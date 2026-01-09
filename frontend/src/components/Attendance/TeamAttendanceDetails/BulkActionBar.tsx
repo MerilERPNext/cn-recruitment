@@ -1,4 +1,6 @@
 import { BulkActionProps } from "../../../types/attendance";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
 
 export function BulkActionBar({
   selectedIds,
@@ -12,24 +14,25 @@ export function BulkActionBar({
   const allSelected = selectedIds.length === pendingRequests.length;
 
   return (
-    <div className="p-2 px-6 bg-blue-50 rounded-xl lg:rounded-none">
-      <div className="flex items-center justify-between mb-2">
+    <div className="p-2 px-6 bg-primary/20 cursor-pointer rounded-xl lg:rounded-none">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
-          <span className="text-sm font-medium text-blue-600">
+          <Typography variant="bodySmall">
             Select all pending requests
-          </span>
+          </Typography>
         </div>
       </div>
-      <span className="text-xs font-medium text-gray-400">
+      <Typography variant="label" color="body2">
         Note - Requests which require other actions are not selectable for bulk
         approval
-      </span>
+      </Typography>
 
       {selectedIds.length > 0 && (
         <div className="flex space-x-2 mt-2">
-          <button
-            className="w-1/2 px-3 py-1.5 rounded-md bg-red-100 shadow-sm text-red-600 text-sm hover:bg-red-100 transition-colors border border-transparent hover:border-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          <Button
+            variant="soft"
+            bgColor="error"
             onClick={() => onBulkAction("Reject")}
             disabled={
               loadingAction?.isLoading && loadingAction?.action === "Reject"
@@ -40,10 +43,11 @@ export function BulkActionBar({
             ) : (
               <>Bulk Reject ({selectedIds?.filter((i) => i)?.length})</>
             )}
-          </button>
+          </Button>
 
-          <button
-            className="w-1/2 px-3 py-1.5 rounded-md bg-green-100 shadow-sm text-green-600 text-sm hover:bg-green-100 transition-colors border border-transparent hover:border-green-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          <Button
+            variant="soft"
+            bgColor="success"
             onClick={() => onBulkAction("Approve")}
             disabled={
               loadingAction?.isLoading && loadingAction?.action === "Approve"
@@ -54,7 +58,7 @@ export function BulkActionBar({
             ) : (
               <>Bulk Approve ({selectedIds?.filter((i) => i)?.length})</>
             )}
-          </button>
+          </Button>
         </div>
       )}
     </div>

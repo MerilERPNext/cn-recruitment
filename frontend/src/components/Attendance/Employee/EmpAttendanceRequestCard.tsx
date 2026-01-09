@@ -85,7 +85,7 @@ const EmpAttendanceRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer`}
+          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors cursor-pointer`}
         >
 
           {/* Request Type */}
@@ -127,7 +127,7 @@ const EmpAttendanceRequestCard = ({
             {data?.custom_allow_revoke && type === "pending" ? (
               <Button
                 icon={<RotateCcw className="h-3 w-3" />}
-                variant="contain"
+                variant="soft"
                 size="sm"
                 onClick={handleRevokeClick}
                 disabled={revokeEventMutation.isPending}
@@ -149,7 +149,7 @@ const EmpAttendanceRequestCard = ({
           </div>
         </div>
       ) : (
-        <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
+        <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover-lift transition-shadow">
           <div className=" flex items-start justify-between gap-4 w-full">
             <div className="flex gap-1 flex-col justify-around w-full p-2">
               <div className="flex items-center gap-2">

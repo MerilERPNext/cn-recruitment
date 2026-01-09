@@ -9,6 +9,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import Modal from "../Advances/commonModal";
 import ExtraPaymentForm from "./ExtraPaymentForm";
 import { IoCloseCircleOutline } from "react-icons/io5";
+import { Typography } from "../../shared/atoms/Typography";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -33,7 +34,7 @@ function FilterDropdown({
   const filters = ["all", "paid", "pending", "overdue"];
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+    <div className="absolute right-0 top-full mt-2 w-56 bg-app rounded-lg shadow-lg border border-gray-200 z-50">
       <div className="p-3">
       <div className="flex items-center justify-between mb-3">  
         <h3 className="text-sm font-semibold mb-2 text-gray-700">
@@ -52,8 +53,8 @@ function FilterDropdown({
               className={`px-3 py-2 rounded-md text-sm text-left border
                 ${
                   activeFilter === filter
-                    ? "border-blue-600 bg-blue-50 text-blue-700"
-                    : "border-gray-200 hover:bg-gray-50"
+                    ? "border-primary-600 bg-primary/10 text-primary-700"
+                    : "border-primary-200 hover:bg-primary/10"
                 }
               `}
               onClick={() => {
@@ -123,7 +124,7 @@ export default function ExtraPayment() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Paid":
-        return "bg-green-100 text-green-700";
+        return "bg-success/20 text-success";
       case "Pending":
         return "bg-amber-100 text-amber-700";
       case "Overdue":
@@ -134,12 +135,17 @@ export default function ExtraPayment() {
   };
 
   return (
-    <div className="min-h-screen bg-white md:p-4">
+    <div className="min-h-screen ">
       <div className="w-full mx-auto">
         <div className="flex items-start justify-between mb-2">
-          <h1 className="base-title  font-bold text-gray-900 mb-2">
+<div className="flex flex-col gap-1">
+<Typography variant="subheading">
             Extra Payment History
-          </h1>
+          </Typography>
+          <Typography variant="bodySmall" color="body2">
+            Track Extra Payment History
+          </Typography>
+</div>
           {/* <button
             onClick={() => setShowExtraPaymentForm(true)}
             className="px-4 py-1 rounded-lg bg-blue-600 text-white flex items-center gap-2"
@@ -156,7 +162,7 @@ export default function ExtraPayment() {
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-1 border border-gray-300 rounded-l-lg w-full "
+              className="pl-10 pr-4 py-1 border border-gray-100 rounded-l-lg w-full "
             />
           </div>
 
@@ -182,7 +188,7 @@ export default function ExtraPayment() {
         {/* ---------------------- WEB ---------------------- */}
         {!isMobile && (
           <div className="border border-gray-100 rounded overflow-hidden">
-            <div className="grid grid-cols-6 bg-gray-50 border-b border-gray-100">
+            <div className="grid grid-cols-6 bg-gray-50 py-2 border-b border-gray-100">
               <div className="px-6 py-2 text-left text-xs font-semibold">
                 Recipient
               </div>
@@ -207,7 +213,7 @@ export default function ExtraPayment() {
               {filteredPayments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="grid grid-cols-6 hover:bg-gray-50"
+                  className="grid grid-cols-6 py-2 hover:bg-primary/10"
                 >
                   <div className="px-6 py-2 text-xs font-medium">
                     {payment.recipient}

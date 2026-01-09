@@ -16,10 +16,11 @@ import HRAForm, { type HRAData } from "./Component/HraExemptio"
 import CompareTaxSheetHandler from "./Component/TaxCompare"
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
 import CustomDropdown from "../../shared/CustomDropdown"
+import Button from "../../shared/atoms/Button"
 
 type PayrollPeriod = {
-  name: string
-}
+  name: string;
+};
 
 const ITDeclarationForm = () => {
   /* ---------------- User & hooks ---------------- */
@@ -67,7 +68,7 @@ const ITDeclarationForm = () => {
       const currentYear = new Date().getFullYear().toString()
       setSelectedPeriod(
         payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-          payrollPeriods[0].name
+        payrollPeriods[0].name
       )
     }
   }, [payrollPeriods, selectedPeriod])
@@ -114,7 +115,7 @@ const ITDeclarationForm = () => {
     setSelectedPeriod(e.target.value)
   }
 
-  const handleHraChange = (field: keyof HRAData, value: string | number ) => {
+  const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev))
   }
 
@@ -130,16 +131,16 @@ const ITDeclarationForm = () => {
           cat.category_name !== categoryName
             ? cat
             : {
-                ...cat,
-                items: cat.items.map((item: any, idx: number) =>
-                  idx === itemIndex
-                    ? {
-                        ...item,
-                        amount: Math.min(value, item.max_amount),
-                      }
-                    : item
-                ),
-              }
+              ...cat,
+              items: cat.items.map((item: any, idx: number) =>
+                idx === itemIndex
+                  ? {
+                    ...item,
+                    amount: Math.min(value, item.max_amount),
+                  }
+                  : item
+              ),
+            }
         ),
       }))
     )
@@ -158,7 +159,7 @@ const ITDeclarationForm = () => {
       })),
     }));
     setGroupedCategories(resetCategories);
-   
+
   }
 
   /* ---------------- Submit ---------------- */
@@ -237,11 +238,10 @@ const ITDeclarationForm = () => {
               type="button"
               onClick={() => setGoHeadWithNewRegime(1)}
               className={`px-6 py-1 rounded-md transition-all
-              ${
-                goHeadWithNewRegime === 1
+              ${goHeadWithNewRegime === 1
                   ? "bg-blue-600 text-white shadow"
                   : "text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
             >
               New
             </button>
@@ -250,11 +250,10 @@ const ITDeclarationForm = () => {
               type="button"
               onClick={() => setGoHeadWithNewRegime(0)}
               className={`px-6 py-1 rounded-md transition-all
-              ${
-                goHeadWithNewRegime === 0
+              ${goHeadWithNewRegime === 0
                   ? "bg-blue-600 text-white shadow"
                   : "text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
             >
               Old
             </button>
@@ -266,27 +265,25 @@ const ITDeclarationForm = () => {
           <button
             onClick={() => setActiveMainTab("category")}
             className={`px-4 py-2 -mb-px font-medium transition-colors duration-200
-              ${
-                activeMainTab === "category"
-                  ? "text-blue-600 border-b-4 border-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+              ${activeMainTab === "category"
+                ? "text-blue-600 border-b-4 border-blue-600"
+                : "text-gray-600 hover:text-blue-600"
               }`}
           >
             Other Investment Declaration
           </button>
 
           {!goHeadWithNewRegimeBool && (
-            <button
+            <Button
               onClick={() => setActiveMainTab("hra")}
               className={`px-4 py-2 -mb-px font-medium transition-colors duration-200
-                ${
-                  activeMainTab === "hra"
-                    ? "text-blue-600 border-b-4 border-blue-600"
-                    : "text-gray-600 hover:text-blue-600"
+                ${activeMainTab === "hra"
+                  ? "text-blue-600 border-b-4 border-blue-600"
+                  : "text-gray-600 hover:text-blue-600"
                 }`}
             >
               HRA & Other   Exemption Declaration
-            </button>
+            </Button>
           )}
         </div>
 
@@ -306,9 +303,8 @@ const ITDeclarationForm = () => {
                     setActiveSection(sec.section)
                     setActiveCategory("")
                   }}
-                  className={`px-4 py-1 text-sx rounded-3xl ${
-                    activeSection === sec.section ? "bg-blue-600 text-white" : "bg-gray-200"
-                  }`}
+                  className={`px-4 py-1 text-sx rounded-3xl ${activeSection === sec.section ? "bg-blue-600 text-white" : "bg-gray-200"
+                    }`}
                 >
                   {sec.section}
                 </button>
@@ -321,11 +317,10 @@ const ITDeclarationForm = () => {
                 <button
                   key={cat.category_name}
                   onClick={() => setActiveCategory(cat.category_name)}
-                  className={`p-3 ml-2 text-left border rounded text-xs ${
-                    activeCategory === cat.category_name
-                      ? "border-blue-600 bg-blue-50"
-                      : "bg-white"
-                  }`}
+                  className={`p-3 ml-2 text-left border rounded text-xs ${activeCategory === cat.category_name
+                    ? "border-blue-600 bg-blue-50"
+                    : "bg-white"
+                    }`}
                 >
                   {cat.category_name}
                 </button>
@@ -372,4 +367,4 @@ const ITDeclarationForm = () => {
   )
 }
 
-export default ITDeclarationForm
+export default ITDeclarationForm;

@@ -7,6 +7,10 @@ import DOMPurify from 'dompurify';
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
+import Button from "../shared/atoms/Button";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
+import CircularLoader from "../shared/atoms/CircularLoader";
 
 
 
@@ -63,9 +67,9 @@ const NoticeDetails = () => {
     const getPriorityColor = (priority: string) => {
         switch (priority) {
             case "high":
-                return "bg-red-500 text-white"
+                return "bg-error text-white"
             case "medium":
-                return "bg-gray-600 text-white"
+                return "bg-warning text-white"
             case "low":
                 return "bg-gray-400 text-white"
             default:
@@ -77,8 +81,8 @@ const NoticeDetails = () => {
         const loader = (
             <div className="w-full flex items-center justify-center">
                 <div className="text-center space-y-4">
-                    <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin mx-auto"></div>
-                    <p className="text-gray-600 text-sm">Loading notice details...</p>
+                    <CircularLoader size="lg" color="black" />
+                    <Typography variant="bodySmall" className="text-gray-600">Loading notice details...</Typography>
                 </div>
             </div>
         );
@@ -95,17 +99,17 @@ const NoticeDetails = () => {
         const errorView = (
             <div className="max-w-md w-full text-center space-y-4">
                 <XCircle className="w-12 h-12 text-black mx-auto" />
-                <h2 className="text-xl font-semibold text-black">Error Loading Notice</h2>
-                <p className="text-gray-600">{error?.message}</p>
-                <button
+                <Typography variant="h3" className="text-black">Error Loading Notice</Typography>
+                <Typography variant="body" className="text-gray-600">{error?.message}</Typography>
+                <Button
                     onClick={() => {
                         navigate(-1)
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    bgColor="primary"
+                    icon={<ArrowLeft className="w-4 h-4" />}
                 >
-                    <ArrowLeft className="w-4 h-4" />
                     Back to Notices
-                </button>
+                </Button>
             </div>
         );
         return isDesktop ? (
@@ -123,17 +127,17 @@ const NoticeDetails = () => {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
                     <Tag className="w-8 h-8 text-gray-400" />
                 </div>
-                <h2 className="text-xl font-semibold text-black">Notice Not Found</h2>
-                <p className="text-gray-600">The notice you're looking for doesn't exist or has been removed.</p>
-                <button
+                <Typography variant="h3" className="text-black">Notice Not Found</Typography>
+                <Typography variant="body" className="text-gray-600">The notice you're looking for doesn't exist or has been removed.</Typography>
+                 <Button
                     onClick={() => {
                         navigate(-1)
                     }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    bgColor="primary"
+                    icon={<ArrowLeft className="w-4 h-4" />}
                 >
-                    <ArrowLeft className="w-4 h-4" />
                     Back to Notices
-                </button>
+                </Button>
             </div>
         );
         return isDesktop ? (
@@ -150,32 +154,32 @@ const NoticeDetails = () => {
 
     const detailsBody = (
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8 h-full overflow-y-auto pb-32">
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <Card shadow="sm" radius="xl" padding="none" className="overflow-hidden border border-gray-200">
                 {/* Header Section */}
                 <div className="p-6 sm:p-8 border-b border-gray-100 bg-white">
                     <div className="flex flex-col sm:flex-row sm:items-start gap-6">
                         <div className="flex-shrink-0">
-                            <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center border border-blue-100">
-                                <Tag className="w-7 h-7 text-blue-600" />
+                            <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center border border-primary-100">
+                                <Tag className="w-7 h-7 text-primary" />
                             </div>
                         </div>
                         <div className="flex-1 min-w-0 space-y-2">
                             <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div>
-                                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight capitalize">
+                                    <Typography variant="h3" className="text-gray-900 leading-tight capitalize">
                                         {notice?.title}
-                                    </h1>
+                                    </Typography>
                                     <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                                         <Clock className="w-4 h-4" />
-                                        <span>Posted on {notice?.publish_date}</span>
+                                        <Typography variant="bodySmall">Posted on {notice?.publish_date}</Typography>
                                         <span className="text-gray-300">•</span>
-                                        <span>by {notice?.name}</span>
+                                        <Typography variant="bodySmall">by {notice?.name}</Typography>
                                     </div>
                                 </div>
                                 <Badge
                                     label={isRead ? "Read" : "Unread"}
-                                    backgroundColor={isRead ? "bg-blue-100" : "bg-red-100"}
-                                    textColor={isRead ? "text-blue-700" : "text-red-700"}
+                                    backgroundColor={isRead ? "bg-primary-100" : "bg-error-100"}
+                                    textColor={isRead ? "text-primary-700" : "text-error-700"}
                                 />
                             </div>
                         </div>
@@ -185,30 +189,30 @@ const NoticeDetails = () => {
                 {/* Metadata Grid */}
                 <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50/50 text-sm">
                     <div className="p-4 sm:p-6">
-                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                        <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <Tag className="w-4 h-4" /> Category
-                        </p>
-                        <p className="font-semibold text-gray-900 capitalize">{notice?.notice_type || 'General'}</p>
+                        </Typography>
+                        <Typography variant="body" className="font-semibold text-gray-900 capitalize">{notice?.notice_type || 'General'}</Typography>
                     </div>
                     <div className="p-4 sm:p-6">
-                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                        <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" /> Status
-                        </p>
-                        <p className="font-semibold text-gray-900 capitalize">{notice?.status}</p>
+                        </Typography>
+                         <Typography variant="body" className="font-semibold text-gray-900 capitalize">{notice?.status}</Typography>
                     </div>
                     <div className="p-4 sm:p-6">
-                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                         <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" /> Priority
-                        </p>
+                        </Typography>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize mt-1 ${getPriorityColor(notice?.priority || '')}`}>
                             {notice?.priority || 'Normal'}
                         </span>
                     </div>
                     <div className="p-4 sm:p-6">
-                        <p className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                        <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <Clock className="w-4 h-4" /> Expires
-                        </p>
-                        <p className="font-semibold text-gray-900">{notice?.expiry_date || 'Never'}</p>
+                        </Typography>
+                        <Typography variant="body" className="font-semibold text-gray-900">{notice?.expiry_date || 'Never'}</Typography>
                     </div>
                 </div>
 
@@ -228,57 +232,46 @@ const NoticeDetails = () => {
                 {/* Content Section */}
                 <div className="p-6 sm:p-8">
                     <div
-                        className="prose prose-slate prose-lg max-w-none text-gray-600 leading-relaxed"
+                        className="prose prose-slate prose-lg max-w-none text-gray-600 leading-relaxed font-sans"
                         dangerouslySetInnerHTML={{ __html: cleanHTML }}
                     />
                 </div>
-            </div>
+            </Card>
 
             {/* Actions Footer */}
             <div className={`mt-8 ${isDesktop ? 'grid grid-cols-2 gap-4 mx-auto' : 'flex flex-col gap-3'}`}>
-                <button
-                    className={`
-                        w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200
-                        ${isRead
-                            ? 'bg-blue-100 text-blue-600'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }
-                        disabled:opacity-70 disabled:cursor-not-allowed
-                    `}
+                <Button
+                    fullWidth
+                    size="lg"
+                    variant={isRead ? "soft" : "contain"}
+                    bgColor={isRead ? "primary" : "primary"}
                     onClick={() => handleActionClick("markAsRead")}
                     disabled={actionLoading?.markAsRead || isRead}
+                    icon={isRead ? <CheckCircle className="w-5 h-5" /> : undefined}
                 >
-                    {actionLoading.markAsRead ? (
-                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                     {actionLoading.markAsRead ? (
+                        <CircularLoader size="sm" color={isRead ? "blue-500" : "white"} />
                     ) : (
-                        <>
-                            {isRead ? <CheckCircle className="w-5 h-5" /> : <div className="w-5 h-5 bg-white/20 rounded-full p-1" />}
-                            {isRead ? "Marked as Read" : "Mark as Read"}
-                        </>
+                        isRead ? "Marked as Read" : "Mark as Read"
                     )}
-                </button>
+                </Button>
 
-                <button
-                    className={`
-                        w-full px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 border
-                        ${isAcknowledged
-                            ? 'bg-green-100 text-green-700 border-green-200'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }
-                        disabled:opacity-70 disabled:cursor-not-allowed
-                    `}
+                <Button
+                     fullWidth
+                     size="lg"
+                    variant={isAcknowledged ? "soft" : "outline"}
+                    bgColor={isAcknowledged ? "success" : "disabled"}
+                    className={!isAcknowledged ? "border-gray-300 text-gray-700 hover:bg-gray-50" : ""}
                     onClick={() => handleActionClick("markAsAcknowledge")}
                     disabled={actionLoading?.markAsAcknowledge || isAcknowledged}
+                     icon={<CheckCircle className="w-5 h-5" />}
                 >
-                    {actionLoading?.markAsAcknowledge ? (
-                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                     {actionLoading?.markAsAcknowledge ? (
+                        <CircularLoader size="sm" color={isAcknowledged ? "gray-700" : "gray-700"} />
                     ) : (
-                        <>
-                            {isAcknowledged ? <CheckCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-                            {isAcknowledged ? "Acknowledged" : "Acknowledge Notice"}
-                        </>
+                        isAcknowledged ? "Acknowledged" : "Acknowledge Notice"
                     )}
-                </button>
+                </Button>
             </div>
         </div>
     );

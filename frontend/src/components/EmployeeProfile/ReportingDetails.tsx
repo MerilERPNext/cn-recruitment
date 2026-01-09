@@ -102,11 +102,11 @@ const ReportingDetails = () => {
 
     const hierarchySections = hierarchyData?.data || {};
     return (
-        <div className="address-form-container bg-white rounded-lg border border-gray-200">
+        <div className="address-form-container bg-white rounded-lg gray-200">
             <div className="p-4 md:p-8">
                 {/* Header */}
-                <div className="flex items-start justify-between">
-                    <div className="border-b border-gray-200 pb-6 mb-8">
+                <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8">
+                    <div className="">
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">
                             Reporting Details
                         </h2>

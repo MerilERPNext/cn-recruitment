@@ -257,9 +257,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   }
 
   return (
-    <div className="bg-gray-50 flex flex-col font-sans">
+    <div className="bg-app flex flex-col font-sans">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <div className="bg-white rounded-lg shadow-sm border p-6">
+        <div className=" rounded-lg shadow-sm border p-6">
           <Form
             form={validatedSchema}
             onFormReady={(instance: Formio) => {
@@ -292,7 +292,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
+      <div className="sticky bottom-0 bg-primary/20 border-t shadow-lg py-4 px-4 w-full">
         <div className="max-w-4xl mx-auto flex space-x-4">
           <Button
             onClick={onClose}
@@ -306,10 +306,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           <Button
             onClick={handleSubmit}
             size="md"
-            variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className={"hover:bg-blue-700 flex-1 font-medium"}
+            
+        
+            className={" flex-1 font-medium"}
           >
             Submit Request
           </Button>

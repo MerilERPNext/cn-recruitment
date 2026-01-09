@@ -169,7 +169,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.multiple = field.fieldtype === "Table MultiSelect";
 
       schema.data = {
-        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*&doctype=${field.options ?? ""}&limit=20`,
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.options ?? ""}&limit=20`,
       };
 
       schema.lazyLoad = true;
@@ -180,7 +180,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.searchField = "q";
 
       schema.template = `
-    <span>{{ item.title || item.label || item.full_name || item.fullname || item.first_name || item.name }}</span>
+    <span> {{ item.name }} ({{ item.employee_name || item.title || item.label || item.full_name || item.fullname || item.first_name }})</span>
   `;
 
       break;

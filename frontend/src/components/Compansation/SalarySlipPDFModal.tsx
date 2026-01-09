@@ -6,6 +6,8 @@ import html2pdf from "html2pdf.js"
 import { Download, X } from "lucide-react"
 import { useState } from "react"
 import { BsToggleOff, BsToggleOn } from "react-icons/bs"
+import Button from "../shared/atoms/Button"
+import { Typography } from "../shared/atoms/Typography"
 
 interface SalarySlipPDFModalProps {
   isOpen: boolean
@@ -48,28 +50,34 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-app rounded-xl shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div>
-            <h3 className="text-lg font-semibold">{salarySlipName}</h3>
+            <Typography variant="h4" >{salarySlipName}</Typography>
             {salarySlipDate && <p className="text-sm text-gray-500">{salarySlipDate}</p>}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => setIsMasked(!isMasked)}>
+            <Button
+            variant="soft"
+             onClick={() => setIsMasked(!isMasked)}>
               {isMasked ? <BsToggleOff className="w-6 h-6" /> : <BsToggleOn className="w-6 h-6" />}
-            </button>
-            <button onClick={handleDownload} className="p-2 bg-blue-600 text-white rounded">
-              <Download className="w-4 h-4" />
-            </button>
-            <button onClick={onClose} className="p-2 rounded hover:bg-gray-100">
-              <X className="w-5 h-5" />
-            </button>
+            </Button>
+            <Button
+            variant="soft"
+             onClick={handleDownload}>
+              <Download className="w-6 h-6" />
+            </Button>
+            <Button 
+            variant="soft" 
+            onClick={onClose}>
+              <X className="w-6 h-6" />
+            </Button>
           </div>
         </div>
 
         {/* PDF Content */}
-        <div className={`flex-1 overflow-auto ${isMasked ? "filter blur-xl" : ""}`}>
+        <div className={`flex-1 overflow-auto bg-app ${isMasked ? "filter blur-xl" : ""}`}>
           <iframe
             srcDoc={htmlContent || ""}
             className="w-full h-full border-0"

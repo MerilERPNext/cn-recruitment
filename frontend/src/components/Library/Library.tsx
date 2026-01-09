@@ -6,6 +6,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import Button from "../shared/atoms/Button";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -121,24 +122,20 @@ const DocumentLibrary = () => {
         ) : (
           // DESKTOP VIEW
           <div className="flex flex-col md:flex-row gap-2">
-            <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "awaiting"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+            <Button
+              variant={activeTab === "awaiting" ? "contain" : "subtle"}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("awaiting")}
             >
               My Documents{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
                 {documents.filter((doc) => doc.status === "Draft").length}
               </span>
-            </button>
+            </Button>
 
-            <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "mydocs"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+            <Button
+              variant={activeTab === "mydocs" ? "contain" : "subtle"}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("mydocs")}
             >
               Awaiting My Acknowledgment{" "}
@@ -149,20 +146,18 @@ const DocumentLibrary = () => {
                   ).length
                 }
               </span>
-            </button>
+            </Button>
 
-            <button
-              className={`px-5 py-2 rounded-md font-medium transition-all ${activeTab === "approved"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+            <Button
+              variant={activeTab === "approved" ? "contain" : "subtle"}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("approved")}
             >
               Documents Approved{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
                 {documents.filter((doc) => doc.status === "Approved").length}
               </span>
-            </button>
+            </Button>
           </div>
         )}
       </div>

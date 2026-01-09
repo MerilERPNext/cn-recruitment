@@ -798,9 +798,9 @@ const DataListView = <T extends BaseItem>({
   return (
     <>
       {/* Header */}
-      <div className="border-gray-200 pb-2">
+      <div className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full">
+          <div className="flex items-center w-full md:border-b">
             {isSearch && (
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -811,14 +811,14 @@ const DataListView = <T extends BaseItem>({
                   value={searchTerm}
                   onChange={handleSearch}
                   placeholder="Search..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="rounded-tl-md rounded-tr-md block w-full pl-10 pr-3 h-12 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
             )}
             {isFilter && filterFields.length > 0 && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`h-full flex items-center px-3 py-2 shadow-sm text-sm leading-4 font-medium  text-gray-700 bg-white hover:bg-gray-50 focus:outline-none ${showFilters ? "bg-gray-100" : ""
+                className={`rounded-tr-md rounded-br-md flex min-h-full h-12 items-center px-3 py-2 shadow-sm text-sm leading-4 font-medium  text-gray-700 bg-white hover:bg-gray-50 focus:outline-none ${showFilters ? "bg-gray-100" : ""
                   }`}
               >
                 <Filter className="h-4 w-4" />
@@ -940,7 +940,7 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-gray-50" : ""
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
                     }`}
                 >
                   <ItemComponent item={item} index={index} />

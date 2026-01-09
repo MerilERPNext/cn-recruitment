@@ -2,8 +2,12 @@ import React, { useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { Award } from "../../types/employee";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
+import { useCurrentEmployeeAllDetails, useGetEmployeeEarnedAppreciations } from "../../hooks/useEmployee";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import useCurrentUser from "../../hooks/useCurrentUser";
 
 export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
+
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
 
@@ -100,14 +104,22 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
 };
 
 interface AwardsSectionProps {
-    awards: Award[] | undefined;
     isDesktop: boolean;
 }
 
 export const AwardsSection: React.FC<AwardsSectionProps> = ({
-    awards,
     isDesktop,
 }) => {
+    const { targetEmployeeId } = useTargetUser();
+
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+        currentUser?.name || ""
+    );
+    const employee = targetEmployeeId || currentEmployee?.name;
+    const { data: employeeAppreciations } =
+        useGetEmployeeEarnedAppreciations(employee || "");
+    const awards = employeeAppreciations?.badges;
     if (isDesktop) {
         return (
             <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">

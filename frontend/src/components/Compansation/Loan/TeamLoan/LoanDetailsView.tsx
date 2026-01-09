@@ -33,7 +33,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data.custom_doctype_actions)
     : [];
- const loanFormUpdate = useLoanApplicationUpdate()
+  const loanFormUpdate = useLoanApplicationUpdate()
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
 
@@ -47,7 +47,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     deferment_date: ref?.loan_deferment_date || "",
   });
 
-  
+
 
   /* comment modal */
   const [commentOpen, setCommentOpen] = useState(false);
@@ -68,15 +68,15 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
 
   const handleConfirmAction = async () => {
     if (!selectedAction) return;
-  
+
     if (!comment.trim()) {
       toast.error("Comment is required");
       return;
     }
-  
+
     const referenceDoctype = ref?.doctype || "Loan Application";
     const referenceName = ref?.name || data?.reference_name;
-  
+
     try {
       // 1️⃣ Save comment first
       await commentMutation.mutateAsync({
@@ -85,25 +85,25 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
         content: comment,
         comment_email: user?.name || "",
       });
-  
+
       // 2️⃣ Prepare payload for loan update API
       const payload: LoanApplicationUpdatePayload = {
         docname: referenceName, // Loan Application document name
         data: {
-            loan_amount: parseFloat(form.loan_amount),
-            rate_of_interest: parseFloat(form.rate_of_interest),
-            loan_tenure: parseFloat(form.loan_tenure),
-            custom_repayment_start_date: form.start_date,
-            custom_repayment_end_date: form.end_date,
-            loan_deferment_date: form.deferment_date,
-            status: selectedAction,
-          },
+          loan_amount: parseFloat(form.loan_amount),
+          rate_of_interest: parseFloat(form.rate_of_interest),
+          loan_tenure: parseFloat(form.loan_tenure),
+          custom_repayment_start_date: form.start_date,
+          custom_repayment_end_date: form.end_date,
+          loan_deferment_date: form.deferment_date,
+          status: selectedAction,
+        },
       };
       console.log("Payload for loan update:", payload);
-  
+
       // 3️⃣ Trigger loan update mutation
       await loanFormUpdate.mutateAsync(payload);
-  
+
       // 4️⃣ Update UI / parent
       if (item.onAction) {
         item.onAction(selectedAction, {
@@ -114,7 +114,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
           },
         });
       }
-  
+
       setComment("");
       setSelectedAction(null);
       setCommentOpen(false);
@@ -125,7 +125,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
       toast.error("Failed to save comment or update loan");
     }
   };
-  
+
 
   return (
     <>
@@ -161,7 +161,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
                 key={action}
                 onClick={() => handleActionClick(action)}
                 bgColor={getActionStyles(action).bg}
-                textColor={getActionStyles(action).text}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -191,13 +191,13 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button bgColor="gray-200" textColor="gray-700" onClick={() => setCommentOpen(false)}>
+              <Button onClick={() => setCommentOpen(false)}>
                 Cancel
               </Button>
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
-                textColor={getActionStyles(selectedAction!).text}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >

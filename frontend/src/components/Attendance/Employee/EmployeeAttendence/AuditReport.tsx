@@ -47,8 +47,6 @@ const AuditReport = () => {
         );
     }
 
-
-
     return (
         <div className="space-y-8">
             {/* ================= Shift & Policy Table ================= */}
@@ -57,21 +55,19 @@ const AuditReport = () => {
 
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full border-collapse divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-50/50">
                             <tr>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Policy
-                                </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+
+                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Shift
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Effective From
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Updated By
                                 </th>
-                                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Updated On
                                 </th>
                             </tr>
@@ -81,9 +77,7 @@ const AuditReport = () => {
                             {auditReports.shift_and_policy.map(
                                 (item: ShiftAndPolicyAudit, index) => (
                                     <tr key={index} className="hover:bg-gray-50">
-                                        <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
-                                            {item.policy || "-"}
-                                        </td>
+
                                         <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
                                             {item.shift || "-"}
                                         </td>
@@ -114,15 +108,15 @@ const AuditReport = () => {
             <div>
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full border-collapse divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-50/50">
                             <tr>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Week Off
                                 </th>
-                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Updated By
                                 </th>
-                                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                                <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-600">
                                     Updated On
                                 </th>
                             </tr>

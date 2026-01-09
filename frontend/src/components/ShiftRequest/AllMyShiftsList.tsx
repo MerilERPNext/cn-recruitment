@@ -42,7 +42,7 @@ const MyShiftRowItem: React.FC<{
   return (
     <div
       key={`${item.name}-${index}`}
-      className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
+      className="my-data-row grid grid-cols-5 gap-4 items-center hover:bg-primary/20 text-center"
     >
       <WrapperHoverCard employeeId={item.employee}>
         <div className="my-data-cell font-medium truncate">

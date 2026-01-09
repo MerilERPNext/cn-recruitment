@@ -5,10 +5,10 @@ import { useRef } from "react";
 import { createPortal } from "react-dom";
 import "../../formio.custom.css";
 import toast from "react-hot-toast";
-import { useShiftTypes } from "../../hooks/useShift";
+import { useEmployeeShifts } from "../../hooks/useShift";
 import {
   useAddAttendanceAssignment,
-  useAllAttendancePolicies,
+  useAllAttendanceAssignmentPolicies,
   useAllIpRestrictions,
   useAllShiftBlocks,
   useAllShiftLocations,
@@ -17,6 +17,8 @@ import {
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import Button from "../shared/atoms/Button";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 interface AttendanceAssignmentsProps {
   onSuccess?: (data?: any) => void;
@@ -30,17 +32,21 @@ const AttendanceAssignments = ({
   open = true,
 }: AttendanceAssignmentsProps) => {
   const formInstance = useRef<any>(null);
+  const { targetEmployeeId } = useTargetUser();
 
-  const { data: shiftList } = useShiftTypes();
-  const { data: attendancePolicy } = useAllAttendancePolicies();
-  const { data: weekOffs } = useAllWeekOffs();
-  const { data: ipRestrictions } = useAllIpRestrictions();
-  const { data: geoFencingRestrictions } = useAllShiftLocations();
-  const { data: allShiftBlocks } = useAllShiftBlocks();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
+  const employee = targetEmployeeId || currentEmployee?.name;
+
+  const { data: shiftList } = useEmployeeShifts(employee || "");
+  const { data: attendancePolicy } = useAllAttendanceAssignmentPolicies(employee || "");
+
+  const { data: weekOffs } = useAllWeekOffs();
+  const { data: ipRestrictions } = useAllIpRestrictions();
+  const { data: geoFencingRestrictions } = useAllShiftLocations();
+  const { data: allShiftBlocks } = useAllShiftBlocks();
   const mutation = useAddAttendanceAssignment();
   const overtimeForm = {
     display: "form",
@@ -132,7 +138,7 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                shiftList?.data?.map((item) => ({
+                shiftList?.data?.shifts?.map((item) => ({
                   label: `${item.name}`,
                   value: item.name,
                 })) || [],
@@ -184,7 +190,7 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                attendancePolicy?.data?.map((item) => ({
+                attendancePolicy?.data?.policies?.map((item) => ({
                   label: `${item.name}`,
                   value: item.name,
                 })) || [],
@@ -302,7 +308,8 @@ const AttendanceAssignments = ({
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
+            size="md"
             onClick={() => {
               handleSubmit();
             }}
@@ -313,7 +320,7 @@ const AttendanceAssignments = ({
             ) : (
               "Update"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

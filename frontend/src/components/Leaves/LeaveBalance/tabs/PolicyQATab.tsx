@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { ChevronUp } from "lucide-react";
 import { useGetPolicyQuestions } from "../../../../hooks/useLeaves";
 import { LeaveBalance } from "../../../../types/leaves";
+import { Typography } from "../../../shared/atoms/Typography";
 
 interface PolicyQATabProps {
   leaveData: LeaveBalance;
@@ -42,11 +43,9 @@ const PolicyQATab: React.FC<PolicyQATabProps> = ({ leaveData }) => {
       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
         <button
           onClick={() => setIsPolicyOpen(!isPolicyOpen)}
-          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-primary/10 transition-colors"
         >
-          <h2 className="base-title md:module-title font-semibold text-gray-800">
-            Policy
-          </h2>
+          <Typography className="font-semibold">Policy</Typography>
           <ChevronUp
             className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
               isPolicyOpen ? "rotate-0" : "rotate-180"
@@ -60,9 +59,9 @@ const PolicyQATab: React.FC<PolicyQATabProps> = ({ leaveData }) => {
           }`}
         >
           <div className="px-6 pb-6 pt-2 border-t border-gray-100">
-            <h3 className="text-base font-semibold text-gray-700 mb-4">
+            <Typography className="font-semibold mb-4">
               Policy Information
-            </h3>
+            </Typography>
 
             {isLoading && (
               <div className="space-y-6 animate-pulse">
@@ -85,12 +84,12 @@ const PolicyQATab: React.FC<PolicyQATabProps> = ({ leaveData }) => {
                 ) : (
                   policyQuestions.map((item, index) => (
                     <div key={index} className="space-y-1">
-                      <h4 className="text-sm font-semibold text-gray-700">
+                      <Typography variant="bodySmall" className="font-medium">
                         {item.question}
-                      </h4>
-                      <p className="text-sm text-gray-600 leading-relaxed">
+                      </Typography>
+                      <Typography variant="bodySmall" color="body2">
                         {item.answer}
-                      </p>
+                      </Typography>
                     </div>
                   ))
                 )}

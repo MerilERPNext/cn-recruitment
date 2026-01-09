@@ -7,6 +7,7 @@ import CardTable from "../../../shared/CardTable";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import LoanDetailsModal from "./LoanDetailsView";
+import { Typography } from "../../../shared/atoms/Typography";
 
 const TeamLoanRequest = () => {
   const { isMobile } = useScreenSize();
@@ -26,6 +27,14 @@ const TeamLoanRequest = () => {
 
   return (
     <div>
+           <div className="mb-4">
+              <Typography variant="h4">
+                Team Loan Requests
+              </Typography>
+              <Typography variant="bodySmall" color="body2">
+                Review and manage loan applications from your team members
+              </Typography>
+     </div>
       {!isMobile && (
         <CardTable
           titles={[
@@ -54,7 +63,8 @@ const TeamLoanRequest = () => {
           ]}
         >
           <ApprovalList
-          
+
+
             status="Open"
             doctype="Loan Application"
             pageSize={1000000}

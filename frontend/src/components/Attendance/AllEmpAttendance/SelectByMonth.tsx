@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Check, Circle, X } from "lucide-react";
 import { generateMonthOptions } from "../../../utils/helperUtils";
+import { Typography } from "../../shared/atoms/Typography";
+import Button from "../../shared/atoms/Button";
+import { Card } from "../../shared/atoms/Card";
 
 export interface MonthOption {
   label: string;
@@ -37,9 +40,9 @@ const SelectByMonth = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <Typography variant="bodyMedium" color="body2">
             Select By Month
-          </h2>
+          </Typography>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -53,10 +56,10 @@ const SelectByMonth = ({
         <div className="px-4 pb-20 pt-2 overflow-y-scroll">
           <div className="space-y-1">
             {monthOptions.map((month) => (
-              <button
+              <Card
                 key={month.value}
                 onClick={() => setSelectedMonth(month)}
-                className="mb-4 w-full flex items-center justify-between p-4 hover:bg-blue-50 transition-colors rounded-lg last:border-b-0 border-1 border-gray-100 bg-white shadow-sm rounded-xl"
+                className="mb-4 w-full flex items-center justify-between p-4 hover:bg-blue-50 transition-colors rounded-lg shadow-sm rounded-xl"
               >
                 <span className="text-gray-900 font-medium text-left">
                   {month.label}
@@ -73,19 +76,19 @@ const SelectByMonth = ({
                     </div>
                   )}
                 </div>
-              </button>
+              </Card>
             ))}
           </div>
         </div>
 
         {/* Apply Button */}
         <div className="sticky bottom-0 left-0 right-0 bg-white w-full p-4 border-t border-gray-200">
-          <button
+          <Button
             onClick={handleApply}
             className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             Apply
-          </button>
+          </Button>
         </div>
       </div>
     </div>

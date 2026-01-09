@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -48,35 +49,6 @@ const ExpenseApprovalCard = ({
   const actionsWithForm = data?.custom_doctype_actions_with_form
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
-
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
@@ -225,29 +197,33 @@ const ExpenseApprovalCard = ({
             {actions?.length &&
               data?.status !== "Approved" &&
               data?.status !== "Rejected" &&
-              actions.map((action: string) => (
-                <Button
-                  key={action}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleActionClick(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
+              actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
+
+                return (
+                  <Button
+                    key={action}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleActionClick(action, data);
+                    }}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
+                    disabled={
+                      loadingAction?.id === data?.todo_id &&
+                      loadingAction?.action === action
+                    }
+                  >
+                    {loadingAction?.id === data?.todo_id &&
+                    loadingAction?.action === action ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
+                  </Button>
+                );
+              })}
           </div>
         </div>
       ) : (
@@ -325,30 +301,34 @@ const ExpenseApprovalCard = ({
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&
-                  actions.map((action: string) => (
-                    <Button
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleActionClick(action, data);
-                      }}
-                      fullWidth
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
+                  actions.map((action: string) => {
+                    const actionStyle = getActionStyles(action);
+
+                    return (
+                      <Button
+                        key={action}
+                        fullWidth
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleActionClick(action, data);
+                        }}
+                        bgColor={actionStyle.bgColor}
+                        variant={actionStyle.variant}
+                        disabled={
+                          loadingAction?.id === data?.todo_id &&
+                          loadingAction?.action === action
+                        }
+                      >
+                        {loadingAction?.id === data?.todo_id &&
+                        loadingAction?.action === action ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -390,16 +370,14 @@ const ExpenseApprovalCard = ({
               <Button
                 onClick={handleCancelComment}
                 size="sm"
-                bgColor="gray-100"
-                textColor="gray-700"
+                bgColor="disabled"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSaveComment}
                 size="sm"
-                bgColor="blue-100"
-                textColor="blue-600"
+                bgColor="primary"
                 disabled={!rejectionComment.trim() || commentMutation.isPending}
               >
                 {commentMutation.isPending ? (

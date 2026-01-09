@@ -5,7 +5,8 @@ import {
   OvertimeDetail,
 } from "../../../types/attendance";
 import { format, isValid, parse } from "date-fns";
-import Button from "../../shared/atoms/Button";
+import Button, { ButtonColor } from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -105,29 +106,29 @@ export function MyOvertimeDetails({
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
-  const getActionStyles = (action: string): { bg: string; text: string } => {
+  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
-      bg: "gray-100",
+      bg: "disabled" as ButtonColor,
       text: "gray-600",
     };
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
+          bg: "success" as ButtonColor,
           text: "green-600",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
+          bg: "error" as ButtonColor,
           text: "red-600",
         };
 
         break;
       default:
         styles = {
-          bg: "gray-200",
+          bg: "disabled" as ButtonColor,
           text: "gray-600",
         };
         break;
@@ -187,14 +188,15 @@ export function MyOvertimeDetails({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
-          <button
+          <Typography variant="h4" className="font-semibold text-gray-800">{label}</Typography>
+          <Button
+            variant="subtle"
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -202,10 +204,10 @@ export function MyOvertimeDetails({
           {/* Allocated To + Status */}
           <div className="flex gap-2 justify-between">
             <div className="flex flex-col gap-1">
-              <div className="card-title">Allocated To</div>
-              <div className="card-subtitle">
+              <Typography variant="bodySmall" color="body2" className="card-title">Allocated To</Typography>
+              <Typography variant="bodyMedium" className="card-subtitle">
                 {data?.username} ({data.allocated_to})
-              </div>
+              </Typography>
             </div>
             <div>
               <Badge
@@ -217,22 +219,22 @@ export function MyOvertimeDetails({
 
           {/* Created On */}
           <div className="flex flex-col gap-1">
-            <div className="card-title">Created On</div>
-            <div className="card-subtitle">
+            <Typography variant="bodySmall" color="body2" className="card-title">Created On</Typography>
+            <Typography variant="bodyMedium" className="card-subtitle">
               {new Date(doc?.creation).toLocaleString()}
-            </div>
+            </Typography>
           </div>
           <div className="flex flex-col gap-1">
-            <div className="card-title">Due Date</div>
-            <div className="card-subtitle">
+            <Typography variant="bodySmall" color="body2" className="card-title">Due Date</Typography>
+            <Typography variant="bodyMedium" className="card-subtitle">
               {formatDashedDate((data?.due_date || data?.date) as string)}
-            </div>
+            </Typography>
           </div>
 
           {/* Overtime Details */}
           {doc?.overtime_details?.length > 0 && (
             <div>
-              <div className="base-title mb-1">Overtime Details</div>
+              <Typography variant="bodyMedium" className="base-title mb-1 block font-semibold">Overtime Details</Typography>
               <div className="grid grid-cols-1 gap-4 ">
                 {doc.overtime_details.map(
                   (item: OvertimeDetail, idx: number) => (
@@ -241,47 +243,47 @@ export function MyOvertimeDetails({
                       className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
                     >
                       <div className="mb-3">
-                        <h4 className="card-title">Overtime Entry {idx + 1}</h4>
+                        <Typography variant="label" className="card-title">Overtime Entry {idx + 1}</Typography>
                       </div>
 
                       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-600">
                         <div className="flex flex-col gap-1">
-                          <span className="card-title">Start Date</span>
-                          <span className="card-subtitle">
+                          <Typography variant="bodySmall" color="body2" className="card-title">Start Date</Typography>
+                          <Typography variant="bodySmall" className="card-subtitle">
                             {formatDate(item.start_date)}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="card-title">Start Time</span>
-                          <span className="card-subtitle">
+                          <Typography variant="bodySmall" color="body2" className="card-title">Start Time</Typography>
+                          <Typography variant="bodySmall" className="card-subtitle">
                             {item.start_time}
-                          </span>
+                          </Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <span className="card-title">End Date</span>
-                          <span className="card-subtitle">
+                          <Typography variant="bodySmall" color="body2" className="card-title">End Date</Typography>
+                          <Typography variant="bodySmall" className="card-subtitle">
                             {formatDate(item.end_date)}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="card-title">End Time</span>
-                          <span className="card-subtitle">{item.end_time}</span>
+                          <Typography variant="bodySmall" color="body2" className="card-title">End Time</Typography>
+                          <Typography variant="bodySmall" className="card-subtitle">{item.end_time}</Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <span className="card-title">Shift Date</span>
-                          <span className="card-subtitle">
+                          <Typography variant="bodySmall" color="body2" className="card-title">Shift Date</Typography>
+                          <Typography variant="bodySmall" className="card-subtitle">
                             {formatDate(item.shift_date)}
-                          </span>
+                          </Typography>
                         </div>
 
                         {item.message && (
                           <div className="flex flex-col gap-1">
-                            <span className="card-title">Message</span>
-                            <span className="card-subtitle">
+                            <Typography variant="bodySmall" color="body2" className="card-title">Message</Typography>
+                            <Typography variant="bodySmall" className="card-subtitle">
                               {item.message}
-                            </span>
+                            </Typography>
                           </div>
                         )}
                       </div>
@@ -291,7 +293,7 @@ export function MyOvertimeDetails({
               </div>
               {data?.attachments && data?.attachments?.length > 0 ? (
                 <div className="py-4">
-                  <p className="text-sm  mb-2 font-bold">Attachment</p>
+                  <Typography variant="bodySmall" className="mb-2 font-bold block">Attachment</Typography>
                   {data?.attachments?.map((item) => (
                     <FileRenderer filePath={item?.file_url || ""} />
                   ))}
@@ -319,7 +321,6 @@ export function MyOvertimeDetails({
                         }}
                         size="md"
                         bgColor={getActionStyles(action).bg}
-                        textColor={getActionStyles(action).text}
                         className="w-full"
                       >
                         {isLoading ? (

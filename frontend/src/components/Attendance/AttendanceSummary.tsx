@@ -38,8 +38,11 @@ import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2
 import { ViewAll } from "../shared/atoms/ViewAll";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import PolicyDrawer from "./PolicyDrawer";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
+import Button from "../shared/atoms/Button";
 
-interface PolicyDrawerConfig {
+export interface PolicyDrawerConfig {
   title: string;
   doctypeName: string;
   targetDoctype: string;
@@ -136,7 +139,7 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.my_attendance_requests || 0,
           icon: "FileText",
-          color: "green",
+          color: "text-green-500",
           background: "bg-green-50",
           actions: [
             {
@@ -157,7 +160,7 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.team_attendance_requests || 0,
           icon: "Users",
-          color: "yellow",
+          color: "text-yellow-500",
           background: "bg-yellow-50",
           actions: [
             {
@@ -173,7 +176,7 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.my_overtime_requests || 0,
           icon: "FileText",
-          color: "blue",
+          color: "text-blue-500",
           background: "bg-blue-50",
           actions: [
             {
@@ -194,7 +197,7 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.team_overtime_requests || 0,
           icon: "Users",
-          color: "purple",
+          color: "text-purple-500",
           background: "bg-purple-50",
           actions: [
             {
@@ -210,7 +213,7 @@ const AttendanceSummary = () => {
           subtitle: "Shift schedule overview",
           value: null,
           icon: "Calendar",
-          color: "indigo",
+          color: "text-indigo-500",
           background: "bg-indigo-50",
           actions: [
             {
@@ -240,26 +243,36 @@ const AttendanceSummary = () => {
   const settingsData = [
     {
       icon: Clock,
+      color: "text-green-500",
+      background: "bg-green-50",
       title: "Attendance Method",
       details: getAttendanceMethod(),
     },
     {
       icon: Users,
+      color: "text-yellow-500",
+      background: "bg-yellow-50",
       title: "Current Shift",
       details: employeeShift ? [employeeShift?.shift] : [],
     },
     {
       icon: Shield,
+      color: "text-blue-500",
+      background: "bg-blue-50",
       title: "Attendance Policy",
       details: attendancePolicy ? [attendancePolicy] : [],
     },
     {
       icon: Calendar,
+      color: "text-indigo-500",
+      background: "bg-indigo-50",
       title: "Week Off",
       details: [currentEmployee?.custom_weekly_off || ""],
     },
     {
       icon: Timer,
+      color: "text-purple-500",
+      background: "bg-purple-50",
       title: "Overtime Policy",
       details: [employeeOvertimePolicy || ""],
     },
@@ -284,8 +297,8 @@ const AttendanceSummary = () => {
     if (settingConfig) {
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
-        <button
-          type="button"
+        <Typography
+          variant="bodySmall"
           onClick={() => {
             setPolicyDrawerConfig({
               title: settingType,
@@ -296,10 +309,10 @@ const AttendanceSummary = () => {
             });
             setOpenPolicyDrawer(true);
           }}
-          className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
+          className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
         >
           {data}
-        </button>
+        </Typography>
       );
     }
 
@@ -319,247 +332,171 @@ const AttendanceSummary = () => {
     }
 
     return (
-      <button
-        type="button"
+      <Typography
+        variant="bodySmall"
         onClick={() => navigate(path!)}
-        className="w-full text-left text-sm text-gray-800 hover:text-blue-600"
+        className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
       >
         {data}
-      </button>
+      </Typography>
     );
   };
 
   return (
-    <>
-      <div className="bg-gray-200 p-4">
-        {/* Date Navigation */}
-        <div className="flex items-center justify-between mb-4 bg-white border border-gray-200 p-4 rounded-xl">
-          <button
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-            onClick={goToPreviousMonth}
-          >
-            <ChevronLeft className="h-5 w-5 text-gray-600" />
-          </button>
-          <div className="text-center">
-            <h1 className="base-title md:text-xl font-bold text-gray-900">
-              {format(currentDate, "MMMM yyyy")}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Attendance Overview</p>
-          </div>
-          <button
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-            onClick={goToNextMonth}
-          >
-            <ChevronRight className="h-5 w-5 text-gray-600" />
-          </button>
+    <div className="p-4 space-y-4">
+      {/* Date Navigation */}
+      <Card padding="sm" radius="xl" shadow="none" className="flex items-center justify-between mb-4  px-4 py-3">
+        <Button
+          variant="subtle"
+          size="sm"
+          className="p-2 rounded-lg bg-slate-100 transition-colors"
+          onClick={goToPreviousMonth}
+        >
+          <ChevronLeft className="h-5 w-5 text-slate-600" />
+        </Button>
+        <div className="text-center">
+          <Typography variant="h3" className="font-bold text-slate-900 tracking-tight">
+            {format(currentDate, "MMMM yyyy")}
+          </Typography>
+          <Typography variant="label" color="secondary" className="font-medium mt-0.5 uppercase tracking-widest text-[10px]">
+            Attendance Overview
+          </Typography>
         </div>
+        <Button
+          variant="subtle"
+          size="sm"
+          className="p-2 rounded-lg bg-slate-100 transition-colors"
+          onClick={goToNextMonth}
+        >
+          <ChevronRight className="h-5 w-5 text-slate-600" />
+        </Button>
+      </Card>
 
-        <AttendanceChart
-          present={employeeAttendanceSummary?.present || 0}
-          absent={employeeAttendanceSummary?.absent || 0}
-          leaves={employeeAttendanceSummary?.leaves || 0}
-          week_offs={employeeAttendanceSummary?.week_offs || 0}
-          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
-          avg_working_hours={
-            Number(employeeAttendanceSummary?.avg_working_hours) || 0
-          }
-          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
-          selectedMonth={currentDate}
-        />
-        {isDesktop ? (
-          // Desktop Layout
-          <div className="flex py-4">
-            {/* Left/Main Column */}
-            <div className="flex-1 space-y-6">
-              {/* Today's Team Summary */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
-                <div className="flex">
-                  <h2 className="module-title">Today's Team Summary</h2>
-                  <ViewAll
-                    className="ml-auto"
-                    title="View Team Calender"
-                    to="/webapp/attendance/team-attendance"
-                  />
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                  {teamSummaryData.map((data, index) => (
-                    <SummaryCard
-                      key={index}
-                      icon={data.icon}
-                      iconColor={`text-${data.color}-600`}
-                      bgColor={`bg-${data.color}-50`}
-                      borderColor={`border-${data.color}-100`}
-                      value={data.value}
-                      label={data.label}
-                      isDesktop={isDesktop}
-                      isMetric={true}
-                    />
-                  ))}
-                </div>
-                <div className="space-y-3 border-b-1 bg-white border-gray-200 py-4 pt-0 mt-5">
-                  <h2 className="module-title">Quick Actions</h2>
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map((card) => (
-                      <QuickActionCard key={card.id} {...card} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+      <AttendanceChart
+        present={employeeAttendanceSummary?.present || 0}
+        absent={employeeAttendanceSummary?.absent || 0}
+        leaves={employeeAttendanceSummary?.leaves || 0}
+        week_offs={employeeAttendanceSummary?.week_offs || 0}
+        avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+        avg_working_hours={
+          Number(employeeAttendanceSummary?.avg_working_hours) || 0
+        }
+        avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
+        selectedMonth={currentDate}
+      />
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
+        <div className="w-full lg:w-[70%] space-y-6">
+          {/* Today's Team Summary */}
+          <Card radius="xl" className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <Typography variant="subheading" >Today's Team Summary</Typography>
+              <ViewAll
+                className="text-sm"
+                title="View Calendar"
+                to="/webapp/attendance/team-attendance"
+              />
+            </div>
+            {/* Using same grid as Summary Cards in Chart */}
+            <div className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}>
+              {teamSummaryData.map((data, index) => (
+                <SummaryCard
+                  key={index}
+                  icon={data.icon}
+                  iconColor={`text-${data.color}-600`}
+                  bgColor={`bg-${data.color}-50`}
+                  borderColor={`border-${data.color}-100`}
+                  value={data.value}
+                  label={data.label}
+                  isDesktop={isDesktop}
+                  isMetric={true}
+                />
+              ))}
+            </div>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card radius="xl" className="space-y-4">
+            <div className="px-1">
+              <Typography variant="subheading" className="mb-4">Quick Actions</Typography>
             </div>
 
-            {/* Right Column: Settings */}
-            <div className="w-1/3 ml-6 bg-white border border-gray-200 rounded-xl p-4 mb-4">
-              <h2 className="module-title mb-4">Settings</h2>
-              <div className="space-y-4">
-                {settingsData.map((setting, index) => {
-                  const Icon = setting.icon;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {quickAction.cards.map((card) => (
+                <QuickActionCard key={card.id} {...card} />
+              ))}
+            </div>
+          </Card>
+        </div>
+        {/* Right Column: Settings - 30% */}
+        <Card radius="xl" className="w-full lg:w-[30%] h-fit">
+          <Typography variant="subheading" className="mb-4">Settings & Policies</Typography>
+          <div className="space-y-3">
+            {settingsData.map((setting, index) => {
+              const Icon = setting.icon;
+              return (
+                <div
+                  key={index}
+                  className="group flex items-start gap-4 p-4  shadow-sm hover-lift transition-all duration-300"
+                >
+                  <div className={`flex-shrink-0 p-2.5 rounded-xl shadow-sm group-hover:scale-105 transition-transform ${setting.background}`}>
+                    <Icon className={`h-5 w-5 ${setting.color}`} />
+                  </div>
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">
+                      {setting.title}
+                    </Typography>
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                    >
-                      <div className="p-2 bg-gray-200 rounded-lg">
-                        <Icon className="h-4 w-4 text-gray-700" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {setting.title}
-                        </h3>
-
-                        {setting.details.length > 0 ? (
-                          setting.details.map(
-                            (detail, detailIndex) =>
-                              getNavigatableSettingsButton(
-                                setting.title,
-                                detail
-                              ) ?? (
-                                <p
-                                  key={detailIndex}
-                                  className="text-sm text-gray-700"
-                                >
-                                  {detail}
-                                </p>
-                              )
-                          )
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No policy defined
-                          </p>
+                    {setting.details.length > 0 ? (
+                      <div className="space-y-1">
+                        {setting.details.map(
+                          (detail, detailIndex) =>
+                            getNavigatableSettingsButton(
+                              setting.title,
+                              detail
+                            ) ?? (
+                              <Typography
+                                key={detailIndex}
+                                variant="bodySmall"
+                                className="font-medium text-gray-600 block"
+                              >
+                                {detail}
+                              </Typography>
+                            )
                         )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Mobile Layout
-          <div className="bg-white p-4 mt-4">
-            {/* Header */}
-            <div className="mb-4">
-              {/* Team Summary */}
-              <div className="space-y-3 border-b bg-white border-gray-200 pt-0 mt-4">
-                <div className="flex">
-                  <h2 className="base-title">Today's Team Summary</h2>
-                  <ViewAll
-                    className="ml-auto"
-                    title="View Team Calender"
-                    to="/webapp/attendance/team-attendance"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  {teamSummaryData.map((data, index) => (
-                    <SummaryCard
-                      key={index}
-                      icon={data.icon}
-                      iconColor={`text-${data.color}-600`}
-                      bgColor={`bg-${data.color}-50`}
-                      borderColor={`border-${data.color}-100`}
-                      value={data.value}
-                      label={data.label}
-                      isDesktop={isDesktop}
-                      isMetric={true}
-                    />
-                  ))}
-                </div>
-
-                <div className="space-y-3  bg-white border-gray-200 py-4 pt-0 mt-4">
-                  <h2 className="base-title">Quick Actions</h2>
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {quickAction.cards.map((card) => (
-                      <QuickActionCard key={card.id} {...card} />
-                    ))}
+                    ) : (
+                      <Typography variant="bodySmall" className="text-gray-400 italic">
+                        Not configured
+                      </Typography>
+                    )}
                   </div>
                 </div>
-              </div>
-
-              {/* Settings */}
-              <div className="bg-white border-gray-200 py-4">
-                <div
-                  className={isDesktop ? "grid grid-cols-2 gap-4" : "space-y-4"}
-                >
-                  {settingsData.map((setting, index) => {
-                    const Icon = setting.icon;
-
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-start gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-                      >
-                        <div className="p-2 bg-gray-200 rounded-lg">
-                          <Icon className="h-4 w-4 text-gray-700" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="card-title mb-1">{setting.title}</h3>
-
-                          {setting.details.length > 0 ? (
-                            setting.details.map(
-                              (detail, detailIndex) =>
-                                getNavigatableSettingsButton(
-                                  setting.title,
-                                  detail
-                                ) ?? (
-                                  <p
-                                    key={detailIndex}
-                                    className="text-sm text-gray-700"
-                                  >
-                                    {detail}
-                                  </p>
-                                )
-                            )
-                          ) : (
-                            <p className="text-sm text-gray-500">
-                              No policy assigned
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        )}
-
-        {showAttendanceRequestModal && (
+        </Card>
+      </div>
+      {
+        showAttendanceRequestModal && (
           <AttendanceRequestFormV2
             onClose={() => setShowAttendanceRequestModal(false)}
           />
-        )}
-        {showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        )
+      }
+      {
+        showOvertimeRequest && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <CreateOvertimeRequest
                 onCancel={() => setShowOvertimeRequest(false)}
               />
             </div>
           </div>
-        )}
+        )
+      }
 
-        {openPolicyDrawer && policyDrawerConfig && (
+      {
+        openPolicyDrawer && policyDrawerConfig && (
           <PolicyDrawer
             isOpen={openPolicyDrawer}
             onClose={() => setOpenPolicyDrawer(false)}
@@ -567,9 +504,9 @@ const AttendanceSummary = () => {
             doctypeName={policyDrawerConfig.doctypeName}
             targetDoctype={policyDrawerConfig.targetDoctype}
           />
-        )}
-      </div>
-    </>
+        )
+      }
+    </div>
   );
 };
 

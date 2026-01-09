@@ -210,9 +210,7 @@ export default function BenefitRequestForm({
                         fullWidth
                         size="lg"
                         variant="contain"
-                        bgColor="blue-600"
-                        textColor="white"
-                        className="hover:bg-blue-700 font-medium"
+                        bgColor="primary"
                     >
                         {fileUploadLoading || mutation.isPending ? <CircularLoader /> : "Submit Request"}
                     </Button>

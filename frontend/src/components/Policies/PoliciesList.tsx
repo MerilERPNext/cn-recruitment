@@ -8,6 +8,8 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
+import CustomDropdown from "../shared/CustomDropdown";
+import { Card } from "../shared/atoms/Card";
 
 type PolicyDoc = {
   name: string;
@@ -34,7 +36,10 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
     );
 
   return (
-    <div className="flex justify-between items-center border rounded-xl mt-2 shadow-sm border-gray-200 py-4 px-4 active:bg-gray-50">
+    <Card
+      padding="sm"
+      className="w-full flex justify-between items-center hover:shadow-md my-1"
+    >
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">
           {item.policy || item.name}
@@ -53,7 +58,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
               document.body.removeChild(link);
             }
           }}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
           title="Download Policy Document"
           disabled={!item.policy_document}
         >
@@ -61,12 +66,12 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         </button>
         <button
           onClick={handleView}
-          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-blue-600 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
+          className="flex items-center justify-center p-2 border border-gray-300 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-200 disabled:opacity-50"
         >
           <FaRegEye className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </Card>
   );
 };
 
@@ -78,8 +83,29 @@ const PoliciesList: React.FC = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
-  const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
-  const statusOptions = ["Pending", "Acknowledged", "Declined", "Archived"];
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const statusOptions = [
+    {
+      value: "All",
+      label: "All",
+    },
+    {
+      value: "Pending",
+      label: "Pending",
+    },
+    {
+      value: "Acknowledged",
+      label: "Acknowledged",
+    },
+    {
+      value: "Declined",
+      label: "Declined",
+    },
+    {
+      value: "Archived",
+      label: "Archived",
+    },
+  ];
 
   if (!categoryName) {
     return <Navigate to="/webapp/policies-app/policies-categories" replace />;
@@ -87,32 +113,26 @@ const PoliciesList: React.FC = () => {
 
   const FilterDropdown: React.FC = () => {
     return (
-      <div className="my-2 flex items-center justify-start gap-4">
-        <div className="flex-1">
-          <select
-            id="statusFilter"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="my-form-input w-full md:w-32"
-          >
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="my-2 flex items-center justify-end gap-4">
+        <CustomDropdown
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          options={statusOptions}
+          position="bottom-right"
+        />
       </div>
     );
   };
 
   return (
-    <div className="w-full bg-white rounded-xl p-2">
+    <div className="w-full rounded-xl p-2">
       {isDesktop ? (
         <HeaderBar
           title="Policies List"
           onBack={() => navigate(-1)}
           rightSlot={<FilterDropdown />}
+          className="md:mb-4"
+          bgColor="primary/10"
         />
       ) : (
         <FilterDropdown />
@@ -121,8 +141,8 @@ const PoliciesList: React.FC = () => {
         doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
-          status: selectedStatus,
           employee_id: employeeId,
+          ...(selectedStatus !== "All" ? { status: selectedStatus } : {}),
         }}
         pageSize={20}
         isSearch={true}

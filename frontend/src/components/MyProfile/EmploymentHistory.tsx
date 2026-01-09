@@ -66,9 +66,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   return (
     <div className="address-form-container bg-white">
       <div className="p-4 md:p-8">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8">
 
-          <div className="border-b border-gray-200 pb-6 mb-8">
+          <div >
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Employment History
             </h2>

@@ -12,6 +12,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
+import { Typography } from "../../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -83,13 +84,18 @@ const AttendanceRequest = ({
         />
       ) : (
         <div>
-          <div className="bg-white h-full px-4 pt-2">
-            <div className="bg-white">
-              <div className="bg-white px-2">
-                <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200">
-                  <h2 className="base-title md:module-title pb-1">
-                    My Attendance Requests
-                  </h2>
+          <div className="h-full px-4 pt-2">
+            <div>
+              <div className="px-2 mb-20">
+                <div className="flex justify-between items-center pt-4 mb-2">
+                  <div className="flex flex-col mb-2">
+                    <Typography variant="h4">
+                      My Attendance Requests
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2">
+                      Track and manage your attendance requests
+                    </Typography>
+                  </div>
 
                   <div className="flex items-center space-x-3 pb-1">
                     <FilterDropdowns />
@@ -176,7 +182,6 @@ const AttendanceRequest = ({
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button
-              bgColor="blue-600"
               size="lg"
               fullWidth
               className="hover:bg-blue-700"

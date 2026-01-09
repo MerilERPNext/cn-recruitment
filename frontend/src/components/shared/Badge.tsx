@@ -1,7 +1,13 @@
+import { Typography } from "./atoms/Typography";
+
 interface BadgeProps {
   label: string;
   backgroundColor?: string;
   textColor?: string;
+  pulse?: {
+    show: boolean,
+    color: string
+  }
   size?: "sm" | "md" | "lg"; // Added size variant
 }
 
@@ -9,6 +15,7 @@ const Badge = ({
   label,
   backgroundColor = "bg-gray-200",
   textColor = "text-black",
+  pulse,
   size = "md", // Default size is 'md'
 }: BadgeProps) => {
   // Define size classes based on the `size` prop
@@ -19,11 +26,14 @@ const Badge = ({
   };
 
   return (
-    <span
-      className={`w-fit flex items-center justify-center rounded-xl font-medium ${backgroundColor} ${textColor} ${sizeClasses[size]}`}
-    >
-      {label}
-    </span>
+    <div className={`w-fit rounded-xl ${backgroundColor} ${textColor} ${sizeClasses[size]} flex justify-center items-center gap-2`}>
+      {pulse?.show && <span
+        className={`w-2 h-2 rounded-full animate-pulse ${pulse?.color}`}
+      />}
+      <Typography variant="label" className={textColor}>
+        {label}
+      </Typography>
+    </div>
   );
 };
 

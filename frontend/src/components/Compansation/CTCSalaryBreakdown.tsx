@@ -82,7 +82,7 @@ const CTCSalaryUI = () => {
     iconBg?: string,
     cardBg?: string
   }) => (
-    <div className={`${cardBg} p-6 rounded-lg border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-200`}>
+    <div className={`${cardBg} p-6 rounded-lg border border-gray-100 shadow-sm hover-lift`}>
       <div className="flex justify-between items-start mb-4">
         <p className="card-subtitle  text-gray-600 uppercase tracking-wide">{label}</p>
         {Icon && (
@@ -129,8 +129,8 @@ const CTCSalaryUI = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white rounded-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-app rounded-lg">
+      <div className="w-full  py-4">
         <Header />
 
        

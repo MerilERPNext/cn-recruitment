@@ -125,7 +125,7 @@ const AttendanceLayoutContent: React.FC = () => {
     }
   };
   const mobileLayout = (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen">
       {/* Fixed Header */}
       <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
@@ -141,7 +141,7 @@ const AttendanceLayoutContent: React.FC = () => {
         </div>
       )}
       {/* Page Content (with top padding to avoid overlap) */}
-      <div className="bg-white">
+      <div className="">
         {/*
           The main outlet needs both providers to function correctly,
           so they wrap the entire content.
@@ -180,7 +180,7 @@ const AttendanceLayoutContent: React.FC = () => {
       <div className="relative" ref={actionsDropdownRef}>
         {canRequestAttendance && <Button
           // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-
+          variant="contain"
           onClick={() => {
             if (isOvertimePage && plannedOvertimAllowed) {
               setShowOvertimeRequest(true);
@@ -189,8 +189,6 @@ const AttendanceLayoutContent: React.FC = () => {
             }
           }}
           size="lg"
-          bgColor="blue-600"
-          className="hover:bg-blue-700"
         >
           {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Attendance Request"}
           {/* <ChevronDown

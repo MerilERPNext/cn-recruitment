@@ -1,5 +1,6 @@
 // import { Funnel } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
+import Button from "./atoms/Button";
 
 interface Option {
   value: string;
@@ -14,6 +15,7 @@ interface CustomDropdownProps {
   className?: string;
   options: Option[];
   position?: Position;
+  label?: string;
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -22,6 +24,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   className,
   options,
   position = "bottom-left",
+  label = "Select",
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -57,17 +60,17 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   };
 
   const selectedLabel =
-    options.find((opt) => opt.value === value)?.label || "Select";
+    options.find((opt) => opt.value === value)?.label || label;
 
   return (
     <div
       ref={dropdownRef}
       className={`relative inline-block ${className || ""}`}
     >
-      <button
-        type="button"
+      <Button
+        variant="contain"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >
         <span>{selectedLabel}</span>
         <svg
@@ -86,28 +89,27 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
           />
         </svg>
         {/* <Funnel size={18} /> */}
-      </button>
+      </Button>
 
       {isOpen && (
         <div
-        className={`absolute right-0 mt-2 w-max min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${positionCss[position]}`}
-      >
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => handleSelect(option.value)}
-            className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors ${
-              value === option.value
-                ? "bg-blue-50 text-blue-600 font-medium"
-                : "text-gray-700"
-            }`}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-      
+          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]}`}
+        >
+          {options.map((option) => (
+            <Button
+              variant="subtle"
+              key={option.value}
+              onClick={() => handleSelect(option.value)}
+              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${
+                value === option.value
+                  ? "bg-primary/10 text-primary-600 font-medium"
+                  : "text-gray-700"
+              }`}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
       )}
     </div>
   );

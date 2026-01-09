@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query";
@@ -318,7 +319,7 @@ const FrappeListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
-      0
+    0
     : countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -442,11 +443,10 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -589,7 +589,7 @@ const FrappeListView = <T extends BaseItem>({
   return (
     <>
       {/* Header */}
-      <div className="border-gray-200 pb-2">
+      <div className="border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 w-full">
             {isSearch && (
@@ -609,9 +609,8 @@ const FrappeListView = <T extends BaseItem>({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  showFilters ? "bg-gray-100" : ""
-                }`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""
+                  }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -676,8 +675,8 @@ const FrappeListView = <T extends BaseItem>({
                       </button>
                       <button
                         onClick={() =>
-                          (window.location.href =
-                            "/login?redirect-to=" + window.location.pathname)
+                        (window.location.href =
+                          "/login?redirect-to=" + window.location.pathname)
                         }
                         className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
@@ -751,9 +750,8 @@ const FrappeListView = <T extends BaseItem>({
                     console.log(`👆 Item clicked for ${doctype}:`, item);
                     onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer hover:bg-gray-50" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer" : ""
+                    }`}
                 >
                   <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
@@ -1071,26 +1069,26 @@ export const StaticListView = <T extends BaseItem>({
       ) : (
         <>
           {(isLoading ? [] : paginatedData).map((item, index) => {
-  const isPaginationActive = infiniteScroll || loadMorePagination || pageSize > 0;
+            const isPaginationActive = infiniteScroll || loadMorePagination || pageSize > 0;
 
-  const isLast = isPaginationActive
-    ? index === paginatedData.length - 1
-    : index === filteredData.length - 1;
+            const isLast = isPaginationActive
+              ? index === paginatedData.length - 1
+              : index === filteredData.length - 1;
 
-  const key = getItemKey
-    ? getItemKey(item, index)
-    : item.name || item.id || index;
+            const key = getItemKey
+              ? getItemKey(item, index)
+              : item.name || item.id || index;
 
-  return (
-    <div
-      key={key}
-      onClick={() => onItemClick?.(item)}
-      className={onItemClick ? "cursor-pointer" : ""}
-    >
-      {ItemComponent(index, item, isLast)}
-    </div>
-  );
-})}
+            return (
+              <div
+                key={key}
+                onClick={() => onItemClick?.(item)}
+                className={onItemClick ? "cursor-pointer" : ""}
+              >
+                {ItemComponent(index, item, isLast)}
+              </div>
+            );
+          })}
 
           {infiniteScroll && <div id="static-listview-sentinel" />}
         </>

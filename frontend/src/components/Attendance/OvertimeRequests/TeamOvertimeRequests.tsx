@@ -7,6 +7,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { Typography } from "../../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -76,12 +77,18 @@ const TeamOvertimeRequests = () => {
 
   return (
     <div>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2">
+      <div className="min-h-screen">
+        <div className="px-4">
           <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
-            <h2 className="base-title md:module-title pb-1">
-              Team Overtime Requests
-            </h2>
+
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">
+                Team Overtime Requests
+              </Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team overtime requests
+              </Typography>
+            </div>
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
             </div>

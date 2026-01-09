@@ -4,7 +4,8 @@ import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
 import Badge from "../shared/Badge";
-import Button from "../shared/atoms/Button";
+import Button, { ButtonColor } from "../shared/atoms/Button";
+import { Typography } from "../shared/atoms/Typography";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
@@ -131,29 +132,29 @@ export function AttendanceDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
+  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
-      bg: "gray-100",
+      bg: "disabled" as ButtonColor,
       text: "gray-600",
     };
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
+          bg: "success" as ButtonColor,
           text: "green-600",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
+          bg: "error" as ButtonColor,
           text: "red-600",
         };
 
         break;
       default:
         styles = {
-          bg: "gray-200",
+          bg: "disabled" as ButtonColor,
           text: "gray-600",
         };
         break;
@@ -202,15 +203,16 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
+            <Typography variant="h4" className="font-semibold text-gray-800">{label}</Typography>
           </div>
-          <button
+          <Button
+            variant="subtle"
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -226,58 +228,58 @@ export function AttendanceDetailView({
             <div className="flex gap-2 justify-between">
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
-                <p className="flex flex-col gap-1">
-                  <span className="card-title">From Date</span>
-                  <span className="card-subtitle">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="label" color="body2" className="card-title">From Date</Typography>
+                  <Typography variant="bodySmall" className="card-subtitle">
                     {formatDate(data?.reference_document?.from_date)}
-                  </span>
-                </p>
+                  </Typography>
+                </div>
               )}
 
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
-                <p className=" flex flex-col gap-1">
-                  <span className="card-title">To Date</span>
-                  <span className="card-subtitle">
+                <div className=" flex flex-col gap-1">
+                  <Typography variant="label" color="body2" className="card-title">To Date</Typography>
+                  <Typography variant="bodySmall" className="card-subtitle">
                     {formatDate(data?.reference_document?.to_date)}
-                  </span>
-                </p>
+                  </Typography>
+                </div>
               )}
             </div>
           </div>
           {data?.due_date && (
-            <p className=" flex flex-col gap-1">
-              <span className="card-title">Due Date</span>
-              <span className="card-subtitle">
+            <div className=" flex flex-col gap-1">
+              <Typography variant="label" color="body2" className="card-title">Due Date</Typography>
+              <Typography variant="bodySmall" className="card-subtitle">
                 {formatDate(data?.due_date)}
-              </span>
-            </p>
+              </Typography>
+            </div>
           )}
           <div className="py-2 flex flex-col gap-1">
-            <p className="card-title">Reason</p>
-            <span className="card-subtitle">
+            <Typography variant="label" color="body2" className="card-title">Reason</Typography>
+            <Typography variant="bodySmall" className="card-subtitle">
               {label === "Leave Application"
                 ? data?.reference_document?.custom_reason
                 : data?.reference_document?.reason}
-            </span>
+            </Typography>
           </div>
           {/* description */}
           <div className="py-2">
-            <p className="card-title mb-2">Description</p>
+            <Typography variant="label" color="body2" className="card-title mb-2 block">Description</Typography>
             <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {/* explanation */}
           <div className="py-2">
-            <p className="card-title mb-2">Explanation</p>
+            <Typography variant="label" color="body2" className="card-title mb-2 block">Explanation</Typography>
             <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
             </div>
           </div>
           {data?.attachments && data?.attachments?.length > 0 ? (
             <div className="py-2">
-              <p className="card-title mb-2">Attachment</p>
+              <Typography variant="label" color="body2" className="card-title mb-2 block">Attachment</Typography>
               {data?.attachments?.map((item: { file_url: string }) => (
                 <FileRenderer filePath={item?.file_url || ""} />
               ))}
@@ -297,6 +299,7 @@ export function AttendanceDetailView({
                     return (
                       <Button
                         key={action}
+                        variant="soft"
                         fullWidth
                         disabled={isLoading}
                         onClick={() => {
@@ -304,7 +307,6 @@ export function AttendanceDetailView({
                         }}
                         size="md"
                         bgColor={getActionStyles(action).bg}
-                        textColor={getActionStyles(action).text}
                       >
                         {isLoading ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />

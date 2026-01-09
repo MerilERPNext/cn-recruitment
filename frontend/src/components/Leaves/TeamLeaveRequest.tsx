@@ -6,6 +6,7 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { LeaveDetailView } from "./LeaveDetails";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import CustomDropdown from "../shared/CustomDropdown";
+import { Typography } from "../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Open" },
@@ -82,12 +83,10 @@ const TeamLeaveRequest = () => {
 
   return (
     <>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2">
+      <div className="min-h-screen">
+        <div className=" px-2">
           <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className=" base-title md:module-title pb-1">
-              Team Leave Requests
-            </h2>
+            <Typography variant="subheading">Team Leave Requests</Typography>
             <div className="flex items-center space-x-3 pb-1">
               <FilterDropdowns />
             </div>

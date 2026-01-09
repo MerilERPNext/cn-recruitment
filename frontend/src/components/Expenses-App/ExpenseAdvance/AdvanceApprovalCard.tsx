@@ -3,6 +3,7 @@ import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -46,35 +47,6 @@ const AdvanceApprovalCard = ({
       return [];
     }
   })();
-
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";
@@ -177,29 +149,33 @@ const AdvanceApprovalCard = ({
             {actions?.length &&
               data?.status !== "Approved" &&
               data?.status !== "Rejected" &&
-              actions.map((action: string) => (
-                <Button
-                  key={action}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
+              actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
+
+                return (
+                  <Button
+                    key={action}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAction(action, data);
+                    }}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
+                    disabled={
+                      loadingAction?.id === data?.todo_id &&
+                      loadingAction?.action === action
+                    }
+                  >
+                    {loadingAction?.id === data?.todo_id &&
+                    loadingAction?.action === action ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
+                  </Button>
+                );
+              })}
           </div>
         </div>
       ) : (
@@ -272,30 +248,34 @@ const AdvanceApprovalCard = ({
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&
-                  actions.map((action: string) => (
-                    <Button
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      fullWidth
-                      bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
+                  actions.map((action: string) => {
+                    const actionStyle = getActionStyles(action);
+
+                    return (
+                      <Button
+                        key={action}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onAction(action, data);
+                        }}
+                        fullWidth
+                        bgColor={actionStyle.bgColor}
+                        variant={actionStyle.variant}
+                        disabled={
+                          loadingAction?.id === data?.todo_id &&
+                          loadingAction?.action === action
+                        }
+                      >
+                        {loadingAction?.id === data?.todo_id &&
+                        loadingAction?.action === action ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
               </div>
             </div>
           </div>

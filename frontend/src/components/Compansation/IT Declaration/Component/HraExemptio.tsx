@@ -35,8 +35,8 @@ interface HRAFormProps {
 }
 
 const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
- const LTAData = hraData?.lta;
- console.log("LTAData in HRAForm:", LTAData);
+  const LTAData = hraData?.lta;
+  console.log("LTAData in HRAForm:", LTAData);
   return (
     <div className="space-y-6">
       {/* HRA Section */}
@@ -127,38 +127,37 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
       </div>
 
       {/* LTA Section inside HRAData */}
-  
-        <div className="border border-gray-300 rounded p-4">
-          <h3 className="text-lg font-semibold mb-4">LTA Details</h3>
-          { LTAData?.map((item: any, idx: number) => (
-            <div
-              key={item.exemption_sub_category}
-              className="grid grid-cols-2 gap-4 mb-4 border-b pb-4"
-            >
-              <div className="col-span-2 flex justify-between items-center">
-                <span className="font-medium">{item.exemption_sub_category}</span>
-                <span className="text-sm text-gray-500">Max: {item.max_amount}</span>
-              </div>
-              <div className="col-span-2">
-                <label className="text-sm text-gray-500">Amount</label>
-                <input
-                  type="number"
-                  value={item.amount}
-                  readOnly={item.editable === 0}
-                  onChange={(e) => {
-                    const updatedLta = [...hraData.lta!];
-                    updatedLta[idx] = { ...item, amount: Number(e.target.value) };
-                    onChange("lta", updatedLta);
-                  }}
-                  className={`w-full border rounded px-3 py-1 ${
-                    item.editable === 0 ? "bg-gray-300" : ""
-                  }`}
-                />
-              </div>
+
+      <div className="border border-gray-300 rounded p-4">
+        <h3 className="text-lg font-semibold mb-4">LTA Details</h3>
+        {LTAData?.map((item: any, idx: number) => (
+          <div
+            key={item.exemption_sub_category}
+            className="grid grid-cols-2 gap-4 mb-4 border-b pb-4"
+          >
+            <div className="col-span-2 flex justify-between items-center">
+              <span className="font-medium">{item.exemption_sub_category}</span>
+              <span className="text-sm text-gray-500">Max: {item.max_amount}</span>
             </div>
-          ))}
-        </div>
-  
+            <div className="col-span-2">
+              <label className="text-sm text-gray-500">Amount</label>
+              <input
+                type="number"
+                value={item.amount}
+                readOnly={item.editable === 0}
+                onChange={(e) => {
+                  const updatedLta = [...hraData.lta!];
+                  updatedLta[idx] = { ...item, amount: Number(e.target.value) };
+                  onChange("lta", updatedLta);
+                }}
+                className={`w-full border rounded px-3 py-1 ${item.editable === 0 ? "bg-gray-300" : ""
+                  }`}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 };

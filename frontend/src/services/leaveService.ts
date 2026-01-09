@@ -78,10 +78,13 @@ export const leaveService = {
     return response as LeaveBalanceResponse;
   },
 
-  getHolidays: async (employeeId: string): Promise<HolidayGroup[]> => {
+  getHolidays: async (
+    employeeId: string,
+    year: string
+  ): Promise<HolidayGroup[]> => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_holidays",
-      { employee: employeeId }
+      { employee: employeeId, year }
     );
     const typed = response as HolidayApiResponse;
     return typed.message.data;
