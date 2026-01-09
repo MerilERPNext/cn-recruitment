@@ -23,7 +23,7 @@
     if (!window.csrf_token) {
       window.csrf_token = "{{ csrf_token }}";
       window.frappe = window.frappe || {};
-      window.frappe.csrf_token = "{{ csrf_token }}";
+      window.frappe.csrf_token = window.csrf_token;
     }
   </script>
   <script type="module">
