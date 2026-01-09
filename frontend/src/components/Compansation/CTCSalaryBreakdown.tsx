@@ -129,7 +129,7 @@ const CTCSalaryUI = () => {
   );
 
   return (
-    <div className="min-h-screen bg- rounded-lg">
+    <div className="min-h-screen bg-app rounded-lg">
       <div className="w-full  py-4">
         <Header />
 
