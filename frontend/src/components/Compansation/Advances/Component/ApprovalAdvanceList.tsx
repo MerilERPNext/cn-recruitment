@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
 import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
-
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -14,6 +14,8 @@ export type ApprovalRejectionLoanProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
 };
+
+
 
 const ApprovalRejectionAdvanceList = ({
   isSelected = false,
@@ -36,12 +38,7 @@ const ApprovalRejectionAdvanceList = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string) => {
-    const a = action.toLowerCase();
-    if (a === "approve") return { bg: "green-100", text: "green-600" };
-    if (a === "reject") return { bg: "red-100", text: "red-600" };
-    return { bg: "gray-200", text: "gray-600" };
-  };
+ 
 
   /* ===================== DESKTOP UI (UNCHANGED) ===================== */
   if (isDesktop) {
@@ -82,37 +79,39 @@ const ApprovalRejectionAdvanceList = ({
           )}
         </div>
 
-        <div>
-          {formatToIndianDate(data.reference_document.posting_date)}
-        </div>
+        <div>{formatToIndianDate(data.reference_document.posting_date)}</div>
 
         <div>
           <StatusBadge status={data?.reference_document?.status} />
         </div>
 
         <div className="flex gap-2">
-          {actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={getActionStyles(action).bg}
-              textColor={getActionStyles(action).text}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
+          {actions.map((action: string) => {
+            const actionStyle = getActionStyles(action);
+
+            return (
+              <Button
+                key={action}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAction(action, data);
+                }}
+                bgColor={actionStyle.bgColor}
+                variant={actionStyle.variant}
+                disabled={
+                  loadingAction?.id === data?.todo_id &&
+                  loadingAction?.action === action
+                }
+              >
+                {loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action ? (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  action
+                )}
+              </Button>
+            );
+          })}
         </div>
       </div>
     );
@@ -175,28 +174,32 @@ const ApprovalRejectionAdvanceList = ({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {actions.map((action: string) => (
-          <Button
-            key={action}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAction(action, data);
-            }}
-            bgColor={getActionStyles(action).bg}
-            textColor={getActionStyles(action).text}
-            disabled={
-              loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action
-            }
-          >
-            {loadingAction?.id === data?.todo_id &&
-            loadingAction?.action === action ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              action
-            )}
-          </Button>
-        ))}
+        {actions.map((action: string) => {
+          const actionStyle = getActionStyles(action);
+
+          return (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={actionStyle.bgColor}
+              variant={actionStyle.variant}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                action
+              )}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
