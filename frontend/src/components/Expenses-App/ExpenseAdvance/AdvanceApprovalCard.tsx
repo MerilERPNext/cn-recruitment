@@ -17,8 +17,6 @@ type ApprovalCardProps = {
   showCheckbox?: boolean;
 };
 
-
-
 const AdvanceApprovalCard = ({
   isSelected = false,
   isDisabled = false,
@@ -49,8 +47,6 @@ const AdvanceApprovalCard = ({
       return [];
     }
   })();
-
-  
 
   const formatDate = (date: string): string => {
     if (!date) return "--/--/----";

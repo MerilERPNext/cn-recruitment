@@ -72,48 +72,40 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: {
         contain:
           "bg-primary text-white hover:bg-primary-600 active:bg-primary-700",
-        outline:
-          "border border-primary text-primary hover:bg-primary-50",
+        outline: "border border-primary text-primary hover:bg-primary-50",
         subtle: "text-primary hover:bg-primary/10",
         soft: "bg-primary-50 text-primary-600 hover:bg-primary-100",
       },
       secondary: {
         contain:
           "bg-secondary text-white hover:bg-secondary-600 active:bg-secondary-700",
-        outline:
-          "border border-secondary text-secondary hover:bg-secondary-50",
+        outline: "border border-secondary text-secondary hover:bg-secondary-50",
         subtle: "text-secondary hover:bg-secondary-50",
         soft: "bg-secondary-50 text-secondary-600 hover:bg-secondary-100",
       },
       success: {
         contain:
           "bg-success-100 text-success hover:bg-success/20 active:bg-success-800",
-        outline:
-          "border border-success text-success hover:bg-success-50",
+        outline: "border border-success text-success hover:bg-success-50",
         subtle: "text-success hover:bg-success-50",
         soft: "bg-success-50 text-success hover:bg-success-100",
       },
       warning: {
         contain:
           "bg-warning text-white hover:bg-warning-600 active:bg-warning-800",
-        outline:
-          "border border-warning text-warning hover:bg-warning-50",
+        outline: "border border-warning text-warning hover:bg-warning-50",
         subtle: "text-warning hover:bg-warning-50",
         soft: "bg-warning-50 text-warning hover:bg-warning-100",
       },
       error: {
-        contain:
-          "bg-error text-white hover:bg-error-600 active:bg-error-800",
-        outline:
-          "border border-error text-error hover:bg-error-50",
+        contain: "bg-error text-white hover:bg-error-600 active:bg-error-800",
+        outline: "border border-error text-error hover:bg-error-50",
         subtle: "text-error hover:bg-error-50",
         soft: "bg-error-50 text-error hover:bg-error-100",
       },
       info: {
-        contain:
-          "bg-info text-white hover:bg-info-600 active:bg-info-800",
-        outline:
-          "border border-info text-info hover:bg-info-50",
+        contain: "bg-info text-white hover:bg-info-600 active:bg-info-800",
+        outline: "border border-info text-info hover:bg-info-50",
         subtle: "text-info hover:bg-info-50",
         soft: "bg-info-50 text-info hover:bg-info-100",
       },

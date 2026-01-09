@@ -7,6 +7,7 @@ import { useMyLeaveRequests } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
+import { Typography } from "../shared/atoms/Typography";
 
 type HolidayType = "regular" | "optional";
 
@@ -65,8 +66,8 @@ const HolidaysFull: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col bg-white">
-      <header className="sticky top-0 bg-white shadow-sm border-b border-gray-200">
+    <div className="flex flex-col">
+      <header className="sticky top-0  shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between px-4 py-1">
           <div className="flex items-center">
             <button
@@ -76,7 +77,7 @@ const HolidaysFull: React.FC = () => {
               className="mr-3 p-2 -ml-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               <svg
-                className="w-6 h-6"
+                className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -90,11 +91,11 @@ const HolidaysFull: React.FC = () => {
               </svg>
             </button>
 
-            <h1 className="base-title md:text-xl font-semibold text-slate-900">
+            <Typography variant="subheading">
               {holidayType === "optional"
                 ? "Optional Holidays"
                 : "Regular Holidays"}
-            </h1>
+            </Typography>
           </div>
 
           <button

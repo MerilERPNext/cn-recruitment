@@ -74,8 +74,9 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       >
         <span>{selectedLabel}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -99,16 +100,16 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
               variant="subtle"
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${value === option.value
-                ? "bg-error-50 text-primary-600 font-medium"
-                : "text-gray-700"
-                }`}
+              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${
+                value === option.value
+                  ? "bg-primary/10 text-primary-600 font-medium"
+                  : "text-gray-700"
+              }`}
             >
               {option.label}
             </Button>
           ))}
         </div>
-
       )}
     </div>
   );

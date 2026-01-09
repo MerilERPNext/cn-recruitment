@@ -12,6 +12,7 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import Tooltip from "../../shared/Tooltip";
 import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -105,7 +106,7 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-3">
+      <div className=" rounded-lg shadow-sm p-4 border border-gray-200 mb-3">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
@@ -164,15 +165,13 @@ const MyAdvanceExpenseList = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <h2 className="base-title md:module-title font-semibold text-gray-800 pb-1">
-          My Advance Expenses
-        </h2>
+        <Typography variant="subheading"> My Advance Expenses</Typography>
 
         <div className="flex items-center space-x-3 pb-1">
           <FilterDropdowns />
         </div>
       </div>
-      <div className=" rounded-lg bg-white h-full px-0 md:pt-2 pt-0 mb-20">
+      <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
         <CardTable
           titles={[
             "Employee",
