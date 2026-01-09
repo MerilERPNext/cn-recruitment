@@ -5,16 +5,10 @@ import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { LeaveDetailView } from "./LeaveDetails";
 import LeaveApprovalCard from "./LeaveApprovalCard";
-import CustomDropdown from "../shared/CustomDropdown";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Open" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
+  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const navigate = useNavigate();
@@ -24,8 +18,6 @@ const TeamLeaveRequest = () => {
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [selectedStatus, setSelectedStatus] = useState("Open");
 
   const requestId = searchParams.get("requestId");
 
@@ -46,23 +38,6 @@ const TeamLeaveRequest = () => {
     setSearchParams({});
     setRefetchApprovalList(true);
   }, [setSearchParams]);
-
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchApprovalList(true);
-  };
-
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
-  const isBulkSelectEnabled = selectedStatus === "Open";
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -88,9 +63,6 @@ const TeamLeaveRequest = () => {
             <h2 className=" base-title md:module-title pb-1">
               Team Leave Requests
             </h2>
-            <div className="flex items-center space-x-3 pb-1">
-              <FilterDropdowns />
-            </div>
           </div>
 
           <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
@@ -101,10 +73,21 @@ const TeamLeaveRequest = () => {
                 setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
-                status={selectedStatus}
+                status={"Open"}
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
+                isSearch={true}
+                isFilter={true}
+                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: ["Open", "Approved", "Rejected"],
+                  },
+                ]}
                 renderCardContent={(item) => (
                   <LeaveApprovalCard
                     isSelected={item?.isSelected}
