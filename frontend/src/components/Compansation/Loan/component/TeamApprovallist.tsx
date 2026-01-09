@@ -48,8 +48,8 @@ const ApprovalRejectionLoanList = ({
 
   const getActionStyles = (action: string) => {
     const a = action.toLowerCase();
-    if (a === "approve") return { bg: "green-100", text: "green-600" };
-    if (a === "reject") return { bg: "red-100", text: "red-600" };
+    if (a === "approve") return { bg: "success-100", text: "success" };
+    if (a === "reject") return { bg: "error-50", text: "error" };
     return { bg: "gray-200", text: "gray-600" };
   };
   const handleActionClick = (action: string) => {
@@ -114,7 +114,7 @@ const ApprovalRejectionLoanList = ({
 
             <input
               type="checkbox"
-              className="accent-blue-500 mt-1"
+              className="accent-primary mt-1"
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -227,7 +227,7 @@ const ApprovalRejectionLoanList = ({
   return (
     <>
       <div
-        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20  cursor-pointer"
         style={{
           gridTemplateColumns:
             "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
@@ -287,6 +287,7 @@ const ApprovalRejectionLoanList = ({
                 handleActionClick(action);
               }}
               bgColor={getActionStyles(action).bg}
+              className={`text-${getActionStyles(action).text}`}
               disabled={
                 loadingAction?.id === data?.todo_id &&
                 loadingAction?.action === action
@@ -331,6 +332,7 @@ const ApprovalRejectionLoanList = ({
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending || !comment.trim()}
               >

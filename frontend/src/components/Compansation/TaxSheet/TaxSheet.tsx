@@ -21,8 +21,9 @@ export default function IncomeTaxSheet() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="md"
                 onClick={() => setActiveTab("taxsheet")}
-                className={`px-4 py-1 rounded-lg border hover:bg-primary/10 hover:text-primary ${
+                className={`px-4  font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
                   activeTab === "taxsheet"
                     ? "bg-primary-600 text-white"
                     : ""
@@ -32,8 +33,9 @@ export default function IncomeTaxSheet() {
               </Button>
               <Button
                variant="outline"
+               size="md"
                 onClick={() => setActiveTab("income-computation")}
-                className={`px-4 py-1 rounded-lg border hover:bg-primary/10 hover:text-primary ${
+                className={`px-4  font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
                   activeTab === "income-computation"
                     ? "bg-primary-600 text-white"
                     : ""

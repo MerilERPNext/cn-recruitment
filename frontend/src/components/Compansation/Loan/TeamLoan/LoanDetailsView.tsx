@@ -161,6 +161,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
                 key={action}
                 onClick={() => handleActionClick(action)}
                 bgColor={getActionStyles(action).bg}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -190,12 +191,13 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
+              <Button onClick={() => setCommentOpen(false)}>
                 Cancel
               </Button>
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >

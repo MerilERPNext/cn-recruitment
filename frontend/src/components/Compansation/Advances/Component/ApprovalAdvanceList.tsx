@@ -50,7 +50,7 @@ const ApprovalRejectionAdvanceList = ({
 
   const getActionStyles = (action: string) => {
     const a = action.toLowerCase();
-    if (a === "approve") return { bg: "success", text: "success" };
+    if (a === "approve") return { bg: "success-100", text: "success" };
     if (a === "reject") return { bg: "error-50", text: "error" };
     return { bg: "gray-200", text: "gray-600" };
   };
@@ -99,14 +99,14 @@ const ApprovalRejectionAdvanceList = ({
     return (
       <>
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
           style={{ gridTemplateColumns: "5% 15% 15% 10% 12% 12% 10% 13%" }}
           onClick={() => onClick?.(data)}
         >
           <div className="flex items-center">
             <input
               type="checkbox"
-              className="accent-blue-500"
+              className="accent-primary"
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -151,6 +151,7 @@ const ApprovalRejectionAdvanceList = ({
                   handleActionClick(action);
                 }}
                 bgColor={getActionStyles(action).bg}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -195,6 +196,7 @@ const ApprovalRejectionAdvanceList = ({
 
                 <Button
                   bgColor={getActionStyles(selectedAction!).bg}
+                  className={`text-${getActionStyles(selectedAction!).text}`}
                   onClick={handleConfirmAction}
                   disabled={commentMutation.isPending || !comment.trim()}
                 >
@@ -319,6 +321,7 @@ const ApprovalRejectionAdvanceList = ({
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending || !comment.trim()}
               >
