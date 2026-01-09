@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { Card } from "../../../shared/atoms/Card"
 
 export interface HRAData {
   monthly_hra: number
@@ -22,7 +23,7 @@ interface HRAFormProps {
 const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
   console.log("API RESPONSE STATE ", hraData)
   return (
-    <div className="grid grid-cols-2 gap-4 rounded border border-gray-300 p-4 mt-4">
+    <Card className="grid grid-cols-2 gap-4 rounded border border-gray-300 p-4 mt-4">
       {/* Monthly HRA - EDITABLE */}
       <div>
         <label className="text-sm text-gray-500">Monthly HRA</label>
@@ -125,7 +126,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
           className="w-full border rounded px-3 py-1"
         />
       </div>
-    </div>
+    </Card>
   )
 }
 

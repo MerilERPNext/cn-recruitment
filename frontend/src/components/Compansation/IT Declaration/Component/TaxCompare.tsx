@@ -4,6 +4,7 @@
 import { useState } from "react";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import { useCompareTaxSheetViewPDF } from "../../../../hooks/payroll/useITDeclaration";
+import Button from "../../../shared/atoms/Button";
 
 type Props = {
   declarationId: string;
@@ -43,11 +44,10 @@ const CompareTaxSheetHandler = ({ declarationId, disabled = false }: Props) => {
 
   return (
     <>
-      <button
-        type="button"
+      <Button
         onClick={handleView}
         disabled={disabled || isPending}
-        className={`px-4 py-2 text-sm border rounded
+        className={`px-4 py-2 text-sm border rounded-xl
           ${
             disabled || isPending
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
@@ -56,7 +56,7 @@ const CompareTaxSheetHandler = ({ declarationId, disabled = false }: Props) => {
         `}
       >
         {isPending ? "Loading..." : "Compare Tax"}
-      </button>
+      </Button>
 
       <SalarySlipPDFModal
         isOpen={open}

@@ -35,18 +35,48 @@ const ApprovalRejectionQueue = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
+  const getActionStyles = (action: string): { bg: string; text: string } => {
+    const parsedAction = action.toLowerCase().trim();
+    let styles = {
+      bg: "gray-100",
+      text: "gray-600",
+    };
+    switch (parsedAction) {
+      case "approve":
+        styles = {
+          bg: "success-100",
+          text: "success",
+        };
+        break;
+      case "reject":
+        styles = {
+          bg: "error-50",
+          text: "error",
+        };
+
+        break;
+      default:
+        styles = {
+          bg: "gray-200",
+          text: "gray-600",
+        };
+        break;
+    }
+    return styles;
+  };
+
   const gridTemplateColumns = "8% 10% 10% 10% 10% 10% 10% 20%";
 
   return (
     <div
-      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
       style={{ gridTemplateColumns }}
       onClick={() => onClick?.(data)}
     >
       <div className="flex items-center">
         <input
           type="checkbox"
-          className="accent-blue-500"
+          className="accent-primary"
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -96,8 +126,8 @@ const ApprovalRejectionQueue = ({
                   e.stopPropagation();
                   onAction(action, data);
                 }}
-                bgColor={actionStyle.bgColor}
-                variant={actionStyle.variant}
+                bgColor={getActionStyles(action).bg}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action

@@ -38,7 +38,12 @@ const ApprovalRejectionLoanList = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
- 
+  const getActionStyles = (action: string) => {
+    const a = action.toLowerCase();
+    if (a === "approve") return { bg: "success", text: "success" };
+    if (a === "reject") return { bg: "error-50", text: "error" };
+    return { bg: "gray-200", text: "gray-600" };
+  };
 
   /* ===================== MOBILE UI ===================== */
   if (isMobile) {
@@ -61,7 +66,7 @@ const ApprovalRejectionLoanList = ({
 
           <input
             type="checkbox"
-            className="accent-blue-500 mt-1"
+            className="accent-primary mt-1"
             checked={isSelected}
             onClick={(e) => e.stopPropagation()}
             onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -104,25 +109,21 @@ const ApprovalRejectionLoanList = ({
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2">
-          {actions.map((action: string) => {
-            const actionStyle = getActionStyles(action);
-
-            return (
-              <Button
-                key={action}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAction(action, data);
-                }}
-                bgColor={actionStyle.bgColor}
-                variant={actionStyle.variant}
-                disabled={
-                  loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action
-                }
-                className="flex-1"
-              >
-                {loadingAction?.id === data?.todo_id &&
+          {actions.map((action: string) => (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={getActionStyles(action).bg}
+              className={`flex-1 text-${getActionStyles(action).text}`}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
                 loadingAction?.action === action ? (
                   <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -139,7 +140,7 @@ const ApprovalRejectionLoanList = ({
   /* ===================== DESKTOP UI (UNCHANGED) ===================== */
   return (
     <div
-      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
       style={{
         gridTemplateColumns: "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
       }}
@@ -148,7 +149,7 @@ const ApprovalRejectionLoanList = ({
       <div className="flex items-center">
         <input
           type="checkbox"
-          className="accent-blue-500"
+          className="accent-primary"
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -188,24 +189,21 @@ const ApprovalRejectionLoanList = ({
       </div>
 
       <div className="flex gap-2">
-        {actions.map((action: string) => {
-          const actionStyle = getActionStyles(action);
-
-          return (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={actionStyle.bgColor}
-              variant={actionStyle.variant}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
+        {actions.map((action: string) => (
+          <Button
+            key={action}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(action, data);
+            }}
+            bgColor={getActionStyles(action).bg}
+            className={`text-${getActionStyles(action).text}`}
+            disabled={
+              loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action
+            }
+          >
+            {loadingAction?.id === data?.todo_id &&
               loadingAction?.action === action ? (
                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (

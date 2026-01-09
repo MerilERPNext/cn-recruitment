@@ -39,7 +39,7 @@ const MyShiftRowItem: React.FC<{ item: ApiShiftAssignment; index?: number }> = (
   return (
     <div
       key={`${item.name}-${index}`}
-      className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
+      className="my-data-row grid grid-cols-5 gap-4 items-center hover:bg-primary/20 text-center"
     >
       <div className="my-data-cell font-medium truncate">{item.employee_name}</div>
       <div className="my-data-cell truncate" title={`Shift Time: ${item.start_time} - ${item.end_time}`}>{item.shift_type}</div>

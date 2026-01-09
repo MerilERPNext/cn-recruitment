@@ -86,7 +86,7 @@ const IncomeTaxComputationlist = ({ data }: any) => {
 
 export default IncomeTaxComputationlist;
 const Section = ({ title }: { title: string }) => (
-  <tr className="bg-blue-50 font-semibold text-blue-800">
+  <tr className="bg-primary/10 font-semibold text-primary">
     <td colSpan={4} className="px-4 py-2">
       {title}
     </td>

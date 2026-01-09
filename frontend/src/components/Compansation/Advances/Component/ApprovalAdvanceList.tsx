@@ -38,20 +38,25 @@ const ApprovalRejectionAdvanceList = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
- 
+  const getActionStyles = (action: string) => {
+    const a = action.toLowerCase();
+    if (a === "approve") return { bg: "success", text: "success" };
+    if (a === "reject") return { bg: "error-50", text: "error" };
+    return { bg: "gray-200", text: "gray-600" };
+  };
 
   /* ===================== DESKTOP UI (UNCHANGED) ===================== */
   if (isDesktop) {
     return (
       <div
-        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+        className="grid items-center gap-4 px-6 h-16 border hover:bg-primary/20 transition-colors cursor-pointer"
         style={{ gridTemplateColumns: "5% 15% 15% 10% 12% 12% 10% 13%" }}
         onClick={() => onClick?.(data)}
       >
         <div className="flex items-center">
           <input
             type="checkbox"
-            className="accent-blue-500"
+            className="accent-primary"
             checked={isSelected}
             onClick={(e) => e.stopPropagation()}
             onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -86,32 +91,28 @@ const ApprovalRejectionAdvanceList = ({
         </div>
 
         <div className="flex gap-2">
-          {actions.map((action: string) => {
-            const actionStyle = getActionStyles(action);
-
-            return (
-              <Button
-                key={action}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAction(action, data);
-                }}
-                bgColor={actionStyle.bgColor}
-                variant={actionStyle.variant}
-                disabled={
-                  loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action
-                }
-              >
-                {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
-                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  action
-                )}
-              </Button>
-            );
-          })}
+          {actions.map((action: string) => (
+            <Button
+              key={action}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAction(action, data);
+              }}
+              bgColor={getActionStyles(action).bg}
+              className={`text-${getActionStyles(action).text}`}
+              disabled={
+                loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action
+              }
+            >
+              {loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                action
+              )}
+            </Button>
+          ))}
         </div>
       </div>
     );
@@ -120,7 +121,7 @@ const ApprovalRejectionAdvanceList = ({
   /* ===================== MOBILE CARD UI ===================== */
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
+      className="bg-app rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
       onClick={() => onClick?.(data)}
     >
       <div className="flex justify-between items-start mb-3">
@@ -135,7 +136,7 @@ const ApprovalRejectionAdvanceList = ({
 
         <input
           type="checkbox"
-          className="accent-blue-500 mt-1"
+          className="accent-primary mt-1"
           checked={isSelected}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -174,32 +175,28 @@ const ApprovalRejectionAdvanceList = ({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {actions.map((action: string) => {
-          const actionStyle = getActionStyles(action);
-
-          return (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={actionStyle.bgColor}
-              variant={actionStyle.variant}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          );
-        })}
+        {actions.map((action: string) => (
+          <Button
+            key={action}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAction(action, data);
+            }}
+            bgColor={getActionStyles(action).bg}
+            className={`text-${getActionStyles(action).text}`}
+            disabled={
+              loadingAction?.id === data?.todo_id &&
+              loadingAction?.action === action
+            }
+          >
+            {loadingAction?.id === data?.todo_id &&
+            loadingAction?.action === action ? (
+              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              action
+            )}
+          </Button>
+        ))}
       </div>
     </div>
   );

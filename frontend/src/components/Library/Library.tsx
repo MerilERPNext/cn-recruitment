@@ -124,7 +124,7 @@ const DocumentLibrary = () => {
           <div className="flex flex-col md:flex-row gap-2">
             <Button
               variant={activeTab === "awaiting" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all`}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("awaiting")}
             >
               My Documents{" "}
@@ -135,7 +135,7 @@ const DocumentLibrary = () => {
 
             <Button
               variant={activeTab === "mydocs" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all`}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("mydocs")}
             >
               Awaiting My Acknowledgment{" "}
@@ -150,7 +150,7 @@ const DocumentLibrary = () => {
 
             <Button
               variant={activeTab === "approved" ? "contain" : "subtle"}
-              className={`px-5 py-2 rounded-md font-medium transition-all`}
+              className={`px-5 py-2 rounded-md font-medium transition-all border border-primary/40`}
               onClick={() => setActiveTab("approved")}
             >
               Documents Approved{" "}

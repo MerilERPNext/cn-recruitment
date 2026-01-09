@@ -10,6 +10,8 @@ import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
+import Button from "../../shared/atoms/Button";
+import { Card } from "../../shared/atoms/Card";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -28,17 +30,18 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-      <div className="flex items-center rounded-lg justify-between mb-4">
+      <div className="flex items-center rounded-lg justify-between mb-2">
         <HeaderBar
           title={`Installments - ${advance.name}`}
           showBackButton={true}
           onBack={onBack}
           rightSlot={
             // CHANGED: Using .btn-secondary for consistent button styling.
-            <button
-              onClick={onToggleMask}
-              className="my-btn-secondary"
-              title={maskAmounts ? "Show amounts" : "Hide amounts"}
+            <Button
+   bgColor="none" 
+onClick={onToggleMask}
+              className="whitespace-nowrap border border-gray-300"
+              data-tooltip={maskAmounts ? "Show amounts" : "Hide amounts"}
             >
               {maskAmounts ? (
                 <>
@@ -56,14 +59,14 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                   <BsToggleOn className="w-6 h-6 text-primary" />
                 </>
               )}
-            </button>
+            </Button>
           }
         />
       </div>
       <div className="w-full max-w-[100vw] mx-auto py-0">
-        <div className="mb-6 px-0">
+        <div className="mb-2 ">
           {/* CHANGED: Using new reusable .my-info-card class */}
-          <div className="my-info-card mb-6">
+          <Card>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center">
               <div>
                 <span className="text-gray-600">Total Amount:</span>
@@ -106,10 +109,10 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
-        <div className="px-0">
+        <div className=" overflow-hidden">
         <CardTable
       titles={[
         "Installment No.",
@@ -130,7 +133,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
         {advance.installments.map((installment: any, index: number) => (
           <div
             key={`${installment.installmentNo}-${index}`}
-            className="my-data-row grid grid-cols-5 gap-4 py-2 px-4"
+            className="hover:bg-primary/20 grid grid-cols-5 gap-4 py-4 px-4 border"
           >
             <div className="  text-start font-medium">
               #{installment.installmentNo}
