@@ -64,6 +64,7 @@ const Appreciations = () => {
                 <CustomDropdown
                     label="Appreciate"
                     value={""}
+                    position="bottom-right"
                     onChange={(e) => {
                         setModal({ open: true, reason: "", type: e.target.value })
                     }}
