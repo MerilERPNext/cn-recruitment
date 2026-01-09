@@ -153,15 +153,22 @@ frappe.ready(function () {
         else if (initiate_id) {
             console.log("🚀 Fetching Initiate Onboarding:", initiate_id);
 
+            // Use secure guest-accessible API instead of frappe.client.get
             frappe.call({
-                method: "frappe.client.get",
+                method: "dah_customization.dah_customization.doctype.initiate_onboarding.initiate_onboarding.get_initiate_onboarding_data",
                 args: {
-                    doctype: "Initiate Onboarding",
-                    name: initiate_id
+                    initiate_onboarding_id: initiate_id
                 },
                 callback(r) {
-                    if (!r.message) {
-                        console.warn("❌ No Initiate Onboarding data");
+                    console.log("✅ Secure API Response:", r.message);
+
+                    if (!r.message || !r.message.found) {
+                        console.warn("❌ No Initiate Onboarding data found");
+                        frappe.msgprint({
+                            title: "Error",
+                            indicator: "red",
+                            message: "Could not find onboarding information. Please check the link and try again."
+                        });
                         return;
                     }
 
@@ -170,12 +177,9 @@ frappe.ready(function () {
 
                     // 🔥 WAIT until fields exist - increased delay
                     setTimeout(() => {
-                        safeSet("custom_initiate_onboarding_id", d.name);
-                        safeSet("department", d.department);
+                        safeSet("custom_initiate_onboarding_id", initiate_id);
                         safeSet("designation", d.designation);
-                        // safeSet("employee_grade", d.employee_grade);
-                        safeSet("company", d.company);
-                    console.log("✅ All Initiate fields set");
+                        console.log("✅ All Initiate fields set");
                     }, 2000);
                 }
             });

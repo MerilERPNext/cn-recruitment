@@ -1220,6 +1220,17 @@ frappe.ready(function () {
         function loadSavedData(docname) {
             console.log("📥 Loading saved data for editing:", docname);
 
+            // Check if user is logged in before attempting to load data
+            if (!frappe.session || frappe.session.user === "Guest") {
+                console.warn("⚠️ Cannot load saved data: User not logged in");
+                frappe.msgprint({
+                    title: "Login Required",
+                    indicator: "orange",
+                    message: "You need to be logged in to edit existing records."
+                });
+                return;
+            }
+
             frappe.call({
                 method: "frappe.client.get",
                 args: {
@@ -1241,6 +1252,14 @@ frappe.ready(function () {
                             console.log("✅ Form populated with saved data");
                         }, 500);
                     }
+                },
+                error(err) {
+                    console.error("❌ Error loading saved data:", err);
+                    frappe.msgprint({
+                        title: "Error",
+                        indicator: "red",
+                        message: "Could not load the document. Please check if you have permission to access it."
+                    });
                 }
             });
         }
