@@ -1,35 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>physics wallah</title>
-    <style>
-      /* Do Not Add In Any CSS file/ */
-      body > chatnext-app > div:first-child {
-        display: none !important;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <chatnext-app />
-    <script type="module" src="/src/main.tsx"></script>
- 
-    <script>
-      if (!window.csrf_token) {
-        window.csrf_token = "{{ csrf_token }}";
-      }
-    </script>
-    <script type="module">
-      fetch("/assets/assets.json")
-        .then((response) => response.json())
-        .then((data) => {
-          const script = document.createElement("script");
-          script.src = data["cn-app.bundle.js"];
-          document.body.appendChild(script);
-        });
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physics wallah</title>
+  <style>
+    /* Do Not Add In Any CSS file/ */
+    body>chatnext-app>div:first-child {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <chatnext-app />
+  <script type="module" src="/src/main.tsx"></script>
+
+  <script>
+    if (!window.csrf_token) {
+      window.csrf_token = "{{ csrf_token }}";
+      window.frappe = window.frappe || {};
+      window.frappe.csrf_token = "{{ csrf_token }}";
+    }
+  </script>
+  <script type="module">
+    fetch("/assets/assets.json")
+      .then((response) => response.json())
+      .then((data) => {
+        const script = document.createElement("script");
+        script.src = data["cn-app.bundle.js"];
+        document.body.appendChild(script);
+      });
+  </script>
+</body>
+
 </html>
