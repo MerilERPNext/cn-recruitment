@@ -11,6 +11,7 @@ import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatDate } from "../../../utils/qrCodeUtils";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 type TeamAdvanceDetailViewProps = {
   documentName: string;
@@ -187,20 +188,15 @@ export default function TeamAdvanceDetailView({
     <div className="border-t bg-white p-4 flex flex-col md:flex-row gap-3">
       {actions.map((action: string) => {
         const isLoading = currentAction === action && mutation.isPending;
-        const buttonType = action.toLowerCase().trim();
+        const actionStyle = getActionStyles(action);
 
         return (
           <Button
             key={action}
             disabled={isLoading}
             onClick={() => handleAction(action)}
-            bgColor={
-              buttonType === "approve"
-                ? "green-100"
-                : buttonType === "reject"
-                ? "red-100"
-                : "gray-200"
-            }
+            bgColor={actionStyle.bgColor}
+            variant={actionStyle.variant}
             fullWidth
             size="md"
           >

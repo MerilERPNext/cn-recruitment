@@ -135,8 +135,8 @@ const AttendanceStatusModal: React.FC<{
           <Button
             onClick={onClose}
             variant="contain"
-            bgColor="gray-600"
-            className="w-full hover:bg-gray-700 py-2 text-white"
+            bgColor="disabled"
+            className="w-full py-2"
           >
             Close
           </Button>

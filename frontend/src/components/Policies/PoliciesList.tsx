@@ -83,13 +83,13 @@ const PoliciesList: React.FC = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
-  const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
-
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const statusOptions = [
-    { value: "Pending", label: "Pending" },
-    { value: "Acknowledged", label: "Acknowledged" },
-    { value: "Declined", label: "Declined" },
-    { value: "Archived", label: "Archived" },
+    "All",
+    "Pending",
+    "Acknowledged",
+    "Declined",
+    "Archived",
   ];
 
   if (!categoryName) {
@@ -126,8 +126,8 @@ const PoliciesList: React.FC = () => {
         doctype="Policy Details"
         defaultFilters={{
           policy_category: categoryName,
-          status: selectedStatus,
           employee_id: employeeId,
+          ...(selectedStatus !== "All" ? { status: selectedStatus } : {}),
         }}
         pageSize={20}
         isSearch={true}
