@@ -3,4 +3,5 @@ export const ROUTES = {
   TODO: "/todoapp",
   HELP_DESK: "/helpdesk/my-tickets",
   HELP_DESK_ADMIN: "/helpdesk",
+  HELP_DESK_INTERNAL: "/webapp/helpdesk",
 };

@@ -123,23 +123,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     window.open(ROUTES.TODO, "_blank");
   };
 
-  const handleHelpDeskClick = () => {
-    if (!currentUser?.roles) {
-      window.open(ROUTES.HELP_DESK, "_blank");
-      return;
-    }
-
-    const rolesArray = currentUser.roles?.map((r) => r.role) ?? [];
-
-    const isAgentOrManager =
-      rolesArray.includes("Agent") || rolesArray.includes("Agent Manager");
-
-    const routeToOpen = isAgentOrManager
-      ? ROUTES.HELP_DESK_ADMIN
-      : ROUTES.HELP_DESK;
-    window.open(routeToOpen, "_blank");
-  };
-
+  
   const allNavigationItems: NavigationItem[] = [
     {
       icon: Home,
@@ -415,7 +399,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     {
       icon: HelpCircle,
       label: "Help Desk",
-      path: "",
+      path: "/webapp/helpdesk",
       permissionKey: "Help Desk",
     },
   ];

@@ -414,6 +414,16 @@ const MyTeamBenefitsRequests = lazyWithRetry(
   "MyTeamBenefitsRequests"
 );
 
+const HelpDeskApp = lazyWithRetry(
+  () => import("./components/HelpDesk/HelpDeskApp"),
+  "HelpDeskApp"
+);
+
+const FAQPage = lazyWithRetry(
+  () => import("./components/HelpDesk/FAQPage"),
+  "FAQPage"
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -743,6 +753,14 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/password-reset",
     element: <PasswordReset />,
+  },
+  {
+    path: "/webapp/helpdesk",
+    element: <HelpDeskApp />,
+  },
+  {
+    path: "/webapp/helpdesk/faq",
+    element: <FAQPage />,
   },
 ];
 
