@@ -7,7 +7,7 @@ import {
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
-  useConfirmationAndseparation,
+  useConfirmation,
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
@@ -38,7 +38,7 @@ const ConfirmationWorkflow = () => {
   }
 
   const [reInitiateSeparation, setReInitiateSeparation] = useState(false);
-  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmationAndseparation(doctype);
+  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmation(doctype);
   const item = confirmationCreationData?.[0];
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";

@@ -1,7 +1,8 @@
 // src/hooks/useChatAssistant.ts
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getChatAssistantData, getChatAssistantFlowInitiateData, getDifinitionNameForSeparation, } from "../services/flowsService";
+import { getChatAssistantData, getChatAssistantFlowInitiateData, getDifinitionNameForSeparation, getSeparationFunnelData, getSeparationWorkflow, postSelectEventFromOptions, } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
+import { SeparationFunnelDataResponse, SeparationWrokflowResponse } from "../types/separation";
 
 
 export const useDifinitaionNameForSeparation = () => {
@@ -55,4 +56,56 @@ export const useChatAssistantFlowInitiateData = () => {
       ),
   });
 };
+
+export const useGetSeparationWorkflow = (
+  reference_doctype: string,
+  reference_docname: string
+) => {
+  return useQuery<SeparationWrokflowResponse>({
+    queryKey: [
+      "get-separation-workflow",
+      reference_doctype,
+      reference_docname
+    ],
+    queryFn: () => getSeparationWorkflow(
+      reference_doctype,
+      reference_docname
+    ),
+    enabled:
+      !!reference_doctype
+      && !!reference_docname
+  });
+};
+
+export const useGetSeparationFunnelData = (
+  docname: string
+) => {
+  return useQuery<SeparationFunnelDataResponse>({
+    queryKey: [
+      "get-separation-funnel",
+      docname
+    ],
+    queryFn: () => getSeparationFunnelData(
+      docname
+    ),
+    enabled: !!docname
+  });
+};
+
+export const usePostSelectEventFromOptions = () => {
+  return useMutation({
+    mutationFn: ({
+      selected_option,
+      data,
+    }: {
+      selected_option: string;
+      data: string;
+    }) =>
+      postSelectEventFromOptions(
+        selected_option,
+        data
+      ),
+  });
+};
+
 

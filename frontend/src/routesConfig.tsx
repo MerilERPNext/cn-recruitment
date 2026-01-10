@@ -353,6 +353,13 @@ const Separation = lazyWithRetry(
   "Separation"
 );
 
+const SeparationWorkflow = lazyWithRetry(
+  () => import("./components/Flows/SeparationWorkflow/SeparationWorkflow"),
+  "SeparationWorkflow"
+);
+
+
+
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
   "Confirmation"
@@ -728,6 +735,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "flow-requests", element: <FlowRequests2 /> },
       { path: "separation", element: <Separation /> },
+      { path: "separation-workflow/:id", element: <SeparationWorkflow /> },
       { path: "confirmation", element: <Confirmation /> },
       { path: "initiate-flow", element: <InitiateFlow2 /> },
       { path: "flow-request/:id", element: <RequestDetails /> },
