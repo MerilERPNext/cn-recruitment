@@ -18,6 +18,7 @@ type CategoryDoc = {
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
   const navigate = useNavigate();
+
   return (
     <Card
       onClick={() =>
@@ -27,11 +28,20 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
       }
       padding="sm"
       radius="xl"
-      className="w-full flex justify-between items-center my-2 hover:shadow-md"
+      className="w-full flex justify-between items-center my-2 hover:shadow-md cursor-pointer"
     >
       <Typography variant="bodyMedium">{name}</Typography>
-      <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-blue-600 font-semibold">
-        <span className="text-primary">{count}</span>
+
+      <div
+        className={`flex items-center justify-center w-12 h-12 rounded-xl font-semibold
+          ${count > 0 ? "bg-green-100" : "bg-transparent"}
+        `}
+      >
+        {count > 0 && (
+          <Typography variant="bodyMedium" color="success" component="span">
+            {count}
+          </Typography>
+        )}
       </div>
     </Card>
   );
