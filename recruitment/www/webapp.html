@@ -1,33 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/assets/recruitment/webapp/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>physics wallah</title>
-    <style>
-      /* Do Not Add In Any CSS file/ */
-      body > chatnext-app > div:first-child {
-        display: none !important;
-      }
-    </style>
-    <script type="module" crossorigin src="/assets/recruitment/webapp/index.B8h8HrHN.js"></script>
-    <script type="module" crossorigin src="/assets/recruitment/webapp/index.BrCT6NrT.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react.BhB54ZBW.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui.1tn5JmmC.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.B4KHX_XX.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-charts.mTs5pIAM.js">
-    <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-pdf.B3ld7uc0.js">
-    <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.B_5wR0bt.css">
-  </head>
-  <body>
-    <div id="root"></div>
-    <chatnext-app />
- 
-    <script>
-      if (!window.csrf_token) {
-        window.csrf_token = "{{ csrf_token }}";
-      }
-    </script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/assets/recruitment/webapp/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>physics wallah</title>
+  <style>
+    /* Do Not Add In Any CSS file/ */
+    body>chatnext-app>div:first-child {
+      display: none !important;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/recruitment/webapp/index.GVzPasyv.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-react.BhB54ZBW.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-mui.1tn5JmmC.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-utils.B4KHX_XX.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-charts.mTs5pIAM.js">
+  <link rel="modulepreload" crossorigin href="/assets/recruitment/webapp/vendor-pdf.B3ld7uc0.js">
+  <link rel="stylesheet" crossorigin href="/assets/recruitment/webapp/index.CA7ciN8I.css">
+</head>
+
+<body>
+  <div id="root"></div>
+  <chatnext-app />
+
+  <script>
+    if (!window.csrf_token) {
+      window.csrf_token = "{{ csrf_token }}";
+      window.frappe = window.frappe || {};
+      window.frappe.csrf_token = window.csrf_token;
+    }
+  </script>
+</body>
+
 </html>

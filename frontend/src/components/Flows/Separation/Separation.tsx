@@ -12,7 +12,7 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Separation = () => {
@@ -27,6 +27,7 @@ const Separation = () => {
   const { data: definitionName } = useDifinitaionNameForSeparation();
   const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useSeparation(doctype);
   const item = confirmationCreationData?.[0];
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
@@ -49,14 +50,30 @@ const Separation = () => {
   );
 
   const handleTriggerChat = () => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.trigger_chatnext_assistant === "function"
-    ) {
-      window.trigger_chatnext_assistant(true, data?.session);
-    } else {
-      console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
-    }
+    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+    let attempts = 0;
+    setIsTriggeringChat(true);
+
+    const checkAndTrigger = () => {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, data?.session);
+        setIsTriggeringChat(false);
+        return;
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(checkAndTrigger, 100);
+      } else {
+        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.");
+        setIsTriggeringChat(false);
+      }
+    };
+
+    checkAndTrigger();
   };
 
   useEffect(() => {
@@ -145,6 +162,7 @@ const Separation = () => {
                     size="md"
                     bgColor="blue-500"
                     className="hover:bg-blue-600"
+                    loading={isTriggeringChat}
                   >
                     INITIATE SEPARATION
                   </Button>
