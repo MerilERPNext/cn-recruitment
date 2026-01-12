@@ -499,7 +499,7 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                     onClick={() => setIsAttendanceAssignmentsOpen(true)}
                     className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
                   >
-                    Attendance Assignments1
+                    Attendance Assignments
                   </button> */}
                 </div>
               </div>
