@@ -68,7 +68,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       className={`relative inline-block ${className || ""}`}
     >
       <Button
-        variant="contain"
+        variant="soft"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >

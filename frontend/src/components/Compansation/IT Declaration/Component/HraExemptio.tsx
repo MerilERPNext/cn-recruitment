@@ -38,97 +38,111 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
   const LTAData = hraData?.lta;
   console.log("LTAData in HRAForm:", LTAData);
   return (
-    <div className="space-y-6">
+    <div className="mt-4 ">
       {/* HRA Section */}
-      <div className="grid grid-cols-2 gap-4 rounded border border-gray-300 p-4">
-        <div>
-          <label className="text-sm text-gray-500">Monthly HRA</label>
-          <input
-            type="number"
-            value={hraData.monthly_hra}
-            onChange={(e) => onChange("monthly_hra", Number(e.target.value))}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">Rented in Metro City</label>
-          <select
-            value={hraData.rented_in_metro_city}
-            onChange={(e) => onChange("rented_in_metro_city", Number(e.target.value))}
-            className="w-full border rounded px-3 py-1"
-          >
-            <option value={0}>No</option>
-            <option value={1}>Yes</option>
-          </select>
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">Annual HRA Exemption</label>
-          <input
-            type="number"
-            value={hraData.annual_hra_exemption}
-            readOnly
-            className="w-full border rounded px-3 py-1 bg-gray-300"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">Monthly HRA Exemption</label>
-          <input
-            type="number"
-            value={hraData.monthly_hra_exemption}
-            readOnly
-            className="w-full border rounded px-3 py-1 bg-gray-300"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">Start Date</label>
-          <input
-            type="date"
-            value={hraData.start_date}
-            onChange={(e) => onChange("start_date", e.target.value)}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-        <div>
-          <label className="text-sm text-gray-500">End Date</label>
-          <input
-            type="date"
-            value={hraData.end_date}
-            onChange={(e) => onChange("end_date", e.target.value)}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="text-sm text-gray-500">PAN</label>
-          <input
-            type="text"
-            value={hraData.pan}
-            onChange={(e) => onChange("pan", e.target.value)}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="text-sm text-gray-500">Address Line 1</label>
-          <input
-            type="text"
-            value={hraData.address_line1}
-            onChange={(e) => onChange("address_line1", e.target.value)}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="text-sm text-gray-500">Address Line 2</label>
-          <input
-            type="text"
-            value={hraData.address_line2}
-            onChange={(e) => onChange("address_line2", e.target.value)}
-            className="w-full border rounded px-3 py-1"
-          />
-        </div>
-      </div>
+{/* HRA UI – Screenshot style */}
+<div className="border rounded-lg p-6 space-y-5">
+
+  {/* Title */}
+  <div className="flex justify-between items-center">
+    <h3 className="text-sm font-semibold text-gray-700 uppercase">
+      House Rent Allowance (Exempt u/s 10(13A))
+    </h3>
+    <button className="text-xs text-primary underline">
+      Download Rental Form
+    </button>
+  </div>
+
+  {/* Info */}
+  <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
+    If rent is more than ₹8,333/month or ₹1,00,000/year, PAN is mandatory.
+  </div>
+
+  {/* Fields */}
+  <div className="grid grid-cols-6 gap-4">
+
+    <div className="col-span-2">
+      <label className="text-xs text-gray-500">Address</label>
+      <input
+        value={hraData.address_line1}
+        onChange={(e) => onChange("address_line1", e.target.value)}
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">Is Metro</label>
+      <select
+        value={hraData.rented_in_metro_city}
+        onChange={(e) =>
+          onChange("rented_in_metro_city", Number(e.target.value))
+        }
+        className="w-full border rounded px-3 py-2 text-sm"
+      >
+        <option value={0}>Non-Metro</option>
+        <option value={1}>Metro</option>
+      </select>
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">From</label>
+      <input type="date" value={hraData.start_date} onChange={(e) => onChange("start_date", e.target.value)} className="w-full border rounded px-3 py-1" />
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">To</label>
+      <input
+        type="date"
+        value={hraData.end_date}
+        onChange={(e) => onChange("end_date", e.target.value)}
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">Monthly Rental</label>
+      <input
+        type="number"
+        value={hraData.monthly_hra}
+        onChange={(e) =>
+          onChange("monthly_hra", Number(e.target.value))
+        }
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">Owner Name</label>
+      <input
+        className="w-full border rounded px-3 py-2 text-sm"
+        placeholder="Owner Name"
+      />
+    </div>
+
+    <div>
+      <label className="text-xs text-gray-500">Owner PAN</label>
+      <input
+        value={hraData.pan}
+        onChange={(e) => onChange("pan", e.target.value)}
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+    </div>
+
+    <div className="flex items-end">
+      <label className="text-sm text-gray-600 cursor-pointer flex gap-2">
+        📎 Attach file
+        <input type="file" hidden />
+      </label>
+    </div>
+  </div>
+
+</div>
+
+
 
       {/* LTA Section inside HRAData */}
 
-      <div className="border border-gray-300 rounded p-4">
+      <div className="border rounded p-4 mt-4">
         <h3 className="text-lg font-semibold mb-4">LTA Details</h3>
         {LTAData?.map((item: any, idx: number) => (
           <div

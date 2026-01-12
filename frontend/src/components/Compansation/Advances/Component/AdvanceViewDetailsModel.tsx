@@ -152,7 +152,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
                 key={action}
                 onClick={() => handleActionClick(action)}
                 bgColor={getActionStyles(action).bg}
-                className={getActionStyles(action).text}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -188,7 +188,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
-                className={getActionStyles(selectedAction!).text}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >
