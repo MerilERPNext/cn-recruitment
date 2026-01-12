@@ -6,6 +6,7 @@ import DOMPurify from "dompurify";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
 
 export function MyRequestCard({
   request,
@@ -61,19 +62,28 @@ export function MyRequestCard({
     <>
       {isDesktop ? (
         <div
-          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-blue-50 transition-colors text-center cursor-pointer border-b"
+          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-primary/20 transition-colors text-center cursor-pointer border-b"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
           <div className="text-gray-600 text-sm truncate text-start">
-            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+
+              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+            </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatToIndianDate(request?.reference_document?.creation) ||
-              "--/--/--"}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+
+              {formatToIndianDate(request?.reference_document?.creation) ||
+                "--/--/--"}
+            </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formattedDate}
+            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+
+              {formattedDate}
+            </Typography>
           </div>
           <div className="text-gray-900 font-medium text-sm text-start">
             <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>

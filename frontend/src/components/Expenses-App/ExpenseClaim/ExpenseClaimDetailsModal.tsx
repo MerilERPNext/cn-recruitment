@@ -91,7 +91,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   label={
                     data?.approval_status === "Draft"
                       ? "Pending"
-                      : data?.approval_status || "—"
+                      : data?.approval_status || ""
                   }
                   backgroundColor={
                     badgeFor(data?.approval_status).split(" ")[0]
@@ -251,9 +251,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                             <td className="px-4 py-2 border-b align-top">
                               <Badge
                                 label={
-                                  item.custom_approval_staus === ""
+                                  item.custom_approval_staus === "Draft"
                                     ? "Pending"
-                                    : item.custom_approval_staus || "—"
+                                    : item.custom_approval_staus || ""
                                 }
                                 backgroundColor={badgeBg}
                                 textColor={badgeText}

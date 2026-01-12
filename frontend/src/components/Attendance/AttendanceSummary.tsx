@@ -139,7 +139,8 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.my_attendance_requests || 0,
           icon: "FileText",
-          color: "green",
+          color: "text-green-500",
+          background: "bg-green-50",
           actions: [
             {
               label: "View My Requests",
@@ -159,7 +160,8 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.team_attendance_requests || 0,
           icon: "Users",
-          color: "yellow",
+          color: "text-yellow-500",
+          background: "bg-yellow-50",
           actions: [
             {
               label: "Manage Team Requests",
@@ -174,7 +176,8 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.my_overtime_requests || 0,
           icon: "FileText",
-          color: "blue",
+          color: "text-blue-500",
+          background: "bg-blue-50",
           actions: [
             {
               label: "View My Overtime",
@@ -194,7 +197,8 @@ const AttendanceSummary = () => {
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.team_overtime_requests || 0,
           icon: "Users",
-          color: "purple",
+          color: "text-purple-500",
+          background: "bg-purple-50",
           actions: [
             {
               label: "Manage Team Overtime",
@@ -209,7 +213,8 @@ const AttendanceSummary = () => {
           subtitle: "Shift schedule overview",
           value: null,
           icon: "Calendar",
-          color: "indigo",
+          color: "text-indigo-500",
+          background: "bg-indigo-50",
           actions: [
             {
               label: "View My Shifts",
@@ -238,26 +243,36 @@ const AttendanceSummary = () => {
   const settingsData = [
     {
       icon: Clock,
+      color: "text-green-500",
+      background: "bg-green-50",
       title: "Attendance Method",
       details: getAttendanceMethod(),
     },
     {
       icon: Users,
+      color: "text-yellow-500",
+      background: "bg-yellow-50",
       title: "Current Shift",
       details: employeeShift ? [employeeShift?.shift] : [],
     },
     {
       icon: Shield,
+      color: "text-blue-500",
+      background: "bg-blue-50",
       title: "Attendance Policy",
       details: attendancePolicy ? [attendancePolicy] : [],
     },
     {
       icon: Calendar,
+      color: "text-indigo-500",
+      background: "bg-indigo-50",
       title: "Week Off",
       details: [currentEmployee?.custom_weekly_off || ""],
     },
     {
       icon: Timer,
+      color: "text-purple-500",
+      background: "bg-purple-50",
       title: "Overtime Policy",
       details: [employeeOvertimePolicy || ""],
     },
@@ -421,10 +436,10 @@ const AttendanceSummary = () => {
               return (
                 <div
                   key={index}
-                  className="group flex items-start gap-4 p-4 rounded-2xl border border-gray-100 hover-lift transition-all duration-300"
+                  className="group flex items-start gap-4 p-4  shadow-sm hover-lift transition-all duration-300"
                 >
-                  <div className="flex-shrink-0 p-2.5 bg-white rounded-xl shadow-sm group-hover:scale-105 transition-transform">
-                    <Icon className="h-5 w-5 text-gray-600" />
+                  <div className={`flex-shrink-0 p-2.5 rounded-xl shadow-sm group-hover:scale-105 transition-transform ${setting.background}`}>
+                    <Icon className={`h-5 w-5 ${setting.color}`} />
                   </div>
                   <div className="flex-1 min-w-0 pt-0.5">
                     <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">

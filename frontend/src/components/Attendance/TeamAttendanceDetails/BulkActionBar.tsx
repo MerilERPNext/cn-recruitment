@@ -14,7 +14,7 @@ export function BulkActionBar({
   const allSelected = selectedIds.length === pendingRequests.length;
 
   return (
-    <div className="p-2 px-6 bg-primary-50 rounded-xl lg:rounded-none">
+    <div className="p-2 px-6 bg-primary/20 cursor-pointer rounded-xl lg:rounded-none">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <input type="checkbox" checked={allSelected} onChange={onSelectAll} />

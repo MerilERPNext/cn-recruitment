@@ -7,6 +7,7 @@ import ApprovalModal from "./ApprovalModel"
 import CardTable from "../../../shared/CardTable"
 import { FormIOComponent } from "../../../../types/formio"
 import CardStages from "./StageCard"
+import { TodoType } from "../../../../types/todos"
 export interface ApprovalStage {
   approval_response_data: string;
   stage_name: string | null
@@ -44,7 +45,7 @@ export interface ApprovalData {
 }
 
 interface ApprovalTrackerProps {
-  data: ApprovalData,
+  data: TodoType,
   For: "Employee Separation" | "Employee Confirmation"
 }
 
@@ -120,7 +121,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             {allStagesComplete && (
               <ApprovalDetails data={data} title={For} />
             )}
-            <div className="w-full mt-8">
+            <div className="w-full mt-8 lg:border-1 rounded-lg">
               <CardTable
                 titles={[
                   "Stage",
@@ -133,7 +134,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                   {data?.approval_stages_status.map((item, idx) => {
                     const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status != "Pending");
                     return (
-                      <CardStages data={item} assignedTo={{ user_id: data?.allocated_to, emp_id: data?.allocated_to_emp_id, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
+                      <CardStages data={item as ApprovalStage} assignedTo={{ user_id: data?.allocated_to, emp_id: data?.allocated_to_emp_id, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
                     );
                   })}
                 </div>

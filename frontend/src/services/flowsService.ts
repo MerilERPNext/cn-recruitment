@@ -47,3 +47,46 @@ export const getChatAssistantFlowInitiateData = async (
   return response as any;
 };
 
+
+// ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
+export const getSeparationWorkflow = async (
+  reference_doctype: string,
+  reference_docname: string
+) => {
+  const response = FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity',
+    {
+      reference_doctype,
+      reference_docname
+    },
+  );
+
+  return response as any;
+};
+
+export const getSeparationFunnelData = async (
+  docname: string
+) => {
+  const response = FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
+    {
+      doctype: "Employee Separation",
+      docname
+    },
+  );
+
+  return response as any;
+};
+
+export const postSelectEventFromOptions = async (
+  selected_option: string,
+  data: string,
+) => {
+  const response = FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.select_event_from_options',
+    {
+      selected_option,
+      data,
+      doctype: "Employee Separation"
+    },
+  );
+
+  return response as any;
+};

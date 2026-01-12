@@ -47,6 +47,7 @@ interface QuickActionCardProps {
     icon: string;
     background?: string;
     actions: Action[];
+    color: string;
 }
 
 const QuickActionCard: React.FC<QuickActionCardProps> = ({
@@ -54,6 +55,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
     subtitle,
     value,
     icon,
+    color,
     background = "bg-slate-50",
     actions
 }) => {
@@ -69,11 +71,17 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
                 relative overflow-hidden border border-slate-100/50
                 p-4.5 transition-all duration-300
                 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50
-                ${background} group/qcard
+                group/qcard
             `}
         >
             {/* Header */}
             <div className="flex items-start justify-between gap-3">
+                {/* Icon */}
+                {Icon && (
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${background} shadow-sm ${color} transition-transform`}>
+                        <Icon className={`h-5 w-5 ${color}`} />
+                    </div>
+                )}
                 <div className="flex-1 min-w-0">
                     <Typography variant="bodySmall" className="font-bold tracking-tight">
                         {title}
@@ -93,12 +101,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
                     )}
                 </div>
 
-                {/* Icon */}
-                {Icon && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-slate-50 group-hover/qcard:rotate-6 transition-transform">
-                        <Icon className="h-5 w-5 text-slate-700" />
-                    </div>
-                )}
+
             </div>
 
             {/* Actions */}

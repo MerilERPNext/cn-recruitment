@@ -7,7 +7,7 @@ import {
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
-  useConfirmationAndseparation,
+  useConfirmation,
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
@@ -38,7 +38,8 @@ const ConfirmationWorkflow = () => {
   }
 
   const [reInitiateSeparation, setReInitiateSeparation] = useState(false);
-  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmationAndseparation(doctype);
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
+  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmation(doctype);
   const item = confirmationCreationData?.[0];
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
@@ -54,14 +55,30 @@ const ConfirmationWorkflow = () => {
   );
 
   const handleTriggerChat = () => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.trigger_chatnext_assistant === "function"
-    ) {
-      window.trigger_chatnext_assistant(true, data?.session);
-    } else {
-      console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
-    }
+    const maxAttempts = 500; // 50 seconds max (500 * 100ms)
+    let attempts = 0;
+    setIsTriggeringChat(true);
+
+    const checkAndTrigger = () => {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, data?.session);
+        setIsTriggeringChat(false);
+        return;
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(checkAndTrigger, 100);
+      } else {
+        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.");
+        setIsTriggeringChat(false);
+      }
+    };
+
+    checkAndTrigger();
   };
 
   useEffect(() => {
@@ -128,16 +145,17 @@ const ConfirmationWorkflow = () => {
               </div>
             </div>
 
-
-            <Button
-              onClick={handleTriggerChat}
-              size="md"
-              bgColor="blue-500"
-              className="hover:bg-blue-600"
-            >
-              INITIATE CONFIRMATION
-            </Button>
-
+            {canReInitiate &&
+              <Button
+                onClick={handleTriggerChat}
+                size="md"
+                bgColor="blue-500"
+                className="hover:bg-blue-600 text-white"
+                loading={isTriggeringChat}
+              >
+                INITIATE CONFIRMATION
+              </Button>
+            }
           </div>
         </div>
       }

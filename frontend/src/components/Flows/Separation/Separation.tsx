@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
-import { useConfirmationAndseparation } from "../../../hooks/useConfiremnation";
+import { useSeparation } from "../../../hooks/useConfiremnation";
 import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
+  useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -23,8 +25,9 @@ const Separation = () => {
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmationAndseparation(doctype);
+  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useSeparation(doctype);
   const item = confirmationCreationData?.[0];
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
@@ -35,6 +38,7 @@ const Separation = () => {
   }
 
   const separationData = getFunnelData("Separation");
+  console.log("separationData", separationData)
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
 
@@ -46,14 +50,30 @@ const Separation = () => {
   );
 
   const handleTriggerChat = () => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.trigger_chatnext_assistant === "function"
-    ) {
-      window.trigger_chatnext_assistant(true, data?.session);
-    } else {
-      console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
-    }
+    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+    let attempts = 0;
+    setIsTriggeringChat(true);
+
+    const checkAndTrigger = () => {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, data?.session);
+        setIsTriggeringChat(false);
+        return;
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(checkAndTrigger, 100);
+      } else {
+        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.");
+        setIsTriggeringChat(false);
+      }
+    };
+
+    checkAndTrigger();
   };
 
   useEffect(() => {
@@ -69,6 +89,12 @@ const Separation = () => {
   }, [refetchConfirmationAndSeparation]);
 
   const showInitiatePage = !item;
+
+  const { data: separationWorkflow } = useGetSeparationWorkflow(doctype, item?.reference_document?.name || "");
+  const navigate = useNavigate();
+  const handleShowWorkflow = () => {
+    navigate("/webapp/flow-app/separation-workflow/" + item?.reference_document?.name);
+  }
 
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
@@ -88,6 +114,16 @@ const Separation = () => {
       <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
         {!showInitiatePage ? (
           <main className="min-h-full bg-background mb-2">
+            {separationWorkflow?.show_workflow &&
+              <Button
+                onClick={handleShowWorkflow}
+                size="md"
+                bgColor="blue-500"
+                className="hover:bg-blue-600 mb-4 text-white"
+              >
+                Show Workflow
+              </Button>
+            }
             <div className="max-w-full">
               <ApprovalTracker For="Employee Separation" data={item} />
             </div>
@@ -119,16 +155,27 @@ const Separation = () => {
               </div>
 
               {/* Button */}
-              <div className="flex justify-center py-6">
-                <Button
-                  onClick={handleTriggerChat}
-                  size="md"
-                  bgColor="blue-500"
-                  className="hover:bg-blue-600"
-                >
-                  INITIATE SEPARATION
-                </Button>
-              </div>
+              {definition_name &&
+                <div className="flex items-center py-6 gap-2 flex-col">
+                  <Button
+                    onClick={handleTriggerChat}
+                    size="md"
+                    bgColor="blue-500"
+                    className="hover:bg-blue-600"
+                    loading={isTriggeringChat}
+                  >
+                    INITIATE SEPARATION
+                  </Button>
+
+                  <Button
+                    size="md"
+                    bgColor="black"
+                    className="hover:bg-gray-900"
+                  >
+                    Terminate
+                  </Button>
+                </div>
+              }
             </div>
           </div>
         )}

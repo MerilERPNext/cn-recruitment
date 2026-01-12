@@ -135,9 +135,10 @@ const Events = () => {
 
                             return (
                                 <Card
-                                    shadow="none"
+                                    shadow="sm"
+                                    radius="none"
                                     key={`${employee.employee_name}-${index}`}
-                                    className="flex items-center justify-between gap-3 py-2 px-2 rounded-xl hover-lift transition-all group"
+                                    className="flex items-center justify-between gap-3 bg-blue-4 py-2 px-2 hover-lift transition-all group"
                                 >
                                     <div className="flex gap-2 items-center">
                                         {/* Avatar */}

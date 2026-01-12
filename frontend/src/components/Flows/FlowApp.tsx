@@ -11,10 +11,12 @@ type TabName = "Flow Requests" | "Confirmation" | "Separation";
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
   Confirmation: "/webapp/flow-app/confirmation",
-  Separation: "/webapp/flow-app/separation",
+  Separation: "/webapp/flow-app/separation"
 };
 
-type SeprateRouteName = "Initiate Flow" | "Flow Request";
+type SeprateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow";
+const NoDesktopLayoutRoute: string[] = [];
+
 
 const FlowApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -58,6 +60,8 @@ const FlowApp: React.FC = () => {
 
     if (location.pathname === "/webapp/flow-app/initiate-flow") {
       setSeprateRoute("Initiate Flow");
+    } else if (location.pathname.startsWith("/webapp/flow-app/separation-workflow/")) {
+      setSeprateRoute("SeparationWorkflow");
     } else if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
       setSeprateRoute("Flow Request");
     } else {
@@ -113,14 +117,14 @@ const FlowApp: React.FC = () => {
     <Button
       bgColor="blue-600"
       size="lg"
-      className="hover:bg-blue-700"
+      className="hover:bg-blue-700 text-white"
       onClick={handleInitiateModel}
     >
       + Initiate
     </Button>
   ) : null;
 
-  const desktopLayout = !seprateRoute ? (
+  const desktopLayout = !NoDesktopLayoutRoute.includes(seprateRoute || "") ? (
     <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
       <div className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto relative">

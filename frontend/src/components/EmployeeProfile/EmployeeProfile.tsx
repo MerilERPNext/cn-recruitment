@@ -34,6 +34,13 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Badge from "../shared/Badge";
 
+// import { AwardsSection } from "./EmployeeAwards";
+// import Appreciations from "./Appreciations";
+
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
+
+
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
   refetch?: () => void;
@@ -43,6 +50,12 @@ const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
+  const { data: userUiPermission } = useGetUiPermission("Profile");
+  const canAttendanceAssignments = isActionEnabled(
+    userUiPermission,
+    "attendance_assignments",
+    "Employee Profile"
+  );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails(userId || "");
 
@@ -355,11 +368,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
+                  {/* <Appreciations /> */}
                 </div>
               </div>
             </div>
-            {/* Awards Section with Divider */}
-            {/* <AwardsSection awards={employeeAppreciations} isDesktop={false} /> */}
+            {/* <AwardsSection isDesktop={false} /> */}
           </div>
         )}
         {/* Horizontal Tabs */}
@@ -370,11 +383,10 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
-                  activeTab === tab.key
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-gray-600 hover:text-primary-600"
-                }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-gray-600 hover:text-primary-600"
+                  }`}
               >
                 {tab.label}
               </Button>
@@ -447,7 +459,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                      uploadMutation.isPending ? (
+                        uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -518,7 +530,7 @@ const EmployeeProfile: React.FC = () => {
                         )}
                         <div className="flex items-center gap-2 mt-2">
 
-                          {showAttendanceAssignment && (
+                          {showAttendanceAssignment && canAttendanceAssignments && (
                             <Button
                               icon={<NotebookPen size={14} />}
                               size="sm"
@@ -547,11 +559,10 @@ const EmployeeProfile: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
-                    activeTab === tab.key
-                      ? "border-primary text-primary"
-                      : "border-transparent text-gray-600 hover:text-primary"
-                  }`}
+                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-600 hover:text-primary"
+                    }`}
                 >
                   {tab.label}
                 </button>

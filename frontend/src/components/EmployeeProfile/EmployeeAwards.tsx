@@ -107,35 +107,31 @@ interface AwardsSectionProps {
     isDesktop: boolean;
 }
 
-export const AwardsSection: React.FC<AwardsSectionProps> = ({
-    isDesktop,
-}) => {
+
+export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name || ""
     );
+
     const employee = targetEmployeeId || currentEmployee?.name;
     const { data: employeeAppreciations } =
         useGetEmployeeEarnedAppreciations(employee || "");
-    const awards = employeeAppreciations?.badges;
-    if (isDesktop) {
-        return (
-            <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
-                <div className="flex items-center gap-2 mb-2">
-                    <h2 className="text-lg font-bold text-gray-900">Appreciations</h2>
-                </div>
-                <div className="p-2 bg-gray-50 rounded-2xl border border-gray-200">
-                    <div className="flex gap-2 flex-wrap">
-                        {awards?.map((award: Award) => (
-                            <AwardBadge key={award.name} award={award} />
-                        ))}
-                    </div>
-                </div>
 
-                {(!awards || awards?.length === 0) && (
-                    <div className="flex items-center p-3 gap-3 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+    const awards = employeeAppreciations?.badges || [];
+    const hasAwards = awards.length > 0;
+
+    if (!hasAwards) {
+        if (isDesktop) {
+            return (
+                <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
+                    <h2 className="text-lg font-bold text-gray-900 mb-3">
+                        Appreciations
+                    </h2>
+
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
                         <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                             <span className="text-2xl opacity-40">🏆</span>
                         </div>
@@ -148,32 +144,61 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({
                             </p>
                         </div>
                     </div>
-                )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="w-full border-t border-gray-200 mt-6 pt-6 px-6">
+                <h2 className="text-base font-bold text-gray-900 mb-4">
+                    Appreciations
+                </h2>
+
+                <div className="flex flex-col items-center justify-center py-8 px-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+                        <span className="text-3xl opacity-40">🏆</span>
+                    </div>
+                    <p className="text-sm text-gray-600 font-medium">
+                        No awards yet
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                        Recognition coming soon!
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (isDesktop) {
+        return (
+            <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
+                <h2 className="text-lg font-bold text-gray-900 mb-3">
+                    Appreciations
+                </h2>
+
+                <div className="p-2 bg-gray-50 rounded-2xl border border-gray-200">
+                    <div className="flex gap-2 flex-wrap">
+                        {awards.map((award: Award) => (
+                            <AwardBadge key={award.name} award={award} />
+                        ))}
+                    </div>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="w-full border-t border-gray-200 mt-6 pt-6 px-6">
-            <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-base font-bold text-gray-900">Appreciations</h2>
-            </div>
+            <h2 className="text-base font-bold text-gray-900 mb-4">
+                Appreciations
+            </h2>
+
             <div className="flex gap-5 overflow-x-auto py-3 scrollbar-hide">
-                {awards?.map((award: Award) => (
+                {awards.map((award: Award) => (
                     <AwardBadge key={award.name} award={award} />
                 ))}
             </div>
-            {(!awards || awards.length === 0) && (
-                <div className="flex flex-col items-center justify-center py-8 px-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-3">
-                        <span className="text-3xl opacity-40">🏆</span>
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">No awards yet</p>
-                    <p className="text-xs text-gray-400 mt-1">
-                        Recognition coming soon!
-                    </p>
-                </div>
-            )}
         </div>
     );
 };
+
