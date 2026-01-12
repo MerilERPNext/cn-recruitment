@@ -7,7 +7,7 @@ import BenefitRequestForm from "./BenefitsRequestForm";
 import CardTable from "../../shared/CardTable";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import Button from "../../shared/atoms/Button";
-import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeIdCard, useEmployee } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
 import { BenefitPayslip, useGetBenefitClaimLockingPeriod, useGetBenefitRequestLockView, useGetYearFilterOptions } from "../../../hooks/useBenefit";
@@ -15,6 +15,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -25,12 +27,19 @@ const MyRequests: React.FC = () => {
   };
 
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
+  const { data: employee } = useCurrentEmployeeIdCard();
+  const { targetEmployeeId, isViewingOtherUser } =
+    useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+
+  const effectiveEmployee = isViewingOtherUser ? targetEmployee : employee;
+  const effectiveEmployeeId = isViewingOtherUser ? targetEmployee?.name : employee?.id;
 
   const handleCloseModal = () => {
     setShowBenefitForm(false);
   };
 
-  const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employeeIdCard?.company || "");
+  const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(effectiveEmployee?.company || "");
 
   const optionYears = useMemo(() => {
     if (YearsLoading || !optionYearsData) return [];
@@ -45,11 +54,10 @@ const MyRequests: React.FC = () => {
     }
   }, [optionYears, selectedYear]);
 
-  const { data: employee } = useCurrentEmployeeIdCard();
   const today = new Date().toISOString().split("T")[0];
 
-  const { data, isLoading } = useGetBenefitRequestLockView(employee?.id || "", selectedYear, today);
-  const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(employee?.id || "", selectedYear, today);
+  const { data, isLoading } = useGetBenefitRequestLockView(effectiveEmployeeId || "", selectedYear, today);
+  const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(effectiveEmployeeId || "", selectedYear, today);
   const showBenefitRequestButton = !benefitClaimLockLoading && benefitClaimLock?.status === "success";
   const LockRequestMessage = useMemo(() => {
     if (!data || isLoading) return null;
@@ -57,11 +65,21 @@ const MyRequests: React.FC = () => {
   }, [data, isLoading]);
 
   return (
-    <div className="px-4 pt-2">
+    <div>
       <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
-        <div className="min-w-[100px] mr-auto">
+
+        <div className="flex w-full gap-2">
+          <div className="flex flex-col mr-auto">
+            <Typography variant="h4">
+              My Benefits Requests for FY {selectedYear}
+            </Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your benefits requests
+            </Typography>
+          </div>
+
           <CustomDropdown
-            position='bottom-right'
+            position='bottom-left'
             value={selectedYear}
             onChange={(event) => setSelectedYear(event?.target.value)}
             options={optionYears}
@@ -92,7 +110,7 @@ const MyRequests: React.FC = () => {
           <Button
             bgColor="blue-600"
             size="md"
-            className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4"
+            className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4 text-white"
             onClick={handleRequestBenefit}
           >
             Request Benefit

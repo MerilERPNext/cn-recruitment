@@ -96,7 +96,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
           <div className="flex flex-col min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-              <Tooltip content={emp.name || "—"} position="right">
+              <Tooltip content={emp.employee_id || "—"} position="right">
                 <p className="text-sm   font-semibold text-gray-900 truncate">
                   {emp.employee_name}
                 </p>

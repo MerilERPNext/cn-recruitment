@@ -9,19 +9,25 @@ import { FaRegEye } from "react-icons/fa";
 import SalarySlipPDFModal from "../../Compansation/SalarySlipPDFModal";
 import CardTable from "../../shared/CardTable";
 import { BenefitPayslip, useGetBenefitSlipHTML, useGetYearFilterOptions } from "../../../hooks/useBenefit";
-import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeIdCard, useEmployee } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import DropdownMenu from "../../shared/DropDownMenu";
 import BenefitSlipPDFMOdel from "./BenefitSlipPDFModel";
 import { createPortal } from "react-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 
 const BenefitsSlips = () => {
-
     const { data: employeeIdCard } = useCurrentEmployeeIdCard();
-    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employeeIdCard?.company || "");
+    const { data: employee } = useCurrentEmployeeIdCard();
+    const { targetEmployeeId, isViewingOtherUser } =
+        useTargetUser();
+    const { data: targetEmployee } = useEmployee(targetEmployeeId);
+
+    const effectiveEmployee = isViewingOtherUser ? targetEmployee : employee;
+    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(effectiveEmployee?.company || "");
 
     const optionYears = useMemo(() => {
         if (YearsLoading || !optionYearsData) return [];

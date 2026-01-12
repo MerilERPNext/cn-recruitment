@@ -5,6 +5,7 @@ import CardTable from '../../shared/CardTable';
 import { StaticListView } from '../../ListView';
 import SeparationLogCard from './components/SeparationLogCard';
 import HeaderBar from '../../HeaderBar';
+import { Typography } from '../../shared/atoms/Typography';
 
 const SeparationWorkflow: React.FC = () => {
     const { id } = useParams()
@@ -47,7 +48,7 @@ const SeparationWorkflow: React.FC = () => {
     const gtc = "1fr 1fr 1fr 1fr 1fr";
     return (
         <div>
-            <HeaderBar title='Separation Workfow' onBack={() => navigate(-1)} />
+            <HeaderBar title='Separation Workflow' onBack={() => navigate(-1)} />
             <div className='p-8'>
                 <div className='lg:mt-6'></div>
                 <CardTable
@@ -78,7 +79,9 @@ const SeparationWorkflow: React.FC = () => {
                             />
                         ) : (
                             <div className="text-center text-gray-500 py-16">
-                                No pending approvals found.
+                                <Typography variant="bodyMedium" color="body2" >
+                                    No pending approvals found.
+                                </Typography>
                             </div>
                         )}
                     </div>

@@ -4,6 +4,7 @@ import Button from '../../../shared/atoms/Button';
 import useCurrentUser from '../../../../hooks/useCurrentUser';
 import Badge from '../../../shared/Badge';
 import { useScreenSize } from '../../../../hooks/useScreenSize';
+import { Typography } from '../../../shared/atoms/Typography';
 
 interface SeparationLogCardProps {
     gtc: string;
@@ -36,25 +37,31 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
     }, [currentUser, data, loadingUser, isActive]);
 
     const statusColors: Record<string, string> = {
-        "Approved": "text-green-500 bg-green-100",
+        "Approved": "bg-green-100 text-green-600",
         "Completed": "text-green-500 bg-green-100",
-        "Cancled": "text-green-500 bg-green-100",
-        "Rejected": "text-red-500 bg-red-100",
-        "Pending": "text-gray-500 ",
-        _: "text-gray-500 bg-gray-100"
+        "Cancled": "bg-red-100 text-red-600",
+        "Rejected": "bg-red-100 text-red-600",
+        "Pending": "bg-yellow-100 text-yellow-600",
+        _: "text-gray-500"
     }
 
     const { isDesktop } = useScreenSize();
 
     return (
         isDesktop ?
-            <div className={`grid gap-4  hover:bg-blue-50 px-6 py-4 items-center`}
+            <div className={`grid gap-4 border-b border-b-gray-300 hover:bg-primary/30 px-6 py-4 items-center`}
                 style={{ gridTemplateColumns: gtc }}
             >
-                <span>{data?.idx}</span>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.idx}
+                </Typography>
                 <Badge label={data?.status} textColor={statusColors[data?.status] ?? statusColors._} />
-                <span>{data?.target}</span>
-                <span>{data?.selected_action}</span>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.target}
+                </Typography>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.selected_action}
+                </Typography>
                 <span>{
                     canPerformActions &&
                     actions?.map((action: string, idx: number) =>
