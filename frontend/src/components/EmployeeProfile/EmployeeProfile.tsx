@@ -34,8 +34,8 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Badge from "../shared/Badge";
 
-import { AwardsSection } from "./EmployeeAwards";
-import Appreciations from "./Appreciations";
+// import { AwardsSection } from "./EmployeeAwards";
+// import Appreciations from "./Appreciations";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -368,11 +368,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
-                  <Appreciations />
+                  {/* <Appreciations /> */}
                 </div>
               </div>
             </div>
-            <AwardsSection isDesktop={false} />
+            {/* <AwardsSection isDesktop={false} /> */}
           </div>
         )}
         {/* Horizontal Tabs */}
@@ -541,14 +541,14 @@ const EmployeeProfile: React.FC = () => {
                               Attendance Assignment
                             </Button>
                           )}
-                          <Appreciations />
+                          {/* <Appreciations /> */}
                         </div>
                       </div>
                     </div>
                   </div>
 
                 </div>
-                <AwardsSection isDesktop={true} />
+                {/* <AwardsSection isDesktop={true} /> */}
               </div>
             </Card>
           )}
