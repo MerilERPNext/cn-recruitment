@@ -118,7 +118,7 @@ const PoliciesList: React.FC = () => {
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
           options={statusOptions}
-          position="bottom-right"
+          position="bottom-left"
         />
       </div>
     );

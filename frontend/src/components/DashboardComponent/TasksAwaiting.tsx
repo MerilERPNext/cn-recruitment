@@ -7,6 +7,7 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { format, parse } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface ToDo {
   priority: string;
@@ -21,28 +22,40 @@ interface ToDo {
   subject?: string; // Added for new layout
   due_date?: string; // Added for new layout
 }
+
 const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
-  const handleTodoClick = () => window.open(`/app/task_manager`);
+  const navigate = useNavigate();
+  const handleClick = () => {
+    navigate(`/webapp/todo-app#/${item.name}`);
+  };
+  const handleTodoClick = () => navigate("/webapp/todo-app");
 
   return (
     <div
+      onClick={handleClick}
       key={item.name} // Assuming item.name is unique
-      className="flex items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
+      className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
         <div>
-          <Typography variant="bodySmall" className="font-medium block line-clamp-1">
+          <Typography
+            variant="bodySmall"
+            className="font-medium block line-clamp-1"
+          >
             {item.subject || item.description || "Task"}
           </Typography>
-          <Typography variant="label" color="body2" >
+          <Typography variant="label" color="body2">
             {item.due_date
-              ? `Due on ${format(parse(item.due_date, "yyyy-MM-dd", new Date()), "do MMM")}`
+              ? `Due on ${format(
+                  parse(item.due_date, "yyyy-MM-dd", new Date()),
+                  "do MMM"
+                )}`
               : item.date
-                ? `Due on ${formatDateDDMonthYYYY(item.date)}`
-                : "No due date"}
+              ? `Due on ${formatDateDDMonthYYYY(item.date)}`
+              : "No due date"}
           </Typography>
         </div>
       </div>
@@ -62,7 +75,9 @@ const TasksAwaiting: React.FC = () => {
   const { data: currentEmployee } = useCurrentUser();
   const currentEmployeeId = currentEmployee?.name;
 
-  const handleTodoClick = () => window.open(`/app/task_manager`);
+  const navigate = useNavigate();
+
+  const handleTodoClick = () => navigate("/webapp/todo-app");
 
   const generatePastelColor = (index: number) => {
     const colors = [
@@ -110,17 +125,20 @@ const TasksAwaiting: React.FC = () => {
   return (
     <Card shadow="sm" className="h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <Typography variant="subheading" color="title">Tasks Awaiting You</Typography>
+        <Typography variant="subheading" color="title">
+          Tasks Awaiting You
+        </Typography>
         <ViewAll title="View to-do" onClick={handleTodoClick} />
       </div>
 
       <div className="flex gap-3 mb-4 p-2">
         <button
           onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
-            ? "bg-primary text-white scale-105"
-            : "bg-primary-100 text-primary-700 hover:bg-primary-300"
-            } transition-all`}
+          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
+            activeCategory === "All"
+              ? "bg-primary text-white scale-105"
+              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+          } transition-all`}
         >
           All ({totalCount})
         </button>
@@ -133,10 +151,11 @@ const TasksAwaiting: React.FC = () => {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                ? `scale-105 ring-2 ${colors}`
-                : `${colors} opacity-70 hover:opacity-100`
-                } `}
+              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                isActive
+                  ? `scale-105 ring-2 ${colors}`
+                  : `${colors} opacity-70 hover:opacity-100`
+              } `}
             >
               {cat} ({count})
             </button>
