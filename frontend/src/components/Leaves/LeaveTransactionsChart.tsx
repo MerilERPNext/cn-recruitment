@@ -3,6 +3,7 @@ import Chart from "react-apexcharts";
 import { LeaveTransaction } from "../../types/leaves";
 import { ChevronUp } from "lucide-react";
 import { ApexOptions } from "apexcharts";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface LeaveTransactionsChartProps {
   data?: LeaveTransaction[];
@@ -34,6 +35,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   data,
 }) => {
   const [open, setOpen] = useState(false);
+  const { isDesktop } = useScreenSize();
 
   const months = useMemo(
     () => [
@@ -129,6 +131,8 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
     }),
     [colors, months, maxValue, tickAmount]
   );
+
+  if (!isDesktop) return null;
 
   return (
     <div className="w-full">

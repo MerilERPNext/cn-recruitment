@@ -3,7 +3,6 @@ import { useState } from "react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import AdvanceDetailModal from "./AdvanceDetailModal";
-import CustomDropdown from "../../shared/CustomDropdown";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -14,14 +13,7 @@ import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Pending" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
-
 const MyAdvanceExpenseList = () => {
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
     null
   );
@@ -30,11 +22,6 @@ const MyAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchAttendance(true);
-  };
 
   const openDetailModal = (id: string, stages: ApprovalStage[]) => {
     setSelectedStages(stages);
@@ -45,16 +32,6 @@ const MyAdvanceExpenseList = () => {
     setSelectedAdvanceId(null);
     setSelectedStages([]);
   };
-
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
 
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
@@ -166,10 +143,6 @@ const MyAdvanceExpenseList = () => {
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
         <Typography variant="subheading"> My Advance Expenses</Typography>
-
-        <div className="flex items-center space-x-3 pb-1">
-          <FilterDropdowns />
-        </div>
       </div>
       <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
         <CardTable
@@ -184,13 +157,13 @@ const MyAdvanceExpenseList = () => {
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
-            queryKey={["employee-advance", selectedStatus]}
+            queryKey={["employee-advance"]}
             customAPI={{
               method: "cn_leave_shift_managment.api.get_open_approval_todos",
               params: {
                 doctype: "Employee Advance",
                 employee: currentEmployee?.name,
-                status: selectedStatus,
+                status: "Pending",
               },
             }}
             defaultFilters={{
@@ -208,10 +181,18 @@ const MyAdvanceExpenseList = () => {
                 </div>
               </div>
             )}
+            isSearch={true}
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: ["Pending", "Approved", "Rejected"],
+              },
+            ]}
             refetchTrigger={refetchAttendance}
             onRefetchComplete={() => setRefetchAttendance(false)}
-            isSearch={false}
-            isFilter={false}
             showRefreshButton={false}
             orderBy="creation desc"
             pageSize={10}
