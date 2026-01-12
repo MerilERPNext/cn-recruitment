@@ -16,6 +16,7 @@ import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import { Typography } from "../../shared/atoms/Typography";
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -69,13 +70,16 @@ const MyOvertimeRequests = () => {
 
   return (
     <div>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2 mt-2">
+      <div className="min-h-screen">
+        <div className="px-4 mb-20">
           <div>
             <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
-              <h2 className="base-title md:module-title pb-1">
-                My Overtime Requests
-              </h2>
+              <div className="flex flex-col mb-2">
+                <Typography variant="h4">My Overtime Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage team attendance requests
+                </Typography>
+              </div>
             </div>
             <CardTable
               columnWidths={["2fr", "1fr", "1fr", "1fr", "1fr"]}
@@ -121,7 +125,7 @@ const MyOvertimeRequests = () => {
                       label: "Status",
                       fieldtype: "Select",
                       options: ["Open", "Approved", "Rejected"],
-                    }
+                    },
                   ]}
                   pageSize={10}
                   showRefreshButton={false}
@@ -139,7 +143,6 @@ const MyOvertimeRequests = () => {
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button
-              bgColor="blue-600"
               size="lg"
               fullWidth
               className="hover:bg-blue-700"

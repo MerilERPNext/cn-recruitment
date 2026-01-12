@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import Button from "./shared/atoms/Button";
 
 export interface Tab {
   key: string;
@@ -49,20 +50,22 @@ const NavigationTabs: React.FC<NavigationProps> = ({
         className="relative flex overflow-x-auto hide-scrollbar gap-4"
       >
         {tabs.map((tab, idx) => (
-          <button
+          <Button
+            variant="subtle"
             key={tab.key}
+            size="md"
             ref={(el) => {
               tabRefs.current[idx] = el;
             }}
             onClick={() => onTabChange(tab.key)}
             className={`flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
-              ${activeTab === tab.key ? "text-blue-500" : "text-gray-600 "}`}
+              ${activeTab === tab.key ? "text-primary-500" : "text-gray-600 "}`}
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
         <span
-          className="absolute bottom-0 h-[3px] bg-blue-500 transition-all duration-300 rounded-tr-3xl rounded-tl-3xl"
+          className="absolute bottom-0 h-[3px] bg-primary-500 transition-all duration-300 rounded-tr-3xl rounded-tl-3xl"
           style={{
             transform: `translateX(${underlineStyle.left}px)`,
             width: underlineStyle.width,

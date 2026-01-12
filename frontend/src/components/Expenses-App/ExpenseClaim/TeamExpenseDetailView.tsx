@@ -18,6 +18,7 @@ import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -314,35 +315,6 @@ export function TeamExpenseDetailView({
     );
   };
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "green-100",
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "red-100",
-          text: "red-600",
-        };
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -417,14 +389,16 @@ export function TeamExpenseDetailView({
               {actions.map((action: string) => {
                 const isLoading =
                   currentAction === action && mutation.isPending;
+                const actionStyle = getActionStyles(action);
+
                 return (
                   <Button
                     key={action}
                     disabled={isLoading}
                     onClick={() => handleAction(action)}
                     size="sm"
-                    bgColor={getActionStyles(action).bg}
-                    textColor={getActionStyles(action).text}
+                    bgColor={actionStyle.bgColor}
+                    variant={actionStyle.variant}
                   >
                     {isLoading ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
@@ -695,9 +669,9 @@ export function TeamExpenseDetailView({
                           <Button
                             onClick={() => handleSaveItem(item.id)}
                             disabled={savingItem === item.id}
+                            variant="contain"
+                            bgColor="primary"
                             size="sm"
-                            bgColor="blue-100"
-                            textColor="blue-600"
                             className="px-4"
                           >
                             {savingItem === item.id ? (
@@ -771,16 +745,14 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelComment}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSaveComment}
                   size="sm"
-                  bgColor="blue-100"
-                  textColor="blue-600"
+                  bgColor="primary"
                   disabled={
                     !rejectionComment.trim() || commentMutation.isPending
                   }
@@ -810,17 +782,11 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelClose}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmClose}
-                  size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
-                >
+                <Button onClick={handleConfirmClose} size="sm" bgColor="error">
                   Discard Changes
                 </Button>
               </div>
@@ -843,17 +809,11 @@ export function TeamExpenseDetailView({
                 <Button
                   onClick={handleCancelAction}
                   size="sm"
-                  bgColor="gray-100"
-                  textColor="gray-700"
+                  bgColor="disabled"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleConfirmAction}
-                  size="sm"
-                  bgColor="red-100"
-                  textColor="red-600"
-                >
+                <Button onClick={handleConfirmAction} size="sm" bgColor="error">
                   Proceed Anyway
                 </Button>
               </div>

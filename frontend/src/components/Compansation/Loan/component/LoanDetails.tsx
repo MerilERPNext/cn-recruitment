@@ -1,3 +1,5 @@
+import { Card } from "../../../shared/atoms/Card"
+import { Typography } from "../../../shared/atoms/Typography"
 import { Loan } from "../Type/loan"
 
 interface LoanDetailsProps {
@@ -16,9 +18,9 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
 
   return (
     // CHANGED: Using the reusable .my-info-card class for consistency.
-    <div className="my-info-card mb-6">
-      <h3 className="font-semibold mb-4 text-gray-900">Loans Details</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+    <Card className=" mb-6" >
+      <Typography variant="subheading" color="body1">Loans Details</Typography>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm ">
         <div>
           <div className="text-gray-600 mb-1">Monthly Repayment</div>
           <div className="font-medium">{formatCurrency(loan.monthly_repayment_amount)}</div>
@@ -48,6 +50,6 @@ export default function LoanDetails({ loan }: LoanDetailsProps) {
           <div className="font-medium">{formatCurrency(loan.remaining_amount)}</div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

@@ -11,7 +11,7 @@ import {
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
-
+import { Typography } from "../shared/atoms/Typography";
 
 const MyLeaveRequests = ({
   pageSize = 10,
@@ -46,8 +46,6 @@ const MyLeaveRequests = ({
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.name || ""
   );
-
-
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
     setReplaceModalData({
@@ -108,12 +106,10 @@ const MyLeaveRequests = ({
   return (
     <>
       <div>
-        <div className="bg-white h-full md:px-4 md:pt-2">
-          <div className="bg-white px-2">
+        <div className=" h-full md:px-4 md:pt-2">
+          <div className=" px-2">
             <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
-              <h2 className="base-title md:module-title pb-1">
-                My Leave Requests
-              </h2>
+              <Typography variant="subheading">My Leave Requests</Typography>
             </div>
 
             {isEmployeeLoading ? (
@@ -137,11 +133,11 @@ const MyLeaveRequests = ({
                     customAPI={{
                       method:
                         "cn_leave_shift_managment.api.get_open_approval_todos",
-                     
+
                       params: {
                         doctype: "Leave Application",
                         employee: currentEmployee?.name,
-                        status: "Open"
+                        status: "Open",
                       },
                     }}
                     ItemComponent={(props: { item: MyLeaveRequestType }) => (

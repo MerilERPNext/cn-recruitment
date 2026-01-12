@@ -20,17 +20,17 @@ const PolicyDrawer = ({
   if (!isOpen) return null;
 
   return (
-    <>
+    <div>
       {/* Backdrop */}
       <button
         type="button"
         aria-label="Close drawer"
-        className="fixed inset-0 bg-black/50 z-40 cursor-default"
+        className="fixed inset-0 bg-black/50 z-[100] cursor-default"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full sm:w-[40rem] bg-white z-50 shadow-xl flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-full sm:w-[40rem] bg-white z-[110] shadow-xl flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="base-title">{title}</h2>
@@ -47,7 +47,7 @@ const PolicyDrawer = ({
           />
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

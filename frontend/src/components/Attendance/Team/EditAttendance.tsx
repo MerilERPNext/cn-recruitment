@@ -12,6 +12,8 @@ import {
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { format } from "date-fns";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
 
 interface EditAttendanceProps {
   onClose: () => void;
@@ -257,9 +259,9 @@ export const EditAttendance = ({
       <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <Typography variant="h4" className="text-lg font-semibold text-gray-800">
             Edit Attendance
-          </h2>
+          </Typography>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -304,11 +306,12 @@ export const EditAttendance = ({
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <button
+          <Button
             onClick={() => {
               handleSubmit();
             }}
-            className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+            fullWidth
+            size="md"
             disabled={!attendanceForm}
           >
             {mutation?.isPending ? (
@@ -316,7 +319,7 @@ export const EditAttendance = ({
             ) : (
               "Update"
             )}{" "}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

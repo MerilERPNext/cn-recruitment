@@ -138,7 +138,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
     <div className="w-full">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full h-14 bg-white shadow-md rounded-xl flex items-center justify-between px-4 hover:bg-gray-50 transition"
+        className="w-full h-14 bg-white shadow-md rounded-b-xl flex items-center justify-between px-4 hover:bg-primary/10 transition"
       >
         <span className="text-lg font-semibold text-gray-800">
           Monthly Leave Transactions
@@ -151,7 +151,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
           open ? "max-h-[2000px] mt-4" : "max-h-0"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-xl w-full p-4 md:p-8">
+        <div className="bg-white rounded-2xl w-full p-4 md:p-8">
           <Chart
             options={monthlyOptions}
             series={monthlySeries}

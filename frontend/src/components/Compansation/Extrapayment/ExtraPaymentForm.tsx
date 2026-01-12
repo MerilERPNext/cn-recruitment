@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRef, useMemo } from "react";
@@ -86,9 +87,7 @@ export default function ExtraPaymentForm({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor="blue-600"
-            textColor="white"
-            className="hover:bg-blue-700 font-medium"
+            bgColor="primary"
           >
             Submit Request
           </Button>

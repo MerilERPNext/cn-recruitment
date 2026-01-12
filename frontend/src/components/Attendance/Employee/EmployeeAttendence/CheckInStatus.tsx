@@ -83,7 +83,7 @@ const CheckInStatus = () => {
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
                     <table className="min-w-full border-collapse divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                        <thead className="bg-gray-50/50">
                             <tr>
                                 <th className="whitespace-nowrap border-r border-gray-200 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                     Employee
@@ -120,9 +120,9 @@ const CheckInStatus = () => {
 
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm">
                                         <span
-                                            className={`inline-flex rounded-xl px-2 py-1 text-xs font-semibold ${item.log_type === "IN"
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-red-100 text-red-700"
+                                            className={`inline-flex rounded-xl px-4 py-1 text-xs font-semibold ${item.log_type === "IN"
+                                                ? "bg-success-100 text-success"
+                                                : "bg-error-50 text-error"
                                                 }`}
                                         >
                                             {item.log_type}

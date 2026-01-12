@@ -6,6 +6,7 @@ import ApprovalList from "../../shared/ApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
+import { Typography } from "../../shared/atoms/Typography";
 
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -48,12 +49,15 @@ const TeamOvertimeRequests = () => {
 
   return (
     <div>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2">
+      <div className="min-h-screen">
+        <div className="px-4">
           <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
-            <h2 className="base-title md:module-title pb-1">
-              Team Overtime Requests
-            </h2>
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">Team Overtime Requests</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team overtime requests
+              </Typography>
+            </div>
           </div>
 
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
@@ -77,7 +81,7 @@ const TeamOvertimeRequests = () => {
                     label: "Status",
                     fieldtype: "Select",
                     options: ["Open", "Approved", "Rejected"],
-                  }
+                  },
                 ]}
                 renderCardContent={(item) => (
                   <OvertimeApprovalCard

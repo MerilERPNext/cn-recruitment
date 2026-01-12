@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
@@ -22,7 +23,7 @@ import { ViewAll } from "../shared/atoms/ViewAll";
 export const StatusBadge = ({ status }: { status: string }) => {
   const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";
   const statusStyles: { [key: string]: string } = {
-    Open: "bg-blue-100 text-blue-800",
+    Open: "bg-success/30 text-success",
     Pending: "bg-yellow-100 text-yellow-800",
     Draft: "bg-yellow-100 text-yellow-800",
     Rejected: "bg-red-100 text-red-800",
@@ -121,12 +122,12 @@ const TeamShiftItem: React.FC<{
     switch (status?.toLowerCase()) {
       case "active":
       case "approved":
-        return <FaCheck className="ml-1 text-green-600 w-3 h-3" />;
+        return <FaCheck className="ml-1 text-success-600 w-3 h-3" />;
       case "pending":
         return <FaInfoCircle className="ml-1 text-yellow-600 w-3 h-3" />;
       case "rejected":
       case "inactive":
-        return <FaMinusCircle className="ml-1 text-red-600 w-3 h-3" />;
+        return <FaMinusCircle className="ml-1 text-error w-3 h-3" />;
       default:
         return null;
     }
@@ -214,7 +215,7 @@ const AllMyShiftRequestsList = () => {
 
   return (
     <>
-      <div className="bg-white p-6 rounded-lg mt-6">
+      <Card className="   p-4  mt-6 border">
         <CardHeader
           title="My Shift Requests"
           onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
@@ -260,7 +261,7 @@ const AllMyShiftRequestsList = () => {
             <></>
           )}
         </CardTable>
-      </div>
+      </Card>
     </>
   );
 };
@@ -296,8 +297,8 @@ export default function AllShiftsDashboard() {
   }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen font-sans text-sm">
-      <main className="p-4 sm:p-6 lg:p-8">
+    <div className=" min-h-screen font-sans text-sm">
+      <main className="p-2 sm:p-2 lg:p-2">
         <div className="grid grid-cols-1 gap-6">
           <div>
             <Card>
@@ -307,7 +308,7 @@ export default function AllShiftsDashboard() {
                   navigate("/webapp/shift-request/shift-change-request")
                 }
               />
-              <div className="border border-gray-200 rounded-lg overflow-x-auto">
+              <div className="border border-gray-100 rounded-lg overflow-x-auto">
                 <CardTable
                   titles={[
                     "Select",

@@ -75,14 +75,17 @@ export function useRequestCompOff() {
   });
 }
 
-export const useGetHolidays = (employeeId: string | undefined) => {
+export const useGetHolidays = (
+  employeeId: string | undefined,
+  year: string
+) => {
   return useQuery<HolidayGroup[]>({
-    queryKey: ["holidays", employeeId],
+    queryKey: ["holidays", employeeId, year],
     queryFn: () => {
       if (!employeeId) throw new Error("Employee ID is required");
-      return leaveService.getHolidays(employeeId);
+      return leaveService.getHolidays(employeeId, year);
     },
-    enabled: !!employeeId,
+    enabled: !!employeeId && !!year,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,

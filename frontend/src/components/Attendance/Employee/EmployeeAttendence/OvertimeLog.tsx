@@ -42,25 +42,25 @@ const OvertimeLog = () => {
                     :
                     <div className="overflow-x-auto rounded-lg border border-gray-200">
                         <table className="min-w-full table-auto border-collapse divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
+                            <thead className="bg-gray-50/50">
                                 <tr>
 
-                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         Created By
                                     </th>
-                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         Created On
                                     </th>
-                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         Overtime For
                                     </th>
-                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         Shift
                                     </th>
-                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap border-r px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         OT Hours
                                     </th>
-                                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                                    <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-medium uppercase text-gray-600">
                                         Comp Off
                                     </th>
                                 </tr>

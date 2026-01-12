@@ -107,9 +107,10 @@ export interface Holiday {
   original_doc_name: string;
   leave_type: string;
 }
+export type HolidayGroupType = "Optional" | "National Holiday" | "Mandatory";
 
 export interface HolidayGroup {
-  type_name: string;
+  type_name: HolidayGroupType;
   holidays: Holiday[];
 }
 

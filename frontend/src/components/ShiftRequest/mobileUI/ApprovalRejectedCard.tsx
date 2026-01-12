@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import { StatusBadge } from "../AllShiftsDashboard";
@@ -32,19 +33,6 @@ const ApprovalRejectedForMobile = ({
   const actionsWithForm = data?.custom_doctype_actions_with_form
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
-
-  // ✅ Common action styles (same as desktop)
-  const getActionStyles = (action: string) => {
-    const parsedAction = action.toLowerCase().trim();
-    switch (parsedAction) {
-      case "approve":
-        return "px-2 py-1 text-xs font-medium rounded-lg text-green-600 bg-green-100 hover:bg-green-200 transition";
-      case "reject":
-        return "px-2 py-1 text-xs font-medium rounded-lg text-red-600 bg-red-100 hover:bg-red-200 transition";
-      default:
-        return "px-2 py-1 text-xs font-medium rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition";
-    }
-  };
 
   return (
     <div
@@ -107,30 +95,34 @@ const ApprovalRejectedForMobile = ({
       {/* Action Buttons */}
       <div className="flex justify-start gap-2 mt-4">
         {actions?.length > 0 &&
-          actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onAction(action, data);
-              }}
-              bgColor={getActionStyles(action)}
-              textColor={getActionStyles(action)}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-              className="w-full"
-            >
-              {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
+          actions.map((action: string) => {
+            const actionStyle = getActionStyles(action);
+
+            return (
+              <Button
+                key={action}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onAction(action, data);
+                }}
+                bgColor={actionStyle.bgColor}
+                variant={actionStyle.variant}
+                disabled={
+                  loadingAction?.id === data?.todo_id &&
+                  loadingAction?.action === action
+                }
+                className="w-full"
+              >
+                {loadingAction?.id === data?.todo_id &&
+                loadingAction?.action === action ? (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  action
+                )}
+              </Button>
+            );
+          })}
       </div>
     </div>
   );

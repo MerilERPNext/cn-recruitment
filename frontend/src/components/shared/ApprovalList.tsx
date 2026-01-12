@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, ReactNode, useCallback, useEffect } from "react";
 import DataListView, { FilterField } from "../DataListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
@@ -224,7 +225,7 @@ const ApprovalList = ({
   };
 
   return (
-    <div className="bg-white">
+    <div>
       <DataListView
         queryKey={["todo-approvals", doctype]}
         customAPI={{

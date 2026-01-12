@@ -5,6 +5,7 @@ import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { LeaveDetailView } from "./LeaveDetails";
 import LeaveApprovalCard from "./LeaveApprovalCard";
+import { Typography } from "../shared/atoms/Typography";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -57,12 +58,10 @@ const TeamLeaveRequest = () => {
 
   return (
     <>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2">
+      <div className="min-h-screen">
+        <div className=" px-2">
           <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
-            <h2 className=" base-title md:module-title pb-1">
-              Team Leave Requests
-            </h2>
+            <Typography variant="subheading">Team Leave Requests</Typography>
           </div>
 
           <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>

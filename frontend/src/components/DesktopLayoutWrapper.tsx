@@ -17,6 +17,8 @@ import { errorResponseFormater } from "../utils/errorResponseFormater";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useTargetUser } from "../context/ViewedUserContext";
 import SearchMembers from "./shared/SearchMembers";
+import Button from "./shared/atoms/Button";
+import { Typography } from "./shared/atoms/Typography";
 
 interface DesktopLayoutWrapperProps {
   children: React.ReactNode;
@@ -157,7 +159,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const contentWidthLeft = isSidebarExpanded ? "16rem" : "5rem";
 
   return (
-    <div className="h-screen bg-gray-50 flex">
+    <div className="h-screen bg-app flex">
       {/* Collapsible Sidebar */}
       <CollapsibleSidebar
         isExpanded={isSidebarExpanded}
@@ -171,20 +173,22 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 border-b border-gray-200 px-8 py-3 flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
-          style={{ height: "73px" }}
+          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-8 py-[0.3rem] flex items-center justify-between sticky top-0 z-[11] flex-shrink-0"
+          style={{ height: "73px", maxHeight: "73px" }}
         >
           <div>
-            <h1 className="text-xl font-bold text-white">{getPageTitle()}</h1>
-            <p className="text-xs text-gray-50">
+            <Typography variant="h3" component="h1" color="white">
+              {getPageTitle()}
+            </Typography>
+            <Typography variant="label" color="white" className="opacity-90 block">
               Manage your {getPageTitle().toLowerCase()}
-            </p>
+            </Typography>
           </div>
           {location.pathname !== ROUTES.SEARCH_MEMBERS && <SearchMembers />}
           <div className="flex items-center gap-4">
             <button
               onClick={handleNotificationClick}
-              className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
@@ -193,17 +197,17 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               {currentUserIsAdmin ? (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-white text-right">
+                  <div className="text-right">
+                    <Typography variant="body" color="white" >
                       {currentUser?.username}
-                    </p>
-                    <p className="text-xs text-gray-50 text-right">
+                    </Typography>
+                    <Typography variant="label" color="white">
                       Employee ID: {currentEmployee?.employee}
-                    </p>
+                    </Typography>
                   </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
                     <img
                       src={currentUser?.user_image || defaultProfile}
                       alt="User avatar"
@@ -211,32 +215,31 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee?.employee ? (
                 <div className="flex w-30 animate-pulse gap-2 items-center">
-                  <div className="h-4 bg-gray-300 rounded w-20  flex-1"></div>
-                  <div className="h-6 w-6 bg-gray-300 rounded-full "></div>
+                  <div className="h-4 bg-primary-400/20 rounded w-20  flex-1"></div>
+                  <div className="h-6 w-6 bg-primary-400/20 rounded-full "></div>
                 </div>
               ) : (
                 <>
                   <button
                     onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
+                    className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-white text-right">
+                    <div className="text-right">
+                      <Typography variant="bodyMedium" color="white" className="block outline-none">
                         {currentEmployee?.employee_name ||
                           currentEmployee?.first_name}
-                      </p>
-                      <p className="text-xs text-gray-50 text-right">
+                      </Typography>
+                      <Typography variant="label" color="white" className="opacity-80 block">
                         Employee ID: {currentEmployee?.employee}
-                      </p>
+                      </Typography>
                     </div>
-                    <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
                       <img
                         src={currentEmployee?.image || defaultProfile}
                         alt="User avatar"
@@ -244,9 +247,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       />
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-white transition-transform ${
-                        showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                 </>
@@ -268,47 +270,56 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">
+                        <Typography variant="subheading" color="title" className="truncate block">
                           {currentEmployee?.employee_name ||
                             currentEmployee?.first_name ||
                             "Temp User"}
-                        </p>
-                        <p className="text-xs text-gray-500 break-words whitespace-normal">
+                        </Typography>
+                        <Typography variant="bodySmall" color="secondary" className="break-words block">
                           {currentEmployee?.company_email ||
                             currentEmployee?.personal_email ||
                             "Temp Email"}
-                        </p>
+                        </Typography>
                       </div>
                     </div>
                   </div>
 
-                  <div className="py-2">
-                    <button
+                  <div className="p-2">
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
                       onClick={() => {
                         clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       <User className="w-4 h-4" />
                       My Profile
-                    </button>
+                    </Button>
                     {canRedirectToDesk && (
-                      <button
+                      <Button
+                        variant="subtle"
+                        size="md"
+                        fullWidth
+                        contentAlign="start"
                         onClick={() => {
                           window.location.href = "/app/home";
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
                         Switch to Admin
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
                       onClick={handleReset}
+                      contentAlign="start"
                       disabled={mutation.isPending}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       {mutation.isPending ? (
                         "Sending..."
@@ -318,19 +329,23 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                           Reset Password
                         </>
                       )}
-                    </button>
+                    </Button>
 
                     <hr className="my-2 border-gray-100" />
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
                       onClick={async () => {
                         await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                      bgColor="error"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -342,7 +357,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         <ViewingAsBanner />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-hidden relative bg-[#F5F8FF]">
+        <div className="flex-1 overflow-hidden relative bg-app">
           {children}
 
           {/* Action Button positioned in bottom right */}

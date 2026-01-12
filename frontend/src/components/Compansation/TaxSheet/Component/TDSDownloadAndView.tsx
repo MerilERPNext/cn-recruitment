@@ -9,6 +9,7 @@ import {
 } from "../../../../hooks/useTaxSheet";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
+import Button from "../../../shared/atoms/Button";
 
 type Props = {
   disabled?: boolean;
@@ -17,9 +18,9 @@ type Props = {
 const TDSSlipHandler = ({ disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
@@ -38,7 +39,7 @@ const TDSSlipHandler = ({ disabled }: Props) => {
 
     mutate(user.employee, {
       onSuccess: (res: any) => {
-        setHtml(res?.response || "");
+        setHtml(res?.response?.html || "");
         setOpen(true);
       },
     });
@@ -47,13 +48,13 @@ const TDSSlipHandler = ({ disabled }: Props) => {
   return (
     <>
       <div className="flex gap-2">
-        <button
+        <Button
           onClick={handleView}
           disabled={disabled || isPending}
           className="px-4 py-1 bg-blue-600 text-white hover:bg-blue-700 border rounded text-sm disabled:opacity-50"
         >
           {isPending ? "Loading..." : "Preview TDS"}
-        </button>
+        </Button>
       </div>
 
       <SalarySlipPDFModal

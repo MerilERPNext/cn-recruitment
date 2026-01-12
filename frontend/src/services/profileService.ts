@@ -60,13 +60,32 @@ export const profileService = {
       );
     }
   },
-  getEmployeeAppreciations: async (): Promise<Award[] | null> => {
+  getEmployeeAppreciations: async (): Promise<{ badges: Award[] } | null> => {
     try {
-      const result = await FrappeAPI.getDocumentList("Award", {
-        fields: ["*"],
+      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_badge_types");
+      return (result as unknown as { badges: Award[] }) || null;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee awards.- ${e}`
+      );
+    }
+  },
+  getEmployeeEarnedAppreciations: async (employee: string): Promise<{ badges: Award[] } | null> => {
+    try {
+      const result = await FrappeAPI.getMethod("chatnext_work_connect.chatnext_work_connect.api.badge.get_employee_badges_awarded", {
+        employee: employee
       });
-
-      return (result?.data as unknown as Award[]) || [];
+      return (result as unknown as { badges: Award[] }) || null;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee awards.- ${e}`
+      );
+    }
+  },
+  appreciateAnEmployee: async (body: Record<string, unknown>): Promise<boolean | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("chatnext_work_connect.chatnext_work_connect.api.badge.award_badge_directly", body);
+      return result as boolean || null;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee awards.- ${e}`

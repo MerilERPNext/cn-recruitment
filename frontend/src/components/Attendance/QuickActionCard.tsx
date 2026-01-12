@@ -7,6 +7,9 @@ import {
     Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
+import Button from "../shared/atoms/Button";
 
 const iconMap: Record<string, React.ElementType> = {
     FileText,
@@ -44,6 +47,7 @@ interface QuickActionCardProps {
     icon: string;
     background?: string;
     actions: Action[];
+    color: string;
 }
 
 const QuickActionCard: React.FC<QuickActionCardProps> = ({
@@ -51,6 +55,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
     subtitle,
     value,
     icon,
+    color,
     background = "bg-slate-50",
     actions
 }) => {
@@ -58,79 +63,78 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
     const navigate = useNavigate();
 
     return (
-        <div
+        <Card
+            padding="sm"
+            radius="xl"
+            shadow="sm"
             className={`
-        relative overflow-hidden rounded-2xl border border-slate-200
-        p-5 transition-all duration-200
-        hover:-translate-y-0.5 hover:shadow-lg
-        ${background}
-      `}
+                relative overflow-hidden border border-slate-100/50
+                p-4.5 transition-all duration-300
+                hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50
+                group/qcard
+            `}
         >
             {/* Header */}
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
+            <div className="flex items-start justify-between gap-3">
+                {/* Icon */}
+                {Icon && (
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${background} shadow-sm ${color} transition-transform`}>
+                        <Icon className={`h-5 w-5 ${color}`} />
+                    </div>
+                )}
+                <div className="flex-1 min-w-0">
+                    <Typography variant="bodySmall" className="font-bold tracking-tight">
                         {title}
-                    </h3>
+                    </Typography>
 
                     {subtitle && (
-                        <p className="mt-1 text-sm text-slate-600">
-                            {value != null ? (
-                                <>
-                                    <span className="font-semibold text-xl text-blue-500">
-                                        {value}
-                                    </span>{" "}
-                                    {subtitle}
-                                </>
-                            ) : (
-                                subtitle
+                        <div className="mt-1 flex items-baseline gap-2">
+                            {value != null && (
+                                <Typography variant="h4" color="body2" className="font-bold">
+                                    {value}
+                                </Typography>
                             )}
-                        </p>
+                            <Typography variant="bodySmall" color="body2" className="font-medium lowercase first-letter:uppercase">
+                                {subtitle}
+                            </Typography>
+                        </div>
                     )}
                 </div>
 
-                {/* Icon */}
-                {Icon && (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-sm">
-                        <Icon className="h-5 w-5 text-slate-700" />
-                    </div>
-                )}
+
             </div>
 
             {/* Actions */}
-            <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100/50">
                 {actions.map((action, idx) => {
                     if (action.type === "link") {
                         return (
-                            <button
+                            <Button
                                 key={idx}
                                 onClick={() => navigate(action.href || "#")}
-                                className="text-sm font-medium text-blue-600 hover:underline"
+                                size="sm"
+                                variant="subtle"
+                                className="font-bold text-[9px] uppercase tracking-widest px-3 py-1 h-auto"
                             >
                                 {action.label}
-                            </button>
+                            </Button>
                         );
                     }
 
                     return (
-                        <button
+                        <Button
                             key={idx}
                             onClick={action.onClick}
-                            className={`
-                inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium
-                transition-colors
-                ${action.type === "primary"
-                                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white"
-                                    : "bg-white text-slate-700 border border-slate-200"
-                                }
-              `}
+                            size="sm"
+                            variant={action.type === "primary" ? "soft" : "subtle"}
+                            className="font-bold text-[9px] uppercase tracking-widest px-3 py-1 h-auto"
                         >
                             {action.label}
-                        </button>
+                        </Button>
                     );
                 })}
             </div>
-        </div>
+        </Card>
     );
 };
 

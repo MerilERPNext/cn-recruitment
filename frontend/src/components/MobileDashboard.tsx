@@ -59,6 +59,9 @@ import { ViewAll } from "./shared/atoms/ViewAll";
 import ViewingAsBanner from "./ViewingAsBanner";
 import SearchMembers from "./shared/SearchMembers";
 import { useAppNotificationCounts } from "../hooks/useAppNotificationCounts";
+import Button from "./shared/atoms/Button";
+import { Typography } from "./shared/atoms/Typography";
+
 
 const statusStyles = {
   unpaid: {
@@ -182,11 +185,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-    CompanyLogo.length > 0 &&
-    currentEmployeeCompany
+      CompanyLogo.length > 0 &&
+      currentEmployeeCompany
       ? CompanyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany
-        )
+        (company) => company.company_name === currentEmployeeCompany
+      )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -204,30 +207,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T"))
+      )
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -374,26 +377,27 @@ const MobileDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <button className="flex items-center hover:bg-black/5 transition-colors w-12 h-12 rounded-xl overflow-hidden ">
+          <Button variant="subtle" className="w-12 h-12 p-0 rounded-xl overflow-hidden hover:bg-black/5">
             <img
               src={typeof logoToShow === "string" ? logoToShow : ""}
               alt="CompnayLogo"
-              className="w-12 h-12 p-1 rounded-full  flex-shrink-0"
+              className="w-12 h-12 p-1 rounded-full flex-shrink-0"
             />
-          </button>
+          </Button>
 
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="subtle"
               onClick={handleNotificationClick}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-gray-100 rounded-lg text-gray-600"
             >
-              <Bell className="w-5 h-5 text-gray-600" />
+              <Bell className="w-5 h-5" />
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </div>
               )}
-            </button>
+            </Button>
 
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
@@ -434,74 +438,77 @@ const MobileDashboard: React.FC = () => {
         )}
 
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-2 rounded-lg">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="text-center bg-gray-100 border-1 border-gray-300 px-2 py-2 rounded-lg">
+            <Typography variant="label" color="body2" className="mb-1 block">
               Shift Start
-            </p>
-            <p className="text-xl font-bold text-gray-900">
+            </Typography>
+            <Typography variant="h3" className="font-bold text-gray-900">
               {employeeShift?.start_time
                 ? formatTimeSafe(employeeShift?.start_time)
                 : "--:--"}
-            </p>
+            </Typography>
           </div>
-          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="text-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
+            <Typography variant="label" color="body2" className="mb-1 block">
               In Time
-            </p>
+            </Typography>
 
-            <p className="text-xl font-bold text-gray-900">
+            <Typography variant="h3" className="font-bold text-gray-900">
               {firstCheckIn?.time
                 ? formatTo24HourTime((firstCheckIn?.time as string) || "")
                 : "--:--"}
-            </p>
+            </Typography>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-200 border-1 border-gray-300 px-2 py-2 rounded-lg">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="text-center bg-gray-100 border-1 border-gray-300 px-2 py-2 rounded-lg">
+            <Typography variant="label" color="body2" className="mb-1 block">
               Shift End
-            </p>
-            <p className="text-xl font-bold text-gray-900">
+            </Typography>
+            <Typography variant="h3" className="font-bold text-gray-900">
               {employeeShift?.end_time
                 ? formatTimeSafe(employeeShift?.end_time)
                 : "--:--"}
-            </p>{" "}
+            </Typography>
           </div>
-          <div className="text-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="text-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
+            <Typography variant="label" color="body2" className="mb-1 block">
               Out Time
-            </p>
-            <p className="text-xl font-bold text-gray-900">
+            </Typography>
+            <Typography variant="h3" className="font-bold text-gray-900">
               {lastCheckOut?.time
                 ? formatTo24HourTime(lastCheckOut?.time)
                 : "--:--"}
-            </p>
+            </Typography>
           </div>
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
-          <div className="flex flex-col flex-1 justify-center items-center bg-gray-200 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          <div className="flex flex-col flex-1 justify-center items-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
+            <Typography variant="label" color="body2" className="mb-1 block">
               Total Hours
-            </p>
-            <p className="text-xl font-bold text-gray-900">{getTotalTime()}</p>
+            </Typography>
+            <Typography variant="h3" className="font-bold text-gray-900">{getTotalTime()}</Typography>
           </div>
           {currentEmployee?.custom_allow_mobile_checkin ? (
             <div className="w-full">
-              <button
+              <Button
+                variant="contain"
+                fullWidth
+                size="lg"
                 onClick={() =>
                   handleCheckInOut(
                     isCurrentlyCheckedIn ? "checkOut" : "checkIn"
                   )
                 }
-                className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 disabled={
                   checkInCheckOutPending ||
                   !employeeShift?.shift ||
                   isLocationLoading ||
                   !location
                 }
+                className="font-medium"
               >
                 {checkInCheckOutPending || isRefetching ? (
                   <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
@@ -515,30 +522,35 @@ const MobileDashboard: React.FC = () => {
                 ) : (
                   "Check In"
                 )}
-              </button>
+              </Button>
               {locationError && !isLocationLoading && (
                 <div className="flex items-center justify-center gap-2 mt-3">
-                  <p className="text-xs text-red-600 font-medium">
+                  <Typography variant="bodySmall" color="error" className="font-medium">
                     {locationError}
-                  </p>
-                  <button
+                  </Typography>
+                  <Button
+                    variant="soft"
+                    bgColor="error"
+                    size="sm"
                     onClick={fetchLocation}
-                    className="p-1.5 bg-red-50 text-red-600 rounded-full hover:bg-red-100 transition-colors border border-red-200"
-                    title="Retry Location"
+                    className="p-1.5 rounded-full border border-red-200"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           ) : null}
           {canShowClockIn?.can_show ? (
-            <button
+            <Button
+              variant="contain"
+              fullWidth
+              size="lg"
               onClick={() =>
                 handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
               }
-              className="w-full flex items-center justify-center py-3 px-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-gray-700 transition-colors"
               disabled={clockInCheckOutPending || !employeeShift?.shift}
+              className="font-medium"
             >
               {clockInCheckOutPending || isRefetching ? (
                 <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
@@ -547,12 +559,12 @@ const MobileDashboard: React.FC = () => {
               ) : (
                 "Clock In"
               )}
-            </button>
+            </Button>
           ) : null}
         </div>
 
         <div className="mb-5">
-          <h3 className="base-title mb-3">Quick Links</h3>
+          <Typography variant="subheading" className="mb-3 block">Quick Links</Typography>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Link
               to="/webapp/leave-app"
@@ -566,9 +578,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-blue-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-blue-700 text-center">
                 Leaves & Holidays
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -583,9 +595,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-green-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-green-700 text-center">
                 Attendance
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -600,9 +612,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-yellow-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-yellow-700 text-center">
                 Compensation
-              </span>
+              </Typography>
             </Link>
           </div>
 
@@ -619,9 +631,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-orange-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-orange-700 text-center">
                 Benefits
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -636,9 +648,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-purple-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-purple-700 text-center">
                 Shifts
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -653,9 +665,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-pink-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
                 Flows
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -670,9 +682,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-pink-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
                 Performance
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -687,9 +699,9 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-pink-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
                 Expenses
-              </span>
+              </Typography>
             </Link>
 
             <Link
@@ -704,16 +716,16 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <span className="text-xs font-medium text-orange-700 text-center">
+              <Typography variant="bodySmall" className="font-medium text-orange-700 text-center">
                 Policies
-              </span>
+              </Typography>
             </Link>
           </div>
         </div>
 
         <div className="mb-5">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="base-title">Attendance</h3>
+            <Typography variant="subheading" className="block">Attendance</Typography>
 
             <ViewAll
               title="View Details"
@@ -729,10 +741,10 @@ const MobileDashboard: React.FC = () => {
               }}
             >
               <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-green-800">
+              <Typography variant="h3" className="font-bold text-green-800">
                 {employeeAttendanceSummary?.present || 0}
-              </p>
-              <p className="text-xs font-medium text-green-700">Present Days</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-green-700">Present Days</Typography>
             </div>
 
             <div
@@ -742,10 +754,10 @@ const MobileDashboard: React.FC = () => {
               }}
             >
               <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-red-800">
+              <Typography variant="h3" className="font-bold text-red-800">
                 {employeeAttendanceSummary?.absent || 0}
-              </p>
-              <p className="text-xs font-medium text-red-700">Absent Days</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-red-700">Absent Days</Typography>
             </div>
 
             <div
@@ -755,10 +767,10 @@ const MobileDashboard: React.FC = () => {
               }}
             >
               <Timer className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-orange-800">
+              <Typography variant="h3" className="font-bold text-orange-800">
                 {employeeAttendanceSummary?.leaves || 0}
-              </p>
-              <p className="text-xs font-medium text-orange-700">Leaves</p>
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-orange-700">Leaves</Typography>
             </div>
           </div>
         </div>
@@ -766,7 +778,7 @@ const MobileDashboard: React.FC = () => {
         {expenseData?.length > 0 && (
           <div className="rounded-xl mb-4 sm:mb-5">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="base-title">Unpaid Expense Claims</h3>
+              <Typography variant="subheading" className="block">Unpaid Expense Claims</Typography>
               <ViewAll
                 title="View Claims"
                 onClick={() => navigate("/webapp/expenses-app")}
@@ -783,7 +795,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                      item.status?.toLowerCase() as keyof typeof statusStyles
+                    item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
@@ -797,16 +809,16 @@ const MobileDashboard: React.FC = () => {
                           {styles.icon}
                         </div>
                         <div>
-                          <p className="card-title">{item?.employee_name}</p>
-                          <p className="text-xs text-gray-600">
+                          <Typography variant="bodyMedium" className="card-title block">{item?.employee_name}</Typography>
+                          <Typography variant="bodySmall" className="text-gray-600 block">
                             {formatDateString(item?.creation)}
-                          </p>
+                          </Typography>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="card-title">
+                        <Typography variant="bodyMedium" className="card-title block">
                           {item?.total_claimed_amount} Rs
-                        </p>
+                        </Typography>
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}
                         >

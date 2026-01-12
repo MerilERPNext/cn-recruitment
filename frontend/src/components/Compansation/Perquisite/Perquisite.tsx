@@ -7,6 +7,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { Typography } from "../../shared/atoms/Typography";
+import { Card } from "../../shared/atoms/Card";
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
   const { data: userId } = useLoggedInUser();
@@ -21,7 +23,7 @@ export default function PerquisiteList() {
       id: item.name,
       name: item.salary_component,
       taxableValue: item.amount,
-      status: item.is_tax_applicable === 1 ? "Applicable" : "Not Applicable",
+      status: item.is_tax_applicable === 1 ? "Paid" : "Not Paid",
       description: `Payment Date: ${item.payment_date}`,
       details: {
         paymentDate: item.payment_date,
@@ -41,9 +43,13 @@ export default function PerquisiteList() {
     }).format(amount);
   return (
     <div className="w-full">
+      <div className="mb-6">
+        <Typography variant="subheading" color="body1">Employee Perquisite </Typography>
+        <Typography variant="bodySmall" color="body2">Track Employee Perquisite History </Typography>
+      </div>
       {isDesktop ? (
         <CardTable titles={titles} columnWidths={columnWidths}>
-          <div className="card-subtitle bg-white border-t border-gray-200">
+          <div className="border bg-white hover:bg-primary/20">
             {perquisites.length === 0 && (
               <div className="px-6 py-6 text-sm text-gray-500 text-center">
                 No perquisites found
@@ -64,10 +70,10 @@ export default function PerquisiteList() {
 
                 <div>
                   <span
-                    className={`px-2.5 py-0.5 rounded-2xl text-xs font-medium
+                    className={`px-2.5 py-1.5 rounded-2xl text-xs font-medium
                     ${
-                      item.status === "Applicable"
-                        ? "bg-green-100 text-green-800"
+                      item.status === "Paid"
+                        ? "bg-success/20 text-success"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
@@ -81,15 +87,15 @@ export default function PerquisiteList() {
                     className="
                                text-[13px]
                                font-medium
-                               text-blue-600
-                               border border-blue-200
-                               bg-blue-50
+                               text-primary
+                               border border-primary/40
+                               bg-primary-20
                                px-3
                                py-0.5
                                rounded-lg
-                              hover:bg-blue-100
-                              hover:border-blue-300
-                             hover:text-blue-700
+                              hover:bg-primary/40
+                              hover:border-primary/60
+                             hover:text-primary-800
                              transition-colors
                              duration-150
                              "
@@ -151,7 +157,7 @@ export default function PerquisiteList() {
       {/* ================= DETAILS MODAL ================= */}
       {selectedPerquisite && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative mx-4">
+          <Card className=" rounded-2xl w-full max-w-lg p-6 relative mx-4">
             <button
               onClick={() => setSelectedPerquisite(null)}
               className="absolute top-4 right-4 text-gray-500"
@@ -169,7 +175,7 @@ export default function PerquisiteList() {
               {selectedPerquisite.description}
             </p>
 
-            <div className="bg-gray-50 rounded-xl p-4 text-sm">
+            <div className="bg-app rounded-xl p-4 text-sm">
               <h3 className="font-medium mb-2">Perquisite Details</h3>
 
               <ul className="space-y-2">
@@ -186,8 +192,8 @@ export default function PerquisiteList() {
   className={`font-medium ${
     typeof value === "boolean"
       ? value
-        ? "bg-green-100 text-green-800"
-        : "bg-red-100 text-red-800"
+        ? "bg-success-100 text-success"
+        : "bg-error-100 text-error"
       : "bg-transparent text-gray-800"
   } px-2 py-1 rounded`}
 >
@@ -198,7 +204,7 @@ export default function PerquisiteList() {
                 )}
               </ul>
             </div>
-          </div>
+          </Card>
         </div>
       )}
     </div>

@@ -9,6 +9,7 @@
   "basic_details_tab",
   "policy_title",
   "description",
+  "termination_form",
   "applicability_section",
   "applicable_to",
   "process_details_tab",
@@ -66,12 +67,18 @@
    "fieldname": "holiday",
    "fieldtype": "Check",
    "label": "Holiday"
+  },
+  {
+   "fieldname": "termination_form",
+   "fieldtype": "Link",
+   "label": "Termination Form",
+   "options": "Microapp Form Widget"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-11-13 16:47:16.676576",
+ "modified": "2026-01-09 10:19:23.461746",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Termination Policy",

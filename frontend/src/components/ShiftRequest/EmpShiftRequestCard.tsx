@@ -63,12 +63,12 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     } else if (status === "approved") {
       return {
         label: "Approved",
-        statusColor: "bg-green-100 text-green-800",
+        statusColor: "bg-success-200 text-success",
       };
     } else if (status === "rejected") {
       return {
         label: "Rejected",
-        statusColor: "bg-red-100 text-red-800",
+        statusColor: "bg-error-50 text-error",
       };
     } else {
       return {
@@ -105,7 +105,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer`}
+          className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer`}
         >
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">
@@ -166,7 +166,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           )}
         </div>
       ) : (
-        <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
+        <div className="w-full bg-app rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">
           {/* Top Section: Shift Type + Status */}
           <div className="flex justify-between items-start mb-3">
             <h3 className="base-title truncate">

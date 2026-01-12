@@ -20,6 +20,7 @@ import { FaRegEye } from "react-icons/fa";
 import CardTable from "../shared/CardTable";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import Button from "../shared/atoms/Button";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -33,8 +34,6 @@ const SalarySlipsList = () => {
     name: string;
     date: string;
   } | null>(null);
-
-
 
   // Hook 1 - Regular Salary Slip
   const { mutate: downloadType1 } = useDownloadSalarySlipPDF({
@@ -290,8 +289,6 @@ const DownloadMenu = ({
   const menuRef = useRef<HTMLButtonElement | null>(null);
   const printFormatMenuRef = onShowPrintFormatMenu.data;
 
-
-
   return (
     <div className="relative">
       {/* Trigger Button */}
@@ -313,7 +310,11 @@ const DownloadMenu = ({
         className="w-60 p-2"
       >
         {[
-          { label: "Regular Payslip", fn: onType1, key: "regular_payslip_exists" },
+          {
+            label: "Regular Payslip",
+            fn: onType1,
+            key: "regular_payslip_exists",
+          },
           { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
           { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
           { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
@@ -327,9 +328,9 @@ const DownloadMenu = ({
                 }}
                 className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
               >
-                <span className="p-2 border rounded">
-                  <FaRegEye className="w-4 h-4 text-blue-500" />
-                </span>
+                <Button className="p-2 border rounded" bgColor="none">
+                  <FaRegEye className="w-4 h-4 text-primary" />
+                </Button>
                 {item.label}
               </button>
             </div>
@@ -339,7 +340,6 @@ const DownloadMenu = ({
     </div>
   );
 };
-
 
 // ---------------- ITEM COMPONENTS ----------------
 const SalarySlipItemDesktop = ({
@@ -371,19 +371,12 @@ const SalarySlipItemDesktop = ({
   );
 
   return (
-    <div className="my-data-row">
-      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer">
+    <div className="">
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
-          <WrapperHoverCard employeeId={item.employee}>{item.employee_name}</WrapperHoverCard>
-          {/* <div
-            className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-                   opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                   transition-all duration-150 ease-out pointer-events-none
-                   bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-                   shadow-lg z-50"
-          >
-            {item.employee}
-          </div> */}
+          <WrapperHoverCard employeeId={item.employee}>
+            {item.employee_name}
+          </WrapperHoverCard>
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}

@@ -82,6 +82,7 @@ export interface Employee {
   custom_allow_mobile_checkin?: boolean;
   custom_enable_web_clockin?: boolean;
   custom_weekly_off?: string;
+  employee_id: string;
 }
 
 export interface Award {
@@ -90,6 +91,8 @@ export interface Award {
   description: string;
   award_category: string;
   award_period: string;
+  recognition_type_name: string;
+  recognition_type_code: string;
   period_start_date?: string;
   period_end_date?: string;
   icon?: string;

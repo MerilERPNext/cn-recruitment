@@ -6,6 +6,7 @@ import LoanDetails from "./LoanDetails";
 import LoanInstallments from "./LoanInstallment";
 import CardTable from "../../../shared/CardTable";
 
+
 interface LoanListProps {
   loans: Loan[];
 }
@@ -61,14 +62,16 @@ export default function LoanList({ loans }: LoanListProps) {
   ];
 
   return (
-    <div className="w-full">
+ 
       <CardTable titles={titles} columnWidths={columnWidths}>
-        <div className="card-subtitle  bg-white divide-y divide-gray-200">
+        <div className="border  bg-app divide-y">
           {loans.map((loan) => (
-            <div key={loan.loan_name} className="border-b border-gray-200">
+            <div key={loan.loan_name} 
+            onClick={() => toggleLoanExpansion(loan.loan_name)}
+            className="hover:bg-primary/10  cursor-pointer">
               {/* Row */}
               <div
-                className="my-data-row grid gap-4 px-6 py-3"
+                className=" grid gap-4 px-6 py-3"
                 style={{
                   gridTemplateColumns: columnWidths.join(" "),
                   alignItems: "center",
@@ -78,7 +81,7 @@ export default function LoanList({ loans }: LoanListProps) {
                 <div className="my-data-cell flex items-start">
                   <button
                     onClick={() => toggleLoanExpansion(loan.loan_name)}
-                    className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded transition-colors text-gray-600"
+                    className="w-8 h-8 flex items-center justify-center hover:bg-primary/10 rounded transition-colors text-gray-600"
                   >
                     {expandedLoan === loan.loan_name ? (
                       <IoIosArrowUp />
@@ -112,7 +115,8 @@ export default function LoanList({ loans }: LoanListProps) {
                 </div>
 
                 {/* EMI Type */}
-                <div className="">{loan.emi_type}</div>
+                <div>{loan.emi_type}</div>
+
 
                 {/* Installments */}
                 <div className="">{loan.loan_tenure || "0"}</div>
@@ -154,10 +158,8 @@ export default function LoanList({ loans }: LoanListProps) {
                   </div>
                 </div>
               </div>
-
-              {/* Expanded Details */}
               {expandedLoan === loan.loan_name && (
-                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <div className="bg-app px-6 py-4 border-t border-gray-200">
                   <div className="space-y-4">
                     <LoanDetails loan={loan} />
                     <LoanInstallments installments={loan.repayment_schedule} />
@@ -166,8 +168,6 @@ export default function LoanList({ loans }: LoanListProps) {
               )}
             </div>
           ))}
-
-          {/* Empty State */}
           {loans.length === 0 && (
             <div className="my-empty-state-card py-10 text-center text-gray-500">
               No loans available.
@@ -175,6 +175,6 @@ export default function LoanList({ loans }: LoanListProps) {
           )}
         </div>
       </CardTable>
-    </div>
+ 
   );
 }

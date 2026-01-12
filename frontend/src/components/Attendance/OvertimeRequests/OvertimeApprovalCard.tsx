@@ -3,7 +3,7 @@ import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
-import Button from "../../shared/atoms/Button";
+import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 type ApprovalCardProps = {
@@ -35,30 +35,30 @@ const OvertimeApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
+  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
-      bg: "gray-100",
+      bg: "disabled" as ButtonColor,
       text: "gray-600",
     };
     switch (parsedAction) {
       case "approve":
         styles = {
-          bg: "green-100",
-          text: "green-600",
+          bg: "success" as ButtonColor,
+          text: "text-success-600",
         };
         break;
       case "reject":
         styles = {
-          bg: "red-100",
-          text: "red-600",
+          bg: "error" as ButtonColor,
+          text: "text-error-600",
         };
 
         break;
       default:
         styles = {
-          bg: "gray-200",
-          text: "gray-600",
+          bg: "disabled" as ButtonColor,
+          text: "text-gray-600",
         };
         break;
     }
@@ -83,7 +83,7 @@ const OvertimeApprovalCard = ({
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const gridTemplateColumns = isBulkSelectEnabled
     ? "5% 10% 35% 8% 8% 20%" // With checkbox
-    : "12% 40% 10% 10% 20%";// Without checkbox
+    : "12% 40% 10% 10% 20%"; // Without checkbox
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -112,7 +112,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-blue-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -161,13 +161,13 @@ const OvertimeApprovalCard = ({
               actions.map((action: string) => (
                 <Button
                   key={action}
+                  variant="soft"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     onAction(action, data);
                   }}
                   bgColor={getActionStyles(action).bg}
-                  textColor={getActionStyles(action).text}
                   disabled={
                     loadingAction?.id === data?.todo_id &&
                     loadingAction?.action === action
@@ -243,6 +243,7 @@ const OvertimeApprovalCard = ({
                   data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
+                      variant="soft"
                       key={action}
                       onClick={(e) => {
                         e.preventDefault();
@@ -250,7 +251,6 @@ const OvertimeApprovalCard = ({
                         onAction(action, data);
                       }}
                       bgColor={getActionStyles(action).bg}
-                      textColor={getActionStyles(action).text}
                       disabled={
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action

@@ -5,6 +5,7 @@ import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
+import { Typography } from "../../shared/atoms/Typography";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -59,16 +60,14 @@ const TeamExpense = () => {
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
-    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
+    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
 
   return (
     <>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-0 md:p-6">
+      <div className=" min-h-screen">
+        <div className=" px-0 md:p-6">
           <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
-            <h2 className="base-title md:module-title pb-1">
-              Team Expense Claims
-            </h2>
+            <Typography variant="subheading">Team Expense Claims</Typography>
           </div>
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (
