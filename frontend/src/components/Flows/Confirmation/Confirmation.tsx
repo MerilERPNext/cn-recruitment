@@ -53,14 +53,30 @@ const ConfirmationWorkflow = () => {
   );
 
   const handleTriggerChat = () => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.trigger_chatnext_assistant === "function"
-    ) {
-      window.trigger_chatnext_assistant(true, data?.session);
-    } else {
-      console.warn("⚠️ trigger_chatnext_assistant is not available on window.");
-    }
+    const maxAttempts = 500; // 50 seconds max (500 * 100ms)
+    let attempts = 0;
+    setIsTriggeringChat(true);
+
+    const checkAndTrigger = () => {
+      if (
+        typeof window !== "undefined" &&
+        typeof window.trigger_chatnext_assistant === "function"
+      ) {
+        window.trigger_chatnext_assistant(true, data?.session);
+        setIsTriggeringChat(false);
+        return;
+      }
+
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(checkAndTrigger, 100);
+      } else {
+        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.");
+        setIsTriggeringChat(false);
+      }
+    };
+
+    checkAndTrigger();
   };
 
   useEffect(() => {
@@ -140,6 +156,7 @@ const ConfirmationWorkflow = () => {
                 size="md"
                 bgColor="blue-500"
                 className="hover:bg-blue-600 text-white"
+                loading={isTriggeringChat}
               >
                 INITIATE CONFIRMATION
               </Button>

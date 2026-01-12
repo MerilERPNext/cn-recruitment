@@ -431,6 +431,11 @@ const FAQPage = lazyWithRetry(
   "FAQPage"
 );
 
+const TodoPage = lazyWithRetry(
+  () => import("./components/Todo/TodoPage"),
+  "TodoPage"
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -769,6 +774,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/helpdesk/faq",
     element: <FAQPage />,
+  },
+  {
+    path: "/webapp/todo-app",
+    element: <TodoPage />,
   },
 ];
 

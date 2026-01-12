@@ -7,7 +7,6 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import CustomDropdown from "../../shared/CustomDropdown";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
 import { Plus } from "lucide-react";
@@ -18,12 +17,6 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { Typography } from "../../shared/atoms/Typography";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Open" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -50,13 +43,6 @@ const MyOvertimeRequests = () => {
 
   const [showForm, setShowForm] = useState(false);
 
-  const [selectedStatus, setSelectedStatus] = useState("Open");
-
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchMyRequestsList(true);
-  };
-
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
     setRefetchAttendance(false);
@@ -82,17 +68,6 @@ const MyOvertimeRequests = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
-
   return (
     <div>
       <div className="min-h-screen">
@@ -100,15 +75,10 @@ const MyOvertimeRequests = () => {
           <div>
             <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
               <div className="flex flex-col mb-2">
-                <Typography variant="h4">
-                  My Overtime Requests
-                </Typography>
+                <Typography variant="h4">My Overtime Requests</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage team attendance requests
                 </Typography>
-              </div>
-              <div className="flex items-center space-x-3 pb-1">
-                <FilterDropdowns />
               </div>
             </div>
             <CardTable
@@ -130,7 +100,7 @@ const MyOvertimeRequests = () => {
                     params: {
                       doctype: "Planned Overtime Request",
                       employee: effectiveEmployeeId,
-                      status: selectedStatus,
+                      status: "Open",
                     },
                   }}
                   ItemComponent={(props: {
@@ -155,16 +125,6 @@ const MyOvertimeRequests = () => {
                       label: "Status",
                       fieldtype: "Select",
                       options: ["Open", "Approved", "Rejected"],
-                    },
-                    {
-                      fieldname: "allocated_to",
-                      label: "Allocated to",
-                      fieldtype: "Data",
-                    },
-                    {
-                      fieldname: "due_date",
-                      label: "Due Date",
-                      fieldtype: "Date",
                     },
                   ]}
                   pageSize={10}
@@ -196,9 +156,7 @@ const MyOvertimeRequests = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <CreateOvertimeRequest
-              onCancel={() => setShowForm(false)}
-            />
+            <CreateOvertimeRequest onCancel={() => setShowForm(false)} />
           </div>
         </div>
       )}

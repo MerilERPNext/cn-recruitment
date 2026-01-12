@@ -33,8 +33,13 @@ import ReportingDetails from "./ReportingDetails";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Badge from "../shared/Badge";
+
+// import { AwardsSection } from "./EmployeeAwards";
+// import Appreciations from "./Appreciations";
+
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -363,11 +368,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
+                  {/* <Appreciations /> */}
                 </div>
               </div>
             </div>
-            {/* Awards Section with Divider */}
-            {/* <AwardsSection awards={employeeAppreciations} isDesktop={false} /> */}
+            {/* <AwardsSection isDesktop={false} /> */}
           </div>
         )}
         {/* Horizontal Tabs */}

@@ -69,8 +69,10 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
     >
       <Button
         variant="contain"
+        bgColor="primary"
+        size="md"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center gap-2 px-4 py-2  focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >
         <span>{selectedLabel}</span>
         <svg
@@ -97,14 +99,12 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
         >
           {options.map((option) => (
             <Button
-              variant="subtle"
+              size="md"
+              variant={value === option.value ? "soft" : "subtle"}
+              bgColor={value === option.value ? "primary" : "disabled"}
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 text-sm hover:bg-primary-50 transition-colors ${
-                value === option.value
-                  ? "bg-primary/10 text-primary-600 font-medium"
-                  : "text-gray-700"
-              }`}
+              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors`}
             >
               {option.label}
             </Button>

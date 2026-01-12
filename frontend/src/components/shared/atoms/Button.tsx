@@ -1,4 +1,5 @@
 import React, { ReactNode, forwardRef } from "react";
+import { Loader2 } from "lucide-react";
 
 type ButtonVariant = "contain" | "outline" | "subtle" | "soft";
 type ButtonSize = "sm" | "md" | "lg";
@@ -21,6 +22,7 @@ interface ButtonProps {
   variant?: ButtonVariant;
   size?: ButtonSize;
   disabled?: boolean;
+  loading?: boolean;
   fullWidth?: boolean;
   className?: string;
   contentAlign?: ButtonContentAlign;
@@ -36,6 +38,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "contain",
       size = "sm",
       disabled = false,
+      loading = false,
       fullWidth = false,
       className = "",
       contentAlign = "center",
@@ -136,11 +139,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const widthClass = fullWidth ? "w-full" : "w-fit";
 
+    const isDisabled = disabled || loading;
+
+    const loaderSizeClasses: Record<ButtonSize, string> = {
+      sm: "h-3 w-3",
+      md: "h-4 w-4",
+      lg: "h-5 w-5",
+    };
+
     return (
       <button
         ref={ref}
         onClick={onClick}
-        disabled={disabled}
+        disabled={isDisabled}
         className={`
           ${widthClass}
           inline-flex items-center gap-2
@@ -154,7 +165,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           ${className}
         `}
       >
-        {icon && <span className="flex items-center">{icon}</span>}
+        {loading ? (
+          <Loader2 className={`${loaderSizeClasses[size]} animate-spin`} />
+        ) : (
+          icon && <span className="flex items-center">{icon}</span>
+        )}
         {children}
       </button>
     );
