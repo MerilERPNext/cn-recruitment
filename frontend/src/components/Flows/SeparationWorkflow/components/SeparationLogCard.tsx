@@ -13,7 +13,14 @@ interface SeparationLogCardProps {
 }
 const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gtc, data, isActive }) => {
     // fallback: all columns equally sized
-    const actions = JSON.parse(data?.action_options);
+
+    const actions = useMemo(() => {
+        try {
+            return data?.action_options ? JSON.parse(data.action_options) : [];
+        } catch {
+            return [];
+        }
+    }, [data?.action_options]);
     const { data: currentUser, isLoading: loadingUser } = useCurrentUser();
 
     const canPerformActions = useMemo(() => {
@@ -31,7 +38,7 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
     const statusColors: Record<string, string> = {
         "Approved": "text-green-500 bg-green-100",
         "Completed": "text-green-500 bg-green-100",
-        "CoCancled": "text-green-500 bg-green-100",
+        "Cancled": "text-green-500 bg-green-100",
         "Rejected": "text-red-500 bg-red-100",
         "Pending": "text-gray-500 ",
         _: "text-gray-500 bg-gray-100"
@@ -50,8 +57,8 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
                 <span>{data?.selected_action}</span>
                 <span>{
                     canPerformActions &&
-                    actions?.map((action: string) =>
-                        <Button onClick={() => onClickAction(action)} size='md'>{action}</Button>
+                    actions?.map((action: string, idx: number) =>
+                        <Button key={action + idx} onClick={() => onClickAction(action)} size='md'>{action}</Button>
                     )
 
                 }</span>

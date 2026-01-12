@@ -2,7 +2,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getChatAssistantData, getChatAssistantFlowInitiateData, getDifinitionNameForSeparation, getSeparationFunnelData, getSeparationWorkflow, postSelectEventFromOptions, } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
-import { SeparationFunnelDataResponse, SeparationWrokflowResponse } from "../types/separation";
+import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 
 
 export const useDifinitaionNameForSeparation = () => {
@@ -61,7 +61,7 @@ export const useGetSeparationWorkflow = (
   reference_doctype: string,
   reference_docname: string
 ) => {
-  return useQuery<SeparationWrokflowResponse>({
+  return useQuery<SeparationWorkflowResponse>({
     queryKey: [
       "get-separation-workflow",
       reference_doctype,

@@ -39,7 +39,7 @@ interface FunnelActivity {
     log: FunnelActivityLog[];
 }
 
-export interface SeparationWrokflowResponse {
+export interface SeparationWorkflowResponse {
     show_workflow: boolean;
     funnel_activity: FunnelActivity | null;
 }

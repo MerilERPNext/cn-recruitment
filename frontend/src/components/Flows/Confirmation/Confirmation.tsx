@@ -128,16 +128,16 @@ const ConfirmationWorkflow = () => {
               </div>
             </div>
 
-
-            <Button
-              onClick={handleTriggerChat}
-              size="md"
-              bgColor="blue-500"
-              className="hover:bg-blue-600"
-            >
-              INITIATE CONFIRMATION
-            </Button>
-
+            {canReInitiate &&
+              <Button
+                onClick={handleTriggerChat}
+                size="md"
+                bgColor="blue-500"
+                className="hover:bg-blue-600 text-white"
+              >
+                INITIATE CONFIRMATION
+              </Button>
+            }
           </div>
         </div>
       }
