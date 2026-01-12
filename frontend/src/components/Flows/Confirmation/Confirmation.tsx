@@ -55,7 +55,7 @@ const ConfirmationWorkflow = () => {
   );
 
   const handleTriggerChat = () => {
-    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+    const maxAttempts = 500; // 50 seconds max (500 * 100ms)
     let attempts = 0;
     setIsTriggeringChat(true);
 
@@ -73,7 +73,7 @@ const ConfirmationWorkflow = () => {
       if (attempts < maxAttempts) {
         setTimeout(checkAndTrigger, 100);
       } else {
-        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.");
+        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.");
         setIsTriggeringChat(false);
       }
     };
