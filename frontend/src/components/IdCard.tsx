@@ -165,8 +165,9 @@ const EmployeeAvatar = ({
 // Employee Info Row Component
 const InfoRow = ({ label, value, isLast = false }: any) => (
   <div
-    className={`flex justify-between items-center py-3 ${!isLast ? "border-b border-gray-200" : ""
-      }`}
+    className={`flex justify-between items-center py-3 ${
+      !isLast ? "border-b border-gray-200" : ""
+    }`}
   >
     <p className="text-gray-600 text-sm">{label}</p>
     <p className="text-gray-800 text-sm font-medium">{value}</p>
@@ -213,8 +214,9 @@ const ActionButton = ({
 
   return (
     <button
-      className={`${baseClasses} ${variantClasses[variant] as string
-        } ${className}`}
+      className={`${baseClasses} ${
+        variantClasses[variant] as string
+      } ${className}`}
       onClick={onClick}
     >
       {Icon && <Icon />}
@@ -273,8 +275,8 @@ interface ActionButtonsProps {
 const ActionButtons = ({
   onWhatsApp,
   onCall,
-  onAttendanceAssignments,
-}: ActionButtonsProps) => (
+}: // onAttendanceAssignments,
+ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
     <div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
@@ -284,13 +286,13 @@ const ActionButtons = ({
         Call
       </ActionButton>
     </div>
-    <ActionButton
+    {/* <ActionButton
       variant="secondary"
       onClick={onAttendanceAssignments}
       className="w-full"
     >
       Attendance Assignments
-    </ActionButton>
+    </ActionButton> */}
   </div>
 );
 
@@ -493,12 +495,12 @@ const DesktopLayout = ({ employee }: { employee: EmployeeIdCard }) => {
                     <CallIcon />
                     Call
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => setIsAttendanceAssignmentsOpen(true)}
                     className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
                   >
-                    Attendance Assignments
-                  </button>
+                    Attendance Assignments1
+                  </button> */}
                 </div>
               </div>
             </div>
