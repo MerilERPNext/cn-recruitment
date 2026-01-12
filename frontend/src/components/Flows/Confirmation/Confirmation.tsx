@@ -14,7 +14,7 @@ import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
@@ -22,7 +22,7 @@ const ConfirmationWorkflow = () => {
   const { targetEmployeeId, isViewingOtherUser } =
     useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
-
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
   const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
