@@ -14,6 +14,8 @@ import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -79,6 +81,7 @@ const Separation = () => {
     navigate("/webapp/flow-app/separation-workflow/" + item?.reference_document?.name);
   }
 
+  const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -94,7 +97,7 @@ const Separation = () => {
 
   return (
     <div>
-      <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
+      <div className="min-h-screen p-4 gap-4 bg-white">
         {!showInitiatePage ? (
           <main className="min-h-full bg-background mb-2">
             {separationWorkflow?.show_workflow &&
@@ -119,12 +122,12 @@ const Separation = () => {
                 {/* Left Section */}
                 <div className="flex-1 p-10">
                   <div className="bg-blue-200 text-black font-bold text-3xl md:text-4xl leading-snug p-8 rounded-lg w-fit">
-                    <p>WE’RE SAD TO</p>
-                    <p>SEE YOU GO</p>
+                    <Typography variant={isDesktop ? "h1" : "h3"}>WE’RE SAD TO</Typography>
+                    <Typography variant={isDesktop ? "h1" : "h3"}>SEE YOU GO</Typography>
                   </div>
-                  <p className="mt-6 text-gray-700 text-sm md:text-base">
+                  <Typography variant="bodyMedium" color="body2" className="mt-4">
                     Please connect with your HBRP once
-                  </p>
+                  </Typography>
                 </div>
 
                 {/* Right Section */}
@@ -144,7 +147,7 @@ const Separation = () => {
                     onClick={handleTriggerChat}
                     size="md"
                     bgColor="blue-500"
-                    className="hover:bg-blue-600"
+                    className="hover:bg-blue-600 text-white"
                   >
                     INITIATE SEPARATION
                   </Button>
@@ -152,7 +155,7 @@ const Separation = () => {
                   <Button
                     size="md"
                     bgColor="black"
-                    className="hover:bg-gray-900"
+                    className="hover:bg-gray-900 text-white"
                   >
                     Terminate
                   </Button>
@@ -162,7 +165,7 @@ const Separation = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

@@ -61,7 +61,7 @@ const BenefitsApp: React.FC = () => {
           onTabChange={(tab) => handleTabChange(tab as TabName)}
         />
       </header>
-      <main className="z-10 flex-grow">
+      <main className="z-10 p-4 flex-grow">
         <Outlet />
       </main>
     </div>
@@ -70,7 +70,7 @@ const BenefitsApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Benefits">
       <div className="flex flex-col h-full">
-        <div className="flex-1 p-8 overflow-y-auto relative">
+        <div className="flex-1 p-4 overflow-y-auto relative">
           <Outlet />
         </div>
       </div>

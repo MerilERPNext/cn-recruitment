@@ -12,9 +12,9 @@ import {
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
@@ -37,7 +37,6 @@ const ConfirmationWorkflow = () => {
       : [];
   }
 
-  const [reInitiateSeparation, setReInitiateSeparation] = useState(false);
   const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmation(doctype);
   const item = confirmationCreationData?.[0];
   const confirmationData = getFunnelData("Confirmation");
@@ -77,9 +76,13 @@ const ConfirmationWorkflow = () => {
     };
   }, [refetchConfirmationAndSeparation, refetch]);
 
-  const InitiatePageShow = reInitiateSeparation || !item;
+  const InitiatePageShow = !item;
 
-  const canReInitiate = (["On Probation", "Probation Extended"].includes((isViewingOtherUser ? targetEmployee : employee_name)?.custom_employment_status || ""));
+  const canInitiate = useMemo(() => {
+    if (!item) return true;
+    if (["Draft", "Confirmed"].includes(item?.status)) return false;
+    return (["On Probation", "Probation Extended"].includes((isViewingOtherUser ? targetEmployee : employee_name)?.custom_employment_status || ""));
+  }, [item, isViewingOtherUser, targetEmployee, employee_name]);
 
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
@@ -95,19 +98,22 @@ const ConfirmationWorkflow = () => {
   /* ---------------------------------------------------------- */
 
   return (
-    <div className=" bg-white  min-h-screen  p-8  text-gray-800  font-sans">
+    <div className=" bg-white  min-h-screen  p-4  text-gray-800  font-sans">
       {/* Header */}
       {!InitiatePageShow ?
         <main className="min-h-full bg-background mb-2">
           <div className="max-w-full">
             <ApprovalTracker For="Employee Confirmation" data={item} />
-            {canReInitiate && <button onClick={() => setReInitiateSeparation(true)} className="px-2 py-1 rounded-lg bg-blue-500 text-white flex items-center gap-2 hover:bg-blue-600"><ArrowLeft className="w-4 h-4" />Go to Initiate Confirmation Page</button>}
+            {canInitiate &&
+              <button
+                onClick={handleTriggerChat} className="px-2 py-1 rounded-lg bg-blue-500 text-white flex items-center gap-2 hover:bg-blue-600">
+                Reinitiate Confirmation <ArrowRight className="w-4 h-4" /></button>}
           </div>
         </main>
         :
         <div className=" items-start  mb-6">
           <div className="   mt-2  min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl      py-4">
-            <div className="  flex   flex-col md:flex-row   items-center   justify-between   w-full   bg-[#eef4fd]   rounded-xl   p-6 md:p-12">
+            <div className="  flex   flex-col md:flex-row   items-center   justify-between   w-full   bg-gray-200 rounded-xl   p-6 md:p-12">
               {/* Left Text Section */}
               <div className="  flex-1   text-center md:text-left">
                 <div className="  bg-[#6da8ff]   text-white   font-bold   text-3xl md:text-4xl   p-8   rounded-lg   inline-block">
@@ -128,7 +134,7 @@ const ConfirmationWorkflow = () => {
               </div>
             </div>
 
-            {canReInitiate &&
+            {canInitiate &&
               <Button
                 onClick={handleTriggerChat}
                 size="md"

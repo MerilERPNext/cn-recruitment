@@ -8,6 +8,7 @@ import CardTable from "../../../shared/CardTable"
 import { FormIOComponent } from "../../../../types/formio"
 import CardStages from "./StageCard"
 import { TodoType } from "../../../../types/todos"
+import { Typography } from "../../../shared/atoms/Typography"
 export interface ApprovalStage {
   approval_response_data: string;
   stage_name: string | null
@@ -80,16 +81,16 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
         <div className="flex flex-col gap-4">
           {/* Header Section */}
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-slate-900">{data.reference_type}</h2>
-            <p className="text-sm text-slate-500">{data.reference_name}</p>
-            <p className="text-sm text-slate-700">{data.description}</p>
+            <Typography variant="h4">{data.reference_type}</Typography>
+            <Typography variant="bodySmall" color="body2">{data.reference_name}</Typography>
+            <Typography variant="bodySmall" color="body1">{data.description}</Typography>
           </div>
 
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             {allStagesComplete ? (
               <>
-                <div className="w-5 h-5 text-green-500">
+                <div className="w-5 h-5 text-green-400">
                   <svg fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -98,7 +99,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                     />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-green-600">Completed all stages</span>
+                <Typography variant="bodySmall" color="success">Completed all stages</Typography>
               </>
             ) : (
               <>
