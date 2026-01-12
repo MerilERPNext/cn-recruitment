@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
-import { useConfirmationAndseparation } from "../../../hooks/useConfiremnation";
+import { useSeparation } from "../../../hooks/useConfiremnation";
 import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
+  useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -23,7 +25,7 @@ const Separation = () => {
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmationAndseparation(doctype);
+  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useSeparation(doctype);
   const item = confirmationCreationData?.[0];
 
   function getFunnelData(trigger_category: string) {
@@ -35,6 +37,7 @@ const Separation = () => {
   }
 
   const separationData = getFunnelData("Separation");
+  console.log("separationData", separationData)
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
 
@@ -70,6 +73,12 @@ const Separation = () => {
 
   const showInitiatePage = !item;
 
+  const { data: separationWorkflow } = useGetSeparationWorkflow(doctype, item?.reference_document?.name || "");
+  const navigate = useNavigate();
+  const handleShowWorkflow = () => {
+    navigate("/webapp/flow-app/separation-workflow/" + item?.reference_document?.name);
+  }
+
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -88,6 +97,16 @@ const Separation = () => {
       <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
         {!showInitiatePage ? (
           <main className="min-h-full bg-background mb-2">
+            {separationWorkflow?.show_workflow &&
+              <Button
+                onClick={handleShowWorkflow}
+                size="md"
+                bgColor="blue-500"
+                className="hover:bg-blue-600 mb-4 text-white"
+              >
+                Show Workflow
+              </Button>
+            }
             <div className="max-w-full">
               <ApprovalTracker For="Employee Separation" data={item} />
             </div>
@@ -119,16 +138,26 @@ const Separation = () => {
               </div>
 
               {/* Button */}
-              <div className="flex justify-center py-6">
-                <Button
-                  onClick={handleTriggerChat}
-                  size="md"
-                  bgColor="blue-500"
-                  className="hover:bg-blue-600"
-                >
-                  INITIATE SEPARATION
-                </Button>
-              </div>
+              {definition_name &&
+                <div className="flex items-center py-6 gap-2 flex-col">
+                  <Button
+                    onClick={handleTriggerChat}
+                    size="md"
+                    bgColor="blue-500"
+                    className="hover:bg-blue-600"
+                  >
+                    INITIATE SEPARATION
+                  </Button>
+
+                  <Button
+                    size="md"
+                    bgColor="black"
+                    className="hover:bg-gray-900"
+                  >
+                    Terminate
+                  </Button>
+                </div>
+              }
             </div>
           </div>
         )}

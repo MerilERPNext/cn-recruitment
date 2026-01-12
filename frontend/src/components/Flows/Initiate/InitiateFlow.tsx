@@ -86,7 +86,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
               <h2 className="text-lg font-semibold">Initiate Flow</h2>
               <X
                 onClick={handleCloseModel}
-                className="ml-auto w-8 h-8 p-1 rounded-lg bg-gray-200 hover:bg-gray-300 cursor-pointer"
+                className="ml-auto w-10 h-10 p-2 text-gray-600 hover:text-black rounded-full hover:bg-gray-100 cursor-pointer"
               />
             </div>
             <hr className="my-4" />
