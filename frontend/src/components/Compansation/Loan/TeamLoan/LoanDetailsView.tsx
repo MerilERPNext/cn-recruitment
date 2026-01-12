@@ -8,7 +8,10 @@ import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
-import { LoanApplicationUpdatePayload, useLoanApplicationUpdate } from "../../../../hooks/useLoan";
+import {
+  LoanApplicationUpdatePayload,
+  useLoanApplicationUpdate,
+} from "../../../../hooks/useLoan";
 
 type Props = {
   open: boolean;
@@ -33,9 +36,10 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data.custom_doctype_actions)
     : [];
-  const loanFormUpdate = useLoanApplicationUpdate()
+  const loanFormUpdate = useLoanApplicationUpdate();
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
+  const [repaymentType, setRepaymentType] = useState("");
 
   /* editable fields */
   const [form, setForm] = useState({
@@ -46,8 +50,6 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     end_date: ref?.custom_repayment_end_date || "",
     deferment_date: ref?.loan_deferment_date || "",
   });
-
-
 
   /* comment modal */
   const [commentOpen, setCommentOpen] = useState(false);
@@ -126,7 +128,6 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     }
   };
 
-
   return (
     <>
       {/* MAIN MODAL */}
@@ -134,7 +135,9 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
         <div className="bg-white w-full max-w-3xl rounded-xl p-6">
           <div className="flex justify-between items-center border-b pb-3">
             <h2 className="text-lg font-semibold">Loan Details</h2>
-            <button onClick={onClose} className="text-xl">✕</button>
+            <button onClick={onClose} className="text-xl">
+              ✕
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
@@ -142,12 +145,64 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
             <ReadOnly label="Loan Type">{ref?.loan_product}</ReadOnly>
 
             {/* Editable fields remain here in main modal */}
-            <Input label="Loan Amount" name="loan_amount" value={form.loan_amount} onChange={handleChange} />
-            <Input label="Rate of Interest (%)" name="rate_of_interest" value={form.rate_of_interest} onChange={handleChange} />
-            <Input label="Loan Tenure" name="loan_tenure" value={form.loan_tenure} onChange={handleChange} />
-            <Input type="date" label="Start Date" name="start_date" value={form.start_date} onChange={handleChange} />
-            <Input type="date" label="End Date" name="end_date" value={form.end_date} onChange={handleChange} />
-            <Input type="date" label="Deferment Date" name="deferment_date" value={form.deferment_date} onChange={handleChange} />
+            <Input
+              label="Loan Amount"
+              name="loan_amount"
+              value={form.loan_amount}
+              onChange={handleChange}
+            />
+            <Input
+              label="Rate of Interest (%)"
+              name="rate_of_interest"
+              value={form.rate_of_interest}
+              onChange={handleChange}
+            />
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Repayment Type</p>
+              <select
+                value={repaymentType}
+                onChange={(e) => setRepaymentType(e.target.value)}
+                className="w-full border rounded-md px-2 py-1 text-sm"
+              >
+                <option value="">Select Loan Type</option>
+                <option value="fixed_amount">
+                  Repay Fixed Amount per Period
+                </option>
+                <option value="number_of_periods">
+                  Repay Over Number of Periods
+                </option>
+              </select>
+            </div>
+
+            {repaymentType === "number_of_periods" && (
+              <Input
+                label="Loan Tenure"
+                name="loan_tenure"
+                value={form.loan_tenure}
+                onChange={handleChange}
+              />
+            )}
+            <Input
+              type="date"
+              label="Start Date"
+              name="start_date"
+              value={form.start_date}
+              onChange={handleChange}
+            />
+            <Input
+              type="date"
+              label="End Date"
+              name="end_date"
+              value={form.end_date}
+              onChange={handleChange}
+            />
+            <Input
+              type="date"
+              label="Deferment Date"
+              name="deferment_date"
+              value={form.deferment_date}
+              onChange={handleChange}
+            />
 
             <ReadOnly label="Status">
               <StatusBadge status={ref?.status} />
@@ -179,7 +234,9 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
           <div className="bg-white w-full max-w-md rounded-xl p-5">
             <h3 className="font-semibold mb-2">
-              {selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+              {selectedAction === "Reject"
+                ? "Reject Reason"
+                : "Approval Comment"}
             </h3>
 
             <textarea
@@ -191,9 +248,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button onClick={() => setCommentOpen(false)}>
-                Cancel
-              </Button>
+              <Button onClick={() => setCommentOpen(false)}>Cancel</Button>
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
