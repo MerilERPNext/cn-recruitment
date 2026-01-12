@@ -165,6 +165,8 @@ const Separation = () => {
                     size="md"
                     bgColor="blue-500"
                     className="hover:bg-blue-600 text-white"
+                    loading={isTriggeringChat}
+                    disabled={isTriggeringChat}
                   >
                     INITIATE SEPARATION
                   </Button>
@@ -173,6 +175,8 @@ const Separation = () => {
                     size="md"
                     bgColor="black"
                     className="hover:bg-gray-900 text-white"
+                    loading={isTriggeringChat}
+                    disabled={isTriggeringChat}
                   >
                     Terminate
                   </Button>
