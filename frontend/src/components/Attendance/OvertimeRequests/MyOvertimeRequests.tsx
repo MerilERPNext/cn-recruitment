@@ -71,13 +71,13 @@ const MyOvertimeRequests = () => {
   return (
     <div>
       <div className="min-h-screen">
-        <div className="px-4 mb-20">
+        <div className="px-4">
           <div>
             <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
               <div className="flex flex-col mb-2">
                 <Typography variant="h4">My Overtime Requests</Typography>
                 <Typography variant="bodySmall" color="body2">
-                  Track and manage team attendance requests
+                  Track and manage your overtime requests
                 </Typography>
               </div>
             </div>

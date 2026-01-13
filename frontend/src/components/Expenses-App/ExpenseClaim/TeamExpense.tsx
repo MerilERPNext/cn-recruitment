@@ -65,9 +65,14 @@ const TeamExpense = () => {
   return (
     <>
       <div className=" min-h-screen">
-        <div className=" px-0 md:p-6">
-          <div className="flex justify-between items-center mb-2 border-b-1 border-gray-200">
-            <Typography variant="subheading">Team Expense Claims</Typography>
+        <div className=" px-4">
+          <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">Team Expense Claims</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team expense claim requests
+              </Typography>
+            </div>
           </div>
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (

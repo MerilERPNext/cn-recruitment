@@ -138,69 +138,77 @@ const MyAdvanceExpenseList = () => {
 
   return (
     <div
-      className="relative flex size-full flex-col md:p-6"
+      className="min-h-screen"
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <Typography variant="subheading"> My Advance Expenses</Typography>
-      </div>
-      <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
-        <CardTable
-          titles={[
-            "Employee",
-            "Posting Date",
-            "Company",
-            "Department",
-            "Advance Amount",
-            "Status",
-          ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-        >
-          <DataListView
-            queryKey={["employee-advance"]}
-            customAPI={{
-              method: "cn_leave_shift_managment.api.get_open_approval_todos",
-              params: {
-                doctype: "Employee Advance",
-                employee: currentEmployee?.name,
-                status: "Pending",
-              },
-            }}
-            defaultFilters={{
-              custom_type: "Reimbursement / Expense Advance",
-            }}
-            ItemComponent={RowWrapper}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
-            isSearch={true}
-            isFilter={true}
-            filterFields={[
-              {
-                fieldname: "status",
-                label: "Status",
-                fieldtype: "Select",
-                options: ["Pending", "Approved", "Rejected"],
-              },
+      <div className="px-4">
+        <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+          <div className="flex flex-col mb-2">
+            <Typography variant="h4">My Advance Expenses</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your advance expense requests
+            </Typography>
+          </div>
+        </div>
+
+        <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
+          <CardTable
+            titles={[
+              "Employee",
+              "Posting Date",
+              "Company",
+              "Department",
+              "Advance Amount",
+              "Status",
             ]}
-            refetchTrigger={refetchAttendance}
-            onRefetchComplete={() => setRefetchAttendance(false)}
-            showRefreshButton={false}
-            orderBy="creation desc"
-            pageSize={10}
-            infiniteScroll={true}
-            showPagination={true}
-            loadMorePagination={false}
-          />
-        </CardTable>
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          >
+            <DataListView
+              queryKey={["employee-advance"]}
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Employee Advance",
+                  employee: currentEmployee?.name,
+                  status: "Pending",
+                },
+              }}
+              defaultFilters={{
+                custom_type: "Reimbursement / Expense Advance",
+              }}
+              ItemComponent={RowWrapper}
+              SkeletonComponent={() => (
+                <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                  <div className="px-4 py-2 flex justify-between">
+                    <div>
+                      <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+                  </div>
+                </div>
+              )}
+              isSearch={true}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Approved", "Rejected"],
+                },
+              ]}
+              refetchTrigger={refetchAttendance}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              showRefreshButton={false}
+              orderBy="creation desc"
+              pageSize={10}
+              infiniteScroll={true}
+              showPagination={true}
+              loadMorePagination={false}
+            />
+          </CardTable>
+        </div>
       </div>
 
       {selectedAdvanceId && (
