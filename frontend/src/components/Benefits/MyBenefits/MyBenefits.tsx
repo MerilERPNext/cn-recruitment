@@ -91,7 +91,7 @@ const MyBenefits: React.FC = () => {
     if (isLoading) {
         const skeletonCount = 4;
         return (
-            <div className="min-h-screen bg-gray-50 font-sans text-slate-800">
+            <div className="min-h-screen font-sans text-slate-800">
                 <div className="flex flex-col mb-2">
                     <Typography variant="h4">
                         My Benefits for FY {selectedYear}
@@ -134,7 +134,7 @@ const MyBenefits: React.FC = () => {
     const components = allAccruedReimbursements?.data ?? [];
     console.log(allAccruedReimbursements, selectedYear)
     return (
-        <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
+        <div className="min-h-screen font-sans text-slate-800 pb-12">
             <div className="flex justify-between items-center mb-2">
                 <div className="flex flex-col mb-2">
                     <Typography variant="h4">

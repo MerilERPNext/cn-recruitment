@@ -295,11 +295,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Users,
           href: "/webapp/benefits-app/my-requests",
         },
-        // {
-        //   name: "Team Requests",
-        //   icon: Users,
-        //   href: "/webapp/benefits-app/my-team-requests",
-        // },
+        {
+          name: "Team Requests",
+          icon: Users,
+          href: "/webapp/benefits-app/my-team-requests",
+        },
         {
           name: "Benefit Slips",
           icon: Calculator,
