@@ -287,7 +287,7 @@ const ExpensesList: React.FC = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
           <div className="flex flex-col mb-2">
             <Typography variant="h4">My Expense Claims</Typography>
             <Typography variant="bodySmall" color="body2">
@@ -329,7 +329,7 @@ const ExpensesList: React.FC = () => {
           </div>
         </div>
 
-        <div className="h-full px-0  pt-0 mb-20">
+        <div className="h-full px-0  pt-0">
           {currentEmployee?.name && (
             <CardTable
               titles={[

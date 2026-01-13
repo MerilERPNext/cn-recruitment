@@ -53,7 +53,7 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
+        className="grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <WrapperHoverCard employeeId={doc.employee}>
@@ -142,7 +142,7 @@ const MyAdvanceExpenseList = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
           <div className="flex flex-col mb-2">
             <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
@@ -151,8 +151,7 @@ const MyAdvanceExpenseList = () => {
           </div>
         </div>
 
-        <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
-          <CardTable
+        <CardTable
             titles={[
               "Employee",
               "Posting Date",
@@ -208,7 +207,6 @@ const MyAdvanceExpenseList = () => {
               loadMorePagination={false}
             />
           </CardTable>
-        </div>
       </div>
 
       {selectedAdvanceId && (

@@ -70,7 +70,7 @@ const TeamAttendanceDetails = () => {
     <>
       <div className="min-h-screen">
         <div className="px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
+          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
             <div className="flex flex-col mb-2">
               <Typography variant="h4">Team Attendance Requests</Typography>
               <Typography variant="bodySmall" color="body2">
