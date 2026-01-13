@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import SummaryCard from "./Attendance/SummaryCard";
 import { useScreenSize } from "../hooks/useScreenSize";
-import { ViewAll } from "./shared/atoms/ViewAll";
+import { Card } from "./shared/atoms/Card";
+import { Typography } from "./shared/atoms/Typography";
 
 interface AttendanceChartProps {
   present?: number;
@@ -93,27 +94,20 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
   const otherDaysAngle = (otherDaysPercent / 100) * 360;
 
   return (
-    <div
-      className={`bg-white p-6 rounded-lg border border-gray-200 ${className}`}
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="base-title md:module-title">Attendance Overview</h3>
-          <p className="text-sm text-gray-600">Monthly attendance summary</p>
-        </div>
-        <div className="text-center">
-          <p className="text-xl md:text-2xl font-bold text-gray-900">{total}</p>
-          <p className="text-sm text-gray-500">Total Days</p>
-        </div>
-      </div>
+    <div className={`p-1 ${className}`}>
+      {/* Header Section */}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Donut Chart */}
-        <div className="flex items-center justify-center">
-          <div className="relative">
+
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-stretch ">
+        {/* Chart Section - 70% */}
+        {/* Chart Section - 70% */}
+        <Card radius="xl" className="w-full lg:w-[70%] p-6 lg:p-0 flex flex-col xl:flex-row items-center justify-center lg:justify-around gap-8">
+
+          {/* Chart */}
+          <div className="relative w-full max-w-[20rem] xl:max-w-[24rem] aspect-square flex-shrink-0">
             <svg
-              width="300"
-              height="300"
+              width="100%"
+              height="100%"
               viewBox="0 0 200 200"
               className="transform -rotate-90"
             >
@@ -164,7 +158,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                 />
               )}
 
-              {/* Leaves */}
+              {/* Week Offs */}
               {week_offs > 0 && (
                 <path
                   d={createArcPath(
@@ -178,6 +172,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                 />
               )}
 
+              {/* Other/Remaining */}
               {otherDaysAngle > 0 && (
                 <path
                   d={createArcPath(
@@ -186,113 +181,134 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     80,
                     50
                   )}
-                  fill="#0000"
-                  className="transition-all duration-700 hover:opacity-80"
+                  fill="transparent"
                 />
               )}
-
             </svg>
 
-
             {/* Center content */}
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
-                <p className="text-xl md:text-2xl font-bold text-gray-900">
+                <p className="text-3xl font-bold text-gray-900">
                   {presentPercent.toFixed(0)}%
                 </p>
-                <p className="text-xs text-gray-500">Present</p>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Present</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <div>
-          <ViewAll className="ml-auto mb-2" title="View in Calender" to="/webapp/attendance/emp-attendance" />
-          {/* Statistics */}
-          {/* Attendance Summary Cards */}
-          <div
-            className={`grid gap-3 ${isDesktop ? "grid-cols-2" : "grid-cols-3"}`}
-          >
-            {/* Present Summary Card */}
-            <SummaryCard
-              icon={CheckCircle}
-              iconColor="text-green-600"
-              bgColor="bg-green-50"
-              borderColor="border-green-100"
-              value={present}
-              label="Present Days"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
+          {/* Percentage Cards */}
+          <div className="flex flex-col xl:flex-col gap-4 w-full xl:w-auto h-fit justify-center">
 
-            {/* Absent Summary Card */}
-            <SummaryCard
-              icon={XCircle}
-              iconColor="text-red-600"
-              bgColor="bg-red-50"
-              borderColor="border-red-100"
-              value={absent}
-              label="Absent Days"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
+            {/* Present Card */}
+            <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-emerald-50 border border-emerald-100 items-center justify-center">
+              <Typography variant="bodyMedium" color="success" className="font-bold text-">{presentPercent.toFixed(0)}%</Typography>
+              <Typography variant="bodyMedium" color="success" className="">Present</Typography>
+            </div>
 
-            {/* Leave Summary Card */}
-            <SummaryCard
-              icon={Calendar}
-              iconColor="text-orange-600"
-              bgColor="bg-orange-50"
-              borderColor="border-orange-100"
-              value={leaves}
-              label="Leave Days"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
+            {/* Absent Card */}
+            <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <Typography variant="bodyMedium" color="error">{absentPercent.toFixed(0)}%</Typography>
+              <Typography variant="bodyMedium" color="error">Absent</Typography>
+            </div>
 
-            <SummaryCard
-              icon={Timer}
-              iconColor="text-yellow-600"
-              bgColor="bg-yellow-50"
-              borderColor="border-yellow-100"
-              value={avg_late_by}
-              label="Avg. Overtime"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
+            {/* Leave Card */}
+            <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+              <Typography variant="bodyMedium" color="warning">{leavesPercent.toFixed(0)}%</Typography>
+              <Typography variant="bodyMedium" color="warning">Leaves</Typography>
+            </div>
 
-            <SummaryCard
-              icon={Timer}
-              iconColor="text-pink-600"
-              bgColor="bg-pink-50"
-              borderColor="border-pink-100"
-              value={week_offs}
-              label="Week Offs"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
-
-            <SummaryCard
-              icon={Clock}
-              iconColor="text-blue-600"
-              bgColor="bg-blue-50"
-              borderColor="border-blue-100"
-              value={avg_working_hours}
-              label="Avg. Work Duration"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
-
-            <SummaryCard
-              icon={Clock8}
-              iconColor="text-purple-600"
-              bgColor="bg-purple-50"
-              borderColor="border-purple-100"
-              value={avg_overtime}
-              label="Avg. Late By"
-              isDesktop={isDesktop}
-              isMetric={true}
-            />
           </div>
+        </Card>
+
+        {/* Summary Cards Grid - 30% */}
+        <div className="w-full lg:w-[30%] grid grid-cols-2 gap-4 h-full content-start">
+          <SummaryCard
+            icon={CheckCircle}
+            iconColor="text-primary-600"
+            bgColor="bg-primary-50"
+            borderColor="border-primary-100"
+            value={total}
+            label="Total Days"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+          <SummaryCard
+            icon={CheckCircle}
+            iconColor="text-emerald-600"
+            bgColor="bg-emerald-50"
+            borderColor="border-emerald-100"
+            value={present}
+            label="Present"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={XCircle}
+            iconColor="text-rose-600"
+            bgColor="bg-rose-50"
+            borderColor="border-rose-100"
+            value={absent}
+            label="Absent"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={Calendar}
+            iconColor="text-amber-600"
+            bgColor="bg-amber-50"
+            borderColor="border-amber-100"
+            value={leaves}
+            label="Leaves"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={Timer}
+            iconColor="text-yellow-600"
+            bgColor="bg-yellow-50"
+            borderColor="border-yellow-100"
+            value={avg_late_by}
+            label="Avg. OT"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={Timer}
+            iconColor="text-pink-600"
+            bgColor="bg-pink-50"
+            borderColor="border-pink-100"
+            value={week_offs}
+            label="Week Offs"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={Clock}
+            iconColor="text-blue-600"
+            bgColor="bg-blue-50"
+            borderColor="border-blue-100"
+            value={avg_working_hours}
+            label="Avg. Hours"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
+
+          <SummaryCard
+            icon={Clock8}
+            iconColor="text-violet-600"
+            bgColor="bg-violet-50"
+            borderColor="border-violet-100"
+            value={avg_overtime}
+            label="Avg. Late"
+            isDesktop={isDesktop}
+            isMetric={true}
+          />
         </div>
       </div>
     </div>

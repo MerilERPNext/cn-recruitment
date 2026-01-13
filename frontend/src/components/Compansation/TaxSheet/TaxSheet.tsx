@@ -4,6 +4,7 @@ import TaxSheet from "./Component/TaxSheet"
 import IncomeComputationSheet from "./Component/IncomeTax"
 
 import TDSSlipHandler from "./Component/TDSDownloadAndView"
+import Button from "../../shared/atoms/Button"
 
 
 export default function IncomeTaxSheet() {
@@ -13,31 +14,35 @@ export default function IncomeTaxSheet() {
 
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
+    
+      <div className="max-w-8xl mx-auto space-y-4">
         <header className="flex flex-wrap items-center justify-between gap-4  rounded">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="md"
                 onClick={() => setActiveTab("taxsheet")}
-                className={`px-4 py-1 rounded-lg border ${
+                className={`px-4  font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
                   activeTab === "taxsheet"
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700"
+                    ? "bg-primary-600 text-white"
+                    : ""
                 }`}
               >
                 Taxsheet
-              </button>
-              <button
+              </Button>
+              <Button
+               variant="outline"
+               size="md"
                 onClick={() => setActiveTab("income-computation")}
-                className={`px-4 py-1 rounded-lg border ${
+                className={`px-4  font-medium rounded-lg border hover:bg-primary/10 hover:text-primary ${
                   activeTab === "income-computation"
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700"
+                    ? "bg-primary-600 text-white"
+                    : ""
                 }`}
               >
                 Income Tax Computation
-              </button>
+              </Button>
             </div>
           </div>
           {activeTab === "taxsheet" && (<div className="flex items-center gap-3">
@@ -52,6 +57,6 @@ export default function IncomeTaxSheet() {
         )}
         {activeTab === "income-computation" && <IncomeComputationSheet />}
       </div>
-    </div>
+
   );
 }

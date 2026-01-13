@@ -10,6 +10,7 @@ import { useLoan } from "../../../hooks/useLoan";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,17 +54,20 @@ export default function LoansPage() {
   // Desktop Layout
   const DesktopLayout = (
     <div className="min-h-screen overflow-x-hidden">
-      <div className="w-full mx-auto py-8">
+      <div className="w-full mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 px-4">
-          <h1 className="base-title">
+<div className="flex flex-col gap-1">
+<Typography variant="subheading">
             Loans For FY25-26
-          </h1>
+          </Typography>
+          <Typography variant="bodySmall" color="body2">
+           Track Loan Details
+          </Typography>
+</div>
 
           <Button
             size="md"
-            bgColor="blue-600"
-            className="hover:bg-blue-700 py-[0.65rem] px-4 font-medium"
             onClick={() => setIsDialogOpen(true)}
           >
             Create Loans
@@ -71,8 +75,8 @@ export default function LoansPage() {
         </div>
 
         {/* Search */}
-        <div className="mb-6 w-full px-4">
-          <div className="relative max-w-md">
+        <div className="pb-2 w-full">
+          <div className="relative w-full ">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <SearchIcon />
             </div>
@@ -88,7 +92,7 @@ export default function LoansPage() {
         </div>
 
         {/* Loans List */}
-        <div className="px-4">
+        <div className="">
           <LoanList loans={filteredLoans} />
         </div>
 

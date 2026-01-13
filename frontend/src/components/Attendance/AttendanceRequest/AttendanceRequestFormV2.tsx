@@ -766,7 +766,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 top-[-30px] z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -793,20 +793,22 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
           {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
-              <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${!isForOthers ? "bg-blue-600 text-white" : ""
-                  }`}
+              <Button
+                size="md"
+                fullWidth
+                variant={isForOthers ? "subtle" : "contain"}
                 onClick={() => setIsForOthers(false)}
               >
                 Self
-              </button>
-              <button
-                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium text-gray-500 ${isForOthers ? "bg-blue-600 text-white" : ""
-                  }`}
+              </Button>
+              <Button
+                size="md"
+                fullWidth
+                variant={!isForOthers ? "subtle" : "contain"}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
-              </button>
+              </Button>
             </div>
           ) : null}
           <Form
@@ -911,8 +913,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               fullWidth
               size="lg"
               variant="contain"
-              bgColor="blue-600"
-              textColor="white"
               className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
                 } font-medium`}
             >

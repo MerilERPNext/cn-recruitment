@@ -8,6 +8,8 @@ import AppGrid from "./DashboardApps/AppGrid";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { CNMicroapp } from "./DashboardApps/AppsCard";
+import { Card } from "../shared/atoms/Card";
+import { Typography } from "../shared/atoms/Typography";
 
 const MicroAppInDashboard: React.FC = () => {
   const { data: microappsList } = useUserMicroApps();
@@ -29,10 +31,10 @@ const MicroAppInDashboard: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
+    <Card shadow="sm" className="h-full ">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="section-title">Admin Apps</h3>
-        <ViewAll title="View All" />
+        <Typography variant="subheading" color="title">Admin apps</Typography>
+        <ViewAll title="View all" />
       </div>
       <DndProvider backend={HTML5Backend}>
         {microappsList?.apps && (
@@ -42,7 +44,7 @@ const MicroAppInDashboard: React.FC = () => {
           />
         )}
       </DndProvider>
-    </div>
+    </Card>
   );
 };
 

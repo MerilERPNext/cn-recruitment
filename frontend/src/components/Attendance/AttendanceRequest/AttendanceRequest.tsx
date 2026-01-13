@@ -8,16 +8,10 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import CustomDropdown from "../../shared/CustomDropdown";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Pending" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
+import { Typography } from "../../shared/atoms/Typography";
 
 const AttendanceRequest = ({
   pageSize = 10,
@@ -35,7 +29,6 @@ const AttendanceRequest = ({
   );
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
-  const [selectedStatus, setSelectedStatus] = useState("Pending");
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -58,21 +51,6 @@ const AttendanceRequest = ({
     </div>
   );
 
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchAttendance(true);
-  };
-
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
   return (
     <>
       {showForm ? (
@@ -83,16 +61,15 @@ const AttendanceRequest = ({
         />
       ) : (
         <div>
-          <div className="bg-white h-full px-4 pt-2">
-            <div className="bg-white">
-              <div className="bg-white px-2">
-                <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200">
-                  <h2 className="base-title md:module-title pb-1">
-                    My Attendance Requests
-                  </h2>
-
-                  <div className="flex items-center space-x-3 pb-1">
-                    <FilterDropdowns />
+          <div className="h-full px-4 pt-2">
+            <div>
+              <div className="px-2 mb-20">
+                <div className="flex justify-between items-center pt-4 mb-2">
+                  <div className="flex flex-col mb-2">
+                    <Typography variant="h4">My Attendance Requests</Typography>
+                    <Typography variant="bodySmall" color="body2">
+                      Track and manage your attendance requests
+                    </Typography>
                   </div>
                 </div>
                 <CardTable
@@ -108,14 +85,14 @@ const AttendanceRequest = ({
                 >
                   {effectiveEmployeeId ? (
                     <DataListView
-                      queryKey={["attendance-requests", selectedStatus, effectiveEmployeeId]}
+                      queryKey={["attendance-requests", effectiveEmployeeId]}
                       customAPI={{
                         method:
                           "cn_leave_shift_managment.api.get_open_approval_todos",
                         params: {
                           doctype: "Attendance Request",
                           employee: effectiveEmployeeId,
-                          status: selectedStatus,
+                          status: "Pending",
                         },
                       }}
                       ItemComponent={(props: { item: MyAttendanceRequest }) => {
@@ -149,16 +126,6 @@ const AttendanceRequest = ({
                           fieldtype: "Select",
                           options: ["Pending", "Approved", "Rejected"],
                         },
-                        {
-                          fieldname: "allocated_to",
-                          label: "Allocated to",
-                          fieldtype: "Data",
-                        },
-                        {
-                          fieldname: "due_date",
-                          label: "Due Date",
-                          fieldtype: "Date",
-                        },
                       ]}
                     />
                   ) : (
@@ -176,7 +143,6 @@ const AttendanceRequest = ({
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button
-              bgColor="blue-600"
               size="lg"
               fullWidth
               className="hover:bg-blue-700"

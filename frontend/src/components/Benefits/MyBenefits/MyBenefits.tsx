@@ -3,25 +3,36 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
     ChevronDown,
     Wallet,
-    TrendingUp
+    TrendingUp,
+    TriangleAlert
 } from 'lucide-react';
 import DataListView from '../../DataListView';
 import CardTable from '../../shared/CardTable';
 import { FetchParams } from '../../../services/customApiService';
 import { FrappePageResponse } from '../../../types/frappe';
-import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
+import { useCurrentEmployeeIdCard, useEmployee } from '../../../hooks/useEmployee';
 import { SalaryComponentDetail, useGetAllAccruedReimbursements, useGetYearFilterOptions } from '../../../hooks/useBenefit';
 import { SkeletonStat } from './Skeletons';
 import { AccrualItem, StatItem } from './CommonItems';
 import CustomDropdown from '../../shared/CustomDropdown';
+import { Typography } from '../../shared/atoms/Typography';
+import Button from '../../shared/atoms/Button';
+import { useTargetUser } from '../../../context/ViewedUserContext';
 
 
 export const COLUMN_LAYOUT = "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const MyBenefits: React.FC = () => {
     const { data: employee } = useCurrentEmployeeIdCard();
-    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employee?.company || "");
+    const { targetEmployeeId, isViewingOtherUser } =
+        useTargetUser();
+    const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
+    const effectiveEmployee = isViewingOtherUser ? targetEmployee : employee;
+    const effectiveEmployeeId = isViewingOtherUser ? targetEmployee?.name : employee?.id;
+    const { data: optionYearsData, isLoading: YearsLoading, isError, error, refetch } = useGetYearFilterOptions(effectiveEmployee?.company || "");
+
+    console.log("error", error)
     const optionYears = useMemo(() => {
         if (YearsLoading || !optionYearsData) return [];
         else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
@@ -38,53 +49,58 @@ const MyBenefits: React.FC = () => {
     const {
         data: allAccruedReimbursements,
         isLoading
-    } = useGetAllAccruedReimbursements(employee?.id || "", employee?.company || "", selectedYear);
+    } = useGetAllAccruedReimbursements(effectiveEmployeeId || "", effectiveEmployee?.company || "", selectedYear);
     // Keep track of which benefit cards are expanded — map by component name
     const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
 
     const toggleExpanded = (key: string) =>
         setExpandedMap(prev => ({ ...prev, [key]: !prev[key] }));
 
-
-
     // // Render error UI
-    // if (isError) {
-    //     return (
-    //         <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
-    //             <header className="bg-white mx-8 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-    //                 <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
-    //                     <div className="flex items-center justify-between">
-    //                         <h1 className="text-xl font-bold text-slate-900">My Benefits for FY {yearPeriod}</h1>
-    //                         <div className="flex gap-3 items-center">
-    //                             <button className="p-2 rounded bg-slate-100 hover:bg-slate-200" onClick={() => refetch?.()}>
-    //                                 Retry
-    //                             </button>
-    //                         </div>
-    //                     </div>
-    //                 </div>
-    //             </header>
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
+                <header className="bg-white mx-8 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
+                    <div className="w-full px-4 sm:px-6 lg:px-8 py-4">
+                        <div className="flex items-center justify-between">
+                            <h1 className="text-xl font-bold text-slate-900">My Benefits for FY {selectedYear}</h1>
+                            <div className="flex gap-3 items-center">
+                                <Button onClick={() => refetch?.()}>
+                                    Retry
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
 
-    //             <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
-    //                 <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-8">
-    //                     <h2 className="text-lg font-bold mb-2">Failed to load benefits</h2>
-    //                     <p className="text-sm text-gray-600 mb-4">We couldn't fetch your accrued reimbursements. {String((error as any)?.message ?? '')}</p>
-    //                     <div className="flex gap-3">
-    //                         <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={() => refetch?.()}>Try again</button>
-    //                     </div>
-    //                 </div>
-    //             </main>
-    //         </div>
-    //     );
-    // }
+                <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="flex flex-col items-center rounded-xl bg-white shadow-sm border border-gray-200 p-8">
+                        <TriangleAlert className='w-10 h-10 text-red-700  ' />
+                        <h2 className="text-lg font-bold mb-2">Failed to load benefits</h2>
+                        <p className="text-sm text-gray-600 mb-4">We couldn't fetch your accrued reimbursements. {String((error as any)?.message ?? '')}</p>
+                        <div className="flex gap-3">
+                            <Button size='md' className="px-4 py-2 rounded bg-blue-600 text-white" onClick={() => refetch?.()}>Try again</Button>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     // Loading skeleton UI
     if (isLoading) {
         const skeletonCount = 4;
         return (
-            <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
-
-                <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {selectedYear}</h1>
-                <main className="w-full px-4 sm:px-6 lg:px-8 pb-8">
+            <div className="min-h-screen bg-gray-50 font-sans text-slate-800">
+                <div className="flex flex-col mb-2">
+                    <Typography variant="h4">
+                        My Benefits for FY {selectedYear}
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2">
+                        Track your benefits
+                    </Typography>
+                </div>
+                <main className="w-full">
                     <div className="space-y-6">
                         {Array.from({ length: skeletonCount }).map((_, i) => (
                             <div key={i} className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden p-6 md:p-8">
@@ -119,18 +135,28 @@ const MyBenefits: React.FC = () => {
     console.log(allAccruedReimbursements, selectedYear)
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-12">
-            <h1 className="text-xl mx-8 pl-2 sm:pt-2 pt-4  pb-4 font-bold  text-slate-900">My Benefits for FY {selectedYear}</h1>
-            <div className="flex-1 sm:max-w-xs mx-4 px-4 lg:px-8 mr-auto">
-                <CustomDropdown
-                    position='bottom-right'
-                    value={selectedYear}
-                    onChange={(event) => setSelectedYear(event?.target.value)}
-                    options={optionYears}
-                />
+            <div className="flex justify-between items-center mb-2">
+                <div className="flex flex-col mb-2">
+                    <Typography variant="h4">
+                        My Benefits for FY {selectedYear}
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2">
+                        Track your benefits
+                    </Typography>
+                </div>
+
+                <div className="flex items-center space-x-3 pb-1">
+                    <CustomDropdown
+                        position='bottom-left'
+                        value={selectedYear}
+                        onChange={(event) => setSelectedYear(event?.target.value)}
+                        options={optionYears}
+                    />
+                </div>
             </div>
             {!components || components.length === 0 ? (
-                <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-8 text-center">
+                <div className="w-full">
+                    <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
                         <p className="text-gray-600">No data found</p>
                     </div>
                 </div>
@@ -166,7 +192,8 @@ const MyBenefits: React.FC = () => {
                     };
 
                     return (
-                        <div key={`${component.salary_component}-${compIdx}`} className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
+                        <div key={`${component.salary_component}-${compIdx}`}
+                            className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden">
                             {/* Header */}
                             <div
                                 className="p-6 md:p-8 cursor-pointer hover:bg-blue-50/10 transition-colors duration-200 group"

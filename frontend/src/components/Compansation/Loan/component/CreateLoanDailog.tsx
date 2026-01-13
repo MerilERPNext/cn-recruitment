@@ -148,20 +148,21 @@ export default function CreateLoanDialog({
             <h2 className=" base-title text-gray-900">
               Create New Loan
             </h2>
-            <button
+            <Button
+            variant="soft"
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
             >
               <X />
-            </button>
+            </Button>
           </div>
           :
           <HeaderBar title="Create New Loan" onBack={onClose} />
         }
 
         {/* Dialog Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto pb-20">
+        <div className="flex-1 min-h-0 bg-white overflow-y-auto pb-20">
           {currentEmployee?.company && (
             <Form
               form={transformedSchema}
@@ -187,9 +188,6 @@ export default function CreateLoanDialog({
             fullWidth
             size="lg"
             variant="contain"
-            bgColor={"blue-600"}
-            textColor="white"
-            className={"hover:bg-blue-700 font-medium"}
           >
             Submit Request
           </Button>

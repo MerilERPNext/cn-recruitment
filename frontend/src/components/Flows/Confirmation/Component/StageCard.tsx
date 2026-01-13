@@ -11,6 +11,8 @@ import { useCallback, useMemo, useState } from "react"
 import { ApprovalStage } from "./ApprovalTracker"
 import toast from "react-hot-toast"
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee"
+import { Typography } from "../../../shared/atoms/Typography"
+import Button from "../../../shared/atoms/Button"
 
 interface CardStagesProps {
     data: ApprovalStage;
@@ -20,7 +22,7 @@ interface CardStagesProps {
     assignedTo: {
         emp_id: string;
         user_id: string;
-        role: string;
+        role: string | null;
     }
 };
 
@@ -60,7 +62,7 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
     const statusColors = {
         "Approved": "text-green-500 bg-green-100",
         "Rejected": "text-red-500 bg-red-100",
-        "Pending": "text-gray-500 bg-gray-100",
+        "Pending": "text-yellow-500 bg-yellow-100",
     }
 
     const { data: currentUser } = useCurrentUser();
@@ -138,21 +140,25 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
     }, [currentEmployee, assignedTo, isActive, currentUser]);
 
     return (
-        <div className="grid w-full lg:grid-cols-4  lg:hover:bg-blue-50 py-3 items-center text-sm  lg:px-6">
+        <div className="grid w-full border-t-1 lg:grid-cols-4  lg:hover:bg-primary/20 cursor-pointer py-3 items-center text-sm  lg:px-6">
             {isDesktop ?
                 <>
-                    <span>{data?.stage_name}</span>
-                    <span>{data?.user}</span>
-                    <span> <Badge label={data?.status} textColor={statusColors[data?.status]} /></span>
+                    <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                        {data?.stage_name}
+                    </Typography>
+                    <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                        {data?.user}
+                    </Typography>
+                    <Badge label={data?.status} textColor={statusColors[data?.status]} />
                     <span className="flex gap-2">
                         {data?.form_json?.components && data.status !== "Pending" &&
-                            <button className={`rounded-lg ring-1 hover:font-semibold transition-all duration-100 ring-blue-500 text-blue-500 hover:ring-2 px-1 py-1 text-sm`}
-                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}> Show Review </button>}
+                            <Button
+                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}> Show Review </Button>}
                         {canPerformActions &&
                             actions.map(action => (
-                                <button onClick={() => handleAction(action, { todo_id: todoId })} className="rounded-lg ring-1 hover:font-semibold transition-all duration-300 ring-blue-500 text-blue-500 hover:ring-2 px-1 py-1 text-sm">
+                                <Button onClick={() => handleAction(action, { todo_id: todoId })}>
                                     {action}
-                                </button>
+                                </Button>
                             ))
                         }
                     </span>
@@ -163,12 +169,12 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
                     {/* Header */}
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wide">
+                            <Typography variant="bodySmall">
                                 Stage
-                            </p>
-                            <p className="text-sm font-semibold text-gray-900">
+                            </Typography>
+                            <Typography variant="bodyMedium">
                                 {data?.stage_name}
-                            </p>
+                            </Typography>
                         </div>
 
                         <Badge
@@ -179,21 +185,24 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
 
                     {/* User */}
                     <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        <Typography variant="bodySmall">
                             Assigned To
-                        </p>
-                        <p className="text-sm font-medium text-gray-800">
+                        </Typography>
+                        <Typography variant="bodyMedium">
                             {data?.user}
-                        </p>
+                        </Typography>
                     </div>
 
                     {/* Review Button */}
                     {data?.form_json?.components && data.status !== "Pending" && (
                         <button
                             onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}
-                            className="w-full rounded-xl border border-blue-200 bg-blue-50 text-blue-600 py-2 text-sm font-medium hover:bg-blue-100 transition"
+                            className="w-full rounded-xl border border-blue-200 bg-primary/10 text-primary py-2 text-sm font-medium hover:bg-primary/20 transition"
                         >
-                            View Review Form
+                            <Typography variant="body">
+                                View Review Form
+                            </Typography>
+
                         </button>
                     )}
 

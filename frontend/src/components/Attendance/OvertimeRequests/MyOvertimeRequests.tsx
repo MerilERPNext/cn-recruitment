@@ -7,7 +7,6 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import CustomDropdown from "../../shared/CustomDropdown";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
 import { Plus } from "lucide-react";
@@ -17,12 +16,7 @@ import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Open" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
+import { Typography } from "../../shared/atoms/Typography";
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -49,13 +43,6 @@ const MyOvertimeRequests = () => {
 
   const [showForm, setShowForm] = useState(false);
 
-  const [selectedStatus, setSelectedStatus] = useState("Open");
-
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchMyRequestsList(true);
-  };
-
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
     setRefetchAttendance(false);
@@ -81,28 +68,17 @@ const MyOvertimeRequests = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
-
-
   return (
     <div>
-      <div className="bg-white min-h-screen">
-        <div className="bg-white px-2 mt-2">
+      <div className="min-h-screen">
+        <div className="px-4 mb-20">
           <div>
             <div className="flex justify-between items-center pt-4 mb-2 border-b-1 border-gray-200 px-2">
-              <h2 className="base-title md:module-title pb-1">
-                My Overtime Requests
-              </h2>
-              <div className="flex items-center space-x-3 pb-1">
-                <FilterDropdowns />
+              <div className="flex flex-col mb-2">
+                <Typography variant="h4">My Overtime Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage team attendance requests
+                </Typography>
               </div>
             </div>
             <CardTable
@@ -124,7 +100,7 @@ const MyOvertimeRequests = () => {
                     params: {
                       doctype: "Planned Overtime Request",
                       employee: effectiveEmployeeId,
-                      status: selectedStatus,
+                      status: "Open",
                     },
                   }}
                   ItemComponent={(props: {
@@ -150,16 +126,6 @@ const MyOvertimeRequests = () => {
                       fieldtype: "Select",
                       options: ["Open", "Approved", "Rejected"],
                     },
-                    {
-                      fieldname: "allocated_to",
-                      label: "Allocated to",
-                      fieldtype: "Data",
-                    },
-                    {
-                      fieldname: "due_date",
-                      label: "Due Date",
-                      fieldtype: "Date",
-                    },
                   ]}
                   pageSize={10}
                   showRefreshButton={false}
@@ -177,7 +143,6 @@ const MyOvertimeRequests = () => {
         <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
           <div className="max-w-7xl mx-auto px-4">
             <Button
-              bgColor="blue-600"
               size="lg"
               fullWidth
               className="hover:bg-blue-700"
@@ -191,9 +156,7 @@ const MyOvertimeRequests = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <CreateOvertimeRequest
-              onCancel={() => setShowForm(false)}
-            />
+            <CreateOvertimeRequest onCancel={() => setShowForm(false)} />
           </div>
         </div>
       )}

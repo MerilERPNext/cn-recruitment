@@ -130,9 +130,7 @@ const ShiftRequestApp: React.FC = () => {
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton = (
     <Button
-      bgColor="blue-600"
       size="lg"
-      className="hover:bg-blue-700"
       onClick={handleShiftForm}
     >
       + Request Shift Change

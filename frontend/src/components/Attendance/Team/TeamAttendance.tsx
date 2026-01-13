@@ -7,6 +7,8 @@ import { useSearchParams } from "react-router-dom";
 import { EmployeeStatus } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Button from "../../shared/atoms/Button";
+import { Card } from "../../shared/atoms/Card";
 
 const TeamAttendance = () => {
   const { isDesktop } = useScreenSize();
@@ -54,11 +56,11 @@ const TeamAttendance = () => {
   );
 
   return (
-    <div className="bg-white">
-      <div className="flex flex-col gap-2 pb-4">
+    <div>
+      <div className="flex flex-col gap-4 p-4">
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
-        <div className="bg-white w-full border-b-1 border-gray-200">
-          <div className="employee_datepicker--small flex items-end flex-col p-1">
+        <div className="w-full border-gray-200">
+          <Card radius="xl" className="employee_datepicker--small flex items-end flex-col">
             <DatePicker
               inline
               selected={selectedDate}
@@ -72,25 +74,27 @@ const TeamAttendance = () => {
                 nextMonthButtonDisabled,
               }) => (
                 <div className="flex items-center justify-between px-2 py-2">
-                  <button
+                  <Button
+                    variant="subtle"
                     onClick={decreaseMonth}
                     disabled={prevMonthButtonDisabled}
-                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                    className="p-1 rounded-md bg-gray-50"
                   >
                     <ChevronLeft className="w-5 h-5" />
-                  </button>
+                  </Button>
                   <span className="base-title">
                     {date.toLocaleString("default", { month: "long" })}{" "}
                     {date.getFullYear()}
                   </span>
 
-                  <button
+                  <Button
+                    variant="subtle"
                     onClick={increaseMonth}
                     disabled={nextMonthButtonDisabled}
-                    className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+                    className="p-1 rounded-md bg-gray-50"
                   >
                     <ChevronRight className="h-5 w-5" />
-                  </button>
+                  </Button>
                 </div>
               )}
               onChange={(date) => {
@@ -102,7 +106,7 @@ const TeamAttendance = () => {
                 };
                 navigate(
                   "/webapp/attendance/team-attendance?filters=" +
-                    encodeURIComponent(JSON.stringify(filters))
+                  encodeURIComponent(JSON.stringify(filters))
                 );
               }}
               dayClassName={(date) => {
@@ -140,9 +144,8 @@ const TeamAttendance = () => {
                 // Mobile rendering for selected day
                 return (
                   <div
-                    className={`relative  w-full h-full flex justify-center items-center p-1 ${
-                      isSelected ? "font-bold rounded-md text-black" : ""
-                    }`}
+                    className={`relative  w-full h-full flex justify-center items-center p-1 ${isSelected ? "font-bold rounded-md text-black" : ""
+                      }`}
                   >
                     {day}
                   </div>
@@ -152,20 +155,21 @@ const TeamAttendance = () => {
 
             {/* Clear Button */}
             {hasFilters && (
-              <button
+              <Button
                 onClick={clearFilters}
                 className={`top-2 right-2 pb-2 pr-2 text-gray-500 hover:text-black transition `}
-                title="Today"
+                size="sm"
+                variant="subtle"
               >
                 Today
-              </button>
+              </Button>
             )}
-          </div>
+          </Card>
         </div>
         {/* ------------------------------------------------- Calendar End ---------------------------------------------- */}
 
         {/* <EmployeeStatusCard /> */}
-        <div className="bg-white pt-4 border-gray-200 p-4 mb-10">
+        <Card radius="xl" className="bg-white pt-4 border-gray-200 p-4 mb-10">
           <FrappeListView
             doctype="Attendance"
             ItemComponent={(props: { item: EmployeeStatus }) => {
@@ -177,7 +181,7 @@ const TeamAttendance = () => {
               );
             }}
             SkeletonComponent={CardSkeleton}
-            onItemClick={() => {}}
+            onItemClick={() => { }}
             infiniteScroll={true}
             isFilter={false}
             onRefetchAvailable={useCallback((refetch: () => void) => {
@@ -197,7 +201,7 @@ const TeamAttendance = () => {
               "employee",
             ]}
           />
-        </div>
+        </Card>
       </div>
     </div>
   );

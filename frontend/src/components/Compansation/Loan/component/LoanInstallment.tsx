@@ -55,7 +55,7 @@ export default function LoanInstallments({ installments }: LoanInstallmentsProps
           installments.map((installment, index) => (
             <div
               key={installment.id || index}
-              className="my-data-row grid gap-4 px-6 py-2"
+              className="hover:bg-primary/10 grid gap-4 px-6 py-2"
               style={{ gridTemplateColumns: columnWidths.join(" ") }}
             >
               <div className=" ">{index + 1}</div>

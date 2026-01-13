@@ -7,6 +7,8 @@ import ApprovalModal from "./ApprovalModel"
 import CardTable from "../../../shared/CardTable"
 import { FormIOComponent } from "../../../../types/formio"
 import CardStages from "./StageCard"
+import { TodoType } from "../../../../types/todos"
+import { Typography } from "../../../shared/atoms/Typography"
 export interface ApprovalStage {
   approval_response_data: string;
   stage_name: string | null
@@ -44,7 +46,7 @@ export interface ApprovalData {
 }
 
 interface ApprovalTrackerProps {
-  data: ApprovalData,
+  data: TodoType,
   For: "Employee Separation" | "Employee Confirmation"
 }
 
@@ -79,16 +81,16 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
         <div className="flex flex-col gap-4">
           {/* Header Section */}
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-slate-900">{data.reference_type}</h2>
-            <p className="text-sm text-slate-500">{data.reference_name}</p>
-            <p className="text-sm text-slate-700">{data.description}</p>
+            <Typography variant="h4">{data.reference_type}</Typography>
+            <Typography variant="bodySmall" color="body2">{data.reference_name}</Typography>
+            <Typography variant="bodySmall" color="body1">{data.description}</Typography>
           </div>
 
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             {allStagesComplete ? (
               <>
-                <div className="w-5 h-5 text-green-500">
+                <div className="w-5 h-5 text-green-400">
                   <svg fill="currentColor" viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
@@ -97,7 +99,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                     />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-green-600">Completed all stages</span>
+                <Typography variant="bodySmall" color="success">Completed all stages</Typography>
               </>
             ) : (
               <>
@@ -120,7 +122,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             {allStagesComplete && (
               <ApprovalDetails data={data} title={For} />
             )}
-            <div className="w-full mt-8">
+            <div className="w-full mt-8 lg:border-1 rounded-lg">
               <CardTable
                 titles={[
                   "Stage",
@@ -133,7 +135,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                   {data?.approval_stages_status.map((item, idx) => {
                     const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status != "Pending");
                     return (
-                      <CardStages data={item} assignedTo={{ user_id: data?.allocated_to, emp_id: data?.allocated_to_emp_id, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
+                      <CardStages data={item as ApprovalStage} assignedTo={{ user_id: data?.allocated_to, emp_id: data?.allocated_to_emp_id, role: data?.role }} actions={actions} isActive={isActive} todoId={data.todo_id} />
                     );
                   })}
                 </div>

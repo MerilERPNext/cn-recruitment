@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Calendar,
-  Clock,
   FileText,
   User,
   CheckCircle,
@@ -39,7 +38,6 @@ import defaultProfile from "../assets/face-rec.png";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
-import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import { toast } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
@@ -59,7 +57,14 @@ import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { useGetUserNotices } from "../hooks/useNotices";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
+import Button from "./shared/atoms/Button";
+import { Typography } from "./shared/atoms/Typography";
+import { Card } from "./shared/atoms/Card";
 import Events from "./Events/Events";
+import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+import { ViewAll } from "./shared/atoms/ViewAll";
+import Badge from "./shared/Badge";
+import CircularLoader from "./shared/atoms/CircularLoader";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -343,9 +348,9 @@ export default function DesktopDashboard() {
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role
   );
-  
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex">
       {/* Collapsible Sidebar */}
       <CollapsibleSidebar
         isExpanded={isSidebarExpanded}
@@ -358,20 +363,29 @@ export default function DesktopDashboard() {
       >
         {/* Header */}
         <div
-          className="bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600
-  border-b border-gray-200 px-8 py-2
+          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500
+  border-b border-gray-200 px-6 py-[0.3rem]
   flex items-center sticky top-0 z-10 gap-4"
         >
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
-                <h1 className="text-xl font-bold text-white">
+                <Typography
+                  variant="h3"
+                  component="h1"
+                  color="white"
+                  className="font-bold"
+                >
                   Welcome,{" "}
                   {currentEmployee?.employee_name || currentUser?.username}!
-                </h1>
-                <p className="text-xs text-gray-50">
+                </Typography>
+                <Typography
+                  variant="label"
+                  color="white"
+                  className="opacity-90"
+                >
                   Here's your dashboard for today.
-                </p>
+                </Typography>
               </>
             ) : (
               <>
@@ -387,7 +401,7 @@ export default function DesktopDashboard() {
           <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={() => navigate("/webapp/notification-log")}
-              className="relative p-2 hover:bg-blue-500 rounded-lg transition-colors"
+              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
             >
               <NotificationBell />
             </button>
@@ -398,15 +412,23 @@ export default function DesktopDashboard() {
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-white text-right">
+                  <div className="text-right">
+                    <Typography
+                      variant="bodyMedium"
+                      color="white"
+                      className="block outline-none"
+                    >
                       {currentUser?.username}
-                    </p>
-                    <p className="text-xs text-gray-50 text-right">
+                    </Typography>
+                    <Typography
+                      variant="label"
+                      color="white"
+                      className="opacity-80 block"
+                    >
                       Employee ID: {currentEmployee?.employee}
-                    </p>
+                    </Typography>
                   </div>
-                  <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
                     <img
                       src={currentUser?.user_image || defaultProfile}
                       alt="User avatar"
@@ -427,17 +449,25 @@ export default function DesktopDashboard() {
               ) : (
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
+                  className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                 >
-                  <div>
-                    <p className="text-sm font-medium text-white text-right">
+                  <div className="text-right">
+                    <Typography
+                      variant="bodyMedium"
+                      color="white"
+                      className="block outline-none"
+                    >
                       {currentEmployee?.employee_name}
-                    </p>
-                    <p className="text-xs text-gray-50 text-right">
+                    </Typography>
+                    <Typography
+                      variant="label"
+                      color="white"
+                      className="opacity-80 block"
+                    >
                       Employee ID: {currentEmployee?.employee}
-                    </p>
+                    </Typography>
                   </div>
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">
                     <img
                       src={currentEmployee?.image || defaultProfile}
                       alt="User avatar"
@@ -456,7 +486,7 @@ export default function DesktopDashboard() {
               {showProfileDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-start gap-3">
                       {/* Profile Image */}
                       <div className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden border border-gray-300">
                         <img
@@ -467,107 +497,152 @@ export default function DesktopDashboard() {
                       </div>
 
                       {/* Text Info */}
+                      {/* Text Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900">
-                          {currentEmployee?.employee_name }
-                        </h3>
-                        <p className="text-sm text-gray-600 break-words whitespace-normal max-w-xs">
-                          {currentEmployee?.custom_designation_name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Employee ID: {currentEmployee?.employee}
-                        </p>
-                        <p className="text-xs text-gray-500 break-words whitespace-normal max-w-xs">
+                        <Typography
+                          variant="subheading"
+                          color="title"
+                          className="truncate block font-bold"
+                        >
+                          {currentEmployee?.employee_name || "N/A"}
+                        </Typography>
+                        <Typography
+                          variant="bodySmall"
+                          color="body2"
+                          className="truncate block"
+                        >
+                          {currentEmployee?.custom_designation_name || "N/A"}
+                        </Typography>
+                        <div className="flex items-center gap-2">
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold uppercase tracking-wider"
+                          >
+                            ID: {currentEmployee?.employee || "N/A"}
+                          </Typography>
+                        </div>
+                        <Typography
+                          variant="bodySmall"
+                          color="body2"
+                          className="truncate block"
+                        >
                           {currentEmployee?.company_email ||
-                            currentEmployee?.personal_email}
-                        </p>
+                            currentEmployee?.personal_email ||
+                            "N/A"}
+                        </Typography>
                       </div>
                     </div>
                   </div>
 
-                  <div className="py-2">
+                  <div className="p-2">
                     <div className="px-4 py-2">
-                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="uppercase mb-2 font-medium"
+                      >
                         Company Information
-                      </h4>
-                      <div className="space-y-1 text-sm">
+                      </Typography>
+                      <div className="space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Department:</span>
-                          <span className="text-gray-900">
+                          <Typography variant="bodySmall" color="body2">
+                            Department:
+                          </Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.department || "N/A"}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Company:</span>
-                          <span className="text-gray-900">
+                          <Typography variant="bodySmall" color="body2">
+                            Company:
+                          </Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.company || "N/A"}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Join Date:</span>
-                          <span className="text-gray-900">
+                          <Typography variant="bodySmall" color="body2">
+                            Join Date:
+                          </Typography>
+                          <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.date_of_joining || "N/A"}
-                          </span>
+                          </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Status:</span>
-                          <span className="text-green-600 font-medium">
+                          <Typography variant="bodySmall" color="body2">
+                            Status:
+                          </Typography>
+                          <Typography variant="bodySmall" color="success">
                             {currentEmployee?.status || "Active"}
-                          </span>
+                          </Typography>
                         </div>
                       </div>
                     </div>
 
                     <hr className="my-2 border-gray-100" />
 
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
                       onClick={() => {
                         clearTargetEmployee();
                         navigate(`/webapp/employee-profile`);
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       <User className="w-4 h-4" />
                       View Full Profile
-                    </button>
+                    </Button>
 
                     {canRedirectToDesk && (
-                      <button
+                      <Button
+                        variant="subtle"
+                        size="md"
+                        fullWidth
+                        contentAlign="start"
                         onClick={() => {
                           window.location.href = "/app/home";
                         }}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                       >
                         <Dock className="w-4 h-4" />
                         Switch to Admin
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
                       onClick={handleReset}
                       disabled={mutation.isPending}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 w-full text-left"
                     >
                       {mutation.isPending ? (
-                        "Sending..."
+                        <CircularLoader size="sm" color="blue-500" />
                       ) : (
                         <>
                           <RotateCcwKey className="w-4 h-4" />
                           Reset Password
                         </>
                       )}
-                    </button>
+                    </Button>
                     <hr className="my-2 border-gray-100" />
-                    <button
+                    <Button
+                      variant="subtle"
+                      size="md"
+                      fullWidth
+                      contentAlign="start"
+                      bgColor="error"
                       onClick={async () => {
                         await logoutHandler();
                         setShowProfileDropdown(false);
                       }}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -576,7 +651,7 @@ export default function DesktopDashboard() {
         </div>
         <ViewingAsBanner />
 
-        <div className="p-4 flex-1 overflow-hidden bg-gray-200">
+        <div className="p-6 flex-1 overflow-auto bg-app">
           <div className="max-w-full">
             {/* Employee Error Section */}
             {!employeeState.isLoading && !employeeState.hasValidData && (
@@ -593,7 +668,7 @@ export default function DesktopDashboard() {
             )}
 
             {/* Hero Banner */}
-            <div className=" w-full max-w-full overflow-hidden rounded-2xl bg-white mb-2">
+            <div className=" w-full max-w-full overflow-hidden bg-white mb-4">
               {!userNoticeIsLoading &&
                 userNotices &&
                 userNotices?.length > 0 && (
@@ -614,142 +689,176 @@ export default function DesktopDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
-            <div className="lg:col-span-7 flex flex-col gap-4">
-              {/* Tasks Awaiting */}
-              <div className="h-auto">
-                <TasksAwaiting />
-              </div>
-              {/* Admin Apps  */}
-              <div>
-                <MicroAppInDashboard />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+            {/* Row 1: Tasks Awaiting (8) | Clocking (4) */}
+            <div className="lg:col-span-8">
+              <TasksAwaiting />
             </div>
 
-            <div className="lg:col-span-3 flex flex-col gap-4">
-              {/* Total Hours Worked + Daily Timings */}
-              <div className="bg-white rounded-lg p-6 shadow-md border border-[rgba(0,0,0,0.05)]">
-                <div className="text-center">
-                  <p className="section-title mb-2 text-left">
+            <div className="lg:col-span-4">
+              <Card shadow="sm" className="h-full flex flex-col gap-4">
+                <div>
+                  <Typography
+                    variant="subheading"
+                    className="mb-4 text-left block"
+                  >
                     Total hours worked
-                  </p>
-                  <p className="text-xl font-bold mb-1">{getTotalTime()}</p>
-                  <p className="text-blue-600 text-sm mb-6">8h 30m target</p>
+                  </Typography>
+                  <div className="flex items-center justify-between w-full mb-3">
+                    <Typography
+                      variant="bodySmall"
+                      color="primary"
+                      className="font-semibold uppercase tracking-wider"
+                    >
+                      8h 30m target
+                    </Typography>
+                    <div className="flex items-center gap-3">
+                      <Typography variant="bodyMedium" className="font-bold">
+                        {getTotalTime()}
+                      </Typography>
+                      <div className="h-4 w-px bg-gray-200" />
+                      <Typography variant="bodySmall" className="font-bold">
+                        {getWorkPercentage()}%
+                      </Typography>
+                    </div>
+                  </div>
 
                   {/* Progress Bar */}
-                  <div className="relative px-4 mb-3">
-                    <div className="bg-blue-200 h-3 rounded-lg">
+                  <div className="relative mb-2">
+                    <div className="bg-primary-50 h-3 rounded-lg overflow-hidden p-[1px]">
                       <div
-                        className="bg-blue-700 h-3 rounded-lg transition-all duration-700"
+                        className="bg-primary-700 h-full rounded-lg transition-all duration-700 ease-out shadow-sm"
                         style={{
                           width: `${Math.min(getWorkPercentage(), 100)}%`,
                         }}
                       />
                     </div>
                   </div>
-
-                  <p className="text-blue-600 text-sm font-medium">
-                    {getWorkPercentage()}% completed
-                  </p>
                 </div>
 
-                <h3 className="section-title mb-4 mt-6">Daily Timings</h3>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* SHIFT START */}
-                  <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          SHIFT START
-                        </p>
-                        <p className="text-lg text-md font-bold text-blue-600">
-                          {employeeShift?.start_time
-                            ? formatTimeSafe(employeeShift.start_time)
-                            : "--:--"}{" "}
-                        </p>
-                      </div>
+                <div className="border-t border-gray-100 pt-4">
+                  <div className="flex items-start justify-between w-full mb-2">
+                    <div>
+                      <Typography
+                        variant="subheading"
+                        color="title"
+                        className="block mb-1"
+                      >
+                        Daily Timings
+                      </Typography>
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="flex items-center gap-1.5"
+                      >
+                        Shift:{" "}
+                        {employeeShift?.start_time
+                          ? formatTimeSafe(employeeShift.start_time)
+                          : "--:--"}{" "}
+                        -{" "}
+                        {employeeShift?.end_time
+                          ? formatTimeSafe(employeeShift.end_time)
+                          : "--:--"}
+                      </Typography>
                     </div>
+                    {homeSummary && homeSummary.length > 0 && (
+                      <Badge
+                        label={
+                          isCurrentlyCheckedIn ? "Checked In" : "Checked Out"
+                        }
+                        size="md"
+                        pulse={{
+                          show: true,
+                          color: isCurrentlyCheckedIn
+                            ? "bg-success"
+                            : "bg-error",
+                        }}
+                        backgroundColor={
+                          isCurrentlyCheckedIn
+                            ? "bg-success-100 border-success-100"
+                            : "bg-error-50 border-error-100"
+                        }
+                        textColor={
+                          isCurrentlyCheckedIn ? "text-success" : "text-error"
+                        }
+                      />
+                    )}
                   </div>
 
-                  {/* IN TIME */}
-                  <div className="bg-green-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          IN TIME
-                        </p>
-                        <p className="text-lg font-bold text-green-600">
-                          {firstCheckIn?.time
-                            ? formatTo24HourTime(firstCheckIn.time)
-                            : "--:--"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SHIFT END */}
-                  <div className="bg-blue-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          SHIFT END
-                        </p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {employeeShift?.end_time
-                            ? formatTimeSafe(employeeShift.end_time)
-                            : "--:--"}
-                        </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* IN TIME */}
+                    <div className="py-2 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-success-100 rounded-xl flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-success" />
+                        </div>
+                        <div>
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold text-[10px]"
+                          >
+                            IN TIME
+                          </Typography>
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-bold text-success"
+                          >
+                            {firstCheckIn?.time
+                              ? formatTo24HourTime(firstCheckIn.time)
+                              : "--:--"}
+                          </Typography>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* OUT TIME */}
-                  <div className="bg-red-50 p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                        <XCircle className="w-4 h-4 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          OUT TIME
-                        </p>
-                        <p className="text-lg font-bold text-red-600">
-                          {lastCheckOut?.time
-                            ? formatTo24HourTime(lastCheckOut.time)
-                            : "--:--"}
-                        </p>
+                    {/* OUT TIME */}
+                    <div className="py-2 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-error-50 rounded-xl flex items-center justify-center">
+                          <XCircle className="w-5 h-5 text-error" />
+                        </div>
+                        <div>
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold text-[10px]"
+                          >
+                            OUT TIME
+                          </Typography>
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-bold text-error"
+                          >
+                            {lastCheckOut?.time
+                              ? formatTo24HourTime(lastCheckOut.time)
+                              : "--:--"}
+                          </Typography>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Clock In / Out */}
                 <div
-                  className={`flex ${
+                  className={`flex  h-full ${
                     homeSummary && !homeSummary?.length
-                      ? "flex-col-reverse gap-2"
-                      : "flex-row gap-4"
-                  }  mt-4`}
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
-                    <div className="flex w-full">
-                      <button
+                    <div className="flex-1">
+                      <Button
+                        fullWidth
+                        className="h-full"
+                        size="lg"
+                        bgColor={isCurrentlyCheckedIn ? "primary" : "success"}
                         onClick={() =>
                           handleClockInOut(
                             isCurrentlyCheckedIn ? "clockOut" : "clockIn"
                           )
                         }
-                        className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                         disabled={
                           clockInCheckOutPending ||
                           !employeeShift?.shift ||
@@ -761,116 +870,102 @@ export default function DesktopDashboard() {
                           : isCurrentlyCheckedIn
                           ? "Clock Out"
                           : "Clock In"}
-                      </button>
+                      </Button>
                     </div>
                   )}
 
                   {/* Status */}
-                  {homeSummary && homeSummary?.length > 0 ? (
-                    <div
-                      className={`flex rounded-lg items-center justify-center w-full gap-1 px-1 text-sm rounded py-1 ${
-                        isCurrentlyCheckedIn ? "bg-green-100" : "bg-red-100"
-                      }`}
-                    >
-                      <div
-                        className={`w-2 h-2 rounded-lg shrink-0 ${
-                          isCurrentlyCheckedIn ? "bg-green-500" : "bg-red-500"
-                        }`}
-                      ></div>
 
-                      <span
-                        className={
-                          isCurrentlyCheckedIn
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }
+                  {!homeSummary?.length && (
+                    <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
+                      <Typography
+                        variant="bodySmall"
+                        className="font-bold text-primary-600"
                       >
-                        Currently{" "}
-                        {isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center w-full gap-2 p-2 text-sm bg-blue-100 rounded">
-                      <span className={"text-blue-600"}>
-                        Let's Get The Ball Rolling
-                      </span>
+                        Let's Get Started
+                      </Typography>
                     </div>
                   )}
                 </div>
-              </div>
+              </Card>
+            </div>
 
-              {/* Events Widget */}
+            {/* Row 2 & 3: MicroApps (8, span 2) | Events (4) + Requests (4) */}
+            <div className="lg:col-span-8 lg:row-span-2">
+              <MicroAppInDashboard />
+            </div>
 
+            <div className="lg:col-span-4">
               <Events />
+            </div>
 
-              {/* Requests */}
-              <div className="bg-white rounded-lg shadow-md relative border border-[rgba(0,0,0,0.05)] pb-4">
-                <div className="sticky top-0 border-b px-6 py-2 flex justify-between items-center mb-3 px-6">
-                  <h3 className="section-title mb-0 text-left">Requests</h3>
-                  <button
+            <div className="lg:col-span-4">
+              <Card shadow="sm" className="h-full">
+                <div className="flex justify-between items-center mb-4">
+                  <Typography variant="subheading" color="title">
+                    Requests
+                  </Typography>
+
+                  <ViewAll
                     onClick={() => {
                       navigate("/webapp/requests");
                     }}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    View All
-                  </button>
+                  />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 px-6">
-                  {/* Apply Leave */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowLeaveRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Calendar className="w-6 h-6 text-blue-600" />
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    {
+                      label: "Apply Leave",
+                      icon: Calendar,
+                      color: "primary",
+                      onClick: () => setShowLeaveRequest(true),
+                    },
+                    {
+                      label: "Attendance Request",
+                      icon: FileText,
+                      color: "secondary",
+                      onClick: () => setShowAttendanceRequest(true),
+                    },
+                    {
+                      label: "Planned Overtime",
+                      icon: Timer,
+                      color: "purple",
+                      onClick: () => setShowOvertimeRequest(true),
+                    },
+                    {
+                      label: "Shift Change",
+                      icon: ArrowUpDown,
+                      color: "success",
+                      onClick: handleShiftForm,
+                    },
+                  ].map((action, idx) => (
+                    <div
+                      key={idx}
+                      className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
+                      onClick={action.onClick}
+                    >
+                      <div
+                        className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                          action.color === "primary"
+                            ? "bg-primary-100 text-primary-600"
+                            : action.color === "purple"
+                            ? "bg-purple-100 text-purple-600"
+                            : "bg-success-100 text-success"
+                        }`}
+                      >
+                        <action.icon className="w-5 h-5 shadow-sm" />
+                      </div>
+                      <Typography
+                        variant="bodySmall"
+                        className="font-semibold leading-tight line-clamp-2"
+                      >
+                        {action.label}
+                      </Typography>
                     </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Apply Leave
-                    </p>
-                  </div>
-
-                  {/* Attendance Request */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowAttendanceRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <FileText className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Attendance Request
-                    </p>
-                  </div>
-
-                  {/* Overtime */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={() => setShowOvertimeRequest(true)}
-                  >
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <Timer className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Planned Overtime Request
-                    </p>
-                  </div>
-
-                  {/* Shift Change */}
-                  <div
-                    className="text-center bg-gray-100 p-6 rounded-lg hover:bg-gray-200 cursor-pointer"
-                    onClick={handleShiftForm}
-                  >
-                    <div className="w-12 h-12 bg-green-100 rounded-lg mx-auto flex items-center justify-center mb-3">
-                      <ArrowUpDown className="w-6 h-6 text-green-600" />
-                    </div>
-                    <p className="text-sm text-gray-600 font-medium">
-                      Request Shift Change
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </div>

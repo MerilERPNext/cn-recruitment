@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import Button from "./Button";
 
 interface SelectOption<T = string> {
     label: string;
@@ -44,17 +45,18 @@ export const Select = <T extends string | number>({
                 </label>
             )}
 
-            <button
-                type="button"
+            <Button
+                variant="subtle"
+                size="md"
                 disabled={disabled}
                 onClick={() => setOpen((v) => !v)}
                 className={`
           flex w-full items-center justify-between
           rounded-lg border border-gray-300
           bg-white px-4 py-2.5
-          text-sm text-gray-900
+          text-gray-900
           shadow-sm transition
-          focus:outline-none focus:ring-2 focus:ring-blue-500/30
+          focus:outline-none focus:ring-2 focus:ring-primary-500/30
           hover:border-gray-400
           ${disabled
                         ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
@@ -62,11 +64,11 @@ export const Select = <T extends string | number>({
                     }
         `}
             >
-                <span className="truncate">{value.label}</span>
+                <span className="truncate font-medium">{value.label}</span>
                 <ChevronDown
                     className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
                 />
-            </button>
+            </Button>
 
             {open && !disabled && (
                 <div
@@ -93,7 +95,7 @@ export const Select = <T extends string | number>({
                     rounded-lg px-3 py-2 text-sm
                     transition
                     ${selected
-                                            ? "bg-blue-50 text-blue-600 font-medium"
+                                            ? "bg-primary-50 text-primary-600 font-medium"
                                             : "text-gray-700 hover:bg-gray-100"
                                         }
                   `}

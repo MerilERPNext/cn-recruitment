@@ -31,6 +31,9 @@ import { ViewAll } from "../../shared/atoms/ViewAll";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import Button from "../../shared/atoms/Button";
+import { Card } from "../../shared/atoms/Card";
+import { Typography } from "../../shared/atoms/Typography";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -241,14 +244,14 @@ const EmployeeAttendance = () => {
   }
 
   return (
-    <div className={`flex  bg-gray-100 `}>
+    <div className={`flex`}>
       <div
-        className={`flex  bg-gray-100 p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        className={`flex p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
           }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
-        <div className=" w-full pb-2 bg-white rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
+        <Card className="pb-2 rounded-tl-lg rounded-tr-lg sm:rounded-lg lg:rounded-lg">
           <ListView />
           <AttendanceCalendar
             selectedDate={selectedDate}
@@ -259,7 +262,7 @@ const EmployeeAttendance = () => {
 
           {/* Legends - Only show for mobile since desktop shows at top */}
           {!isDesktop && <AttendanceLegend isCompact={true} />}
-        </div>
+        </Card>
 
         {/* Legend */}
 
@@ -269,8 +272,9 @@ const EmployeeAttendance = () => {
         {!isDesktop && canRequestAttendance && (
           <div className="bg-white p-4 border-b-1 border-gray-200 rounded-bl-lg rounded-br-lg">
             <div className="flex gap-2">
-              <button
-                className="w-full flex items-center justify-center text-md flex-1 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+              <Button
+                size="lg"
+                fullWidth
                 onClick={() => {
                   // setOpenDrawer(!openDrawer);
                   setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
@@ -279,7 +283,7 @@ const EmployeeAttendance = () => {
                 {/* <Plus className="w-4 h-4 mr-2 font-bold" /> */}
                 {/* Raise Request */}
                 Attendance Request
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -287,11 +291,9 @@ const EmployeeAttendance = () => {
         {/* Request Attendance Correction */}
 
         {/* My Attendance Requests */}
-        <div className="pb-20 px-2 bg-white mt-2 rounded-lg">
-          <div className="flex justify-between items-center w-full pt-4 pb-2 md:p-4">
-            <h3 className="base-title md:module-title mb-1">
-              My Attendance Requests
-            </h3>
+        <Card className="pb-20 mt-4">
+          <div className="flex justify-between items-center w-full pb-2">
+            <Typography variant="subheading">My Attendance Requests</Typography>
 
             <ViewAll
               title="View All"
@@ -319,7 +321,7 @@ const EmployeeAttendance = () => {
               setRefetchAttendance={setRefetchAttendance}
             />
           </CardTable>
-        </div>
+        </Card>
         {showReqAttendanceCorrection && (
           <AttendanceRequestFormV2
             onClose={() => {

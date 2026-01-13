@@ -8,6 +8,8 @@ import {
 } from "../../../../hooks/useTaxSheet";
 import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
+import { Card } from "../../../shared/atoms/Card";
+import { Typography } from "../../../shared/atoms/Typography";
 
 /* ---------------- Types ---------------- */
 
@@ -137,17 +139,22 @@ export default function TaxSheet() {
   );
   return (
     <div className="space-y-1">
-      <header className="py-2 px-4 bg-blue-50 rounded">
+      <Card padding="sm">
         <div className="flex items-center justify-between w-full">
-          <h1 className="base-title font-semibold text-gray-800">
+<div className="flex flex-col">
+<Typography variant="h4">
             Tax Sheet {selectedPeriod}
-          </h1>
+          </Typography>
+          <Typography variant="bodySmall" color="body2">
+            Selected Pay Roll Period {selectedPeriod}
+          </Typography>
+</div>
 <div className="flex flex-row md:flex-row md:items-center md:gap-4">
 <FilterDropdowns />
 </div>
         </div>
  
-      </header>
+      </Card>
 
       <div className="overflow-x-auto border rounded-lg">
 <div

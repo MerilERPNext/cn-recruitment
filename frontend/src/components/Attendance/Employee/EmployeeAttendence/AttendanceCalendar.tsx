@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
 import { gradientClassMap } from "../../../../utils/helperUtils";
+import Button from "../../../shared/atoms/Button";
 type Status =
   | "present"
   | "absent"
@@ -94,24 +95,26 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
           nextMonthButtonDisabled,
         }) => (
           <div className="flex items-center justify-between px-2 py-2">
-            <button
+            <Button
+              variant="subtle"
               onClick={decreaseMonth}
               disabled={prevMonthButtonDisabled}
-              className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+              className="p-1 rounded-md bg-gray-50"
             >
               <ChevronLeft className="w-5 h-5" />
-            </button>
+            </Button>
             <span className="base-title">
               {date.toLocaleString("default", { month: "long" })}{" "}
               {date.getFullYear()}
             </span>
-            <button
+            <Button
+              variant="subtle"
               onClick={increaseMonth}
               disabled={nextMonthButtonDisabled}
-              className="p-1 rounded-md border-1 border-gray-200 bg-gray-100"
+              className="p-1 rounded-md bg-gray-50"
             >
               <ChevronRight className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         )}
         renderDayContents={(day, date) => {

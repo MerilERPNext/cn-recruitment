@@ -3,32 +3,17 @@
 
 import { X } from "lucide-react";
 import ApprovalStages from "./ApprovalStages";
+import { TodoType } from "../../../../types/todos";
 
-interface ApprovalStage {
-  stage_name: string | null;
-  user: string | null;
-  role: string | null;
-  status: "Approved" | "Pending" | "Rejected";
-}
 
-interface ReferenceDocument {
-  name: string;
-  employee_name: string;
-  [key: string]: any;
-}
-
-interface ApprovalData {
-  reference_type: string;
-  reference_name: string;
-  approval_stages_status: ApprovalStage[];
-  reference_document: ReferenceDocument;
-}
+type ApprovalData = TodoType;
 
 interface ApprovalModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: ApprovalData;
 }
+
 
 export default function ApprovalModal({
   isOpen,

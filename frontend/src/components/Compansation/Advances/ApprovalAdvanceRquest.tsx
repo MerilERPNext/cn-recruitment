@@ -6,6 +6,7 @@ import CardTable from "../../shared/CardTable";
 import ApprovalList from "../../shared/ApprovalList";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
+import { Typography } from "../../shared/atoms/Typography";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -25,10 +26,16 @@ const TeamAdvanceRequest = () => {
   }: {
     children: React.ReactNode;
     className?: string;
-  }) => <div className={`my-dashboard-card ${className}`}>{children}</div>;
-  const CardHeader = ({ title }: { title: string; onSeeAll: () => void }) => (
-    <div className="flex justify-between items-center mb-4">
-      <h2 className="section-title">{title}</h2>
+  }) => <div className={` ${className}`}>{children}</div>;
+  const CardHeader = ({
+    title,
+  }: {
+    title: string;
+    onSeeAll: () => void;
+  }) => (
+    <div className="flex flex-col w-full items-start mb-4">
+      <Typography variant="subheading" color="body1">{title}</Typography>
+      <Typography variant="bodySmall" color="body2">Track {title}</Typography>
     </div>
   );
   return (

@@ -8,7 +8,7 @@ import {
   useFileUpload,
 } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
-import defaultProfile from "../../assets/user.png";
+import defaultProfile from "../../assets/face-rec.png";
 
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -30,19 +30,32 @@ import { useTargetUser } from "../../context/ViewedUserContext";
 import { useQueryClient } from "@tanstack/react-query";
 import EmployeeProfileSections from "./EmployeeProfileSections";
 import ReportingDetails from "./ReportingDetails";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
+import Badge from "../shared/Badge";
+
 // import { AwardsSection } from "./EmployeeAwards";
+// import Appreciations from "./Appreciations";
+
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
+
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
   refetch?: () => void;
 }
 
-
-
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
   const { data: userId } = useLoggedInUser();
+  const { data: userUiPermission } = useGetUiPermission("Profile");
+  const canAttendanceAssignments = isActionEnabled(
+    userUiPermission,
+    "attendance_assignments",
+    "Employee Profile"
+  );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails(userId || "");
 
@@ -60,8 +73,6 @@ const EmployeeProfile: React.FC = () => {
     refetch: userRefetch,
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpId(employeeId);
-  // const { data: employeeAppreciations } =
-  //   useGetEmployeeAppreciations();
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
     currentUser?.employee || ""
@@ -266,87 +277,119 @@ const EmployeeProfile: React.FC = () => {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="flex items-start gap-5 px-6 py-4 border-b border-gray-50 bg-white">
+            <div className="flex items-start gap-5 px-6 py-6 border-b border-gray-50 bg-white">
               <div className="relative shrink-0">
                 <img
                   src={uploadedImage || user?.image || defaultProfile}
                   alt="User avatar"
-                  className="w-20 h-20 rounded-2xl object-cover ring-4 ring-blue-50/10 shadow-sm"
+                  className="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-50/10 shadow-sm"
                 />
                 <button
                   onClick={handleImageClick}
-                  className="absolute -bottom-1.5 -right-1.5 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95"
+                  className="absolute -bottom-1.5 -right-1.5 h-8 w-8 bg-white flex justify-center items-center p-1.5 rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition-all active:scale-95 text-primary-600"
                   aria-label="Upload new avatar"
                 >
                   {updateDocMutation.isPending || uploadMutation.isPending ? (
-                    <CircularLoader size="sm" />
+                    <CircularLoader size="sm" color="blue-500" />
                   ) : (
-                    <Pencil size={14} className="text-blue-600" />
+                    <Pencil size={14} />
                   )}
                 </button>
               </div>
-
               <div className="flex flex-col flex-1 min-w-0 pt-0.5">
-                <h1 className="text-xl font-extrabold text-gray-900 truncate tracking-tight">
+                <Typography
+                  variant="h3"
+                  className="font-bold truncate tracking-tight"
+                >
                   {user?.employee_name}
-                </h1>
-                {user?.designation && <Tooltip content={user?.designation}>
-                  <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
-                    <Award size={12} />
-                    <span>{user?.designation}</span>
-                  </p>
-                </Tooltip>}
-
-                {user?.branch && <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
-                  <MapPin size={12} />
-                  <span>{user?.branch}</span>
-                </p>}
-                {user?.employee && <p className="text-gray-400 text-xs mt-1 font-medium flex gap-1 items-center justify-start">
-                  <IdCard size={12} />
-                  <span>{user?.employee}</span>
-                </p>}
-
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  {user?.custom_employment_status && (
-                    <span
-                      className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${user?.status === "Active"
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                        : "bg-gray-50 text-gray-600 border-gray-100"
-                        }`}
+                </Typography>
+                {user?.custom_designation_name && (
+                  <Tooltip content={user?.custom_designation_name}>
+                    <Typography
+                      variant="bodySmall"
+                      color="secondary"
+                      className="font-medium truncate mt-1 flex gap-1.5 items-center"
                     >
-                      {user?.custom_employment_status}
-                    </span>
+                      <Award size={14} className="text-primary-500" />
+                      <span>{user?.custom_designation_name}</span>
+                    </Typography>
+                  </Tooltip>
+                )}
+                {user?.branch && (
+                  <Typography
+                    variant="bodySmall"
+                    color="secondary"
+                    className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                  >
+                    <MapPin size={14} className="text-primary-500" />
+                    <span>{user?.branch}</span>
+                  </Typography>
+                )}
+                {user?.employee && (
+                  <Typography
+                    variant="label"
+                    color="disabled"
+                    className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
+                  >
+                    <IdCard size={14} />
+                    <span>{user?.employee}</span>
+                  </Typography>
+                )}
+                <div className="flex flex-wrap items-center gap-3 mt-4">
+                  {user?.custom_employment_status && (
+                    <Badge
+                      label={user?.custom_employment_status}
+                      size="sm"
+                      backgroundColor={
+                        user?.status === "Active"
+                          ? "bg-success-50/50"
+                          : "bg-gray-50"
+                      }
+                      textColor={
+                        user?.status === "Active"
+                          ? "text-success"
+                          : "text-gray-600"
+                      }
+                      pulse={
+                        user?.status === "Active"
+                          ? { show: true, color: "bg-success" }
+                          : undefined
+                      }
+                    />
                   )}
                   {showAttendanceAssignment && (
-                    <button
+                    <Button
+                      icon={<NotebookPen size={12} />}
+                      size="sm"
+                      variant="subtle"
                       onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                      className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors uppercase tracking-wider"
+                      className="text-[10px] font-bold uppercase tracking-wider"
                     >
-                      <NotebookPen size={12} />
                       Attendance
-                    </button>
+                    </Button>
                   )}
+                  {/* <Appreciations /> */}
                 </div>
               </div>
             </div>
-            {/* Awards Section with Divider */}
-            {/* <AwardsSection awards={employeeAppreciations} isDesktop={false} /> */}
+            {/* <AwardsSection isDesktop={false} /> */}
           </div>
         )}
         {/* Horizontal Tabs */}
         <div className="bg-white border-b sticky top-0 z-10">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.key}
+                variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
                 className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-600 hover:text-blue-600"
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-gray-600 hover:text-primary-600"
                   }`}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -375,7 +418,7 @@ const EmployeeProfile: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Profile">
-      <div className="flex flex-col h-full bg-gray-50 p-6 gap-4 w-full overflow-hidden">
+      <div className="flex flex-col h-full p-6 gap-4 w-full overflow-hidden">
         {/* Profile Header */}
 
         {/* All Sections Rendered */}
@@ -386,86 +429,128 @@ const EmployeeProfile: React.FC = () => {
           {userIsLoading ? (
             <HeaderInfoSkeleton />
           ) : (
-            <div className="bg-white border rounded-tl-lg rounded-tr-lg p-6">
-              <div className="flex items-start justify-between gap-6 w-full">
-                <div className="flex items-center gap-6 w-1/2 p-1">
-
+            <Card
+              padding="none"
+              radius="none"
+              shadow="none"
+              className="bg-white border rounded-tl-xl rounded-tr-xl p-8 border-gray-100"
+            >
+              <div className="flex items-center justify-between gap-8 w-full">
+                <div className="flex items-center gap-8 flex-1">
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    id="upload-image"
+                    id="upload-image-desktop"
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <div className="relative">
-                    <div className="w-30 h-30 rounded-full ring-4 ring-white overflow-hidden">
+                  <div className="relative group/avatar">
+                    <div className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl overflow-hidden ">
                       <img
                         src={uploadedImage || user?.image || defaultProfile}
                         alt="User avatar"
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110"
                       />
                     </div>
                     <button
                       onClick={handleImageClick}
-                      className="absolute bottom-0 -right-2 bg-blue-600 h-10 w-10 flex justify-center items-center p-1 hover:bg-blue-700 text-white rounded-full shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="absolute bottom-[-10px] right-[-10px] bg-primary-500 h-10 w-10 flex justify-center items-center text-white rounded-2xl shadow-lg hover:bg-primary-700 transition-all hover:scale-110 active:scale-95 z-10"
                       aria-label="Upload new avatar"
                     >
-                      {updateDocMutation.isPending || uploadMutation.isPending ? (
+                      {updateDocMutation.isPending ||
+                        uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
-                        <Pencil size={16} />
+                        <Pencil size={18} />
                       )}
                     </button>
                   </div>
-                  <div className="flex flex-col pt-3">
-                    <div>
-                      <h1 className="text-xl font-bold text-gray-900 leading-tight">
+                  <div className="flex flex-col min-w-0">
+                    <div className="space-y-1">
+                      <Typography
+                        variant="h2"
+                        className="font-bold text-gray-900 tracking-tight"
+                      >
                         {user?.employee_name}
-                      </h1>
-                      {user?.designation && <Tooltip content={user?.designation}>
-                        <p className="text-blue-600 font-semibold text-sm mt-0.5 flex gap-1 items-center justify-start">
-                          <Award size={12} />
-                          <span>
-                            {user?.designation?.slice(0, 40)}
-                          </span>
-                        </p>
-                      </Tooltip>}
-                      {user?.branch && <p className="text-sm font-medium text-gray-500 truncate mt-0.5 flex gap-1 items-center justify-start">
-                        <MapPin size={12} />
-                        <span>{user?.branch}</span>
-                      </p>}
-                      {user?.employee && <p className="text-gray-500 text-xs mt-1 flex gap-1 items-center justify-start">
-                        <IdCard size={12} />
-                        <span>{user?.employee}</span>
-                      </p>}
-                      {user?.custom_employment_status && (
-                        <span className="inline-block mt-2 px-3 py-0.5 bg-yellow-100 text-yellow-800 text-[10px] font-bold rounded-lg uppercase tracking-wider">
-                          {user?.custom_employment_status}
-                        </span>
-                      )}
-                    </div>
-                    {showAttendanceAssignment && (
-                      <div className="mt-2">
-                        <Button
-                          icon={<NotebookPen size={"14px"} />}
-                          size="sm"
-                          bgColor="blue-50"
-                          variant="contain"
-                          textColor="blue-600"
-                          onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                        >
-                          Attendance Assignment
-                        </Button>
+                      </Typography>
+                      <div className="flex flex-wrap items-center gap-4">
+                        {user?.custom_designation_name && (
+                          <Tooltip content={user?.custom_designation_name}>
+                            <Typography
+                              variant="bodyMedium"
+                              className="font-semibold text-primary-600 flex gap-2 items-center"
+                            >
+                              <Award size={16} />
+                              <span>{user?.custom_designation_name}</span>
+                            </Typography>
+                          </Tooltip>
+                        )}
+                        {user?.branch && (
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-medium flex gap-2 items-center text-primary-500"
+                          >
+                            <MapPin size={16} />
+                            <span>{user?.branch}</span>
+                          </Typography>
+                        )}
+                        {user?.employee && (
+                          <Typography
+                            variant="bodySmall"
+                            color="disabled"
+                            className="text-primary-500 font-medium flex gap-2 items-center uppercase tracking-widest"
+                          >
+                            <IdCard size={16} />
+                            <span>{user?.employee}</span>
+                          </Typography>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                {/* Awards Section with Divider */}
-                {/* <AwardsSection awards={employeeAppreciations} isDesktop={true} /> */}
+                      <div className="flex flex-col justify-start items-start gap-2 mt-4">
+                        {user?.custom_employment_status && (
+                          <Badge
+                            label={user?.custom_employment_status}
+                            size="md"
+                            backgroundColor={
+                              user?.status === "Active"
+                                ? "bg-success-100/50"
+                                : "bg-gray-100"
+                            }
+                            textColor={
+                              user?.status === "Active"
+                                ? "text-success"
+                                : "text-gray-600"
+                            }
+                            pulse={
+                              user?.status === "Active"
+                                ? { show: true, color: "bg-success" }
+                                : undefined
+                            }
+                          />
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
 
+                          {showAttendanceAssignment && canAttendanceAssignments && (
+                            <Button
+                              icon={<NotebookPen size={14} />}
+                              size="sm"
+                              variant="soft"
+                              onClick={() => setIsAttendanceAssignmentsOpen(true)}
+                              className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
+                            >
+                              Attendance Assignment
+                            </Button>
+                          )}
+                          {/* <Appreciations /> */}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+                {/* <AwardsSection isDesktop={true} /> */}
               </div>
-            </div>
+            </Card>
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="bg-white border-b sticky top-0 z-10">
@@ -474,9 +559,9 @@ const EmployeeProfile: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-blue-600"
+                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-600 hover:text-primary"
                     }`}
                 >
                   {tab.label}

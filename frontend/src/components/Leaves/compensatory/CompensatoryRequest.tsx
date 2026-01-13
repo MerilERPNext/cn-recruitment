@@ -10,6 +10,7 @@ import CompensatoryRequestCard, {
 import CompOffDetailsModal from "./CompOffDetailsModal";
 import { useGetCompOffList } from "../../../hooks/useLeaves";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { Typography } from "../../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
   { label: "Issued", value: "Issued" },
@@ -38,7 +39,7 @@ const CompensatoryRequest: React.FC = () => {
     currentEmployee?.name
   );
 
-    const filteredData = useMemo(() => {
+  const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter(
       (item: CompensatoryRequestItem) => item.custom_status === selectedStatus
@@ -81,9 +82,9 @@ const CompensatoryRequest: React.FC = () => {
   if (isError) return <p>Error: {(error as Error).message}</p>;
 
   return (
-    <div className="bg-white px-4 md:py-2 pb-10 md:pb-20">
+    <div className="px-4 md:py-2 pb-10 md:pb-20">
       <div className="flex justify-between pt-4 mb-2 border-b border-gray-200">
-        <h2 className="module-title pb-1">Compensatory Requests</h2>
+        <Typography variant="subheading">Compensatory Requests</Typography>
         <div className="flex items-center pb-1">
           <CustomDropdown
             value={selectedStatus}

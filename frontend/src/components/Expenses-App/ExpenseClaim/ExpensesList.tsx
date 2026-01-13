@@ -10,7 +10,6 @@ import DataListView from "../../DataListView";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
-import CustomDropdown from "../../shared/CustomDropdown";
 import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
@@ -21,12 +20,7 @@ import { isActionEnabled } from "../../../utils/uiPermission";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
-
-const STATUS_OPTIONS = [
-  { label: "Pending", value: "Draft" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
+import { Typography } from "../../shared/atoms/Typography";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -52,7 +46,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     : " - ";
 
   return (
-    <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
+    <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
         <div className="flex flex-col gap-1">
           <span className="card-title">Expense category</span>
@@ -63,15 +57,15 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           )}
         </div>
 
-        {item?.reference_document?.status && (
+        {item?.status && (
           <span
             className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-              item?.reference_document?.status
+              item?.status
             )}`}
           >
-            {item?.reference_document?.status === "Draft"
+            {item?.status === "Draft"
               ? "Pending"
-              : item?.reference_document?.status}
+              : item?.status}
           </span>
         )}
       </div>
@@ -145,7 +139,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="grid gap-4 px-6 py-5 hover:bg-blue-50 border-b border-gray-100 text-sm text-gray-700 items-center"
+      className="grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
       style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
       <span>{expenseClaim?.custom_expense_category || " - "}</span>
@@ -156,7 +150,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       <div>
         <Tooltip
           content={
-            item?.reference_document?.status === "Draft"
+            item?.status === "Draft"
               ? item?.reference_document?.custom_assigned_user ||
                 item?.allocated_to
               : ""
@@ -164,12 +158,12 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         >
           <span
             className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.reference_document?.status
+              item?.status
             )}`}
           >
-            {item?.reference_document?.status === "Draft"
+            {item?.status === "Draft"
               ? "Pending"
-              : item?.reference_document?.status}
+              : item?.status}
           </span>
         </Tooltip>
       </div>
@@ -201,7 +195,6 @@ const ExpensesList: React.FC = () => {
     string | null
   >(null);
 
-  const [selectedStatus, setSelectedStatus] = React.useState("Draft");
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
@@ -237,10 +230,7 @@ const ExpensesList: React.FC = () => {
     setSelectedSendBackUser(null);
   };
 
-  const handleStatusChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedStatus(event.target.value);
-    setRefetchAttendance(true);
-  };
+
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
@@ -284,21 +274,9 @@ const ExpensesList: React.FC = () => {
     </div>
   );
 
-  const FilterDropdowns = () => (
-    <div className="flex items-center gap-2">
-      <CustomDropdown
-        value={selectedStatus}
-        onChange={handleStatusChange}
-        options={STATUS_OPTIONS}
-      />
-    </div>
-  );
+ 
 
-  const apiParams = {
-    doctype: "Expense Claim",
-    employee: currentEmployee?.name,
-    status: selectedStatus,
-  };
+ 
 
   const mobileMenuItems = [
     {
@@ -319,7 +297,7 @@ const ExpensesList: React.FC = () => {
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <h2 className="base-title md:module-title pb-1">My Expense Claims</h2>
+        <Typography variant="subheading">My Expense Claims</Typography>
 
         <div className="flex items-center space-x-3 pb-1">
           {isDesktop ? (
@@ -327,8 +305,7 @@ const ExpensesList: React.FC = () => {
               <Button
                 variant="outline"
                 size="md"
-                bgColor="blue-500"
-                className="rounded-xl hover:bg-blue-100"
+                className="rounded-xl hover:bg-blue-100 py-1"
                 onClick={() => setIsPolicyDrawerOpen(true)}
               >
                 Policy
@@ -339,8 +316,7 @@ const ExpensesList: React.FC = () => {
                 icon={<Users size={16} />}
                 size="md"
                 variant="outline"
-                bgColor="blue-500"
-                className="hover:bg-blue-100 rounded-xl"
+                className="hover:bg-blue-100 rounded-xl py-1"
               >
                 Shared
               </Button>
@@ -352,11 +328,11 @@ const ExpensesList: React.FC = () => {
               </button>
             </DropdownMenu>
           )}
-          <FilterDropdowns />
+         
         </div>
       </div>
 
-      <div className="bg-white h-full px-0 md:pt-2 pt-0 mb-20">
+      <div className="h-full px-0  pt-0 mb-20">
         {currentEmployee?.name && (
           <CardTable
             titles={[
@@ -371,10 +347,14 @@ const ExpensesList: React.FC = () => {
             columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
           >
             <DataListView
-              queryKey={["expense-claims-all", selectedStatus]}
+              queryKey={["expense-claims-all"]}
               customAPI={{
                 method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: apiParams,
+                params: {
+                  doctype: "Expense Claim",
+                  employee: currentEmployee?.name,
+                  status: "Draft"
+                },
               }}
               ItemComponent={(props: { item: any }) =>
                 isDesktop ? (
@@ -383,11 +363,19 @@ const ExpensesList: React.FC = () => {
                   <ItemWrapper item={props.item} />
                 )
               }
+              isSearch={true}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: ["Draft", "Approved", "Rejected"],
+                },
+              ]}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
-              isSearch={false}
-              isFilter={false}
               showRefreshButton={false}
               orderBy="modified desc"
               pageSize={10}

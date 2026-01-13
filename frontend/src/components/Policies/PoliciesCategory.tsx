@@ -2,10 +2,10 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import HeaderBar from "../HeaderBar";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { Typography } from "../shared/atoms/Typography";
+import { Card } from "../shared/atoms/Card";
 
 type CategoryCardProps = {
   name: string;
@@ -18,36 +18,48 @@ type CategoryDoc = {
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
   const navigate = useNavigate();
+
   return (
-    <div
+    <Card
       onClick={() =>
         navigate("/webapp/policies-app/policies-list", {
           state: { name },
         })
       }
-      className="flex border  border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 my-2 cursor-pointer"
+      padding="sm"
+      radius="xl"
+      className="w-full flex justify-between items-center my-2 hover:shadow-md cursor-pointer"
     >
-      <span className="card-title">{name}</span>
-      <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 font-semibold">
-        <span className="uppercase leading-none">{count}</span>
+      <Typography variant="bodyMedium">{name}</Typography>
+
+      <div
+        className={`flex items-center justify-center w-12 h-12 rounded-xl font-semibold
+          ${count > 0 ? "bg-green-100" : "bg-transparent"}
+        `}
+      >
+        {count > 0 && (
+          <Typography variant="bodyMedium" color="success" component="span">
+            {count}
+          </Typography>
+        )}
       </div>
-    </div>
+    </Card>
   );
 };
 
 const PoliciesCategory: React.FC = () => {
-  const { data: userId } = useLoggedInUser();
-  const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const employeeId = user?.employee ?? "";
+  const { data: employee, isLoading: employeeLoading } = useCurrentEmployee();
+
   const {
     data: counts,
     isLoading: isCountsLoading,
     error: countsError,
-  } = usePolicyCountsByCategory(employeeId);
+  } = usePolicyCountsByCategory(employee?.name);
 
-  if (isCountsLoading) {
+  const isLoading = employeeLoading || isCountsLoading;
+
+  if (isLoading) {
     return (
       <>
         {[...Array(5)].map((_, i) => (
@@ -57,21 +69,24 @@ const PoliciesCategory: React.FC = () => {
     );
   }
 
-  // Handle errors gracefully
   if (countsError) {
     console.warn("Failed to load policy counts:", countsError);
   }
 
-  // Create categories from the counts data
   const categories = counts
     ? Object.keys(counts).map((name) => ({ name }))
     : [];
   console.log("🏷️ Generated categories:", categories);
 
   return (
-    <div className="bg-white h-full w-full p-2">
+    <div className=" h-full w-full p-2">
       {isDesktop && (
-        <HeaderBar title="Policy Categories" onBack={() => navigate(-1)} />
+        <Typography
+          variant="subheading"
+          className="border-b border-gray-200 pb-2 mt-2"
+        >
+          Policy Category
+        </Typography>
       )}
       {categories.length === 0 ? (
         <p className="text-gray-500 text-center mt-4">No categories found.</p>

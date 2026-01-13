@@ -11,7 +11,7 @@ interface ApprovalStage {
   stage_name: string | null
   user: string | null
   role: string | null
-  status: "Approved" | "Pending" | "Rejected",
+  status: string
   form_json?: {
     components: FormIOComponent[]
   }

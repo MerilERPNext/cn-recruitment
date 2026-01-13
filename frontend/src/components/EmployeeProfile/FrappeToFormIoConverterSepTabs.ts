@@ -169,7 +169,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.multiple = field.fieldtype === "Table MultiSelect";
 
       schema.data = {
-        url: `/api/method/nextai.funnel.apis.fetch_data.get_searched_doc_list?fields=*&doctype=${field.options ?? ""}&limit=20`,
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.options ?? ""}&limit=20`,
       };
 
       schema.lazyLoad = true;
@@ -178,11 +178,46 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.valueProperty = "name";
       schema.selectValues = "message";
       schema.searchField = "q";
+      schema.template = (item: any) => {
+        const data = item?.item || {};
 
-      schema.template = `
-    <span>{{ item.title || item.label || item.full_name || item.fullname || item.first_name || item.name }}</span>
-  `;
+        const name = data.name || "";
 
+        const secondary =
+          data.employee_name ||
+          data.title ||
+          data.label ||
+          data.full_name ||
+          data.fullname ||
+          data.first_name ||
+          "";
+
+        const designation = data.custom_designation_name || "";
+        const branch = data.branch || "";
+
+        const infoText =
+          designation && branch
+            ? `${designation} | ${branch}`
+            : designation || branch;
+
+        return `
+          <div class="formio-select-item">
+            <div class="formio-select-item-main">
+              <span class="primary">${name}</span>
+              ${secondary ? `<span class="secondary">(${secondary})</span>` : ""}
+            </div>
+
+            ${infoText
+            ? `
+              <div class="formio-select-item-info">
+                <span>${infoText}</span>
+              </div>
+            `
+            : ""}
+
+          </div>
+        `;
+      };
       break;
     }
 

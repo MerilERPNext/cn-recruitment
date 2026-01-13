@@ -25,7 +25,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Template",
-   "options": "Confirmation Policy Templates"
+   "options": "Document Template"
   },
   {
    "fieldname": "hr_letter_field",
@@ -52,7 +52,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-10-16 16:14:03.385618",
+ "modified": "2026-01-08 17:40:12.424942",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Letter Configuration Table",

@@ -16,6 +16,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -105,9 +106,13 @@ const AdvancesList: React.FC = () => {
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
       <div className="w-full max-w-[100vw] mx-auto py-0">
         {/* Header Actions */}
-        <div className="mb-6 w-full px-0">
-          <div className="flex items-center justify-end gap-4">
-            {/* Toggle Button */}
+        <div className="mb-4 w-full">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col flex-grow">
+            <Typography variant="subheading" color="body1">My Advance Request</Typography>
+            <Typography variant="bodySmall" color="body2">Track My Advance Request History</Typography>
+            </div>
+
             <button
               onClick={() => setMaskAmounts(!maskAmounts)}
               className="my-btn-secondary flex items-center gap-2"
@@ -138,10 +143,10 @@ const AdvancesList: React.FC = () => {
               Create Advance
             </button> */}
             <Button
-              bgColor="blue-600"
+              bgColor="primary"
               size="md"
               onClick={handleCreateAdvance}
-              className="hover:bg-blue-700 py-[0.65rem] font-semibold"
+              className="hover:bg-primary-700 py-[0.65rem] font-semibold"
             >
               Create Advance
             </Button>
@@ -150,11 +155,11 @@ const AdvancesList: React.FC = () => {
 
         {/* Table Wrapper */}
         <CardTable titles={titles} columnWidths={columnWidths}>
-          <div className="divide-y divide-gray-200 text-sm bg-white">
+          <div className=" text-sm bg-white">
             {formattedData.map((advance, index) => (
               <div
                 key={`${advance.name}-${index}`}
-                className="my-data-row grid gap-4 px-6 py-3 cursor-pointer"
+                className="hover:bg-primary/20 grid gap-4 px-6 py-3 border cursor-pointer"
                 style={{
                   gridTemplateColumns: columnWidths.join(" "),
                   alignItems: "center",

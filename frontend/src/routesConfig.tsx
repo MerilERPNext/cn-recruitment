@@ -353,6 +353,13 @@ const Separation = lazyWithRetry(
   "Separation"
 );
 
+const SeparationWorkflow = lazyWithRetry(
+  () => import("./components/Flows/SeparationWorkflow/SeparationWorkflow"),
+  "SeparationWorkflow"
+);
+
+
+
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
   "Confirmation"
@@ -412,6 +419,16 @@ const BenefitsSlips = lazyWithRetry(
 const MyTeamBenefitsRequests = lazyWithRetry(
   () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
   "MyTeamBenefitsRequests"
+);
+
+const HelpDeskApp = lazyWithRetry(
+  () => import("./components/HelpDesk/HelpDeskApp"),
+  "HelpDeskApp"
+);
+
+const FAQPage = lazyWithRetry(
+  () => import("./components/HelpDesk/FAQPage"),
+  "FAQPage"
 );
 
 const TodoPage = lazyWithRetry(
@@ -723,6 +740,7 @@ export const routesConfig: AppRoute[] = [
     children: [
       { path: "flow-requests", element: <FlowRequests2 /> },
       { path: "separation", element: <Separation /> },
+      { path: "separation-workflow/:id", element: <SeparationWorkflow /> },
       { path: "confirmation", element: <Confirmation /> },
       { path: "initiate-flow", element: <InitiateFlow2 /> },
       { path: "flow-request/:id", element: <RequestDetails /> },
@@ -749,7 +767,14 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/password-reset",
     element: <PasswordReset />,
   },
-  // Todo App route
+  {
+    path: "/webapp/helpdesk",
+    element: <HelpDeskApp />,
+  },
+  {
+    path: "/webapp/helpdesk/faq",
+    element: <FAQPage />,
+  },
   {
     path: "/webapp/todo-app",
     element: <TodoPage />,

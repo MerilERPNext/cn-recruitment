@@ -243,7 +243,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
           />
           <button
             onClick={handleReplace}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition-colors"
+            className="w-full bg-primary hover:bg-primary-600 text-white py-2 rounded-md transition-colors"
           >
             Replace
           </button>

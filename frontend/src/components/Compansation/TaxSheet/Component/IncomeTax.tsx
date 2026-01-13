@@ -8,6 +8,8 @@ import {
 } from "../../../../hooks/useTaxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
 import IncomeTaxComputationlist from "./IncomeTaxComputationlist";
+import { Typography } from "../../../shared/atoms/Typography";
+import { Card } from "../../../shared/atoms/Card";
 
 type PayrollPeriod = {
   name: string;
@@ -58,14 +60,14 @@ export default function IncomeComputationSheetContainer() {
 
   return (
     <div className="mb-2">
-      <div className="py-2 px-4 bg-blue-50 rounded">
-      <div className="flex items-center justify-between w-full">
+      <div className="py-2 rounded">
+      <Card className="flex items-center justify-between w-full">
 <div className="flex items-center gap-4">
 
-          <h1 className="base-title font-semibold text-gray-800">
+          <Typography variant="subheading">
             Income Tax Computation Sheet {selectedPeriod}
-          </h1>
-          <span className="text-sm bg-green-200 text-gray-600 px-2 py-1 rounded">{taxsheetData?.current_tax_regime ?? "Regime not available"}</span>
+          </Typography>
+          <span className="text-sm bg-success/20  text-success px-2 py-1 rounded">{taxsheetData?.current_tax_regime ?? "Regime not available"}</span>
 </div>
           <div className="flex flex-row md:flex-row md:items-center md:gap-4">
             <CustomDropdown
@@ -74,7 +76,7 @@ export default function IncomeComputationSheetContainer() {
               options={payrollPeriodOptions}
             />
           </div>
-        </div>
+        </Card>
       </div>
       <div>
         <IncomeTaxComputationlist data={taxsheetData} />
