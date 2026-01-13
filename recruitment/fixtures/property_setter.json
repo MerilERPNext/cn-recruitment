@@ -58,22 +58,6 @@
     },
     {
         "default_value": null,
-        "doc_type": "Job Applicant",
-        "docstatus": 0,
-        "doctype": "Property Setter",
-        "doctype_or_field": "DocField",
-        "field_name": "status",
-        "is_system_generated": 0,
-        "modified": "2024-12-27 11:44:23.718296",
-        "module": "Recruitment",
-        "name": "Job Applicant-status-options",
-        "property": "options",
-        "property_type": "Text",
-        "row_name": null,
-        "value": "Open\nIn-Progress\nRejected\nHold\nAccepted\nCold\nCall For Interview\nScreening\nInterview\nOffered\nOffer Accepted\nOffer Rejected\nHired\nOthers\nHR Head Approval Pending\nHR Head Approved\nManagement Approval Pending\nManagement Approved\nOffer to be Sent"
-    },
-    {
-        "default_value": null,
         "doc_type": "Job Requisition",
         "docstatus": 0,
         "doctype": "Property Setter",
