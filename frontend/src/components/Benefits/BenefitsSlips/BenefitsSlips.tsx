@@ -17,6 +17,7 @@ import { createPortal } from "react-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { Typography } from "../../shared/atoms/Typography";
 
 
 const BenefitsSlips = () => {
@@ -50,7 +51,7 @@ const BenefitsSlips = () => {
     } | null>(null);
 
     return (
-        <div className="px-4 pt-2">
+        <div className="">
             {/* PDF Modal */}
             {selectedSalarySlip && (
                 <SalarySlipPDFModal
@@ -65,18 +66,23 @@ const BenefitsSlips = () => {
                     htmlContent={modalHtmlContent}
                 />
             )}
-            <>
-                <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="flex-1 mt-2 lg:max-w-xs">
-                        <CustomDropdown
-                            position='bottom-right'
-                            value={selectedYear}
-                            onChange={(event) => setSelectedYear(event?.target.value)}
-                            options={optionYears}
-                        />
-                    </div>
+            <div className="flex w-full gap-2 mb-2">
+                <div className="flex flex-col mr-auto">
+                    <Typography variant="h4">
+                        My Benefit Slips for FY {selectedYear}
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2">
+                        Track your benefits slips
+                    </Typography>
                 </div>
-            </>
+
+                <CustomDropdown
+                    position='bottom-left'
+                    value={selectedYear}
+                    onChange={(event) => setSelectedYear(event?.target.value)}
+                    options={optionYears}
+                />
+            </div>
 
             <CardTable
                 titles={[
