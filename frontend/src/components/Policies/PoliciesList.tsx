@@ -37,6 +37,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
 
   return (
     <Card
+      onClick={handleView}
       padding="sm"
       className="w-full flex justify-between items-center hover:shadow-md my-1"
     >
@@ -83,12 +84,8 @@ const PoliciesList: React.FC = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
-  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedStatus, setSelectedStatus] = useState("Acknowledged");
   const statusOptions = [
-    {
-      value: "All",
-      label: "All",
-    },
     {
       value: "Pending",
       label: "Pending",
@@ -142,7 +139,7 @@ const PoliciesList: React.FC = () => {
         defaultFilters={{
           policy_category: categoryName,
           employee_id: employeeId,
-          ...(selectedStatus !== "All" ? { status: selectedStatus } : {}),
+          status: selectedStatus,
         }}
         pageSize={20}
         isSearch={true}

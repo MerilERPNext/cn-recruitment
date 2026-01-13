@@ -180,12 +180,16 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
             <Typography variant="h3" component="h1" color="white">
               {getPageTitle()}
             </Typography>
-            <Typography variant="label" color="white" className="opacity-90 block">
+            <Typography
+              variant="label"
+              color="white"
+              className="opacity-90 block"
+            >
               Manage your {getPageTitle().toLowerCase()}
             </Typography>
           </div>
           {location.pathname !== ROUTES.SEARCH_MEMBERS && <SearchMembers />}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={handleNotificationClick}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
@@ -200,7 +204,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                   className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                 >
                   <div className="text-right">
-                    <Typography variant="body" color="white" >
+                    <Typography variant="body" color="white">
                       {currentUser?.username}
                     </Typography>
                     <Typography variant="label" color="white">
@@ -215,8 +219,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee?.employee ? (
@@ -231,11 +236,19 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                   >
                     <div className="text-right">
-                      <Typography variant="bodyMedium" color="white" className="block outline-none">
+                      <Typography
+                        variant="bodyMedium"
+                        color="white"
+                        className="block outline-none"
+                      >
                         {currentEmployee?.employee_name ||
                           currentEmployee?.first_name}
                       </Typography>
-                      <Typography variant="label" color="white" className="opacity-80 block">
+                      <Typography
+                        variant="label"
+                        color="white"
+                        className="opacity-80 block"
+                      >
                         Employee ID: {currentEmployee?.employee}
                       </Typography>
                     </div>
@@ -247,8 +260,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       />
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 text-white transition-transform ${
+                        showProfileDropdown ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                 </>
@@ -270,12 +284,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
                       {/* Text */}
                       <div className="flex-1 min-w-0">
-                        <Typography variant="subheading" color="title" className="truncate block">
+                        <Typography
+                          variant="subheading"
+                          color="title"
+                          className="truncate block"
+                        >
                           {currentEmployee?.employee_name ||
                             currentEmployee?.first_name ||
                             "Temp User"}
                         </Typography>
-                        <Typography variant="bodySmall" color="secondary" className="break-words block">
+                        <Typography
+                          variant="bodySmall"
+                          color="secondary"
+                          className="break-words block"
+                        >
                           {currentEmployee?.company_email ||
                             currentEmployee?.personal_email ||
                             "Temp Email"}
