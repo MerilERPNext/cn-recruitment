@@ -66,6 +66,7 @@ const Appreciations = () => {
                     value={""}
                     position="bottom-right"
                     onChange={(e) => {
+                        console.log(e.target);
                         setModal({ open: true, reason: "", type: e.target.value })
                     }}
                     options={employeeAppreciations?.badges?.map((item) => ({
