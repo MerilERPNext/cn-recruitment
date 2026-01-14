@@ -197,7 +197,7 @@ const SalarySlipsList = () => {
                 Track and manage your salary slips
               </Typography>
             </div>
-            <div className="flex items-center gap-2 justify-between mb-2">
+            <div className="flex items-center gap-5 justify-between mb-2">
               <div className="flex-1 max-w-xs min-w-[150px]">
                 <select
                   id="yearFilter"
@@ -224,14 +224,14 @@ const SalarySlipsList = () => {
                     <span className="text-sm font-medium text-gray-700">
                       Show Amounts
                     </span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
+                    <BsToggleOff className="w-5 h-5 text-gray-400" />
                   </>
                 ) : (
                   <>
                     <span className="text-sm font-medium text-gray-700">
                       Hide Amounts
                     </span>
-                    <BsToggleOn className="w-6 h-6 text-primary" />
+                    <BsToggleOn className="w-5 h-5 text-primary" />
                   </>
                 )}
               </button>
