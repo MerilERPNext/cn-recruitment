@@ -16,8 +16,8 @@ import HRAForm, { type HRAData } from "./Component/HraExemptio"
 import CompareTaxSheetHandler from "./Component/TaxCompare"
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
 import CustomDropdown from "../../shared/CustomDropdown"
-import CategoryDeclarationSelectable from "./Component/test"
 import Button from "../../shared/atoms/Button"
+import CategoryDeclarationSelectable from "./Component/Category"
 
 type PayrollPeriod = {
   name: string
@@ -61,6 +61,8 @@ const ITDeclarationForm = () => {
     selectedPeriod || null
   ) as { data?: any }
 
+  const declarationDoctype = responseData?.doctype
+  const proofId = responseData?.proof_id
   /* ---------------- Initial payroll period ---------------- */
   useEffect(() => {
     if (payrollPeriods?.length && !selectedPeriod) {
@@ -71,6 +73,15 @@ const ITDeclarationForm = () => {
       )
     }
   }, [payrollPeriods, selectedPeriod])
+
+
+
+useEffect(() => {
+  if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
+    setActiveMainTab("category");
+  }
+}, [goHeadWithNewRegimeBool, activeMainTab]);
+
 
   /* ---------------- Regime flag ---------------- */
   useEffect(() => {
@@ -148,6 +159,11 @@ const ITDeclarationForm = () => {
 
     const payload = {
       declaration_id: declarationId,
+      doctype:  declarationDoctype,
+      proof_id: proofId,
+      payroll_period: selectedPeriod,
+      company: user?.company,
+      employee: user?.employee,
       data: {
         monthly_house_rent: goHeadWithNewRegimeBool ? 0 : hraData?.monthly_hra ?? 0,
         rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : hraData?.rented_in_metro_city ?? 0,
@@ -173,11 +189,9 @@ const ITDeclarationForm = () => {
     })
   }
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="bg-white min-h-screen">
       <header className=" p-4 rounded-lg">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="font-bold">IT Declaration</h1>
 
@@ -201,8 +215,6 @@ const ITDeclarationForm = () => {
             </Button>
           </div>
         </div>
-
-        {/* Regime */}
         <div className="flex justify-between items-center mt-4">
           <p className="text-gray-500">Tax Regime</p>
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
@@ -255,16 +267,11 @@ const ITDeclarationForm = () => {
             </button>
           )}
         </div>
-
-        {/* HRA */}
         {activeMainTab === "hra" && hraData && (
           <HRAForm hraData={hraData} onChange={handleHraChange} />
         )}
-
-        {/* Categories */}
         {activeMainTab === "category" && (
           <>
-            {/* Sections */}
             <div className="flex gap-2 mt-4">
               {groupedCategories.map((sec) => (
                 <button
@@ -280,14 +287,13 @@ const ITDeclarationForm = () => {
                 </button>
               ))}
             </div>
-
-            {/* Direct Categories + Items */}
             {sectionCategories.map((cat: any) => (
               <div key={cat.category_name} className="mt-6">
 
 
                 <CategoryDeclarationSelectable
                   categoryName={cat.category_name}
+                  max_amount={cat.max_amount}
                   selectable={cat.custom_select_type}
                   showProofFields={
                     responseData?.doctype === "Employee Tax Exemption Proof Submission"
