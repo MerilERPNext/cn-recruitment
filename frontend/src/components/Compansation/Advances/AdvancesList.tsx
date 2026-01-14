@@ -104,52 +104,56 @@ const AdvancesList: React.FC = () => {
 
   const DesktopLayout = () => (
     <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-      <div className="w-full max-w-[100vw] mx-auto py-0">
+      <div className="w-full max-w-[100vw] mx-auto py-0 px-2">
         {/* Header Actions */}
-        <div className="mb-4 w-full">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex flex-col flex-grow">
-            <Typography variant="subheading" color="body1">My Advance Request</Typography>
-            <Typography variant="bodySmall" color="body2">Track My Advance Request History</Typography>
+        <div className="mb-2 w-full px-2">
+          <div className="flex items-center justify-between gap-4 border-b border-gray-200">
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4"> My Advance Request</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your advance requests
+              </Typography>
             </div>
 
-            <button
-              onClick={() => setMaskAmounts(!maskAmounts)}
-              className="my-btn-secondary flex items-center gap-2"
-              title={maskAmounts ? "Show amounts" : "Hide amounts"}
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Show Amounts
-                  </span>
-                  <BsToggleOff className="w-6 h-6 text-gray-400" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Hide Amounts
-                  </span>
-                  <BsToggleOn className="w-6 h-6 text-primary" />
-                </>
-              )}
-            </button>
+            <div className="flex items-center gap-5">
+              <button
+                onClick={() => setMaskAmounts(!maskAmounts)}
+                className="my-btn-secondary flex items-center gap-2"
+                title={maskAmounts ? "Show amounts" : "Hide amounts"}
+              >
+                {maskAmounts ? (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Show Amounts
+                    </span>
+                    <BsToggleOff className="w-6 h-6 text-gray-400" />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Hide Amounts
+                    </span>
+                    <BsToggleOn className="w-6 h-6 text-primary" />
+                  </>
+                )}
+              </button>
 
-            {/* Create Advance Button */}
-            {/* <button
+              {/* Create Advance Button */}
+              {/* <button
               onClick={handleCreateAdvance}
               className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
             >
               Create Advance
             </button> */}
-            <Button
-              bgColor="primary"
-              size="md"
-              onClick={handleCreateAdvance}
-              className="hover:bg-primary-700 py-[0.65rem] font-semibold"
-            >
-              Create Advance
-            </Button>
+              <Button
+                bgColor="primary"
+                size="md"
+                onClick={handleCreateAdvance}
+                className="hover:bg-primary-700 py-[0.65rem] font-semibold"
+              >
+                Create Advance
+              </Button>
+            </div>
           </div>
         </div>
 
