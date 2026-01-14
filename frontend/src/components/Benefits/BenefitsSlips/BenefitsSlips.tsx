@@ -28,11 +28,12 @@ import { Typography } from "../../shared/atoms/Typography";
 
 const BenefitsSlips = () => {
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
-  const { data: employee } = useCurrentEmployeeIdCard();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
-  const effectiveEmployee = isViewingOtherUser ? targetEmployee : employee;
+  const effectiveEmployee = isViewingOtherUser
+    ? targetEmployee
+    : employeeIdCard;
   const { data: optionYearsData, isLoading: YearsLoading } =
     useGetYearFilterOptions(effectiveEmployee?.company || "");
 
@@ -61,21 +62,7 @@ const BenefitsSlips = () => {
   } | null>(null);
 
   return (
-    <div className="">
-      {/* PDF Modal */}
-      {selectedSalarySlip && (
-        <SalarySlipPDFModal
-          isOpen={pdfModalOpen}
-          onClose={() => {
-            setPdfModalOpen(false);
-            setSelectedSalarySlip(null);
-            setModalHtmlContent("");
-          }}
-          salarySlipName={selectedSalarySlip?.name || ""}
-          salarySlipDate={selectedSalarySlip?.date || ""}
-          htmlContent={modalHtmlContent}
-        />
-      )}
+    <div>
       <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
         <div className="flex flex-col mb-2">
           <Typography variant="h4">
@@ -139,6 +126,21 @@ const BenefitsSlips = () => {
           loadMorePagination={false}
         />
       </CardTable>
+
+      {/* PDF Modal */}
+      {selectedSalarySlip && (
+        <SalarySlipPDFModal
+          isOpen={pdfModalOpen}
+          onClose={() => {
+            setPdfModalOpen(false);
+            setSelectedSalarySlip(null);
+            setModalHtmlContent("");
+          }}
+          salarySlipName={selectedSalarySlip?.name || ""}
+          salarySlipDate={selectedSalarySlip?.date || ""}
+          htmlContent={modalHtmlContent}
+        />
+      )}
     </div>
   );
 };

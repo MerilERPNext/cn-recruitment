@@ -40,8 +40,6 @@ const MyBenefits: React.FC = () => {
     error,
     refetch,
   } = useGetYearFilterOptions(effectiveEmployee?.company || "");
-
-  console.log("error", error);
   const optionYears = useMemo(() => {
     if (YearsLoading || !optionYearsData) return [];
     else
@@ -159,7 +157,6 @@ const MyBenefits: React.FC = () => {
 
   // At this point we have real data in allAccruedReimbursements.data
   const components = allAccruedReimbursements?.data ?? [];
-  console.log(allAccruedReimbursements, selectedYear);
   return (
     <div className="min-h-screen font-sans text-slate-800 pb-12">
       <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
