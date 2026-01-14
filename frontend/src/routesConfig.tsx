@@ -436,6 +436,26 @@ const TodoPage = lazyWithRetry(
   "TodoPage"
 );
 
+const LeaveSummary = lazyWithRetry(
+  () => import("./components/Leaves/LeaveSummary"),
+  "LeaveSummary"
+);
+
+const CompensationSummary = lazyWithRetry(
+  () => import("./components/Compansation/CompensationSummary"),
+  "CompensationSummary"
+);
+
+const BenefitsSummary = lazyWithRetry(
+  () => import("./components/Benefits/BenefitsSummary"),
+  "BenefitsSummary"
+);
+
+const ExpenseSummary = lazyWithRetry(
+  () => import("./components/Expenses-App/ExpenseSummary"),
+  "ExpenseSummary"
+);
+
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
   const location = useLocation();
@@ -533,6 +553,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/salary-slip-app",
     element: <SalarySlipApp />,
     children: [
+      { path: "summary", element: <CompensationSummary /> },
       { path: "ctc-salary-breakdown", element: <CTCSalaryUI /> },
       { path: "salary-slip-list", element: <SalarySlipsList /> },
       { path: "income-tax-sheet", element: <IncomeTaxSheet /> },
@@ -561,6 +582,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/benefits-app",
     element: <BenefitsApp />,
     children: [
+      { path: "summary", element: <BenefitsSummary /> },
       { path: "my-benefits", element: <MyBenefits /> },
       { path: "my-requests", element: <MyBenefitRequests /> },
       { path: "benefits-slips", element: <BenefitsSlips /> },
@@ -616,6 +638,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/expenses-app",
     element: <ExpensesApp />,
     children: [
+      { path: "summary", element: <ExpenseSummary /> },
       { path: "expenses-list", element: <ExpensesList /> },
       { path: "team-requests", element: <TeamExpense /> },
       { path: "my-advance-expense", element: <MyAdvanceExpenseList /> },
@@ -685,6 +708,7 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/leave-app",
     element: <LeaveApp />,
     children: [
+      { path: "summary", element: <LeaveSummary /> },
       { path: "leaves/leave-balance", element: <LeaveBalance /> },
       {
         path: "leaves/leave-requests",

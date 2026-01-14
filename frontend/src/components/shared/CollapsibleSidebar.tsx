@@ -137,6 +137,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Leaves and Holidays",
       subItems: [
         {
+          name: "Leave & Holidays Summary",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/leave-app/summary",
+        },
+        {
           name: "Leave Balance",
           icon: Calculator,
           href: "/webapp/leave-app/leaves/leave-balance",
@@ -218,6 +223,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Compensation",
       subItems: [
         {
+          name: "Compensation Summary",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/salary-slip-app/summary",
+        },
+        {
           name: "Pay Package",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/pay-package",
@@ -286,6 +296,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Benefit",
       subItems: [
         {
+          name: "Benefits Summary",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/benefits-app/summary",
+        },
+        {
           name: "My Benefits",
           icon: Gift,
           href: "/webapp/benefits-app/my-benefits",
@@ -314,6 +329,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       path: "/webapp/expenses-app",
       permissionKey: "Expenses",
       subItems: [
+        {
+          name: "Expense Summary",
+          icon: ChartNoAxesCombined,
+          href: "/webapp/expenses-app/summary",
+        },
         {
           name: "Expense Claims",
           icon: IndianRupee,
