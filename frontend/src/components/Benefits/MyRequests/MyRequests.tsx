@@ -7,10 +7,18 @@ import BenefitRequestForm from "./BenefitsRequestForm";
 import CardTable from "../../shared/CardTable";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import Button from "../../shared/atoms/Button";
-import { useCurrentEmployeeIdCard, useEmployee } from "../../../hooks/useEmployee";
+import {
+  useCurrentEmployeeIdCard,
+  useEmployee,
+} from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
-import { BenefitPayslip, useGetBenefitClaimLockingPeriod, useGetBenefitRequestLockView, useGetYearFilterOptions } from "../../../hooks/useBenefit";
+import {
+  BenefitPayslip,
+  useGetBenefitClaimLockingPeriod,
+  useGetBenefitRequestLockView,
+  useGetYearFilterOptions,
+} from "../../../hooks/useBenefit";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
@@ -28,22 +36,28 @@ const MyRequests: React.FC = () => {
 
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
   const { data: employee } = useCurrentEmployeeIdCard();
-  const { targetEmployeeId, isViewingOtherUser } =
-    useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
   const effectiveEmployee = isViewingOtherUser ? targetEmployee : employee;
-  const effectiveEmployeeId = isViewingOtherUser ? targetEmployee?.name : employee?.id;
+  const effectiveEmployeeId = isViewingOtherUser
+    ? targetEmployee?.name
+    : employee?.id;
 
   const handleCloseModal = () => {
     setShowBenefitForm(false);
   };
 
-  const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(effectiveEmployee?.company || "");
+  const { data: optionYearsData, isLoading: YearsLoading } =
+    useGetYearFilterOptions(effectiveEmployee?.company || "");
 
   const optionYears = useMemo(() => {
     if (YearsLoading || !optionYearsData) return [];
-    else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
+    else
+      return optionYearsData?.map((data) => ({
+        label: data?.name,
+        value: data?.name,
+      }));
   }, [optionYearsData, YearsLoading]);
 
   const [selectedYear, setSelectedYear] = useState("");
@@ -56,20 +70,37 @@ const MyRequests: React.FC = () => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const { data, isLoading } = useGetBenefitRequestLockView(effectiveEmployeeId || "", selectedYear, today);
-  const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } = useGetBenefitClaimLockingPeriod(effectiveEmployeeId || "", selectedYear, today);
-  const showBenefitRequestButton = !benefitClaimLockLoading && benefitClaimLock?.status === "success";
+  const { data, isLoading } = useGetBenefitRequestLockView(
+    effectiveEmployeeId || "",
+    selectedYear,
+    today
+  );
+  const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } =
+    useGetBenefitClaimLockingPeriod(
+      effectiveEmployeeId || "",
+      selectedYear,
+      today
+    );
+  const showBenefitRequestButton =
+    !benefitClaimLockLoading && benefitClaimLock?.status === "success";
   const LockRequestMessage = useMemo(() => {
     if (!data || isLoading) return null;
-    return <div className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"}`}>{data?.message}</div>
+    return (
+      <div
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
+          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+        }`}
+      >
+        {data?.message}
+      </div>
+    );
   }, [data, isLoading]);
 
   return (
     <div>
       <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
-
-        <div className="flex w-full gap-2">
-          <div className="flex flex-col mr-auto">
+        <div className="flex md:flex-row flex-col w-full gap-2 justify-between border-b border-gray-200 px-2">
+          <div className="flex flex-col mb-2">
             <Typography variant="h4">
               My Benefits Requests for FY {selectedYear}
             </Typography>
@@ -78,35 +109,38 @@ const MyRequests: React.FC = () => {
             </Typography>
           </div>
 
-          <CustomDropdown
-            position='bottom-left'
-            value={selectedYear}
-            onChange={(event) => setSelectedYear(event?.target.value)}
-            options={optionYears}
-          />
+          <div className="flex items-center gap-2 justify-between mb-2">
+            <button
+              onClick={() => setMaskAmounts(!maskAmounts)}
+              className="my-btn-secondary"
+              title={maskAmounts ? "Show amounts" : "Hide amounts"}
+            >
+              {maskAmounts ? (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Show Amounts
+                  </span>
+                  <BsToggleOff className="w-5 h-5 text-gray-400" />
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-medium text-gray-700">
+                    Hide Amounts
+                  </span>
+                  <BsToggleOn className="w-5 h-5 text-primary" />
+                </>
+              )}
+            </button>
+            <CustomDropdown
+              position="bottom-left"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event?.target.value)}
+              options={optionYears}
+            />
+          </div>
         </div>
-        <button
-          onClick={() => setMaskAmounts(!maskAmounts)}
-          className="my-btn-secondary"
-          title={maskAmounts ? "Show amounts" : "Hide amounts"}
-        >
-          {maskAmounts ? (
-            <>
-              <span className="text-sm font-medium text-gray-700">
-                Show Amounts
-              </span>
-              <BsToggleOff className="w-6 h-6 text-gray-400" />
-            </>
-          ) : (
-            <>
-              <span className="text-sm font-medium text-gray-700">
-                Hide Amounts
-              </span>
-              <BsToggleOn className="w-6 h-6 text-primary" />
-            </>
-          )}
-        </button>
-        {showBenefitRequestButton &&
+
+        {showBenefitRequestButton && (
           <Button
             bgColor="blue-600"
             size="md"
@@ -115,7 +149,7 @@ const MyRequests: React.FC = () => {
           >
             Request Benefit
           </Button>
-        }
+        )}
       </div>
       {LockRequestMessage}
       <CardTable
@@ -131,18 +165,22 @@ const MyRequests: React.FC = () => {
         ]}
       >
         <DataListView
-          queryKey={["mybenefit-request", employeeIdCard?.id || "", employeeIdCard?.company || "", selectedYear || ""]}
+          queryKey={[
+            "mybenefit-request",
+            employeeIdCard?.id || "",
+            employeeIdCard?.company || "",
+            selectedYear || "",
+          ]}
           customAPI={{
-            method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
+            method:
+              "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
             params: {
               employee: employeeIdCard?.id || "",
               company: employeeIdCard?.company || "",
               payroll_period: selectedYear,
             },
           }}
-          ItemComponent={(props: {
-            item: BenefitPayslip;
-          }) => {
+          ItemComponent={(props: { item: BenefitPayslip }) => {
             return (
               <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
             );
@@ -170,18 +208,19 @@ const MyRequests: React.FC = () => {
           getItemKey={(item) => item.name}
         />
       </CardTable>
-      {showBenefitForm && createPortal(
-        <Modal onClose={handleCloseModal}>
-          <BenefitRequestForm
-            isOpen={showBenefitForm}
-            onClose={handleCloseModal}
-            onSuccess={() => {
-              // setRefetch(true);
-            }}
-          />
-        </Modal>,
-        document.body
-      )}
+      {showBenefitForm &&
+        createPortal(
+          <Modal onClose={handleCloseModal}>
+            <BenefitRequestForm
+              isOpen={showBenefitForm}
+              onClose={handleCloseModal}
+              onSuccess={() => {
+                // setRefetch(true);
+              }}
+            />
+          </Modal>,
+          document.body
+        )}
     </div>
   );
 };
@@ -195,20 +234,46 @@ const BenefitSlipItem = ({
 }) => {
   const { isDesktop } = useScreenSize();
 
-  return isDesktop ? (<div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
-    <span className="text-sm font-medium text-gray-700 text-start truncate">
-      <WrapperHoverCard employeeId={item?.employee}>
-        {item?.employee_name}
-      </WrapperHoverCard>
-    </span>
-    <span className="text-sm font-medium text-gray-700 text-start truncate">{item?.company}</span>
-    <span>{item?.earning_component}</span>
-    <span className="text-sm font-medium text-gray-700 text-start truncate">{formatToIndianDate(item?.claim_date || "")}</span>
-    <span className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""}`}>₹{maskAmounts ? "#####" : item?.claimed_amount}</span>
-    <span className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""}`}>₹{maskAmounts ? "#####" : item?.custom_taxable_amount}</span>
-    <span className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""}`}>₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}</span>
-    <span> <StatusBadge status={item?.custom_status} /></span>
-  </div>
+  return isDesktop ? (
+    <div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
+      <span className="text-sm font-medium text-gray-700 text-start truncate">
+        <WrapperHoverCard employeeId={item?.employee}>
+          {item?.employee_name}
+        </WrapperHoverCard>
+      </span>
+      <span className="text-sm font-medium text-gray-700 text-start truncate">
+        {item?.company}
+      </span>
+      <span>{item?.earning_component}</span>
+      <span className="text-sm font-medium text-gray-700 text-start truncate">
+        {formatToIndianDate(item?.claim_date || "")}
+      </span>
+      <span
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
+      >
+        ₹{maskAmounts ? "#####" : item?.claimed_amount}
+      </span>
+      <span
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
+      >
+        ₹{maskAmounts ? "#####" : item?.custom_taxable_amount}
+      </span>
+      <span
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
+      >
+        ₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}
+      </span>
+      <span>
+        {" "}
+        <StatusBadge status={item?.custom_status} />
+      </span>
+    </div>
   ) : (
     <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
       <div className="flex w-full">
@@ -243,8 +308,9 @@ const BenefitSlipItem = ({
         <div className="flex ml-auto flex-col">
           <label className="text-gray-500 text-sm">Claim Amount</label>
           <span
-            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${maskAmounts ? "blur-[3px]" : ""
-              }`}
+            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${
+              maskAmounts ? "blur-[3px]" : ""
+            }`}
           >
             ₹{maskAmounts ? "#####" : item?.claimed_amount}
           </span>

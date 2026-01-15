@@ -36,14 +36,13 @@ function FilterDropdown({
   return (
     <div className="absolute right-0 top-full mt-2 w-56 bg-app rounded-lg shadow-lg border border-gray-200 z-50">
       <div className="p-3">
-      <div className="flex items-center justify-between mb-3">  
-        <h3 className="text-sm font-semibold mb-2 text-gray-700">
-          Filter Payments
-        </h3>
-        <button
-        onClick={onClose}
-        className=" mb-2 text-gray-700 "
-        ><IoCloseCircleOutline className="w-6 h-6"/></button>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold mb-2 text-gray-700">
+            Filter Payments
+          </h3>
+          <button onClick={onClose} className=" mb-2 text-gray-700 ">
+            <IoCloseCircleOutline className="w-6 h-6" />
+          </button>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -70,7 +69,6 @@ function FilterDropdown({
     </div>
   );
 }
-
 
 export default function ExtraPayment() {
   const [activeFilter, setActiveFilter] = useState<PaymentStatus>("all");
@@ -136,16 +134,14 @@ export default function ExtraPayment() {
 
   return (
     <div className="min-h-screen ">
-      <div className="w-full mx-auto">
-        <div className="flex items-start justify-between mb-2">
-<div className="flex flex-col gap-1">
-<Typography variant="subheading">
-            Extra Payment History
-          </Typography>
-          <Typography variant="bodySmall" color="body2">
-            Track Extra Payment History
-          </Typography>
-</div>
+      <div className="w-full mx-auto px-2">
+        <div className="flex items-center justify-between mb-2 border-b border-gray-200 px-2">
+          <div className="flex flex-col mb-2">
+            <Typography variant="h4">Extra Payment History</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your extra payments
+            </Typography>
+          </div>
           {/* <button
             onClick={() => setShowExtraPaymentForm(true)}
             className="px-4 py-1 rounded-lg bg-blue-600 text-white flex items-center gap-2"
@@ -166,24 +162,22 @@ export default function ExtraPayment() {
             />
           </div>
 
-    <div className="relative inline-block">
-  <button
-    onClick={() => setIsFilterOpen((prev) => !prev)}
-    className="px-2 py-2 border border-gray-300 border-l-0 rounded-r-lg bg-white text-gray-900 flex items-center gap-2"
-  >
-    <Filter className="w-4 h-4" />
-  </button>
+          <div className="relative inline-block">
+            <button
+              onClick={() => setIsFilterOpen((prev) => !prev)}
+              className="px-2 py-2 border border-gray-300 border-l-0 rounded-r-lg bg-white text-gray-900 flex items-center gap-2"
+            >
+              <Filter className="w-4 h-4" />
+            </button>
 
-  <FilterDropdown
-    isOpen={isFilterOpen}
-    activeFilter={activeFilter}
-    onFilterChange={setActiveFilter}
-    onClose={() => setIsFilterOpen(false)}
-  />
-</div>
+            <FilterDropdown
+              isOpen={isFilterOpen}
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              onClose={() => setIsFilterOpen(false)}
+            />
+          </div>
         </div>
-
-      
 
         {/* ---------------------- WEB ---------------------- */}
         {!isMobile && (

@@ -31,13 +31,7 @@ const RequestShiftChangeButton: React.FC<Props> = ({
           </svg>
           {label}
         </button> */}
-        <Button
-          fullWidth
-          onClick={onClick}
-          size="lg"
-          bgColor="blue-600"
-          className="hover:bg-blue-700"
-        >
+        <Button fullWidth onClick={onClick} size="lg" bgColor="primary">
           {label}
         </Button>
       </div>

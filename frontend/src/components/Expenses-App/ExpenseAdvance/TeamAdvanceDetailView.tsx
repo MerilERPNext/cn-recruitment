@@ -48,21 +48,6 @@ export default function TeamAdvanceDetailView({
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-  if (isLoading) return <LoadingView onClose={onClose} label={label} />;
-  if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
-  if (!data?.reference_document) return null;
-
-  const ref = data.reference_document;
-  const actions = (() => {
-    if (!data.custom_doctype_actions) return [];
-    try {
-      return JSON.parse(data.custom_doctype_actions);
-    } catch (e) {
-      console.error("Failed to parse custom_doctype_actions:", e);
-      return [];
-    }
-  })();
-  const status = getStatus(ref.status);
 
   const handleAction = useCallback(
     async (action: string) => {
@@ -84,6 +69,23 @@ export default function TeamAdvanceDetailView({
     },
     [data, mutation, onAction, onClose, setRefetchAttendance]
   );
+  
+  if (isLoading) return <LoadingView onClose={onClose} label={label} />;
+  if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
+  if (!data?.reference_document) return null;
+
+  const ref = data.reference_document;
+  const actions = (() => {
+    if (!data.custom_doctype_actions) return [];
+    try {
+      return JSON.parse(data.custom_doctype_actions);
+    } catch (e) {
+      console.error("Failed to parse custom_doctype_actions:", e);
+      return [];
+    }
+  })();
+  const status = getStatus(ref.status);
+
   const DesktopBreakup = (
     <div className="mt-2 border border-gray-200 rounded-lg overflow-x-auto bg-white shadow-sm">
       <table className="min-w-full text-sm text-gray-800">

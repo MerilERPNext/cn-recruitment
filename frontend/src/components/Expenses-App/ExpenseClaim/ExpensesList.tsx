@@ -320,7 +320,7 @@ const ExpensesList: React.FC = () => {
                 </Button>
               </>
             ) : (
-              <DropdownMenu items={mobileMenuItems} placement="bottom-right">
+              <DropdownMenu items={mobileMenuItems} placement="bottom-left">
                 <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
                   <MoreVertical size={18} />
                 </button>
