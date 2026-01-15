@@ -1271,16 +1271,23 @@ export async function convertFieldsToSimpleTabbedData(
       // It's a field
       ensureCurrentTab();
 
-      const fieldValue = employeeData[field.fieldname];
+      const fieldValue =
+        employeeData[`${field.fieldname}_display`] !== undefined
+          ? employeeData[`${field.fieldname}_display`]
+          : employeeData[field.fieldname];
 
       // Determine simpler type
       let simpleType = "text";
-      if (['Int', 'Float', 'Currency', 'Percent'].includes(field.fieldtype)) simpleType = "number";
-      else if (['Date', 'Datetime', 'Time'].includes(field.fieldtype)) simpleType = "date";
-      else if (['Select', 'Link', 'Dynamic Link'].includes(field.fieldtype)) simpleType = "select";
-      else if (['Check'].includes(field.fieldtype)) simpleType = "boolean";
-      else if (['Attach', 'Attach Image'].includes(field.fieldtype)) simpleType = "file";
-      else if (['Table'].includes(field.fieldtype)) simpleType = "table";
+      if (["Int", "Float", "Currency", "Percent"].includes(field.fieldtype))
+        simpleType = "number";
+      else if (["Date", "Datetime", "Time"].includes(field.fieldtype))
+        simpleType = "date";
+      else if (["Select", "Link", "Dynamic Link"].includes(field.fieldtype))
+        simpleType = "select";
+      else if (["Check"].includes(field.fieldtype)) simpleType = "boolean";
+      else if (["Attach", "Attach Image"].includes(field.fieldtype))
+        simpleType = "file";
+      else if (["Table"].includes(field.fieldtype)) simpleType = "table";
 
       const simpleField: SimpleField = {
         label: field.label || field.fieldname,
@@ -1289,7 +1296,7 @@ export async function convertFieldsToSimpleTabbedData(
         type: simpleType, // simplified type
         hidden: !!field.hidden,
         required: !!field.reqd,
-        readOnly: !!field.read_only
+        readOnly: !!field.read_only,
       };
 
       if (field.fieldtype === 'Table' && field.options) {
@@ -1328,8 +1335,13 @@ export async function convertFieldsToSimpleTabbedData(
               else if (["Attach", "Attach Image"].includes(childField.fieldtype))
                 childSimpleType = "file";
 
+              const childValue =
+                row[`${childField.fieldname}_display`] !== undefined
+                  ? row[`${childField.fieldname}_display`]
+                  : row[childField.fieldname];
+
               rowData[childField.fieldname] = {
-                value: row[childField.fieldname],
+                value: childValue,
                 type: childSimpleType,
                 label: childField.label || childField.fieldname,
               };

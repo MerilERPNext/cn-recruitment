@@ -295,7 +295,7 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
 };
 export const useGetEmployeeDetailsByEmpIdForProfile = (employee_id: string) => {
   return useQuery({
-    queryKey: ["all-emp-details-by-empid", employee_id],
+    queryKey: ["all-emp-details-by-empid-for-profile", employee_id],
     queryFn: () => profileService.getEmployeeDetailsByEmpIdForProfile(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
     useCurrentEmployeeAllDetails,
-    useGetEmployeeDetailsByEmpId,
+    useGetEmployeeDetailsByEmpIdForProfile,
     useGetEmployeeFieldPermissions,
 } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
@@ -35,7 +35,7 @@ export default function EmployeeProfileSections() {
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";
 
-    const employee = useGetEmployeeDetailsByEmpId(employeeId);
+    const { data: employee, isLoading: employeeLoading, refetch: refetchEmployee } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstances = useRef<Record<string, any>>({});
 
@@ -55,24 +55,24 @@ export default function EmployeeProfileSections() {
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
     const can = usePermission();
     useEffect(() => {
-        if (!fieldPermissions || !employee?.data) return;
+        if (!fieldPermissions || !employee?.employee) return;
 
         const fetchData = async () => {
             const result = await convertFieldsToSimpleTabbedData(
                 fieldPermissions,
-                employee.data
+                employee.employee
             );
             setTabs(result.tabs);
             setActiveTab(result.tabs[0]?.key || "");
 
             const formioResult = await convertToFormioWithTabMetadata(
                 fieldPermissions,
-                employee?.data
+                employee?.employee
             );
             setformioTabs(formioResult.tabs);
         };
         fetchData();
-    }, [fieldPermissions, employee?.data]);
+    }, [fieldPermissions, employee?.employee]);
 
 
     useEffect(() => {
@@ -102,7 +102,7 @@ export default function EmployeeProfileSections() {
             block: "start",
         });
     };
-    if (!employeeId || fieldPermissionsLoading || employee.isLoading || !tabs.length) {
+    if (!employeeId || fieldPermissionsLoading || employeeLoading || !tabs.length) {
         return <ProfileGridSkeleton />;
     }
     return (
@@ -204,8 +204,8 @@ export default function EmployeeProfileSections() {
                 formioTabs={formioTabs}
                 formInstances={formInstances}
                 employeeId={employeeId}
-                refetchEmployee={() => { employee.refetch() }}
-                employeeIsLoading={employee.isLoading}
+                refetchEmployee={() => { refetchEmployee() }}
+                employeeIsLoading={employeeLoading}
             />
         </div>
     );
