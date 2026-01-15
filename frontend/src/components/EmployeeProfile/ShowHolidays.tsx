@@ -53,7 +53,7 @@ const ShowHolidays = () => {
         {holidays.map((holiday) => (
           <li
             key={`${holiday.date}-${holiday.holiday_name}`}
-            className="flex border border-gray-100 items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2"
+            className="flex hover-lift items-center justify-between gap-3 bg-white shadow-sm rounded-xl p-2 mb-2"
           >
             <div className="flex items-center justify-between">
               <div className="flex gap-2">

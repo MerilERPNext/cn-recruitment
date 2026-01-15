@@ -56,6 +56,11 @@ const EmployeeProfile: React.FC = () => {
     "attendance_assignments",
     "Employee Profile"
   );
+  const canAppreciate = isActionEnabled(
+    userUiPermission,
+    "can_appreciate",
+    "Employee Profile"
+  );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails(userId || "");
 
@@ -368,7 +373,7 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
-                  <Appreciations />
+                  {canAppreciate && <Appreciations />}
                 </div>
               </div>
             </div>
@@ -541,7 +546,7 @@ const EmployeeProfile: React.FC = () => {
                               Attendance Assignment
                             </Button>
                           )}
-                          <Appreciations />
+                          {canAppreciate && <Appreciations />}
                         </div>
                       </div>
                     </div>

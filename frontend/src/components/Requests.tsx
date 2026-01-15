@@ -50,7 +50,7 @@ const Requests = () => {
             <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,250px)] gap-3 justify-center">
                 {/* Apply Leave */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setShowLeaveRequest(true)}
                 >
@@ -62,7 +62,7 @@ const Requests = () => {
 
                 {/* Attendance Request */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setShowAttendanceRequest(true)}
                 >
@@ -74,7 +74,7 @@ const Requests = () => {
 
                 {/* Overtime */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setShowOvertimeRequest(true)}
                 >
@@ -86,7 +86,7 @@ const Requests = () => {
 
                 {/* Shift Change */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={handleShiftForm}
                 >
@@ -98,7 +98,7 @@ const Requests = () => {
 
                 {/* Create Loan */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setIsLoanDialogOpen(true)}
                 >
@@ -110,7 +110,7 @@ const Requests = () => {
 
                 {/* Create Advance */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setShowAdvanceForm(true)}
                 >
@@ -122,7 +122,7 @@ const Requests = () => {
 
                 {/* Create Expense */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => navigate("/webapp/expenses-app/add-expense")}
                 >
@@ -134,7 +134,7 @@ const Requests = () => {
 
                 {/* Create Flow Request */}
                 <div
-                    className="bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer 
+                    className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
                     onClick={() => setShowInitiateModel(true)}
                 >
