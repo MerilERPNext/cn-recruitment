@@ -5,9 +5,11 @@ import ContextualPopup from "../shared/molecules/ContextualPopup";
 import { useCurrentEmployeeAllDetails, useGetEmployeeEarnedAppreciations } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import Modal from "../shared/Modal";
+import { Typography } from "../shared/atoms/Typography";
+import Button from "../shared/atoms/Button";
 
 export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
-
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLDivElement>(null);
 
@@ -21,7 +23,7 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                 {award.icon ? (
                     <img
                         src={award.icon}
-                        alt={award.award_name}
+                        alt={award.badge_name}
                         className="relative z-10 w-14 h-14 object-cover"
                     />
                 ) : (
@@ -29,7 +31,7 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                 )}
             </div>
             <span className="text-[10px] font-semibold text-gray-700 truncate w-full text-center leading-tight px-1">
-                {award.award_name}
+                {award.badge_name}
             </span>
 
             <ContextualPopup
@@ -54,26 +56,26 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-900 leading-tight text-base mb-1">
-                                {award.award_name}
+                                {award.badge_name}
                             </p>
                             <p className="text-[11px] text-blue-700 font-bold tracking-wider uppercase bg-blue-50 px-2 py-0.5 rounded-md inline-block">
-                                {award.award_category}
+                                {award.recognition_type}
                             </p>
                         </div>
                     </div>
 
                     {/* Description */}
                     <div className="text-sm text-gray-700 leading-relaxed max-h-[180px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
-                        {award.description ? (
+                        {award.reason ? (
                             <div
                                 dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(award.description),
+                                    __html: DOMPurify.sanitize(award.reason),
                                 }}
                                 className="prose prose-sm prose-blue max-w-none"
                             />
                         ) : (
                             <span className="italic text-gray-400 text-xs">
-                                No description available
+                                No reason available
                             </span>
                         )}
                     </div>
@@ -82,10 +84,10 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                     <div className="pt-3 border-t border-gray-200 flex flex-col gap-2 text-xs">
                         <div className="flex justify-between items-center">
                             <span className="text-gray-500 font-medium">
-                                Recognition Period
+                                Awarded On
                             </span>
-                            <span className="font-bold text-gray-800 bg-blue-50 px-2 py-1 rounded-md">
-                                {award.award_period}
+                            <span className="font-bold px-2 py-1 rounded-md">
+                                {new Date(award.awarded_at).toLocaleDateString()}
                             </span>
                         </div>
                         {award.period_start_date && award.period_end_date && (
@@ -110,6 +112,7 @@ interface AwardsSectionProps {
 
 export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
     const { targetEmployeeId } = useTargetUser();
+    const [showAllModal, setShowAllModal] = useState(false);
 
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -122,6 +125,9 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
 
     const awards = employeeAppreciations?.badges || [];
     const hasAwards = awards.length > 0;
+
+    const displayedAwards = awards.slice(0, 5);
+    const remainingCount = awards.length - 4;
 
     if (!hasAwards) {
         if (isDesktop) {
@@ -169,6 +175,68 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
         );
     }
 
+    const renderAwardsGrid = () => (
+        <div className="flex gap-2 flex-wrap">
+            {displayedAwards.map((award: Award) => (
+                <AwardBadge key={award.name} award={award} />
+            ))}
+            {remainingCount > 0 && (
+                <div
+                    onClick={() => setShowAllModal(true)}
+                    className="flex flex-col items-center gap-2 cursor-pointer group"
+                >
+                    <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-blue-200 group-hover:border-blue-300">
+                        <span className="text-blue-700 font-bold text-sm">+{remainingCount}</span>
+                    </div>
+                    <span className="text-[10px] font-semibold text-blue-600">View All</span>
+                </div>
+            )}
+        </div>
+    );
+
+    const renderAllAwardsModal = () => (
+        <Modal
+            isOpen={showAllModal}
+            onClose={() => setShowAllModal(false)}
+            size={isDesktop ? "md" : "full"}
+            className={isDesktop ? "p-6" : "p-4"}
+        >
+            <div className={`flex flex-col h-full min-h-[50vh] ${isDesktop ? "max-h-[80vh]" : ""}`}>
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                    <div>
+                        <Typography variant="h3" className="text-gray-900 font-bold">
+                            All Appreciations
+                        </Typography>
+                        <p className="text-sm text-gray-500 mt-1">
+                            A showcase of all milestones and recognitions earned.
+                        </p>
+                    </div>
+                    <Button
+                        variant="subtle"
+                        onClick={() => setShowAllModal(false)}
+                        className="!p-2 hover:bg-gray-100 rounded-full"
+                    >
+                        ✕
+                    </Button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 pr-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent">
+                    <div className="flex flex-wrap gap-x-4 gap-y-8 py-4 justify-items-start">
+                        {awards.map((award: Award) => (
+                            <AwardBadge key={award.name} award={award} />
+                        ))}
+                    </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                    <Button variant="contain" onClick={() => setShowAllModal(false)}>
+                        Close
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+
     if (isDesktop) {
         return (
             <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
@@ -177,12 +245,9 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
                 </h2>
 
                 <div className="p-2 bg-gray-50 rounded-2xl border border-gray-200">
-                    <div className="flex gap-2 flex-wrap">
-                        {awards.map((award: Award) => (
-                            <AwardBadge key={award.name} award={award} />
-                        ))}
-                    </div>
+                    {renderAwardsGrid()}
                 </div>
+                {renderAllAwardsModal()}
             </div>
         );
     }
@@ -194,10 +259,22 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
             </h2>
 
             <div className="flex gap-5 overflow-x-auto py-3 scrollbar-hide">
-                {awards.map((award: Award) => (
+                {displayedAwards.map((award: Award) => (
                     <AwardBadge key={award.name} award={award} />
                 ))}
+                {remainingCount > 0 && (
+                    <div
+                        onClick={() => setShowAllModal(true)}
+                        className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group"
+                    >
+                        <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-blue-200 group-hover:border-blue-300">
+                            <span className="text-blue-700 font-bold text-sm">+{remainingCount}</span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-blue-600">View All</span>
+                    </div>
+                )}
             </div>
+            {renderAllAwardsModal()}
         </div>
     );
 };

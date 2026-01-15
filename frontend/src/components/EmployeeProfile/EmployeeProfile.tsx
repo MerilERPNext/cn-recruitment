@@ -34,8 +34,8 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Badge from "../shared/Badge";
 
-// import { AwardsSection } from "./EmployeeAwards";
-// import Appreciations from "./Appreciations";
+import { AwardsSection } from "./EmployeeAwards";
+import Appreciations from "./Appreciations";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -368,11 +368,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
-                  {/* <Appreciations /> */}
+                  <Appreciations />
                 </div>
               </div>
             </div>
-            {/* <AwardsSection isDesktop={false} /> */}
+            <AwardsSection isDesktop={false} />
           </div>
         )}
         {/* Horizontal Tabs */}
@@ -446,11 +446,11 @@ const EmployeeProfile: React.FC = () => {
                     onChange={handleFileChange}
                   />
                   <div className="relative group/avatar">
-                    <div className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl overflow-hidden ">
+                    <div className="w-[120px] h-[120px] rounded-full ring-4 ring-white shadow-md overflow-hidden ">
                       <img
                         src={uploadedImage || user?.image || defaultProfile}
                         alt="User avatar"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110"
+                        className="w-full h-full object-cover bg-gray-50 transition-transform duration-500 group-hover/avatar:scale-110"
                       />
                     </div>
                     <button
@@ -469,7 +469,7 @@ const EmployeeProfile: React.FC = () => {
                   <div className="flex flex-col min-w-0">
                     <div className="space-y-1">
                       <Typography
-                        variant="h2"
+                        variant="h4"
                         className="font-bold text-gray-900 tracking-tight"
                       >
                         {user?.employee_name}
@@ -541,14 +541,14 @@ const EmployeeProfile: React.FC = () => {
                               Attendance Assignment
                             </Button>
                           )}
-                          {/* <Appreciations /> */}
+                          <Appreciations />
                         </div>
                       </div>
                     </div>
                   </div>
 
                 </div>
-                {/* <AwardsSection isDesktop={true} /> */}
+                <AwardsSection isDesktop={true} />
               </div>
             </Card>
           )}

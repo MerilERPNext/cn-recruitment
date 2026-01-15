@@ -98,6 +98,10 @@ export interface Award {
   icon?: string;
   display_on_profile: 0 | 1;
   employee: string;
+  badge_name: string;
+  reason: string;
+  recognition_type: string;
+  awarded_at: string;
 }
 
 export interface EmployeeNode {

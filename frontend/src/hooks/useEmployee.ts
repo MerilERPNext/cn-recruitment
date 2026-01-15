@@ -293,6 +293,14 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
     enabled: !!employee_id,
   });
 };
+export const useGetEmployeeDetailsByEmpIdForProfile = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["all-emp-details-by-empid", employee_id],
+    queryFn: () => profileService.getEmployeeDetailsByEmpIdForProfile(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
 export const useGetEmployeeAppreciations = () => {
   return useQuery<{ badges: Award[] } | null>({
     queryKey: ["all-emp-appreciations"],

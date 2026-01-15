@@ -9,6 +9,7 @@ import HeaderBar from "../../HeaderBar";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
+import { MdErrorOutline } from "react-icons/md";
 
 type SalaryItem = any;
 type CTCComponentItem = {
@@ -31,16 +32,6 @@ export default function SalaryAssignmentList() {
     [apiResponse]
   );
 
-  const isActive = (fromDate: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // time ignore kare
-
-    const startDate = new Date(fromDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    return today >= startDate;
-  };
-
   const titles = [
     "Effective Date",
     "Status",
@@ -51,21 +42,43 @@ export default function SalaryAssignmentList() {
     "Action",
   ];
 
-  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr",  "0.8fr"];
+  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.8fr"];
+  const SkeletonLoader = () => {
+    return (
+      <div className="space-y-4 animate-pulse">
+        <div className="h-6 bg-gray-50 rounded w-1/3" />
+        <div className="h-10 bg-gray-50 rounded" />
+        <div className="h-10 bg-gray-50 rounded" />
+        <div className="h-10 bg-gray-50 rounded" />
+      </div>
+    );
+  };
+  
 
-  if (isLoading) return <p className="p-4">Loading...</p>;
-  if (isError) return <p className="p-4 text-red-500">Error loading data</p>;
+  if (isLoading) return <SkeletonLoader/>;
+
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-red-500">
+        <MdErrorOutline size={40} className="mb-2" />
+        <p className="text-lg font-semibold">Error loading data</p>
+        <p className="text-sm text-red-400">
+          Please try again later
+        </p>
+      </div>
+    );
+  }
+  
 
   return (
     <div className="mt-4">
-     <div className="mb-4">
-              <Typography variant="h4">
-              Pay package
-              </Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage Pay Package
-              </Typography>
-     </div>
+      <div className="mb-4">
+        <Typography variant="h4">Pay package</Typography>
+        <Typography variant="bodySmall" color="body2">
+          Track and manage Pay Package
+        </Typography>
+      </div>
 
       <CardTable titles={titles} columnWidths={columnWidths}>
         <div className="  ">
@@ -76,32 +89,22 @@ export default function SalaryAssignmentList() {
                 className="my-data-row grid px-6 py-3 gap-4 items-center text-sm border hover:bg-primary/20 border-gray-100"
                 style={{ gridTemplateColumns: columnWidths.join(" ") }}
               >
-                {/* Effective Date */}
                 <div>{item.from_date}</div>
-
-                {/* Status */}
                 <div>
                   <span
-                    className={`text-xs font-medium px-2 py-[1px] rounded-xl
-      ${
-        isActive(item.from_date)
-          ? "bg-success-100 text-success border border-success-200"
-          : "bg-gray-100 text-gray-400 border border-gray-200"
-      }`}
+                    className={`text-xs font-medium px-2 py-[1px] rounded-xl ${
+                      item.active === 1
+                        ? "bg-success-100 text-success border border-success-200"
+                        : "bg-gray-100 text-gray-400 border border-gray-200"
+                    }`}
                   >
-                    {isActive(item.from_date) ? "Active" : "Inactive"}
+                    {item.active === 1 ? "Active" : "Inactive"}
                   </span>
                 </div>
-
-                {/* Monthly CTC */}
                 <div className="font-medium">₹ {item.monthly_ctc}</div>
-
-                {/* Annual CTC */}
                 <div>₹ {item.annual_ctc || "—"}</div>
                 <div>₹ {item.fixed_gross_monthly || "—"}</div>
                 <div>₹ {item.fixed_gross_annual || "—"}</div>
-
-                {/* Action */}
                 <div>
                   <button
                     onClick={() => setSelected(item)}
@@ -141,10 +144,7 @@ export default function SalaryAssignmentList() {
                     </p>
                   </div>
                 </div>
-
-                {/* BOTTOM: Meta Row */}
                 <div className="flex items-center justify-between">
-                  {/* Left: Label + Date + Status */}
                   <div className="flex items-center gap-4">
                     <div>
                       <p className="text-[11px] font-medium text-slate-400 mb-0.5">
@@ -166,8 +166,6 @@ export default function SalaryAssignmentList() {
                       {item.idx === 1 ? "Active" : "Disabled"}
                     </span>
                   </div>
-
-                  {/* Right: Details */}
                   <button
                     onClick={() => setSelected(item)}
                     className="inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
@@ -191,8 +189,6 @@ export default function SalaryAssignmentList() {
               </div>
             )
           )}
-
-          {/* Empty State */}
           {!list.length && (
             <div className="my-empty-state-card py-10 text-center text-gray-500">
               No records found.
@@ -200,8 +196,6 @@ export default function SalaryAssignmentList() {
           )}
         </div>
       </CardTable>
-
-      {/* DETAILS DRAWER / MODAL */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
@@ -209,10 +203,11 @@ export default function SalaryAssignmentList() {
               isDesktop ? "max-w-[600px]" : ""
             } shadow-lg relative h-screen overflow-y-auto`}
           >
-            {/* HEADER */}
             {isDesktop ? (
               <div className="flex justify-between items-center p-4  border-b">
-                <Typography variant="subheading" color="body1">CTC Breakdown</ Typography>
+                <Typography variant="subheading" color="body1">
+                  CTC Breakdown
+                </Typography>
                 <button
                   onClick={() => setSelected(null)}
                   className="text-gray-500 hover:text-black"
@@ -226,37 +221,58 @@ export default function SalaryAssignmentList() {
                 onBack={() => setSelected(null)}
               />
             )}
-
-            {/* BODY */}
             <div className="p-4 space-y-6 text-sm">
-              {/* SUMMARY */}
               <div className="flex justify-between">
                 <span className="font-semibold">Effective From</span>
                 <span className="font-semibold">{selected.from_date}</span>
               </div>
+              <div className="flex justify-between">
+                <span className="font-semibold">Annual Variable Pay</span>
+                <span className="font-semibold">
+                  {selected.annual_variable_pay}
+                </span>
+              </div>
 
               <Card className="grid gap-3 border border-gray-200  p-4 rounded">
                 <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">Monthly CTC</Typography >
-                  <Typography >
-                    ₹ {selected.monthly_ctc}
-                  </Typography >
-                </div>
-                <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">Fixed Gross Monthly</Typography>
+                  <Typography variant="bodySmall" className="font-medium">
+                    Fixed Gross Monthly CTC
+                  </Typography>
                   <Typography>
-                    ₹ {selected.fixed_gross_monthly}
+                    ₹{" "}
+                    {Number(selected.fixed_gross_monthly).toLocaleString(
+                      "en-IN"
+                    )}
                   </Typography>
                 </div>
                 <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">Annual CTC</Typography>
-                  <Typography>₹ {selected.annual_ctc}</Typography>
+                  <Typography variant="bodySmall" className="font-medium">
+                    Monthly CTC
+                  </Typography>
+                  <Typography>
+                    ₹ {Number(selected.monthly_ctc).toLocaleString("en-IN")}
+                  </Typography>
                 </div>
+
                 <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">Fixed Gross Annual CTC</Typography>
+                  <Typography variant="bodySmall" className="font-medium">
+                    Fixed Gross Annual CTC
+                  </Typography>
                   <span className="font-semibold">
-                    ₹ {selected.fixed_gross_annual}
+                    ₹{" "}
+                    {Number(selected.fixed_gross_annual).toLocaleString(
+                      "en-IN"
+                    )}
                   </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <Typography variant="bodySmall" className="font-medium">
+                    Annual CTC
+                  </Typography>
+                  <Typography>
+                    ₹ {Number(selected.annual_ctc).toLocaleString("en-IN")}
+                  </Typography>
                 </div>
               </Card>
 
@@ -271,18 +287,33 @@ export default function SalaryAssignmentList() {
                         key={item.component ?? index}
                         className="flex justify-between items-start"
                       >
-                        <Typography variant="bodySmall" className="font-medium flex ">
+                        <Typography
+                          variant="bodySmall"
+                          className="font-medium flex "
+                        >
                           {item.component}
-                          <Typography variant="bodySmall" className="ml-1" color="body2">
+                          <Typography
+                            variant="bodySmall"
+                            className="ml-1"
+                            color="body2"
+                          >
                             ({item.type})
                           </Typography>
                         </Typography>
 
                         <div className="text-right">
-                          <Typography variant="bodySmall" className="font-medium ">
-                          Annual: ₹ {Number(item.amount).toLocaleString("en-IN")}
+                          <Typography
+                            variant="bodySmall"
+                            className="font-medium "
+                          >
+                            Annual: ₹{" "}
+                            {Number(item.amount).toLocaleString("en-IN")}
                           </Typography>
-                          <Typography variant="bodySmall" className="ml-1" color="body2">
+                          <Typography
+                            variant="bodySmall"
+                            className="ml-1"
+                            color="body2"
+                          >
                             Monthly: ₹{" "}
                             {(Number(item.amount) / 12).toLocaleString("en-IN")}
                           </Typography>
