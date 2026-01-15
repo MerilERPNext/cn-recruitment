@@ -310,7 +310,7 @@ export const useGetEmployeeAppreciations = () => {
 };
 export const useGetEmployeeEarnedAppreciations = (employee: string) => {
   return useQuery<{ badges: Award[] } | null>({
-    queryKey: ["all-emp-appreciations", employee],
+    queryKey: ["all-emp-appreciations-badges", employee],
     queryFn: () => profileService.getEmployeeEarnedAppreciations(employee),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee,
