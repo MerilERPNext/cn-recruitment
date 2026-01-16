@@ -345,8 +345,7 @@ export const useShowAttendanaceAssignmentButton = (
 export const useGetDesignationHierarchy = (
   company: string,
   department: string,
-  designation: string,
-  isEdit: boolean
+  designation: string
 ) => {
   return useQuery({
     queryKey: ["designation-hierarchy", company, department, designation],
@@ -357,7 +356,7 @@ export const useGetDesignationHierarchy = (
         designation
       ),
     staleTime: 1000 * 60 * 5,
-    enabled: !!company && !isEdit,
+    enabled: true,
   });
 };
 

@@ -54,7 +54,6 @@
                     "label": "Department",
                     "errorLabel": "Department",
                     "placeholder": "Select Department",
-                    "validate": {},
                     "customConditional": "show = !!data.company",
                     "input": true,
                     "dataSrc": "custom",
@@ -72,7 +71,6 @@
                     "label": "Designation",
                     "errorLabel": "Designation",
                     "placeholder": "Select Designation",
-                    "validate": {},
                     "customConditional": "show = !!data.department",
                     "input": true,
                     "dataSrc": "custom",
@@ -91,7 +89,6 @@
                     "errorLabel": "Functional Area",
                     "placeholder": "Select Functional Area",
                     "customConditional": "show = !!data.designation",
-                    "validate": {},
                     "input": true,
                     "dataSrc": "custom",
                     "data": {
