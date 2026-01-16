@@ -197,7 +197,7 @@ export default function BenefitRequestForm({
             // IMPORTANT: Handle attachments without causing rerender
             onChange={(submission: any) => {
               if (submission.changed?.component?.key === "attachments") {
-                setAttachments([...(submission?.data?.attachments || [])]);
+                setAttachments(submission?.data?.attachments || []);
               }
             }}
           />

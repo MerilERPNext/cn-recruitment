@@ -251,7 +251,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             )}
             onChange={(submission: any) => {
               if (submission?.changed?.component?.key === "attachment")
-                setAttachments([...(submission?.data?.attachment || [])]);
+                setAttachments(submission?.data?.attachment || []);
             }}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {

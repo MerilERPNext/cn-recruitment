@@ -46,7 +46,7 @@ interface RequestLeaveProps {
 }
 
 const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<any[]>([]);
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const { setRefetchAttendance } = useGlobalStore();
@@ -578,10 +578,11 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               calculateLeaveDays(data);
 
               if (submission?.changed?.component?.key === "attachment") {
-                setAttachments((prev) => [
-                  ...prev,
-                  ...((data.attachment as any) || []),
-                ]);
+                // setAttachments((prev) => [
+                //   ...prev,
+                //   ...((data.attachment as any) || []),
+                // ]);
+                setAttachments((data.attachment as any) || []);
               }
             }}
           />
