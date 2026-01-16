@@ -41,7 +41,6 @@ import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import { toast } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
-import LeaveRequest from "./Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
@@ -65,6 +64,7 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
 import CircularLoader from "./shared/atoms/CircularLoader";
+import RequestLeave from "./Leaves/RequestLeave";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -985,7 +985,7 @@ export default function DesktopDashboard() {
             {/* Ensure LeaveRequest is inside its providers */}
             <LeaveRequestRefreshProvider>
               <RequestLeaveModalProvider>
-                <LeaveRequest
+                <RequestLeave
                   onCancel={() => setShowLeaveRequest(false)}
                   onSuccess={() => setShowLeaveRequest(false)}
                 />
