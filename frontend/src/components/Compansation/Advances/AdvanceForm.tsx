@@ -234,7 +234,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
               }
               if (submission?.changed?.component?.key === "attachments")
                 setAttachments([
-                  ...attachments,
                   ...((submission?.data?.attachments as any) || []),
                 ]);
             }}
