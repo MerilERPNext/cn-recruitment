@@ -25,7 +25,6 @@ import { LeaveFieldFlags } from "../../types/leaves";
 import Button from "../shared/atoms/Button";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
-import { useFileUploader } from "../../hooks/useFileUploader";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -46,9 +45,6 @@ interface RequestLeaveProps {
 }
 
 const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
-  const [attachments, setAttachments] = useState<any[]>([]);
-  const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
-
   const { setRefetchAttendance } = useGlobalStore();
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useEmployeeByUserId(userId);
@@ -63,16 +59,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { defaults } = useRequestLeaveModal();
   const createLeaveMutation = useCreateFrappeDocument({
-    onSuccess: async (newDoc) => {
-      if (attachments.length > 0) {
-        await uploadFiles(
-          attachments,
-          newDoc.doctype as string,
-          newDoc.name as string
-        );
-
-        setAttachments([]);
-      }
+    onSuccess: (newDoc) => {
       setTimeout(() => {
         setRefetchAttendance(true);
       }, 1000);
@@ -215,7 +202,6 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     }
     try {
       const submission = await formInstance.current.submit();
-
       await createLeaveMutation.mutateAsync({
         doctype: "Leave Application",
         data: {
@@ -232,6 +218,7 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             submission.data?.custom_second_half_day_date?.split("T")[0],
           description: submission.data.description,
           custom_reason: submission.data.custom_reason,
+          custom_attachment: submission.data?.attachment?.[0]?.url,
         },
       });
     } catch (error) {
@@ -475,16 +462,17 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           : "Attachment",
         errorLabel: "Attachment",
         input: true,
-        multiple: true,
-        storage: "customfiles",
-        fileReader: false,
-        privateDownload: false,
+        storage: "customBase64",
         validate: {
           required:
             !!mandatory.custom_attachment ||
             requiredFieldMap["custom_attachment"],
         },
-        filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+        fileTypes: [
+          { label: "Documents", value: ".pdf,.doc,.docx" },
+          { label: "Images", value: ".jpg,.jpeg,.png" },
+        ],
+        filePattern: "*/*",
         customClass: "px-2 mb-6",
       },
     ];
@@ -569,21 +557,9 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
               validateOnBlur: false,
               validateOnChange: false,
             }}
-            onChange={(submission: {
-              data: FormSubmissionData;
-              changed?: any;
-            }) => {
-              const data = submission.data;
+            onChange={({ data }: { data: FormSubmissionData }) => {
               setFormData(data);
               calculateLeaveDays(data);
-
-              if (submission?.changed?.component?.key === "attachment") {
-                // setAttachments((prev) => [
-                //   ...prev,
-                //   ...((data.attachment as any) || []),
-                // ]);
-                setAttachments((data.attachment as any) || []);
-              }
             }}
           />
         </div>
@@ -594,9 +570,8 @@ const LeaveRequest: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             variant="contain"
             bgColor="primary"
             onClick={handleSubmit}
-            disabled={uploadFileLoading}
           >
-            {uploadFileLoading ? "Uploading..." : "Submit Request"}
+            Submit Request
           </Button>
         </div>
       </div>
