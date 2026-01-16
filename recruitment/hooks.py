@@ -200,6 +200,7 @@ doc_events = {
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
         "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",
+        "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
@@ -226,6 +227,9 @@ scheduler_events = {
         "59 23 * * *": [
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
             "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks",
+        ],
+        "0 6 * * *": [
+            "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
         ]
     }
 }

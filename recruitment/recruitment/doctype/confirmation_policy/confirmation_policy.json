@@ -14,6 +14,8 @@
   "policy_details_tab",
   "initiation_configuration_section",
   "triggered_number_of_days_before_confirmation",
+  "column_break_pdmn",
+  "triggered_days_before_extension_confirmation",
   "post_confirmation_section",
   "employee_type",
   "column_break_ovsj",
@@ -33,6 +35,8 @@
   "column_break_qbus",
   "confirmation_form",
   "confirmation_extension_form",
+  "extension_workflow_section",
+  "extension_workflow_configurations",
   "notification_and_advanced_settings_tab",
   "letter_configuration",
   "section_break_lgfk",
@@ -115,18 +119,21 @@
    "options": "Probation Period"
   },
   {
+   "default": "0",
    "fieldname": "maximum_number_of_extensions_to_probation_period",
    "fieldtype": "Select",
    "label": "Maximum number of extensions to Probation period",
-   "options": "1\n2\n3"
+   "options": "0\n1\n2\n3"
   },
   {
    "fieldname": "column_break_rgnl",
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
    "fieldname": "restrict_these_probation_periods_for_extensions",
    "fieldtype": "Table MultiSelect",
+   "hidden": 1,
    "label": "Restrict these Probation periods for extensions",
    "options": "Probation Period Table"
   },
@@ -140,12 +147,14 @@
    "default": "0",
    "fieldname": "show_hold_days_only_to_admin",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Show Hold Days only to admin"
   },
   {
    "default": "0",
    "fieldname": "show_employees_as_probation_when_recommended_for_separation",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Show employees as Probation when recommended for separation"
   },
   {
@@ -166,7 +175,8 @@
   },
   {
    "fieldname": "section_break_lgfk",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1
   },
   {
    "fieldname": "notification_configuration",
@@ -181,9 +191,11 @@
    "options": "Approval Policy Matrix"
   },
   {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
    "fieldname": "confirmation_extension_workflow",
    "fieldtype": "Link",
-   "label": "Confirmation Extension Workflow",
+   "hidden": 1,
+   "label": "Confirmation Extension Workflow (Default)",
    "options": "Approval Policy Matrix"
   },
   {
@@ -201,16 +213,41 @@
    "options": "Microapp Form Widget"
   },
   {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
    "fieldname": "confirmation_extension_form",
    "fieldtype": "Link",
-   "label": "Confirmation Extension Form",
+   "hidden": 1,
+   "label": "Confirmation Extension Form (Default)",
    "options": "Microapp Form Widget"
+  },
+  {
+   "fieldname": "column_break_pdmn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "triggered_days_before_extension_confirmation",
+   "fieldtype": "Int",
+   "label": "Triggered Days Before Extension Confirmation",
+   "non_negative": 1
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "extension_workflow_section",
+   "fieldtype": "Section Break",
+   "label": "Extension Workflow Configurations"
+  },
+  {
+   "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
+   "fieldname": "extension_workflow_configurations",
+   "fieldtype": "Table",
+   "label": "Extension Workflow Configurations",
+   "options": "Extension Workflow Configuration"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-08 17:39:57.169822",
+ "modified": "2026-01-16 20:02:38.955590",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
