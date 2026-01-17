@@ -78,6 +78,7 @@
   {
    "fieldname": "notification_and_advanced_settings_tab",
    "fieldtype": "Tab Break",
+   "hidden": 1,
    "label": "Notification and Advanced Settings"
   },
   {
@@ -162,6 +163,7 @@
    "default": "0",
    "fieldname": "capture_date_of_resignation",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Capture Date Of Resignation, Requested LWD, Recovery Days While Raising Separation"
   },
   {
@@ -177,7 +179,9 @@
   },
   {
    "fieldname": "section_break_xfth",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "h"
   },
   {
    "fieldname": "separation_workflow_configuration",
@@ -200,7 +204,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-10-20 14:22:33.328719",
+ "modified": "2026-01-17 10:52:54.425598",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Separation Policy",

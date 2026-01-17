@@ -38,21 +38,21 @@ def trigger_confirmation_todos():
             if employee.status not in ["Active"]:
                 continue
 
-            existing_confirmation = frappe.db.get_value(
+            extension_count = frappe.db.count(
                 "Employee Confirmation",
                 {
                     "employee": emp_name,
                     "docstatus": 1,
                     "status": "Probation Extended"
-                },
-                "name"
+                }
             )
 
-            if existing_confirmation:
-                if not policy.triggered_days_before_extension_confirmation:
-                    continue
-
-                trigger_days = policy.triggered_days_before_extension_confirmation
+            if extension_count > 0:
+                trigger_days = get_extension_trigger_days(policy_doc, extension_count)
+                if not trigger_days:
+                    if not policy.triggered_days_before_extension_confirmation:
+                        continue
+                    trigger_days = policy.triggered_days_before_extension_confirmation
                 todo_type = "extension"
             else:
                 if not policy.triggered_number_of_days_before_confirmation:
@@ -83,6 +83,18 @@ def trigger_confirmation_todos():
                 if not existing_todo:
                     create_confirmation_todo(employee, policy_doc, todo_type)
                 
+
+
+def get_extension_trigger_days(policy_doc, extension_count):
+  
+    if not policy_doc.extension_workflow_configurations:
+        return None
+
+    for row in policy_doc.extension_workflow_configurations:
+        if row.extension_number == extension_count:
+            return row.trigger_days_before_extension or 0
+
+    return None
 
 
 def get_applicable_employees(policy_doc):
@@ -138,3 +150,72 @@ def create_confirmation_todo(employee, policy_doc, todo_type="confirmation"):
     todo.insert()
 
     frappe.db.commit()
+
+
+def auto_separate_employees_on_lwd():
+  
+    current_date = getdate(today())
+
+    separations = frappe.get_all(
+        "Employee Separation",
+        filters={
+            "custom_actual_last_working_date": ["<=", current_date],
+            "docstatus": ["!=", 2]  # Not cancelled
+        },
+        fields=["name", "employee", "custom_actual_last_working_date"]
+    )
+
+    for sep in separations:
+        if not sep.employee:
+            continue
+
+        employee_status = frappe.db.get_value("Employee", sep.employee, "status")
+        if employee_status == "Left":
+            continue
+
+        separation_policy = get_applicable_separation_policy(sep.employee)
+
+        if not separation_policy:
+            continue
+
+        sp_doc = frappe.get_doc("Separation Policy", separation_policy)
+
+        if sp_doc.force_separate_employee_on_lwd_as_per_notice_period:
+            sep_docstatus = frappe.db.get_value("Employee Separation", sep.name, "docstatus")
+
+            if sep_docstatus == 0:  # Draft
+                sep_doc = frappe.get_doc("Employee Separation", sep.name)
+                sep_doc.flags.ignore_permissions = True
+                sep_doc.submit()
+
+            frappe.db.set_value("Employee", sep.employee, {
+                "status": "Left",
+                "custom_employment_status": "Separated",
+                "relieving_date": sep.custom_actual_last_working_date
+            })
+
+            employee_name = frappe.db.get_value("Employee", sep.employee, "employee_name")
+
+            frappe.log_error(
+                message=f"Auto-separated employee {employee_name} ({sep.employee}) on LWD {sep.custom_actual_last_working_date}. Employee Separation {sep.name} submitted.",
+                title="Auto Separation Executed"
+            )
+
+    frappe.db.commit()
+
+
+def get_applicable_separation_policy(employee_id):
+    policies = frappe.get_all("Separation Policy", fields=["name"])
+
+    for policy in policies:
+        sp_doc = frappe.get_doc("Separation Policy", policy.name)
+        for assignment in sp_doc.applicable_to:
+            if assignment.select_visibility_restriction:
+                try:
+                    dy_ass = frappe.get_doc("Dynamic User Assignment", assignment.select_visibility_restriction)
+                    assigned_ids = [u.employee_id for u in dy_ass.assigned_users]
+                    if employee_id in assigned_ids:
+                        return policy.name
+                except Exception:
+                    pass
+    return None

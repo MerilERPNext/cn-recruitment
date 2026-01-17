@@ -214,6 +214,7 @@ doc_events = {
         "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
     },
     "Employee Separation": {
+        "before_insert": "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_from_notice_period",
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
     },
 }
@@ -230,6 +231,9 @@ scheduler_events = {
         ],
         "0 6 * * *": [
             "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
+        ],
+        "0 7 * * *": [
+            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
         ]
     }
 }
