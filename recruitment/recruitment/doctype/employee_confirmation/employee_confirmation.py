@@ -24,25 +24,25 @@ class EmployeeConfirmation(Document):
 			employee.custom_probation_period = probation_period
 			employee.custom_employment_status = "Probation Extended"
 
-			if not probation_period:
-				return 
+			# if not probation_period:
+			# 	return 
 
-			probation_period_doc = frappe.get_doc('Probation Period', probation_period)
+			# probation_period_doc = frappe.get_doc('Probation Period', probation_period)
 
-			date_of_joining = employee.date_of_joining
-			if not date_of_joining:
-				return 
+			# date_of_joining = employee.date_of_joining
+			# if not date_of_joining:
+			# 	return 
 
-			probation_duration = probation_period_doc.duration_of_probation
-			probation_period_in = probation_period_doc.probation_period_in
+			# probation_duration = probation_period_doc.duration_of_probation
+			# probation_period_in = probation_period_doc.probation_period_in
 
-			if probation_period_in == 'Months':
-				probation_end_date = frappe.utils.add_months(date_of_joining, probation_duration)
-			else: 
-				probation_end_date = date_of_joining + timedelta(days=probation_duration)
+			# if probation_period_in == 'Months':
+			# 	probation_end_date = frappe.utils.add_months(date_of_joining, probation_duration)
+			# else: 
+			# 	probation_end_date = date_of_joining + timedelta(days=probation_duration)
 			
-			self.probation_end_date = probation_end_date
-			self.save()
+			# self.probation_end_date = probation_end_date
+			# self.save()
 			employee.save()
 		elif confirmation_status == "Terminated":
 			employee = frappe.get_doc("Employee", self.employee)
