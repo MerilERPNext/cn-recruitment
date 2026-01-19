@@ -34,7 +34,7 @@ export default function BenefitRequestForm({
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || ""
+    currentUser?.name || "",
   );
   const [attachments, setAttachments] = useState<File[]>([]);
   const formRef = useRef<any>(null);
@@ -66,7 +66,7 @@ export default function BenefitRequestForm({
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
+    requiredMap: Record<string, boolean>,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
     // deep clone
@@ -102,7 +102,7 @@ export default function BenefitRequestForm({
         }
         if (comp.rows && Array.isArray(comp.rows)) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+            row.forEach((cell: any) => applyToComponents(cell.components)),
           );
         }
       });
@@ -115,7 +115,7 @@ export default function BenefitRequestForm({
   const transformedSchema = useMemo(() => {
     return transformSchemaWithRequired(
       benefitRequestFormSchema as FormSchema,
-      requiredFieldMap
+      requiredFieldMap,
     );
   }, [requiredFieldMap]);
 

@@ -1,5 +1,5 @@
 {
-  "title": "Advance Request", 
+  "title": "Advance Request",
   "name": "advanceRequest",
   "path": "advance-request",
   "display": "form",
@@ -19,7 +19,7 @@
           "type": "select",
           "input": true,
           "placeholder": "Select advance type",
-          "validate": { },
+          "validate": {},
           "dataSrc": "url",
           "data": {
             "url": "/api/resource/Advance Type?fields=[\"name\"]"
@@ -30,26 +30,23 @@
           "lazyLoad": false,
           "refreshOn": "employee",
           "customClass": "mb-4",
-"logic": [
-  {
-    "name": "Fetch Advance Amount Automatically",
-    "event": "change",
-    "trigger": {
-      "type": "javascript",
-      "javascript": "result = !!data.custom_advance_type;"
-    },
-    "actions": [
-      {
-        "name": "Fetch and Fill Advance Amount",
-        "type": "custom",
-        "custom": "if (data.employee && data.custom_advance_type) {\n  fetch(`/api/method/cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_amount_checking?employee=${data.employee}&advance_type=${data.custom_advance_type}`)\n    .then(res => res.json())\n    .then(result => {\n      if (result.message && result.message.advance_amount) {\n        const advanceAmountComp = instance.root.getComponent('advance_amount');\n        if (advanceAmountComp) {\n          advanceAmountComp.setValue(result.message.advance_amount);\n        }\n      } else {\n        console.warn('Advance amount not found in response', result);\n      }\n    })\n    .catch(err => console.error('Error fetching advance amount:', err));\n}"
-      }
-    ]
-  }
-]
-
-
-
+          "logic": [
+            {
+              "name": "Fetch Advance Amount Automatically",
+              "event": "change",
+              "trigger": {
+                "type": "javascript",
+                "javascript": "result = !!data.custom_advance_type;"
+              },
+              "actions": [
+                {
+                  "name": "Fetch and Fill Advance Amount",
+                  "type": "custom",
+                  "custom": "if (data.employee && data.custom_advance_type) {\n  fetch(`/api/method/cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_amount_checking?employee=${data.employee}&advance_type=${data.custom_advance_type}`)\n    .then(res => res.json())\n    .then(result => {\n      if (result.message && result.message.advance_amount) {\n        const advanceAmountComp = instance.root.getComponent('advance_amount');\n        if (advanceAmountComp) {\n          advanceAmountComp.setValue(result.message.advance_amount);\n        }\n      } else {\n        console.warn('Advance amount not found in response', result);\n      }\n    })\n    .catch(err => console.error('Error fetching advance amount:', err));\n}"
+                }
+              ]
+            }
+          ]
         },
         {
           "label": "Advance Amount",
@@ -58,7 +55,7 @@
           "type": "currency",
           "input": true,
           "placeholder": "0.00",
-          "validate": {  "min": 1 },
+          "validate": { "min": 1 },
           "currency": "INR",
           "customClass": "mb-4"
         },
@@ -69,7 +66,7 @@
           "type": "select",
           "input": true,
           "placeholder": "Select repayment type",
-          "validate": { },
+          "validate": {},
           "data": {
             "values": [
               { "label": "One Time", "value": "One Time" },
@@ -87,8 +84,14 @@
           "customConditional": "show = data.custom_repayment_type === 'Recurring';",
           "data": {
             "values": [
-              { "label": "Repay Over Number of Periods", "value": "Repay Over Number of Periods" },
-              { "label": "Repay Fixed Amount per Period", "value": "Repay Fixed Amount per Period" }
+              {
+                "label": "Repay Over Number of Periods",
+                "value": "Repay Over Number of Periods"
+              },
+              {
+                "label": "Repay Fixed Amount per Period",
+                "value": "Repay Fixed Amount per Period"
+              }
             ]
           },
           "customClass": "mb-4"
@@ -102,7 +105,7 @@
           "enableTime": false,
           "format": "dd-MM-yyyy",
           "placeholder": "Select start date",
-          "validate": { },
+          "validate": {},
           "customConditional": "show = data.custom_repayment_type === 'One Time' || data.custom_repayment_type === 'Recurring';",
           "customClass": "mb-4"
         },
@@ -113,7 +116,7 @@
           "type": "number",
           "input": true,
           "placeholder": "Number of months",
-          "validate": {  "min": 1, "max": 36 },
+          "validate": { "min": 1, "max": 36 },
           "customConditional": "show = data.custom_repayment_type === 'Recurring' && data.repayment_method === 'Repay Over Number of Periods';",
           "customClass": "mb-4"
         },
@@ -124,7 +127,7 @@
           "type": "number",
           "input": true,
           "placeholder": "0.00",
-          "validate": {  "min": 1 },
+          "validate": { "min": 1 },
           "customConditional": "show = data.custom_repayment_type === 'Recurring' && data.repayment_method === 'Repay Fixed Amount per Period';",
           "customClass": "mb-4"
         },
@@ -135,7 +138,7 @@
           "type": "textarea",
           "input": true,
           "placeholder": "Describe the purpose of advance",
-          "validate": { },
+          "validate": {},
           "rows": 4,
           "customClass": "mb-4"
         },

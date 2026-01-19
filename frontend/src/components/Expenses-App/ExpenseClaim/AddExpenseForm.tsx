@@ -1403,7 +1403,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         </td>
                         <td className="px-4 py-2">{expense.expenseType}</td>
                         <td className="px-4 py-2">
-                          
                           {expense.expense_date
                             ? formatToIndianDate(expense.expense_date)
                             : "-"}

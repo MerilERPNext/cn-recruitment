@@ -41,7 +41,7 @@ any & {
 
   const gridTemplateColumns = "16% 20% 10% 10% 10% 20%";
   const cleanExplaination = DOMPurify.sanitize(
-    request?.reference_document?.explanation || ""
+    request?.reference_document?.explanation || "",
   );
   return (
     <>
@@ -104,7 +104,9 @@ any & {
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span>From</span>
                       <span className="text-black font-semibold">
-                        {formatToIndianDate(request?.reference_document?.from_date)}
+                        {formatToIndianDate(
+                          request?.reference_document?.from_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -114,7 +116,9 @@ any & {
                     <p className="text-sm text-gray-500 flex flex-col items-center">
                       <span>To</span>
                       <span className="text-black font-semibold">
-                        {formatToIndianDate(request?.reference_document?.to_date)}
+                        {formatToIndianDate(
+                          request?.reference_document?.to_date,
+                        )}
                       </span>
                     </p>
                   )}

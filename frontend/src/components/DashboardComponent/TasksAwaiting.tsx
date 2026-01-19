@@ -56,7 +56,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
           >
             {item.subject || item.description || "Task"}
           </Typography>
-          
+
           <Typography variant="label" color="body2">
             {item.due_date
               ? `Due on ${formatDateDDMonthYYYY(item.due_date)}`
