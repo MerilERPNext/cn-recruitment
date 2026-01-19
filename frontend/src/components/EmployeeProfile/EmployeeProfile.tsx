@@ -40,7 +40,6 @@ import Appreciations from "./Appreciations";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
-
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
   refetch?: () => void;
@@ -54,12 +53,12 @@ const EmployeeProfile: React.FC = () => {
   const canAttendanceAssignments = isActionEnabled(
     userUiPermission,
     "attendance_assignments",
-    "Employee Profile"
+    "Employee Profile",
   );
   const canAppreciate = isActionEnabled(
     userUiPermission,
     "can_appreciate",
-    "Employee Profile"
+    "Employee Profile",
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails(userId || "");
@@ -78,9 +77,10 @@ const EmployeeProfile: React.FC = () => {
     refetch: userRefetch,
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpId(employeeId);
+
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
-    currentUser?.employee || ""
+    currentUser?.employee || "",
   );
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
@@ -117,7 +117,7 @@ const EmployeeProfile: React.FC = () => {
                 toast.error("Failed to update data.");
                 console.warn("Form submission error -", err);
               },
-            }
+            },
           );
         },
         onError(e) {
@@ -138,7 +138,7 @@ const EmployeeProfile: React.FC = () => {
       { key: "employee-holidays", label: "Employee Holidays" },
       { key: "employee-documents", label: "Employee Documents" },
     ],
-    []
+    [],
   );
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
 
@@ -157,7 +157,7 @@ const EmployeeProfile: React.FC = () => {
       "employee-documents": <DocumentLibrary />,
       "reporting-details": <ReportingDetails />,
     }),
-    [user]
+    [user],
   );
 
   // Scroll to section when tab is clicked
@@ -194,7 +194,7 @@ const EmployeeProfile: React.FC = () => {
         if (entry.isIntersecting) {
           // Add or update the section
           const existingIndex = currentIntersecting.findIndex(
-            (item) => item.id === sectionId
+            (item) => item.id === sectionId,
           );
           if (existingIndex >= 0) {
             currentIntersecting[existingIndex].ratio = entry.intersectionRatio;
@@ -207,7 +207,7 @@ const EmployeeProfile: React.FC = () => {
         } else {
           // Remove the section
           currentIntersecting = currentIntersecting.filter(
-            (item) => item.id !== sectionId
+            (item) => item.id !== sectionId,
           );
         }
       });
@@ -215,7 +215,7 @@ const EmployeeProfile: React.FC = () => {
       // Find the section with the highest intersection ratio
       if (currentIntersecting.length > 0) {
         const mostVisible = currentIntersecting.reduce((prev, current) =>
-          current.ratio > prev.ratio ? current : prev
+          current.ratio > prev.ratio ? current : prev,
         );
         setActiveTab(mostVisible.id);
       }
@@ -223,7 +223,7 @@ const EmployeeProfile: React.FC = () => {
 
     const observer = new IntersectionObserver(
       observerCallback,
-      observerOptions
+      observerOptions,
     );
 
     // Observe all sections
@@ -332,14 +332,21 @@ const EmployeeProfile: React.FC = () => {
                 )}
                 {user?.employee && (
                   <Typography
-                    variant="label"
+                    variant="bodySmall"
                     color="disabled"
                     className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
                   >
-                    <IdCard size={14} />
+                    <IdCard size={16} />
                     <span>{user?.employee}</span>
                   </Typography>
                 )}
+                <Typography
+                  variant="bodySmall"
+                  color="secondary"
+                  className="break-words block"
+                >
+                  {user?.company_email || user?.personal_email || "Temp Email"}
+                </Typography>
                 <div className="flex flex-wrap items-center gap-3 mt-4">
                   {user?.custom_employment_status && (
                     <Badge
@@ -388,10 +395,11 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
+                  activeTab === tab.key
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-600 hover:text-primary-600"
+                }`}
               >
                 {tab.label}
               </Button>
@@ -464,7 +472,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                        uploadMutation.isPending ? (
+                      uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -512,6 +520,15 @@ const EmployeeProfile: React.FC = () => {
                         )}
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
+                        <Typography
+                          variant="bodySmall"
+                          color="secondary"
+                          className="break-words block"
+                        >
+                          {user?.company_email ||
+                            user?.personal_email ||
+                            "Temp Email"}
+                        </Typography>
                         {user?.custom_employment_status && (
                           <Badge
                             label={user?.custom_employment_status}
@@ -534,24 +551,25 @@ const EmployeeProfile: React.FC = () => {
                           />
                         )}
                         <div className="flex items-center gap-2 mt-2">
-
-                          {showAttendanceAssignment && canAttendanceAssignments && (
-                            <Button
-                              icon={<NotebookPen size={14} />}
-                              size="sm"
-                              variant="soft"
-                              onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                              className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
-                            >
-                              Attendance Assignment
-                            </Button>
-                          )}
+                          {showAttendanceAssignment &&
+                            canAttendanceAssignments && (
+                              <Button
+                                icon={<NotebookPen size={14} />}
+                                size="sm"
+                                variant="soft"
+                                onClick={() =>
+                                  setIsAttendanceAssignmentsOpen(true)
+                                }
+                                className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
+                              >
+                                Attendance Assignment
+                              </Button>
+                            )}
                           {canAppreciate && <Appreciations />}
                         </div>
                       </div>
                     </div>
                   </div>
-
                 </div>
                 <AwardsSection isDesktop={true} />
               </div>
@@ -564,10 +582,11 @@ const EmployeeProfile: React.FC = () => {
                 <button
                   key={tab.key}
                   onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-600 hover:text-primary"
-                    }`}
+                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                    activeTab === tab.key
+                      ? "border-primary text-primary"
+                      : "border-transparent text-gray-600 hover:text-primary"
+                  }`}
                 >
                   {tab.label}
                 </button>

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -63,21 +63,6 @@ const OvertimeApprovalCard = ({
         break;
     }
     return styles;
-  };
-
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
   };
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
@@ -143,7 +128,7 @@ const OvertimeApprovalCard = ({
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           <div className="flex items-center justify-start">
@@ -218,7 +203,7 @@ const OvertimeApprovalCard = ({
                   <div className="flex gap-2">
                     {data?.due_date && (
                       <p className="card-subtitle">
-                        Due Date - {formatDate(data?.due_date)}
+                        Due Date - {formatToIndianDate(data?.due_date)}
                       </p>
                     )}
                   </div>

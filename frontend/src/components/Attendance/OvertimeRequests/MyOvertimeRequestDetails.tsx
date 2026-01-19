@@ -4,7 +4,6 @@ import {
   MyPlannedAttendanceRequest,
   OvertimeDetail,
 } from "../../../types/attendance";
-import { format, isValid, parse } from "date-fns";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { useCallback, useState } from "react";
@@ -13,7 +12,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import FileRenderer from "../../shared/molecules/FileRenderer";
-import { formatDashedDate } from "../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
   ErrorView,
@@ -134,12 +133,6 @@ export function MyOvertimeDetails({
   const status = getStatus(data?.reference_document?.status);
   const doc = data?.reference_document;
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "--/--";
-    const date = parse(dateString, "yyyy-MM-dd", new Date());
-    return isValid(date) ? format(date, "dd/MM/yyyy") : "--/--";
-  };
-
   // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -208,7 +201,7 @@ export function MyOvertimeDetails({
               Created On
             </Typography>
             <Typography variant="bodyMedium" className="card-subtitle">
-              {new Date(doc?.creation).toLocaleString()}
+{formatToIndianDate(doc?.creation)}
             </Typography>
           </div>
           <div className="flex flex-col gap-1">
@@ -220,7 +213,7 @@ export function MyOvertimeDetails({
               Due Date
             </Typography>
             <Typography variant="bodyMedium" className="card-subtitle">
-              {formatDashedDate((data?.due_date || data?.date) as string)}
+              {formatToIndianDate((data?.due_date || data?.date) as string)}
             </Typography>
           </div>
 
@@ -259,7 +252,7 @@ export function MyOvertimeDetails({
                             variant="bodySmall"
                             className="card-subtitle"
                           >
-                            {formatDate(item.start_date)}
+                            {formatToIndianDate(item.start_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -290,7 +283,7 @@ export function MyOvertimeDetails({
                             variant="bodySmall"
                             className="card-subtitle"
                           >
-                            {formatDate(item.end_date)}
+                            {formatToIndianDate(item.end_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -321,7 +314,7 @@ export function MyOvertimeDetails({
                             variant="bodySmall"
                             className="card-subtitle"
                           >
-                            {formatDate(item.shift_date)}
+                            {formatToIndianDate(item.shift_date)}
                           </Typography>
                         </div>
 

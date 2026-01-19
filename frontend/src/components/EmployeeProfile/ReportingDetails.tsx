@@ -6,13 +6,13 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
 import { EditIcon, PlusIcon } from "lucide-react";
-import { format } from "date-fns";
 import React from "react";
 import { Building2 } from "lucide-react";
 import { useState } from "react";
 import ReportingDetailsForm from "../MyProfile/ReportingDetailsForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const ReportingDetails = () => {
     const { data: currentUser } = useCurrentUser();
@@ -52,10 +52,6 @@ const ReportingDetails = () => {
         startDate,
         endDate,
     }) => {
-        const formatDate = (date?: string | null) => {
-            if (!date) return "N/A";
-            return format(new Date(date), "dd-MM-yyyy");
-        };
 
         const isCurrent = !endDate;
 
@@ -74,7 +70,7 @@ const ReportingDetails = () => {
                     <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-500">Start Date</span>
                         <span className="text-sm font-medium bg-gray-50 px-3 py-1 rounded-md">
-                            {formatDate(startDate)}
+                            {formatToIndianDate(startDate)}
                         </span>
                     </div>
 
@@ -87,7 +83,7 @@ const ReportingDetails = () => {
                             }}
                             className="text-sm font-medium px-3 py-1 rounded-md"
                         >
-                            {endDate ? formatDate(endDate) : "Present"}
+                            {endDate ? formatToIndianDate(endDate) : "Present"}
                         </span>
                     </div>
                 </div>

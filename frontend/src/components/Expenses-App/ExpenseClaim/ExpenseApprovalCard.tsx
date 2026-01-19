@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
@@ -9,6 +8,7 @@ import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -50,20 +50,6 @@ const ExpenseApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
 
   const gridTemplateColumns = showCheckbox
     ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
@@ -183,7 +169,7 @@ const ExpenseApprovalCard = ({
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           <div className="flex items-center justify-start">
@@ -283,7 +269,7 @@ const ExpenseApprovalCard = ({
                   <div className="flex flex-col gap-1">
                     <p className="card-title">Claim Date</p>
                     <p className="card-subtitle">
-                      {formatDate(
+                      {formatToIndianDate(
                         data?.reference_document?.expenses[0]?.expense_date
                       )}
                     </p>
@@ -291,7 +277,7 @@ const ExpenseApprovalCard = ({
                   <div className="flex flex-col gap-1 text-right">
                     <p className="card-title">Due Date</p>
                     <p className="card-subtitle">
-                      {formatDate(data?.due_date)}
+                      {formatToIndianDate(data?.due_date)}
                     </p>
                   </div>
                 </div>

@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { MoreVertical, Repeat1, RotateCcw, SquarePen } from "lucide-react";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -10,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -121,11 +121,13 @@ const EmpLeaveRequestCard = ({
   };
 
   const status = getStatus(data?.reference_document?.status);
+
   const formattedFromDate = data?.reference_document?.from_date
-    ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
+    ? formatToIndianDate(data?.reference_document.from_date)
     : "N/A";
+ 
   const formattedToDate = data?.reference_document?.to_date
-    ? format(new Date(data?.reference_document.to_date), "dd/MM/yyyy")
+    ? formatToIndianDate(data?.reference_document.to_date)
     : "N/A";
 
   const ActionMenu = () => (

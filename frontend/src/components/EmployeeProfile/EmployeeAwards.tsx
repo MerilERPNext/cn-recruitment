@@ -8,6 +8,7 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import Modal from "../shared/Modal";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -87,14 +88,14 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                                 Awarded On
                             </span>
                             <span className="font-bold px-2 py-1 rounded-md">
-                                {new Date(award.awarded_at).toLocaleDateString()}
+                                {formatToIndianDate(award.awarded_at)}
                             </span>
                         </div>
                         {award.period_start_date && award.period_end_date && (
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-500 font-medium">Award Dates</span>
                                 <span className="font-semibold text-gray-700 text-[11px]">
-                                    {award.period_start_date} → {award.period_end_date}
+                                    {formatToIndianDate(award.period_start_date)} → {formatToIndianDate(award.period_end_date)}
                                 </span>
                             </div>
                         )}

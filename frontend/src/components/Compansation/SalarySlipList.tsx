@@ -22,6 +22,7 @@ import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -93,21 +94,13 @@ const SalarySlipsList = () => {
     if (isDesktop) {
       setSelectedSalarySlip({
         name: salaryId,
-        date: startDate ? formatToIndianDateModal(startDate) : "",
+        date: startDate ? formatToIndianDate(startDate) : "",
       });
       setPdfModalOpen(true);
     } else {
       const encodedId = encodeURIComponent(salaryId);
       navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
     }
-  };
-
-  const formatToIndianDateModal = (dateString: string): string => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
   };
 
   // Handlers for view PDF
@@ -378,12 +371,6 @@ const SalarySlipItemDesktop = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
@@ -451,12 +438,6 @@ const SalarySlipItemMobile = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
