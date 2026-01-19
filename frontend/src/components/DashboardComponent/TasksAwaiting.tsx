@@ -19,16 +19,26 @@ interface ToDo {
   reference_type?: string;
   reference_name?: string;
   date?: string;
-  subject?: string; // Added for new layout
-  due_date?: string; // Added for new layout
+  subject?: string; 
+  due_date?: string;
+  custom_redirect_url?: string; 
 }
 
 const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
   const navigate = useNavigate();
+
   const handleClick = () => {
-    navigate(`/webapp/todo-app#/${item.name}`);
+    if (item.custom_redirect_url) {
+      navigate(item.custom_redirect_url);
+    } else {
+      navigate(`/webapp/todo-app#/${item.name}`);
+    }
   };
-  const handleTodoClick = () => navigate("/webapp/todo-app");
+
+  const handleTodoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate("/webapp/todo-app");
+  };
 
   return (
     <div
@@ -51,11 +61,11 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
             {item.due_date
               ? `Due on ${format(
                   parse(item.due_date, "yyyy-MM-dd", new Date()),
-                  "do MMM"
+                  "do MMM",
                 )}`
               : item.date
-              ? `Due on ${formatDateDDMonthYYYY(item.date)}`
-              : "No due date"}
+                ? `Due on ${formatDateDDMonthYYYY(item.date)}`
+                : "No due date"}
           </Typography>
         </div>
       </div>
@@ -185,6 +195,7 @@ const TasksAwaiting: React.FC = () => {
             "date",
             "priority",
             "allocated_to",
+            "custom_redirect_url",
           ]}
           showPagination={false}
         />
