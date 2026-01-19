@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import Button from "../shared/atoms/Button";
 import { RotateCcw, Pencil } from "lucide-react";
 import Badge from "../shared/Badge";
@@ -13,6 +12,7 @@ import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import { useNavigate } from "react-router-dom";
 import { useShiftTypes } from "../../hooks/useShift";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
@@ -29,7 +29,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
 
   const handleEditClick = () => {
     navigate(
-      `/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`
+      `/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`,
     );
   };
 
@@ -47,7 +47,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               setRefetchAttendance(true);
             }, 1000);
           },
-        }
+        },
       );
     }
   };
@@ -78,17 +78,11 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     }
   };
   const status = getStatus(data?.reference_document?.status);
-  const formattedFromDate = data?.reference_document?.from_date
-    ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
-    : "";
-  const formattedToDate = data?.reference_document?.to_date
-    ? format(new Date(data?.reference_document?.to_date), "dd/MM/yyyy")
-    : "";
 
   const getShiftTimeline = (shiftTypeName: string) => {
     if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
       const shiftType = shiftTypes.data.find(
-        (type) => type.name === shiftTypeName
+        (type) => type.name === shiftTypeName,
       );
 
       if (shiftType) {
@@ -117,12 +111,12 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
 
           {/* From Date */}
           <div className="text-sm text-gray-900 text-start">
-            {formattedFromDate}
+            {formatToIndianDate(data?.reference_document?.from_date || "")}
           </div>
 
           {/* To Date */}
           <div className="text-sm text-gray-900 text-start">
-            {formattedToDate}
+            {formatToIndianDate(data?.reference_document?.to_date || "")}
           </div>
 
           {/* Status */}
@@ -201,12 +195,16 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
             <div className="text-right">
               <div className="flex flex-col gap-1">
                 <div className="card-title">From</div>
-                <div className="card-subtitle">{formattedFromDate}</div>
+                <div className="card-subtitle">
+                  {formatToIndianDate(
+                    data?.reference_document?.from_date || "",
+                  )}
+                </div>
               </div>
               <div className="flex flex-col gap-1 mt-1">
                 <div className="card-title">To</div>
                 <div className="font-medium text-sm text-gray-800">
-                  {formattedToDate}
+                  {formatToIndianDate(data?.reference_document?.to_date || "")}
                 </div>
               </div>
             </div>
@@ -252,7 +250,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               forActionType="edit"
             />
           </ExpenseFormModal>,
-          document.body
+          document.body,
         )}
     </>
   );
