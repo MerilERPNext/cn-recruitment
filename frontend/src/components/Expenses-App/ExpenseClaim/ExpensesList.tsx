@@ -14,13 +14,13 @@ import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
-import { format } from "date-fns";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -41,9 +41,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
-    : " - ";
+  // const formattedDate = item?.reference_document?.creation
+  //   ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
+  //   : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
@@ -71,7 +71,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       <div className="flex justify-between">
         <div className="flex flex-col gap-1">
           <span className="card-title">Claimed Date</span>
-          <span className="card-subtitle">{formattedDate}</span>
+          <span className="card-subtitle">{formatToIndianDate(item?.reference_document?.creation)}</span>
         </div>
 
         <div className="flex flex-col gap-1 text-right">
@@ -90,24 +90,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? new Date(item?.reference_document?.creation).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
-
-  const formattedExpenseDate = item?.reference_document?.expenses[0]
-    ?.expense_date
-    ? new Date(
-        item?.reference_document?.expenses[0]?.expense_date
-      ).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
 
   const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -143,8 +125,8 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       <span>{expenseClaim?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
       <span>{formattedSanctionedAmount || " - "}</span>
-      <span>{formattedExpenseDate}</span>
-      <span>{formattedDate}</span>
+      <span>{formatToIndianDate(item?.reference_document?.expenses[0]?.expense_date)}</span>
+      <span>{formatToIndianDate(item?.reference_document?.creation)}</span>
       <div>
         <Tooltip
           content={

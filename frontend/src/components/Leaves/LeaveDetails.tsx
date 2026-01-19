@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { format, isValid, parse } from "date-fns";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
@@ -14,6 +13,7 @@ import {
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { getActionStyles } from "../../utils/actionButtonStyles";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 export function LeaveDetailView({
   documentName,
@@ -114,20 +114,6 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
 
   // Loading state
   if (isLoading && documentName) {
@@ -183,7 +169,7 @@ export function LeaveDetailView({
                     variant="bodySmall"
                     className="text-gray-500/80 font-medium"
                   >
-                    {formatDate(data?.reference_document?.from_date)}
+                    {formatToIndianDate(data?.reference_document?.from_date)}
                   </Typography>
                 </p>
               )}
@@ -196,7 +182,7 @@ export function LeaveDetailView({
                     variant="bodySmall"
                     className="text-gray-500/80 font-medium"
                   >
-                    {formatDate(data?.reference_document?.to_date)}
+                    {formatToIndianDate(data?.reference_document?.to_date)}
                   </Typography>
                 </p>
               )}
@@ -209,7 +195,7 @@ export function LeaveDetailView({
                 variant="bodySmall"
                 className="text-gray-500/80 font-medium"
               >
-                {formatDate(data?.due_date)}
+                {formatToIndianDate(data?.due_date)}
               </Typography>
             </p>
           )}

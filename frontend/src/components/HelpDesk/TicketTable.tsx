@@ -2,6 +2,7 @@ import React from "react";
 import { ExternalLink, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -17,15 +18,6 @@ interface TicketTableProps {
   onSort: (field: string) => void;
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
 
 const getAssignedName = (assignStr: string | null): string => {
   if (!assignStr) return "-";
@@ -231,12 +223,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {formatDate(ticket.creation)}
+                  {formatToIndianDate(ticket.creation)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {formatDate(ticket.modified)}
+                  {formatToIndianDate(ticket.modified)}
                 </Typography>
               </td>
               <td className="px-4 py-3">

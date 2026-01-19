@@ -4,6 +4,7 @@ import CommonSearchAndActions from '../CommonSearchAndActions';
 import FlowRequestCard from '../FlowRequestCard';
 import Badge from '../../shared/Badge';
 import { useNavigate } from 'react-router-dom';
+import formatToIndianDate from '../../../utils/formatToIndianDate';
 
 const subtabs = [
   { name: "Active", count: 1 },
@@ -232,10 +233,10 @@ const FlowRequests : React.FC = () => {
             <span className="px-4 py-4 inline-block cursor-pointer text-blue-700 hover:text-blue-800 hover:underline" onClick={()=> handleNavigate(request.requestId)}>{request.requestId}</span>
             <span className="px-4 py-4 inline-block cursor-pointer text-blue-700 hover:text-blue-800 hover:underline" onClick={()=> handleNavigate(request.requestId)}>{request.flowName}</span>
             <span className="px-4 py-4 inline-block ">{request.category}</span>
-            <span className="px-4 py-4 inline-block ">{request.initiatedOn}</span>
+            <span className="px-4 py-4 inline-block ">{formatToIndianDate(request.initiatedOn)}</span>
             <span className="px-4 py-4 inline-block ">{request.initiatedBy}</span>
             <span className="px-4 py-4 inline-block ">{request.initiatedFor}</span>
-            <span className="px-4 py-4 inline-block ">{request.lastTriggeredOn}</span>
+            <span className="px-4 py-4 inline-block ">{formatToIndianDate(request.lastTriggeredOn)}</span>
             <span className="px-4 py-4 inline-block ">{request.triggeringEvent}</span>
             <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.approvalStatus)} label={request.approvalStatus} size="sm" /></span>
             <span className="px-4 py-4 inline-block "><Badge backgroundColor={getStatusTagColor(request.workflowStatus)} label={request.workflowStatus} size="sm" /></span>

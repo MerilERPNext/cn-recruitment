@@ -10,8 +10,8 @@ import {
 import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { formatDate } from "../../../utils/qrCodeUtils";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type TeamAdvanceDetailViewProps = {
   documentName: string;
@@ -108,7 +108,7 @@ export default function TeamAdvanceDetailView({
             >
               <td className="px-4 py-2">{item.expense_type || "-"}</td>
               <td className="px-4 py-2">
-                {formatDate(item.expense_date) || "-"}
+                {formatToIndianDate(item.expense_date) || "-"}
               </td>
               <td className="px-4 py-2">{item.custom_mercent || "-"}</td>
               <td className="px-4 py-2">{item.custom_invoice_number || "-"}</td>
@@ -157,7 +157,7 @@ export default function TeamAdvanceDetailView({
           <div className="text-xs text-gray-600 space-y-1">
             <p>
               <span className="font-medium">Date:</span>{" "}
-              {formatDate(item.expense_date)}
+              {formatToIndianDate(item.expense_date)}
             </p>
             <p>
               <span className="font-medium">Merchant:</span>{" "}
@@ -268,7 +268,7 @@ export default function TeamAdvanceDetailView({
               </p>
               <p>
                 <span className="font-medium">Posting Date:</span>{" "}
-                {formatDate(ref.posting_date)}
+                {formatToIndianDate(ref.posting_date)}
               </p>
               {ref.purpose && (
                 <p className="md:col-span-2">
