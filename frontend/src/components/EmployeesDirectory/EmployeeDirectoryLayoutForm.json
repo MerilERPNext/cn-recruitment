@@ -22,7 +22,7 @@
                 ]
             },
             "validateWhenHidden": false,
-            "key": "employee_status",
+            "key": "status",
             "type": "select",
             "input": true
         },
@@ -45,7 +45,7 @@
         },
         {
             "label": "Select Departments",
-            "key": "departments",
+            "key": "department",
             "type": "select",
             "input": true,
             "placeholder": "Select Departments",
@@ -58,6 +58,53 @@
             "selectValues": "message.data.departments",
             "valueProperty": "name",
             "template": "<span>{{ item.name }}</span>",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Employee Type",
+            "key": "employment_type",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Employee Type",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Employment Type"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Current Office Location",
+            "key": "branch",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Current Office Location",
+            "customClass": "mb-4",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Branch"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Business Unit",
+            "key": "custom_business_unit",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Business Unit",
+            "customClass": "mb-4",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Business Unit"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
             "lazyLoad": false
         }
     ]

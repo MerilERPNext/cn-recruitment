@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { format, parseISO, isValid } from "date-fns";
 import { profileService } from "../../services/profileService";
 
 // Cache for table field metadata to prevent duplicate API calls
@@ -239,14 +240,14 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         type: "calendar",
         displayInTimezone: "viewer",
         timezone: "default",
-        format: "yyyy-MM-dd",
+        format: "dd-MM-yyyy",
         useLocaleSettings: false,
         allowInput: true,
         clickOpens: true,
         enableTime: false,
         mode: "single",
       };
-      schema.format = "yyyy-MM-dd";
+      schema.format = "dd-MM-yyyy";
       schema.placeholder = "Enter date";
       break;
 
@@ -255,14 +256,14 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         type: "calendar",
         displayInTimezone: "viewer",
         timezone: "default",
-        format: "yyyy-MM-dd HH:mm:ss",
+        format: "dd-MM-yyyy HH:mm:ss",
         useLocaleSettings: false,
         allowInput: true,
         clickOpens: true,
         enableTime: true,
         mode: "single",
       };
-      schema.format = "yyyy-MM-dd HH:mm:ss";
+      schema.format = "dd-MM-yyyy HH:mm:ss";
       schema.placeholder = "Enter date and time";
       break;
 
@@ -1271,10 +1272,25 @@ export async function convertFieldsToSimpleTabbedData(
       // It's a field
       ensureCurrentTab();
 
-      const fieldValue =
+      let fieldValue =
         employeeData[`${field.fieldname}_display`] !== undefined
           ? employeeData[`${field.fieldname}_display`]
           : employeeData[field.fieldname];
+
+      // Standardize date format if it's a raw date string
+      if (
+        (field.fieldtype === "Date" || field.fieldtype === "Datetime") &&
+        typeof fieldValue === "string" &&
+        fieldValue
+      ) {
+        const date = parseISO(fieldValue);
+        if (isValid(date)) {
+          fieldValue = format(
+            date,
+            field.fieldtype === "Date" ? "dd-MM-yyyy" : "dd-MM-yyyy HH:mm:ss"
+          );
+        }
+      }
 
       // Determine simpler type
       let simpleType = "text";
@@ -1335,10 +1351,28 @@ export async function convertFieldsToSimpleTabbedData(
               else if (["Attach", "Attach Image"].includes(childField.fieldtype))
                 childSimpleType = "file";
 
-              const childValue =
+              let childValue =
                 row[`${childField.fieldname}_display`] !== undefined
                   ? row[`${childField.fieldname}_display`]
                   : row[childField.fieldname];
+
+              // Standardize date format for child table fields
+              if (
+                (childField.fieldtype === "Date" ||
+                  childField.fieldtype === "Datetime") &&
+                typeof childValue === "string" &&
+                childValue
+              ) {
+                const date = parseISO(childValue);
+                if (isValid(date)) {
+                  childValue = format(
+                    date,
+                    childField.fieldtype === "Date"
+                      ? "dd-MM-yyyy"
+                      : "dd-MM-yyyy HH:mm:ss"
+                  );
+                }
+              }
 
               rowData[childField.fieldname] = {
                 value: childValue,

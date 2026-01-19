@@ -8,6 +8,7 @@ import { Employee } from "../../types/employee";
 import EmployeeTable from "./EmployeeTable";
 import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 import Button from "../shared/atoms/Button";
+import DynamicEmployeeUpdateForm from "./DynamicEmployeeUpdateForm";
 
 
 const EmployeeDirectoryLayout: React.FC = () => {
@@ -15,6 +16,7 @@ const EmployeeDirectoryLayout: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] = useState(false);
+  const [isUpdateFormOpen, setIsUpdateFormOpen] = useState(false);
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -31,19 +33,23 @@ const EmployeeDirectoryLayout: React.FC = () => {
           setSelectedEmployees={setSelectedEmployees}
         />
         {selectedEmployees.length > 0 && (
-          <div>
+          <div className="flex gap-2">
             <Button variant="soft" size="sm" onClick={() => { setIsAttendanceAssignmentsOpen(true) }}>Attendance Assignments</Button>
+            <Button variant="soft" size="sm" onClick={() => { setIsUpdateFormOpen(true) }}>Update Probation</Button>
           </div>
         )}
         <Outlet />
         <AttendanceAssignments
           open={isAttendanceAssignmentsOpen}
           onClose={() => { setIsAttendanceAssignmentsOpen(false) }}
+          employees={selectedEmployees}
         />
-
+        <DynamicEmployeeUpdateForm
+          doctype="Probation Period"
+          isOpen={isUpdateFormOpen}
+          onClose={() => setIsUpdateFormOpen(false)}
+        />
       </main>
-
-
     </div>
   );
 
@@ -59,8 +65,9 @@ const EmployeeDirectoryLayout: React.FC = () => {
             setSelectedEmployees={setSelectedEmployees}
           />
           {selectedEmployees.length > 0 && (
-            <div className="flex justify-end bg-primary rounded-md p-2">
+            <div className="flex justify-end bg-primary rounded-md p-2 gap-2">
               <Button variant="soft" size="sm" onClick={() => { setIsAttendanceAssignmentsOpen(true) }}>Attendance Assignments</Button>
+              <Button variant="soft" size="sm" onClick={() => { setIsUpdateFormOpen(true) }}>Update Probation</Button>
             </div>
           )}
           <Outlet />
@@ -69,6 +76,12 @@ const EmployeeDirectoryLayout: React.FC = () => {
       <AttendanceAssignments
         open={isAttendanceAssignmentsOpen}
         onClose={() => { setIsAttendanceAssignmentsOpen(false) }}
+        employees={selectedEmployees}
+      />
+      <DynamicEmployeeUpdateForm
+        doctype="Probation Period"
+        isOpen={isUpdateFormOpen}
+        onClose={() => setIsUpdateFormOpen(false)}
       />
     </DesktopLayoutWrapper>
   );

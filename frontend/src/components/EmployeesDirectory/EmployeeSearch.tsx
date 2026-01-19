@@ -50,23 +50,16 @@ const EmployeeSearch = ({ setEmployees }: { setEmployees: React.Dispatch<React.S
     const debouncedQuery = useDebounce(searchQuery, 350);
 
     const filters: FilterCondition[] = [];
-
     if (debouncedQuery) {
         filters.push(["employee_name", "like", `%${debouncedQuery}%`]);
     }
-
-    if (activeFilters.employee_status) {
-        filters.push(["status", "=", activeFilters.employee_status]);
+    if (activeFilters.status) {
+        Object.entries(activeFilters).forEach(([key, value]) => {
+            if (value) {
+                filters.push([key, "=", value]);
+            }
+        });
     }
-
-    if (activeFilters.company) {
-        filters.push(["company", "=", activeFilters.company]);
-    }
-
-    if (activeFilters.departments) {
-        filters.push(["department", "=", activeFilters.departments]);
-    }
-
     const { data = [] } = useGetAllEmployees(
         ["*"],
         50,
@@ -117,7 +110,7 @@ const EmployeeSearch = ({ setEmployees }: { setEmployees: React.Dispatch<React.S
                     renderOption={(emp) => <EmployeeOption employee={emp} />}
                 />
                 <div className="relative">
-                    <Button variant="soft" size="sm" onClick={() => { setIsFilterOpen(true) }} className="relative">
+                    <Button variant="soft" size="sm" onClick={() => { setIsFilterOpen(true) }} className="h-full">
                         <Filter size={16} />
                         {activeFilterCount > 0 && (
                             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
@@ -163,7 +156,7 @@ const EmployeeSearch = ({ setEmployees }: { setEmployees: React.Dispatch<React.S
                 title="Filter"
                 size="xl"
             >
-                <EmployeeDirectoryFilters onUpdate={handleFilterUpdate} />
+                <EmployeeDirectoryFilters onUpdate={handleFilterUpdate} data={activeFilters} />
             </SideDrawer>
         </div>
     );

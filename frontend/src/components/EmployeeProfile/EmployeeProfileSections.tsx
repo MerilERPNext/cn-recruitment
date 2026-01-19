@@ -169,31 +169,36 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
-                                .map(field => (
-                                    <div
-                                        key={field.key}
-                                        className="px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"
-                                    >
-                                        <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest mb-1 block">
-                                            {field.label || "-"}
-                                        </Typography>
-                                        {
-                                            field?.type === 'file' ? (
-                                                <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
-                                                    <FileText size={14} />
-                                                    <span className="truncate max-w-[200px] inline-block">{field.value}</span>
-                                                </Link>
-                                            ) : (
-                                                <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                                    {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
-                                                </Typography>
-                                            )
-                                        }
-                                    </div>
-                                ))}
+                                .map(field => {
+                                    const isTable = Array.isArray(field.value);
+                                    return (
+                                        <div
+                                            key={field.key}
+                                            className={`${isTable ? "col-span-full mt-4" : "px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"}`}
+                                        >
+                                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest mb-3 block">
+                                                {field.label || "-"}
+                                            </Typography>
+                                            {
+                                                field?.type === 'file' ? (
+                                                    <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
+                                                        <FileText size={14} />
+                                                        <span className="truncate max-w-[200px] inline-block">{field.value}</span>
+                                                    </Link>
+                                                ) : isTable ? (
+                                                    <CardsRenderer items={field.value} />
+                                                ) : (
+                                                    <Typography variant="bodyMedium" className="font-bold text-gray-900">
+                                                        {field?.value || "—"}
+                                                    </Typography>
+                                                )
+                                            }
+                                        </div>
+                                    );
+                                })}
                         </div>
                     </section>
                 ))}
@@ -217,9 +222,11 @@ const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
     return (
-        <div className="w-full">
+        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             {items.map((item, index) => (
-                <GenericCard key={item?.id || item?.name || index} data={item} />
+                <div key={item?.id || item?.name || index} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
+                    <GenericCard data={item} />
+                </div>
             ))}
         </div>
     );
@@ -229,7 +236,7 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
     if (!data || typeof data !== "object") return null;
 
     return (
-        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all mb-3 group/card">
+        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full">
             <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;

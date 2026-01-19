@@ -2,7 +2,6 @@
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useRef } from "react";
-import { createPortal } from "react-dom";
 import "../../formio.custom.css";
 import toast from "react-hot-toast";
 import { useEmployeeShifts } from "../../hooks/useShift";
@@ -19,17 +18,21 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import Modal from "../shared/Modal";
+import { Employee } from "../../types/employee";
 
 interface AttendanceAssignmentsProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
   onClose: () => void;
   open?: boolean;
+  employees?: Employee[];
 }
 
 const AttendanceAssignments = ({
   onClose,
   open = true,
+  employees = [],
 }: AttendanceAssignmentsProps) => {
   const formInstance = useRef<any>(null);
   const { targetEmployeeId } = useTargetUser();
@@ -38,17 +41,27 @@ const AttendanceAssignments = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || ""
   );
-  const employee = targetEmployeeId || currentEmployee?.name;
 
-  const { data: shiftList } = useEmployeeShifts(employee || "");
-  const { data: attendancePolicy } = useAllAttendanceAssignmentPolicies(employee || "");
+  // Use either the passed list or single employee from context
+  const targetEmployees = employees.length > 0
+    ? employees
+    : targetEmployeeId || currentEmployee?.employee
+      ? [{ employee: targetEmployeeId || currentEmployee?.employee }] as Partial<Employee>[]
+      : [];
+
+  const employeeIdForContext = employees.length > 0 ? employees[0].employee : (targetEmployeeId || currentEmployee?.employee);
+
+  const { data: shiftList } = useEmployeeShifts(employeeIdForContext || "");
+  const { data: attendancePolicy } = useAllAttendanceAssignmentPolicies(employeeIdForContext || "");
 
   const { data: weekOffs } = useAllWeekOffs();
   const { data: ipRestrictions } = useAllIpRestrictions();
   const { data: geoFencingRestrictions } = useAllShiftLocations();
   const { data: allShiftBlocks } = useAllShiftBlocks();
   const mutation = useAddAttendanceAssignment();
+
   const overtimeForm = {
+    // ... (rest of the form schema remains the same, skipping for brevity but keeping structure)
     display: "form",
     components: [
       {
@@ -56,7 +69,6 @@ const AttendanceAssignments = ({
         key: "attendance_assignments",
         label: "Attendance Assignments",
         hideLabel: true,
-
         customClass: "border-0",
         components: [
           {
@@ -145,7 +157,6 @@ const AttendanceAssignments = ({
             },
             customConditional: "show = !data.use_shift_blocks ;",
           },
-
           {
             label: "Shift Block",
             key: "shift_block",
@@ -221,7 +232,6 @@ const AttendanceAssignments = ({
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
 
-      // Map all fields with proper boolean conversion and default values
       const mappedData = {
         enable_web_clockin: submissionData.enable_web_clockin ? 1 : 0,
         enable_check_in: submissionData.enable_check_in ? 1 : 0,
@@ -232,39 +242,29 @@ const AttendanceAssignments = ({
         effective_from: submissionData.effective_from?.split("T")[0] || "none",
       };
 
-      if (currentEmployee?.employee) {
-        mutation.mutate(
-          {
-            employee: currentEmployee?.employee,
+      if (targetEmployees.length > 0) {
+        const promises = targetEmployees.map((emp) =>
+          mutation.mutateAsync({
+            employee: emp.employee || "",
             data: mappedData,
-          },
-          {
-            onSuccess() {
-              toast.success("Form submitted successfully.");
-              onClose();
-            },
-          }
+          })
         );
+
+        await Promise.all(promises);
+        toast.success(`${targetEmployees.length} attendance assignments updated.`);
+        onClose();
+      } else {
+        toast.error("No employees selected.");
       }
     } catch (err) {
-      // If form is invalid, prevent API call
-      toast.error("Please fill in all required fields.");
+      toast.error("Please correct the errors in the form.");
       console.warn("Form submission error -", err);
     }
   };
 
-  if (!open) return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+  return (
+    <Modal isOpen={open} onClose={onClose} size="md">
+      <div className="flex flex-col bg-white overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -307,24 +307,21 @@ const AttendanceAssignments = ({
         </div>
 
         {/* Footer */}
-        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+        <div className="bg-white py-4 px-6 border-t border-gray-200">
           <Button
             size="md"
-            onClick={() => {
-              handleSubmit();
-            }}
+            onClick={handleSubmit}
             className="w-full rounded-lg py-3 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
             {mutation?.isPending ? (
               <CircularLoader size="sm" color="white" />
             ) : (
-              "Update"
+              "Update Assignments"
             )}
           </Button>
         </div>
       </div>
-    </div>,
-    document.body
+    </Modal>
   );
 };
 

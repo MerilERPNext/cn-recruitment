@@ -7,9 +7,10 @@ import { EmployeeDirectoryFilterData } from "./EmployeeSearch";
 
 interface EmployeeDirectoryFiltersProps {
     onUpdate: (data: EmployeeDirectoryFilterData) => void;
+    data: EmployeeDirectoryFilterData;
 }
 
-const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onUpdate }) => {
+const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onUpdate, data }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
 
@@ -33,6 +34,7 @@ const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onU
                 <Form
                     className="profile-form w-full max-w-full bg-white"
                     form={schema}
+                    submission={{ data: data }}
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onFormReady={(instance: any) => {
                         formInstance.current = instance;
@@ -58,7 +60,7 @@ const EmployeeDirectoryFilters: React.FC<EmployeeDirectoryFiltersProps> = ({ onU
                         size="md"
                         fullWidth
                     >
-                        Update
+                        Apply
                     </Button>
                 </div>
             </div>
