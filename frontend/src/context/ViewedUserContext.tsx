@@ -84,6 +84,48 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, searchParams.toString(), targetEmployeeId]);
 
+  const hasReloadedRef = useRef(false);
+
+
+  useEffect(() => {
+    if (
+      !currentEmployee?.name ||
+      !targetEmployeeId ||
+      hasReloadedRef.current
+    ) {
+      return;
+    }
+
+    // If impersonation target is same as logged-in user
+    if (currentEmployee.name === targetEmployeeId) {
+      hasReloadedRef.current = true;
+      isClearing.current = true;
+
+      // Clear state + session
+      setTargetEmployeeIdState(null);
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+
+      // Clean URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete(TARGET_USER_PARAM);
+
+      navigate(
+        {
+          pathname: location.pathname,
+          search: newParams.toString(),
+        },
+        { replace: true }
+      );
+
+      // Force full reload (after URL cleanup)
+      setTimeout(() => {
+        window.location.reload();
+      }, 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmployee?.name, targetEmployeeId]);
+
+
   const setTargetEmployee = (
     employeeId: string | null,
     targetPath?: string,
@@ -102,9 +144,8 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newParams = new URLSearchParams(searchParams);
       newParams.set(TARGET_USER_PARAM, employeeId);
-      const fullPath = `${
-        targetPath || location.pathname
-      }?${newParams.toString()}`;
+      const fullPath = `${targetPath || location.pathname
+        }?${newParams.toString()}`;
 
       if (openInNewTab) {
         // Only open in new tab - don't modify current tab's state or sessionStorage
