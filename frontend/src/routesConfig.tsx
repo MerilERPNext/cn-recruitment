@@ -431,6 +431,11 @@ const FAQPage = lazyWithRetry(
   "FAQPage"
 );
 
+const TicketDetailView = lazyWithRetry(
+  () => import("./components/HelpDesk/TicketDetailView"),
+  "TicketDetailView"
+);
+
 const TodoPage = lazyWithRetry(
   () => import("./components/Todo/TodoPage"),
   "TodoPage"
@@ -774,6 +779,10 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/helpdesk/faq",
     element: <FAQPage />,
+  },
+  {
+    path: "/webapp/helpdesk/ticket/:ticketId",
+    element: <TicketDetailView />,
   },
   {
     path: "/webapp/todo-app",

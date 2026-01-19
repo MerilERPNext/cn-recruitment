@@ -214,6 +214,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
             onSelectAll={handleSelectAll}
             onReply={handleReply}
             onClose={handleClose}
+            onRowClick={handleReply}
             currentUser={currentUserEmail}
             sortField={sortField}
             sortDirection={sortDirection}

@@ -313,21 +313,59 @@ export const useSubcategories = (parentCategory: string) => {
 
 /**
  * Search employees for "Raise For Others"
+ * Uses frappe.client.get_list which respects Frappe's User Permissions
  */
 export const useSearchEmployees = (searchText: string) => {
   return useQuery<EmployeeSearchResult[]>({
     queryKey: ["employee-search", searchText],
     queryFn: async () => {
-      const result = await FrappeAPI.callMethod("frappe.desk.search.search_link", {
-        txt: searchText,
+      // Use get_list which properly respects User Permissions
+      const result = await FrappeAPI.callMethod("frappe.client.get_list", {
         doctype: "Employee",
-        filters: {},
-        page_length: 20,
+        or_filters: [
+          ["name", "like", `%${searchText}%`],
+          ["employee_name", "like", `%${searchText}%`]
+        ],
+        fields: ["name", "employee_name", "department", "designation"],
+        limit_page_length: 20,
+        order_by: "employee_name asc",
       });
-      return result as EmployeeSearchResult[];
+
+      // Transform to expected format (value/description for compatibility)
+      return ((result as Array<{ name: string; employee_name: string; department?: string; designation?: string }>) || []).map(emp => ({
+        value: emp.name,
+        description: `${emp.employee_name}${emp.designation ? ` - ${emp.designation}` : ''}${emp.department ? ` (${emp.department})` : ''}`,
+      }));
     },
     enabled: searchText.length >= 2,
     staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
+ * Fetch all accessible employees for dropdown
+ * Uses frappe.client.get_list which respects Frappe's User Permissions
+ */
+export const useEmployeeList = () => {
+  return useQuery<EmployeeSearchResult[]>({
+    queryKey: ["employee-list"],
+    queryFn: async () => {
+      // Use get_list which properly respects User Permissions
+      const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+        doctype: "Employee",
+        filters: { status: "Active" },
+        fields: ["name", "employee_name", "department", "designation"],
+        limit_page_length: 500,
+        order_by: "employee_name asc",
+      });
+
+      // Transform to expected format (value/description for compatibility)
+      return ((result as Array<{ name: string; employee_name: string; department?: string; designation?: string }>) || []).map(emp => ({
+        value: emp.name,
+        description: `${emp.employee_name}${emp.designation ? ` - ${emp.designation}` : ''}${emp.department ? ` (${emp.department})` : ''}`,
+      }));
+    },
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
   });
 };
 
@@ -358,6 +396,265 @@ export const useCreateTicket = () => {
       // Invalidate ticket list and stats to refresh
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+    },
+  });
+};
+
+// ============== Agents Hook for @mentions ==============
+
+export interface HDAgent {
+  name: string;
+  agent_name: string;
+  user: string;
+  user_image?: string;
+}
+
+/**
+ * Fetch HD Agents for @mention suggestions
+ * Uses fallback API first to avoid 417 errors from helpdesk.api.agent.get_agents
+ */
+export const useAgents = () => {
+  return useQuery<HDAgent[]>({
+    queryKey: ["hd-agents"],
+    queryFn: async () => {
+      // Use fallback API directly (more reliable, avoids 417 errors)
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "HD Agent",
+          fields: ["name", "agent_name", "user"],
+          limit_page_length: 100,
+        });
+        return (result as HDAgent[]) || [];
+      } catch {
+        // Silent fail - @mentions just won't work if this fails
+        return [];
+      }
+    },
+    retry: false, // Don't retry on failure
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
+/**
+ * User info for @mention suggestions
+ */
+export interface MentionUser {
+  name: string;
+  full_name: string;
+  email: string;
+  user_image?: string;
+}
+
+/**
+ * Fetch all active users for @mention suggestions (employees/users)
+ */
+export const useMentionUsers = () => {
+  return useQuery<MentionUser[]>({
+    queryKey: ["mention-users"],
+    queryFn: async () => {
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "User",
+          fields: ["name", "full_name", "email", "user_image"],
+          filters: {
+            enabled: 1,
+            user_type: "System User",
+          },
+          limit_page_length: 200,
+        });
+        return (result as MentionUser[]) || [];
+      } catch {
+        return [];
+      }
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
+// ============== Ticket Detail View Hooks ==============
+
+export interface TicketContact {
+  name: string;
+  email_id: string;
+  image?: string;
+  mobile_no?: string;
+  phone?: string;
+  company_name?: string;
+}
+
+export interface TicketUser {
+  name: string;
+  email: string;
+  user_image?: string;
+  full_name?: string;
+}
+
+export interface TicketAttachment {
+  file_name: string;
+  file_url: string;
+}
+
+export interface TicketComment {
+  name: string;
+  commented_by: string;
+  content: string;
+  creation: string;
+  is_pinned?: boolean;
+  attachments?: TicketAttachment[];
+  user?: TicketUser;
+}
+
+export interface TicketCommunication {
+  name: string;
+  sender: string;
+  recipients: string;
+  cc?: string;
+  bcc?: string;
+  subject: string;
+  content: string;
+  creation: string;
+  communication_date: string;
+  delivery_status?: string;
+  attachments?: TicketAttachment[];
+  user?: TicketUser;
+}
+
+export interface TicketHistory {
+  creation: string;
+  action: string;
+  user: string;
+}
+
+export interface TicketDetail {
+  name: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  agent_group?: string;
+  raised_by: string;
+  _assign?: string;
+  creation: string;
+  modified: string;
+  response_by?: string;
+  resolution_by?: string;
+  first_responded_on?: string;
+  resolution_date?: string;
+  custom_category?: string;
+  custom_sub_category?: string;
+  // Category names (API may return these populated)
+  category?: { name: string; category_name: string };
+  sub_category?: { name: string; category_name: string };
+  via_customer_portal?: number;
+  agreement_status?: string;
+  resolution_details?: string;
+  contact?: TicketContact;
+  comments: TicketComment[];
+  communications: TicketCommunication[];
+  history: TicketHistory[];
+}
+
+/**
+ * Fetch single ticket with all communications, comments, and history
+ */
+export const useTicketDetail = (ticketId: string) => {
+  return useQuery<TicketDetail>({
+    queryKey: ["hd-ticket-detail", ticketId],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod(
+        "helpdesk.helpdesk.doctype.hd_ticket.api.get_one",
+        {
+          name: ticketId,
+          is_customer_portal: false,
+        }
+      );
+      return result as TicketDetail;
+    },
+    enabled: !!ticketId,
+    ...defaultQueryOptions,
+  });
+};
+
+/**
+ * Send email reply to ticket
+ */
+export const useSendEmailReply = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketId,
+      to,
+      cc,
+      bcc,
+      message,
+      attachments = [],
+    }: {
+      ticketId: string;
+      to: string;
+      cc?: string;
+      bcc?: string;
+      message: string;
+      attachments?: TicketAttachment[];
+    }) => {
+      const result = await FrappeAPI.callMethod("run_doc_method", {
+        dt: "HD Ticket",
+        dn: ticketId,
+        method: "reply_via_agent",
+        args: {
+          to,
+          cc,
+          bcc,
+          message,
+          attachments,
+        },
+      });
+      return result;
+    },
+    onSuccess: (_data, variables) => {
+      // Invalidate ticket detail to refresh communications
+      queryClient.invalidateQueries({
+        queryKey: ["hd-ticket-detail", variables.ticketId],
+      });
+    },
+  });
+};
+
+/**
+ * Add internal comment to ticket
+ */
+export const useAddComment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketId,
+      content,
+      attachments = [],
+    }: {
+      ticketId: string;
+      content: string;
+      attachments?: TicketAttachment[];
+    }) => {
+      const result = await FrappeAPI.callMethod("run_doc_method", {
+        dt: "HD Ticket",
+        dn: ticketId,
+        method: "new_comment",
+        args: {
+          content,
+          attachments,
+        },
+      });
+      return result;
+    },
+    onSuccess: (_data, variables) => {
+      // Invalidate ticket detail to refresh comments
+      queryClient.invalidateQueries({
+        queryKey: ["hd-ticket-detail", variables.ticketId],
+      });
     },
   });
 };

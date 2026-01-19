@@ -6,11 +6,10 @@ import toast from "react-hot-toast";
 import {
   useCategories,
   useSubcategories,
-  useSearchEmployees,
+  useEmployeeList,
   useCreateTicket,
   HDCategory,
 } from "../../hooks/useHelpDeskTickets";
-import useDebounce from "../../hooks/useDebounce";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -34,20 +33,17 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [subcategory, setSubcategory] = useState("");
   const [raisedFor, setRaisedFor] = useState<"Myself" | "Others">("Myself");
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [employeeSearch, setEmployeeSearch] = useState("");
   const [description, setDescription] = useState("");
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const debouncedEmployeeSearch = useDebounce(employeeSearch, 300);
 
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: subcategories = [] } = useSubcategories(category);
-  const { data: employees = [] } = useSearchEmployees(debouncedEmployeeSearch);
+  const { data: employees = [], isLoading: employeesLoading } = useEmployeeList();
 
   // Mutation
   const createTicketMutation = useCreateTicket();
@@ -59,7 +55,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setSubcategory("");
     setRaisedFor("Myself");
     setSelectedEmployee("");
-    setEmployeeSearch("");
     setDescription("");
     setAttachments([]);
   }, []);
@@ -76,6 +71,18 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setSubcategory(""); // Reset subcategory when category changes
   };
 
+  // Get CSRF token from cookie
+  const getCSRFToken = (): string => {
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "csrf_token") {
+        return decodeURIComponent(value);
+      }
+    }
+    return "";
+  };
+
   // Handle file upload
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -85,15 +92,23 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       for (const file of Array.from(files)) {
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("folder", "Home/Helpdesk");
         formData.append("is_private", "1");
+
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
 
         const response = await fetch("/api/method/upload_file", {
           method: "POST",
           body: formData,
+          headers: {
+            "X-Frappe-CSRF-Token": csrfToken,
+          },
+          credentials: "include",
         });
 
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Upload error:", errorText);
           throw new Error("Upload failed");
         }
 
@@ -243,8 +258,8 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Subcategory (only if category selected and has subcategories) */}
-          {category && subcategories.length > 0 && (
+          {/* Row 2: Subcategory (always show when category is selected) */}
+          {category && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Select Subcategory
@@ -254,8 +269,11 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   value={subcategory}
                   onChange={(e) => setSubcategory(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
+                  disabled={subcategories.length === 0}
                 >
-                  <option value="">Select Subcategory</option>
+                  <option value="">
+                    {subcategories.length === 0 ? "No subcategories available" : "Select Subcategory"}
+                  </option>
                   {subcategories.map((sub: HDCategory) => (
                     <option key={sub.name} value={sub.name}>
                       {sub.category_name}
@@ -281,7 +299,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     setRaisedFor(e.target.value as "Myself" | "Others");
                     if (e.target.value === "Myself") {
                       setSelectedEmployee("");
-                      setEmployeeSearch("");
                     }
                   }}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
@@ -293,43 +310,30 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               </div>
             </div>
 
-            {/* Employee Search (conditional) */}
+            {/* Employee Dropdown (conditional) */}
             {raisedFor === "Others" && (
-              <div className="relative">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Select Employee
                 </label>
-                <input
-                  type="text"
-                  value={employeeSearch}
-                  onChange={(e) => {
-                    setEmployeeSearch(e.target.value);
-                    setShowEmployeeDropdown(true);
-                  }}
-                  onFocus={() => setShowEmployeeDropdown(true)}
-                  placeholder="Search employee..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
-                />
-                {showEmployeeDropdown && employees.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                <div className="relative">
+                  <select
+                    value={selectedEmployee}
+                    onChange={(e) => setSelectedEmployee(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
+                    disabled={employeesLoading}
+                  >
+                    <option value="">
+                      {employeesLoading ? "Loading employees..." : "Select Employee"}
+                    </option>
                     {employees.map((emp) => (
-                      <button
-                        key={emp.value}
-                        onClick={() => {
-                          setSelectedEmployee(emp.value);
-                          setEmployeeSearch(emp.description || emp.value);
-                          setShowEmployeeDropdown(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
-                      >
-                        <div className="font-medium">{emp.value}</div>
-                        {emp.description && (
-                          <div className="text-gray-500 text-xs">{emp.description}</div>
-                        )}
-                      </button>
+                      <option key={emp.value} value={emp.value}>
+                        {emp.description}
+                      </option>
                     ))}
-                  </div>
-                )}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
               </div>
             )}
           </div>

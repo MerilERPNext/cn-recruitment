@@ -11,6 +11,7 @@ interface TicketTableProps {
   onSelectAll: () => void;
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
+  onRowClick?: (ticket: HDTicket) => void;
   currentUser: string;
   sortField: string;
   sortDirection: "asc" | "desc";
@@ -77,6 +78,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onSelectAll,
   onReply,
   onClose,
+  onRowClick,
   currentUser,
   sortField,
   sortDirection,
@@ -199,9 +201,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
           {tickets.map((ticket) => (
             <tr
               key={ticket.name}
-              className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
+              className={`border-t border-gray-200 hover:bg-gray-50 transition-colors ${
+                onRowClick ? "cursor-pointer" : ""
+              }`}
+              onClick={() => onRowClick?.(ticket)}
             >
-              <td className="px-4 py-3">
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={selectedTickets.has(ticket.name)}
@@ -210,7 +215,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 />
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="primary" className="text-blue-600 hover:underline">
                   {ticket.name}
                 </Typography>
               </td>
@@ -244,7 +249,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   {ticket.status}
                 </Typography>
               </td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {/* Reply Button */}
                   <button
