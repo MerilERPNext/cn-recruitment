@@ -4,7 +4,6 @@ import { Form } from "@tsed/react-formio";
 import { useNewBenifitRequest } from "../../../hooks/useBenifits";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { CustomError } from "../../../types/attendance";
 import benefitRequestFormSchema from "./benefitRequestFormSchema.json";
@@ -19,6 +18,7 @@ import {
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ export default function BenefitRequestForm({
     return {
       data: {
         currentEmployeeId: currentEmployee?.employee || "",
-        claimDate: format(new Date(), "yyyy-MM-dd"),
+        claimDate: formatToIndianDate(new Date()),
       },
     };
   }, [currentEmployee]);
@@ -130,7 +130,7 @@ export default function BenefitRequestForm({
 
     const submissionData = {
       employee: currentEmployee?.employee,
-      claim_date: format(new Date(), "yyyy-MM-dd"),
+      claim_date: formatToIndianDate(new Date()),
       earning_component: submission.data.earning_component,
       custom_note_by_employee: submission.data.custom_note_by_employee,
       claimed_amount: submission.data.claimed_amount,

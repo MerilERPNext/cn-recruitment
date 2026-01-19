@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface ExpenseClaim {
   id: string;
@@ -48,12 +49,12 @@ const ExpenseAdvanceForm: React.FC<{
 
   const [subAdvanceType, setSubAdvanceType] = useState<string | null>(null);
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string | null>(
-    null
+    null,
   );
 
   const { data: fieldSettings } = useExpenseTableFieldSettings(
     employeeId || null,
-    subAdvanceType
+    subAdvanceType,
   );
 
   const postingDate = new Date().toISOString().split("T")[0];
@@ -91,26 +92,27 @@ const ExpenseAdvanceForm: React.FC<{
         console.debug(id);
         const filteredClaim = Object.fromEntries(
           Object.entries(claim).filter(
-            ([, value]) => value !== null && value !== undefined && value !== ""
-          )
+            ([, value]) =>
+              value !== null && value !== undefined && value !== "",
+          ),
         );
 
         if (filteredClaim.expense_date) {
           filteredClaim.expense_date = format(
             new Date(filteredClaim.expense_date),
-            "yyyy-MM-dd"
+            "yyyy-MM-dd",
           );
         }
         if (filteredClaim.start_datetime) {
           filteredClaim.start_datetime = format(
             new Date(filteredClaim.start_datetime),
-            "yyyy-MM-dd HH:mm:ss"
+            "yyyy-MM-dd HH:mm:ss",
           );
         }
         if (filteredClaim.end_datetime) {
           filteredClaim.end_datetime = format(
             new Date(filteredClaim.end_datetime),
-            "yyyy-MM-dd HH:mm:ss"
+            "yyyy-MM-dd HH:mm:ss",
           );
         }
 
@@ -170,7 +172,7 @@ const ExpenseAdvanceForm: React.FC<{
 
   const handleUpdateExpense = (updatedExpense: ExpenseClaim) => {
     setExpenseClaims((prev) =>
-      prev.map((exp) => (exp.id === updatedExpense.id ? updatedExpense : exp))
+      prev.map((exp) => (exp.id === updatedExpense.id ? updatedExpense : exp)),
     );
     toast.success("Expense claim updated successfully!");
 
@@ -192,7 +194,7 @@ const ExpenseAdvanceForm: React.FC<{
   const handleDeleteSelected = () => {
     if (selectedExpenses.length === 0) return;
     setExpenseClaims((prev) =>
-      prev.filter((exp) => !selectedExpenses.includes(exp.id))
+      prev.filter((exp) => !selectedExpenses.includes(exp.id)),
     );
     toast.success(`${selectedExpenses.length} expense(s) deleted!`);
     setSelectedExpenses([]);
@@ -200,7 +202,7 @@ const ExpenseAdvanceForm: React.FC<{
 
   const handleCheckboxChange = (id: string) => {
     setSelectedExpenses((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -359,7 +361,7 @@ const ExpenseAdvanceForm: React.FC<{
 
                       data: {
                         url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
-                          selectedAdvanceType || ""
+                          selectedAdvanceType || "",
                         )}&_t=${Date.now()}`,
                       },
                       selectValues: "message[0]",
@@ -406,7 +408,7 @@ const ExpenseAdvanceForm: React.FC<{
                                   key: "project",
                                   label: getLabelWithAsterisk(
                                     "Project",
-                                    projectMandatory
+                                    projectMandatory,
                                   ),
                                   html: true,
                                   input: true,
@@ -438,7 +440,7 @@ const ExpenseAdvanceForm: React.FC<{
                                   key: "cost_center",
                                   label: getLabelWithAsterisk(
                                     "Cost Center",
-                                    costCenterMandatory
+                                    costCenterMandatory,
                                   ),
                                   html: true,
                                   input: true,
@@ -520,7 +522,7 @@ const ExpenseAdvanceForm: React.FC<{
               const newSubType = submission?.data?.advance_type || null;
 
               setSubAdvanceType((prev) =>
-                prev === newSubType ? prev : newSubType
+                prev === newSubType ? prev : newSubType,
               );
 
               if (newSubType !== selectedAdvanceType) {
@@ -592,7 +594,7 @@ const ExpenseAdvanceForm: React.FC<{
                             setSelectedExpenses(
                               e.target.checked
                                 ? expenseClaims.map((e) => e.id)
-                                : []
+                                : [],
                             )
                           }
                           checked={
@@ -635,10 +637,7 @@ const ExpenseAdvanceForm: React.FC<{
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {expense.expense_date
-                            ? format(
-                                new Date(expense.expense_date),
-                                "dd-MM-yyyy"
-                              )
+                            ? formatToIndianDate(expense.expense_date)
                             : "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
