@@ -244,6 +244,10 @@ const AttendancePolicies = lazyWithRetry(
   () => import("./components/Attendance/AttendancePolicies/AttendancePolicies"),
   "AttendancePolicies"
 );
+const EmployeesDirectory = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
+  "EmployeesDirectory"
+);
 const TrackerApp = lazyWithRetry(
   () => import("./components/ApprovalTracker/TrackerApp"),
   "TrackerApp"
@@ -679,7 +683,10 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
-
+  {
+    path: "/webapp/employees-directory",
+    element: <EmployeesDirectory />,
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",

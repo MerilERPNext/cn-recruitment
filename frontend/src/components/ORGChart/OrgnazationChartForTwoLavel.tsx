@@ -84,14 +84,15 @@ const getLayoutedElements = (
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const nodeWidth = 240; // Approximate width of PersonNode
-  const nodeHeight = 120; // Approximate height of PersonNode
+  const nodeWidth = 320; // Adjusted for new PersonNode size
+  const nodeHeight = 120;
 
   dagreGraph.setGraph({
     rankdir: options.direction,
-    align: "UL", // align to upper left to keep compactness
-    nodesep: 80, // Horizontal spacing
-    ranksep: 100, // Vertical spacing
+    nodesep: 80, // Increased horizontal spacing
+    ranksep: 80, // Increased vertical spacing
+    marginx: 50,
+    marginy: 50,
   });
 
   nodes.forEach((node) => {
@@ -333,12 +334,12 @@ export default function ThreeLevelOrgChart() {
           minZoom={0.2}
           maxZoom={2}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
-          zoomOnScroll={false}
-          zoomOnPinch={false}
+          // zoomOnScroll={false}
+          // zoomOnPinch={false}
           preventScrolling={false}
-          nodesDraggable={false}
-          draggable={false} // Allow panning
-          panOnDrag={false} // Allow panning
+        // nodesDraggable={false}
+        // draggable={false} // Allow panning
+        // panOnDrag={false} // Allow panning
         >
           <Controls position="top-right" showZoom showFitView />
         </ReactFlow>
