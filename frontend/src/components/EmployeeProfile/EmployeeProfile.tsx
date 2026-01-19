@@ -78,8 +78,6 @@ const EmployeeProfile: React.FC = () => {
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpId(employeeId);
 
-  console.log("123456789012345678901234567890", user);
-
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
     currentUser?.employee || "",

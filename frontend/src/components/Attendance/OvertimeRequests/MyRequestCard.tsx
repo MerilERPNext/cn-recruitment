@@ -73,8 +73,8 @@ export function MyRequestCard({
           <div className="text-gray-700 text-sm text-start">
             <Typography variant="bodySmall" className="font-semibold tracking-tight">
 
-              {formatToIndianDate(request?.due_date) ||
-                "--/--/--"}
+               {formatToIndianDate(request?.due_date) ||
+                "--/--/----"}
             </Typography>
           </div>
           <div className="text-gray-900 font-medium text-sm text-start">

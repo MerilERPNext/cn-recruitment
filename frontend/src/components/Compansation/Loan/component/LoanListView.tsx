@@ -33,7 +33,10 @@ export default function LoanList({ loans }: LoanListProps) {
     const date = new Date(startDate);
     date.setMonth(date.getMonth() + tenure);
 
-    return formatToIndianDate(date);
+    // Example: Format to MM/YYYY
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${month}/${year}`;
   }
 
   const titles = [

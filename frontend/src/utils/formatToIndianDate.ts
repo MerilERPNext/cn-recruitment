@@ -2,7 +2,7 @@ import { format, isValid, parse } from "date-fns";
 
 const formatToIndianDate = (dateInput: string | number | Date): string => {
   if (!dateInput) {
-    return '';
+    return "";
   }
 
   try {
@@ -13,7 +13,7 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
       date = dateInput;
     }
     // Handle timestamp (number)
-    else if (typeof dateInput === 'number') {
+    else if (typeof dateInput === "number") {
       date = new Date(dateInput);
     }
     // Handle string inputs
@@ -28,7 +28,7 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
         // Try dd-MM-yyyy or dd/MM/yyyy
         const ddMMyyyyPattern = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
         const ddMMyyyyMatch = dateStr.match(ddMMyyyyPattern);
-        
+
         if (ddMMyyyyMatch) {
           const [, day, month, year] = ddMMyyyyMatch;
           date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -37,7 +37,7 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
         else {
           const yyyyMMddPattern = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/;
           const yyyyMMddMatch = dateStr.match(yyyyMMddPattern);
-          
+
           if (yyyyMMddMatch) {
             const [, year, month, day] = yyyyMMddMatch;
             date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -46,12 +46,16 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
           else {
             const mmDDyyyyPattern = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
             const mmDDyyyyMatch = dateStr.match(mmDDyyyyPattern);
-            
+
             if (mmDDyyyyMatch) {
               const [, month, day, year] = mmDDyyyyMatch;
-              date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+              date = new Date(
+                parseInt(year),
+                parseInt(month) - 1,
+                parseInt(day),
+              );
             } else {
-              throw new Error('Invalid date format');
+              throw new Error("Invalid date format");
             }
           }
         }
@@ -60,18 +64,17 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
 
     // Validate the date
     if (isNaN(date.getTime())) {
-      throw new Error('Invalid date');
+      throw new Error("Invalid date");
     }
 
     // Format to dd-MM-yyyy
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
 
     return `${day}-${month}-${year}`;
   } catch (error) {
-    console.error('Error formatting date:', error, 'Input:', dateInput);
-    return '';
+    return "";
   }
 };
 
@@ -107,4 +110,3 @@ export function formatDateDDMonthYYYY(dateString: string) {
   return `${day} ${month} ${year}`;
 }
 export { formatEndDate, formatDashedDate };
-
