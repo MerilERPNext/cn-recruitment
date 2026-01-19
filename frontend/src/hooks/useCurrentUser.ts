@@ -59,7 +59,17 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
           return null;
         }
 
-        return userData as CurrentUser;
+        // Fetch user roles using safe API method that handles Administrator correctly
+        const rolesData = await FrappeAPI.callMethod("recruitment.api.get_user_roles");
+        
+        // Map roles to the expected format
+        const roles = Array.isArray(rolesData)
+          ? rolesData.map((r: { role: string }) => ({ role: r.role }))
+          : [];
+
+        console.log("Fetched user roles:", roles);
+
+        return { ...userData, roles } as CurrentUser;
       } catch (error) {
         console.error("Error fetching current user:", error);
         throw error;
@@ -70,6 +80,17 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
     retry: 2,
     refetchOnWindowFocus: false,
   });
+};
+
+/**
+ * Helper function to check if a user has admin roles (System Manager or Administrator)
+ */
+export const isAdminUser = (user: CurrentUser | null): boolean => {
+  return (
+    user?.roles?.some((role) =>
+      ["System Manager", "Administrator"].includes(role.role)
+    ) ?? false
+  );
 };
 
 export default useCurrentUser;

@@ -22,9 +22,10 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 interface TicketListViewProps {
   currentUserEmail: string;
+  isAdmin: boolean;
 }
 
-const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => {
+const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin }) => {
   const navigate = useNavigate();
 
   // State
@@ -47,13 +48,18 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => 
   // Order by string
   const orderBy = `${sortField} ${sortDirection}`;
 
-  // Queries
-  const { data: statsData, isLoading: statsLoading } = useTicketStats();
+  // Queries - pass user context for role-based filtering
+  const { data: statsData, isLoading: statsLoading } = useTicketStats(
+    currentUserEmail,
+    isAdmin
+  );
   const { data: ticketData, isLoading: ticketsLoading } = useTicketList(
     filters,
     orderBy,
     pageLength,
-    debouncedSearch
+    debouncedSearch,
+    currentUserEmail,
+    isAdmin
   );
   const { data: filterableFields = [], isLoading: fieldsLoading } = useFilterableFields();
 
@@ -208,6 +214,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => 
             onSelectAll={handleSelectAll}
             onReply={handleReply}
             onClose={handleClose}
+            onRowClick={handleReply}
             currentUser={currentUserEmail}
             sortField={sortField}
             sortDirection={sortDirection}
