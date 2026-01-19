@@ -1,6 +1,8 @@
 // Employee interface based on Frappe Employee DocType
 export interface Employee {
   designation: string;
+  department_display: string;
+  designation_display: string;
   shift_request_approver: string | null;
   name: string;
   employee: string;

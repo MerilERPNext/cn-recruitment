@@ -116,23 +116,23 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
             <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-xs text-gray-600 min-w-0">
               <span className="sm:inline min-w-0">
-                <Tooltip content={emp.designation || "—"} position="bottom">
+                <Tooltip content={emp.designation_display || "—"} position="top">
                   <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.designation || "—"}
+                    {emp.designation_display || "—"}
                   </span>
                 </Tooltip>
               </span>
 
-              {emp.designation && emp.department && (
+              {emp.designation_display && emp.department_display && (
                 <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
                   •
                 </span>
               )}
 
               <span className="sm:inline min-w-0">
-                <Tooltip content={emp.department || "—"} position="bottom">
+                <Tooltip content={emp.department_display || "—"} position="top">
                   <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.department || "—"}
+                    {emp.department_display || "—"}
                   </span>
                 </Tooltip>
               </span>
