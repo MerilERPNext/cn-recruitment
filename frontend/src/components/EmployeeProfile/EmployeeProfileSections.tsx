@@ -24,6 +24,8 @@ import { Card } from "../shared/atoms/Card";
 interface EditableField {
     key: string;
     label: string;
+    fieldname?: string;
+    rowIndex?: number;
 }
 export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
@@ -179,9 +181,20 @@ export default function EmployeeProfileSections() {
                                             key={field.key}
                                             className={`${isTable ? "col-span-full mt-4" : "px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"}`}
                                         >
-                                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest mb-3 block">
-                                                {field.label || "-"}
-                                            </Typography>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
+                                                    {field.label || "-"}
+                                                </Typography>
+                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !isTable && (
+                                                    <button
+                                                        onClick={() => setEdit({ key: tab.key, label: field.label || tab.label, fieldname: field.key })}
+                                                        className="p-1 hover:bg-gray-100 rounded-full transition-colors group/edit"
+                                                        title={`Edit ${field.label}`}
+                                                    >
+                                                        <PencilIcon className="h-3 w-3 text-primary-600 opacity-0 group-hover/editing:opacity-100 transition-opacity" />
+                                                    </button>
+                                                )}
+                                            </div>
                                             {
                                                 field?.type === 'file' ? (
                                                     <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
@@ -189,7 +202,15 @@ export default function EmployeeProfileSections() {
                                                         <span className="truncate max-w-[200px] inline-block">{field.value}</span>
                                                     </Link>
                                                 ) : isTable ? (
-                                                    <CardsRenderer items={field.value} />
+                                                    <CardsRenderer
+                                                        items={field.value}
+                                                        onEdit={(index) => setEdit({
+                                                            key: tab.key,
+                                                            label: field.label || tab.label,
+                                                            fieldname: field.key,
+                                                            rowIndex: index
+                                                        })}
+                                                    />
                                                 ) : (
                                                     <Typography variant="bodyMedium" className="font-bold text-gray-900">
                                                         {field?.value || "—"}
@@ -217,7 +238,7 @@ export default function EmployeeProfileSections() {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
+const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void }) => {
     if (!Array.isArray(items) || items.length === 0) {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
@@ -225,18 +246,27 @@ const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
         <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             {items.map((item, index) => (
                 <div key={item?.id || item?.name || index} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
-                    <GenericCard data={item} />
+                    <GenericCard data={item} onEdit={() => onEdit?.(index)} />
                 </div>
             ))}
         </div>
     );
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GenericCard = ({ data }: { data: Record<string, any> }) => {
+const GenericCard = ({ data, onEdit }: { data: Record<string, any>, onEdit?: () => void }) => {
     if (!data || typeof data !== "object") return null;
 
     return (
-        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full">
+        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full relative">
+            <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                <button
+                    onClick={onEdit}
+                    className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
+                    title="Edit entry"
+                >
+                    <PencilIcon className="h-3.5 w-3.5" />
+                </button>
+            </div>
             <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;
