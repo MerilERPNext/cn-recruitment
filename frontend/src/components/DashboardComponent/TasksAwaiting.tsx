@@ -6,7 +6,6 @@ import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
-import { format, parse } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 interface ToDo {
@@ -19,9 +18,9 @@ interface ToDo {
   reference_type?: string;
   reference_name?: string;
   date?: string;
-  subject?: string; 
+  subject?: string;
   due_date?: string;
-  custom_redirect_url?: string; 
+  custom_redirect_url?: string;
 }
 
 const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
@@ -57,12 +56,10 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
           >
             {item.subject || item.description || "Task"}
           </Typography>
+
           <Typography variant="label" color="body2">
             {item.due_date
-              ? `Due on ${format(
-                  parse(item.due_date, "yyyy-MM-dd", new Date()),
-                  "do MMM",
-                )}`
+              ? `Due on ${formatDateDDMonthYYYY(item.due_date)}`
               : item.date
                 ? `Due on ${formatDateDDMonthYYYY(item.date)}`
                 : "No due date"}
