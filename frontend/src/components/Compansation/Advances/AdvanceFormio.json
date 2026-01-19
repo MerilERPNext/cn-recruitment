@@ -100,7 +100,7 @@
           "type": "datetime",
           "input": true,
           "enableTime": false,
-          "format": "yyyy-MM-dd",
+          "format": "dd-MM-yyyy",
           "placeholder": "Select start date",
           "validate": { },
           "customConditional": "show = data.custom_repayment_type === 'One Time' || data.custom_repayment_type === 'Recurring';",
