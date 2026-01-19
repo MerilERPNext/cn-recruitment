@@ -123,7 +123,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
                 </Tooltip>
               </span>
 
-              {emp.designation && emp.department_display && (
+              {emp.designation_display && emp.department_display && (
                 <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
                   •
                 </span>

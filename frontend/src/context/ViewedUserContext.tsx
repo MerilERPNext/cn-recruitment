@@ -123,7 +123,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEmployee?.name, targetEmployeeId]);
+  }, [currentEmployee?.name, targetEmployeeId, location.pathname, searchParams.toString()]);
 
 
   const setTargetEmployee = (
