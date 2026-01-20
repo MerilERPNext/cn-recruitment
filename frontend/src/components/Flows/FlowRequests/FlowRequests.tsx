@@ -1,7 +1,6 @@
-import React, { useCallback, useState } from 'react'
-import { useScreenSize } from '../../../hooks/useScreenSize';
+import React, { useState } from 'react'
 import Badge from '../../shared/Badge';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useCurrentEmployee, useEmployee } from '../../../hooks/useEmployee';
 import { useTargetUser } from '../../../context/ViewedUserContext';
 import { TodoItem } from '../../../types/flows';
@@ -9,7 +8,6 @@ import DataListView from '../../DataListView';
 import CardTable from '../../shared/CardTable';
 import { Typography } from '../../shared/atoms/Typography';
 import formatToIndianDate from '../../../utils/formatToIndianDate';
-import FlowDetails from './FlowDetails';
 import ApprovalTracker from '../Confirmation/Component/ApprovalTracker';
 import HeaderBar from '../../HeaderBar';
 
@@ -136,7 +134,7 @@ const FlowRequests: React.FC = () => {
 export default FlowRequests
 
 
-const MyFlowRequestCard = ({ request, handleShowDetails }: { request: TodoItem, handleShowDetails: (todoId: string) => {} }) => {
+const MyFlowRequestCard = ({ request, handleShowDetails }: { request: TodoItem, handleShowDetails: (data: any) => void }) => {
   return (
     <div
       onClick={() => handleShowDetails(request)}

@@ -5,7 +5,6 @@ import { useScreenSize } from "../../../../hooks/useScreenSize"
 import { FormIOComponent, FormIOSchema } from "../../../../types/formio"
 import { createPortal } from "react-dom"
 import { Form } from "@tsed/react-formio"
-import { X } from "lucide-react"
 import ReivewForm from "../../Confirmation/Component/ReivewForm"
 
 interface ApprovalStage {

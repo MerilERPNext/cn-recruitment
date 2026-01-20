@@ -112,8 +112,6 @@ const Separation = () => {
       (stage) => stage.status === "Rejected"
     ) ?? false;
 
-  const pendingCount =
-    item?.approval_stages_status?.filter((s) => s.status === "Pending").length ?? 0
 
   const separationStatus = allStagesComplete ? "Approved" : Rejected ? "Rejected" : "Pending";
 

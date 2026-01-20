@@ -40,6 +40,7 @@ export type Attachment = {
 };
 
 export type TodoItem = {
+  reference_document: any;
   todo_id: string;
   allocated_to: string;
   allocated_to_emp_id: string;

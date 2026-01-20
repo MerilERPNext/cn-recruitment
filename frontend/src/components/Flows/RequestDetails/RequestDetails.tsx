@@ -5,7 +5,6 @@ import HeaderBar from '../../HeaderBar';
 import { useNavigate, useParams } from 'react-router-dom';
 import Badge from '../../shared/Badge';
 import RequestTimeline from './RequestDetailsCard';
-import { useGetToDoWithReferenceDoc } from '../../../hooks/useAttendance';
 import CardTable from '../../shared/CardTable';
 
 const titles = ["Stage Number",
@@ -86,13 +85,6 @@ const RequestDetails: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  const {
-    data: fetchedData,
-    isLoading,
-    error,
-  } = useGetToDoWithReferenceDoc(id || "");
-
-  console.log("fetched Data", fetchedData)
   const handleNavigateBack = () => {
     navigate(-1);
   }

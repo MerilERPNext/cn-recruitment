@@ -1,4 +1,3 @@
-import React from 'react'
 import CardTable from '../../shared/CardTable'
 import { ApprovalStage } from '../../../types/todos'
 
