@@ -1,6 +1,13 @@
 // src/hooks/useChatAssistant.ts
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getChatAssistantData, getChatAssistantFlowInitiateData, getDifinitionNameForSeparation, getSeparationFunnelData, getSeparationWorkflow, postSelectEventFromOptions, } from "../services/flowsService";
+import {
+  getChatAssistantData,
+  getChatAssistantFlowInitiateData,
+  getDifinitionNameForSeparation,
+  getSeparationFunnelData,
+  getSeparationWorkflow,
+  postSelectEventFromOptions
+} from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 
@@ -107,5 +114,4 @@ export const usePostSelectEventFromOptions = () => {
       ),
   });
 };
-
 

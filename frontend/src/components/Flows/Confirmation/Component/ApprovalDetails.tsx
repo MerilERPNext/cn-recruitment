@@ -22,12 +22,17 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
       { label: "Employee Name", value: doc.employee_name },
       { label: "Designation", value: doc.designation },
       { label: "Department", value: doc.department },
-      { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
-      { label: "Status", value: doc.status },
     ];
 
     if (title === "Employee Confirmation") {
-      fields.splice(5, 0, { label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+      if (data.status != "Confirmed")
+        fields.push({ label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+      fields.splice(4, 0,
+        { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
+        { label: "Status", value: doc.status }
+      );
+    } else if (title === "Employee Separation") {
+      fields.splice(4, 0, { label: "Date of Joining", value: formatDashedDate(doc.custom_date_of_joining) }, { label: "Status", value: doc.custom_status });
     }
 
     return fields;
