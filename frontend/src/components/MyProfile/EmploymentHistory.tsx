@@ -64,9 +64,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   );
 
   return (
-    <div className="address-form-container bg-white rounded-md">
+    <div className="address-form-container bg-white rounded-md bg-blue-100">
       <div className="p-4 md:p-8">
-        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md">
+        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
 
           <div >
             <h2 className="text-2xl font-bold text-gray-900 mb-2">

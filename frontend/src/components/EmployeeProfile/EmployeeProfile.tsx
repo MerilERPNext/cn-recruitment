@@ -271,7 +271,6 @@ const EmployeeProfile: React.FC = () => {
       </div>
     );
   };
-  console.log(user, "----------------------")
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
@@ -542,24 +541,23 @@ const EmployeeProfile: React.FC = () => {
                             <Typography
                               variant="bodySmall"
                               color="disabled"
-                              className="text-primary-500 flex gap-1 items-center"
+                              className="text-primary-500 flex items-center gap-2"
                             >
-                              <MapPin size={12} />
+                              <MapPin size={16} />
                               <span>{user?.branch_display}</span>
                             </Typography>
                           )}
 
-                          {(user?.company_email || user?.personal_email) && <Typography
-                            variant="bodySmall"
-                            color="disabled"
-                            className="text-primary-500 flex gap-1 items-center justify-center text-center"
-                          >
-                            <Mail size={12} />
-                            <span>
-                              {user?.company_email ||
-                                user?.personal_email}
-                            </span>
-                          </Typography>}
+                          {(user?.company_email || user?.personal_email) && (
+                            <Typography
+                              variant="bodySmall"
+                              color="disabled"
+                              className="text-primary-500 flex items-center gap-2"
+                            >
+                              <Mail size={16} />
+                              <span>{user?.company_email || user?.personal_email}</span>
+                            </Typography>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
