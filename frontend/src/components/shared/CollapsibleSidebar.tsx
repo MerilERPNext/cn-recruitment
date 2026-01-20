@@ -31,7 +31,6 @@ import {
   HandCoins,
   Coins,
   BadgeIndianRupee,
-  BriefcaseBusiness,
 } from "lucide-react";
 
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
