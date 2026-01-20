@@ -345,7 +345,7 @@ const EmployeeProfile: React.FC = () => {
                   color="primary"
                   className="break-words block"
                 >
-                  {user?.company_email || user?.personal_email || "Temp Email"}
+                  {user?.company_email || user?.personal_email}
                 </Typography>
                 <div className="flex flex-wrap items-center gap-3 mt-4">
                   {user?.custom_employment_status && (
@@ -525,9 +525,7 @@ const EmployeeProfile: React.FC = () => {
                           color="primary"
                           className="break-words block"
                         >
-                          {user?.company_email ||
-                            user?.personal_email ||
-                            "Temp Email"}
+                          {user?.company_email || user?.personal_email}
                         </Typography>
                         {user?.custom_employment_status && (
                           <Badge
