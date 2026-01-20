@@ -107,7 +107,7 @@ const RequestDetails: React.FC = () => {
   }
   return (
     <div className="min-h-screen bg-white">
-      <div className="top-0 sticky z-20 bg-white">
+      <div className="top-0 sticky z-10 bg-white">
         <div className="sm:px-4">
           <HeaderBar title={'Flow Request Details : ' + id} onBack={handleNavigateBack} />
         </div>
