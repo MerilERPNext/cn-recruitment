@@ -17,10 +17,11 @@ import CompareTaxSheetHandler from "./Component/TaxCompare"
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet"
 import CustomDropdown from "../../shared/CustomDropdown"
 import Button from "../../shared/atoms/Button"
+import CategoryDeclarationSelectable from "./Component/Category"
 
 type PayrollPeriod = {
-  name: string;
-};
+  name: string
+}
 
 const ITDeclarationForm = () => {
   /* ---------------- User & hooks ---------------- */
@@ -40,9 +41,7 @@ const ITDeclarationForm = () => {
 
   const [groupedCategories, setGroupedCategories] = useState<any[]>([])
   const [activeSection, setActiveSection] = useState("")
-  const [activeCategory, setActiveCategory] = useState("")
   const [hraData, setHraData] = useState<HRAData | null>(null)
-  console.log("Rendered ITDeclarationForm", hraData)
 
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
@@ -62,16 +61,27 @@ const ITDeclarationForm = () => {
     selectedPeriod || null
   ) as { data?: any }
 
+  const declarationDoctype = responseData?.doctype
+  const proofId = responseData?.proof_id
   /* ---------------- Initial payroll period ---------------- */
   useEffect(() => {
     if (payrollPeriods?.length && !selectedPeriod) {
       const currentYear = new Date().getFullYear().toString()
       setSelectedPeriod(
         payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-        payrollPeriods[0].name
+          payrollPeriods[0].name
       )
     }
   }, [payrollPeriods, selectedPeriod])
+
+
+
+useEffect(() => {
+  if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
+    setActiveMainTab("category");
+  }
+}, [goHeadWithNewRegimeBool, activeMainTab]);
+
 
   /* ---------------- Regime flag ---------------- */
   useEffect(() => {
@@ -92,23 +102,19 @@ const ITDeclarationForm = () => {
 
     if (normalized.length) {
       setActiveSection(normalized[0].section)
-      setActiveCategory("")
     }
 
-    const hra = responseData?.hra_exemption
-    if (hra) setHraData(hra)
+    if (responseData?.hra_exemption) {
+      setHraData(responseData.hra_exemption)
+    }
   }, [responseData])
 
-  /* ---------------- Derived Data ---------------- */
+  /* ---------------- Derived ---------------- */
   const activeSectionData = groupedCategories.find(
     (sec) => sec.section === activeSection
   )
 
   const sectionCategories = activeSectionData?.categories || []
-
-  const activeCategoryData = sectionCategories.find(
-    (cat: any) => cat.category_name === activeCategory
-  )
 
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -119,47 +125,20 @@ const ITDeclarationForm = () => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev))
   }
 
-  const handleItemAmountChange = (
-    categoryName: string,
-    itemIndex: number,
-    value: number
-  ) => {
+  /* ---------------- Reset ---------------- */
+  const resetForm = () => {
     setGroupedCategories((prev) =>
       prev.map((sec) => ({
         ...sec,
-        categories: sec.categories.map((cat: any) =>
-          cat.category_name !== categoryName
-            ? cat
-            : {
-              ...cat,
-              items: cat.items.map((item: any, idx: number) =>
-                idx === itemIndex
-                  ? {
-                    ...item,
-                    amount: Math.min(value, item.max_amount),
-                  }
-                  : item
-              ),
-            }
-        ),
+        categories: sec.categories.map((cat: any) => ({
+          ...cat,
+          items: cat.items.map((item: any) => ({
+            ...item,
+            amount: 0,
+          })),
+        })),
       }))
     )
-  }
-
-  /* ---------------- Reset Form ---------------- */
-  const resetForm = () => {
-    const resetCategories = groupedCategories.map((sec) => ({
-      ...sec,
-      categories: sec.categories.map((cat: any) => ({
-        ...cat,
-        items: cat.items.map((item: any) => ({
-          ...item,
-          amount: 0, // Reset the input value to 0
-        })),
-      })),
-    }));
-    setGroupedCategories(resetCategories);
-
   }
 
   /* ---------------- Submit ---------------- */
@@ -171,6 +150,7 @@ const ITDeclarationForm = () => {
           .map((item: any) => ({
             exemption_category: cat.category_name,
             exemption_sub_category: item.exemption_sub_category,
+            custom_remarks: item.proof_comment || "",
             amount: Number(item.amount),
             max_amount: Number(item.max_amount),
           }))
@@ -179,6 +159,11 @@ const ITDeclarationForm = () => {
 
     const payload = {
       declaration_id: declarationId,
+      doctype:  declarationDoctype,
+      proof_id: proofId,
+      payroll_period: selectedPeriod,
+      company: user?.company,
+      employee: user?.employee,
       data: {
         monthly_house_rent: goHeadWithNewRegimeBool ? 0 : hraData?.monthly_hra ?? 0,
         rented_in_metro_city: goHeadWithNewRegimeBool ? 0 : hraData?.rented_in_metro_city ?? 0,
@@ -198,62 +183,58 @@ const ITDeclarationForm = () => {
     mutation.mutate(payload, {
       onSuccess: () => {
         alert("Declaration submitted successfully")
-        resetForm() // Reset form after success
+        resetForm()
       },
       onError: () => alert("Submission failed"),
     })
   }
 
-  /* ---------------- UI ---------------- */
   return (
-    <div className="bg-gray-50 min-h-screen p-4">
-      <header className="bg-blue-50 p-4 rounded-lg">
+    <div className="bg-white min-h-screen">
+      <header className=" p-4 rounded-lg">
         <div className="flex justify-between items-center">
           <h1 className="font-bold">IT Declaration</h1>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-between items-center">
             <CustomDropdown
               value={selectedPeriod}
               onChange={handlePeriodChange}
-              options={payrollPeriods?.map((p) => ({
-                value: p.name,
-                label: p.name,
-              })) || []}
+              options={
+                payrollPeriods?.map((p) => ({
+                  value: p.name,
+                  label: p.name,
+                })) || []
+              }
             />
             <CompareTaxSheetHandler declarationId={declarationId} disabled={false} />
-            <button
+            <Button
               onClick={handleSubmit}
-              className="bg-blue-600 text-white px-4 py-1 rounded text-xs"
+              className="bg-primary text-white py-2 rounded text-xs"
             >
               Submit
-            </button>
+            </Button>
           </div>
         </div>
-
-        {/* Regime */}
-        <div className="flex w-full justify-between items-center mt-4">
+        <div className="flex justify-between items-center mt-4">
           <p className="text-gray-500">Tax Regime</p>
-          <div className="mt-4 inline-flex rounded-lg border border-gray-300 bg-gray-100 p-[2px] text-xs">
+          <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
-              type="button"
               onClick={() => setGoHeadWithNewRegime(1)}
-              className={`px-6 py-1 rounded-md transition-all
-              ${goHeadWithNewRegime === 1
-                  ? "bg-blue-600 text-white shadow"
-                  : "text-gray-600 hover:bg-gray-200"
-                }`}
+              className={`px-6 py-1 rounded-md ${
+                goHeadWithNewRegime === 1
+                  ? "bg-primary text-white"
+                  : "text-gray-600"
+              }`}
             >
               New
             </button>
-
             <button
-              type="button"
               onClick={() => setGoHeadWithNewRegime(0)}
-              className={`px-6 py-1 rounded-md transition-all
-              ${goHeadWithNewRegime === 0
-                  ? "bg-blue-600 text-white shadow"
-                  : "text-gray-600 hover:bg-gray-200"
-                }`}
+              className={`px-6 py-1 rounded-md ${
+                goHeadWithNewRegime === 0
+                  ? "bg-primary text-white"
+                  : "text-gray-600"
+              }`}
             >
               Old
             </button>
@@ -261,105 +242,82 @@ const ITDeclarationForm = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mt-4 border-b border-gray-300">
+        <div className="flex gap-2 mt-4 border-b">
           <button
             onClick={() => setActiveMainTab("category")}
-            className={`px-4 py-2 -mb-px font-medium transition-colors duration-200
-              ${activeMainTab === "category"
-                ? "text-blue-600 border-b-4 border-blue-600"
-                : "text-gray-600 hover:text-blue-600"
-              }`}
+            className={`px-4 py-2 ${
+              activeMainTab === "category"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600"
+            }`}
           >
             Other Investment Declaration
           </button>
 
           {!goHeadWithNewRegimeBool && (
-            <Button
+            <button
               onClick={() => setActiveMainTab("hra")}
-              className={`px-4 py-2 -mb-px font-medium transition-colors duration-200
-                ${activeMainTab === "hra"
-                  ? "text-blue-600 border-b-4 border-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
-                }`}
+              className={`px-4 py-2 ${
+                activeMainTab === "hra"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-gray-600"
+              }`}
             >
-              HRA & Other   Exemption Declaration
-            </Button>
+              HRA & Other Exemption Declaration
+            </button>
           )}
         </div>
-
-        {/* HRA */}
         {activeMainTab === "hra" && hraData && (
           <HRAForm hraData={hraData} onChange={handleHraChange} />
         )}
-
-        {/* Sections */}
         {activeMainTab === "category" && (
           <>
-            <div className="flex w-full py-4 px-2 gap-2 mt-4">
+            <div className="flex gap-2 mt-4">
               {groupedCategories.map((sec) => (
                 <button
                   key={sec.section}
-                  onClick={() => {
-                    setActiveSection(sec.section)
-                    setActiveCategory("")
-                  }}
-                  className={`px-4 py-1 text-sx rounded-3xl ${activeSection === sec.section ? "bg-blue-600 text-white" : "bg-gray-200"
-                    }`}
+                  onClick={() => setActiveSection(sec.section)}
+                  className={`px-4 py-1 rounded-3xl text-xs ${
+                    activeSection === sec.section
+                      ? "bg-primary text-white"
+                      : "bg-gray-200"
+                  }`}
                 >
                   {sec.section}
                 </button>
               ))}
             </div>
+            {sectionCategories.map((cat: any) => (
+              <div key={cat.category_name} className="mt-6">
 
-            {/* Categories */}
-            <div className="grid-row mt-4">
-              {sectionCategories.map((cat: any) => (
-                <button
-                  key={cat.category_name}
-                  onClick={() => setActiveCategory(cat.category_name)}
-                  className={`p-3 ml-2 text-left border rounded text-xs ${activeCategory === cat.category_name
-                    ? "border-blue-600 bg-blue-50"
-                    : "bg-white"
-                    }`}
-                >
-                  {cat.category_name}
-                </button>
-              ))}
-            </div>
 
-            {/* Items */}
-            {activeCategoryData && (
-              <div className="mt-6 space-y-3">
-                {activeCategoryData.items.map((item: any, idx: number) => (
-                  <div
-                    key={item.exemption_sub_category}
-                    className="flex justify-between p-3 border bg-white rounded"
-                  >
-                    <div>
-                      <p className="text-xs font-medium">{item.description}</p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                      <input
-                        type="number"
-                        disabled={item.editable === 0}
-                        value={item.amount}
-                        onChange={(e) =>
-                          handleItemAmountChange(
-                            activeCategoryData.category_name,
-                            idx,
-                            Number(e.target.value)
-                          )
-                        }
-                        className="w-28 border rounded px-2 py-1 text-xs"
-                      />
-                      <p className="text-[11px] text-gray-500">
-                        Max: ₹{item.max_amount}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                <CategoryDeclarationSelectable
+                  categoryName={cat.category_name}
+                  max_amount={cat.max_amount}
+                  selectable={cat.custom_select_type}
+                  showProofFields={
+                    responseData?.doctype === "Employee Tax Exemption Proof Submission"
+                  }
+                  items={cat.items}
+                  onChange={(updatedItems) => {
+                    setGroupedCategories((prev) =>
+                      prev.map((sec) =>
+                        sec.section === activeSection
+                          ? {
+                              ...sec,
+                              categories: sec.categories.map((c: any) =>
+                                c.category_name === cat.category_name
+                                  ? { ...c, items: updatedItems }
+                                  : c
+                              ),
+                            }
+                          : sec
+                      )
+                    )
+                  }}
+                />
               </div>
-            )}
+            ))}
           </>
         )}
       </header>
@@ -367,4 +325,4 @@ const ITDeclarationForm = () => {
   )
 }
 
-export default ITDeclarationForm;
+export default ITDeclarationForm

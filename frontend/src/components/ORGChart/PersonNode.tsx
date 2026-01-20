@@ -1,10 +1,12 @@
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { User, ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import Tooltip from "../shared/Tooltip";
+import Avatar from "../shared/Avatar";
+import { Typography } from "../shared/atoms/Typography";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { data: employee } = useCurrentEmployee();
@@ -48,32 +50,52 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       />
 
       <div
-        className="min-w-[160px] px-4 py-3 bg-white border border-gray-300 shadow-sm hover:shadow-md transition-shadow duration-200 rounded-lg cursor-pointer"
+        className="relative min-w-[320px] px-5 py-4 bg-white border-t-4 border-primary shadow-md hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer"
         onClick={handleClick}
       >
-        <div className="flex items-center space-x-3">
-          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-blue-600" />
-          </div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <Avatar
+            name={name}
+            src={data?.image || ""}
+          />
+        </div>
+        <div className="flex flex-col gap-2 text-center mt-2">
 
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-gray-900 text-sm truncate">
-              {name}
-            </h3>
-            <div className="flex gap-2 items-center">
-              {title && (
-                <Tooltip content={title}>
-                  <p className="text-gray-500 text-xs truncate mt-0.5 line-clamp-1">{title.slice(0, 10)}</p>
+          <h3 className="font-semibold text-gray-900 font-medium text-base text-center truncate">
+            {name}
+          </h3>
+          <div className="flex gap-2 items-center text-center justify-center">
+            {title && (
+              <Tooltip content={title}>
+                <p className="text-gray-500 text-sm font-medium truncate line-clamp-1 mb-1">{title}</p>
+              </Tooltip>
+            )}
+
+          </div>
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-4 p-1">
+            {totalChildren > 0 && (
+              <div className="flex gap-1.5 items-center">
+                <Tooltip content={`Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`}>
+                  <div className="flex items-center bg-blue-50 border border-blue-100 rounded-md overflow-hidden">
+                    <Typography variant="bodySmall" color="primary" className="text-blue-600 flex gap-2 px-1.5 py-0.5  text-nowrap">
+                      Direct {data.directChildren || 0}
+                    </Typography>
+                    <Typography variant="bodySmall" color="primary" className="text-blue-400 flex gap-2  px-1.5 py-0.5 border-x border-blue-100 text-nowrap">
+                      Indirect {data.indirectChildren || 0}
+                    </Typography>
+                    <Typography variant="bodySmall" color="primary" className="text-blue-400 flex gap-2 px-1.5 py-0.5 text-nowrap">
+                      Total {totalChildren}
+                    </Typography>
+
+                  </div>
                 </Tooltip>
-              )}
-              {totalChildren > 0 && (
-                <p className="text-green-600 bg-green-100 rounded-sm text-xs truncate mt-0.5 px-1">
-                  {totalChildren}
-                </p>
-              )}
-            </div>
-          </div>
 
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
           {hasChildren && showExpand && (
             <button
               onClick={(e) => {

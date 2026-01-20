@@ -4,6 +4,7 @@ import Button from '../../../shared/atoms/Button';
 import useCurrentUser from '../../../../hooks/useCurrentUser';
 import Badge from '../../../shared/Badge';
 import { useScreenSize } from '../../../../hooks/useScreenSize';
+import { Typography } from '../../../shared/atoms/Typography';
 
 interface SeparationLogCardProps {
     gtc: string;
@@ -36,25 +37,31 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
     }, [currentUser, data, loadingUser, isActive]);
 
     const statusColors: Record<string, string> = {
-        "Approved": "text-green-500 bg-green-100",
+        "Approved": "bg-green-100 text-green-600",
         "Completed": "text-green-500 bg-green-100",
-        "Cancled": "text-green-500 bg-green-100",
-        "Rejected": "text-red-500 bg-red-100",
-        "Pending": "text-gray-500 ",
-        _: "text-gray-500 bg-gray-100"
+        "Cancled": "bg-red-100 text-red-600",
+        "Rejected": "bg-red-100 text-red-600",
+        "Pending": "bg-yellow-100 text-yellow-600",
+        _: "text-gray-500"
     }
 
     const { isDesktop } = useScreenSize();
 
     return (
         isDesktop ?
-            <div className={`grid gap-4  hover:bg-blue-50 px-6 py-4 items-center`}
+            <div className={`grid gap-4 border-b border-b-gray-300 hover:bg-primary/30 px-6 py-4 items-center`}
                 style={{ gridTemplateColumns: gtc }}
             >
-                <span>{data?.idx}</span>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.idx}
+                </Typography>
                 <Badge label={data?.status} textColor={statusColors[data?.status] ?? statusColors._} />
-                <span>{data?.target}</span>
-                <span>{data?.selected_action}</span>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.target}
+                </Typography>
+                <Typography variant="bodySmall" className="font-semibold tracking-tight">
+                    {data?.selected_action}
+                </Typography>
                 <span>{
                     canPerformActions &&
                     actions?.map((action: string, idx: number) =>
@@ -66,30 +73,45 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
             :
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-4 mb-4 relative overflow-hidden">
 
-                {/* 1. Header: Target Name & Status */}
-                <div className="flex justify-between items-start gap-3">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            #{data?.idx}
-                        </span>
-                        <span className="font-bold text-gray-900 text-lg leading-tight">
-                            {data?.target}
-                        </span>
+
+
+
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Typography variant="bodySmall">
+                            Stage
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.idx}
+                        </Typography>
                     </div>
-                    <div className="shrink-0">
-                        <Badge
-                            label={data?.status}
-                            textColor={statusColors[data?.status] ?? statusColors._}
-                        />
-                    </div>
+
+                    <Badge
+                        label={data?.status}
+                        textColor={statusColors[data?.status] ?? statusColors._}
+                    // textColor={getStatusBadgeClasses(data?.status)}
+                    />
                 </div>
 
-                {/* 2. Middle: Contextual Info */}
-                <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between border border-gray-100">
-                    <span className="text-sm text-gray-500 font-medium">Selected Action</span>
-                    <span className="text-sm font-semibold text-gray-700">
-                        {data?.selected_action || "—"}
-                    </span>
+                {/* User */}
+                <div className="flex justify-between">
+                    <div>
+                        <Typography variant="bodySmall">
+                            Assigned To
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.target}
+                        </Typography>
+                    </div>
+
+                    <div>
+                        <Typography variant="bodySmall">
+                            Selected Action
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.selected_action || "-"}
+                        </Typography>
+                    </div>
                 </div>
 
                 {/* 3. Footer: Action Buttons */}

@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { format, isValid, parse } from "date-fns";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
@@ -13,6 +12,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 export function AttendanceDetailView({
   data: propData,
@@ -162,21 +162,6 @@ export function AttendanceDetailView({
     return styles;
   };
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -231,7 +216,7 @@ export function AttendanceDetailView({
                 <div className="flex flex-col gap-1">
                   <Typography variant="label" color="body2" className="card-title">From Date</Typography>
                   <Typography variant="bodySmall" className="card-subtitle">
-                    {formatDate(data?.reference_document?.from_date)}
+                    {formatToIndianDate(data?.reference_document?.from_date)}
                   </Typography>
                 </div>
               )}
@@ -241,7 +226,7 @@ export function AttendanceDetailView({
                 <div className=" flex flex-col gap-1">
                   <Typography variant="label" color="body2" className="card-title">To Date</Typography>
                   <Typography variant="bodySmall" className="card-subtitle">
-                    {formatDate(data?.reference_document?.to_date)}
+                    {formatToIndianDate(data?.reference_document?.to_date)}
                   </Typography>
                 </div>
               )}
@@ -251,7 +236,7 @@ export function AttendanceDetailView({
             <div className=" flex flex-col gap-1">
               <Typography variant="label" color="body2" className="card-title">Due Date</Typography>
               <Typography variant="bodySmall" className="card-subtitle">
-                {formatDate(data?.due_date)}
+                {formatToIndianDate(data?.due_date)}
               </Typography>
             </div>
           )}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface AvatarProps {
   src?: string;
@@ -22,9 +22,11 @@ const Avatar: React.FC<AvatarProps> = ({
   indicatorNode,
   indicatorSize = "h-4 w-4",
   indicatorPositionClass = "absolute bottom-0 right-0",
-  avatarBgColor = "bg-indigo-100", avatarTextColor = "text-indigo-800"
+  avatarBgColor = "bg-indigo-100",
+  avatarTextColor = "text-indigo-800",
 }) => {
-  // If a custom indicator node is passed, render that instead
+  const [imageError, setImageError] = useState(false);
+
   const indicator = indicatorNode ? (
     <span className={`${indicatorPositionClass} ${indicatorSize}`}>
       {indicatorNode}
@@ -35,24 +37,28 @@ const Avatar: React.FC<AvatarProps> = ({
     />
   ) : null;
 
-  const avatarContent = src ? (
-    <img
-      src={src}
-      alt={name}
-      className={`aspect-square rounded-full object-cover border border-gray-200 bg-white ${size}`}
-    />
-  ) : (
-    <div
-      className={`flex items-center justify-center rounded-full font-bold text-lg uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
-    >
-      {name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()}
-    </div>
-  );
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const avatarContent =
+    src && !imageError ? (
+      <img
+        src={src}
+        alt={name}
+        onError={() => setImageError(true)}
+        className={`aspect-square rounded-full object-cover border border-gray-200 bg-white ${size}`}
+      />
+    ) : (
+      <div
+        className={`flex items-center justify-center rounded-full font-bold text-lg uppercase ${avatarBgColor} ${avatarTextColor} ${size}`}
+      >
+        {initials}
+      </div>
+    );
 
   return (
     <div className="relative inline-block">

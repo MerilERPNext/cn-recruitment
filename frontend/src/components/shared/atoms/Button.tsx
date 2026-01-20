@@ -13,7 +13,7 @@ export type ButtonColor =
   | "disabled"
   | (string & {});
 
-type ButtonContentAlign = "start" | "center" | "end" | "between";
+export type ButtonContentAlign = "start" | "center" | "end" | "between";
 
 interface ButtonProps {
   icon?: ReactNode;

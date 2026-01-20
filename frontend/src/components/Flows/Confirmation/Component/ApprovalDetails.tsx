@@ -3,6 +3,7 @@
 
 import { useMemo } from "react";
 import { formatDashedDate } from "../../../../utils/formatToIndianDate";
+import { Typography } from "../../../shared/atoms/Typography";
 
 
 
@@ -21,16 +22,21 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
       { label: "Employee Name", value: doc.employee_name },
       { label: "Designation", value: doc.designation },
       { label: "Department", value: doc.department },
-      { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
-      { label: "Status", value: doc.status },
     ];
 
     if (title === "Employee Confirmation") {
-      fields.splice(5, 0, { label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+      if (data.status != "Confirmed")
+        fields.push({ label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+      fields.splice(4, 0,
+        { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
+        { label: "Status", value: doc.status }
+      );
+    } else if (title === "Employee Separation") {
+      fields.splice(4, 0, { label: "Date of Joining", value: formatDashedDate(doc.custom_date_of_joining) }, { label: "Status", value: doc.custom_status });
     }
 
     return fields;
-  }, [title]);
+  }, [title, doc]);
 
   return (
     <div className="space-y-4">
@@ -44,7 +50,13 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
             />
           </svg>
         </div>
-        <span className="text-sm font-medium text-green-800">All Approvals Completed Succesfully</span>
+
+        <Typography variant="bodySmall" >
+          <span className="font-medium text-green-800">
+            All Approvals Completed Succesfully
+          </span>
+        </Typography>
+
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-6">
@@ -53,12 +65,16 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {detailsFields.map((field, index) => (
             <div key={index} className="space-y-1">
-              <p className="text-sm text-slate-500 font-medium">{field.label}</p>
-              <p className="text-slate-900 font-semibold">{field.value}</p>
+              <Typography variant="label" >
+                {field.label}
+              </Typography>
+              <Typography variant="bodyMedium" >
+                {field.value}
+              </Typography>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </div >
   )
 }

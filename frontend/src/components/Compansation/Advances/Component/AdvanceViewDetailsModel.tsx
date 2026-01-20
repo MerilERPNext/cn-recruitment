@@ -9,6 +9,7 @@ import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { EmployeeAdvanceUpdatePayload, useEmployeeAdvanceUpdate } from "../../../../hooks/useEmployeeAdvances";
+import { Typography } from "../../../shared/atoms/Typography";
 
 type Props = {
   open: boolean;
@@ -42,7 +43,6 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
     advance_amount: ref?.advance_amount || "",
     purpose: ref?.purpose || "",
     start_date: ref?.custom_repayment_start_date || "",
-    end_date: ref?.end_date || "",
     posting_date: ref?.posting_date || "",
   });
 
@@ -89,7 +89,6 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
           advance_amount: parseFloat(form.advance_amount),
           purpose: form.purpose,
           custom_repayment_start_date: form.start_date,
-          end_date: form.end_date,
           posting_date: form.posting_date,
           status: selectedAction,
         },
@@ -128,6 +127,12 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
             <h2 className="text-lg font-semibold">Advance Details</h2>
             <button onClick={onClose} className="text-xl">✕</button>
           </div>
+          <div className="bg-primary/20 flex justify-between items-center px-4 py-2 rounded mt-1">
+            <Typography variant="bodySmall" color="body1">
+              Status
+            </Typography>
+            <StatusBadge status={ref?.status} />
+          </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
             <ReadOnly label="Employee">{ref?.employee_name}</ReadOnly>
@@ -137,12 +142,9 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
             <Input label="Advance Amount" name="advance_amount" value={form.advance_amount} onChange={handleChange} />
             <Input label="Purpose" name="purpose" value={form.purpose} onChange={handleChange} />
             <Input type="date" label="Start Date" name="start_date" value={form.start_date} onChange={handleChange} />
-            <Input type="date" label="End Date" name="end_date" value={form.end_date} onChange={handleChange} />
             <Input type="date" label="Posting Date" name="posting_date" value={form.posting_date} onChange={handleChange} />
 
-            <ReadOnly label="Status">
-              <StatusBadge status={ref?.status} />
-            </ReadOnly>
+
           </div>
 
           {/* ACTION BUTTONS */}
@@ -152,7 +154,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
                 key={action}
                 onClick={() => handleActionClick(action)}
                 bgColor={getActionStyles(action).bg}
-                className={getActionStyles(action).text}
+                className={`text-${getActionStyles(action).text}`}
                 disabled={
                   loadingAction?.id === data?.todo_id &&
                   loadingAction?.action === action
@@ -188,7 +190,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
-                className={getActionStyles(selectedAction!).text}
+                className={`text-${getActionStyles(selectedAction!).text}`}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >

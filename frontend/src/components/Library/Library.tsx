@@ -26,6 +26,7 @@ const DocumentLibrary = () => {
     "view_employee_document",
     "Employee Profile"
   );
+  console.log("userUiPermission:", userUiPermission, canViewDocument);
   const canDownloadDocument = isActionEnabled(
     userUiPermission,
     "download_employee_document",
@@ -53,11 +54,11 @@ const DocumentLibrary = () => {
   const documents = data || [];
   const filteredDocuments = documents.filter((doc: any) => {
     if (activeTab === "awaiting") {
-      return doc.status === "Draft";
+      return doc.type === "Personal";
     } else if (activeTab === "mydocs") {
       return doc.status === "Acknowledgement Required";
     } else if (activeTab === "approved") {
-      return doc.status === "Approved";
+      return doc.type !== "Personal" && doc.status === "Approved";
     }
     return true;
   });
@@ -129,7 +130,7 @@ const DocumentLibrary = () => {
             >
               My Documents{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {documents.filter((doc) => doc.status === "Draft").length}
+                {documents.filter((doc) => doc.type === "Personal").length}
               </span>
             </Button>
 
@@ -155,7 +156,11 @@ const DocumentLibrary = () => {
             >
               Documents Approved{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {documents.filter((doc) => doc.status === "Approved").length}
+              {documents.filter(
+  (doc) =>
+    doc.type?.trim().toLowerCase() !== "personal" &&
+    doc.status === "Approved"
+).length}
               </span>
             </Button>
           </div>
@@ -214,7 +219,7 @@ const DocumentLibrary = () => {
                     )}
 
                     {/* Draft or Approved → show View + Download buttons */}
-                    {(doc.status === "Draft" || doc.status === "Approved") && (
+                    {(doc.type === "Personal" || doc.status === "Approved") && (
                       <div className="flex gap-2">
                         {canViewDocument && <button
                           onClick={() => setSelectedFile(doc.file_name)}

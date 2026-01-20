@@ -8,7 +8,11 @@ import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
-import { LoanApplicationUpdatePayload, useLoanApplicationUpdate } from "../../../../hooks/useLoan";
+import {
+  LoanApplicationUpdatePayload,
+  useLoanApplicationUpdate,
+} from "../../../../hooks/useLoan";
+import { Typography } from "../../../shared/atoms/Typography";
 
 type Props = {
   open: boolean;
@@ -27,29 +31,32 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   if (!open || !item) return null;
 
   const data = item.data;
+  console.log("LoanDetailsModal data:", data);
   const ref = data?.reference_document;
   const loadingAction = item.loadingAction;
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data.custom_doctype_actions)
     : [];
-  const loanFormUpdate = useLoanApplicationUpdate()
+
+  const loanFormUpdate = useLoanApplicationUpdate();
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
 
-  /* editable fields */
+  const [repaymentType, setRepaymentType] = useState(
+    ref?.repayment_method || ""
+  );
+
   const [form, setForm] = useState({
     loan_amount: ref?.loan_amount || "",
     rate_of_interest: ref?.rate_of_interest || "",
-    loan_tenure: ref?.loan_tenure || "",
+    loan_tenure: ref?.repayment_periods || "",
+    monthly_repayment_amount: ref?.repayment_amount || "",
     start_date: ref?.custom_repayment_start_date || "",
-    end_date: ref?.custom_repayment_end_date || "",
-    deferment_date: ref?.loan_deferment_date || "",
+    custom_defered_date: ref?.custom_defered_date || "",
+    repayment_method: ref?.repayment_method || "",
   });
 
-
-
-  /* comment modal */
   const [commentOpen, setCommentOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
@@ -59,11 +66,10 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     setForm((p) => ({ ...p, [name]: value }));
   };
 
-  /* approve / reject click */
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
     setComment("");
-    setCommentOpen(true); // only comment modal opens
+    setCommentOpen(true);
   };
 
   const handleConfirmAction = async () => {
@@ -78,33 +84,34 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     const referenceName = ref?.name || data?.reference_name;
 
     try {
-      // 1️⃣ Save comment first
       await commentMutation.mutateAsync({
         referenceDoctype,
         referenceName,
         content: comment,
         comment_email: user?.name || "",
       });
-
-      // 2️⃣ Prepare payload for loan update API
       const payload: LoanApplicationUpdatePayload = {
-        docname: referenceName, // Loan Application document name
+        docname: referenceName,
         data: {
-          loan_amount: parseFloat(form.loan_amount),
-          rate_of_interest: parseFloat(form.rate_of_interest),
-          loan_tenure: parseFloat(form.loan_tenure),
+          loan_amount: Number(form.loan_amount),
+          rate_of_interest: Number(form.rate_of_interest),
           custom_repayment_start_date: form.start_date,
-          custom_repayment_end_date: form.end_date,
-          loan_deferment_date: form.deferment_date,
+          custom_defered_date: form.custom_defered_date,
+          repayment_method: form.repayment_method,
           status: selectedAction,
+
+          ...(form.repayment_method === "Repay Fixed Amount per Period" && {
+            repayment_amount: Number(form.monthly_repayment_amount),
+          }),
+          
+          ...(form.repayment_method === "Repay Over Number of Periods" && {
+            repayment_periods: Number(form.loan_tenure),
+          }),
         },
       };
-      console.log("Payload for loan update:", payload);
 
-      // 3️⃣ Trigger loan update mutation
       await loanFormUpdate.mutateAsync(payload);
 
-      // 4️⃣ Update UI / parent
       if (item.onAction) {
         item.onAction(selectedAction, {
           ...data,
@@ -126,35 +133,100 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     }
   };
 
-
   return (
     <>
-      {/* MAIN MODAL */}
       <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
         <div className="bg-white w-full max-w-3xl rounded-xl p-6">
           <div className="flex justify-between items-center border-b pb-3">
             <h2 className="text-lg font-semibold">Loan Details</h2>
-            <button onClick={onClose} className="text-xl">✕</button>
+            <Button variant="soft" onClick={onClose}>
+              ✕
+            </Button>
+          </div>
+
+          <div className="bg-primary/20 flex justify-between items-center px-4 py-2 rounded mt-1">
+            <Typography variant="bodySmall" color="body1">
+              Status
+            </Typography>
+            <StatusBadge status={ref?.status} />
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
             <ReadOnly label="Employee">{ref?.applicant_name}</ReadOnly>
             <ReadOnly label="Loan Type">{ref?.loan_product}</ReadOnly>
 
-            {/* Editable fields remain here in main modal */}
-            <Input label="Loan Amount" name="loan_amount" value={form.loan_amount} onChange={handleChange} />
-            <Input label="Rate of Interest (%)" name="rate_of_interest" value={form.rate_of_interest} onChange={handleChange} />
-            <Input label="Loan Tenure" name="loan_tenure" value={form.loan_tenure} onChange={handleChange} />
-            <Input type="date" label="Start Date" name="start_date" value={form.start_date} onChange={handleChange} />
-            <Input type="date" label="End Date" name="end_date" value={form.end_date} onChange={handleChange} />
-            <Input type="date" label="Deferment Date" name="deferment_date" value={form.deferment_date} onChange={handleChange} />
+            <Input
+              label="Loan Amount"
+              name="loan_amount"
+              value={form.loan_amount}
+              onChange={handleChange}
+            />
 
-            <ReadOnly label="Status">
-              <StatusBadge status={ref?.status} />
-            </ReadOnly>
+            <Input
+              label="Rate of Interest (%)"
+              name="rate_of_interest"
+              value={form.rate_of_interest}
+              onChange={handleChange}
+            />
+
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Repayment Type</p>
+              <select
+                value={form.repayment_method}
+                name="repayment_method"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRepaymentType(value);
+                  setForm((p) => ({ ...p, repayment_method: value }));
+                }}
+                className="w-full border rounded-md px-2 py-1 text-sm"
+              >
+             
+                <option value="">Select Loan Type</option>
+<option value="Repay Fixed Amount per Period">
+  Repay Fixed Amount per Period
+</option>
+<option value="Repay Over Number of Periods">
+  Repay Over Number of Periods
+</option>
+              </select>
+            </div>
+
+            {repaymentType === "Repay Over Number of Periods" && (
+              <Input
+                label="Loan Tenure"
+                name="loan_tenure"
+                value={form.loan_tenure}
+                onChange={handleChange}
+              />
+            )}
+
+            {repaymentType === "Repay Fixed Amount per Period" && (
+              <Input
+                label="Monthly Repayment Amount"
+                name="monthly_repayment_amount"
+                value={form.monthly_repayment_amount}
+                onChange={handleChange}
+              />
+            )}
+
+            <Input
+              type="date"
+              label="Start Date"
+              name="start_date"
+              value={form.start_date}
+              onChange={handleChange}
+            />
+
+            <Input
+              type="date"
+              label="Deferment Date"
+              name="custom_defered_date"
+              value={form.custom_defered_date}
+              onChange={handleChange}
+            />
           </div>
 
-          {/* ACTION BUTTONS */}
           <div className="mt-6 flex gap-3 border-t pt-4">
             {actions.map((action: string) => (
               <Button
@@ -174,12 +246,14 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
         </div>
       </div>
 
-      {/* COMMENT MODAL ONLY */}
+      {/* COMMENT MODAL */}
       {commentOpen && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
           <div className="bg-white w-full max-w-md rounded-xl p-5">
             <h3 className="font-semibold mb-2">
-              {selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
+              {selectedAction === "Reject"
+                ? "Reject Reason"
+                : "Approval Comment"}
             </h3>
 
             <textarea
@@ -191,9 +265,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button onClick={() => setCommentOpen(false)}>
-                Cancel
-              </Button>
+              <Button onClick={() => setCommentOpen(false)}>Cancel</Button>
 
               <Button
                 bgColor={getActionStyles(selectedAction!).bg}
@@ -211,7 +283,6 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   );
 };
 
-/* helpers */
 const ReadOnly = ({ label, children }: any) => (
   <div>
     <p className="text-xs text-gray-400">{label}</p>
@@ -227,3 +298,4 @@ const Input = ({ label, ...props }: any) => (
 );
 
 export default LoanDetailsModal;
+

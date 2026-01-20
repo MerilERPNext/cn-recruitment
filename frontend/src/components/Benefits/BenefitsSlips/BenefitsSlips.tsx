@@ -8,160 +8,224 @@ import { MoreVertical } from "lucide-react";
 import { FaRegEye } from "react-icons/fa";
 import SalarySlipPDFModal from "../../Compansation/SalarySlipPDFModal";
 import CardTable from "../../shared/CardTable";
-import { BenefitPayslip, useGetBenefitSlipHTML, useGetYearFilterOptions } from "../../../hooks/useBenefit";
-import { useCurrentEmployeeIdCard } from "../../../hooks/useEmployee";
+import {
+  BenefitPayslip,
+  useGetBenefitSlipHTML,
+  useGetYearFilterOptions,
+} from "../../../hooks/useBenefit";
+import {
+  useCurrentEmployeeIdCard,
+  useEmployee,
+} from "../../../hooks/useEmployee";
 import DataListView from "../../DataListView";
 import DropdownMenu from "../../shared/DropDownMenu";
 import BenefitSlipPDFMOdel from "./BenefitSlipPDFModel";
 import { createPortal } from "react-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
-
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { Typography } from "../../shared/atoms/Typography";
 
 const BenefitsSlips = () => {
+  const { data: employeeIdCard } = useCurrentEmployeeIdCard();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
-    const { data: employeeIdCard } = useCurrentEmployeeIdCard();
-    const { data: optionYearsData, isLoading: YearsLoading } = useGetYearFilterOptions(employeeIdCard?.company || "");
+  const effectiveEmployee = isViewingOtherUser
+    ? targetEmployee
+    : employeeIdCard;
+  const { data: optionYearsData, isLoading: YearsLoading } =
+    useGetYearFilterOptions(effectiveEmployee?.company || "");
 
-    const optionYears = useMemo(() => {
-        if (YearsLoading || !optionYearsData) return [];
-        else return optionYearsData?.map(data => ({ label: data?.name, value: data?.name }))
-    }, [optionYearsData, YearsLoading]);
+  const optionYears = useMemo(() => {
+    if (YearsLoading || !optionYearsData) return [];
+    else
+      return optionYearsData?.map((data) => ({
+        label: data?.name,
+        value: data?.name,
+      }));
+  }, [optionYearsData, YearsLoading]);
 
-    const [selectedYear, setSelectedYear] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
 
-    useEffect(() => {
-        if (optionYears.length > 0 && !selectedYear) {
-            setSelectedYear(optionYears[0].value);
-        }
-    }, [optionYears, selectedYear]);
+  useEffect(() => {
+    if (optionYears.length > 0 && !selectedYear) {
+      setSelectedYear(optionYears[0].value);
+    }
+  }, [optionYears, selectedYear]);
 
-    const [pdfModalOpen, setPdfModalOpen] = useState(false);
-    const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
-    const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
-        name: string;
-        date: string;
-    } | null>(null);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
+  const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
+    name: string;
+    date: string;
+  } | null>(null);
 
-    return (
-        <div className="px-4 pt-2">
-            {/* PDF Modal */}
-            {selectedSalarySlip && (
-                <SalarySlipPDFModal
-                    isOpen={pdfModalOpen}
-                    onClose={() => {
-                        setPdfModalOpen(false);
-                        setSelectedSalarySlip(null);
-                        setModalHtmlContent("");
-                    }}
-                    salarySlipName={selectedSalarySlip?.name || ""}
-                    salarySlipDate={selectedSalarySlip?.date || ""}
-                    htmlContent={modalHtmlContent}
-                />
-            )}
-            <>
-                <div className="mb-4 flex items-center justify-between gap-4">
-                    <div className="flex-1 mt-2 lg:max-w-xs">
-                        <CustomDropdown
-                            position='bottom-right'
-                            value={selectedYear}
-                            onChange={(event) => setSelectedYear(event?.target.value)}
-                            options={optionYears}
-                        />
-                    </div>
-                </div>
-            </>
-
-            <CardTable
-                titles={[
-                    "Claim Date",
-                    "Status",
-                    "Actions"
-                ]}
-                columnWidths={["1fr", "1fr", "50px"]}
-            >
-                <DataListView
-                    queryKey={["benefit-sips", employeeIdCard?.id || "", employeeIdCard?.company || "", selectedYear || ""]}
-                    customAPI={{
-                        method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_payslip_list_view",
-                        params: {
-                            employee: employeeIdCard?.id || "",
-                            company: employeeIdCard?.company || "",
-                            payroll_period: selectedYear,
-                        },
-                    }}
-                    getItemKey={(item: any, _: number) => item.name}
-                    ItemComponent={BenefitSlipItem}
-                    SkeletonComponent={() => (
-                        <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                            <div className="px-4 py-2 flex justify-between">
-                                <div>
-                                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                                </div>
-                                <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                            </div>
-                        </div>
-                    )}
-                    // refetchTrigger={refetchAttendance}
-                    // onRefetchComplete={() => setRefetchAttendance(false)}
-                    isSearch={false}
-                    isFilter={false}
-                    showRefreshButton={false}
-                    // orderBy="creation desc"
-                    // pageSize={10}
-                    infiniteScroll={true}
-                    // showPagination={true}
-                    loadMorePagination={false}
-                />
-            </CardTable>
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
+        <div className="flex flex-col mb-2">
+          <Typography variant="h4">
+            My Benefit Slips for FY {selectedYear}
+          </Typography>
+          <Typography variant="bodySmall" color="body2">
+            Track and manage your benefits slips
+          </Typography>
         </div>
-    );
+
+        <CustomDropdown
+          position="bottom-left"
+          value={selectedYear}
+          onChange={(event) => setSelectedYear(event?.target.value)}
+          options={optionYears}
+        />
+      </div>
+
+      <CardTable
+        titles={["Claim Date", "Status", "Actions"]}
+        columnWidths={["1fr", "1fr", "50px"]}
+      >
+        <DataListView
+          queryKey={[
+            "benefit-sips",
+            employeeIdCard?.id || "",
+            employeeIdCard?.company || "",
+            selectedYear || "",
+          ]}
+          customAPI={{
+            method:
+              "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_payslip_list_view",
+            params: {
+              employee: employeeIdCard?.id || "",
+              company: employeeIdCard?.company || "",
+              payroll_period: selectedYear,
+            },
+          }}
+          getItemKey={(item: any, _: number) => item.name}
+          ItemComponent={BenefitSlipItem}
+          SkeletonComponent={() => (
+            <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+              <div className="px-4 py-2 flex justify-between">
+                <div>
+                  <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                </div>
+                <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+              </div>
+            </div>
+          )}
+          // refetchTrigger={refetchAttendance}
+          // onRefetchComplete={() => setRefetchAttendance(false)}
+          isSearch={false}
+          isFilter={false}
+          showRefreshButton={false}
+          // orderBy="creation desc"
+          // pageSize={10}
+          infiniteScroll={true}
+          // showPagination={true}
+          loadMorePagination={false}
+        />
+      </CardTable>
+
+      {/* PDF Modal */}
+      {selectedSalarySlip && (
+        <SalarySlipPDFModal
+          isOpen={pdfModalOpen}
+          onClose={() => {
+            setPdfModalOpen(false);
+            setSelectedSalarySlip(null);
+            setModalHtmlContent("");
+          }}
+          salarySlipName={selectedSalarySlip?.name || ""}
+          salarySlipDate={selectedSalarySlip?.date || ""}
+          htmlContent={modalHtmlContent}
+        />
+      )}
+    </div>
+  );
 };
 
 export default BenefitsSlips;
 
 const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
+  const { data, isLoading } = useGetBenefitSlipHTML(item.name);
+  const [showPDF, setShowPDF] = useState<boolean>(false);
+  const benefitSlipDate = item?.claim_date;
 
-    const { data, isLoading } = useGetBenefitSlipHTML(item.name);
-    const [showPDF, setShowPDF] = useState<boolean>(false);
-    const benefitSlipDate = item?.claim_date;
-
-    return <div className="px-6 grid grid-cols-[1fr_1fr_50px] items-center gap-4 border-b border-gray-200 h-14  cursor-pointer relative ">
-        <span className="text-sm font-medium text-gray-700 text-start truncate">{formatToIndianDate(benefitSlipDate || "")}</span>
-        <span> <StatusBadge status={item?.custom_status} /></span>
-        <DropdownMenu
-            placement="center-left"
-            items={[
-                { label: "View", icon: <FaRegEye className="h-4 w-4" />, onClick: () => setShowPDF(true) }
-            ]}
-        >
-            <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
-                <MoreVertical className="h-5 w-5" />
-            </button>
-        </DropdownMenu>
-        {data && !isLoading && createPortal(
-            <BenefitSlipPDFMOdel isOpen={showPDF} onClose={() => setShowPDF(false)} htmlContent={data.html} key={item.name} benefitSlipName={item.name}
-                benefitSlipDate={benefitSlipDate || ""} />, document.body
-        )
-        }
+  return (
+    <div className="px-6 grid grid-cols-[1fr_1fr_50px] items-center gap-4 border-b border-gray-200 h-14  cursor-pointer relative ">
+      <span className="text-sm font-medium text-gray-700 text-start truncate">
+        {formatToIndianDate(benefitSlipDate || "")}
+      </span>
+      <span>
+        {" "}
+        <StatusBadge status={item?.custom_status} />
+      </span>
+      <DropdownMenu
+        placement="center-left"
+        items={[
+          {
+            label: "View",
+            icon: <FaRegEye className="h-4 w-4" />,
+            onClick: () => setShowPDF(true),
+          },
+        ]}
+      >
+        <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
+          <MoreVertical className="h-5 w-5" />
+        </button>
+      </DropdownMenu>
+      {data &&
+        !isLoading &&
+        createPortal(
+          <BenefitSlipPDFMOdel
+            isOpen={showPDF}
+            onClose={() => setShowPDF(false)}
+            htmlContent={data.html}
+            key={item.name}
+            benefitSlipName={item.name}
+            benefitSlipDate={benefitSlipDate || ""}
+          />,
+          document.body
+        )}
     </div>
-}
-
+  );
+};
 
 const StatusBadge = ({ status }: { status: string }) => {
-    const statusConfig: Record<string, { bg: string; text: string; borderColor: string }> = {
-        Pending: { bg: "bg-yellow-100", text: "text-yellow-800", borderColor: "border-yellow-300" },
-        Cancelled: { bg: "bg-gray-100", text: "text-gray-800", borderColor: "border-gray-300" },
-        Rejected: { bg: "bg-red-100", text: "text-red-800", borderColor: "border-red-300" },
-        Approved: { bg: "bg-green-100", text: "text-green-800", borderColor: "border-green-300" },
-    };
+  const statusConfig: Record<
+    string,
+    { bg: string; text: string; borderColor: string }
+  > = {
+    Pending: {
+      bg: "bg-yellow-100",
+      text: "text-yellow-800",
+      borderColor: "border-yellow-300",
+    },
+    Cancelled: {
+      bg: "bg-gray-100",
+      text: "text-gray-800",
+      borderColor: "border-gray-300",
+    },
+    Rejected: {
+      bg: "bg-red-100",
+      text: "text-red-800",
+      borderColor: "border-red-300",
+    },
+    Approved: {
+      bg: "bg-green-100",
+      text: "text-green-800",
+      borderColor: "border-green-300",
+    },
+  };
 
-    const config = statusConfig[status] || statusConfig.Pending;
+  const config = statusConfig[status] || statusConfig.Pending;
 
-    return (
-        <span className={`inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}>
-            {status}
-        </span>
-    );
+  return (
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}
+    >
+      {status}
+    </span>
+  );
 };

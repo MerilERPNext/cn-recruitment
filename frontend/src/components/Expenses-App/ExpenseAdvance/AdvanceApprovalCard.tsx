@@ -1,9 +1,9 @@
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -48,21 +48,6 @@ const AdvanceApprovalCard = ({
     }
   })();
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   const gridTemplateColumns = showCheckbox
     ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
     : "1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr";
@@ -100,7 +85,7 @@ const AdvanceApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -134,7 +119,7 @@ const AdvanceApprovalCard = ({
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           {/* Status + Actions */}
@@ -239,7 +224,7 @@ const AdvanceApprovalCard = ({
                     Due Date
                   </p>
                   <p className="w-1/2 truncate text-end">
-                    {formatDate(data?.due_date)}
+                    {formatToIndianDate(data?.due_date)}
                   </p>
                 </div>
               </div>

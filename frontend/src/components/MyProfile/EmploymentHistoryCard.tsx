@@ -21,7 +21,7 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 relative">
+    <div className="bg-white rounded-xl shadow-sm border hover-lift p-6 relative min-w-[400px]">
       <div className="flex items-center gap-3  mb-6">
         <div className="p-2 bg-blue-50 rounded-lg">
           <Building2 className="w-5 h-5 text-blue-600" />

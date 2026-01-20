@@ -26,15 +26,15 @@ const TeamLoanRequest = () => {
   }, []);
 
   return (
-    <div>
-           <div className="mb-4">
-              <Typography variant="h4">
-                Team Loan Requests
-              </Typography>
-              <Typography variant="bodySmall" color="body2">
-                Review and manage loan applications from your team members
-              </Typography>
-     </div>
+    <div className="px-2">
+      <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
+        <div className="flex flex-col mb-2">
+          <Typography variant="h4">Team Loan Requests</Typography>
+          <Typography variant="bodySmall" color="body2">
+            Track and manage team loan requests
+          </Typography>
+        </div>
+      </div>
       {!isMobile && (
         <CardTable
           titles={[
@@ -63,8 +63,6 @@ const TeamLoanRequest = () => {
           ]}
         >
           <ApprovalList
-
-
             status="Open"
             doctype="Loan Application"
             pageSize={1000000}

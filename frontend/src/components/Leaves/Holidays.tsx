@@ -17,6 +17,7 @@ import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import CustomDropdown from "../shared/CustomDropdown";
+import DataNotFoundPng from "../../assets/data-not-found.png";
 
 interface HolidayCardProps {
   holiday: Holiday;
@@ -211,7 +212,12 @@ const Holidays: React.FC = () => {
 
       <section className="mb-8">
         {regularHolidays.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No regular holidays</p>
+          <div className=" flex flex-col items-center">
+            <img src={DataNotFoundPng} alt="" className="size-60 mt-4" />
+            <Typography variant="h3" className="mt-4" color="disabled">
+              No regular holidays found
+            </Typography>
+          </div>
         ) : (
           <div className="mt-3 max-h-[320px] overflow-y-auto pr-1">
             {regularHolidays.map((h) => (
@@ -227,7 +233,7 @@ const Holidays: React.FC = () => {
         {attendancePolicy && (
           <div className="flex justify-between text-center py-2 rounded-lg bg-primary/10 my-3 divide-x-1 divide-primary">
             <p className="w-full">
-              Total:{" "}
+              Entitled:{" "}
               <span className="font-semibold">
                 {optionalBalance?.entitled ?? 0}
               </span>
@@ -239,7 +245,7 @@ const Holidays: React.FC = () => {
               </span>
             </p>
             <p className="w-full">
-              Remaining:{" "}
+              Balance:{" "}
               <span className="font-semibold">
                 {optionalBalance?.balance ?? 0}
               </span>
@@ -252,7 +258,12 @@ const Holidays: React.FC = () => {
             ! Please contact HR to assign an attendance policy
           </p>
         ) : optionalHolidays.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No optional holidays</p>
+          <div className=" flex flex-col items-center">
+            <img src={DataNotFoundPng} alt="" className="size-60 mt-4" />
+            <Typography variant="h3" className="mt-4" color="disabled">
+              No optional holidays found
+            </Typography>
+          </div>
         ) : (
           <div className="mt-3 max-h-[320px] overflow-y-auto pr-1">
             {optionalHolidays.map((h) => (

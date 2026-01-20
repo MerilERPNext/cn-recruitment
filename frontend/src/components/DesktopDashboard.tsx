@@ -41,7 +41,6 @@ import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import { toast } from "react-hot-toast";
 import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
 import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
-import LeaveRequest from "./Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
@@ -65,6 +64,7 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
 import CircularLoader from "./shared/atoms/CircularLoader";
+import RequestLeave from "./Leaves/RequestLeave";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -140,29 +140,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -370,11 +370,20 @@ export default function DesktopDashboard() {
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
-                <Typography variant="h3" component="h1" color="white" className="font-bold">
+                <Typography
+                  variant="h3"
+                  component="h1"
+                  color="white"
+                  className="font-bold"
+                >
                   Welcome,{" "}
                   {currentEmployee?.employee_name || currentUser?.username}!
                 </Typography>
-                <Typography variant="label" color="white" className="opacity-90">
+                <Typography
+                  variant="label"
+                  color="white"
+                  className="opacity-90"
+                >
                   Here's your dashboard for today.
                 </Typography>
               </>
@@ -404,10 +413,18 @@ export default function DesktopDashboard() {
                   className="flex items-center gap-3 hover:bg-blue-500 rounded-lg p-2 transition-colors"
                 >
                   <div className="text-right">
-                    <Typography variant="bodyMedium" color="white" className="block outline-none">
+                    <Typography
+                      variant="bodyMedium"
+                      color="white"
+                      className="block outline-none"
+                    >
                       {currentUser?.username}
                     </Typography>
-                    <Typography variant="label" color="white" className="opacity-80 block">
+                    <Typography
+                      variant="label"
+                      color="white"
+                      className="opacity-80 block"
+                    >
                       Employee ID: {currentEmployee?.employee}
                     </Typography>
                   </div>
@@ -419,8 +436,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -434,10 +452,18 @@ export default function DesktopDashboard() {
                   className="flex items-center gap-3 hover:bg-primary-400/20 rounded-lg p-2 transition-colors"
                 >
                   <div className="text-right">
-                    <Typography variant="bodyMedium" color="white" className="block outline-none">
+                    <Typography
+                      variant="bodyMedium"
+                      color="white"
+                      className="block outline-none"
+                    >
                       {currentEmployee?.employee_name}
                     </Typography>
-                    <Typography variant="label" color="white" className="opacity-80 block">
+                    <Typography
+                      variant="label"
+                      color="white"
+                      className="opacity-80 block"
+                    >
                       Employee ID: {currentEmployee?.employee}
                     </Typography>
                   </div>
@@ -449,8 +475,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -472,51 +499,80 @@ export default function DesktopDashboard() {
                       {/* Text Info */}
                       {/* Text Info */}
                       <div className="flex-1 min-w-0">
-                        <Typography variant="subheading" color="title" className="truncate block font-bold">
+                        <Typography
+                          variant="subheading"
+                          color="title"
+                          className="truncate block font-bold"
+                        >
                           {currentEmployee?.employee_name || "N/A"}
                         </Typography>
-                        <Typography variant="bodySmall" color="body2" className="truncate block">
+                        <Typography
+                          variant="bodySmall"
+                          color="body2"
+                          className="truncate block"
+                        >
                           {currentEmployee?.custom_designation_name || "N/A"}
                         </Typography>
                         <div className="flex items-center gap-2">
-                          <Typography variant="label" color="disabled" className="font-bold uppercase tracking-wider">
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold uppercase tracking-wider"
+                          >
                             ID: {currentEmployee?.employee || "N/A"}
                           </Typography>
                         </div>
-                        <Typography variant="bodySmall" color="body2" className="truncate block">
-                          {currentEmployee?.company_email || currentEmployee?.personal_email || "N/A"}
+                        <Typography
+                          variant="bodySmall"
+                          color="body2"
+                          className="truncate block"
+                        >
+                          {currentEmployee?.company_email ||
+                            currentEmployee?.personal_email ||
+                            "N/A"}
                         </Typography>
                       </div>
                     </div>
                   </div>
 
-
                   <div className="p-2">
                     <div className="px-4 py-2">
-                      <Typography variant="bodySmall" color="body2" className="uppercase mb-2 font-medium">
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="uppercase mb-2 font-medium"
+                      >
                         Company Information
                       </Typography>
                       <div className="space-y-1">
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="body2">Department:</Typography>
+                          <Typography variant="bodySmall" color="body2">
+                            Department:
+                          </Typography>
                           <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.department || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="body2">Company:</Typography>
+                          <Typography variant="bodySmall" color="body2">
+                            Company:
+                          </Typography>
                           <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.company || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="body2">Join Date:</Typography>
+                          <Typography variant="bodySmall" color="body2">
+                            Join Date:
+                          </Typography>
                           <Typography variant="bodySmall" color="body2">
                             {currentEmployee?.date_of_joining || "N/A"}
                           </Typography>
                         </div>
                         <div className="flex justify-between">
-                          <Typography variant="bodySmall" color="body2">Status:</Typography>
+                          <Typography variant="bodySmall" color="body2">
+                            Status:
+                          </Typography>
                           <Typography variant="bodySmall" color="success">
                             {currentEmployee?.status || "Active"}
                           </Typography>
@@ -642,11 +698,18 @@ export default function DesktopDashboard() {
             <div className="lg:col-span-4">
               <Card shadow="sm" className="h-full flex flex-col gap-4">
                 <div>
-                  <Typography variant="subheading" className="mb-4 text-left block">
+                  <Typography
+                    variant="subheading"
+                    className="mb-4 text-left block"
+                  >
                     Total hours worked
                   </Typography>
                   <div className="flex items-center justify-between w-full mb-3">
-                    <Typography variant="bodySmall" color="primary" className="font-semibold uppercase tracking-wider">
+                    <Typography
+                      variant="bodySmall"
+                      color="primary"
+                      className="font-semibold uppercase tracking-wider"
+                    >
                       8h 30m target
                     </Typography>
                     <div className="flex items-center gap-3">
@@ -676,30 +739,50 @@ export default function DesktopDashboard() {
                 <div className="border-t border-gray-100 pt-4">
                   <div className="flex items-start justify-between w-full mb-2">
                     <div>
-                      <Typography variant="subheading" color="title" className="block mb-1">
+                      <Typography
+                        variant="subheading"
+                        color="title"
+                        className="block mb-1"
+                      >
                         Daily Timings
                       </Typography>
-                      <Typography variant="bodySmall" color="body2" className="flex items-center gap-1.5">
-                        Shift: {employeeShift?.start_time
+                      <Typography
+                        variant="bodySmall"
+                        color="body2"
+                        className="flex items-center gap-1.5"
+                      >
+                        Shift:{" "}
+                        {employeeShift?.start_time
                           ? formatTimeSafe(employeeShift.start_time)
-                          : "--:--"} - {employeeShift?.end_time
-                            ? formatTimeSafe(employeeShift.end_time)
-                            : "--:--"}
+                          : "--:--"}{" "}
+                        -{" "}
+                        {employeeShift?.end_time
+                          ? formatTimeSafe(employeeShift.end_time)
+                          : "--:--"}
                       </Typography>
                     </div>
-                    <Badge
-                      label={isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
-                      size="md"
-                      pulse={{
-                        show: true,
-                        color: isCurrentlyCheckedIn ? "bg-success" : "bg-error"
-                      }}
-                      backgroundColor={isCurrentlyCheckedIn
-                        ? "bg-success-100 border-success-100"
-                        : "bg-error-50 border-error-100"
-                      }
-                      textColor={isCurrentlyCheckedIn ? "text-success" : "text-error"}
-                    />
+                    {homeSummary && homeSummary.length > 0 && (
+                      <Badge
+                        label={
+                          isCurrentlyCheckedIn ? "Checked In" : "Checked Out"
+                        }
+                        size="md"
+                        pulse={{
+                          show: true,
+                          color: isCurrentlyCheckedIn
+                            ? "bg-success"
+                            : "bg-error",
+                        }}
+                        backgroundColor={
+                          isCurrentlyCheckedIn
+                            ? "bg-success-100 border-success-100"
+                            : "bg-error-50 border-error-100"
+                        }
+                        textColor={
+                          isCurrentlyCheckedIn ? "text-success" : "text-error"
+                        }
+                      />
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -710,10 +793,17 @@ export default function DesktopDashboard() {
                           <CheckCircle className="w-5 h-5 text-success" />
                         </div>
                         <div>
-                          <Typography variant="label" color="disabled" className="font-bold text-[10px]">
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold text-[10px]"
+                          >
                             IN TIME
                           </Typography>
-                          <Typography variant="bodyMedium" className="font-bold text-success">
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-bold text-success"
+                          >
                             {firstCheckIn?.time
                               ? formatTo24HourTime(firstCheckIn.time)
                               : "--:--"}
@@ -729,10 +819,17 @@ export default function DesktopDashboard() {
                           <XCircle className="w-5 h-5 text-error" />
                         </div>
                         <div>
-                          <Typography variant="label" color="disabled" className="font-bold text-[10px]">
+                          <Typography
+                            variant="label"
+                            color="disabled"
+                            className="font-bold text-[10px]"
+                          >
                             OUT TIME
                           </Typography>
-                          <Typography variant="bodyMedium" className="font-bold text-error">
+                          <Typography
+                            variant="bodyMedium"
+                            className="font-bold text-error"
+                          >
                             {lastCheckOut?.time
                               ? formatTo24HourTime(lastCheckOut.time)
                               : "--:--"}
@@ -744,10 +841,11 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-3"
-                    : "flex-row gap-3 mt-2"
-                    }`}
+                  className={`flex  h-full ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -770,19 +868,24 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                            ? "Clock Out"
-                            : "Clock In"}
+                          ? "Clock Out"
+                          : "Clock In"}
                       </Button>
                     </div>
                   )}
 
                   {/* Status */}
 
-                  {!homeSummary?.length && <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
-                    <Typography variant="bodySmall" className="font-bold text-primary-600">
-                      Let's Get Started
-                    </Typography>
-                  </div>}
+                  {!homeSummary?.length && (
+                    <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-xl border border-primary-100">
+                      <Typography
+                        variant="bodySmall"
+                        className="font-bold text-primary-600"
+                      >
+                        Let's Get Started
+                      </Typography>
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>
@@ -799,7 +902,9 @@ export default function DesktopDashboard() {
             <div className="lg:col-span-4">
               <Card shadow="sm" className="h-full">
                 <div className="flex justify-between items-center mb-4">
-                  <Typography variant="subheading" color="title">Requests</Typography>
+                  <Typography variant="subheading" color="title">
+                    Requests
+                  </Typography>
 
                   <ViewAll
                     onClick={() => {
@@ -814,39 +919,47 @@ export default function DesktopDashboard() {
                       label: "Apply Leave",
                       icon: Calendar,
                       color: "primary",
-                      onClick: () => setShowLeaveRequest(true)
+                      onClick: () => setShowLeaveRequest(true),
                     },
                     {
                       label: "Attendance Request",
                       icon: FileText,
                       color: "secondary",
-                      onClick: () => setShowAttendanceRequest(true)
+                      onClick: () => setShowAttendanceRequest(true),
                     },
                     {
                       label: "Planned Overtime",
                       icon: Timer,
                       color: "purple",
-                      onClick: () => setShowOvertimeRequest(true)
+                      onClick: () => setShowOvertimeRequest(true),
                     },
                     {
                       label: "Shift Change",
                       icon: ArrowUpDown,
                       color: "success",
-                      onClick: handleShiftForm
-                    }
+                      onClick: handleShiftForm,
+                    },
                   ].map((action, idx) => (
                     <div
                       key={idx}
                       className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
                       onClick={action.onClick}
                     >
-                      <div className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === 'primary' ? 'bg-primary-100 text-primary-600' :
-                        action.color === 'purple' ? 'bg-purple-100 text-purple-600' :
-                          'bg-success-100 text-success'
-                        }`}>
+                      <div
+                        className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                          action.color === "primary"
+                            ? "bg-primary-100 text-primary-600"
+                            : action.color === "purple"
+                            ? "bg-purple-100 text-purple-600"
+                            : "bg-success-100 text-success"
+                        }`}
+                      >
                         <action.icon className="w-5 h-5 shadow-sm" />
                       </div>
-                      <Typography variant="bodySmall" className="font-semibold leading-tight line-clamp-2">
+                      <Typography
+                        variant="bodySmall"
+                        className="font-semibold leading-tight line-clamp-2"
+                      >
                         {action.label}
                       </Typography>
                     </div>
@@ -857,45 +970,39 @@ export default function DesktopDashboard() {
           </div>
         </div>
       </div>
-      {
-        showAttendanceRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <AttendanceRequestFormV2
-                onClose={() => setShowAttendanceRequest(false)}
-              />
-            </div>
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestFormV2
+              onClose={() => setShowAttendanceRequest(false)}
+            />
           </div>
-        )
-      }
-      {
-        showLeaveRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              {/* Ensure LeaveRequest is inside its providers */}
-              <LeaveRequestRefreshProvider>
-                <RequestLeaveModalProvider>
-                  <LeaveRequest
-                    onCancel={() => setShowLeaveRequest(false)}
-                    onSuccess={() => setShowLeaveRequest(false)}
-                  />
-                </RequestLeaveModalProvider>
-              </LeaveRequestRefreshProvider>
-            </div>
+        </div>
+      )}
+      {showLeaveRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Ensure LeaveRequest is inside its providers */}
+            <LeaveRequestRefreshProvider>
+              <RequestLeaveModalProvider>
+                <RequestLeave
+                  onCancel={() => setShowLeaveRequest(false)}
+                  onSuccess={() => setShowLeaveRequest(false)}
+                />
+              </RequestLeaveModalProvider>
+            </LeaveRequestRefreshProvider>
           </div>
-        )
-      }
-      {
-        showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <CreateOvertimeRequest
-                onCancel={() => setShowOvertimeRequest(false)}
-              />
-            </div>
+        </div>
+      )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
           </div>
-        )
-      }
+        </div>
+      )}
       <ExpenseFormModal
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
@@ -903,6 +1010,6 @@ export default function DesktopDashboard() {
       >
         <ShiftRequestFormModal onClose={handleCloseShiftModal} />
       </ExpenseFormModal>
-    </div >
+    </div>
   );
 }

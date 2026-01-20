@@ -244,6 +244,10 @@ const AttendancePolicies = lazyWithRetry(
   () => import("./components/Attendance/AttendancePolicies/AttendancePolicies"),
   "AttendancePolicies"
 );
+const EmployeesDirectory = lazyWithRetry(
+  () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
+  "EmployeesDirectory"
+);
 const TrackerApp = lazyWithRetry(
   () => import("./components/ApprovalTracker/TrackerApp"),
   "TrackerApp"
@@ -358,8 +362,6 @@ const SeparationWorkflow = lazyWithRetry(
   "SeparationWorkflow"
 );
 
-
-
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
   "Confirmation"
@@ -439,6 +441,23 @@ const TicketDetailView = lazyWithRetry(
 const TodoPage = lazyWithRetry(
   () => import("./components/Todo/TodoPage"),
   "TodoPage"
+);
+
+const Recruitment = lazyWithRetry(
+  () => import("./components/Recruitment/RecruitmentApp"),
+  "Recruitment"
+);
+const RecruitmentOverview = lazyWithRetry(
+  () => import("./components/Recruitment/Overview"),
+  "RecruitmentOverview"
+);
+const Requisition = lazyWithRetry(
+  () => import("./components/Recruitment/Requisition"),
+  "Requisition"
+);
+const RequisitionForm = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionForm"),
+  "RequisitionForm"
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -684,7 +703,10 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
-
+  {
+    path: "/webapp/employees-directory",
+    element: <EmployeesDirectory />,
+  },
   //Leaves routes
   {
     path: "/webapp/leave-app",
@@ -704,6 +726,20 @@ export const routesConfig: AppRoute[] = [
       {
         path: "compensatory-request",
         element: <CompensatoryRequest />,
+      },
+    ],
+  },
+
+  //new recruitment routes
+  {
+    path: "/webapp/recruitment",
+    element: <Recruitment />,
+    children: [
+      { path: "overview", element: <RecruitmentOverview /> },
+      { path: "requisition", element: <Requisition /> },
+      {
+        path: "requisition/new",
+        element: <RequisitionForm />,
       },
     ],
   },

@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
@@ -17,7 +23,10 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
-import { FormSchema, SchemaComponent } from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import {
+  FormSchema,
+  SchemaComponent,
+} from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { Typography } from "../../shared/atoms/Typography";
 
 interface AdvanceFormProps {
@@ -29,7 +38,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-   const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const { uploadFiles } = useFileUploader();
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
@@ -45,70 +54,71 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const mutation = useCreateNewAdvance();
 
   const { data: requiredFields } = useRequiredFields("Employee Advance");
-      const requiredFieldMap = useMemo(() => {
-        if (!requiredFields?.fields) return {};
-        const map: Record<string, boolean> = {};
-        requiredFields.fields.forEach((f) => {
-          if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-        });
-        return map;
-      }, [requiredFields]);
-    
-      console.log("requiredFieldMap", requiredFieldMap);
-  
-    const transformSchemaWithRequired = (
-            baseSchema: FormSchema,
-            requiredMap: Record<string, boolean>
-          ): FormSchema => {
-            if (!baseSchema) return baseSchema;
-            // deep clone
-            const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
-        
-            const applyToComponents = (components?: SchemaComponent[]) => {
-              if (!components) return;
-              components.forEach((comp) => {
-                const key = comp.key;
-                if (key && requiredMap[key]) {
-                  // ensure validate exists
-                  if (!comp.validate) comp.validate = {};
-                  // set required flag
-                  comp.validate.required = true;
-        
-                  // Append red asterisk to label (avoid duplicating)
-                  if (typeof comp.label === "string") {
-                    const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
-                    if (!comp.label.includes(asteriskHtml)) {
-                      // Some labels may include HTML already; we append the asterisk HTML
-                      comp.label = `${comp.label} ${asteriskHtml}`;
-                    }
-                  }
-                }
-                // recurse into nested components (like panels, columns, containers)
-                if (comp.components && Array.isArray(comp.components)) {
-                  applyToComponents(comp.components);
-                }
-                // some schema use nested components in 'columns' or 'rows' etc - handle common cases
-                if (comp.columns && Array.isArray(comp.columns)) {
-                  comp.columns.forEach((col: any) => applyToComponents(col.components));
-                }
-                if (comp.rows && Array.isArray(comp.rows)) {
-                  comp.rows.forEach((row: any[]) =>
-                    row.forEach((cell: any) => applyToComponents(cell.components))
-                  );
-                }
-              });
-            };
-        
-            applyToComponents(cloned.components);
-            return cloned;
-          };
-      
-      const trasnsformedSchema = useMemo(() => {
-        return transformSchemaWithRequired(
-          advanceFormJson as FormSchema,
-          requiredFieldMap
-        );
-      }, [requiredFieldMap]);
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFields?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFields.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFields]);
+
+  console.log("requiredFieldMap", requiredFieldMap);
+
+  const transformSchemaWithRequired = (
+    baseSchema: FormSchema,
+    requiredMap: Record<string, boolean>
+  ): FormSchema => {
+    if (!baseSchema) return baseSchema;
+    // deep clone
+    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+
+    const applyToComponents = (components?: SchemaComponent[]) => {
+      if (!components) return;
+      components.forEach((comp) => {
+        const key = comp.key;
+        if (key && requiredMap[key]) {
+          // ensure validate exists
+          if (!comp.validate) comp.validate = {};
+          // set required flag
+          comp.validate.required = true;
+
+          // Append red asterisk to label (avoid duplicating)
+          if (typeof comp.label === "string") {
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
+            if (!comp.label.includes(asteriskHtml)) {
+              // Some labels may include HTML already; we append the asterisk HTML
+              comp.label = `${comp.label} ${asteriskHtml}`;
+            }
+          }
+        }
+        // recurse into nested components (like panels, columns, containers)
+        if (comp.components && Array.isArray(comp.components)) {
+          applyToComponents(comp.components);
+        }
+        // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+        if (comp.columns && Array.isArray(comp.columns)) {
+          comp.columns.forEach((col: any) => applyToComponents(col.components));
+        }
+        if (comp.rows && Array.isArray(comp.rows)) {
+          comp.rows.forEach((row: any[]) =>
+            row.forEach((cell: any) => applyToComponents(cell.components))
+          );
+        }
+      });
+    };
+
+    applyToComponents(cloned.components);
+    return cloned;
+  };
+
+  const trasnsformedSchema = useMemo(() => {
+    return transformSchemaWithRequired(
+      advanceFormJson as FormSchema,
+      requiredFieldMap
+    );
+  }, [requiredFieldMap]);
 
   /** ✅ Auto update Advance Amount when fetched */
   useEffect(() => {
@@ -160,18 +170,21 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       };
 
       mutation.mutate(submissionData, {
-        onSuccess: async(data: any) => {
-            if (attachments?.length > 0) {
-              await uploadFiles(attachments, data.doctype, data.name);
-            }
+        onSuccess: async (data: any) => {
+          if (attachments?.length > 0) {
+            await uploadFiles(attachments, data.doctype, data.name);
+          }
           toast.success("Advance Request submitted successfully!");
           onClose?.();
           setTimeout(() => setRefetchAttendance(true), 2000);
         },
         onError: (error: any) => {
-           const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
-            toast.error(formatedError);
-            console.error(error);
+          const formatedError = errorResponseFormater(
+            error,
+            "Submission failed. Please try again."
+          );
+          toast.error(formatedError);
+          console.error(error);
         },
       });
     } catch (err) {
@@ -199,9 +212,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
               <Typography variant="subheading" color="body1">
                 Advance Request
               </Typography>
-              <Button
-                variant="soft"
-                onClick={onClose}>
+              <Button variant="soft" onClick={onClose}>
                 <X className="w-6 h-6" />
               </Button>
             </div>
@@ -230,13 +241,10 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
                 submission.data.custom_advance_type &&
                 submission.data.custom_advance_type !== selectedAdvanceType
               ) {
-                setSelectedAdvanceType(submission.data.custom_advance_type);;
+                setSelectedAdvanceType(submission.data.custom_advance_type);
               }
               if (submission?.changed?.component?.key === "attachments")
-                setAttachments([
-                  ...attachments,
-                  ...((submission?.data?.attachments as any) || []),
-                ]);
+                setAttachments((submission?.data?.attachments as any) || []);
             }}
           />
         </div>

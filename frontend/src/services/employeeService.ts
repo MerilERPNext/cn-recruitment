@@ -502,6 +502,7 @@ export class EmployeeService {
   ): Promise<Employee[]> {
     const response = FrappeAPI.getMethod("cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees", {
       limit: limit,
+      status: 'Active',
       query: filters,
     });
     const data = await response;

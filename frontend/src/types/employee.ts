@@ -1,6 +1,8 @@
 // Employee interface based on Frappe Employee DocType
 export interface Employee {
   designation: string;
+  department_display: string;
+  designation_display: string;
   shift_request_approver: string | null;
   name: string;
   employee: string;
@@ -13,7 +15,9 @@ export interface Employee {
   department?: string;
   company?: string;
   branch?: string;
+  branch_display?: string;
   grade?: string;
+  grade_display?: string;
   employment_type?: string;
   date_of_joining: string;
   date_of_birth: string;
@@ -98,6 +102,10 @@ export interface Award {
   icon?: string;
   display_on_profile: 0 | 1;
   employee: string;
+  badge_name: string;
+  reason: string;
+  recognition_type: string;
+  awarded_at: string;
 }
 
 export interface EmployeeNode {

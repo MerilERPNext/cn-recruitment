@@ -11,8 +11,11 @@ export type NodeData = {
   isExpanded: boolean;
   childrens?: any;
   totalChildren?: number;
+  directChildren?: number;
+  indirectChildren?: number;
   onToggleExpand: (id: string) => void;
   showExpand?: boolean;
+  image?: string | null;
 };
 
 // ✅ Optional alias (safe version)

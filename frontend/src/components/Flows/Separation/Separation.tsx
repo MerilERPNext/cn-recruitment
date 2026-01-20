@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Loader2 } from "lucide-react";
+import { CircleIcon, Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import { useSeparation } from "../../../hooks/useConfiremnation";
 import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
@@ -12,8 +12,10 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const Separation = () => {
   const { data: userId } = useLoggedInUser();
@@ -41,6 +43,10 @@ const Separation = () => {
   console.log("separationData", separationData)
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
+
+  useEffect(() => {
+    refetchConfirmationAndSeparation();
+  }, [refetchConfirmationAndSeparation, isViewingOtherUser]);
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -96,6 +102,43 @@ const Separation = () => {
     navigate("/webapp/flow-app/separation-workflow/" + item?.reference_document?.name);
   }
 
+  const allStagesComplete =
+    item?.approval_stages_status?.every(
+      (stage) => stage.status === "Approved"
+    ) ?? false
+
+  const Rejected =
+    item?.approval_stages_status?.some(
+      (stage) => stage.status === "Rejected"
+    ) ?? false;
+
+
+  const separationStatus = allStagesComplete ? "Approved" : Rejected ? "Rejected" : "Pending";
+
+  const BannerForCurrentStatus = useMemo(() => {
+    if (separationStatus === "Approved")
+      return {
+        color: "bg-green-100 border border-green-500 ",
+        description: "Separation is approved.",
+        button: null,
+        dotColor: "fill-green-500"
+      };
+    else if (separationStatus === "Rejected")
+      return {
+        color: "bg-red-100 border border-red-500 ",
+        description: "Separation is rejected.",
+        button: null,
+        dotColor: "fill-red-500"
+      };
+    else
+      return {
+        color: "bg-yellow-100 border border-yellow-500 ",
+        description: "Separation is currently in progress.",
+        button: null,
+        dotColor: "fill-yellow-500"
+      };
+  }, [separationStatus]);
+  const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -111,37 +154,52 @@ const Separation = () => {
 
   return (
     <div>
-      <div className="flex flex-col min-h-screen p-6 gap-4 bg-white">
+      <div className="min-h-screen p-4 gap-4 bg-blue-50">
         {!showInitiatePage ? (
-          <main className="min-h-full bg-background mb-2">
-            {separationWorkflow?.show_workflow &&
-              <Button
-                onClick={handleShowWorkflow}
-                size="md"
-                bgColor="blue-500"
-                className="hover:bg-blue-600 mb-4 text-white"
-              >
-                Show Workflow
-              </Button>
-            }
+          <main className="min-h-full mb-2">
+            <div className={`flex text-white justify-between w-full rounded-lg border mb-2 items-center px-2 
+                ${BannerForCurrentStatus.color}
+              `}>
+              <div className="flex items-center py-2">
+                <CircleIcon className={`h-3 w-3 ${BannerForCurrentStatus.dotColor} mr-2`} />
+                <Typography variant="bodyMedium" color="body1" className="mr-2">
+                  {BannerForCurrentStatus.description}
+                </Typography>
+              </div>
+              {separationWorkflow?.show_workflow &&
+                <Button
+                  onClick={handleShowWorkflow}
+                  size="md"
+                  bgColor="primary"
+                  className="hover:bg-primary my-2 text-white"
+                >
+                  Show Workflow Activity Log
+                </Button>
+              }
+            </div>
             <div className="max-w-full">
               <ApprovalTracker For="Employee Separation" data={item} />
             </div>
           </main>
         ) : (
-          <div className="min-h-screen bg-gray-50 flex items-start justify-center">
-            <div className="bg-gray-200 rounded-xl shadow-sm w-full max-w-full overflow-hidden">
+          <div className="min-h-screen">
+            <div className="flex flex-col mb-4 ">
+              <Typography variant="h4">Separation</Typography>
+              <Typography variant="bodySmall" color="body2">
+                View Your Separation Process
+              </Typography>
+            </div>
+            <div className="flex items-center justify-between">
+            </div>
+            <div className="bg-white rounded-xl shadow-sm w-full max-w-full overflow-hidden">
               {/* Main content */}
               <div className="flex flex-col md:flex-row items-center justify-between">
                 {/* Left Section */}
-                <div className="flex-1 p-10">
-                  <div className="bg-blue-200 text-black font-bold text-3xl md:text-4xl leading-snug p-8 rounded-lg w-fit">
-                    <p>WE’RE SAD TO</p>
-                    <p>SEE YOU GO</p>
-                  </div>
-                  <p className="mt-6 text-gray-700 text-sm md:text-base">
-                    Please connect with your HBRP once
-                  </p>
+                <div className="flex-1 p-6 md:p-12">
+                  <Typography color="primary" variant={isDesktop ? "h1" : "h3"}>We are sad to see you leave</Typography>
+                  <Typography variant="bodyMedium" color="body2" className="mt-1">
+                    Please connect with your HBRP once before taking this step
+                  </Typography>
                 </div>
 
                 {/* Right Section */}
@@ -149,38 +207,41 @@ const Separation = () => {
                   <img
                     src={image}
                     alt="Goodbye illustration"
-                    className="max-h-64 object-contain"
+                    className="max-h-80 object-contain"
                   />
                 </div>
               </div>
 
-              {/* Button */}
-              {definition_name &&
-                <div className="flex items-center py-6 gap-2 flex-col">
-                  <Button
-                    onClick={handleTriggerChat}
-                    size="md"
-                    bgColor="blue-500"
-                    className="hover:bg-blue-600"
-                    loading={isTriggeringChat}
-                  >
-                    INITIATE SEPARATION
-                  </Button>
-
-                  <Button
-                    size="md"
-                    bgColor="black"
-                    className="hover:bg-gray-900"
-                  >
-                    Terminate
-                  </Button>
-                </div>
-              }
             </div>
+            {/* Button */}
+            {definition_name &&
+              <div className="flex items-center py-6 gap-2 flex-col">
+                <Button
+                  onClick={handleTriggerChat}
+                  size="md"
+                  bgColor="blue-500"
+                  className="hover:bg-blue-600 text-white"
+                  loading={isTriggeringChat}
+                  disabled={isTriggeringChat}
+                >
+                  INITIATE SEPARATION
+                </Button>
+
+                <Button
+                  size="md"
+                  bgColor="black"
+                  className="hover:bg-gray-900 text-white"
+                  loading={isTriggeringChat}
+                  disabled={isTriggeringChat}
+                >
+                  Terminate
+                </Button>
+              </div>
+            }
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 

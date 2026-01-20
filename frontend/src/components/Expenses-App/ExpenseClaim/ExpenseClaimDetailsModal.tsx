@@ -12,6 +12,7 @@ import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { useNavigate } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface ExpenseClaimModalProps {
   id: string | null;
@@ -116,11 +117,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               <p className="text-sm text-gray-700">
                 <span className="card-title">Claimed Date:</span>
                 <span className="card-subtitle ml-2">
-                  {data?.creation
-                    ? new Date(data.creation).toLocaleString("en-IN", {
-                        dateStyle: "medium",
-                      })
-                    : "—"}
+                  {data?.creation ? formatToIndianDate(data.creation) : "—"}
                 </span>
               </p>
 
@@ -239,12 +236,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                             <td className="px-4 py-2 border-b align-top">
                               {/* {formatDateString(item.expense_date) ?? "—"} */}
                               {item.expense_date
-                                ? new Date(item.expense_date).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      dateStyle: "medium",
-                                    }
-                                  )
+                                ? formatToIndianDate(item.expense_date)
                                 : "—"}
                             </td>
 
@@ -294,7 +286,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                                       "/webapp/expenses-app/add-expense",
                                       {
                                         state: navigationState,
-                                      }
+                                      },
                                     );
                                   }}
                                   className="text-gray-500 hover:text-blue-600"
