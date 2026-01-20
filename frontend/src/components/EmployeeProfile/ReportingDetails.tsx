@@ -22,7 +22,6 @@ const ReportingDetails = () => {
 
     const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
         useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");
-
     const { data: userUiPermission } = useGetUiPermission("Profile");
     const canEditReportingDetails = isActionEnabled(
         userUiPermission,
@@ -56,7 +55,7 @@ const ReportingDetails = () => {
         const isCurrent = !endDate;
 
         return (
-            <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift">
+            <div className="bg-white rounded-xl shadow-sm border p-6 relative min-w-[450px] hover-lift">
                 <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-blue-50 rounded-lg">
                         <Building2 className="w-5 h-5 text-blue-600" />
@@ -144,7 +143,7 @@ const ReportingDetails = () => {
                                 {sectionTitle}
                             </h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex gap-2 overflow-auto">
                                 {records.map((item: { records: string; reporting_employee_name: string; start_date: string; end_date: string }) => (
                                     <HierarchyCard
                                         key={item.records}
