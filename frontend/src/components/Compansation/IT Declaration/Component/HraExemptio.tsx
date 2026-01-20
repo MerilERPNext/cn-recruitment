@@ -22,6 +22,7 @@ export interface LTAData {
 }
 
 export interface HRAData {
+  owner_name: string;
   attach_reqd: number;
   monthly_hra: number;
   rented_in_metro_city: number;
@@ -30,6 +31,7 @@ export interface HRAData {
   start_date: string;
   end_date: string;
   pan: string;
+  owner_pan: string;
   address_line1: string;
   address_line2: string;
   lta?: LTAData;
@@ -112,14 +114,27 @@ const LTAData = (hraData as unknown as any[])?.[1];
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
-          {hraData.attach_reqd === 1 && (
+          <div>
+            <label className="text-xs text-gray-500">Owner name</label>
+            <input
+              value={hraData.owner_name}
+              onChange={(e) => onChange("owner_name", e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+          {hraData.attach_reqd !== 0 && 
             <div className="col-span-2 flex items-end">
-              <label className="text-sm text-gray-600 cursor-pointer flex gap-2">
-                📎 Attach file
-                <input type="file" hidden />
-              </label>
-            </div>
-          )}
+  <label
+    className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-md 
+               text-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition"
+  >
+    📎
+    <span>Attach file</span>
+    <input type="file" className="hidden" />
+  </label>
+</div>
+
+          }
         </div>
       </div>
 
