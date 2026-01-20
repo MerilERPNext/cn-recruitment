@@ -342,7 +342,7 @@ const EmployeeProfile: React.FC = () => {
                 )}
                 <Typography
                   variant="bodySmall"
-                  color="secondary"
+                  color="primary"
                   className="break-words block"
                 >
                   {user?.company_email || user?.personal_email || "Temp Email"}
@@ -522,7 +522,7 @@ const EmployeeProfile: React.FC = () => {
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         <Typography
                           variant="bodySmall"
-                          color="secondary"
+                          color="primary"
                           className="break-words block"
                         >
                           {user?.company_email ||
