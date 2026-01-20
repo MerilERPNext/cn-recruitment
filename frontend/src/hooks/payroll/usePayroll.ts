@@ -4,11 +4,11 @@ import { getSalaryStructureAssignment } from "../../services/payrollApi/payPacka
 
 
 export const usePayPackage = (
-  employeeId: string,
+ employeeId: string, selectedPeriod: string, company: string
 ) => {
 return useQuery({
-queryKey: ["payroll-data", employeeId],
-queryFn: () => getSalaryStructureAssignment(employeeId),
+queryKey: ["payroll-data", employeeId, selectedPeriod],
+queryFn: () => getSalaryStructureAssignment(employeeId, selectedPeriod,  company),
 enabled: true,
 staleTime: 5 * 60 * 1000, // 5 minutes
 });

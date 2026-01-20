@@ -2,19 +2,21 @@ import { useMemo, useState } from "react";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
+import { useFileUpload } from "../../../../hooks/useEmployee";
 
 type Item = {
-  attach_proof: string;
+  proof_file?: File | string;
+  attach_proof: string | null;
   attach_reqd: number;
   exemption_sub_category: string;
   description: string | null;
   max_amount: number;
   editable: number;
-  amount?: number;
-  proof_file?: File | null;
+  amount?: number | "";
   proof_comment?: string;
   is_selected?: boolean;
 };
+
 
 type Props = {
   categoryName: string;
@@ -34,6 +36,7 @@ const CategoryDeclarationSelectable = ({
   selectable,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
+  const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
 
   /* ---------------- Dropdown Options ---------------- */
@@ -58,7 +61,28 @@ const CategoryDeclarationSelectable = ({
 
     onChange(updated);
   };
-
+  const handleProofFileUpload = (
+    key: string,
+    file: File | null
+  ) => {
+    if (!file) return;
+  
+    uploadMutation.mutate(file, {
+      onSuccess(data) {
+        const updated = items.map((item) =>
+          item.exemption_sub_category === key
+            ? { ...item, proof_file: data?.file_url }
+            : item
+        );
+  
+        onChange(updated);
+      },
+      onError(err) {
+        console.error("Proof upload failed", err);
+      },
+    });
+  };
+  
   /* ---------------- Select Item ---------------- */
   const handleSelectItem = (value: string) => {
     if (!value) return;
@@ -87,21 +111,20 @@ const CategoryDeclarationSelectable = ({
 
   /* ---------------- Amount Change ---------------- */
   const handleAmountChange = (key: string, value: number) => {
-    const updated = items.map((item) => {
+    const updated: Item[] = items.map((item) => {
       if (item.exemption_sub_category !== key) return item;
-      if (item.editable === 0) {
-        return item;
-      }
-
+      if (item.editable === 0) return item;
+  
       return {
         ...item,
         amount: Math.min(value, item.max_amount),
       };
     });
-
+  
     onChange(updated);
   };
-
+  
+  
   /* ---------------- Remove Selected Item ---------------- */
   const handleRemoveItem = (key: string) => {
     const updated = items.map((item) =>
@@ -155,17 +178,20 @@ const CategoryDeclarationSelectable = ({
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">Attachment</label>
                   <input
-                    type="file"
-                    value={item.attach_proof}
-                    onChange={(e) =>
-                      handleProofChange(
-                        item.exemption_sub_category,
-                        "proof_file",
-                        e.target.files?.[0] || null
-                      )
-                    }
-                    className="border rounded pr-3 text-xs file:text-xs file:border-0 file:bg-primary file:text-white file:px-3 file:py-1"
-                  />
+  type="file"
+  onChange={(e) =>
+    handleProofFileUpload(
+      item.exemption_sub_category,
+      e.target.files?.[0] || null
+    )
+  }
+  className="border rounded pr-3 text-xs
+    file:text-xs file:border-0
+    file:bg-primary file:text-white
+    file:px-3 file:py-1"
+/>
+
+
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">
@@ -193,17 +219,28 @@ const CategoryDeclarationSelectable = ({
                   Max ₹{item.max_amount}
                 </p>
                 <input
-                  type="number"
-                  disabled={item.editable === 0}
-                  value={item.amount ?? ""}
-                  onChange={(e) =>
-                    handleAmountChange(
-                      item.exemption_sub_category,
-                      Number(e.target.value)
-                    )
-                  }
-                  className="border rounded px-2 py-1 text-xs w-32"
-                />
+  type="number"
+  placeholder="Amount"
+  disabled={item.editable === 0}
+  value={item.amount === 0 ? "" : item.amount ?? ""}
+  onChange={(e) => {
+    const raw = e.target.value;
+
+    // empty typing → state update mat karo
+    if (raw === "") {
+      handleAmountChange(item.exemption_sub_category, 0);
+      return;
+    }
+
+    handleAmountChange(
+      item.exemption_sub_category,
+      Number(raw)
+    );
+  }}
+  className="border rounded px-2 py-1 text-xs w-32"
+/>
+
+
               </div>
               <div className="pt-3">
                 {item.editable !== 0 && (

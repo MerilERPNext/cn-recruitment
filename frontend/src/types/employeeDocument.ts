@@ -1,4 +1,5 @@
 export interface DocumentItem {
+    type: string;
     name: string;
     owner: string;
     creation: string;
