@@ -777,6 +777,14 @@ export const routesConfig: AppRoute[] = [
     element: <HelpDeskApp />,
   },
   {
+    path: "/webapp/helpdesk/my-tickets",
+    element: <HelpDeskApp />,
+  },
+  {
+    path: "/webapp/helpdesk/assigned",
+    element: <HelpDeskApp />,
+  },
+  {
     path: "/webapp/helpdesk/faq",
     element: <FAQPage />,
   },
