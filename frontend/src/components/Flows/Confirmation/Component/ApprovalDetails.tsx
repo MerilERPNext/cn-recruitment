@@ -26,7 +26,7 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
 
     if (title === "Employee Confirmation") {
       if (data.status != "Confirmed")
-        fields.concat({ label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
+        fields.push({ label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
       fields.splice(4, 0,
         { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
         { label: "Status", value: doc.status }
