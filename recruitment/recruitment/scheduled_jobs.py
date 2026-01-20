@@ -219,3 +219,71 @@ def get_applicable_separation_policy(employee_id):
                 except Exception:
                     pass
     return None
+
+
+@frappe.whitelist()
+def should_show_confirmation_button():
+
+    user = frappe.session.user
+
+    employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    if not employee:
+        return {"show_button": False}
+
+    employee_doc = frappe.get_doc("Employee", employee)
+
+    if employee_doc.status != "Active":
+        return {"show_button": False}
+
+    if not employee_doc.final_confirmation_date:
+        return {"show_button": False}
+
+    confirmation_date = getdate(employee_doc.final_confirmation_date)
+    current_date = getdate(today())
+    days_until_confirmation = (confirmation_date - current_date).days
+
+    policies = frappe.get_all(
+        "Confirmation Policy",
+        fields=[
+            "name",
+            "triggered_number_of_days_before_confirmation",
+            "triggered_days_before_extension_confirmation"
+        ]
+    )
+
+    for policy in policies:
+        policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+
+        if employee not in get_applicable_employees(policy_doc):
+            continue
+
+        extension_count = frappe.db.count(
+            "Employee Confirmation",
+            {
+                "employee": employee,
+                "docstatus": 1,
+                "status": "Probation Extended"
+            }
+        )
+
+        if extension_count > 0:
+            trigger_days = get_extension_trigger_days(policy_doc, extension_count)
+            if not trigger_days:
+                trigger_days = policy_doc.triggered_days_before_extension_confirmation
+        else:
+            trigger_days = policy_doc.triggered_number_of_days_before_confirmation
+
+        if not trigger_days:
+            continue
+
+        if 0 <= days_until_confirmation <= trigger_days:
+            return {
+                "show_button": True,
+                "days_until_confirmation": days_until_confirmation,
+                "trigger_days": trigger_days
+            }
+
+    return {
+        "show_button": False,
+        "days_until_confirmation": days_until_confirmation
+    }
