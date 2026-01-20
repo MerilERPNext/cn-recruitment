@@ -9,7 +9,7 @@ import { Typography } from "../shared/atoms/Typography";
 const Events = () => {
   const { data = [] } = useGetAllEmployees(
     ["date_of_birth", "employee_name", "image", "date_of_joining"],
-    9999,
+    19999,
     [["status", "=", "Active"]],
   );
 
