@@ -21,6 +21,7 @@ import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanReq
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import Requests from "./components/Requests";
 import Perquisite from "./components/Compansation/Perquisite/Perquisite";
+import Invoice from "./components/Compansation/Invoice/Invoice";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -546,6 +547,7 @@ export const routesConfig: AppRoute[] = [
       { path: "pay-package", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
       { path: "perquisite-list", element: <Perquisite /> },
+      {path: "invoice-page", element: <Invoice/> },
     ],
   },
   {

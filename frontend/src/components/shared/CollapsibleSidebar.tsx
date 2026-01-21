@@ -31,6 +31,7 @@ import {
   HandCoins,
   Coins,
   BadgeIndianRupee,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -236,6 +237,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Annual CTC",
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
+          name: "Invoice",
+          icon: FileSpreadsheet,
+          href: "/webapp/salary-slip-app/invoice-page",
         },
         {
           name: "Salary Slip",

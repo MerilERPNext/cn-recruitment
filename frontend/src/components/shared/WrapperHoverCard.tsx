@@ -202,7 +202,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                             {emp["Full Name"]}
                           </p>
                           <p className="text-sm text-gray-600 mt-0.5">
-                            @{emp.Designation}
+                            @{emp.Department || "—"}
                           </p>
                           <p className="text-sm text-gray-500 mt-1">
                             {emp["Company Email"] || emp["Personal Email"]}
