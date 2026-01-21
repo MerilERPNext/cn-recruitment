@@ -20,10 +20,10 @@
             "refreshOn": "doctype",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/{{ data.doctype }}"
+                "url": "/api/resource/{{ data.doctype }}?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{ item.employee_name || item.name }}</span>",
             "selectValues": "data",
             "lazyLoad": false
         }

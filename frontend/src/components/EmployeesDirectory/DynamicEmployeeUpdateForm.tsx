@@ -5,16 +5,33 @@ import schema from "./DynamicEmployeeUpdateForm.json";
 import toast from "react-hot-toast";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import CircularLoader from "../shared/atoms/CircularLoader";
 
 interface DynamicEmployeeUpdateFormProps {
     doctype: string;
+    fieldDoctype: string;
+    updateValue: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ doctype, isOpen, onClose }) => {
+const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ doctype, fieldDoctype, updateValue, isOpen, onClose }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
+
+    const { targetEmployeeId } = useTargetUser();
+    const { data: userId } = useLoggedInUser();
+    const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+    const employeeId =
+        targetEmployeeId ||
+        (isCurrentUserLoading ? null : currentUser?.employee) ||
+        "";
+    const mutation = useUpdateFrappeDocument();
 
     const handleSubmit = async () => {
         try {
@@ -22,13 +39,34 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
                 const submission = await formInstance.current.submit();
                 if (submission && submission.data) {
                     console.log("Form submitted with data:", submission.data);
-                    toast.success(`${doctype} updated successfully (check console)`);
-                    onClose();
+                    mutation.mutate(
+                        {
+                            doctype: doctype,
+                            name: employeeId,
+                            data: {
+                                [updateValue]: submission?.data?.selected_value
+                            },
+                        },
+                        {
+                            onSuccess() {
+                                toast.success("Updated data successfully.");
+                                onClose();
+                            },
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            onError(err: any) {
+                                onClose()
+                                const error = errorResponseFormater(err)
+                                toast.error(error);
+                                console.warn("Form submission error -", err);
+                            },
+                        }
+                    );
                 }
             }
         } catch (error) {
             console.error("Form submission error:", error);
             toast.error("Please correct the errors in the form.");
+            onClose();
         }
     };
 
@@ -45,7 +83,7 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
             {/* Modal Container */}
-            <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
                     <h2 className="text-xl font-bold text-gray-900">
@@ -66,7 +104,7 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
                         key={doctype}
                         className="profile-form w-full"
                         form={schema}
-                        submission={{ data: { doctype } }}
+                        submission={{ data: { doctype: fieldDoctype } }}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;
@@ -94,7 +132,7 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
                         fullWidth
                         className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 py-2.5 rounded-lg font-bold"
                     >
-                        Apply Updates
+                        {mutation.isPending ? <CircularLoader color="white" /> : "Apply Updates"}
                     </Button>
                 </div>
             </div>
