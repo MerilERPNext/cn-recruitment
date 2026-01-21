@@ -172,7 +172,7 @@ const TicketDetailSidebar: React.FC<TicketDetailSidebarProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-500">#{ticket.name}</span>
             <span
-              className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(
+              className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(
                 ticket.status
               )}`}
             >
@@ -192,7 +192,7 @@ const TicketDetailSidebar: React.FC<TicketDetailSidebarProps> = ({
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-600">First Response</span>
                 <span
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getSLAColorClass(
+                  className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getSLAColorClass(
                     firstResponseSLA.color
                   )}`}
                 >
@@ -214,7 +214,7 @@ const TicketDetailSidebar: React.FC<TicketDetailSidebarProps> = ({
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-600">Resolution</span>
                 <span
-                  className={`px-2 py-0.5 text-xs font-medium rounded-full ${getSLAColorClass(
+                  className={`px-2 py-0.5 text-xs font-medium rounded-lg ${getSLAColorClass(
                     resolutionSLA.color
                   )}`}
                 >

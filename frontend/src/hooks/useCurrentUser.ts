@@ -93,4 +93,16 @@ export const isAdminUser = (user: CurrentUser | null): boolean => {
   );
 };
 
+/**
+ * Helper function to check if a user is an HD Agent (HelpDesk Agent)
+ * HD Agents have access to admin features in HelpDesk module
+ */
+export const isHDAgent = (user: CurrentUser | null): boolean => {
+  return (
+    user?.roles?.some((role) =>
+      ["HD Agent", "HD Manager", "System Manager", "Administrator"].includes(role.role)
+    ) ?? false
+  );
+};
+
 export default useCurrentUser;

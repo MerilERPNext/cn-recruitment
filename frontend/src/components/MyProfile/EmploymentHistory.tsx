@@ -33,18 +33,22 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const history = data?.custom_work_history || [];
+  const hasEmploymentHistory = history.length > 0;
+
+  const defaultStartDateForAdd = !hasEmploymentHistory
+    ? data?.date_of_joining
+    : new Date().toISOString();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canEditEmploymentHistory = isActionEnabled(
     userUiPermission,
     "edit_employee_history",
-    "Employee Profile"
+    "Employee Profile",
   );
   const canAddEmploymentHistory = isActionEnabled(
     userUiPermission,
     "add_employee_history",
-    "Employee Profile"
+    "Employee Profile",
   );
-
 
   const [isModalOpen, setIsModalOpen] = React.useState<boolean>(false);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
@@ -55,15 +59,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       acc[item.doctype_name].push(item);
       return acc;
     },
-    {}
+    {},
   );
 
   return (
-    <div className="address-form-container bg-white rounded-md bg-blue-100">
+    <div className="address-form-container bg-white rounded-md">
       <div className="p-4 md:p-8">
         <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
-
-          <div >
+          <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Employment History
             </h2>
@@ -72,25 +75,29 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             </p>
           </div>
           <div className="flex gap-2 ">
-            {canEditEmploymentHistory && <Button
-              onClick={() => {
-                setIsModalOpen(true)
-                setIsEditing(true)
-              }}
-              icon={<EditIcon className="h-4 w-4" />}
-              variant="subtle"
-              size="md"
-            >
-              Edit
-            </Button>}
-            {canAddEmploymentHistory && <Button
-              onClick={() => setIsModalOpen(true)}
-              icon={<PlusIcon className="h-4 w-4" />}
-              variant="contain"
-              size="md"
-            >
-              Add
-            </Button>}
+            {canEditEmploymentHistory && (
+              <Button
+                onClick={() => {
+                  setIsModalOpen(true);
+                  setIsEditing(true);
+                }}
+                icon={<EditIcon className="h-4 w-4" />}
+                variant="subtle"
+                size="md"
+              >
+                Edit
+              </Button>
+            )}
+            {canAddEmploymentHistory && (
+              <Button
+                onClick={() => setIsModalOpen(true)}
+                icon={<PlusIcon className="h-4 w-4" />}
+                variant="contain"
+                size="md"
+              >
+                Add
+              </Button>
+            )}
           </div>
         </div>
         {!employeeId && (
@@ -127,7 +134,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {!isLoading &&
           !error &&
           (() => {
-            const joinDate = data?.date_of_joining ? new Date(data.date_of_joining).getTime() : null;
+            const joinDate = data?.date_of_joining
+              ? new Date(data.date_of_joining).getTime()
+              : null;
 
             let overallClosestItem: CustomWorkHistory | null = null;
             let overallClosestCategory: string | null = null;
@@ -135,7 +144,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
             if (joinDate && history.length > 0) {
               history.forEach((item) => {
-                const itemDate = item.start_date ? new Date(item.start_date).getTime() : 0;
+                const itemDate = item.start_date
+                  ? new Date(item.start_date).getTime()
+                  : 0;
                 const diff = Math.abs(itemDate - joinDate);
                 if (diff < minDiff) {
                   minDiff = diff;
@@ -145,11 +156,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               });
             }
 
-            const sortedCategories = Object.keys(groupedHistory).sort((a, b) => {
-              if (a === overallClosestCategory) return -1;
-              if (b === overallClosestCategory) return 1;
-              return a.localeCompare(b);
-            });
+            const sortedCategories = Object.keys(groupedHistory).sort(
+              (a, b) => {
+                if (a === overallClosestCategory) return -1;
+                if (b === overallClosestCategory) return 1;
+                return a.localeCompare(b);
+              },
+            );
 
             return sortedCategories.map((category) => {
               const items = groupedHistory[category];
@@ -161,8 +174,12 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 }
 
                 // Otherwise sort by start date descending
-                const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
-                const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+                const aDate = a.start_date
+                  ? new Date(a.start_date).getTime()
+                  : 0;
+                const bDate = b.start_date
+                  ? new Date(b.start_date).getTime()
+                  : 0;
                 return bDate - aDate;
               });
 
@@ -199,12 +216,17 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-
-            <EmploymentHistoryForm onCancel={() => { setIsModalOpen(false); setIsEditing(false) }} isEdit={isEditing} />
+            <EmploymentHistoryForm
+              onCancel={() => {
+                setIsModalOpen(false);
+                setIsEditing(false);
+              }}
+              isEdit={isEditing}
+              defaultStartDate={defaultStartDateForAdd}
+            />
           </div>
         </div>
       )}
-
     </div>
   );
 };

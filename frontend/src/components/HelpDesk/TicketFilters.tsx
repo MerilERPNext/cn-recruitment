@@ -190,7 +190,7 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
         <Filter className="w-4 h-4" />
         <span className="text-sm font-medium">Filter</span>
         {activeFilterCount > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-600 text-white rounded-full">
+          <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-600 text-white rounded-lg">
             {activeFilterCount}
           </span>
         )}

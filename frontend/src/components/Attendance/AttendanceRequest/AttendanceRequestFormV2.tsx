@@ -23,7 +23,10 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
-import { GenericFormSchema, transformSchemaWithRequired } from "../../../utils/transformSchemaWithRequired";
+import {
+  GenericFormSchema,
+  transformSchemaWithRequired,
+} from "../../../utils/transformSchemaWithRequired";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -47,6 +50,8 @@ interface AttendanceFormData {
   isForOthers?: boolean;
   currentEmployeeId?: string;
   currentUserId?: string;
+  checkin_time?: string | Date;
+  checkout_time?: string | Date;
 }
 
 interface FormioComponent {
@@ -55,7 +60,7 @@ interface FormioComponent {
   hidden: boolean;
   setValue: (
     value: string | boolean,
-    options?: { noUpdateEvent?: boolean }
+    options?: { noUpdateEvent?: boolean },
   ) => void;
   redraw: () => void;
 }
@@ -138,6 +143,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   forActionType = "create",
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
+  const [shiftCheckins, setShiftCheckins] = useState<any[]>([]);
+
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fromDateChanged, setFromDateChanged] = useState<string>("");
@@ -146,21 +153,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useState<string>("");
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
-
   const [isForOthers, setIsForOthers] = useState(false);
   const [formSchema, setFormSchema] = useState<FormSchema>(
-    (propSchema || defaultFormSchema) as FormSchema
+    (propSchema || defaultFormSchema) as FormSchema,
   );
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { data: userRoles } = useGetUserRoles();
 
   const { data: shiftData } = useGetEmployeeShift(currentUser?.name || "");
-  console.log("shift data", shiftData)
+
   const activeEmployeeId =
     currentlySelectedEmployee || currentEmployee?.employee || "";
 
@@ -170,8 +176,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useAttendanceRequestAttachments(
       activeEmployeeId,
       fromDateChanged ||
-      formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
-      requestTypeChanged
+        formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
   const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
@@ -197,7 +203,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           try {
             const transformed = transformSchemaWithRequired(
               src,
-              requiredFieldMap
+              requiredFieldMap,
             ) as FormSchema;
             setFormSchema(transformed);
           } catch (e) {
@@ -221,7 +227,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (propSchema) {
       try {
         setFormSchema(
-          transformSchemaWithRequired(propSchema as GenericFormSchema, requiredFieldMap) as FormSchema
+          transformSchemaWithRequired(
+            propSchema as GenericFormSchema,
+            requiredFieldMap,
+          ) as FormSchema,
         );
       } catch {
         setFormSchema(propSchema);
@@ -235,7 +244,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     try {
       setFormSchema((prev) => {
         if (!prev) return prev;
-        return transformSchemaWithRequired(prev as GenericFormSchema, requiredFieldMap) as FormSchema;
+        return transformSchemaWithRequired(
+          prev as GenericFormSchema,
+          requiredFieldMap,
+        ) as FormSchema;
       });
     } catch (e) {
       // ignore transform errors
@@ -248,14 +260,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (reqValidationmutation?.data) {
       const baseSchema = propSchema || defaultFormSchema;
       const filteredSchema = JSON.parse(
-        JSON.stringify(baseSchema)
+        JSON.stringify(baseSchema),
       ) as FormSchema; // Deep clone
 
       // Find the request_type field in the schema
       const panel = filteredSchema.components?.[0];
       if (panel?.components) {
         const requestTypeField = panel.components.find(
-          (comp: SchemaComponent) => comp.key === "request_type"
+          (comp: SchemaComponent) => comp.key === "request_type",
         );
 
         if (requestTypeField?.data?.values) {
@@ -275,7 +287,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 default:
                   return false;
               }
-            }
+            },
           );
 
           requestTypeField.data.values = filteredValues;
@@ -283,7 +295,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
         // Remove dataSrc from company field to allow manual control
         const companyField = panel.components.find(
-          (comp: SchemaComponent) => comp.key === "company"
+          (comp: SchemaComponent) => comp.key === "company",
         );
         if (companyField && companyField.dataSrc) {
           delete companyField.dataSrc;
@@ -297,7 +309,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       try {
         const transformed = transformSchemaWithRequired(
           filteredSchema as GenericFormSchema,
-          requiredFieldMap
+          requiredFieldMap,
         ) as FormSchema;
         setFormSchema(transformed);
       } catch {
@@ -307,6 +319,22 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     // include requiredFieldMap so required flags are respected after filtering
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reqValidationmutation?.data, propSchema, requiredFieldMap]);
+
+  useEffect(() => {
+    if (!currentEmployee?.user_id) return;
+
+    fetch(
+      `/api/method/cn_leave_shift_managment.api.get_shift_checkins?user=${currentEmployee.user_id}`,
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const list = data?.message || [];
+        setShiftCheckins(list);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch shift checkins", err);
+      });
+  }, [currentEmployee?.user_id]);
 
   const normalizeTime = (timeStr?: string) => {
     if (!timeStr) return null;
@@ -334,18 +362,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document.custom_from_time
-            )}`
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document.custom_from_time,
+              )}`,
+            )
           : "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document?.custom_to_time
-            )}`
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document?.custom_to_time,
+              )}`,
+            )
           : "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -361,13 +389,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
-            defaultAttendanceData?.attachments?.length > 0
+          defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-              return {
-                name: item?.file_url?.split("/").pop(),
-                url: item?.file_url,
-              };
-            })
+                return {
+                  name: item?.file_url?.split("/").pop(),
+                  url: item?.file_url,
+                };
+              })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -382,7 +410,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       currentEmployee?.user_id,
       isForOthers,
       attendanceRequestAttachmentsMandatory,
-    ]
+    ],
   );
   // Update hidden fields when isForOthers or currentEmployee changes
   useEffect(() => {
@@ -427,7 +455,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       if (showAttachmentComp) {
         showAttachmentComp.setValue(
           String(!!attendanceRequestAttachmentsMandatory.is_mandatory),
-          { noUpdateEvent: true }
+          { noUpdateEvent: true },
         );
       }
 
@@ -437,7 +465,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ) {
         allowedFromDateComp.setValue(
           attendanceRequestAttachmentsMandatory.allowed_from_date,
-          { noUpdateEvent: true }
+          { noUpdateEvent: true },
         );
       }
 
@@ -447,7 +475,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ) {
         allowedToDateComp.setValue(
           attendanceRequestAttachmentsMandatory.allowed_to_date,
-          { noUpdateEvent: true }
+          { noUpdateEvent: true },
         );
       }
 
@@ -458,10 +486,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
       // Disable to_date if required by API
       if (toDateComp && toDateComp.component) {
-        toDateComp.component.disabled = !!(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only
-        );
+        toDateComp.component.disabled =
+          !!// eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (attendanceRequestAttachmentsMandatory as any)?.to_date_read_only;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -477,10 +504,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           };
 
           const minD = parseDate(
-            attendanceRequestAttachmentsMandatory.allowed_from_date
+            attendanceRequestAttachmentsMandatory.allowed_from_date,
           );
           const maxD = parseDate(
-            attendanceRequestAttachmentsMandatory.allowed_to_date
+            attendanceRequestAttachmentsMandatory.allowed_to_date,
           );
 
           if (minD) {
@@ -545,9 +572,12 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ...(submission.data.from_date && {
         from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
       }),
-      ...((submission.data.to_date || (submission.data.request_type === "Out Duty" && submission.data.from_date)) && {
+      ...((submission.data.to_date ||
+        (submission.data.request_type === "Out Duty" &&
+          submission.data.from_date)) && {
         to_date:
-          submission.data.request_type === "Out Duty" && submission.data.from_date
+          submission.data.request_type === "Out Duty" &&
+          submission.data.from_date
             ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
             : formatDateToYYYYMMDD(new Date(submission.data.to_date as string)),
       }),
@@ -560,7 +590,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.from_date,
-          custom_from_time: submission.data.custom_from_time,
+          custom_from_time: submission.data.checkin_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -569,8 +599,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           to_date: baseBody.to_date,
-          custom_from_time: submission.data.custom_from_time,
-          custom_to_time: submission.data.custom_to_time,
+          custom_from_time: submission.data.checkin_time,
+          custom_to_time: submission.data.checkout_time,
           custom__request_reason: submission.data.custom__request_reason,
           overnight_out_duty: submission.data.overnight_out_duty || false,
         };
@@ -580,13 +610,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           from_date: formatDateToYYYYMMDD(
-            new Date(submission.data.from_date || "")
+            new Date(submission.data.from_date || ""),
           ),
           to_date: formatDateToYYYYMMDD(
-            new Date(submission.data.to_date || "")
+            new Date(submission.data.to_date || ""),
           ),
-          custom_from_time: submission.data.custom_from_time,
-          custom_to_time: submission.data.custom_to_time,
+          custom_from_time: submission.data.checkin_time,
+          custom_to_time: submission.data.checkout_time,
           custom__request_reason: submission.data.custom__request_reason,
         };
         break;
@@ -595,13 +625,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         requestBody = {
           ...baseBody,
           from_date: formatDateToYYYYMMDD(
-            new Date(submission.data.from_date || new Date())
+            new Date(submission.data.from_date || new Date()),
           ),
           to_date: formatDateToYYYYMMDD(
-            new Date(submission.data.to_date || new Date())
+            new Date(submission.data.to_date || new Date()),
           ),
-          custom_from_time: submission.data.custom_from_time,
-          custom_to_time: submission.data.custom_to_time,
+          custom_from_time: submission.data.checkin_time,
+          custom_to_time: submission.data.checkout_time,
           custom__request_reason: submission.data.custom__request_reason,
           custom_location: submission?.data?.custom_location,
         };
@@ -631,7 +661,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     const handleError = (error: CustomError) => {
       const formatedError = errorResponseFormater(
         error,
-        "Submission failed. Please try again."
+        "Submission failed. Please try again.",
       );
       toast.error(formatedError);
       console.error(error);
@@ -653,7 +683,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             handleSuccess("Updated Attendance Request successfully!");
           },
           onError: handleError,
-        }
+        },
       );
     } else {
       mutation.mutate(requestBody as Record<string, unknown>, {
@@ -688,7 +718,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             String(!!attendanceRequestAttachmentsMandatory?.is_mandatory),
             {
               noUpdateEvent: true,
-            }
+            },
           );
           showAttachmentsComponent.redraw();
         }
@@ -722,7 +752,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ]);
 
     // This code is currently commented out as we currently don't need it but can be used in future if needed
-    // Auto-sync from_date to to_date for certain request types 
+    // Auto-sync from_date to to_date for certain request types
     // if (submission?.changed?.component?.key === "from_date") {
     //   const formInstance = formAddressInstance.current;
     //   if (formInstance) {
@@ -753,6 +783,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     //   }
     // }
   };
+
+  // 2️⃣ Get BE values
+  const latestCheckin =
+    shiftCheckins?.find((c) => c.log_type === "IN")?.time || null;
+
+  const latestCheckout =
+    [...shiftCheckins].reverse().find((c) => c.log_type === "OUT")?.time ||
+    null;
 
   if (isSchemaLoading) {
     return (
@@ -821,7 +859,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               clearOnSubmit: false,
               keepAlive: true,
               shiftData: shiftData,
-              shiftRedraw: shiftData?.shift
+              shiftRedraw: shiftData?.shift,
             }}
             onChange={handleFormChange}
             onFormReady={(instance: FormioFormInstance) => {
@@ -842,11 +880,50 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   } catch (e) {
                     console.warn(
                       "Could not set initial submission on form instance",
-                      e
+                      e,
                     );
                   }
                 }
               }
+
+              // 1️⃣ Get FormIO components
+              const checkinComp = instance.getComponent("checkin_time");
+              const checkoutComp = instance.getComponent("checkout_time");
+
+              const latestCheckinTime = latestCheckin;
+              const latestCheckoutTime = latestCheckout;
+
+              const shift = shiftData?.shift as any;
+
+              const shiftStart = shift?.start_time;
+              const shiftEnd = shift?.end_time;
+
+              // 3️⃣ Decide final values
+              let finalCheckin: string | null = null;
+              let finalCheckout: string | null = null;
+
+              if (latestCheckinTime && latestCheckoutTime) {
+                finalCheckin = latestCheckinTime;
+                finalCheckout = latestCheckoutTime;
+              } else if (latestCheckinTime && !latestCheckoutTime) {
+                finalCheckin = latestCheckinTime;
+                finalCheckout = shiftEnd;
+              } else {
+                finalCheckin = shiftStart;
+                finalCheckout = shiftEnd;
+              }
+
+              // 4️⃣ Set values safely
+              if (checkinComp && finalCheckin) {
+                checkinComp.setValue(finalCheckin, { noUpdateEvent: true });
+              }
+
+              if (checkoutComp && finalCheckout) {
+                checkoutComp.setValue(finalCheckout, { noUpdateEvent: true });
+              }
+
+              // 5️⃣ Redraw once
+              instance.redraw();
 
               // Disable dataSrc behavior on company field
               const companyComponent = instance.getComponent("company");
@@ -871,11 +948,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input"
-                  )
+                      "input.flatpickr-input",
+                    )
                   : document.querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input"
-                  );
+                      "input.flatpickr-input",
+                    );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -913,8 +990,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               fullWidth
               size="lg"
               variant="contain"
-              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-                } font-medium`}
+              className={`flex-1 ${
+                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+              } font-medium`}
             >
               {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>

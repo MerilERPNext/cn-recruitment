@@ -94,15 +94,18 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         formData.append("file", file);
         formData.append("is_private", "1");
 
-        // Get CSRF token
+        // Get CSRF token once before upload
         const csrfToken = getCSRFToken();
+
+        // If no CSRF token, try using credentials-only approach
+        const headers: HeadersInit = csrfToken
+          ? { "X-Frappe-CSRF-Token": csrfToken }
+          : {};
 
         const response = await fetch("/api/method/upload_file", {
           method: "POST",
           body: formData,
-          headers: {
-            "X-Frappe-CSRF-Token": csrfToken,
-          },
+          headers,
           credentials: "include",
         });
 
