@@ -6,6 +6,7 @@ import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -128,9 +129,11 @@ const ApprovalCard = ({
           )}
 
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.reference_document?.employee_name}
+              </div>
+            </Link>
           </WrapperHoverCard>
 
           <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
@@ -221,9 +224,11 @@ const ApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="card-title">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                    <p className="card-title">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                   {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
                 </div>
 

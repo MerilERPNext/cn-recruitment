@@ -1,12 +1,17 @@
 import React from "react";
-import { Building2 } from "lucide-react";
+import { Building2, IdCard, MapPin, Warehouse } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { Typography } from "../shared/atoms/Typography";
 
 interface EmploymentHistoryCardProps {
   title?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   isCurrent?: boolean;
+  department?: string | null;
+  location?: string | null;
+  id?: string | null;
 }
 
 const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
@@ -14,6 +19,9 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
   start_date,
   end_date,
   isCurrent,
+  department,
+  location,
+  id,
 }) => {
   const formatDate = (date?: string | null) => {
     if (!date) return "N/A";
@@ -26,9 +34,45 @@ const EmploymentHistoryCard: React.FC<EmploymentHistoryCardProps> = ({
         <div className="p-2 bg-blue-50 rounded-lg">
           <Building2 className="w-5 h-5 text-blue-600" />
         </div>
-        <h3 className=" font-medium text-gray-900 truncate">
-          <span title={title || ""}>{title}</span>
-        </h3>
+        <div className="flex flex-col gap-1">
+          <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
+            <h3 className="font-medium text-gray-900 truncate">
+              <span>{title}</span>
+            </h3>
+          </Link>
+          <div className="flex flex-wrap gap-4">
+            {id && (
+              <Typography
+                variant="label"
+                color="secondary"
+                className="font-medium truncate flex items-center gap-1.5"
+              >
+                <IdCard size={14} className="text-primary-500" />
+                <span>{id}</span>
+              </Typography>
+            )}
+            {department && (
+              <Typography
+                variant="label"
+                color="secondary"
+                className="font-medium truncate flex items-center gap-1.5"
+              >
+                <Warehouse size={14} className="text-primary-500" />
+                <span>{department}</span>
+              </Typography>
+            )}
+            {location && (
+              <Typography
+                variant="label"
+                color="secondary"
+                className="font-medium truncate flex items-center gap-1.5"
+              >
+                <MapPin size={14} className="text-primary-500" />
+                <span>{location}</span>
+              </Typography>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="space-y-3">

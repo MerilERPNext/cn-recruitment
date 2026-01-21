@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -102,9 +103,11 @@ const EmpAttendanceRequestCard = ({
             {formattedDueDate}
           </div>
           <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-            <div className="text-sm font-medium text-gray-700 text-start truncate">
-              {data?.username}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`} target="_blank">
+              <div className="text-sm font-medium text-gray-700 text-start truncate">
+                {data?.username}
+              </div>
+            </Link>
           </WrapperHoverCard>
           {/* Status */}
           <div className="flex justify-start">

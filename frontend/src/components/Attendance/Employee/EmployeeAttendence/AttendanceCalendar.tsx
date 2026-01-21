@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -6,6 +6,8 @@ import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
 import { gradientClassMap } from "../../../../utils/helperUtils";
 import Button from "../../../shared/atoms/Button";
+import { useSearchParams } from "react-router-dom";
+
 type Status =
   | "present"
   | "absent"
@@ -58,6 +60,19 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   getAttendanceStatus,
   setShowDetailsFor,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!selectedDate && !searchParams.get("date")) return;
+
+    setSearchParams(
+      {
+        date: selectedDate?.toISOString() || "",
+      },
+      { replace: true }
+    );
+  }, [selectedDate, setSearchParams]);
+
   return (
     <div className="p-1 employee-datepicker-lg">
       <DatePicker
@@ -131,7 +146,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
               case "on-leave":
                 return "!bg-yellow-100 !text-yellow-700 rounded-md";
               case "unpaid":
-                return "!bg-orange-100 !text-orange-700 rounded-md";
+                return "!bg-yellow-100 !text-yellow-700 rounded-md";
               case "holiday":
                 return "!bg-blue-100 !text-blue-700 rounded-md";
               case "week-off":

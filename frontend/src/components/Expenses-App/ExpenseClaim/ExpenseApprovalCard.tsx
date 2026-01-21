@@ -9,6 +9,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -157,9 +158,11 @@ const ExpenseApprovalCard = ({
             </div>
           )}
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.reference_document?.employee_name}
+              </div>
+            </Link>
           </WrapperHoverCard>
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.custom_expense_category}
@@ -202,7 +205,7 @@ const ExpenseApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -240,9 +243,11 @@ const ExpenseApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="card-title">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                    <p className="card-title">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                 </div>
 
                 <Badge
@@ -307,7 +312,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

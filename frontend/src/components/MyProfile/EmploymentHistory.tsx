@@ -1,11 +1,11 @@
 import React from "react";
-import { useFrappeDocument } from "../../hooks/useFrappeQuery";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
 import { EditIcon, PlusIcon } from "lucide-react";
 import EmploymentHistoryForm from "./EmploymentHistorForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { useGetEmploymentHistoryData } from "../../hooks/useEmployee";
 
 interface EmploymentHistoryProps {
   employeeId: string | undefined;
@@ -31,12 +31,7 @@ export interface Employee {
 const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
 }) => {
-  const { data, isLoading, error } = useFrappeDocument(
-    "Employee",
-    employeeId || "",
-    ["custom_work_history", "date_of_joining"],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as { data: Employee | null; isLoading: boolean; error: any };
+  const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
   const history = data?.custom_work_history || [];
   const hasEmploymentHistory = history.length > 0;
 
@@ -198,15 +193,17 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                     {sortedItems.map((item) => (
                       <div
                         key={item.name}
-                        className={`${
-                          sortedItems.length === 1 ? "max-w-md w-full" : ""
-                        }`}
+                        className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""
+                          }`}
                       >
                         <EmploymentHistoryCard
-                          title={item.records}
+                          title={item.doctype_name === 'Employee' ? item.records_details?.fullname : item.records}
                           start_date={item.start_date}
                           end_date={item.end_date}
                           isCurrent={!item.end_date}
+                          department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
+                          location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
+                          id={item.records}
                         />
                       </div>
                     ))}

@@ -80,18 +80,23 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
   const daysInMonth = getDaysInCurrentMonth();
 
   const otherDays = Math.max(daysInMonth - (present + absent + leaves + week_offs), 0);
+
+
   // Percentages based on total working days
-  const presentPercent = (present / daysInMonth) * 100;
-  const absentPercent = (absent / daysInMonth) * 100;
-  const leavesPercent = (leaves / daysInMonth) * 100;
-  const weekOffPercent = (week_offs / daysInMonth) * 100;
-  const otherDaysPercent = (otherDays / daysInMonth) * 100;
+  const presentPercent = isNaN((present / total) * 100) ? 0 : (present / total) * 100;
+  const absentPercent = isNaN((absent / total) * 100) ? 0 : (absent / total) * 100;
+  const leavesPercent = isNaN((leaves / total) * 100) ? 0 : (leaves / total) * 100;
+  const otherDaysPercent = isNaN((otherDays / total) * 100) ? 0 : (otherDays / total) * 100;
+
+  const toAngle = (percent: number) =>
+    Math.min((percent / 100) * 360, 359.999);
+
+
   // Angles
-  const presentAngle = (presentPercent / 100) * 360;
-  const absentAngle = (absentPercent / 100) * 360;
-  const leavesAngle = (leavesPercent / 100) * 360;
-  const weekOffsAngle = (weekOffPercent / 100) * 360;
-  const otherDaysAngle = (otherDaysPercent / 100) * 360;
+  const presentAngle = toAngle(presentPercent);
+  const absentAngle = toAngle(absentPercent);
+  const leavesAngle = toAngle(leavesPercent);
+  const otherDaysAngle = toAngle(otherDaysPercent);
 
   return (
     <div className={`p-1 ${className}`}>
@@ -163,7 +168,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                 <path
                   d={createArcPath(
                     presentAngle + absentAngle + leavesAngle,
-                    presentAngle + absentAngle + leavesAngle + weekOffsAngle,
+                    presentAngle + absentAngle + leavesAngle,
                     80,
                     50
                   )}
@@ -176,8 +181,8 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
               {otherDaysAngle > 0 && (
                 <path
                   d={createArcPath(
-                    presentAngle + absentAngle + leavesAngle + weekOffsAngle,
-                    presentAngle + absentAngle + leavesAngle + weekOffsAngle + otherDaysAngle,
+                    presentAngle + absentAngle + leavesAngle,
+                    presentAngle + absentAngle + leavesAngle + otherDaysAngle,
                     80,
                     50
                   )}
@@ -190,7 +195,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-3xl font-bold text-gray-900">
-                  {presentPercent.toFixed(0)}%
+                  {(presentPercent.toFixed(0))}%
                 </p>
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Present</p>
               </div>

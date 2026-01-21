@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 const ReportingDetails = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
+    currentUser?.name || ""
   );
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
@@ -29,17 +29,19 @@ const ReportingDetails = () => {
   const canEditReportingDetails = isActionEnabled(
     userUiPermission,
     "edit_reporting_details",
-    "Employee Profile",
+    "Employee Profile"
   );
   const canAddReportingDetails = isActionEnabled(
     userUiPermission,
     "add_reporting_details",
-    "Employee Profile",
+    "Employee Profile"
   );
+
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
+
 
   interface HierarchyCardProps {
     name: string;
@@ -58,6 +60,7 @@ const ReportingDetails = () => {
     id,
     location,
   }) => {
+
     const isCurrent = !endDate;
 
     return (
@@ -66,16 +69,13 @@ const ReportingDetails = () => {
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />
           </div>
-          <div className="flex flex-col gap-2">
-            <Link
-              to={`/webapp/employee-profile?target_user=${id}`}
-              target="_blank"
-            >
+          <div className="flex flex-col gap-1">
+            <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
               <h3 className="font-medium text-gray-900 truncate">
                 <span title={name}>{name}</span>
               </h3>
             </Link>
-            <div className="flex flex-wrap gap-4 mt-1">
+            <div className="flex flex-wrap gap-4">
               {id && (
                 <Typography
                   variant="label"
@@ -135,20 +135,12 @@ const ReportingDetails = () => {
     );
   };
 
+
   if (employeeHierarchyHistoryPending) {
     return <CircularLoader />;
   }
 
   const hierarchySections = hierarchyData?.data || {};
-
-  const hasReportingHistory = Object.values(hierarchySections).some(
-    (records: any) => Array.isArray(records) && records.length > 0,
-  );
-
-  const defaultStartDateForAdd = !hasReportingHistory
-    ? currentEmployee?.date_of_joining
-    : new Date().toISOString();
-
   return (
     <div className="address-form-container bg-white rounded-lg gray-200">
       <div className="p-4 md:p-8">
@@ -163,46 +155,40 @@ const ReportingDetails = () => {
             </p>
           </div>
           <div className="flex gap-2 ">
-            {canEditReportingDetails && (
-              <Button
-                onClick={() => {
-                  setIsModalOpen(true);
-                  setIsEditing(true);
-                }}
-                icon={<EditIcon className="h-4 w-4" />}
-                variant="subtle"
-                size="md"
-              >
-                Edit
-              </Button>
-            )}
-            {canAddReportingDetails && (
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                icon={<PlusIcon className="h-4 w-4" />}
-                variant="contain"
-                size="md"
-              >
-                Add
-              </Button>
-            )}
+            {canEditReportingDetails && <Button
+              onClick={() => {
+                setIsModalOpen(true)
+                setIsEditing(true)
+              }}
+              icon={<EditIcon className="h-4 w-4" />}
+              variant="subtle"
+              size="md"
+            >
+              Edit
+            </Button>}
+            {canAddReportingDetails && <Button
+              onClick={() => setIsModalOpen(true)}
+              icon={<PlusIcon className="h-4 w-4" />}
+              variant="contain"
+              size="md"
+            >
+              Add
+            </Button>}
           </div>
         </div>
 
+
+
         {/* Hierarchy History Cards */}
         {(() => {
-          const joinDate = currentEmployee?.date_of_joining
-            ? new Date(currentEmployee.date_of_joining).getTime()
-            : null;
+          const joinDate = currentEmployee?.date_of_joining ? new Date(currentEmployee.date_of_joining).getTime() : null;
 
           const allRecords: any[] = [];
-          Object.entries(hierarchySections).forEach(
-            ([category, records]: [string, any]) => {
-              records.forEach((record: any) => {
-                allRecords.push({ ...record, category });
-              });
-            },
-          );
+          Object.entries(hierarchySections).forEach(([category, records]: [string, any]) => {
+            records.forEach((record: any) => {
+              allRecords.push({ ...record, category });
+            });
+          });
 
           let overallClosestItem: any = null;
           let overallClosestCategory: string | null = null;
@@ -210,9 +196,7 @@ const ReportingDetails = () => {
 
           if (joinDate && allRecords.length > 0) {
             allRecords.forEach((item) => {
-              const itemDate = item.start_date
-                ? new Date(item.start_date).getTime()
-                : 0;
+              const itemDate = item.start_date ? new Date(item.start_date).getTime() : 0;
               const diff = Math.abs(itemDate - joinDate);
               if (diff < minDiff) {
                 minDiff = diff;
@@ -222,13 +206,11 @@ const ReportingDetails = () => {
             });
           }
 
-          const sortedCategories = Object.keys(hierarchySections).sort(
-            (a, b) => {
-              if (a === overallClosestCategory) return -1;
-              if (b === overallClosestCategory) return 1;
-              return a.localeCompare(b);
-            },
-          );
+          const sortedCategories = Object.keys(hierarchySections).sort((a, b) => {
+            if (a === overallClosestCategory) return -1;
+            if (b === overallClosestCategory) return 1;
+            return a.localeCompare(b);
+          });
 
           return sortedCategories.map((category) => {
             const items = hierarchySections[category];
@@ -273,14 +255,8 @@ const ReportingDetails = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <ReportingDetailsForm
-              onCancel={() => {
-                setIsModalOpen(false);
-                setIsEditing(false);
-              }}
-              isEdit={isEditing}
-              defaultStartDate={defaultStartDateForAdd}
-            />
+
+            <ReportingDetailsForm onCancel={() => { setIsModalOpen(false); setIsEditing(false) }} isEdit={isEditing} />
           </div>
         </div>
       )}

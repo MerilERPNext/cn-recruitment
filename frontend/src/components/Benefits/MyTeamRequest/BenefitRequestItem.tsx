@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import { Link } from "react-router-dom";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -106,7 +107,9 @@ const BenefitRequestItem = ({
           </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
             <WrapperHoverCard employeeId={data.reference_document.employee}>
-              {data.reference_document.employee_name}
+              <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                {data.reference_document.employee_name}
+              </Link>
             </WrapperHoverCard>
           </div>
           <div className="flex text-gray-900 text-sm flex-col">
@@ -144,7 +147,7 @@ const BenefitRequestItem = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -175,9 +178,11 @@ const BenefitRequestItem = ({
                 }
               />
               <div className="pl-4">
-                <div className="truncate text-gray-900  font-semibold text-lg text-start">
-                  {data.reference_document.employee_name}
-                </div>
+                <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                  <div className="truncate text-gray-900  font-semibold text-lg text-start">
+                    {data.reference_document.employee_name}
+                  </div>
+                </Link>
                 <div className="flex text-gray-500 font-meduim text-sm flex-col">
                   {data.reference_document.earning_component}
                 </div>
@@ -230,7 +235,7 @@ const BenefitRequestItem = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action

@@ -21,7 +21,6 @@ import {
 import { useMemo, useState } from "react";
 
 import {
-  useAllAttendance,
   useGetEmployeeShift,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
@@ -41,6 +40,8 @@ import PolicyDrawer from "./PolicyDrawer";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Button from "../shared/atoms/Button";
+import { useFrappeDocumentList } from "../../hooks/useFrappeQuery";
+import { Attendance, EmployeeCheckInLog } from "../../types/attendance";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -82,43 +83,89 @@ const AttendanceSummary = () => {
     },
     !!currentEmployee?.employee
   );
+
+  const { data: attendanceData } = useFrappeDocumentList(
+    "Attendance", {
+    fields: ["*"],
+    filters: [
+      ["status", "=", "On Leave"],
+      ["attendance_date", "between", [startOfDay(currentDate), endOfDay(currentDate)]],
+    ]
+  })
+
+  const { data } = useFrappeDocumentList(
+    "Employee Checkin", {
+    fields: ["*"],
+    filters: [
+      ["time", "between", [startOfDay(currentDate), endOfDay(currentDate)]],
+    ]
+  })
+
+  function useUniqueInOutCount(records: EmployeeCheckInLog[]) {
+    return useMemo(() => {
+      if (!Array.isArray(records)) {
+        return { IN: 0, OUT: 0 };
+      }
+
+      const inSet = new Set();
+      const outSet = new Set();
+
+      for (const record of records) {
+        if (record.log_type === "IN") {
+          inSet.add(record.employee);
+        } else if (record.log_type === "OUT") {
+          outSet.add(record.employee);
+        }
+      }
+
+      return {
+        IN: inSet.size,
+        OUT: outSet.size
+      };
+    }, [records]);
+  }
+  function useUniqueAttendanceLeaveCount(records: Attendance[]) {
+    return useMemo(() => {
+      if (!Array.isArray(records)) {
+        return 0;
+      }
+
+      const attendanceLeaveSet = new Set();
+
+      for (const record of records) {
+        if (record.status === "On Leave") {
+          attendanceLeaveSet.add(record.employee);
+        }
+      }
+
+      return attendanceLeaveSet.size;
+    }, [records]);
+  }
+
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
   const goToNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-
-  const { data: teamDataInfo } = useAllAttendance(
-    ["attendance_date", "status"],
-    [["attendance_date", "between", [start, end]]]
-  );
-
-  function countStatus(statusToCount: string) {
-    return teamDataInfo?.reduce((count: number, record: { status: string }) => {
-      return record.status === statusToCount ? count + 1 : count;
-    }, 0);
-  }
 
   const teamSummaryData = [
     {
       icon: CheckCircle,
       color: "green",
       label: "Logged In",
-      value: countStatus("Present") || 0,
+      value: useUniqueInOutCount(data as EmployeeCheckInLog[] || []).IN || 0,
     },
     {
       icon: AlertCircle,
       color: "red",
       label: "Not Logged In",
-      value: countStatus("Absent") || 0,
+      value: useUniqueInOutCount(data as EmployeeCheckInLog[] || []).OUT || 0,
     },
     {
       icon: Calendar,
       color: "orange",
       label: "On Leave",
-      value: countStatus("On Leave") || 0,
+      value: useUniqueAttendanceLeaveCount(attendanceData as Attendance[] || []) || 0,
     },
   ];
 
