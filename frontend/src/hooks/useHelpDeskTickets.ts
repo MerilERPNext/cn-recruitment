@@ -64,7 +64,9 @@ const defaultQueryOptions = {
 
 /**
  * Fetch ticket list with filters, pagination, sorting.
- * Note: User-based filtering is handled automatically by Frappe's permission_query hook.
+ * Supports viewMode for role-based filtering:
+ * - "user" view: shows tickets raised by the current user
+ * - "admin" view: shows tickets assigned to the current user (for HD Agents)
  */
 export const useTicketList = (
   filters: TicketFilters = {},
@@ -72,26 +74,34 @@ export const useTicketList = (
   pageLength: number = 20,
   searchTerm: string = "",
   currentUserEmail?: string,
-  isAdmin?: boolean
+  isAdmin?: boolean,
+  viewMode: "user" | "admin" = "user"
 ) => {
-  // Build filters with search
+  // Build filters with search and viewMode-based filtering
   const effectiveFilters = { ...filters };
   if (searchTerm) {
     effectiveFilters.name = ["like", `%${searchTerm}%`];
   }
 
-  // Don't add OR filters - Frappe's permission_query hook automatically filters
-  // tickets based on user permissions (owner, contact, raised_by, customer, agent_group, etc.)
-  // Adding our own filters would conflict with and override Frappe's permission system
+  // Apply viewMode-based filtering
+  if (currentUserEmail) {
+    if (viewMode === "user") {
+      // User view: show tickets raised by current user
+      effectiveFilters.raised_by = currentUserEmail;
+    } else if (viewMode === "admin") {
+      // Admin view: show tickets assigned to current user
+      effectiveFilters._assign = ["like", `%${currentUserEmail}%`];
+    }
+  }
 
   return useQuery<TicketListResponse>({
-    queryKey: ["hd-tickets", filters, orderBy, pageLength, searchTerm, currentUserEmail, isAdmin],
+    queryKey: ["hd-tickets", filters, orderBy, pageLength, searchTerm, currentUserEmail, isAdmin, viewMode],
     queryFn: async () => {
       // Use custom API that respects Frappe's permission system
       const result = await FrappeAPI.callMethod("recruitment.api.get_ticket_list_data", {
         doctype: "HD Ticket",
         filters: effectiveFilters,
-        or_filters: [], // Empty - let Frappe's permission_query handle filtering
+        or_filters: [],
         order_by: orderBy,
         page_length: pageLength,
         rows: [
@@ -117,40 +127,52 @@ export const useTicketList = (
 
 /**
  * Fetch ticket statistics (counts by status).
- * Note: User-based filtering is handled automatically by Frappe's permission_query hook.
+ * Supports viewMode for role-based filtering:
+ * - "user" view: counts tickets raised by the current user
+ * - "admin" view: counts tickets assigned to the current user (for HD Agents)
  */
 export const useTicketStats = (
   currentUserEmail?: string,
-  isAdmin?: boolean
+  isAdmin?: boolean,
+  viewMode: "user" | "admin" = "user"
 ) => {
-  // Don't add OR filters - Frappe's permission_query hook automatically filters
-  // tickets based on user permissions
+  // Build base filters based on viewMode
+  const getBaseFilters = (): TicketFilters => {
+    if (!currentUserEmail) return {};
+    if (viewMode === "user") {
+      return { raised_by: currentUserEmail };
+    } else if (viewMode === "admin") {
+      return { _assign: ["like", `%${currentUserEmail}%`] };
+    }
+    return {};
+  };
 
   return useQuery<TicketStats>({
-    queryKey: ["hd-ticket-stats", currentUserEmail, isAdmin],
+    queryKey: ["hd-ticket-stats", currentUserEmail, isAdmin, viewMode],
     queryFn: async () => {
-      // Fetch all counts in parallel
-      // Frappe's permission_query hook will automatically apply user-based filtering
+      const baseFilters = getBaseFilters();
+
+      // Fetch all counts in parallel with viewMode-based filtering
       const [total, inProgress, closed, resolved] = await Promise.all([
         FrappeAPI.callMethod("recruitment.api.get_ticket_count", {
           doctype: "HD Ticket",
-          filters: {},
-          or_filters: [], // Empty - let Frappe's permission_query handle filtering
+          filters: { ...baseFilters },
+          or_filters: [],
         }),
         FrappeAPI.callMethod("recruitment.api.get_ticket_count", {
           doctype: "HD Ticket",
-          filters: { status: ["in", ["Open", "Replied"]] },
-          or_filters: [], // Empty - let Frappe's permission_query handle filtering
+          filters: { ...baseFilters, status: ["in", ["Open", "Replied"]] },
+          or_filters: [],
         }),
         FrappeAPI.callMethod("recruitment.api.get_ticket_count", {
           doctype: "HD Ticket",
-          filters: { status: "Closed" },
-          or_filters: [], // Empty - let Frappe's permission_query handle filtering
+          filters: { ...baseFilters, status: "Closed" },
+          or_filters: [],
         }),
         FrappeAPI.callMethod("recruitment.api.get_ticket_count", {
           doctype: "HD Ticket",
-          filters: { status: "Resolved" },
-          or_filters: [], // Empty - let Frappe's permission_query handle filtering
+          filters: { ...baseFilters, status: "Resolved" },
+          or_filters: [],
         }),
       ]);
 
@@ -196,12 +218,14 @@ export const useCloseTicket = () => {
     mutationFn: async ({
       ticketId,
       resolutionDetails,
+      status = "Closed",
     }: {
       ticketId: string;
       resolutionDetails?: string;
+      status?: string;
     }) => {
       const updateData: Record<string, unknown> = {
-        status: "Closed",
+        status,
       };
       if (resolutionDetails) {
         updateData.resolution_details = resolutionDetails;
@@ -214,10 +238,11 @@ export const useCloseTicket = () => {
       );
       return result;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       // Invalidate ticket list and stats
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
     },
   });
 };

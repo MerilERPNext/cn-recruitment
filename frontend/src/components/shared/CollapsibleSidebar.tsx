@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -71,7 +71,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   setIsExpanded,
 }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
@@ -118,10 +117,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   //     .filter((app) => backendTitles.includes(app.title))
   //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
   // };
-
-  const handleHelpDeskClick = () => {
-    navigate("/webapp/helpdesk");
-  };
 
   const allNavigationItems: NavigationItem[] = [
     {
@@ -497,10 +492,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Help Desk") {
-      return false;
-    }
-
     if (item.label === "Dashboard") {
       return (
         location.pathname === "/webapp/" || location.pathname === "/webapp"
@@ -708,49 +699,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           }`}
                         />
                       )}
-                    </div>
-                  ) : item.label === "Help Desk" ? (
-                    <div
-                      onClick={handleHelpDeskClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${
-                        isItemDirectlyActive
-                          ? "bg-primary-500 text-white hover:text-white"
-                          : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                      }`}
-                    >
-                      <div className="relative flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
-                          <Icon className="h-5 w-5" />
-
-                          {!isExpanded && getCount("Help Desk") > 0 && (
-                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                              {getCount("Help Desk")}
-                            </span>
-                          )}
-                        </div>
-
-                        <span
-                          className={`transition-all duration-300 ${
-                            isExpanded
-                              ? "opacity-100"
-                              : "opacity-0 -translate-x-2"
-                          }`}
-                        >
-                          <Typography
-                            variant="bodySmall"
-                            className="font-medium whitespace-nowrap"
-                            color="inherit"
-                          >
-                            {item.label}
-                          </Typography>
-                        </span>
-
-                        {isExpanded && getCount("Help Desk") > 0 && (
-                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
-                            {getCount("Help Desk")}
-                          </span>
-                        )}
-                      </div>
                     </div>
                   ) : (
                     <Link

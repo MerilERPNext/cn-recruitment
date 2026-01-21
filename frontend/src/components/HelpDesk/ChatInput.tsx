@@ -92,9 +92,9 @@ const MentionList = React.forwardRef<HTMLDivElement, MentionListProps>(
             }`}
           >
             {item.user_image ? (
-              <img src={item.user_image} alt="" className="w-6 h-6 rounded-full object-cover" />
+              <img src={item.user_image} alt="" className="w-6 h-6 rounded-lg object-cover" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
+              <div className="w-6 h-6 rounded-lg bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-600">
                 {(item.full_name || item.name).charAt(0).toUpperCase()}
               </div>
             )}
@@ -297,12 +297,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
         // Get CSRF token
         const csrfToken = getCSRFToken();
 
+        // If no CSRF token, try using credentials-only approach
+        const headers: HeadersInit = csrfToken
+          ? { "X-Frappe-CSRF-Token": csrfToken }
+          : {};
+
         const response = await fetch("/api/method/upload_file", {
           method: "POST",
           body: formData,
-          headers: {
-            "X-Frappe-CSRF-Token": csrfToken,
-          },
+          headers,
           credentials: "include",
         });
 
@@ -488,7 +491,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           {attachments.map((file, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full text-sm border border-gray-200"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg text-sm border border-gray-200"
             >
               <Paperclip className="w-3 h-3 text-gray-500" />
               <span className="truncate max-w-[150px]">{file.file_name}</span>
@@ -511,7 +514,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isDisabled}
-            className="flex-shrink-0 p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isUploading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -553,7 +556,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             type="button"
             onClick={handleSend}
             disabled={!canSend}
-            className="flex-shrink-0 p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm"
+            className="flex-shrink-0 p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed shadow-sm"
           >
             {isSending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
