@@ -168,6 +168,7 @@ export interface BulkActionProps {
 }
 
 export type EmployeeCheckInLog = {
+  custom_checkin_type: string;
   name: string;
   employee: string;
   time: string;

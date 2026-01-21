@@ -166,6 +166,7 @@ export default function DesktopDashboard() {
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
+  const onOutDuty = lastLog?.custom_checkin_type === "Out Duty";
   const { data: currentUser } = useCurrentUser();
 
   const logoutHandler = async () => {
@@ -762,6 +763,16 @@ export default function DesktopDashboard() {
                       </Typography>
                     </div>
                     {homeSummary && homeSummary.length > 0 && (
+                      <div className="flex gap-x-2">
+                      {onOutDuty &&
+                         <Badge
+                            label="Out Duty"
+                            size="md"
+                            
+                        backgroundColor="bg-secondary-100 border-secondary-100"
+                        textColor="text-secondary text-semibold"
+                      />
+}                     
                       <Badge
                         label={
                           isCurrentlyCheckedIn ? "Checked In" : "Checked Out"
@@ -782,6 +793,7 @@ export default function DesktopDashboard() {
                           isCurrentlyCheckedIn ? "text-success" : "text-error"
                         }
                       />
+                      </div>
                     )}
                   </div>
 
