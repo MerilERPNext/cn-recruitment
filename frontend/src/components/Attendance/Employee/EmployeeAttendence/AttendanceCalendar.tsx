@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -6,6 +6,8 @@ import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
 import { gradientClassMap } from "../../../../utils/helperUtils";
 import Button from "../../../shared/atoms/Button";
+import { useSearchParams } from "react-router-dom";
+
 type Status =
   | "present"
   | "absent"
@@ -58,6 +60,16 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   getAttendanceStatus,
   setShowDetailsFor,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!selectedDate && !searchParams.get("date")) return;
+
+    setSearchParams({
+      date: selectedDate?.toISOString() || "",
+    });
+  }, [selectedDate, setSearchParams]);
+
   return (
     <div className="p-1 employee-datepicker-lg">
       <DatePicker

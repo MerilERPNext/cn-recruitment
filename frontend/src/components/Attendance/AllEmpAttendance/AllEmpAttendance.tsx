@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { ChevronLeft, ChevronRight, LogIn, LogOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardPlus, LogIn, LogOut, MoreVertical, Shield } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   startOfMonth,
@@ -21,6 +21,16 @@ import { AttendanceRecord } from "../../../types/attendance";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { useQueryClient } from "@tanstack/react-query";
+import { ViewAll } from "../../shared/atoms/ViewAll";
+import RegularizeDrawer from "../Employee/EmployeeAttendence/RegularizeDrawer";
+import DropdownMenu from "../../shared/DropDownMenu";
+import SideDrawer, { DrawerSize } from "../../shared/SideDrawer";
+import ViewPolicies from "../Employee/EmployeeAttendence/ViewPolicies";
+import CheckInStatus from "../Employee/EmployeeAttendence/CheckInStatus";
+import AuditReport from "../Employee/EmployeeAttendence/AuditReport";
+import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 /* -------------------- Helpers -------------------- */
 
@@ -64,6 +74,7 @@ const AllEmpAttendance = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const queryClient = useQueryClient();
+  const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   /* 🔑 Single month state */
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -91,7 +102,23 @@ const AllEmpAttendance = () => {
     isError,
     error,
   } = useGetAllEventsAndAttendance({ start, end });
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canRegularize = isActionEnabled(
+    userUiPermission,
+    "regularize_attendance",
+    "My Attendance"
+  );
 
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!currentMonth && !searchParams.get("date")) return;
+
+    setSearchParams({
+      date: currentMonth?.toISOString() || "",
+    });
+  }, [currentMonth, setSearchParams]);
   /* 🔥 Generate full month data (NO FEATURE LOSS) */
   const completeMonthData = useMemo(() => {
     if (!allEventsAndAttendance) return [];
@@ -171,17 +198,18 @@ const AllEmpAttendance = () => {
       <LayoutHeader tab="All Attendance" onBack={() => navigate(-1)} />
 
       {/* 🔁 Month Navigation */}
-      <div className="relative flex items-center py-3 px-4">
+      <div className="relative flex justify-between items-center py-3 px-4 ">
         {/* 🔙 Back Icon — LEFT CORNER */}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 flex items-center text-gray-600 hover:text-black transition-colors"
+        {isDesktop && <button
+          onClick={() => navigate("/webapp/attendance/emp-attendance")}
+          className="flex items-center text-gray-600 hover:text-black transition-colors w-full"
         >
           <ChevronLeft className="w-5 h-5" />
-        </button>
+        </button>}
 
         {/* 📅 Month Navigation — CENTER */}
-        <div className="mx-auto flex items-center gap-4">
+        <div className="mx-auto flex items-center justify-center gap-2 w-full">
+
           <Button
             size="sm"
             variant="subtle"
@@ -190,8 +218,8 @@ const AllEmpAttendance = () => {
             <ChevronLeft className="h-5 w-5" />
           </Button>
 
-          <Typography variant="bodyMedium" className="font-semibold">
-            {format(currentMonth, "MMMM yyyy")}
+          <Typography variant={isDesktop ? "bodyMedium" : "bodySmall"} className="font-semibold text-center">
+            {format(currentMonth, "MMM yyyy")}
           </Typography>
 
           <Button
@@ -201,6 +229,50 @@ const AllEmpAttendance = () => {
           >
             <ChevronRight className="h-5 w-5" />
           </Button>
+        </div>
+        <div className="flex gap-2 justify-end items-center w-full">
+
+          <ViewAll
+            title={isDesktop ? "Calendar View" : "Cal View"}
+            className="text-gray-500 px-2 flex gap-1 justify-center items-center text-nowrap"
+            onClick={() => {
+              navigate("/webapp/attendance/emp-attendance");
+            }}
+          />
+          <div className="flex gap-2">
+
+            {canRegularize && <RegularizeDrawer />}
+
+            <DropdownMenu
+              placement={'bottom-left'}
+              items={[
+                { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
+                { label: "Check In Status", icon: <LogIn className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "checkInStatus", label: "Check In Status", sideBarSize: "xxl" }) } },
+                { label: "Audit Report", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "auditReport", label: "Audit Report", sideBarSize: "xxl" }) } },
+                { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
+              ]}
+            >
+              <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
+                <MoreVertical className="h-5 w-5" />
+              </button>
+            </DropdownMenu>
+          </div>
+          <SideDrawer
+            open={openSidebarFor.isOpen}
+            onClose={() => setOpenSidebarFor({ isOpen: false, for: null, label: "", sideBarSize: "xl" })}
+            side="right"
+            title={openSidebarFor.label}
+            size={openSidebarFor.sideBarSize}
+          >
+            <div className="pb-20">
+
+              {openSidebarFor.for === "policies" && <ViewPolicies />}
+              {openSidebarFor.for === "checkInStatus" && <CheckInStatus />}
+              {openSidebarFor.for === "auditReport" && <AuditReport />}
+              {openSidebarFor.for === "overtimeLog" && <OvertimeLog />}
+            </div>
+          </SideDrawer>
+
         </div>
       </div>
 
@@ -238,9 +310,9 @@ const AllEmpAttendance = () => {
                 style={
                   item.status?.toLowerCase() === "half day"
                     ? getStatusGradient(
-                        item.half_day_status_first_half || "",
-                        item.half_day_status_second_half || "",
-                      )
+                      item.half_day_status_first_half || "",
+                      item.half_day_status_second_half || "",
+                    )
                     : {}
                 }
               >
@@ -265,17 +337,15 @@ const AllEmpAttendance = () => {
                   <div className="flex justify-between mt-1">
                     <div className="flex items-center gap-2">
                       <LogIn
-                        className={`h-4 w-4 ${
-                          item.in_time ? "text-green-600" : "text-gray-600"
-                        }`}
+                        className={`h-4 w-4 ${item.in_time ? "text-green-600" : "text-gray-600"
+                          }`}
                       />
                       {formatTimeSafe(item.in_time)}
                     </div>
                     <div className="flex items-center gap-2">
                       <LogOut
-                        className={`h-4 w-4 ${
-                          item.out_time ? "text-red-600" : "text-gray-600"
-                        }`}
+                        className={`h-4 w-4 ${item.out_time ? "text-red-600" : "text-gray-600"
+                          }`}
                       />
                       {formatTimeSafe(item.out_time)}
                     </div>

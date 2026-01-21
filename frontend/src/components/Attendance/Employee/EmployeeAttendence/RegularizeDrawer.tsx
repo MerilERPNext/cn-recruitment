@@ -14,8 +14,20 @@ import { EmployeeRegularize } from "../../../../types/attendance";
 import toast from "react-hot-toast";
 import CircularLoader from "../../../shared/atoms/CircularLoader";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
+import { useSearchParams } from "react-router-dom";
+import { format, isValid, parseISO } from "date-fns";
 
 const RegularizeDrawer = () => {
+    const [searchParams] = useSearchParams();
+    const encodedDate = searchParams.get("date") || "";
+    const decodedDate = decodeURIComponent(encodedDate);
+
+    // 2️⃣ Parse ISO string → Date
+    const parsedDate = decodedDate ? parseISO(decodedDate) : new Date();
+    const date = isValid(parsedDate) ? parsedDate : new Date();
+    const formattedDate = format(date, "yyyy-MM");
+
+
     const [open, setOpen] = useState(false);
     const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
@@ -25,7 +37,7 @@ const RegularizeDrawer = () => {
     );
 
     const monthOptions: MonthOption[] = generateMonthOptions(1);
-    const { frm_date, to_date } = getMonthDateRange(monthOptions[0].value);
+    const { frm_date, to_date } = getMonthDateRange(formattedDate || monthOptions[0].value);
 
     const {
         data: allEmployeeRegularize,
@@ -38,9 +50,10 @@ const RegularizeDrawer = () => {
             employee: currentEmployee?.employee,
             from_date: frm_date,
             to_date: to_date,
-            exclude_holidays: 1
+            exclude_holidays: 1,
         },
-        open
+        open && !!currentEmployee?.employee,
+        decodedDate
     );
     const { mutateAsync: markBulkAttendance, isPending: isMarkBulkAttendancePending } = useMarkBulkAttendance();
 
