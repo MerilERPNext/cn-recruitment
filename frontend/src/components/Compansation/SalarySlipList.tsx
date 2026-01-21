@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState, useRef } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -155,9 +155,9 @@ const SalarySlipsList = () => {
 
   const filters: Record<string, [string, string]> | undefined = selectedYear
     ? {
-        start_date: [">=", `${selectedYear}-01-01`],
-        end_date: ["<=", `${selectedYear}-12-31`],
-      }
+      start_date: [">=", `${selectedYear}-01-01`],
+      end_date: ["<=", `${selectedYear}-12-31`],
+    }
     : undefined;
 
   const currentYear = new Date().getFullYear();
@@ -382,7 +382,9 @@ const SalarySlipItemDesktop = ({
       <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
           <WrapperHoverCard employeeId={item.employee}>
-            {item.employee_name}
+            <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+              {item.employee_name}
+            </Link>
           </WrapperHoverCard>
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">

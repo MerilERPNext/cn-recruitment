@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -106,9 +108,11 @@ const AdvanceApprovalCard = ({
             </div>
           )}
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.reference_document?.employee_name}
+              </div>
+            </Link>
           </WrapperHoverCard>
 
           <div className="text-gray-700 truncate text-sm text-start">
@@ -153,7 +157,7 @@ const AdvanceApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -191,9 +195,11 @@ const AdvanceApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="text-md font-bold">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                    <p className="text-md font-bold">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                 </div>
 
                 <Badge
@@ -253,7 +259,7 @@ const AdvanceApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

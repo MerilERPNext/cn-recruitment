@@ -106,9 +106,9 @@ const EmployeeAttendanceDetails = ({
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
     validDate && effectiveEmployeeId
       ? [
-          ["time", "between", [start, end]],
-          ["employee", "=", effectiveEmployeeId],
-        ]
+        ["time", "between", [start, end]],
+        ["employee", "=", effectiveEmployeeId],
+      ]
       : [],
   );
 
@@ -116,11 +116,11 @@ const EmployeeAttendanceDetails = ({
     1000,
     validDate && effectiveEmployeeId
       ? [
-          ["employee", "=", effectiveEmployeeId],
-          ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
-          ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
-          ["docstatus", "!=", 2],
-        ]
+        ["employee", "=", effectiveEmployeeId],
+        ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
+        ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+        ["docstatus", "!=", 2],
+      ]
       : [],
   );
 
@@ -128,7 +128,7 @@ const EmployeeAttendanceDetails = ({
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance",
+    "Attendance Summary",
   );
   const canRevokeLeave = isActionEnabled(
     userUiPermission,

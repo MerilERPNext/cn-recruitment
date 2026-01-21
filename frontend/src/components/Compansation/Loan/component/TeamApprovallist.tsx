@@ -8,6 +8,7 @@ import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import { Link } from "react-router-dom";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -103,10 +104,12 @@ const ApprovalRejectionLoanList = ({
           {/* Header */}
           <div className="flex justify-between items-start mb-3">
             <div>
-              <p className="text-sm font-semibold">
-                {data?.reference_document?.applicant_name ||
-                  data?.reference_document?.applicant}
-              </p>
+              <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`} target="_blank">
+                <p className="text-sm font-semibold">
+                  {data?.reference_document?.applicant_name ||
+                    data?.reference_document?.applicant}
+                </p>
+              </Link>
               <p className="text-xs text-gray-500">
                 {data?.reference_document?.loan_product}
               </p>
@@ -251,8 +254,10 @@ const ApprovalRejectionLoanList = ({
 
         <div className="text-sm font-medium text-start">
           <WrapperHoverCard employeeId={data?.reference_document?.custom_employee}>
-            {data?.reference_document?.applicant_name ||
-              data?.reference_document?.applicant}
+            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`} target="_blank">
+              {data?.reference_document?.applicant_name ||
+                data?.reference_document?.applicant}
+            </Link>
           </WrapperHoverCard>
         </div>
 

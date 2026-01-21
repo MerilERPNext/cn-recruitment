@@ -69,13 +69,13 @@ const ReportingDetails = () => {
                     <div className="p-2 bg-blue-50 rounded-lg">
                         <Building2 className="w-5 h-5 text-blue-600" />
                     </div>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
                         <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
                             <h3 className="font-medium text-gray-900 truncate">
                                 <span title={name}>{name}</span>
                             </h3>
                         </Link>
-                        <div className="flex flex-wrap gap-4 mt-1">
+                        <div className="flex flex-wrap gap-4">
                             {id && (
                                 <Typography
                                     variant="label"

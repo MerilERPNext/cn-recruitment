@@ -6,6 +6,7 @@ import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -118,9 +119,11 @@ const OvertimeApprovalCard = ({
             </div>
           )}
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.username}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.username}
+              </div>
+            </Link>
           </WrapperHoverCard>
 
           <div className="text-gray-600 text-sm truncate text-start">
