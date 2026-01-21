@@ -75,10 +75,10 @@ export default function SalaryAssignmentList() {
   const titles = [
     "Effective Date",
     "Status",
-    "Monthly CTC",
-    "Annual CTC",
     "Fixed Gross Monthly",
+    "Monthly CTC",
     "Fixed Gross Annual",
+    "Annual CTC",  
     "Action",
   ];
 
@@ -149,12 +149,16 @@ export default function SalaryAssignmentList() {
                       </span>
                     </div>
 
+
+
+                    <div>{renderAmount(item.fixed_gross_monthly)}</div>
                     <div className="font-medium">
                       {renderAmount(item.monthly_ctc)}
                     </div>
-                    <div>{renderAmount(item.annual_ctc)}</div>
-                    <div>{renderAmount(item.fixed_gross_monthly)}</div>
                     <div>{renderAmount(item.fixed_gross_annual)}</div>
+                    <div>{renderAmount(item.annual_ctc)}</div>
+                   
+                    
 
                     <div className="flex items-center justify-start gap-2">
                       <button
