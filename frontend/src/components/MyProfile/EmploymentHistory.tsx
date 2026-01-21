@@ -34,10 +34,15 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   const { data, isLoading, error } = useFrappeDocument(
     "Employee",
     employeeId || "",
-    ["custom_work_history", "date_of_joining"]
+    ["custom_work_history", "date_of_joining"],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) as { data: Employee | null; isLoading: boolean; error: any };
   const history = data?.custom_work_history || [];
+  const hasEmploymentHistory = history.length > 0;
+
+  const defaultStartDateForAdd = !hasEmploymentHistory
+    ? data?.date_of_joining
+    : new Date().toISOString();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canEditEmploymentHistory = isActionEnabled(
     userUiPermission,
@@ -63,11 +68,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   );
 
   return (
-    <div className="address-form-container bg-white rounded-md bg-blue-100">
+    <div className="address-form-container bg-white rounded-md">
       <div className="p-4 md:p-8">
         <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
-
-          <div >
+          <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Employment History
             </h2>
@@ -135,7 +139,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {!isLoading &&
           !error &&
           (() => {
-            const joinDate = data?.date_of_joining ? new Date(data.date_of_joining).getTime() : null;
+            const joinDate = data?.date_of_joining
+              ? new Date(data.date_of_joining).getTime()
+              : null;
 
             let overallClosestItem: CustomWorkHistory | null = null;
             let overallClosestCategory: string | null = null;
@@ -143,7 +149,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
             if (joinDate && history.length > 0) {
               history.forEach((item) => {
-                const itemDate = item.start_date ? new Date(item.start_date).getTime() : 0;
+                const itemDate = item.start_date
+                  ? new Date(item.start_date).getTime()
+                  : 0;
                 const diff = Math.abs(itemDate - joinDate);
                 if (diff < minDiff) {
                   minDiff = diff;
@@ -153,11 +161,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               });
             }
 
-            const sortedCategories = Object.keys(groupedHistory).sort((a, b) => {
-              if (a === overallClosestCategory) return -1;
-              if (b === overallClosestCategory) return 1;
-              return a.localeCompare(b);
-            });
+            const sortedCategories = Object.keys(groupedHistory).sort(
+              (a, b) => {
+                if (a === overallClosestCategory) return -1;
+                if (b === overallClosestCategory) return 1;
+                return a.localeCompare(b);
+              },
+            );
 
             return sortedCategories.map((category) => {
               const items = groupedHistory[category];
@@ -169,8 +179,12 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 }
 
                 // Otherwise sort by start date descending
-                const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
-                const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+                const aDate = a.start_date
+                  ? new Date(a.start_date).getTime()
+                  : 0;
+                const bDate = b.start_date
+                  ? new Date(b.start_date).getTime()
+                  : 0;
                 return bDate - aDate;
               });
 
@@ -184,8 +198,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                     {sortedItems.map((item) => (
                       <div
                         key={item.name}
-                        className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""
-                          }`}
+                        className={`${
+                          sortedItems.length === 1 ? "max-w-md w-full" : ""
+                        }`}
                       >
                         <EmploymentHistoryCard
                           title={item.records}
