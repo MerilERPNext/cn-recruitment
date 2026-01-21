@@ -113,12 +113,16 @@ const AllEmpAttendance = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    if (!currentMonth && !searchParams.get("date")) return;
+    const currentDateParam = searchParams.get("date");
+    const newDateISO = currentMonth?.toISOString() || "";
 
-    setSearchParams({
-      date: currentMonth?.toISOString() || "",
-    });
-  }, [currentMonth, setSearchParams]);
+    if (currentDateParam !== newDateISO) {
+      setSearchParams(
+        { date: newDateISO },
+        { replace: true }
+      );
+    }
+  }, [currentMonth, setSearchParams, searchParams]);
   /* 🔥 Generate full month data (NO FEATURE LOSS) */
   const completeMonthData = useMemo(() => {
     if (!allEventsAndAttendance) return [];

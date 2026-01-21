@@ -227,8 +227,11 @@ const EmployeeAttendanceDetails = ({
     let headerTitle = "Attendance Details";
     if (status === "holiday") {
       headerTitle = "Holiday Details";
-    } else if (data?.custom_auto_created === 1 || status === "on-leave") {
+    } else if (status === "on-leave") {
       headerTitle = "Leave Details";
+      // if custom_auto_created is 1 that means its a Unpaid Leave and we show it like a leave on UI in yellow color
+    } else if (data?.custom_auto_created === 1) {
+      headerTitle = "Leave Details (System Generated)"
     }
     return (
       <div className="flex justify-between items-center p-4 border-b">

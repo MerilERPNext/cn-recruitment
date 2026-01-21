@@ -65,9 +65,12 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   useEffect(() => {
     if (!selectedDate && !searchParams.get("date")) return;
 
-    setSearchParams({
-      date: selectedDate?.toISOString() || "",
-    });
+    setSearchParams(
+      {
+        date: selectedDate?.toISOString() || "",
+      },
+      { replace: true }
+    );
   }, [selectedDate, setSearchParams]);
 
   return (
@@ -143,7 +146,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
               case "on-leave":
                 return "!bg-yellow-100 !text-yellow-700 rounded-md";
               case "unpaid":
-                return "!bg-orange-100 !text-orange-700 rounded-md";
+                return "!bg-yellow-100 !text-yellow-700 rounded-md";
               case "holiday":
                 return "!bg-blue-100 !text-blue-700 rounded-md";
               case "week-off":
