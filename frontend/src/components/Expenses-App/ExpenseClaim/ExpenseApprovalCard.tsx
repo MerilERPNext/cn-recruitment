@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
@@ -9,6 +8,8 @@ import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -50,20 +51,6 @@ const ExpenseApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
 
   const gridTemplateColumns = showCheckbox
     ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
@@ -171,9 +158,11 @@ const ExpenseApprovalCard = ({
             </div>
           )}
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.reference_document?.employee_name}
+              </div>
+            </Link>
           </WrapperHoverCard>
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.custom_expense_category}
@@ -183,7 +172,7 @@ const ExpenseApprovalCard = ({
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           <div className="flex items-center justify-start">
@@ -216,7 +205,7 @@ const ExpenseApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -254,9 +243,11 @@ const ExpenseApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="card-title">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                    <p className="card-title">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                 </div>
 
                 <Badge
@@ -283,7 +274,7 @@ const ExpenseApprovalCard = ({
                   <div className="flex flex-col gap-1">
                     <p className="card-title">Claim Date</p>
                     <p className="card-subtitle">
-                      {formatDate(
+                      {formatToIndianDate(
                         data?.reference_document?.expenses[0]?.expense_date
                       )}
                     </p>
@@ -291,7 +282,7 @@ const ExpenseApprovalCard = ({
                   <div className="flex flex-col gap-1 text-right">
                     <p className="card-title">Due Date</p>
                     <p className="card-subtitle">
-                      {formatDate(data?.due_date)}
+                      {formatToIndianDate(data?.due_date)}
                     </p>
                   </div>
                 </div>
@@ -321,7 +312,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

@@ -1,4 +1,3 @@
-import { format, isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -11,6 +10,8 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -72,15 +73,10 @@ const EmpAttendanceRequestCard = ({
 
   const status = getStatus(data?.reference_document?.custom_status);
 
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return isValid(date) ? format(date, "dd/MM/yyyy") : "N/A";
-  };
 
-  const formattedFromDate = formatDate(data?.reference_document?.from_date);
-  const formattedToDate = formatDate(data?.reference_document?.to_date);
-  const formattedDueDate = formatDate(data?.due_date);
+  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
+  const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
+  const formattedDueDate = formatToIndianDate(data?.due_date);
   return (
     <>
       {isDesktop ? (
@@ -107,9 +103,11 @@ const EmpAttendanceRequestCard = ({
             {formattedDueDate}
           </div>
           <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-            <div className="text-sm font-medium text-gray-700 text-start truncate">
-              {data?.username}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`} target="_blank">
+              <div className="text-sm font-medium text-gray-700 text-start truncate">
+                {data?.username}
+              </div>
+            </Link>
           </WrapperHoverCard>
           {/* Status */}
           <div className="flex justify-start">

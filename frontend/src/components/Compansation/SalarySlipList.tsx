@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState, useRef } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -21,6 +21,8 @@ import CardTable from "../shared/CardTable";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Button from "../shared/atoms/Button";
+import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -92,21 +94,13 @@ const SalarySlipsList = () => {
     if (isDesktop) {
       setSelectedSalarySlip({
         name: salaryId,
-        date: startDate ? formatToIndianDateModal(startDate) : "",
+        date: startDate ? formatToIndianDate(startDate) : "",
       });
       setPdfModalOpen(true);
     } else {
       const encodedId = encodeURIComponent(salaryId);
       navigate(`/webapp/salary-slip-app/salary-slip-list/${encodedId}`);
     }
-  };
-
-  const formatToIndianDateModal = (dateString: string): string => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
   };
 
   // Handlers for view PDF
@@ -187,90 +181,100 @@ const SalarySlipsList = () => {
           htmlContent={modalHtmlContent}
         />
       )}
-      <>
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex-1 max-w-xs">
-            <select
-              id="yearFilter"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="my-form-input"
-            >
-              <option value="">All Years</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div className="px-2">
+        <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
+          <div className="flex md:flex-row flex-col w-full gap-2 justify-between border-b border-gray-200 px-2">
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">My Salary Slips</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your salary slips
+              </Typography>
+            </div>
+            <div className="flex items-center gap-5 justify-between mb-2">
+              <div className="flex-1 max-w-xs min-w-[150px]">
+                <select
+                  id="yearFilter"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="my-form-input"
+                >
+                  <option value="">All Years</option>
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <button
-            onClick={() => setMaskSalary((prev) => !prev)}
-            className="my-btn-secondary"
-            title={maskSalary ? "Show amounts" : "Hide amounts"}
-          >
-            {maskSalary ? (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Show Amounts
-                </span>
-                <BsToggleOff className="w-6 h-6 text-gray-400" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Hide Amounts
-                </span>
-                <BsToggleOn className="w-6 h-6 text-primary" />
-              </>
-            )}
-          </button>
+              <button
+                onClick={() => setMaskSalary((prev) => !prev)}
+                className="my-btn-secondary"
+                title={maskSalary ? "Show amounts" : "Hide amounts"}
+              >
+                {maskSalary ? (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Show Amounts
+                    </span>
+                    <BsToggleOff className="w-5 h-5 text-gray-400" />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Hide Amounts
+                    </span>
+                    <BsToggleOn className="w-5 h-5 text-primary" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
-      </>
-      <CardTable
-        titles={[
-          "Employee",
-          "Start Date",
-          "End Date",
-          "Gross Pay",
-          "Net Pay",
-          "Actions",
-        ]}
-      >
-        <FrappeListView
-          key={filtersKey}
-          doctype="Salary Slip"
-          ItemComponent={(props) => (
-            <SalarySlipItem
-              {...props}
-              maskSalary={maskSalary}
-              onDownloadType1={handleDownloadType1}
-              onDownloadType2={handleDownloadType2}
-              onDownloadType3={handleDownloadType3}
-              onDownloadType4={handleDownloadType4}
-              onViewPDF={handleGoToSalarySlip}
-              isDownloading={isDownloading}
-            />
-          )}
-          isSearch={false}
-          pageSize={10}
-          defaultFields={[
-            "name",
-            "employee",
-            "employee_name",
-            "start_date",
-            "end_date",
-            "gross_pay",
-            "net_pay",
-            "status",
-            "posting_date",
+        <CardTable
+          titles={[
+            "Employee",
+            "Start Date",
+            "End Date",
+            "Gross Pay",
+            "Net Pay",
+            "Actions",
           ]}
-          searchFields={["employee", "status", "posting_date"]}
-          infiniteScroll={true}
-          defaultFilters={filters as any}
-        />
-      </CardTable>
+        >
+          <FrappeListView
+            key={filtersKey}
+            doctype="Salary Slip"
+            ItemComponent={(props) => (
+              <SalarySlipItem
+                {...props}
+                maskSalary={maskSalary}
+                onDownloadType1={handleDownloadType1}
+                onDownloadType2={handleDownloadType2}
+                onDownloadType3={handleDownloadType3}
+                onDownloadType4={handleDownloadType4}
+                onViewPDF={handleGoToSalarySlip}
+                isDownloading={isDownloading}
+              />
+            )}
+            isSearch={false}
+            pageSize={10}
+            defaultFields={[
+              "name",
+              "employee",
+              "employee_name",
+              "start_date",
+              "end_date",
+              "gross_pay",
+              "net_pay",
+              "status",
+              "posting_date",
+            ]}
+            searchFields={["employee", "status", "posting_date"]}
+            infiniteScroll={true}
+            defaultFilters={filters as any}
+          />
+        </CardTable>
+      </div>
     </div>
   );
 };
@@ -316,26 +320,35 @@ const DownloadMenu = ({
             key: "regular_payslip_exists",
           },
           { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
-          { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
-          { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
-        ].map((item, i) => (
-          printFormatMenuRef?.[item.key] === 1 && (
-            <div key={i} className="flex justify-between items-center ">
-              <button
-                onClick={(e) => {
-                  setOpen(false);
-                  item.fn(e, itemName);
-                }}
-                className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
-              >
-                <Button className="p-2 border rounded" bgColor="none">
-                  <FaRegEye className="w-4 h-4 text-primary" />
-                </Button>
-                {item.label}
-              </button>
-            </div>
-          )
-        ))}
+          {
+            label: "Benefit Payslip",
+            fn: onType3,
+            key: "benefit_payslip_exists",
+          },
+          {
+            label: "Off Cycle Payslip",
+            fn: onType4,
+            key: "off_payslip_exists",
+          },
+        ].map(
+          (item, i) =>
+            printFormatMenuRef?.[item.key] === 1 && (
+              <div key={i} className="flex justify-between items-center ">
+                <button
+                  onClick={(e) => {
+                    setOpen(false);
+                    item.fn(e, itemName);
+                  }}
+                  className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
+                >
+                  <Button className="p-2 border rounded" bgColor="none">
+                    <FaRegEye className="w-4 h-4 text-primary" />
+                  </Button>
+                  {item.label}
+                </button>
+              </div>
+            )
+        )}
       </ContextualPopup>
     </div>
   );
@@ -358,12 +371,6 @@ const SalarySlipItemDesktop = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
@@ -375,7 +382,9 @@ const SalarySlipItemDesktop = ({
       <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
           <WrapperHoverCard employeeId={item.employee}>
-            {item.employee_name}
+            <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+              {item.employee_name}
+            </Link>
           </WrapperHoverCard>
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">
@@ -431,12 +440,6 @@ const SalarySlipItemMobile = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,

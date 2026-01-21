@@ -132,7 +132,7 @@ const CheckInStatus = () => {
                                     <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
                                         {format(
                                             new Date(item.time),
-                                            "dd MMM yyyy, hh:mm a"
+                                            "dd-MM-yyyy, hh:mm a"
                                         )}
                                     </td>
 

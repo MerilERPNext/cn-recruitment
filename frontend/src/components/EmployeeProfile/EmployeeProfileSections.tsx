@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
     useCurrentEmployeeAllDetails,
-    useGetEmployeeDetailsByEmpId,
+    useGetEmployeeDetailsByEmpIdForProfile,
     useGetEmployeeFieldPermissions,
 } from "../../hooks/useEmployee";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
@@ -35,7 +36,7 @@ export default function EmployeeProfileSections() {
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";
 
-    const employee = useGetEmployeeDetailsByEmpId(employeeId);
+    const { data: employee, isLoading: employeeLoading, refetch: refetchEmployee } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstances = useRef<Record<string, any>>({});
 
@@ -55,24 +56,24 @@ export default function EmployeeProfileSections() {
     const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
     const can = usePermission();
     useEffect(() => {
-        if (!fieldPermissions || !employee?.data) return;
+        if (!fieldPermissions || !employee?.employee) return;
 
         const fetchData = async () => {
             const result = await convertFieldsToSimpleTabbedData(
                 fieldPermissions,
-                employee.data
+                employee.employee
             );
             setTabs(result.tabs);
             setActiveTab(result.tabs[0]?.key || "");
 
             const formioResult = await convertToFormioWithTabMetadata(
                 fieldPermissions,
-                employee?.data
+                employee?.employee
             );
             setformioTabs(formioResult.tabs);
         };
         fetchData();
-    }, [fieldPermissions, employee?.data]);
+    }, [fieldPermissions, employee?.employee]);
 
 
     useEffect(() => {
@@ -102,13 +103,13 @@ export default function EmployeeProfileSections() {
             block: "start",
         });
     };
-    if (!employeeId || fieldPermissionsLoading || employee.isLoading || !tabs.length) {
+    if (!employeeId || fieldPermissionsLoading || employeeLoading || !tabs.length) {
         return <ProfileGridSkeleton />;
     }
     return (
         <div>
             <div className="flex items-start justify-between">
-                <div className="px-6 py-4">
+                <div className="px-6 py-6">
                     <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
                     </Typography>
@@ -118,7 +119,7 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full border-b border-gray-50 pb-2">
+                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
@@ -138,9 +139,8 @@ export default function EmployeeProfileSections() {
                     </div>
                 </div>
             )}
-
             {/* Scrollable Sections */}
-            <div className="space-y-14 pb-6">
+            <div className="space-y-6 pb-6">
                 {tabs.map(tab => (
                     <section
                         key={tab.key}
@@ -150,7 +150,7 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center justify-between mb-6 py-3 px-6 bg-gray-50/50 border-y border-gray-100/50">
+                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-6 border border-gray-100/50">
                             <Typography variant="subheading" className="font-bold text-gray-800">
                                 {tab.label}
                             </Typography>
@@ -169,31 +169,36 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
-                                .map(field => (
-                                    <div
-                                        key={field.key}
-                                        className="px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"
-                                    >
-                                        <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest mb-1 block">
-                                            {field.label || "-"}
-                                        </Typography>
-                                        {
-                                            field?.type === 'file' ? (
-                                                <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
-                                                    <FileText size={14} />
-                                                    <span className="truncate max-w-[200px] inline-block">{field.value}</span>
-                                                </Link>
-                                            ) : (
-                                                <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                                    {Array.isArray(field.value) ? <CardsRenderer items={field.value} /> : field?.value || "—"}
-                                                </Typography>
-                                            )
-                                        }
-                                    </div>
-                                ))}
+                                .map(field => {
+                                    const isTable = Array.isArray(field.value);
+                                    return (
+                                        <div
+                                            key={field.key}
+                                            className={`${isTable ? "col-span-full mt-4" : "px-4 py-2  hover:border-primary-200 transition-colors"}`}
+                                        >
+                                            <Typography variant="label" color="disabled" className="text-[12px] uppercase tracking-widest mb-3 block">
+                                                {field.label || "-"}
+                                            </Typography>
+                                            {
+                                                field?.type === 'file' ? (
+                                                    <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
+                                                        <FileText size={14} />
+                                                        <span className="truncate max-w-[200px] inline-block">{field.value}</span>
+                                                    </Link>
+                                                ) : isTable ? (
+                                                    <CardsRenderer items={field.value} />
+                                                ) : (
+                                                    <Typography variant="bodyMedium" className="font-bold text-gray-900">
+                                                        {field?.value || "—"}
+                                                    </Typography>
+                                                )
+                                            }
+                                        </div>
+                                    );
+                                })}
                         </div>
                     </section>
                 ))}
@@ -204,8 +209,8 @@ export default function EmployeeProfileSections() {
                 formioTabs={formioTabs}
                 formInstances={formInstances}
                 employeeId={employeeId}
-                refetchEmployee={() => { employee.refetch() }}
-                employeeIsLoading={employee.isLoading}
+                refetchEmployee={() => { refetchEmployee() }}
+                employeeIsLoading={employeeLoading}
             />
         </div>
     );
@@ -216,10 +221,50 @@ const CardsRenderer = ({ items }: { items: Record<string, any>[] }) => {
     if (!Array.isArray(items) || items.length === 0) {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
+
+    const sortedItems = [...items].sort((a, b) => {
+        const getStartDateValue = (item: Record<string, any>) => {
+            for (const [key, field] of Object.entries(item)) {
+                const isStructured = field && typeof field === 'object' && 'value' in field;
+                const label = (isStructured && field.label) ? field.label : formatKey(key);
+                if (label === "Start Date") {
+                    return isStructured ? field.value : field;
+                }
+            }
+            return null;
+        };
+
+        const aDateStr = getStartDateValue(a);
+        const bDateStr = getStartDateValue(b);
+
+        if (!aDateStr && !bDateStr) return 0;
+        if (!aDateStr) return 1;
+        if (!bDateStr) return -1;
+
+        const parseDate = (dateStr: any) => {
+            if (!dateStr) return 0;
+            if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3 && parts[0].length === 2) {
+                    return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+                }
+            }
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? 0 : date.getTime();
+        };
+
+        const aTime = parseDate(aDateStr);
+        const bTime = parseDate(bDateStr);
+
+        return bTime - aTime; // Newest first
+    });
+
     return (
-        <div className="w-full">
-            {items.map((item, index) => (
-                <GenericCard key={item?.id || item?.name || index} data={item} />
+        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            {sortedItems.map((item, index) => (
+                <div key={item?.id || item?.name || index} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
+                    <GenericCard data={item} />
+                </div>
             ))}
         </div>
     );
@@ -229,7 +274,7 @@ const GenericCard = ({ data }: { data: Record<string, any> }) => {
     if (!data || typeof data !== "object") return null;
 
     return (
-        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all mb-3 group/card">
+        <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full">
             <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;

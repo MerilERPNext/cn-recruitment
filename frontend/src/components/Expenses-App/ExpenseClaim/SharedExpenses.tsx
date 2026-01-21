@@ -6,6 +6,7 @@ import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft } from "lucide-react";
+import { Typography } from "../../shared/atoms/Typography";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -159,7 +160,7 @@ const SharedExpenses: React.FC = () => {
 
   return (
     <div
-      className="relative flex size-full flex-col group/design-root md:p-6"
+      className="relative flex size-full flex-col group/design-root md:p-6 md:px-4 md:py-4"
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
       <div className="flex justify-between items-center mb-2 border-b border-gray-200">
@@ -173,9 +174,12 @@ const SharedExpenses: React.FC = () => {
             <div className="min-w-8"></div>
           </div>
         ) : (
-          <h2 className="text-lg font-semibold text-gray-800 pb-1">
-            Shared Expense Claims
-          </h2>
+          <div className="flex flex-col mb-2 px-2">
+            <Typography variant="h4">Shared Expense Claims</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage shared expense claims
+            </Typography>
+          </div>
         )}
       </div>
 

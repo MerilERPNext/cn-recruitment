@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -65,21 +66,6 @@ const OvertimeApprovalCard = ({
     return styles;
   };
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const gridTemplateColumns = isBulkSelectEnabled
     ? "5% 10% 35% 8% 8% 20%" // With checkbox
@@ -133,9 +119,11 @@ const OvertimeApprovalCard = ({
             </div>
           )}
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.username}
-            </div>
+            <Link to={`/webapp/employee-profile?target_user=${data?.employee}`} target="_blank">
+              <div className="truncate text-gray-900 font-medium text-sm text-start">
+                {data?.username}
+              </div>
+            </Link>
           </WrapperHoverCard>
 
           <div className="text-gray-600 text-sm truncate text-start">
@@ -143,7 +131,7 @@ const OvertimeApprovalCard = ({
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           <div className="flex items-center justify-start">
@@ -218,7 +206,7 @@ const OvertimeApprovalCard = ({
                   <div className="flex gap-2">
                     {data?.due_date && (
                       <p className="card-subtitle">
-                        Due Date - {formatDate(data?.due_date)}
+                        Due Date - {formatToIndianDate(data?.due_date)}
                       </p>
                     )}
                   </div>

@@ -11,6 +11,7 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { CustomError } from "../../types/attendance";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Appreciations = () => {
     const [modal, setModal] = useState({
@@ -23,7 +24,7 @@ const Appreciations = () => {
     const { targetEmployeeId } = useTargetUser();
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name as string);
-
+    const queryClient = useQueryClient();
     const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
     const { data: employeeAppreciations } = useGetEmployeeAppreciations();
     const { mutate: appreciateEmployee, isPending: isSubmitting } = useAppreciateAnEmployeeMutation();
@@ -49,6 +50,7 @@ const Appreciations = () => {
                 onSuccess: () => {
                     toast.success("Appreciation sent successfully!");
                     setModal({ open: false, reason: "", type: "" });
+                    queryClient.invalidateQueries({ queryKey: ['all-emp-appreciations-badges'] })
                 },
                 onError: (error: CustomError) => {
                     const err = errorResponseFormater(error);
@@ -65,8 +67,8 @@ const Appreciations = () => {
                     label="Appreciate"
                     value={""}
                     position="bottom-right"
+                    contentAlign="start"
                     onChange={(e) => {
-                        console.log(e.target);
                         setModal({ open: true, reason: "", type: e.target.value })
                     }}
                     options={employeeAppreciations?.badges?.map((item) => ({

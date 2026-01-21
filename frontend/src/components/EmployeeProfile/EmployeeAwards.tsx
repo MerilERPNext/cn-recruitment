@@ -8,6 +8,9 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import Modal from "../shared/Modal";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Card } from "../shared/atoms/Card";
+import { Award as AwardIcon } from "lucide-react";
 
 export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -87,14 +90,14 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
                                 Awarded On
                             </span>
                             <span className="font-bold px-2 py-1 rounded-md">
-                                {new Date(award.awarded_at).toLocaleDateString()}
+                                {formatToIndianDate(award.awarded_at)}
                             </span>
                         </div>
                         {award.period_start_date && award.period_end_date && (
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-500 font-medium">Award Dates</span>
                                 <span className="font-semibold text-gray-700 text-[11px]">
-                                    {award.period_start_date} → {award.period_end_date}
+                                    {formatToIndianDate(award.period_start_date)} → {formatToIndianDate(award.period_end_date)}
                                 </span>
                             </div>
                         )}
@@ -132,7 +135,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
     if (!hasAwards) {
         if (isDesktop) {
             return (
-                <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
+                <div className="pt-3 w-1/2 h-full p-2 bg-white rounded-md">
                     <h2 className="text-lg font-bold text-gray-900 mb-3">
                         Appreciations
                     </h2>
@@ -155,7 +158,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
         }
 
         return (
-            <div className="w-full border-t border-gray-200 mt-6 pt-6 px-6">
+            <div className="w-full border-gray-200 mt-6 pt-6 px-6">
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                     Appreciations
                 </h2>
@@ -239,26 +242,29 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
 
     if (isDesktop) {
         return (
-            <div className="border-l border-gray-200 pl-8 pt-3 w-1/2 h-full p-2">
-                <h2 className="text-lg font-bold text-gray-900 mb-3">
-                    Appreciations
-                </h2>
+            <Card shadow="none" className="h-full w-1/2 p-6 flex flex-col">
+                <Typography variant="h4" className="font-bold text-gray-900 mb-2 flex gap-2 items-center">
+                    <AwardIcon className="text-primary" size={18} />
+                    <span>
+                        Appreciations
+                    </span>
+                </Typography>
 
-                <div className="p-2 bg-gray-50 rounded-2xl border border-gray-200">
+                <div className="flex-1 p-4 rounded-2xl">
                     {renderAwardsGrid()}
                 </div>
                 {renderAllAwardsModal()}
-            </div>
+            </Card>
         );
     }
 
     return (
-        <div className="w-full border-t border-gray-200 mt-6 pt-6 px-6">
-            <h2 className="text-base font-bold text-gray-900 mb-4">
+        <div className="w-full border-t border-gray-100 mt-8 pt-8 px-6">
+            <Typography variant="h4" className="font-bold text-gray-900 mb-4">
                 Appreciations
-            </h2>
+            </Typography>
 
-            <div className="flex gap-5 overflow-x-auto py-3 scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto py-2 scrollbar-hide">
                 {displayedAwards.map((award: Award) => (
                     <AwardBadge key={award.name} award={award} />
                 ))}
@@ -267,10 +273,10 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
                         onClick={() => setShowAllModal(true)}
                         className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer group"
                     >
-                        <div className="w-14 h-14 rounded-full bg-blue-100 border-2 border-blue-200 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-blue-200 group-hover:border-blue-300">
-                            <span className="text-blue-700 font-bold text-sm">+{remainingCount}</span>
+                        <div className="w-14 h-14 rounded-full bg-blue-50 border-2 border-primary-100 flex items-center justify-center shadow-sm transition-all duration-300 group-hover:bg-primary-50 group-hover:border-primary-200">
+                            <span className="text-primary-600 font-bold text-sm">+{remainingCount}</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-blue-600">View All</span>
+                        <span className="text-[10px] font-semibold text-primary-500">View All</span>
                     </div>
                 )}
             </div>

@@ -5,7 +5,7 @@ import { useScreenSize } from "../../../../hooks/useScreenSize"
 import { FormIOComponent, FormIOSchema } from "../../../../types/formio"
 import { createPortal } from "react-dom"
 import { Form } from "@tsed/react-formio"
-import { X } from "lucide-react"
+import ReivewForm from "../../Confirmation/Component/ReivewForm"
 
 interface ApprovalStage {
   stage_name: string | null
@@ -170,24 +170,18 @@ export default function SeparationApprovalStages({ stages }: ApprovalStagesProps
       ) : <StageCardDesktop key={index} isLast={index + 1 === stages.length} index={index} stage={stage} handleShowForm={handleShowForm} />
       )}
       {formSchema && show &&
-        createPortal(<div className="fixed inset-0 z-50 bg-black/10 flex justify-center items-center">
-          <div className="max-w-[500px] mx-2 w-full rounded-xl bg-white p-6">
-            <div className="flex border-b pb-2 mb-2">
-              <p className="text-xl font-semibold">Review Form</p>
-              <X className="ml-auto text-gray-500 hover:text-gray-800 cursor-pointer rounded-lg bg-gray-100 hover:bg-gray-200 w-8 h-8" onClick={() => setShow(false)} />
-            </div>
-            <div>
-              <Form
-                form={formSchema}
-                options={{
-                  readOnly: true, // This makes the entire form read-only
-                  viewAsHtml: false // Set to true to render as plain HTML instead of form inputs
-                }}
-                submit={false}
-              />
-            </div>
-          </div>
-        </div>, document.body)
+        createPortal(
+          <ReivewForm onClose={() => setShow(false)}>
+            <Form
+              form={formSchema}
+              options={{
+                readOnly: true, // This makes the entire form read-only
+                viewAsHtml: false // Set to true to render as plain HTML instead of form inputs
+              }}
+              submit={false}
+            />
+          </ReivewForm>
+          , document.body)
       }
 
     </div>

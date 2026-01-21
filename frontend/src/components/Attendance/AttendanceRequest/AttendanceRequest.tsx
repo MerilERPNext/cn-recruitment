@@ -25,7 +25,7 @@ const AttendanceRequest = ({
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
@@ -125,7 +125,21 @@ const AttendanceRequest = ({
                         fieldtype: "Select",
                         options: ["Pending", "Approved", "Rejected"],
                       },
+                      {
+                        fieldname: "custom_request_type",
+                        label: "Request Type",
+                        fieldtype: "Select",
+                        options: [
+                          "Attendance Adjustment",
+                          "Short Attendance Request",
+                          "Out Duty",
+                          "Clockin",
+                        ],
+                      },
                     ]}
+                    defaultFilters={{
+                      status: "Pending",
+                    }}
                   />
                 ) : (
                   <></>

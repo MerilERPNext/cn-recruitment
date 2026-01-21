@@ -1,6 +1,8 @@
 // Employee interface based on Frappe Employee DocType
 export interface Employee {
   designation: string;
+  department_display: string;
+  designation_display: string;
   shift_request_approver: string | null;
   name: string;
   employee: string;
@@ -13,7 +15,9 @@ export interface Employee {
   department?: string;
   company?: string;
   branch?: string;
+  branch_display?: string;
   grade?: string;
+  grade_display?: string;
   employment_type?: string;
   date_of_joining: string;
   date_of_birth: string;
@@ -83,7 +87,40 @@ export interface Employee {
   custom_enable_web_clockin?: boolean;
   custom_weekly_off?: string;
   employee_id: string;
+  custom_work_history?: IEmployeeWorkHistory[];
 }
+
+export interface IEmployeeWorkHistory {
+  name: string;
+  owner: string;
+  creation: string; // ISO-like datetime string
+  modified: string; // ISO-like datetime string
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  history_type: string;
+  doctype_name: string;
+  records: string;
+  field_label: string;
+  start_date: string; // YYYY-MM-DD
+  end_date: string | null;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
+  records_details: {
+    fullname: string;
+    department: {
+      name: string;
+      department_name: string;
+    };
+    branch: {
+      name: string;
+      branch_value: string;
+    };
+  };
+}
+
 
 export interface Award {
   name: string;

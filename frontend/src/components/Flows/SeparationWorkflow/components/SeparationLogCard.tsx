@@ -73,30 +73,45 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({ onClickAction, gt
             :
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-4 mb-4 relative overflow-hidden">
 
-                {/* 1. Header: Target Name & Status */}
-                <div className="flex justify-between items-start gap-3">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                            #{data?.idx}
-                        </span>
-                        <span className="font-bold text-gray-900 text-lg leading-tight">
-                            {data?.target}
-                        </span>
+
+
+
+                <div className="flex items-center justify-between">
+                    <div>
+                        <Typography variant="bodySmall">
+                            Stage
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.idx}
+                        </Typography>
                     </div>
-                    <div className="shrink-0">
-                        <Badge
-                            label={data?.status}
-                            textColor={statusColors[data?.status] ?? statusColors._}
-                        />
-                    </div>
+
+                    <Badge
+                        label={data?.status}
+                        textColor={statusColors[data?.status] ?? statusColors._}
+                    // textColor={getStatusBadgeClasses(data?.status)}
+                    />
                 </div>
 
-                {/* 2. Middle: Contextual Info */}
-                <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between border border-gray-100">
-                    <span className="text-sm text-gray-500 font-medium">Selected Action</span>
-                    <span className="text-sm font-semibold text-gray-700">
-                        {data?.selected_action || "—"}
-                    </span>
+                {/* User */}
+                <div className="flex justify-between">
+                    <div>
+                        <Typography variant="bodySmall">
+                            Assigned To
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.target}
+                        </Typography>
+                    </div>
+
+                    <div>
+                        <Typography variant="bodySmall">
+                            Selected Action
+                        </Typography>
+                        <Typography variant="bodyMedium">
+                            {data?.selected_action || "-"}
+                        </Typography>
+                    </div>
                 </div>
 
                 {/* 3. Footer: Action Buttons */}

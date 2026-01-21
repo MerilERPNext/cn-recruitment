@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CardTable from "../../shared/CardTable";
 import { useState } from "react";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -12,6 +12,8 @@ import Tooltip from "../../shared/Tooltip";
 import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -57,7 +59,9 @@ const MyAdvanceExpenseList = () => {
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <WrapperHoverCard employeeId={doc.employee}>
-          <span>{doc.employee_name}</span>
+          <Link to={`/webapp/employee-profile?target_user=${doc?.employee}`} target="_blank">
+            <span>{doc.employee_name}</span>
+          </Link>
         </WrapperHoverCard>
         <span>{formatToIndianDate(doc.posting_date)}</span>
         <span>{doc.company}</span>
@@ -100,10 +104,11 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Employee:</span> {doc.employee_name}
-        </p>
+        <Link to={`/webapp/employee-profile?target_user=${doc?.employee}`} target="_blank">
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Employee:</span> {doc.employee_name}
+          </p>
+        </Link>
 
         <p className="text-sm text-gray-600">
           <span className="font-medium">Date:</span>{" "}
@@ -152,61 +157,61 @@ const MyAdvanceExpenseList = () => {
         </div>
 
         <CardTable
-            titles={[
-              "Employee",
-              "Posting Date",
-              "Company",
-              "Department",
-              "Advance Amount",
-              "Status",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
-            <DataListView
-              queryKey={["employee-advance"]}
-              customAPI={{
-                method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: {
-                  doctype: "Employee Advance",
-                  employee: currentEmployee?.name,
-                  status: "Pending",
-                },
-              }}
-              defaultFilters={{
-                custom_type: "Reimbursement / Expense Advance",
-              }}
-              ItemComponent={RowWrapper}
-              SkeletonComponent={() => (
-                <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                  <div className="px-4 py-2 flex justify-between">
-                    <div>
-                      <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                      <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                    </div>
-                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+          titles={[
+            "Employee",
+            "Posting Date",
+            "Company",
+            "Department",
+            "Advance Amount",
+            "Status",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <DataListView
+            queryKey={["employee-advance"]}
+            customAPI={{
+              method: "cn_leave_shift_managment.api.get_open_approval_todos",
+              params: {
+                doctype: "Employee Advance",
+                employee: currentEmployee?.name,
+                status: "Pending",
+              },
+            }}
+            defaultFilters={{
+              custom_type: "Reimbursement / Expense Advance",
+            }}
+            ItemComponent={RowWrapper}
+            SkeletonComponent={() => (
+              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                <div className="px-4 py-2 flex justify-between">
+                  <div>
+                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
                   </div>
+                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
                 </div>
-              )}
-              isSearch={true}
-              isFilter={true}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
-                },
-              ]}
-              refetchTrigger={refetchAttendance}
-              onRefetchComplete={() => setRefetchAttendance(false)}
-              showRefreshButton={false}
-              orderBy="creation desc"
-              pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
+              </div>
+            )}
+            isSearch={true}
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: ["Pending", "Approved", "Rejected"],
+              },
+            ]}
+            refetchTrigger={refetchAttendance}
+            onRefetchComplete={() => setRefetchAttendance(false)}
+            showRefreshButton={false}
+            orderBy="creation desc"
+            pageSize={10}
+            infiniteScroll={true}
+            showPagination={true}
+            loadMorePagination={false}
+          />
+        </CardTable>
       </div>
 
       {selectedAdvanceId && (

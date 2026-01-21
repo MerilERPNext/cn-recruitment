@@ -295,8 +295,16 @@ export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
 };
 export const useGetEmployeeDetailsByEmpIdForProfile = (employee_id: string) => {
   return useQuery({
-    queryKey: ["all-emp-details-by-empid", employee_id],
+    queryKey: ["all-emp-details-by-empid-for-profile", employee_id],
     queryFn: () => profileService.getEmployeeDetailsByEmpIdForProfile(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
+export const useGetEmploymentHistoryData = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["employment-history-data", employee_id],
+    queryFn: () => profileService.getEmploymentHistoryData(employee_id),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
   });
@@ -310,7 +318,7 @@ export const useGetEmployeeAppreciations = () => {
 };
 export const useGetEmployeeEarnedAppreciations = (employee: string) => {
   return useQuery<{ badges: Award[] } | null>({
-    queryKey: ["all-emp-appreciations", employee],
+    queryKey: ["all-emp-appreciations-badges", employee],
     queryFn: () => profileService.getEmployeeEarnedAppreciations(employee),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee,
@@ -345,8 +353,7 @@ export const useShowAttendanaceAssignmentButton = (
 export const useGetDesignationHierarchy = (
   company: string,
   department: string,
-  designation: string,
-  isEdit: boolean
+  designation: string
 ) => {
   return useQuery({
     queryKey: ["designation-hierarchy", company, department, designation],
@@ -357,7 +364,7 @@ export const useGetDesignationHierarchy = (
         designation
       ),
     staleTime: 1000 * 60 * 5,
-    enabled: !!company && !isEdit,
+    enabled: true,
   });
 };
 

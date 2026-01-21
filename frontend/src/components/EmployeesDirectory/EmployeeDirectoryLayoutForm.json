@@ -1,0 +1,111 @@
+{
+    "title": "Employee Directory Filters",
+    "name": "employeeDirectoryFilters",
+    "path": "employee-directory-filters",
+    "display": "form",
+    "components": [
+        {
+            "label": "Employee Status",
+            "widget": "choicesjs",
+            "tableView": true,
+            "defaultValue": "Active",
+            "data": {
+                "values": [
+                    {
+                        "label": "Active Employees",
+                        "value": "Active"
+                    },
+                    {
+                        "label": "Inactive Employees",
+                        "value": "Inactive"
+                    }
+                ]
+            },
+            "validateWhenHidden": false,
+            "key": "status",
+            "type": "select",
+            "input": true
+        },
+        {
+            "label": "Select Company",
+            "key": "company",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Company",
+            "customClass": "mb-4",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.employee_history.get_designation_hierarchy_options"
+            },
+            "selectValues": "message.data.companies",
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "lazyLoad": false,
+            "clearOnRefresh": false
+        },
+        {
+            "label": "Select Departments",
+            "key": "department",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Departments",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.employee_history.get_designation_hierarchy_options?company={{ data.company }}"
+            },
+            "refreshOn": "company",
+            "clearOnRefresh": true,
+            "selectValues": "message.data.departments",
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Employee Type",
+            "key": "employment_type",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Employee Type",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Employment Type"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Current Office Location",
+            "key": "branch",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Current Office Location",
+            "customClass": "mb-4",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Branch"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Select Business Unit",
+            "key": "custom_business_unit",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Business Unit",
+            "customClass": "mb-4",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Business Unit"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        }
+    ]
+}

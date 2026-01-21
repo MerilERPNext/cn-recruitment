@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Link } from "react-router-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
@@ -88,7 +89,9 @@ const ApprovalRejectionQueue = ({
       </div>
       <div className="truncate text-gray-900 font-medium text-sm text-start">
         <WrapperHoverCard employeeId={data?.reference_document.employee}>
-          <span>{data.reference_document.employee_name}</span>
+          <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+            <span>{data.reference_document.employee_name}</span>
+          </Link>
         </WrapperHoverCard>
       </div>
       <div className="flex text-gray-900 text-sm flex-col">
@@ -107,15 +110,15 @@ const ApprovalRejectionQueue = ({
         {formatToIndianDate(data.reference_document.to_date)}
       </div>
       <div className="flex items-center text-gray-900 text-sm">
-        {data.due_date.replace(/-/g, "/")}
+        {formatToIndianDate(data?.due_date)}
       </div>
+
       <div className="flex items-center text-sm">
         <StatusBadge status={data.reference_document.status} />
       </div>
       <div className="flex w-full justify-start gap-2 whitespace-nowrap">
         {actions?.length &&
           actions.map((action: string) => {
-
             return (
               <Button
                 key={action}

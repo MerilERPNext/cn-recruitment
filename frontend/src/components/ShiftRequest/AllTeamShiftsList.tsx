@@ -1,6 +1,6 @@
 import React from "react";
 import { StatusBadge } from "./AllShiftsDashboard";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import formatToIndianDate, {
@@ -19,9 +19,11 @@ const TeamShiftRowItem: React.FC<{
       className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
     >
       <WrapperHoverCard employeeId={item.employee}>
-        <div className="my-data-cell font-medium truncate">
-          {item.employee_name || item.employee}
-        </div>
+        <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+          <div className="my-data-cell font-medium truncate">
+            {item.employee_name || item.employee}
+          </div>
+        </Link>
       </WrapperHoverCard>
 
       <div

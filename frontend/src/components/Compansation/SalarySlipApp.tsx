@@ -9,6 +9,7 @@ import Button from "../shared/atoms/Button";
 
 type TabName =
   | "Annual CTC"
+  | "Invoice Slip"
   | "Salary Slip"
   | "Tax Declaration"
   | "IT Declaration"
@@ -24,6 +25,7 @@ type ViewMode = "annual"; // ❌ removed monthly
 
 const tabRoutes: Record<TabName, string> = {
   "Annual CTC": "/webapp/salary-slip-app/ctc-salary-breakdown",
+  "Invoice Slip": "/webapp/salary-slip-app/invoice-page",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
   "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
   "IT Declaration": "/webapp/salary-slip-app/it-declaration-form",
@@ -116,8 +118,7 @@ const SalarySlipApp: React.FC = () => {
             <Button
               fullWidth
               size="lg"
-              bgColor="blue-600"
-              className="hover:bg-blue-700"
+              bgColor="primary"
               onClick={() => setIsLoanDialogOpen(true)}
             >
               + Create Loan

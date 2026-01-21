@@ -18,7 +18,7 @@ type Size = "xs" | "sm" | "md" | "lg";
 
 export type IconButtonProps = {
   icon: React.ReactNode;
-  label: string;
+  label?: string;
   onClick?: () => void;
   disabled?: boolean;
   color?: IconButtonColor;
@@ -143,7 +143,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           className={[
             SIZE_STYLES[size].wrapper,
             RADIUS_STYLES[radius],
-            "border-2 flex items-center justify-center mb-2 transition-colors duration-150",
+            "border-2 flex items-center justify-center transition-colors duration-150",
             COLOR_STYLES[color][variant],
           ]
             .filter(Boolean)
@@ -162,7 +162,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         <span
           className={[
             SIZE_STYLES[size].text,
-            "font-medium text-center text-text-body2",
+            "font-medium text-center text-text-body2  mt-2",
           ].join(" ")}
         >
           {label}

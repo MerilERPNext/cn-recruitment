@@ -8,42 +8,41 @@ const CardTable = ({
   children,
 }: {
   titles: string[];
-  columnWidths?: string[]; // optional
+  columnWidths?: string[];
   children: ReactNode;
 }) => {
   const { isDesktop } = useScreenSize();
 
-  // fallback: all columns equally sized
   const gridTemplateColumns = columnWidths?.length
     ? columnWidths.join(" ")
     : `repeat(${titles.length}, 1fr)`;
 
   return (
+    /* OUTER scroll container */
     <div
       className={
-        isDesktop
-          ? `overflow-x-auto rounded-lg bg-white shadow-sm`
-          : ""
+        isDesktop ? "overflow-x-auto rounded-lg bg-white shadow-sm" : ""
       }
     >
-      {/* Header */}
-      {isDesktop && (
-        <div
-          className="grid gap-4 px-6 py-4 bg-gray-50/80"
-          style={{ gridTemplateColumns }}
-        >
-          {titles?.map((item, i) => (
-            <Typography
-              key={i}
-              variant="bodySmall"
-              className="font-medium flex items-center justify-start"
-            >
-              {item}
-            </Typography>
-          ))}
-        </div>
-      )}
-      {children}
+      {/* INNER width holder */}
+      <div className="min-w-max">
+        {/* Header */}
+        {isDesktop && (
+          <div
+            className="grid gap-4 px-6 py-4 bg-gray-50/80"
+            style={{ gridTemplateColumns }}
+          >
+            {titles.map((item, i) => (
+              <Typography key={i} variant="bodySmall" className="font-medium">
+                {item}
+              </Typography>
+            ))}
+          </div>
+        )}
+
+        {/* Rows */}
+        {children}
+      </div>
     </div>
   );
 };

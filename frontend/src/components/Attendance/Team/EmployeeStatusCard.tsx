@@ -10,6 +10,7 @@ import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
+import { Link } from "react-router-dom";
 
 const EmployeeStatusCard = ({
   data,
@@ -108,7 +109,7 @@ const EmployeeStatusCard = ({
   );
 
   return (
-    <div className="w-full mt-2 p-3 border shadow-sm rounded-xl transition-all duration-200 bg-white hover-lift border border-gray-100 transition-colors">
+    <div className="w-full mt-2 p-3 shadow-sm rounded-xl transition-all duration-200 bg-white hover:shadow-xl hover:shadow-slate-200/50 border-gray-100 transition-colors">
       <div className="flex flex-col sm:flex-row  gap-3 w-full">
         {/* Left Section - Avatar + Info */}
         <div className="flex items-start gap-3 flex-1 justify-center">
@@ -121,12 +122,14 @@ const EmployeeStatusCard = ({
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
               <WrapperHoverCard employeeId={data?.employee}>
-                <Typography
-                  variant="bodyMedium"
-                  className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
-                >
-                  {data?.employee_name}
-                </Typography>
+                <Link to={`/webapp/employee-profile?target_user=${data?.employee}`} target="_blank">
+                  <Typography
+                    variant="bodyMedium"
+                    className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
+                  >
+                    {data?.employee_name}
+                  </Typography>
+                </Link>
               </WrapperHoverCard>
               {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
