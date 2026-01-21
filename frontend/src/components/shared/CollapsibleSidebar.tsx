@@ -32,6 +32,7 @@ import {
   Coins,
   BadgeIndianRupee,
   FileSpreadsheet,
+  Sheet,
 } from "lucide-react";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
@@ -229,10 +230,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/it-declaration-form",
         },
         {
+          name: "Team IT Declaration",
+          icon: Sheet,
+          href: "/webapp/salary-slip-app/team-it-declaration-form",
+        },
+        {
           name: "Tax Declaration Sheet",
           icon: Wallet,
           href: "/webapp/salary-slip-app/income-tax-sheet",
         },
+        
         {
           name: "Annual CTC",
           icon: Calculator,

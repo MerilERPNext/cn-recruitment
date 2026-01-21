@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build --base=/assets/recruitment/webapp/ && yarn copy-html-entry",
+    "build": "tsc -b && vite build --base=/recruitment/ && yarn copy-html-entry",
     "lint": "eslint .",
     "preview": "vite preview",
     "copy-html-entry": "cp ../recruitment/public/webapp/index.html ../recruitment/www/webapp.html"
