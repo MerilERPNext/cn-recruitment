@@ -106,10 +106,9 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
     setPos({
       top: top + rect.height / 2 - cardRect.height / 2,
-      left: left ,
+      left: left,
     });
   };
-
 
   useLayoutEffect(() => {
     if (show) updatePosition();
@@ -197,14 +196,16 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           </div>
                         )}
 
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900">
+                        <div className="flex-1 min-w-0 group">
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                             {emp["Full Name"]}
                           </p>
-                          <p className="text-sm text-gray-600 mt-0.5">
-                            @{emp.Department || "—"}
+
+                          <p className="text-sm text-gray-600 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
+                            @{emp.Designation}
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">
+
+                          <p className="text-sm text-gray-500 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                             {emp["Company Email"] || emp["Personal Email"]}
                           </p>
                         </div>
