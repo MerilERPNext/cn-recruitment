@@ -57,7 +57,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,
-    today
+    today,
   );
   const queryClient = useQueryClient();
   const { defaults } = useRequestLeaveModal();
@@ -124,9 +124,11 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const showDailyConfig = Boolean(
     formData.halfDay &&
-      formData.half_day_mode === "individual" &&
-      formData.fromDate &&
-      formData.toDate
+    formData.half_day_mode === "individual" &&
+    formData.fromDate &&
+    formData.toDate &&
+    formData.fromDate !== formData.toDate && // Add this line
+    Object.keys(dailyConfig).length > 0,
   );
 
   const leaveTypeOptions = useMemo(() => {
@@ -148,7 +150,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         acc[entry.type] = entry.balance;
         return acc;
       },
-      {}
+      {},
     );
   }, [leaveBalanceData]);
 
@@ -201,14 +203,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       setLeaveDays(days);
     },
-    []
+    [],
   );
 
   const { data: fields } = useGetLeaveRequestFields(
     formData.leaveType,
     formData.fromDate || "",
-    formData.toDate || ""
+    formData.toDate || "",
   );
+
+  console.log(fields?.mandatory);
 
   const { data: requiredFields } = useRequiredFields("Leave Application");
   const requiredFieldMap = useMemo(() => {
@@ -275,10 +279,22 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   ]);
 
   useEffect(() => {
-    if (!formData.halfDay || formData.half_day_mode !== "individual") {
+    // Clear daily config when NOT individual mode OR when dates are equal
+    if (
+      !formData.halfDay ||
+      formData.half_day_mode !== "individual" ||
+      (formData.fromDate &&
+        formData.toDate &&
+        formData.fromDate === formData.toDate)
+    ) {
       setDailyConfig({});
     }
-  }, [formData.halfDay, formData.half_day_mode]);
+  }, [
+    formData.halfDay,
+    formData.half_day_mode,
+    formData.fromDate,
+    formData.toDate,
+  ]);
 
   useEffect(() => {
     if (formData.half_day_mode !== "individual") return;
@@ -312,7 +328,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         }
       }
     },
-    []
+    [],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -336,7 +352,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     } catch (err) {
       const formatted = errorResponseFormater(
         err,
-        "Submission failed. Please try again."
+        "Submission failed. Please try again.",
       );
       toast.error(formatted);
     }
@@ -393,10 +409,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 enableTime: false,
                 defaultValue:
                   defaults?.source === "balances"
-                    ? `${today}T00:00:00`
+                    ? `${today}T00:00:00+05:30`
                     : defaults?.fromDate
-                    ? `${defaults.fromDate}T00:00:00`
-                    : "",
+                      ? `${defaults.fromDate}T00:00:00`
+                      : "",
                 validate: { required: requiredFieldMap["from_date"] },
                 input: true,
                 customClass: "mb-4",
@@ -589,9 +605,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       {
         type: "textarea",
         key: "description",
-        label: requiredFieldMap["description"]
-          ? "Message <span style='color:red;margin-left:3px;'> *</span>"
-          : "Message",
+        label:
+          mandatory?.description || requiredFieldMap["description"]
+            ? "Message <span style='color:red;margin-left:3px;'> *</span>"
+            : "Message",
         errorLabel: "Message",
         defaultValue: defaults?.description ?? "",
         placeholder: "Enter the message for leave",
@@ -608,9 +625,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             {
               type: "select",
               key: "custom_reason",
-              label: requiredFieldMap["custom_reason"]
-                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-                : "Reason",
+              label:
+                mandatory?.custom_reason || requiredFieldMap["custom_reason"]
+                  ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+                  : "Reason",
               errorLabel: "Reason",
               placeholder: "Select a reason",
               defaultValue: defaults?.custom_reason ?? "",
@@ -647,7 +665,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                     },
                   ]
                 : [],
-              label: requiredFieldMap["custom_attachment"]
+              label: fields?.mandatory?.custom_attachment
                 ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
                 : "Attachment",
               errorLabel: "Attachment",
