@@ -95,6 +95,8 @@ export default function DesktopDashboard() {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+
+  
   const loginUserEmail = userId || "";
   const mutation = useRequestPasswordReset();
   const handleReset = () => {
@@ -130,6 +132,7 @@ export default function DesktopDashboard() {
     refetch: refetchHomeSummary,
     isRefetching,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
+  console.log("homeSummary",homeSummary)
   const { data: canShowClockIn } = useCanShowClockIn(
     currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
   );

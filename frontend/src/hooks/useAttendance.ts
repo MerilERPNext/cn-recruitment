@@ -378,6 +378,9 @@ export function useCreateNewAttendanceRequest() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-requests"] });
     },
     onError: (e) => {
       console.log(e);
@@ -549,6 +552,7 @@ export function useCreatePlannedOvertimeRequest() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
     },
     onError: (e) => {
       console.log(e);
