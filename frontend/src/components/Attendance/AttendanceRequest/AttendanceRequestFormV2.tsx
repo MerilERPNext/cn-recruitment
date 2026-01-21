@@ -176,7 +176,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useAttendanceRequestAttachments(
       activeEmployeeId,
       fromDateChanged ||
-        formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -362,18 +362,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document.custom_from_time,
-              )}`,
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document.custom_from_time,
+            )}`,
+          )
           : "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document?.custom_to_time,
-              )}`,
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document?.custom_to_time,
+            )}`,
+          )
           : "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -389,13 +389,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
-          defaultAttendanceData?.attachments?.length > 0
+            defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-                return {
-                  name: item?.file_url?.split("/").pop(),
-                  url: item?.file_url,
-                };
-              })
+              return {
+                name: item?.file_url?.split("/").pop(),
+                url: item?.file_url,
+              };
+            })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -553,7 +553,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   type CustomError = Error & {
     response?: { data?: { exception?: string } };
   };
-
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
     // Logic to determine employee: Use selected from form (if any) or fallback to current
     const selectedEmpId =
@@ -577,7 +576,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           submission.data.from_date)) && {
         to_date:
           submission.data.request_type === "Out Duty" &&
-          submission.data.from_date
+            submission.data.from_date
             ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
             : formatDateToYYYYMMDD(new Date(submission.data.to_date as string)),
       }),
@@ -728,10 +727,59 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (submission?.changed?.component?.key === "from_date") {
       setFromDateChanged(submission.changed.value.toString() || "");
     }
+
     if (submission?.changed?.component?.key === "request_type") {
-      setRequestTypeChanged(submission.changed.value.toString() || "");
+      const newRequestType = submission.changed.value?.toString() || "";
+      setRequestTypeChanged(newRequestType);
+
+      const formInstance = formAddressInstance.current;
+      if (!formInstance) return;
+
+      const checkinComp = formInstance.getComponent("checkin_time");
+      const checkoutComp = formInstance.getComponent("checkout_time");
+
+      const shiftStart = shiftData?.start_time || null;
+      const shiftEnd = shiftData?.end_time || null;
+
+      const isOutDuty = newRequestType === "Out Duty";
+
+      if (checkinComp) {
+        // 🔥 HARD RESET first
+        checkinComp.setValue(null, { noUpdateEvent: true });
+
+        if (isOutDuty && shiftStart) {
+          // ✅ ALWAYS enforce shift start
+          checkinComp.setValue(shiftStart, { noUpdateEvent: true });
+        }
+
+        (checkinComp as any).disabled = isOutDuty;
+        if (checkinComp.component) {
+          checkinComp.component.disabled = isOutDuty;
+        }
+
+        checkinComp.redraw();
+      }
+
+      if (checkoutComp) {
+        // 🔥 HARD RESET first
+        checkoutComp.setValue(null, { noUpdateEvent: true });
+
+        if (isOutDuty && shiftEnd) {
+          // ✅ ALWAYS enforce shift end
+          checkoutComp.setValue(shiftEnd, { noUpdateEvent: true });
+        }
+
+        (checkoutComp as any).disabled = isOutDuty;
+        if (checkoutComp.component) {
+          checkoutComp.component.disabled = isOutDuty;
+        }
+
+        checkoutComp.redraw();
+      }
+
       return;
     }
+
     // Track employee selection
     if (submission?.changed?.component?.key === "employee") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -948,11 +996,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input",
-                    )
+                    "input.flatpickr-input",
+                  )
                   : document.querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input",
-                    );
+                    "input.flatpickr-input",
+                  );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -990,9 +1038,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               fullWidth
               size="lg"
               variant="contain"
-              className={`flex-1 ${
-                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-              } font-medium`}
+              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
+                } font-medium`}
             >
               {mutation.isPending || uploadFileLoading ? (
                 <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
