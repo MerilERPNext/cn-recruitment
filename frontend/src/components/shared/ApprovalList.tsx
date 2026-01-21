@@ -6,6 +6,7 @@ import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 type ApprovalListProps = {
   doctype: string;
@@ -210,7 +211,7 @@ const ApprovalList = ({
             triggerRefetch();
           },
           onError: (error) => {
-            toast.error(error?.message);
+            toast.error(errorResponseFormater(error));
             console.error(error);
           },
         }
