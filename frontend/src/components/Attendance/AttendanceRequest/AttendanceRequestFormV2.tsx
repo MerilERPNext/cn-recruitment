@@ -745,7 +745,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
       if (checkinComp) {
         // 🔥 HARD RESET first
-        checkinComp.setValue(null, { noUpdateEvent: true });
+        checkinComp.setValue('', { noUpdateEvent: true });
 
         if (isOutDuty && shiftStart) {
           // ✅ ALWAYS enforce shift start
@@ -762,7 +762,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
       if (checkoutComp) {
         // 🔥 HARD RESET first
-        checkoutComp.setValue(null, { noUpdateEvent: true });
+        checkoutComp.setValue('', { noUpdateEvent: true });
 
         if (isOutDuty && shiftEnd) {
           // ✅ ALWAYS enforce shift end
