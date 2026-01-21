@@ -97,6 +97,7 @@ const formioFieldTypeMap: Record<string, string> = {
   // Complex fields
   Table: "datagrid",
   "Table MultiSelect": "select",
+  "Table Multiselect": "select",
 
   // HTML field
   HTML: "content",
@@ -120,10 +121,25 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   };
 
   // Special processing for Table MultiSelect values
-  if (field.fieldtype === "Table MultiSelect" && Array.isArray(fieldValue)) {
-    // Users requested to use the label/fieldname as the key for extraction
+  if (
+    (field.fieldtype === "Table MultiSelect" ||
+      field.fieldtype === "Table Multiselect") &&
+    Array.isArray(fieldValue)
+  ) {
     schema.defaultValue = fieldValue.map((row: any) => {
-      return row[field.fieldname] || row[field.label] || row.label || row.name;
+      // 1. Try common link fields in child tables (e.g. for IP Restriction field, look for ip_restriction field)
+      const linkFieldName = field.child_fields?.find((cf: any) => cf.fieldtype === 'Link')?.fieldname;
+      if (linkFieldName && row[linkFieldName]) return row[linkFieldName];
+
+      // 2. Try the label/fieldname as the key for extraction (User requested fallback)
+      return (
+        row[field.fieldname] ||
+        row[field.label] ||
+        row.label ||
+        row.name ||
+        // 3. Last resort: first property that is a string and not a standard ERPNext field
+        Object.keys(row).find(k => !['name', 'owner', 'parent', 'parentfield', 'parenttype', 'idx', 'docstatus', 'creation', 'modified', 'modified_by'].includes(k) && typeof row[k] === 'string')
+      );
     });
   }
 
@@ -160,17 +176,75 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       }
       break;
 
-    case "Table MultiSelect":
+    case "Table MultiSelect": {
+      schema.type = "select";
+      schema.widget = "choicesjs";
+      schema.dropdown = "body";
+      schema.dataSrc = "url";
+      schema.searchEnabled = true;
+      schema.multiple = true
+      schema.data = {
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
+      };
+
+      schema.lazyLoad = true;
+      schema.dataType = "string";
+      schema.idPath = "name";
+      schema.valueProperty = "name";
+      schema.selectValues = "message";
+      schema.searchField = "q";
+      schema.template = (item: any) => {
+        const data = item?.item || {};
+
+        const name = data.name || "";
+
+        const secondary =
+          data.employee_name ||
+          data.title ||
+          data.label ||
+          data.full_name ||
+          data.fullname ||
+          data.first_name ||
+          "";
+
+        const designation = data.custom_designation_name || "";
+        const branch = data.branch || "";
+
+        const infoText =
+          designation && branch
+            ? `${designation} | ${branch}`
+            : designation || branch;
+
+        return `
+            <div class="formio-select-item">
+              <div class="formio-select-item-main">
+                <span class="primary">${name}</span>
+                ${secondary ? `<span class="secondary">(${secondary})</span>` : ""}
+              </div>
+  
+              ${infoText
+            ? `
+                <div class="formio-select-item-info">
+                  <span>${infoText}</span>
+                </div>
+              `
+            : ""}
+  
+            </div>
+          `;
+      };
+      break;
+    }
     case "Link": {
       schema.type = "select";
       schema.widget = "choicesjs";
       schema.dropdown = "body";
       schema.dataSrc = "url";
       schema.searchEnabled = true;
-      schema.multiple = field.fieldtype === "Table MultiSelect";
+      schema.multiple = false;
 
       schema.data = {
-        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.options ?? ""}&limit=20`,
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
       };
 
       schema.lazyLoad = true;
@@ -411,7 +485,12 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
 
   // Handle read-only fields
   if (field.read_only === 1 || field.read_only === true) {
-    if (field.fieldtype !== "Table") {
+    // Don't disable Table or Table MultiSelect fields - they need to load their data/options
+    if (
+      field.fieldtype !== "Table" &&
+      field.fieldtype !== "Table MultiSelect" &&
+      field.fieldtype !== "Table Multiselect"
+    ) {
       schema.disabled = true;
     }
   }

@@ -124,6 +124,17 @@ const getLayoutedElements = (
   return { nodes: newNodes, edges };
 };
 
+const countTotalDescendants = (node: EmployeeHierarchy): number => {
+  let count = 0;
+  if (node.children) {
+    count += node.children.length;
+    node.children.forEach((child) => {
+      count += countTotalDescendants(child);
+    });
+  }
+  return count;
+};
+
 // ✅ Show grandparent → parent → current user → children (only current branch)
 const buildHierarchyWithGrandparent = (
   user: EmployeeHierarchy,
@@ -135,6 +146,8 @@ const buildHierarchyWithGrandparent = (
 
   // 🧓 Grandparent (top)
   if (grandParent) {
+    const direct = grandParent.children?.length || 0;
+    const total = countTotalDescendants(grandParent);
     nodes.push({
       id: grandParent.id,
       type: "person",
@@ -143,11 +156,14 @@ const buildHierarchyWithGrandparent = (
         id: grandParent.id,
         name: grandParent.name,
         title: grandParent.title || "",
+        image: grandParent.image,
         hasChildren: true,
         isExpanded: true,
         onToggleExpand: () => { },
         showExpand: false,
-        totalChildren: grandParent.children?.length || 0,
+        totalChildren: total,
+        directChildren: direct,
+        indirectChildren: total - direct,
       },
     });
 
@@ -164,6 +180,8 @@ const buildHierarchyWithGrandparent = (
 
   // 👨 Parent (middle)
   if (parent) {
+    const direct = parent.children?.length || 0;
+    const total = countTotalDescendants(parent);
     nodes.push({
       id: parent.id,
       type: "person",
@@ -171,12 +189,15 @@ const buildHierarchyWithGrandparent = (
       data: {
         id: parent.id,
         name: parent.name,
+        image: parent.image,
         title: parent.title || "",
         hasChildren: true,
         isExpanded: true,
         onToggleExpand: () => { },
         showExpand: false,
-        totalChildren: parent.children?.length || 0,
+        totalChildren: total,
+        directChildren: direct,
+        indirectChildren: total - direct,
       },
     });
 
@@ -191,7 +212,8 @@ const buildHierarchyWithGrandparent = (
 
   // 👤 Current user
   const visibleChildren = (user.children || []).slice(0, 5);
-  const totalChildren = user.children?.length || 0;
+  const direct = user.children?.length || 0;
+  const total = countTotalDescendants(user);
 
   nodes.push({
     id: user.id,
@@ -200,10 +222,13 @@ const buildHierarchyWithGrandparent = (
     data: {
       id: user.id,
       name: user.name,
+      image: user.image,
       title: user.title || "",
-      hasChildren: totalChildren > 0,
+      hasChildren: total > 0,
       childrens: visibleChildren,
-      totalChildren,
+      totalChildren: total,
+      directChildren: direct,
+      indirectChildren: total - direct,
       showExpand: false,
       isExpanded: true,
       onToggleExpand: () => { },
@@ -213,6 +238,8 @@ const buildHierarchyWithGrandparent = (
   // 👶 Children (limit 5)
   if (visibleChildren.length > 0) {
     visibleChildren.forEach((child) => {
+      const childDirect = child.children?.length || 0;
+      const childTotal = countTotalDescendants(child);
       nodes.push({
         id: child.id,
         type: "person",
@@ -220,10 +247,13 @@ const buildHierarchyWithGrandparent = (
         data: {
           id: child.id,
           name: child.name,
+          image: child.image,
           title: child.title || "",
-          hasChildren: (child.children || []).length > 0,
+          hasChildren: childTotal > 0,
           childrens: child.children || [],
-          totalChildren: child.children?.length || 0,
+          totalChildren: childTotal,
+          directChildren: childDirect,
+          indirectChildren: childTotal - childDirect,
           showExpand: false,
           isExpanded: false,
           onToggleExpand: () => { },
@@ -299,8 +329,8 @@ export default function ThreeLevelOrgChart() {
   }, [employeeHierarchy, employeeId, calculateLayout]);
 
   return (
-    <div className="w-full bg-gray-100">
-      <div className=" bg-white shadow-sm  py-3 flex items-start justify-between">
+    <div className="w-full rounded-md bg-white">
+      <div className="py-3 rounded-md flex items-start justify-between">
         <div className="flex items-start justify-between">
           <div className="border-gray-200 px-6 my-2 pb-2">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -321,7 +351,7 @@ export default function ThreeLevelOrgChart() {
         </button>
       </div>
 
-      <div className="h-[400px] px-2 bg-white">
+      <div className="h-[400px] px-2 bg-white rounded-md">
         <ReactFlow
           nodes={nodes}
           edges={edges}

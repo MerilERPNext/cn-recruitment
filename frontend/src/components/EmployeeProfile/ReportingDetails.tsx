@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useCurrentEmployeeAllDetails,
   useGetEmployeeHierarchyHistory,
@@ -5,7 +6,7 @@ import {
 import useCurrentUser from "../../hooks/useCurrentUser";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
-import { EditIcon, PlusIcon } from "lucide-react";
+import { EditIcon, IdCard, MapPin, PlusIcon, Warehouse } from "lucide-react";
 import React from "react";
 import { Building2 } from "lucide-react";
 import { useState } from "react";
@@ -13,6 +14,8 @@ import ReportingDetailsForm from "../MyProfile/ReportingDetailsForm";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Typography } from "../shared/atoms/Typography";
+import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
   const { data: currentUser } = useCurrentUser();
@@ -20,48 +23,91 @@ const ReportingDetails = () => {
     currentUser?.name || "",
   );
 
-  const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
-    useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");
+    const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
+        useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");
+    const { data: userUiPermission } = useGetUiPermission("Profile");
+    const canEditReportingDetails = isActionEnabled(
+        userUiPermission,
+        "edit_reporting_details",
+        "Employee Profile"
+    );
+    const canAddReportingDetails = isActionEnabled(
+        userUiPermission,
+        "add_reporting_details",
+        "Employee Profile"
+    );
 
-  const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canEditReportingDetails = isActionEnabled(
-    userUiPermission,
-    "edit_reporting_details",
-    "Employee Profile",
-  );
-  const canAddReportingDetails = isActionEnabled(
-    userUiPermission,
-    "add_reporting_details",
-    "Employee Profile",
-  );
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
-  interface HierarchyCardProps {
-    name: string;
-    startDate: string;
-    endDate: string | null;
-  }
+    interface HierarchyCardProps {
+        name: string;
+        startDate: string;
+        endDate: string | null;
+        department: string;
+        id: string;
+        location: string;
+    }
 
-  const HierarchyCard: React.FC<HierarchyCardProps> = ({
-    name,
-    startDate,
-    endDate,
-  }) => {
-    const isCurrent = !endDate;
+    const HierarchyCard: React.FC<HierarchyCardProps> = ({
+        name,
+        startDate,
+        endDate,
+        department,
+        id,
+        location,
+    }) => {
 
-    return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 relative hover-lift">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Building2 className="w-5 h-5 text-blue-600" />
-          </div>
-          <h3 className="font-medium text-gray-900 truncate">
-            <span title={name}>{name}</span>
-          </h3>
-        </div>
+        const isCurrent = !endDate;
+
+        return (
+            <div className="bg-white rounded-xl shadow-sm border p-6 relative min-w-[450px] hover-lift">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
+                            <h3 className="font-medium text-gray-900 truncate">
+                                <span title={name}>{name}</span>
+                            </h3>
+                        </Link>
+                        <div className="flex flex-wrap gap-4 mt-1">
+                            {id && (
+                                <Typography
+                                    variant="label"
+                                    color="secondary"
+                                    className="font-medium truncate flex items-center gap-1.5"
+                                >
+                                    <IdCard size={14} className="text-primary-500" />
+                                    <span>{id}</span>
+                                </Typography>
+                            )}
+                            {department && (
+                                <Typography
+                                    variant="label"
+                                    color="secondary"
+                                    className="font-medium truncate flex items-center gap-1.5"
+                                >
+                                    <Warehouse size={14} className="text-primary-500" />
+                                    <span>{department}</span>
+                                </Typography>
+                            )}
+                            {location && (
+                                <Typography
+                                    variant="label"
+                                    color="secondary"
+                                    className="font-medium truncate flex items-center gap-1.5"
+                                >
+                                    <MapPin size={14} className="text-primary-500" />
+                                    <span>{location}</span>
+                                </Typography>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
         <div className="space-y-3">
           <div className="flex justify-between items-center">
@@ -141,52 +187,89 @@ const ReportingDetails = () => {
           </div>
         </div>
 
-        {/* Hierarchy History Cards */}
-        {Object.entries(hierarchySections).map(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ([sectionTitle, records]: any) => (
-            <div key={sectionTitle} className="mb-10">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                {sectionTitle}
-              </h3>
+                {/* Hierarchy History Cards */}
+                {(() => {
+                    const joinDate = currentEmployee?.date_of_joining ? new Date(currentEmployee.date_of_joining).getTime() : null;
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {records.map(
-                  (item: {
-                    records: string;
-                    reporting_employee_name: string;
-                    start_date: string;
-                    end_date: string;
-                  }) => (
-                    <HierarchyCard
-                      key={item.records}
-                      name={item.reporting_employee_name}
-                      startDate={item.start_date}
-                      endDate={item.end_date}
-                    />
-                  ),
-                )}
-              </div>
+                    const allRecords: any[] = [];
+                    Object.entries(hierarchySections).forEach(([category, records]: [string, any]) => {
+                        records.forEach((record: any) => {
+                            allRecords.push({ ...record, category });
+                        });
+                    });
+
+                    let overallClosestItem: any = null;
+                    let overallClosestCategory: string | null = null;
+                    let minDiff = Infinity;
+
+                    if (joinDate && allRecords.length > 0) {
+                        allRecords.forEach((item) => {
+                            const itemDate = item.start_date ? new Date(item.start_date).getTime() : 0;
+                            const diff = Math.abs(itemDate - joinDate);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                overallClosestItem = item;
+                                overallClosestCategory = item.category;
+                            }
+                        });
+                    }
+
+                    const sortedCategories = Object.keys(hierarchySections).sort((a, b) => {
+                        if (a === overallClosestCategory) return -1;
+                        if (b === overallClosestCategory) return 1;
+                        return a.localeCompare(b);
+                    });
+
+                    return sortedCategories.map((category) => {
+                        const items = hierarchySections[category];
+                        const sortedItems = [...items].sort((a, b) => {
+                            if (joinDate && category === overallClosestCategory) {
+                                if (a.records === overallClosestItem?.records) return -1;
+                                if (b.records === overallClosestItem?.records) return 1;
+                            }
+                            const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
+                            const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
+                            return bDate - aDate;
+                        });
+
+                        return (
+                            <div key={category} className="mb-10">
+                                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                                    {category}
+                                </h3>
+
+                                <div className="flex gap-2 overflow-auto">
+                                    {sortedItems.map((item: any) => (
+                                        <div
+                                            key={item.records}
+                                            className={`${sortedItems.length === 1 ? "max-w-md w-full" : ""}`}
+                                        >
+                                            <HierarchyCard
+                                                name={item.reporting_employee_name}
+                                                startDate={item.start_date}
+                                                endDate={item.end_date}
+                                                department={item.department}
+                                                id={item.records}
+                                                location={item.branch}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    });
+                })()}
             </div>
-          ),
-        )}
-      </div>
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <ReportingDetailsForm
-              onCancel={() => {
-                setIsModalOpen(false);
-                setIsEditing(false);
-              }}
-              isEdit={isEditing}
-              defaultStartDate={defaultStartDateForAdd}
-            />
-          </div>
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+
+                        <ReportingDetailsForm onCancel={() => { setIsModalOpen(false); setIsEditing(false) }} isEdit={isEditing} />
+                    </div>
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default ReportingDetails;

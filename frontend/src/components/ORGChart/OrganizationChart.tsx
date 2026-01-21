@@ -26,6 +26,17 @@ const nodeTypes = {
   person: PersonNode,
 };
 
+const countTotalDescendants = (node: any): number => {
+  let count = 0;
+  if (node.children) {
+    count += node.children.length;
+    node.children.forEach((child: any) => {
+      count += countTotalDescendants(child);
+    });
+  }
+  return count;
+};
+
 /**
  * Recursively build nodes and edges from employeeHierarchy
  */
@@ -40,6 +51,8 @@ const buildHierarchy = (
 
   const nodeId = employee.id;
   const hasChildren = employee.children && employee.children.length > 0;
+  const direct = employee.children?.length || 0;
+  const total = countTotalDescendants(employee);
 
   nodes.push({
     id: nodeId,
@@ -52,7 +65,10 @@ const buildHierarchy = (
       childrens: employee?.children,
       hasChildren,
       isExpanded: true,
-      onToggleExpand: () => {},
+      totalChildren: total,
+      directChildren: direct,
+      indirectChildren: total - direct,
+      onToggleExpand: () => { },
     },
   });
 
@@ -220,7 +236,7 @@ export default function OrganizationChart() {
     ...node,
     data: {
       ...node.data,
-      onToggleExpand: node.data.hasChildren ? toggleNodeExpansion : () => {},
+      onToggleExpand: node.data.hasChildren ? toggleNodeExpansion : () => { },
     },
   }));
 

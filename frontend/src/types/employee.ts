@@ -15,7 +15,9 @@ export interface Employee {
   department?: string;
   company?: string;
   branch?: string;
+  branch_display?: string;
   grade?: string;
+  grade_display?: string;
   employment_type?: string;
   date_of_joining: string;
   date_of_birth: string;
