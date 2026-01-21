@@ -185,7 +185,10 @@ const RegularizeDrawer = () => {
                                                     />
                                                 </td>
                                                 <td className="border-r px-4 py-3 text-sm">
-                                                    {item.date}
+                                                    {format(
+                                                        new Date(item.date),
+                                                        "dd-MM-yyyy"
+                                                    )}
                                                 </td>
                                                 <td className="border-r px-4 py-3 text-sm">
                                                     {item.status}
