@@ -160,6 +160,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Transform ticket data into simple chat messages (emails only, no comments/activity)
   const messages = useMemo<SimpleChatMessage[]>(() => {
     const msgs: SimpleChatMessage[] = [];
+    const ticketCreationTime = new Date(ticket.creation).getTime();
 
     // Add original request as first message
     msgs.push({
@@ -175,8 +176,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       attachments: [],
     });
 
-    // Add communications (emails) - no comments or activity for simplified view
+    // Add communications (emails) - skip the first one if it matches ticket creation time
+    // (to avoid duplicate description message)
     ticket.communications?.forEach((comm) => {
+      const commCreationTime = new Date(comm.creation).getTime();
+      // Skip if this communication was created at the same time as the ticket (within 5 seconds)
+      // This is likely the initial description being saved as a communication
+      if (Math.abs(commCreationTime - ticketCreationTime) < 5000) {
+        return;
+      }
+
       msgs.push({
         id: comm.name,
         content: comm.content,
@@ -274,10 +283,34 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       case "Resolved":
         return "bg-green-100 text-green-700";
       case "Closed":
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
     }
+  };
+
+  // Build message with attachments embedded as HTML
+  const buildMessageWithAttachments = (
+    msg: string,
+    files: { file_url: string; file_name: string }[]
+  ): string => {
+    let htmlMessage = msg.startsWith("<") ? msg : `<p>${msg.replace(/\n/g, "<br/>")}</p>`;
+
+    if (files.length > 0) {
+      let attachmentHtml = '<br/><div class="attachments"><strong>Attachments:</strong><ul>';
+      files.forEach((file) => {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+        if (isImage) {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+        } else {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
+        }
+      });
+      attachmentHtml += '</ul></div>';
+      htmlMessage += attachmentHtml;
+    }
+
+    return htmlMessage;
   };
 
   // Handle send message (always as email for simplified view)
@@ -290,11 +323,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       const assignedAgent = getAssignedUser();
       const recipient = assignedAgent !== "Unassigned" ? assignedAgent : ticket.raised_by;
 
+      // Embed attachments in message HTML instead of passing separately
+      const messageWithAttachments = buildMessageWithAttachments(message, attachments);
+
       await sendEmailMutation.mutateAsync({
         ticketId: ticket.name,
         to: recipient,
-        message: message.startsWith("<") ? message : `<p>${message.replace(/\n/g, "<br/>")}</p>`,
-        attachments,
+        message: messageWithAttachments,
       });
       toast.success("Message sent successfully");
     } catch {
@@ -469,7 +504,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     if (!ticket.resolution_details && !isTicketClosed) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-app rounded-xl flex items-center justify-center mb-4">
             <CheckCircle className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 font-medium">No Resolution Yet</p>
@@ -560,7 +595,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-app">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -582,7 +617,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-gray-500">Assigned to</span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg">
                 <span className="w-2 h-2 rounded-lg bg-green-500"></span>
                 <span className="text-sm font-medium text-gray-700">
                   {getAssignedUser()}
@@ -608,7 +643,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-app rounded-xl transition-colors"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -632,7 +667,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
                 activeTab === "chat"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-app text-gray-600"
               }`}>
                 {messages.length}
               </span>
@@ -651,7 +686,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
                 activeTab === "resolution"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-app text-gray-600"
               }`}>
                 1
               </span>
@@ -727,7 +762,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
 // Loading component
 export const SimplifiedChatViewLoading: React.FC = () => (
-  <div className="h-screen flex items-center justify-center bg-gray-100">
+  <div className="h-screen flex items-center justify-center bg-app">
     <div className="flex items-center gap-3">
       <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
       <span className="text-gray-600">Loading ticket...</span>
@@ -737,7 +772,7 @@ export const SimplifiedChatViewLoading: React.FC = () => (
 
 // Error component
 export const SimplifiedChatViewError: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
+  <div className="h-screen flex flex-col items-center justify-center bg-app">
     <p className="text-red-500 mb-4">Failed to load ticket</p>
     <button
       onClick={onClose}
