@@ -67,6 +67,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 }) => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
+  const [expenseTypeKey, setExpenseTypeKey] = useState(0);
   const [formKey, setFormKey] = useState<number>(0);
   const [vehicleType, setVehicleType] = useState<string | null>(null);
   const [previousCategory, setPreviousCategory] = useState<string | null>(null);
@@ -319,6 +320,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   customClass: "mt-4 md:mt-0",
                   html: true,
                   disabled: !!editingExpenseId,
+                  redrawOn: "expenseCategory",
                 },
               ],
             },
@@ -580,7 +582,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       })
       .filter(Boolean);
 
-  const expenseTypeValue: string | undefined = mainFormData?.expenseType;
+  const expenseTypeValue = useMemo(
+    () => mainFormData?.expenseType || undefined,
+    [mainFormData?.expenseType, expenseTypeKey],
+  );
+
   const { data: expenseTypeData, isFetching: isFetchingFields } =
     useGetExpenseTypeFields(expenseTypeValue);
 
@@ -865,6 +871,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             onChange={(change: any) => {
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
+              const prevCategory = previousCategory;
 
               // FIX 3: Better handling of category type changes
               if (
@@ -891,6 +898,27 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 } catch (e) {
                   console.error(e);
                 }
+                return;
+              }
+
+              if (prevCategory && newCategory && prevCategory !== newCategory) {
+                change.data.expenseType = null;
+
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setCalcParams(undefined);
+                setVehicleType(null);
+                setExpenseTypeKey((k) => k + 1);
+                setMainFormData({ ...change.data });
+                setPreviousCategory(newCategory);
+                setFormKey((k) => k + 1);
+
+                try {
+                  dynamicFormRef.current?.reset();
+                } catch (e) {
+                  console.error(e);
+                }
+
                 return;
               }
 
