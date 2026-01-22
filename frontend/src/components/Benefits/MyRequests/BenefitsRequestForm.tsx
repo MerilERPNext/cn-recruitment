@@ -157,9 +157,9 @@ export default function BenefitRequestForm({
         toast.error(message);
         console.error(error);
       },
-      onSettled: (()=>{
+      onSettled: () => {
         loading?.hide();
-      })
+      }
     });
   };
 
