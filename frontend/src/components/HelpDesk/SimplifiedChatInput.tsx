@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Paperclip, Send, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import FrappeAPI from "../../utils/frappeAPI";
 
 interface UploadedFile {
   file_url: string;
@@ -13,18 +14,6 @@ interface SimplifiedChatInputProps {
   disabled?: boolean;
   isSending?: boolean;
 }
-
-// Get CSRF token from cookie
-const getCSRFToken = (): string => {
-  const cookies = document.cookie.split(";");
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split("=");
-    if (name === "csrf_token") {
-      return decodeURIComponent(value);
-    }
-  }
-  return "";
-};
 
 const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
   onSend,
@@ -48,44 +37,20 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
     }
   }, [message]);
 
-  // Handle file upload with CSRF token
+  // Handle file upload using FrappeAPI
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
     try {
-      // Get CSRF token once before upload loop
-      const csrfToken = getCSRFToken();
-
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("is_private", "1");
-
-        const headers: HeadersInit = csrfToken
-          ? { "X-Frappe-CSRF-Token": csrfToken }
-          : {};
-
-        const response = await fetch("/api/method/upload_file", {
-          method: "POST",
-          body: formData,
-          headers,
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Upload error:", errorText);
-          throw new Error("Upload failed");
-        }
-
-        const result = await response.json();
-        if (result.message) {
+        const result = await FrappeAPI.uploadFile(file, file.name, undefined, undefined, undefined, "1");
+        if (result) {
           setAttachments((prev) => [
             ...prev,
             {
-              file_url: result.message.file_url,
-              file_name: result.message.file_name,
+              file_url: result.file_url,
+              file_name: result.name || file.name,
             },
           ]);
         }

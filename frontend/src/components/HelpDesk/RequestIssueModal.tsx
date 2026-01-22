@@ -3,10 +3,11 @@ import { X, HelpCircle, Upload, Trash2, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
 import toast from "react-hot-toast";
+import FrappeAPI from "../../utils/frappeAPI";
 import {
   useCategories,
   useSubcategories,
-  useEmployeeList,
+  useSubordinateEmployees,
   useCreateTicket,
   HDCategory,
 } from "../../hooks/useHelpDeskTickets";
@@ -43,7 +44,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: subcategories = [] } = useSubcategories(category);
-  const { data: employees = [], isLoading: employeesLoading } = useEmployeeList();
+  const { data: employees = [], isLoading: employeesLoading } = useSubordinateEmployees();
 
   // Mutation
   const createTicketMutation = useCreateTicket();
@@ -71,63 +72,27 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setSubcategory(""); // Reset subcategory when category changes
   };
 
-  // Get CSRF token from cookie
-  const getCSRFToken = (): string => {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split("=");
-      if (name === "csrf_token") {
-        return decodeURIComponent(value);
-      }
-    }
-    return "";
-  };
-
-  // Handle file upload
+  // Handle file upload using FrappeAPI
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     setIsUploading(true);
     try {
       for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("is_private", "1");
-
-        // Get CSRF token once before upload
-        const csrfToken = getCSRFToken();
-
-        // If no CSRF token, try using credentials-only approach
-        const headers: HeadersInit = csrfToken
-          ? { "X-Frappe-CSRF-Token": csrfToken }
-          : {};
-
-        const response = await fetch("/api/method/upload_file", {
-          method: "POST",
-          body: formData,
-          headers,
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Upload error:", errorText);
-          throw new Error("Upload failed");
-        }
-
-        const result = await response.json();
-        if (result.message) {
+        const result = await FrappeAPI.uploadFile(file, file.name, undefined, undefined, undefined, "1");
+        if (result) {
           setAttachments((prev) => [
             ...prev,
             {
-              file_url: result.message.file_url,
-              file_name: result.message.file_name,
+              file_url: result.file_url,
+              file_name: result.name || file.name,
             },
           ]);
         }
       }
       toast.success("File uploaded successfully");
-    } catch {
+    } catch (error) {
+      console.error("Upload error:", error);
       toast.error("Failed to upload file");
     } finally {
       setIsUploading(false);
@@ -156,6 +121,25 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Build description with attachments embedded as HTML
+  const buildDescriptionWithAttachments = (desc: string, files: UploadedFile[]): string => {
+    if (files.length === 0) return desc;
+
+    // Append attachments as HTML links at the end of description
+    let attachmentHtml = '<br/><br/><div class="attachments"><strong>Attachments:</strong><ul>';
+    files.forEach((file) => {
+      const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+      if (isImage) {
+        attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+      } else {
+        attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
+      }
+    });
+    attachmentHtml += '</ul></div>';
+
+    return desc + attachmentHtml;
+  };
+
   // Handle submit
   const handleSubmit = async () => {
     // Validation
@@ -168,10 +152,13 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       return;
     }
 
+    // Embed attachments in description as HTML
+    const descriptionWithAttachments = buildDescriptionWithAttachments(description.trim(), attachments);
+
     const payload = {
       doc: {
         subject: title.trim(),
-        description: description.trim(),
+        description: descriptionWithAttachments,
         custom_category: category || undefined,
         custom_subcategory: subcategory || undefined,
         custom_rasied_for: raisedFor,
@@ -179,7 +166,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         custom_for_myself: raisedFor === "Myself" ? 1 : 0,
         custom_for_others: raisedFor === "Others" ? 1 : 0,
       },
-      attachments,
     };
 
     try {
