@@ -40,7 +40,7 @@ export const StatusBadge = ({ status }: { status: string }) => {
         statusStyles[status] || "bg-gray-100 text-gray-800"
       }`}
     >
-      {status==="Draft"?"Pending": status}
+      {status === "Draft" ? "Pending" : status}
     </span>
   );
 };
@@ -192,7 +192,7 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name ?? ""
+    currentUser?.name ?? "",
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -279,7 +279,7 @@ export default function AllShiftsDashboard() {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -303,7 +303,7 @@ export default function AllShiftsDashboard() {
           <div>
             <Card>
               <CardHeader
-                title="Shift Change Requests"
+                title="Team Shift Change Requests"
                 onSeeAll={() =>
                   navigate("/webapp/shift-request/shift-change-request")
                 }
@@ -318,7 +318,7 @@ export default function AllShiftsDashboard() {
                     "To Date",
                     "Due Date",
                     "Status",
-                    "Actionsasdfasdf",
+                    "Actions",
                   ]}
                   columnWidths={[
                     "8%",
