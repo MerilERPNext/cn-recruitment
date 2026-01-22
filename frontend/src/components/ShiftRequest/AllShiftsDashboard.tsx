@@ -303,7 +303,7 @@ export default function AllShiftsDashboard() {
           <div>
             <Card>
               <CardHeader
-                title="Team Shift Change Requests"
+                title="Team Shift Requests"
                 onSeeAll={() =>
                   navigate("/webapp/shift-request/shift-change-request")
                 }
