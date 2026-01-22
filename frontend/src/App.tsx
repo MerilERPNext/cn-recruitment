@@ -28,6 +28,7 @@ import { ViewedUserProvider, useTargetUser } from "./context/ViewedUserContext";
 import { setTargetEmployeeId } from "./utils/frappeAPI";
 import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
+import { LoadingOverlayProvider } from "./context/OverlayContext";
 
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
@@ -79,6 +80,7 @@ const App: React.FC = () => {
         <GlobalStoreProvider>
           <ViewedUserProvider>
             <TargetUserSync />
+            <LoadingOverlayProvider>
             <RequestLeaveModalProvider>
               <Toaster position="top-center" containerClassName="z-50">
                 {(t) => (
@@ -142,6 +144,7 @@ const App: React.FC = () => {
                 </Routes>
               </div>
             </RequestLeaveModalProvider>
+            </LoadingOverlayProvider>
           </ViewedUserProvider>
         </GlobalStoreProvider>
       </PermissionProvider>

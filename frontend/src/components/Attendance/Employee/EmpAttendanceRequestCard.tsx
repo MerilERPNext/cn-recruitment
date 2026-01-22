@@ -12,6 +12,9 @@ import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -26,8 +29,11 @@ const EmpAttendanceRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
+
+  const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
+      loading?.show("Revoking Request...");
       revokeEventMutation.mutate(
         {
           docname: data?.reference_name,
@@ -39,7 +45,14 @@ const EmpAttendanceRequestCard = ({
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
-          },
+            toast.success("Attendance Request Revoked Successfully!");
+          }, onError: (error) => {
+          const formatedError = errorResponseFormater(error);
+          toast.error(formatedError);
+      },
+      onSettled: () => {
+        loading?.hide(); 
+      },
         }
       );
     }

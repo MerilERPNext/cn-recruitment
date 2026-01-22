@@ -28,6 +28,7 @@ import {
   GenericFormSchema,
   transformSchemaWithRequired,
 } from "../../../utils/transformSchemaWithRequired";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -562,7 +563,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     response?: { data?: { exception?: string } };
   };
 
+  const loading = useLoadingOverlay();
+
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
+     await loading?.wrap(() => {
+    return new Promise<void>((resolve, reject) => {
     // Logic to determine employee: Use selected from form (if any) or fallback to current
     const selectedEmpId =
       submission.data.employee?.name || currentEmployee?.employee;
@@ -661,6 +666,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     }
 
     const handleSuccess = (message: string) => {
+      resolve();
       onClose();
       setTimeout(() => setRefetchAttendance(true), 2000);
       toast.success(message);
@@ -671,6 +677,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         error,
         "Submission failed. Please try again.",
       );
+       reject(error);
       toast.error(formatedError);
       console.error(error);
     };
@@ -705,6 +712,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         onError: handleError,
       });
     }
+       });  
+  }, "Submitting Attendance Request…");
   };
 
   // Handle form change

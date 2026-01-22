@@ -19,6 +19,7 @@ import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -119,6 +120,8 @@ export default function BenefitRequestForm({
     );
   }, [requiredFieldMap]);
 
+
+  const loading = useLoadingOverlay();
   // Form submission handler
   const handleSubmit = async () => {
     const submission = await formRef.current?.submit();
@@ -137,14 +140,14 @@ export default function BenefitRequestForm({
       custom_max_amount: submission.data.custom_max_amount,
       custom_payroll_period: submission?.data?.custom_payroll_period,
     };
-
+    loading?.show("Submitting Benefit Request");
     mutation.mutate(submissionData as Record<string, unknown>, {
       onSuccess: async (data: any) => {
         // upload any attachments *without* causing rerender
         if (attachments.length > 0) {
           await uploadFiles(attachments, data.doctype, data.name);
         }
-
+        
         onClose();
         onSuccess();
         toast.success("Added Benefit Request successfully!");
@@ -154,6 +157,9 @@ export default function BenefitRequestForm({
         toast.error(message);
         console.error(error);
       },
+      onSettled: (()=>{
+        loading?.hide();
+      })
     });
   };
 

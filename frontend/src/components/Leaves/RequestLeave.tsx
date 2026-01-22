@@ -29,6 +29,7 @@ import DailyConfiguration from "./DailyConfiguration";
 import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
 import AttendanceStatusModal from "./AttendanceStatusModal";
 import { X } from "lucide-react";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -331,32 +332,37 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     [],
   );
 
-  const handleSubmit = useCallback(async () => {
-    if (!currentEmployee?.name || !formInstance.current) return;
+  const loading = useLoadingOverlay();
+const handleSubmit = useCallback(async () => {
+  if (!currentEmployee?.name || !formInstance.current) return;
 
-    try {
-      const submission = await formInstance.current.submit();
+  loading?.show("Submitting leave request…");
 
-      const payload = buildLeavePayload({
-        employee: currentEmployee.name,
-        submission: submission.data,
-        dailyConfig,
-      });
+  try {
+    const submission = await formInstance.current.submit();
 
-      await createLeaveMutation.mutateAsync(payload);
+    const payload = buildLeavePayload({
+      employee: currentEmployee.name,
+      submission: submission.data,
+      dailyConfig,
+    });
 
-      toast.success("Leave request submitted successfully!");
-      triggerRefetch();
-      onSuccess?.();
-      onCancel?.();
-    } catch (err) {
-      const formatted = errorResponseFormater(
-        err,
-        "Submission failed. Please try again.",
-      );
-      toast.error(formatted);
-    }
-  }, [currentEmployee, dailyConfig]);
+    await createLeaveMutation.mutateAsync(payload);
+
+    toast.success("Leave request submitted successfully!");
+    triggerRefetch();
+    onSuccess?.();
+    onCancel?.();
+  } catch (err) {
+    const formatted = errorResponseFormater(
+      err,
+      "Submission failed. Please try again.",
+    );
+    toast.error(formatted);
+  } finally {
+    loading?.hide();
+  }
+}, [currentEmployee, dailyConfig, loading]);
 
   const leaveForm = useMemo(() => {
     const defaultFieldFlags: LeaveFieldFlags = {
