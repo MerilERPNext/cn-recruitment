@@ -23,6 +23,7 @@ import ParticipantsDrawer from "./ParticipantDrawer";
 import { Employee } from "../../../types/employee";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 export interface EmployeeOption {
   name: string;
@@ -747,7 +748,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
   }, [isSharePanelOpen]);
 
-  const submitAll = () => {
+  const loading = useLoadingOverlay();
+
+  const submitAll = async() => {
+
+     await loading?.wrap(async () => {
     const participantsForClaim: any[] =
       (dynamicFormData?.participants &&
       Array.isArray(dynamicFormData.participants)
@@ -803,11 +808,17 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       participants: participantsForClaim || [],
     };
 
+      await new Promise<void>((resolve, reject) => {
     submitExpenseClaim(JSON.stringify(payload), {
       onSuccess: () => {
         clearLocal();
-      },
-    } as any);
+         resolve();
+      },  onError: (err: any) => {
+          reject(err);
+        },
+      } as any);
+          });
+     }, "Submitting all expenses…");
   };
 
   const handleEdit = (expense: Expense) => {

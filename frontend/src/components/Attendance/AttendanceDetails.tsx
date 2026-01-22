@@ -13,6 +13,9 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../context/OverlayContext";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
 
 export function AttendanceDetailView({
   data: propData,
@@ -74,8 +77,13 @@ export function AttendanceDetailView({
   const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-  const handleAction = useCallback(
-    async (action: string) => {
+  const loading = useLoadingOverlay();
+ const handleAction = useCallback(
+  async (action: string) => {
+    await loading?.wrap(async () => {
+
+      // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
+
       setCurrentAction(action);
 
       try {
@@ -86,7 +94,6 @@ export function AttendanceDetailView({
         });
 
         console.log("Action response:", response);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
         console.log("Session data:", responseWithSession?.session);
         console.log(
@@ -121,13 +128,19 @@ export function AttendanceDetailView({
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
-
+        const formattedError = errorResponseFormater(error);
+        toast.error(formattedError);
         console.error("Action failed", error);
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+
+      // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
+
+    }, "Processing action...");
+  },
+  
+  [data?.custom_approval_type, data?.custom_open_chatnext_assistant_on_action, data?.todo_id, onAction, loading, mutation, setRefetchAttendance]
+);
+
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -184,7 +197,6 @@ export function AttendanceDetailView({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
-
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
