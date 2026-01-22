@@ -708,6 +708,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             builder: { styles: false },
             submitButton: false,
             alerts: false,
+            noAlerts: true,
             disableOnSubmit: true,
             formClass: "space-y-6",
             rowClass: "flex flex-col",

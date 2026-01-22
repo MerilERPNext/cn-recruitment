@@ -42,7 +42,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "optional_holiday_apply",
-    "Holidays"
+    "Holidays",
   );
 
   return (
@@ -91,8 +91,8 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
               statusLabel === "Taken"
                 ? "text-green-600 bg-green-100 border-green-200"
                 : statusLabel === "Rejected"
-                ? "text-red-600 bg-red-100 border-red-200"
-                : "text-yellow-600 bg-yellow-100 border-yellow-200"
+                  ? "text-red-600 bg-red-100 border-red-200"
+                  : "text-yellow-600 bg-yellow-100 border-yellow-200"
             }`}
         >
           {statusLabel}
@@ -137,20 +137,24 @@ const Holidays: React.FC = () => {
   }, [refetch, setRefetch]);
 
   const today = new Date().toISOString().split("T")[0];
+  const selectedYearDate = useMemo(() => {
+    return `${year}-01-01`;
+  }, [year]);
+
   const { data: attendancePolicy } = useGetAttendancePolicyForDate(
     employee?.name,
-    today
+    today,
   );
 
   const { data: leaveBalance, isLoading: isBalanceLoading } =
-    useGetLeaveBalance(employee?.name, today);
+    useGetLeaveBalance(employee?.name, selectedYearDate, "Optional Holiday");
 
   const regularHolidays: Holiday[] = useMemo(() => {
     if (!holidaysData) return [];
     return holidaysData
       .filter(
         (g: HolidayGroup) =>
-          g.type_name === "National Holiday" || g.type_name === "Mandatory"
+          g.type_name === "National Holiday" || g.type_name === "Mandatory",
       )
       .flatMap((g: HolidayGroup) => g.holidays);
   }, [holidaysData]);
@@ -163,12 +167,12 @@ const Holidays: React.FC = () => {
   }, [holidaysData]);
 
   const optionalBalance = leaveBalance?.leave_balance?.find((b) =>
-    b.type.toLowerCase().includes("optional")
+    b.type.toLowerCase().includes("optional"),
   );
 
   const getHolidayStatus = (date: string) => {
     const req = leaveRequests?.find(
-      (r) => r.from_date === date && r.to_date === date
+      (r) => r.from_date === date && r.to_date === date,
     );
     if (!req) return null;
     if (req.status === "Approved") return "Taken";
