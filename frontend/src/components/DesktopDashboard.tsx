@@ -30,7 +30,7 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
@@ -349,6 +349,25 @@ export default function DesktopDashboard() {
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role
   );
+  
+
+const showOutTimes = useMemo(() => {
+  const checkInTime = firstCheckIn?.time
+  ? new Date(firstCheckIn.time.replace(" ", "T"))
+  : null;
+
+const checkOutTime = lastCheckOut?.time
+  ? new Date(lastCheckOut.time.replace(" ", "T"))
+  : null;
+  if (!checkInTime || !checkOutTime) return false;
+
+  return (
+    !isNaN(checkInTime.getTime()) &&
+    !isNaN(checkOutTime.getTime()) &&
+    currentTime >= checkInTime &&
+    currentTime >= checkOutTime
+  );
+}, [firstCheckIn,lastCheckOut, currentTime]);
 
   return (
     <div className="min-h-screen flex">
@@ -842,7 +861,7 @@ export default function DesktopDashboard() {
                             variant="bodyMedium"
                             className="font-bold text-error"
                           >
-                            {lastCheckOut?.time
+                            {lastCheckOut?.time && showOutTimes
                               ? formatTo24HourTime(lastCheckOut.time)
                               : "--:--"}
                           </Typography>
