@@ -17,7 +17,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 }) => {
   const dates = useMemo(
     () => getDatesBetween(fromDate, toDate),
-    [fromDate, toDate]
+    [fromDate, toDate],
   );
 
   const applyToAll = (type: DayConfig) => {
@@ -31,8 +31,8 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
   const allSame: DayConfig | null = useMemo(() => {
     if (!dates.length) return null;
 
-    const first = value[dates[0]] ?? "Full Day";
-    return dates.every((d) => (value[d] ?? "Full Day") === first)
+    const first = value[dates[0]] ?? "First Half";
+    return dates.every((d) => (value[d] ?? "First Half") === first)
       ? first
       : null;
   }, [dates, value]);
@@ -42,16 +42,6 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
       <div className="px-4 py-2 bg-gray-50">Daily Configuration</div>
       <div className="px-4 py-3 border-b bg-white flex items-center gap-6 text-sm">
         <span className="font-medium text-gray-700">Apply to all:</span>
-
-        <label>
-          <input
-            type="radio"
-            name="apply-all"
-            checked={allSame === "Full Day"}
-            onChange={() => applyToAll("Full Day")}
-          />{" "}
-          Full Day
-        </label>
 
         <label>
           <input
@@ -72,6 +62,16 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
           />{" "}
           Second Half
         </label>
+
+        <label>
+          <input
+            type="radio"
+            name="apply-all"
+            checked={allSame === "Full Day"}
+            onChange={() => applyToAll("Full Day")}
+          />{" "}
+          Full Day
+        </label>
       </div>
 
       <table className="w-full border-collapse">
@@ -84,7 +84,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
 
         <tbody>
           {dates.map((date) => {
-            const selected = value[date] ?? "Full Day";
+            const selected = value[date] ?? "First Half";
 
             return (
               <tr key={date} className="border-t">
@@ -97,18 +97,6 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                     <input
                       type="radio"
                       name={`half-${date}`}
-                      checked={selected === "Full Day"}
-                      onChange={() =>
-                        onChange({ ...value, [date]: "Full Day" })
-                      }
-                    />{" "}
-                    Full Day
-                  </label>
-
-                  <label className="mr-6">
-                    <input
-                      type="radio"
-                      name={`half-${date}`}
                       checked={selected === "First Half"}
                       onChange={() =>
                         onChange({ ...value, [date]: "First Half" })
@@ -117,7 +105,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                     First Half
                   </label>
 
-                  <label>
+                  <label className="mr-6">
                     <input
                       type="radio"
                       name={`half-${date}`}
@@ -127,6 +115,18 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
                       }
                     />{" "}
                     Second Half
+                  </label>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name={`half-${date}`}
+                      checked={selected === "Full Day"}
+                      onChange={() =>
+                        onChange({ ...value, [date]: "Full Day" })
+                      }
+                    />{" "}
+                    Full Day
                   </label>
                 </td>
               </tr>
