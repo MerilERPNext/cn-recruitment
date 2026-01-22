@@ -60,8 +60,8 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
-    : "1.5fr 1fr 1fr 1fr 1fr 1.5fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
+    : "1.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr";
   return (
     <>
       {isDesktop ? (
@@ -89,7 +89,10 @@ const LeaveApprovalCard = ({
           )}
 
           <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+            <Link
+              to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+              target="_blank"
+            >
               <div className="truncate text-gray-900 font-medium text-sm text-start">
                 {data?.reference_document?.employee_name}
               </div>
@@ -104,6 +107,9 @@ const LeaveApprovalCard = ({
           </div>
           <div className="text-gray-700 text-sm text-start">
             {formatToIndianDate(data?.due_date)}
+          </div>
+          <div className="text-gray-700 text-sm text-start">
+            {data?.reference_document?.total_leave_days}
           </div>
 
           {/* Status + Actions */}
@@ -136,7 +142,7 @@ const LeaveApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -174,7 +180,10 @@ const LeaveApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target="_blank"
+                  >
                     <p className="card-title">
                       {data?.reference_document?.employee_name}
                     </p>
@@ -194,7 +203,9 @@ const LeaveApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span className="card-title mb-1">From</span>
                       <span className="card-subtitle">
-                        {formatToIndianDate(data?.reference_document?.from_date)}
+                        {formatToIndianDate(
+                          data?.reference_document?.from_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -242,7 +253,7 @@ const LeaveApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action
