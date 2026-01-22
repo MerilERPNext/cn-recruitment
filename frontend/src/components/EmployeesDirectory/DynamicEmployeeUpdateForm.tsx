@@ -16,11 +16,12 @@ interface DynamicEmployeeUpdateFormProps {
     doctype: string;
     fieldDoctype: string;
     updateValue: string;
+    fieldName: string;
     isOpen: boolean;
     onClose: () => void;
 }
 
-const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ doctype, fieldDoctype, updateValue, isOpen, onClose }) => {
+const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ doctype, fieldDoctype, updateValue, fieldName, isOpen, onClose }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const formInstance = useRef<any>(null);
 
@@ -38,7 +39,6 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
             if (formInstance.current) {
                 const submission = await formInstance.current.submit();
                 if (submission && submission.data) {
-                    console.log("Form submitted with data:", submission.data);
                     mutation.mutate(
                         {
                             doctype: doctype,
@@ -74,20 +74,16 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) onClose();
-            }}
-        >
+            className="fixed inset-0 z-[9999] flex items-center justify-center md:p-4 ">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { onClose() }} />
 
             {/* Modal Container */}
-            <div className="relative w-full max-w-md bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 h-full">
+            <div className="relative w-full max-w-md bg-white md:rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 h-full">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
                     <h2 className="text-xl font-bold text-gray-900">
-                        Update {doctype}
+                        Update {fieldName}
                     </h2>
                     <button
                         onClick={onClose}
@@ -104,7 +100,7 @@ const DynamicEmployeeUpdateForm: React.FC<DynamicEmployeeUpdateFormProps> = ({ d
                         key={doctype}
                         className="profile-form w-full"
                         form={schema}
-                        submission={{ data: { doctype: fieldDoctype } }}
+                        submission={{ data: { doctype: fieldDoctype, fieldName } }}
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onFormReady={(instance: any) => {
                             formInstance.current = instance;

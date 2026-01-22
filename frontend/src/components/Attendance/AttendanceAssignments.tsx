@@ -18,8 +18,8 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import Modal from "../shared/Modal";
 import { Employee } from "../../types/employee";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface AttendanceAssignmentsProps {
   onSuccess?: (data?: any) => void;
@@ -231,7 +231,7 @@ const AttendanceAssignments = ({
     try {
       const submission = await formInstance.current?.submit();
       const submissionData = submission?.data || {};
-
+      console.log(submission)
       const mappedData = {
         enable_web_clockin: submissionData.enable_web_clockin ? 1 : 0,
         enable_check_in: submissionData.enable_check_in ? 1 : 0,
@@ -241,12 +241,17 @@ const AttendanceAssignments = ({
         policy_name: submissionData.policy_name || "none",
         effective_from: submissionData.effective_from?.split("T")[0] || "none",
       };
-
       if (targetEmployees.length > 0) {
         const promises = targetEmployees.map((emp) =>
           mutation.mutateAsync({
             employee: emp.employee || "",
             data: mappedData,
+          }, {
+            onError: (err) => {
+              onClose()
+              const error = errorResponseFormater(err)
+              toast.error(error);
+            }
           })
         );
 
@@ -261,10 +266,14 @@ const AttendanceAssignments = ({
       console.warn("Form submission error -", err);
     }
   };
+  if (!open) return null;
 
   return (
-    <Modal isOpen={open} onClose={onClose} size="md">
-      <div className="flex flex-col bg-white overflow-hidden relative">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center md:p-4 ">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { onClose() }} />
+      <div className="relative w-full max-w-md bg-white md:rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200 h-full">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -321,7 +330,7 @@ const AttendanceAssignments = ({
           </Button>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 

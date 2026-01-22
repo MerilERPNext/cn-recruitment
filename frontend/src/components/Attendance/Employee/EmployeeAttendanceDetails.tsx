@@ -26,7 +26,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import ReplaceLeaveModal from "../../Leaves/ReplaceLeaveModal";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import CircularLoader from "../../shared/atoms/CircularLoader";
-import RequestLeave from "../../Leaves/RequestLeave";
 import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
@@ -258,20 +257,23 @@ const EmployeeAttendanceDetails = ({
     );
 
     return (
-      <div className="mt-10 flex gap-2">
-        {showButton?.show_revoke_button && canRevokeLeave && (
-          <Button size="md" fullWidth onClick={handleRevoke}>
-            {revokePending ? <CircularLoader color="white" /> : "Revoke"}
-          </Button>
-        )}
-        {showButton?.show_replace_button && canReplaceLeave && (
-          <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
-            Replace
-          </Button>
-        )}
+      <div className="mt-10 flex flex-col gap-2">
+        <div className="flex gap-2">
+
+          {showButton?.show_revoke_button && canRevokeLeave && (
+            <Button size="md" fullWidth onClick={handleRevoke}>
+              {revokePending ? <CircularLoader color="white" /> : "Revoke"}
+            </Button>
+          )}
+          {showButton?.show_replace_button && canReplaceLeave && (
+            <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
+              Replace
+            </Button>
+          )}
+        </div>
         {showButton?.show_edit_button && canEditLeave && (
           <Button size="md" fullWidth onClick={handleEdit}>
-            Edit
+            Attendance Adjustment
           </Button>
         )}
       </div>
@@ -447,40 +449,9 @@ const EmployeeAttendanceDetails = ({
 
       {showEditModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-2xl h-[90vh] flex flex-col overflow-hidden shadow-xl">
-              <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
-                <Typography
-                  variant="h3"
-                  className="font-semibold text-gray-900"
-                >
-                  Edit Leave Application
-                </Typography>
-                <Button
-                  variant="subtle"
-                  size="sm"
-                  onClick={() => setShowEditModal(false)}
-                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </Button>
-              </div>
-              <div className="flex-1 min-h-0">
-                <RequestLeave
-                  onSuccess={() => {
-                    setShowEditModal(false);
-                    queryClient.invalidateQueries({
-                      queryKey: ["get-All-Events-And-Attendance"],
-                    });
-                    if (onClose) {
-                      onClose();
-                    }
-                  }}
-                  onCancel={() => setShowEditModal(false)}
-                />
-              </div>
-            </div>
-          </div>,
+          <AttendanceRequestFormV2
+            onClose={() => setShowEditModal(false)}
+          />,
           document.body,
         )}
     </div>

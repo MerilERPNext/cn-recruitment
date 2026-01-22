@@ -11,7 +11,13 @@
             "defaultValue": ""
         },
         {
-            "label": "Select {{ data.doctype }}",
+            "type": "hidden",
+            "key": "fieldName",
+            "input": true,
+            "defaultValue": ""
+        },
+        {
+            "label": "",
             "key": "selected_value",
             "type": "select",
             "input": true,

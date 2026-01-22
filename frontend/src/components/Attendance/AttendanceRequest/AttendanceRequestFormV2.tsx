@@ -374,7 +374,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               defaultAttendanceData?.reference_document.custom_from_time,
             )}`,
           )
-          : "",
+          : shiftData?.start_time || "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
@@ -382,7 +382,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               defaultAttendanceData?.reference_document?.custom_to_time,
             )}`,
           )
-          : "",
+          : shiftData?.end_time || "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
           "",

@@ -204,6 +204,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                           department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
                           location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
                           id={item.records}
+                          doctype_name={item.doctype_name}
                         />
                       </div>
                     ))}

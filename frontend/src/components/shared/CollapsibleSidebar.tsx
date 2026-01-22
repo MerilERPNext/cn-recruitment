@@ -383,12 +383,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
       ],
     },
-    // {
-    //   icon: Users,
-    //   label: "Employee Directory",
-    //   path: "/webapp/employees-directory",
-    //   permissionKey: "Employee Directory",
-    // },
+    {
+      icon: Users,
+      label: "Employee Directory",
+      path: "/webapp/employees-directory",
+      permissionKey: "Employee Directory",
+    },
     {
       icon: Shield,
       label: "Policies",

@@ -1,4 +1,6 @@
+import { Link } from "react-router-dom";
 import { Employee } from "../../types/employee";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 const EmployeeTable = ({
     employees,
     selectedEmployees = [],
@@ -79,9 +81,13 @@ const EmployeeTable = ({
                                     />
                                 </td>
                                 <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 flex gap-2 items-center border-0">
-                                    <div className="font-medium">
-                                        {item.employee_name}
-                                    </div>
+                                    <WrapperHoverCard employeeId={item.employee}>
+                                        <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+                                            <div className="font-medium">
+                                                {item.employee_name}
+                                            </div>
+                                        </Link>
+                                    </WrapperHoverCard>
                                 </td>
                                 <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
                                     {item.employee}

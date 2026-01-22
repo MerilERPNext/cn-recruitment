@@ -6,7 +6,7 @@ import {
 import useCurrentUser from "../../hooks/useCurrentUser";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
-import { EditIcon, IdCard, MapPin, PlusIcon, Warehouse } from "lucide-react";
+import { EditIcon, ExternalLink, IdCard, MapPin, PlusIcon, Warehouse } from "lucide-react";
 import React from "react";
 import { Building2 } from "lucide-react";
 import { useState } from "react";
@@ -71,8 +71,8 @@ const ReportingDetails = () => {
           </div>
           <div className="flex flex-col gap-1">
             <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-              <h3 className="font-medium text-gray-900 truncate">
-                <span title={name}>{name}</span>
+              <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary">
+                <span>{name}</span><ExternalLink className="h-4 w-4" />
               </h3>
             </Link>
             <div className="flex flex-wrap gap-4">

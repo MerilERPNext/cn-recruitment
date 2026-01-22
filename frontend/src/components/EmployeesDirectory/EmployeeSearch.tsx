@@ -60,7 +60,7 @@ const EmployeeSearch = ({ setEmployees }: { setEmployees: React.Dispatch<React.S
             }
         });
     }
-    const { data = [] } = useGetAllEmployees(
+    const { data = [], isLoading } = useGetAllEmployees(
         ["*"],
         50,
         filters.length > 0 ? filters : undefined
@@ -106,6 +106,7 @@ const EmployeeSearch = ({ setEmployees }: { setEmployees: React.Dispatch<React.S
                     className="h-full"
                     placeholder="Search employees"
                     searchValue={searchQuery}
+                    isLoading={isLoading}
                     onSearchChange={setSearchQuery}
                     renderOption={(emp) => <EmployeeOption employee={emp} />}
                 />
