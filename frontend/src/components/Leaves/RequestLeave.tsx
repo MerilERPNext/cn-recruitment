@@ -29,7 +29,6 @@ import DailyConfiguration from "./DailyConfiguration";
 import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
 import AttendanceStatusModal from "./AttendanceStatusModal";
 import { X } from "lucide-react";
-import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -334,78 +333,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const show: LeaveFieldFlags = fields?.show ?? defaultFieldFlags;
     const mandatory: LeaveFieldFlags = fields?.mandatory ?? defaultFieldFlags;
-    const baseComponents = [
-      {
-        type: "select",
-        key: "leaveType",
-        label: "Leave Type <span style='color:red;margin-left:3px;'> *</span>",
-        errorLabel: "Leave Type",
-        placeholder: "Select Leave Type",
-        input: true,
-        defaultValue: defaults?.leaveType ?? "",
-        validate: { required: true },
-        data: { values: leaveTypeOptions },
-        customClass: "px-2 mb-4",
-        disabled: defaults?.isEdit ? false : Boolean(defaults?.leaveType),
-      },
-      {
-        type: "columns",
-        key: "dateColumns",
-        customClass: "px-2",
-        columns: [
-          {
-            width: 6,
-            components: [
-              {
-                type: "datetime",
-                key: "fromDate",
-                label: requiredFieldMap["from_date"]
-                  ? "From Date <span style='color:red;margin-left:3px;'> *</span>"
-                  : "From Date",
-                errorLabel: "From Date",
-                placeholder: "DD-MM-YYYY",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: defaults?.fromDate
-                  ? `${defaults.fromDate}T00:00:00`
-                  : `${today}T00:00:00+05:30`,
-                validate: { required: requiredFieldMap["from_date"] },
-                input: true,
-                customClass: "mb-4",
-                format: "dd-MM-yyyy",
-                disabled: defaults?.isEdit
-                  ? false
-                  : Boolean(defaults?.fromDate),
-              },
-            ],
-          },
-          {
-            width: 6,
-            components: [
-              {
-                type: "datetime",
-                key: "toDate",
-                label: requiredFieldMap["to_date"]
-                  ? "To Date <span style='color:red;margin-left:3px;'> *</span>"
-                  : "To Date",
-                errorLabel: "To Date",
-                placeholder: "DD-MM-YYYY",
-                enableDate: true,
-                enableTime: false,
-                defaultValue: defaults?.toDate
-                  ? `${defaults.toDate}T00:00:00`
-                  : "",
-                validate: { required: requiredFieldMap["to_date"] },
-                input: true,
-                customClass: "mb-4",
-                format: "dd-MM-yyyy",
-                disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
-              },
-            ],
-          },
-        ],
-      },
-    ];
 
     const halfDayComponents = show.half_day
       ? [
