@@ -106,7 +106,7 @@ const ApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >

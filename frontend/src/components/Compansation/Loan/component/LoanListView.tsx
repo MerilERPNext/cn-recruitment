@@ -78,7 +78,7 @@ export default function LoanList({ loans }: LoanListProps) {
           >
             {/* Row */}
             <div
-              className=" grid gap-4 px-6 py-3"
+              className="max-w-screen grid gap-4 px-6 py-3"
               style={{
                 gridTemplateColumns: columnWidths.join(" "),
                 alignItems: "center",

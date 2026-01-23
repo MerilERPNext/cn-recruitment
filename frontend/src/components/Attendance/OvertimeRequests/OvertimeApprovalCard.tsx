@@ -100,7 +100,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >

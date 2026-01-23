@@ -55,7 +55,7 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
+        className="max-w-screen grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <Link

@@ -69,7 +69,7 @@ const ApprovalRejectionQueue = ({
 
   return (
     <div
-      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
+      className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
       style={{ gridTemplateColumns }}
       onClick={() => onClick?.(data)}
     >

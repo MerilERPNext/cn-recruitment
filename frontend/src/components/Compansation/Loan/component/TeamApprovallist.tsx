@@ -235,7 +235,7 @@ const ApprovalRejectionLoanList = ({
   return (
     <>
       <div
-        className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20  cursor-pointer"
+        className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20  cursor-pointer"
         style={{
           gridTemplateColumns: "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
         }}

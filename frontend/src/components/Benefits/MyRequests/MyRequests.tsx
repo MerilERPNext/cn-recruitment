@@ -236,7 +236,7 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
+    <div className="max-w-screen px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
       <span className="text-sm font-medium text-gray-700 text-start truncate">
         <Link
           to={`/webapp/employee-profile?target_user=${item?.employee}`}
