@@ -36,7 +36,9 @@ const OvertimeApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
+  const getActionStyles = (
+    action: string,
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
       bg: "disabled" as ButtonColor,
@@ -98,7 +100,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -118,13 +120,16 @@ const OvertimeApprovalCard = ({
               />
             </div>
           )}
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.employee}`} target="_blank">
-              <div className="truncate text-gray-900 font-medium text-sm text-start">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.username}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
 
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
@@ -162,7 +167,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -246,7 +251,7 @@ const OvertimeApprovalCard = ({
                       className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

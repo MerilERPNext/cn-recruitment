@@ -103,7 +103,7 @@ const AdvancesList: React.FC = () => {
   const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const DesktopLayout = () => (
-    <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
+    <div className="min-h-screen max-w-screen overflow-x-hidden">
       <div className="w-full max-w-[100vw] mx-auto py-0 px-2">
         {/* Header Actions */}
         <div className="mb-2 w-full px-2">

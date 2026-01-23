@@ -124,14 +124,6 @@ const EmpLeaveRequestCard = ({
 
   const status = getStatus(data?.reference_document?.status);
 
-  const formattedFromDate = data?.reference_document?.from_date
-    ? formatToIndianDate(data?.reference_document.from_date)
-    : "N/A";
-
-  const formattedToDate = data?.reference_document?.to_date
-    ? formatToIndianDate(data?.reference_document.to_date)
-    : "N/A";
-
   const ActionMenu = () => (
     <div
       ref={menuRef}
@@ -186,14 +178,21 @@ const EmpLeaveRequestCard = ({
       {isDesktop ? (
         <div
           style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
+          className={`grid max-w-screen items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.leave_type}
           </div>
-          <div className="text-sm text-gray-900">{formattedFromDate}</div>
-          <div className="text-sm text-gray-900">{formattedToDate}</div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.from_date)}
+          </div>
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.to_date)}
+          </div>
+          <div
+            className="text-sm font-medium text-gray-700 text-start truncate"
+            title={data?.reference_document?.description}
+          >
             {data?.reference_document?.description || " - "}
           </div>
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -239,7 +238,8 @@ const EmpLeaveRequestCard = ({
               </div>
 
               <div className="card-subtitle">
-                {formattedFromDate} - {formattedToDate}
+                {formatToIndianDate(data?.reference_document.from_date)} -{" "}
+                {formatToIndianDate(data?.reference_document.to_date)}
               </div>
             </div>
 

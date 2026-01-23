@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 
 import { useMemo } from "react";
-import { formatDashedDate } from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
-
-
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 
 interface ApprovalDetailsProps {
   data: any;
   title: "Employee Separation" | "Employee Confirmation";
 }
 
-
 export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
-  const doc = data.reference_document
+  const doc = data.reference_document;
 
   const detailsFields = useMemo(() => {
     const fields = [
@@ -26,13 +23,29 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
 
     if (title === "Employee Confirmation") {
       if (data.status != "Confirmed")
-        fields.push({ label: "Probation End Date", value: formatDashedDate(doc.probation_end_date) });
-      fields.splice(4, 0,
-        { label: "Date of Joining", value: formatDashedDate(doc.date_of_joining) },
-        { label: "Status", value: doc.status }
+        fields.push({
+          label: "Probation End Date",
+          value: formatToIndianDate(doc.probation_end_date),
+        });
+      fields.splice(
+        4,
+        0,
+        {
+          label: "Date of Joining",
+          value: formatToIndianDate(doc.date_of_joining),
+        },
+        { label: "Status", value: doc.status },
       );
     } else if (title === "Employee Separation") {
-      fields.splice(4, 0, { label: "Date of Joining", value: formatDashedDate(doc.custom_date_of_joining) }, { label: "Status", value: doc.custom_status });
+      fields.splice(
+        4,
+        0,
+        {
+          label: "Date of Joining",
+          value: formatToIndianDate(doc.custom_date_of_joining),
+        },
+        { label: "Status", value: doc.custom_status },
+      );
     }
 
     return fields;
@@ -51,12 +64,11 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
           </svg>
         </div>
 
-        <Typography variant="bodySmall" >
+        <Typography variant="bodySmall">
           <span className="font-medium text-green-800">
             All Approvals Completed Succesfully
           </span>
         </Typography>
-
       </div>
 
       <div className="bg-white border border-slate-200 rounded-lg p-6">
@@ -65,16 +77,12 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {detailsFields.map((field, index) => (
             <div key={index} className="space-y-1">
-              <Typography variant="label" >
-                {field.label}
-              </Typography>
-              <Typography variant="bodyMedium" >
-                {field.value}
-              </Typography>
+              <Typography variant="label">{field.label}</Typography>
+              <Typography variant="bodyMedium">{field.value}</Typography>
             </div>
           ))}
         </div>
       </div>
-    </div >
-  )
+    </div>
+  );
 }

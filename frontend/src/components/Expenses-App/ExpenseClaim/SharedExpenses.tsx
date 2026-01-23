@@ -107,7 +107,7 @@ const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
+      className="max-w-screen grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
       style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 0.7fr 0.7fr" }}
     >
       <span>{item.employee_name || "-"}</span>

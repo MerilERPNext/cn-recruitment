@@ -33,7 +33,6 @@ import {
 import { useExpenseClaim } from "../hooks/useExpense";
 import {
   Coordinates,
-  formatDateString,
   formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
@@ -61,7 +60,7 @@ import SearchMembers from "./shared/SearchMembers";
 import { useAppNotificationCounts } from "../hooks/useAppNotificationCounts";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
-
+import { formatDateDDMonthYYYY } from "../utils/formatToIndianDate";
 
 const statusStyles = {
   unpaid: {
@@ -119,7 +118,7 @@ const MobileDashboard: React.FC = () => {
     } catch (err) {
       console.error("Failed to get location:", err);
       setLocationError(
-        "Unable to get your location. Please enable location services."
+        "Unable to get your location. Please enable location services.",
       );
       return null;
     } finally {
@@ -157,17 +156,17 @@ const MobileDashboard: React.FC = () => {
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(
-    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
   );
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee || "",
     format(startOfMonth(new Date()), "yyyy-MM-dd"),
-    format(endOfMonth(new Date()), "yyyy-MM-dd")
+    format(endOfMonth(new Date()), "yyyy-MM-dd"),
   );
 
   const { mutate: checkInCheckOutMutation, isPending: checkInCheckOutPending } =
@@ -185,11 +184,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-      CompanyLogo.length > 0 &&
-      currentEmployeeCompany
+    CompanyLogo.length > 0 &&
+    currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany
-      )
+          (company) => company.company_name === currentEmployeeCompany,
+        )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -200,37 +199,37 @@ const MobileDashboard: React.FC = () => {
     isRefetching,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id || ""
+    currentEmployee?.user_id || "",
   );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
-      )[0]
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T")),
+          ),
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -242,7 +241,7 @@ const MobileDashboard: React.FC = () => {
     // Validate location before proceeding
     if (!location?.latitude || !location?.longitude) {
       toast.error(
-        "Location not available. Please wait for location to load or enable location services."
+        "Location not available. Please wait for location to load or enable location services.",
       );
       return;
     }
@@ -262,10 +261,10 @@ const MobileDashboard: React.FC = () => {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Checking In"
+              e?.response?.data?.message?.error || "Error while Checking In",
             );
           },
-        }
+        },
       );
     } else {
       checkInCheckOutMutation(
@@ -282,10 +281,10 @@ const MobileDashboard: React.FC = () => {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Checking out"
+              e?.response?.data?.message?.error || "Error while Checking out",
             );
           },
-        }
+        },
       );
     }
   };
@@ -304,10 +303,10 @@ const MobileDashboard: React.FC = () => {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out"
+              e?.response?.data?.message?.error || "Error while Clocking out",
             );
           },
-        }
+        },
       );
     } else {
       clockInCheckOutMutation(
@@ -322,10 +321,10 @@ const MobileDashboard: React.FC = () => {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out"
+              e?.response?.data?.message?.error || "Error while Clocking out",
             );
           },
-        }
+        },
       );
     }
   };
@@ -343,8 +342,8 @@ const MobileDashboard: React.FC = () => {
     const sortedLogs = [...homeSummary].sort((a, b) =>
       compareAsc(
         parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
+        parseISO(b.time.replace(" ", "T")),
+      ),
     );
 
     let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -377,7 +376,10 @@ const MobileDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <Button variant="subtle" className="w-12 h-12 p-0 rounded-xl overflow-hidden hover:bg-black/5">
+          <Button
+            variant="subtle"
+            className="w-12 h-12 p-0 rounded-xl overflow-hidden hover:bg-black/5"
+          >
             <img
               src={typeof logoToShow === "string" ? logoToShow : ""}
               alt="CompnayLogo"
@@ -489,7 +491,9 @@ const MobileDashboard: React.FC = () => {
             <Typography variant="label" color="body2" className="mb-1 block">
               Total Hours
             </Typography>
-            <Typography variant="h3" className="font-bold text-gray-900">{getTotalTime()}</Typography>
+            <Typography variant="h3" className="font-bold text-gray-900">
+              {getTotalTime()}
+            </Typography>
           </div>
           {currentEmployee?.custom_allow_mobile_checkin ? (
             <div className="w-full">
@@ -499,7 +503,7 @@ const MobileDashboard: React.FC = () => {
                 size="lg"
                 onClick={() =>
                   handleCheckInOut(
-                    isCurrentlyCheckedIn ? "checkOut" : "checkIn"
+                    isCurrentlyCheckedIn ? "checkOut" : "checkIn",
                   )
                 }
                 disabled={
@@ -525,7 +529,11 @@ const MobileDashboard: React.FC = () => {
               </Button>
               {locationError && !isLocationLoading && (
                 <div className="flex items-center justify-center gap-2 mt-3">
-                  <Typography variant="bodySmall" color="error" className="font-medium">
+                  <Typography
+                    variant="bodySmall"
+                    color="error"
+                    className="font-medium"
+                  >
                     {locationError}
                   </Typography>
                   <Button
@@ -564,7 +572,9 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         <div className="mb-5">
-          <Typography variant="subheading" className="mb-3 block">Quick Links</Typography>
+          <Typography variant="subheading" className="mb-3 block">
+            Quick Links
+          </Typography>
           <div className="grid grid-cols-3 gap-3 mb-4">
             <Link
               to="/webapp/leave-app"
@@ -578,7 +588,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-blue-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-blue-700 text-center"
+              >
                 Leaves & Holidays
               </Typography>
             </Link>
@@ -595,7 +608,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-green-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-green-700 text-center"
+              >
                 Attendance
               </Typography>
             </Link>
@@ -612,7 +628,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-yellow-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-yellow-700 text-center"
+              >
                 Compensation
               </Typography>
             </Link>
@@ -631,7 +650,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-orange-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-orange-700 text-center"
+              >
                 Benefits
               </Typography>
             </Link>
@@ -648,7 +670,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-purple-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-purple-700 text-center"
+              >
                 Shifts
               </Typography>
             </Link>
@@ -665,7 +690,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-pink-700 text-center"
+              >
                 Flows
               </Typography>
             </Link>
@@ -682,7 +710,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-pink-700 text-center"
+              >
                 Performance
               </Typography>
             </Link>
@@ -699,7 +730,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-pink-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-pink-700 text-center"
+              >
                 Expenses
               </Typography>
             </Link>
@@ -716,7 +750,10 @@ const MobileDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
-              <Typography variant="bodySmall" className="font-medium text-orange-700 text-center">
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-orange-700 text-center"
+              >
                 Policies
               </Typography>
             </Link>
@@ -725,7 +762,9 @@ const MobileDashboard: React.FC = () => {
 
         <div className="mb-5">
           <div className="flex justify-between items-center mb-3">
-            <Typography variant="subheading" className="block">Attendance</Typography>
+            <Typography variant="subheading" className="block">
+              Attendance
+            </Typography>
 
             <ViewAll
               title="View Details"
@@ -744,7 +783,12 @@ const MobileDashboard: React.FC = () => {
               <Typography variant="h3" className="font-bold text-green-800">
                 {employeeAttendanceSummary?.present || 0}
               </Typography>
-              <Typography variant="bodySmall" className="font-medium text-green-700">Present Days</Typography>
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-green-700"
+              >
+                Present Days
+              </Typography>
             </div>
 
             <div
@@ -757,7 +801,12 @@ const MobileDashboard: React.FC = () => {
               <Typography variant="h3" className="font-bold text-red-800">
                 {employeeAttendanceSummary?.absent || 0}
               </Typography>
-              <Typography variant="bodySmall" className="font-medium text-red-700">Absent Days</Typography>
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-red-700"
+              >
+                Absent Days
+              </Typography>
             </div>
 
             <div
@@ -770,7 +819,12 @@ const MobileDashboard: React.FC = () => {
               <Typography variant="h3" className="font-bold text-orange-800">
                 {employeeAttendanceSummary?.leaves || 0}
               </Typography>
-              <Typography variant="bodySmall" className="font-medium text-orange-700">Leaves</Typography>
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-orange-700"
+              >
+                Leaves
+              </Typography>
             </div>
           </div>
         </div>
@@ -778,7 +832,9 @@ const MobileDashboard: React.FC = () => {
         {expenseData?.length > 0 && (
           <div className="rounded-xl mb-4 sm:mb-5">
             <div className="flex justify-between items-center mb-3">
-              <Typography variant="subheading" className="block">Unpaid Expense Claims</Typography>
+              <Typography variant="subheading" className="block">
+                Unpaid Expense Claims
+              </Typography>
               <ViewAll
                 title="View Claims"
                 onClick={() => navigate("/webapp/expenses-app")}
@@ -795,7 +851,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                    item.status?.toLowerCase() as keyof typeof statusStyles
+                      item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
@@ -809,14 +865,25 @@ const MobileDashboard: React.FC = () => {
                           {styles.icon}
                         </div>
                         <div>
-                          <Typography variant="bodyMedium" className="card-title block">{item?.employee_name}</Typography>
-                          <Typography variant="bodySmall" className="text-gray-600 block">
-                            {formatDateString(item?.creation)}
+                          <Typography
+                            variant="bodyMedium"
+                            className="card-title block"
+                          >
+                            {item?.employee_name}
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="text-gray-600 block"
+                          >
+                            {formatDateDDMonthYYYY(item?.creation)}
                           </Typography>
                         </div>
                       </div>
                       <div className="text-right">
-                        <Typography variant="bodyMedium" className="card-title block">
+                        <Typography
+                          variant="bodyMedium"
+                          className="card-title block"
+                        >
                           {item?.total_claimed_amount} Rs
                         </Typography>
                         <span
@@ -827,7 +894,7 @@ const MobileDashboard: React.FC = () => {
                       </div>
                     </div>
                   );
-                }
+                },
               )}
             </div>
           </div>

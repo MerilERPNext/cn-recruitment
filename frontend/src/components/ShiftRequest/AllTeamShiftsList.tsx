@@ -18,13 +18,16 @@ const TeamShiftRowItem: React.FC<{
       key={`${item.name}-${index}`}
       className="my-data-row grid grid-cols-5 gap-4 items-center text-center"
     >
-      <WrapperHoverCard employeeId={item.employee}>
-        <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
-          <div className="my-data-cell font-medium truncate">
-            {item.employee_name || item.employee}
-          </div>
-        </Link>
-      </WrapperHoverCard>
+      <Link
+        to={`/webapp/employee-profile?target_user=${item?.employee}`}
+        target="_blank"
+      >
+        <div className="my-data-cell font-medium truncate">
+          <WrapperHoverCard employeeId={item.employee}>
+            {item.employee_name}
+          </WrapperHoverCard>
+        </div>
+      </Link>
 
       <div
         className="my-data-cell truncate"

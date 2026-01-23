@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
@@ -55,14 +55,17 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
+        className="max-w-screen grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <WrapperHoverCard employeeId={doc.employee}>
-          <Link to={`/webapp/employee-profile?target_user=${doc?.employee}`} target="_blank">
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
+          <WrapperHoverCard employeeId={doc.employee}>
             <span>{doc.employee_name}</span>
-          </Link>
-        </WrapperHoverCard>
+          </WrapperHoverCard>
+        </Link>
         <span>{formatToIndianDate(doc.posting_date)}</span>
         <span>{doc.company}</span>
         <span>{doc.department}</span>
@@ -104,7 +107,10 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-        <Link to={`/webapp/employee-profile?target_user=${doc?.employee}`} target="_blank">
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
           <p className="text-sm text-gray-600">
             <span className="font-medium">Employee:</span> {doc.employee_name}
           </p>

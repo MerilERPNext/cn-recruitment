@@ -99,7 +99,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer`}
+          className={`max-w-screen grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer`}
         >
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">

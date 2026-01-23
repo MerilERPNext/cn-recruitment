@@ -66,7 +66,7 @@ const LeaveApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -88,16 +88,16 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link
-              to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-              target="_blank"
-            >
-              <div className="truncate text-gray-900 font-medium text-sm text-start">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
             {formatToIndianDate(data?.reference_document?.from_date)}

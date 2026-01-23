@@ -44,13 +44,16 @@ const MyShiftRowItem: React.FC<{
       key={`${item.name}-${index}`}
       className="my-data-row grid grid-cols-5 gap-4 items-center hover:bg-primary/20 text-center"
     >
-      <WrapperHoverCard employeeId={item.employee}>
-        <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
-          <div className="my-data-cell font-medium truncate">
+      <Link
+        to={`/webapp/employee-profile?target_user=${item?.employee}`}
+        target="_blank"
+      >
+        <div className="my-data-cell font-medium truncate">
+          <WrapperHoverCard employeeId={item.employee}>
             {item.employee_name}
-          </div>
-        </Link>
-      </WrapperHoverCard>
+          </WrapperHoverCard>
+        </div>
+      </Link>
       <div
         className="my-data-cell truncate"
         title={`Shift Time: ${item.start_time} - ${item.end_time}`}

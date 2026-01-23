@@ -106,7 +106,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white shadow-lg rounded-lg border shadow-sm p-6">
+      <div className="bg-white rounded-lg border shadow-sm p-6">
         <div className="flex flex-col gap-4">
           {/* Header Section */}
           <div className="flex justify-between">

@@ -87,7 +87,7 @@ const AdvanceApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -107,13 +107,16 @@ const AdvanceApprovalCard = ({
               />
             </div>
           )}
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
-              <div className="truncate text-gray-900 font-medium text-sm text-start">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
 
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.department}
@@ -157,7 +160,7 @@ const AdvanceApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -195,7 +198,10 @@ const AdvanceApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target="_blank"
+                  >
                     <p className="text-md font-bold">
                       {data?.reference_document?.employee_name}
                     </p>
@@ -259,7 +265,7 @@ const AdvanceApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

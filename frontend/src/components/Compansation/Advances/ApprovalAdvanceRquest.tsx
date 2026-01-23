@@ -30,7 +30,7 @@ const TeamAdvanceRequest = () => {
           </Typography>
         </div>
       </div>
-      <div className=" rounded-lg overflow-x-auto">
+      <div className="max-w-screen rounded-lg overflow-x-auto">
         <CardTable
           titles={[
             "Select",
