@@ -1,5 +1,4 @@
 import React from "react";
-import { ViewAll } from "../shared/atoms/ViewAll";
 import {
   useSaveUserMicroApps,
   useUserMicroApps,
@@ -34,7 +33,6 @@ const MicroAppInDashboard: React.FC = () => {
     <Card shadow="sm" className="h-full ">
       <div className="flex items-center justify-between mb-4">
         <Typography variant="subheading" color="title">Admin apps</Typography>
-        <ViewAll title="View all" />
       </div>
       <DndProvider backend={HTML5Backend}>
         {microappsList?.apps && (
