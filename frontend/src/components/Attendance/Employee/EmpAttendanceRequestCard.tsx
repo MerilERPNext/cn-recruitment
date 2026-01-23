@@ -15,11 +15,12 @@ import { Link } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 
 const EmpAttendanceRequestCard = ({
   data,
   type,
-  columns = 7,
+  columns = 8,
 }: {
   data: MyAttendanceRequest;
   columns?: number;
@@ -46,15 +47,14 @@ const EmpAttendanceRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Attendance Request Revoked Successfully!");
-          },
-          onError: (error) => {
+          }, onError: (error) => {
             const formatedError = errorResponseFormater(error);
             toast.error(formatedError);
           },
           onSettled: () => {
             loading?.hide();
           },
-        },
+        }
       );
     }
   };
@@ -86,12 +86,21 @@ const EmpAttendanceRequestCard = ({
   };
 
   const status = getStatus(data?.reference_document?.custom_status);
+  function getDays(from_date: string, to_date: string) {
+    const format = 'dd-MM-yyyy';
 
-  const formattedFromDate = formatToIndianDate(
-    data?.reference_document?.from_date,
-  );
+    const fromDate = startOfDay(parse(from_date, format, new Date()));
+    const toDate = startOfDay(parse(to_date, format, new Date()));
+
+    const diff = differenceInCalendarDays(toDate, fromDate);
+
+    return diff + 1; // inclusive
+  }
+
+  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
+  const duration = getDays(formattedToDate, formattedFromDate);
   return (
     <>
       {isDesktop ? (
@@ -112,7 +121,11 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedToDate}
           </div>
-          {/* To Date */}
+          {/* Duration */}
+          <div className="text-sm text-gray-900 text-start">
+            {duration > 1 ? duration + " Days" : duration + " Day"}
+          </div>
+          {/* Due Date */}
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
@@ -173,6 +186,11 @@ const EmpAttendanceRequestCard = ({
                     <p className="whitespace-nowrap card-title">
                       {data?.reference_document?.custom_request_type}
                     </p>
+                    <Badge
+                      size="sm"
+                      backgroundColor={"bg-blue-100 text-blue-800"}
+                      label={duration > 1 ? duration + " Days" : duration + " Day"}
+                    />
                   </div>
                   <div className="text-sm text-gray-900 text-start flex gap-2">
                     {data?.custom_allow_revoke && type === "pending" ? (

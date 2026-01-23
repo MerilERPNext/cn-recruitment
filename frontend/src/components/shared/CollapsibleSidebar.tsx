@@ -636,9 +636,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               let parentItemClasses = "";
               if (isExpanded) {
                 if (isAnySubItemActive) {
-                  parentItemClasses = "bg-primary-50 text-primary-600";
+                  parentItemClasses = "bg-primary text-white";
                 } else if (isItemDirectlyActive && !hasSubItems) {
-                  parentItemClasses = "bg-primary-500 text-white";
+                  parentItemClasses = "bg-primary-50 text-primary-600";
                 } else if (isDropdownOpen) {
                   parentItemClasses = "bg-primary-50 text-primary-600";
                 } else {
@@ -735,7 +735,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     (isDropdownOpen || isAnySubItemActive) &&
                     isExpanded && (
                       <div className="overflow-hidden transition-all duration-300 ease-in-out">
-                        <div className="py-1 space-y-1">
+                        <div className="py-1 space-y-0">
                           {item.subItems?.map((subItem) => {
                             const SubIcon = subItem.icon;
                             const hasSubSubItems =
@@ -788,13 +788,37 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                 ) : (
                                   <Link
                                     to={subItem.href || "#"}
-                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-primary-500 text-white hover:text-white"
-                                      : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                      }`}
+                                    className={`
+                                              group flex items-center w-full h-8 p-4 text-sm no-underline whitespace-nowrap
+                                              relative left-5 border-l border-gray-400 transition-colors duration-300
+                                              ${isSubActive
+                                        ? "text-primary"
+                                        : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"}
+                                  `}
                                   >
-                                    <div className="flex items-center space-x-2">
-                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
+                                    {/* dot */}
+                                    <span
+                                      className={`
+                                      absolute left-[-5px] top-1/2 -translate-y-1/2
+                                      h-2 w-2 rounded-full bg-primary
+                                      transition-all duration-400 ease-out
+                                      ${isSubActive ? "scale-100 opacity-100" : "scale-0 opacity-0"}
+                                    `}
+                                    />
+
+                                    {/* vertical bar */}
+                                    <span
+                                      className={`
+                                      absolute left-[-1.5px] top-0
+                                      h-full w-[2px] bg-primary
+                                      origin-center
+                                      rounded-md
+                                      transition-transform transition-opacity duration-400 ease-out
+                                      ${isSubActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}
+                                    `}
+                                    />
+                                    <div className="flex items-center justify-start space-x-2">
+                                      {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
                                       <span
                                         className={`transition-all duration-300 whitespace-nowrap ${isExpanded
                                           ? "opacity-100 translate-x-0"

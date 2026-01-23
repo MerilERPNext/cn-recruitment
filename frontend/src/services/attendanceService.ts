@@ -63,6 +63,7 @@ export const attendanceService = {
         "nextai.api.microapps.user_preferences.get_user_microapps",
         {
           filters: filters || "",
+          limit: 100,
         }
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -289,12 +290,10 @@ export const attendanceService = {
     filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
-      console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
-      console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
       console.error("📡 Error while getting events and attendance:", error);

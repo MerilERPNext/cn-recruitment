@@ -76,6 +76,7 @@ const AttendanceRequest = ({
                   "Request Type",
                   "From Date",
                   "To Date",
+                  "Duration",
                   "Due Date",
                   "Allocated To",
                   "Status",

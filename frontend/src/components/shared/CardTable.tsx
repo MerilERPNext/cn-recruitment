@@ -25,7 +25,7 @@ const CardTable = ({
       }
     >
       {/* INNER width holder */}
-      <div className="min-w-max">
+      <div className="min-w-auto">
         {/* Header */}
         {isDesktop && (
           <div
