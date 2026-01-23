@@ -40,6 +40,24 @@ type ApprovalListProps = {
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
 };
 
+const normalizeFilters = (filters: Record<string, any>) => {
+  const normalized: Record<string, any> = {};
+
+  Object.entries(filters || {}).forEach(([key, value]) => {
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      ("name" in value || "value" in value)
+    ) {
+      normalized[key] = value.name || value.value;
+    } else {
+      normalized[key] = value;
+    }
+  });
+
+  return normalized;
+};
+
 const ApprovalList = ({
   doctype,
   status,
@@ -59,23 +77,10 @@ const ApprovalList = ({
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
 
-  const normalizeFilters = (filters: Record<string, any>) => {
-    const normalized: Record<string, any> = {};
-
-    Object.entries(filters || {}).forEach(([key, value]) => {
-      if (
-        typeof value === "object" &&
-        value !== null &&
-        ("name" in value || "value" in value)
-      ) {
-        normalized[key] = value.name || value.value;
-      } else {
-        normalized[key] = value;
-      }
-    });
-
-    return normalized;
-  };
+  const handleFiltersChange = useCallback((filters: Record<string, any>) => {
+    const normalized = normalizeFilters(filters);
+    setActiveFilters(normalized);
+  }, []);
 
   const loading = useLoadingOverlay();
 
@@ -279,10 +284,7 @@ const ApprovalList = ({
         // onFiltersChange={(filters) => {
         //   setActiveFilters(filters);
         // }}
-        onFiltersChange={(filters) => {
-          const normalized = normalizeFilters(filters);
-          setActiveFilters(normalized);
-        }}
+        onFiltersChange={handleFiltersChange}
         isSearch={isSearch}
         isFilter={isFilter}
         filterFields={filterFields}
