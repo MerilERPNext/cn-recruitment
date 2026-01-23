@@ -55,15 +55,6 @@ export function formatDateToYYYYMMDD(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-export function formatDateString(dateString: string) {
-  if (!dateString || isNaN(Date.parse(dateString))) return "Invalid date";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
 export function formatTo24HourTime(isoString: string): string {
   const date = parseISO(isoString.replace(" ", "T"));
   return format(date, "HH:mm");
