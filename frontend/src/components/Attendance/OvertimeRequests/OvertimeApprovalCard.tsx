@@ -121,7 +121,7 @@ const OvertimeApprovalCard = ({
             </div>
           )}
           <Link
-            to={`/webapp/employee-profile?target_user=${data?.employee}`}
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
             <div className="truncate text-gray-900 font-medium text-sm text-start">

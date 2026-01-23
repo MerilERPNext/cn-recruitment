@@ -264,7 +264,8 @@ const ApprovalRejectionLoanList = ({
             <WrapperHoverCard
               employeeId={data?.reference_document?.custom_employee}
             >
-              {data?.reference_document?.applicant_name}
+              {data?.reference_document?.applicant_name ||
+                data?.reference_document?.custom_employee}
             </WrapperHoverCard>
           </Link>
         </div>
