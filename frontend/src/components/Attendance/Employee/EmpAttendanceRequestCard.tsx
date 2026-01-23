@@ -46,14 +46,15 @@ const EmpAttendanceRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Attendance Request Revoked Successfully!");
-          }, onError: (error) => {
-          const formatedError = errorResponseFormater(error);
-          toast.error(formatedError);
-      },
-      onSettled: () => {
-        loading?.hide(); 
-      },
-        }
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
       );
     }
   };
@@ -86,8 +87,9 @@ const EmpAttendanceRequestCard = ({
 
   const status = getStatus(data?.reference_document?.custom_status);
 
-
-  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
+  const formattedFromDate = formatToIndianDate(
+    data?.reference_document?.from_date,
+  );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   return (
@@ -96,7 +98,6 @@ const EmpAttendanceRequestCard = ({
         <div
           className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors cursor-pointer`}
         >
-
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.custom_request_type}
@@ -115,13 +116,16 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
-          <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`} target="_blank">
-              <div className="text-sm font-medium text-gray-700 text-start truncate">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
+            target="_blank"
+          >
+            <div className="text-sm font-medium text-gray-700 text-start truncate">
+              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
                 {data?.username}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
           {/* Status */}
           <div className="flex justify-start">
             <Tooltip
@@ -219,7 +223,7 @@ const EmpAttendanceRequestCard = ({
             defaultAttendanceData={data}
             forActionType="edit"
           />,
-          document.body
+          document.body,
         )}
     </>
   );

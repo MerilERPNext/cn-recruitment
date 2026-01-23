@@ -51,7 +51,6 @@ const ExpenseApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-
   const gridTemplateColumns = showCheckbox
     ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
     : "1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr";
@@ -157,13 +156,16 @@ const ExpenseApprovalCard = ({
               />
             </div>
           )}
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
-              <div className="truncate text-gray-900 font-medium text-sm text-start">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <div className="truncate text-gray-900 font-medium text-sm text-start">
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
           <div className="text-gray-700 truncate text-sm text-start">
             {data?.reference_document?.custom_expense_category}
           </div>
@@ -205,7 +207,7 @@ const ExpenseApprovalCard = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -243,7 +245,10 @@ const ExpenseApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target="_blank"
+                  >
                     <p className="card-title">
                       {data?.reference_document?.employee_name}
                     </p>
@@ -275,7 +280,7 @@ const ExpenseApprovalCard = ({
                     <p className="card-title">Claim Date</p>
                     <p className="card-subtitle">
                       {formatToIndianDate(
-                        data?.reference_document?.expenses[0]?.expense_date
+                        data?.reference_document?.expenses[0]?.expense_date,
                       )}
                     </p>
                   </div>
@@ -312,7 +317,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

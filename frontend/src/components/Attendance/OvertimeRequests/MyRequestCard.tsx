@@ -59,31 +59,39 @@ export function MyRequestCard({
           onClick={() => onClick?.(request)}
         >
           <div className="text-gray-600 text-sm truncate text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
               {formatToIndianDate(request?.reference_document?.creation) ||
                 "--/--/--"}
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-              {formatToIndianDate(request?.due_date) ||
-                "--/--/----"}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(request?.due_date) || "--/--/----"}
             </Typography>
           </div>
           <div className="text-gray-900 font-medium text-sm text-start">
-            <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-              <Link to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`} target="_blank">
-                {request?.username || ""}
-              </Link>
-            </WrapperHoverCard>
+            <Link
+              to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+              target="_blank"
+            >
+              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
+                {request?.username}
+              </WrapperHoverCard>
+            </Link>
           </div>
           <div className="w-full flex justify-start">
             <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
@@ -105,11 +113,16 @@ export function MyRequestCard({
               <div className="w-full">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col gap-1">
-                    <Link to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`} target="_blank">
+                    <Link
+                      to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+                      target="_blank"
+                    >
                       <h3 className="card-title">{request?.username}</h3>
                     </Link>
                     {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
-                    <p className="card-subtitle">{formatToIndianDate(request?.due_date) || "--/--/--"}</p>
+                    <p className="card-subtitle">
+                      {formatToIndianDate(request?.due_date) || "--/--/--"}
+                    </p>
                   </div>
                   <Badge
                     size="sm"

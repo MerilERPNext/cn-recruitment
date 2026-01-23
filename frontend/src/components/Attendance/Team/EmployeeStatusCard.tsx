@@ -31,7 +31,7 @@ const EmployeeStatusCard = ({
       | "on leave"
       | "half day"
       | "work from home"
-      | "default"
+      | "default",
   ): { indicatorBgColor: string; indicatorBorderColor?: string } => {
     if (isDesktop) {
       // Lighter colors for desktop
@@ -105,11 +105,11 @@ const EmployeeStatusCard = ({
   };
 
   const statusColors = getStatusIndicatorColor(
-    data?.status?.toLowerCase() as EmployeeStatusType
+    data?.status?.toLowerCase() as EmployeeStatusType,
   );
 
   return (
-    <div className="w-full mt-2 p-3 shadow-sm rounded-xl transition-all duration-200 bg-white hover:shadow-xl hover:shadow-slate-200/50 border-gray-100 transition-colors">
+    <div className="w-full mt-2 p-3 shadow-sm rounded-xl transition-all duration-200 bg-white hover:shadow-xl hover:shadow-slate-200/50 border-gray-100">
       <div className="flex flex-col sm:flex-row  gap-3 w-full">
         {/* Left Section - Avatar + Info */}
         <div className="flex items-start gap-3 flex-1 justify-center">
@@ -121,16 +121,19 @@ const EmployeeStatusCard = ({
           />
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
-              <WrapperHoverCard employeeId={data?.employee}>
-                <Link to={`/webapp/employee-profile?target_user=${data?.employee}`} target="_blank">
-                  <Typography
-                    variant="bodyMedium"
-                    className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
-                  >
+              <Link
+                to={`/webapp/employee-profile?target_user=${data?.employee}`}
+                target="_blank"
+              >
+                <Typography
+                  variant="bodyMedium"
+                  className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
+                >
+                  <WrapperHoverCard employeeId={data?.employee}>
                     {data?.employee_name}
-                  </Typography>
-                </Link>
-              </WrapperHoverCard>
+                  </WrapperHoverCard>
+                </Typography>
+              </Link>
               {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
               ) : null}
@@ -152,36 +155,58 @@ const EmployeeStatusCard = ({
               className="self-center h-full px-2 text-gray-600 hover:text-gray-800"
             >
               <EllipsisVertical size={18} />
-            </Button>)}
+            </Button>
+          )}
         </div>
         <div className="flex justify-center w-full  max-w-[700px]  gap-4">
           {/* Middle Section - Time Info */}
           <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Check-in
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
                 {data?.in_time
                   ? format(new Date(data?.in_time), "HH:mm")
                   : "--:--"}
               </Typography>
             </div>
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Check-out
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
                 {data?.out_time
                   ? format(new Date(data?.out_time), "HH:mm")
                   : "--:--"}
               </Typography>
             </div>
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Working Hours
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
                 {data?.working_hours
                   ? `${data.working_hours.toFixed(2)} hrs`
                   : "--:--"}
@@ -190,15 +215,17 @@ const EmployeeStatusCard = ({
           </div>
 
           {/* Right Section - Menu */}
-          {isDesktop && <Button
-            ref={buttonRef}
-            variant="subtle"
-            size="sm"
-            onClick={() => setIsPopupOpen(!isPopupOpen)}
-            className="self-center h-full px-2 text-gray-600 hover:text-gray-800"
-          >
-            <EllipsisVertical size={18} />
-          </Button>}
+          {isDesktop && (
+            <Button
+              ref={buttonRef}
+              variant="subtle"
+              size="sm"
+              onClick={() => setIsPopupOpen(!isPopupOpen)}
+              className="self-center h-full px-2 text-gray-600 hover:text-gray-800"
+            >
+              <EllipsisVertical size={18} />
+            </Button>
+          )}
         </div>
       </div>
 

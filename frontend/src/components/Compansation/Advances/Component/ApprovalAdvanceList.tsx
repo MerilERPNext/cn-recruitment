@@ -20,8 +20,6 @@ export type ApprovalRejectionLoanProps = {
   loadingAction?: { id: string; action: string } | null;
 };
 
-
-
 const ApprovalRejectionAdvanceList = ({
   isSelected = false,
   isDisabled = false,
@@ -119,13 +117,16 @@ const ApprovalRejectionAdvanceList = ({
             />
           </div>
 
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
-              <div className="text-sm font-medium">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <div className="text-sm font-medium">
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
-              </div>
-            </Link>
-          </WrapperHoverCard>
+              </WrapperHoverCard>
+            </div>
+          </Link>
 
           <div>{data.reference_document.custom_advance_type}</div>
 
@@ -135,7 +136,7 @@ const ApprovalRejectionAdvanceList = ({
 
           <div>
             {formatToIndianDate(
-              data.reference_document.custom_repayment_start_date
+              data.reference_document.custom_repayment_start_date,
             )}
           </div>
 
@@ -161,7 +162,7 @@ const ApprovalRejectionAdvanceList = ({
                 }
               >
                 {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
+                loadingAction?.action === action ? (
                   <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   action
@@ -222,7 +223,10 @@ const ApprovalRejectionAdvanceList = ({
       >
         <div className="flex justify-between items-start mb-3">
           <div>
-            <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`} target="_blank">
+            <Link
+              to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`}
+              target="_blank"
+            >
               <p className="font-semibold text-sm">
                 {data?.reference_document?.employee_name}
               </p>
@@ -262,7 +266,7 @@ const ApprovalRejectionAdvanceList = ({
           <div>
             <span className="block text-gray-400">Start Date</span>
             {formatToIndianDate(
-              data?.reference_document?.custom_repayment_start_date
+              data?.reference_document?.custom_repayment_start_date,
             )}
           </div>
 
@@ -288,7 +292,7 @@ const ApprovalRejectionAdvanceList = ({
               }
             >
               {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
+              loadingAction?.action === action ? (
                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (
                 action
@@ -317,10 +321,7 @@ const ApprovalRejectionAdvanceList = ({
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button
-                bgColor="gray-200"
-                onClick={() => setCommentOpen(false)}
-              >
+              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
                 Cancel
               </Button>
 

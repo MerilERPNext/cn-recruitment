@@ -107,7 +107,7 @@ const SalarySlipsList = () => {
   const handleViewPDF = (
     type: "regular" | "tds" | "benefit" | "offcycle",
     salarySlipName: string,
-    salaryDate?: string
+    salaryDate?: string,
   ) => {
     // Reset modal before fetching
     setModalHtmlContent("");
@@ -155,14 +155,14 @@ const SalarySlipsList = () => {
 
   const filters: Record<string, [string, string]> | undefined = selectedYear
     ? {
-      start_date: [">=", `${selectedYear}-01-01`],
-      end_date: ["<=", `${selectedYear}-12-31`],
-    }
+        start_date: [">=", `${selectedYear}-01-01`],
+        end_date: ["<=", `${selectedYear}-12-31`],
+      }
     : undefined;
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) =>
-    (currentYear - i).toString()
+    (currentYear - i).toString(),
   );
 
   return (
@@ -347,7 +347,7 @@ const DownloadMenu = ({
                   {item.label}
                 </button>
               </div>
-            )
+            ),
         )}
       </ContextualPopup>
     </div>
@@ -374,18 +374,21 @@ const SalarySlipItemDesktop = ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (
     <div className="">
       <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
-          <WrapperHoverCard employeeId={item.employee}>
-            <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+          <Link
+            to={`/webapp/employee-profile?target_user=${item?.employee}`}
+            target="_blank"
+          >
+            <WrapperHoverCard employeeId={item.employee}>
               {item.employee_name}
-            </Link>
-          </WrapperHoverCard>
+            </WrapperHoverCard>
+          </Link>
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
@@ -443,7 +446,7 @@ const SalarySlipItemMobile = ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (
