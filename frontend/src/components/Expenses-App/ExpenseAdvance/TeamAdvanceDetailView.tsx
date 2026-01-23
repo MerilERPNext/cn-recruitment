@@ -22,7 +22,7 @@ type TeamAdvanceDetailViewProps = {
 
 const formatINR = (amount: number | undefined | null) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
-    amount ?? 0
+    amount ?? 0,
   );
 
 const getStatus = (status: string | undefined) => {
@@ -48,7 +48,6 @@ export default function TeamAdvanceDetailView({
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-
   const handleAction = useCallback(
     async (action: string) => {
       setCurrentAction(action);
@@ -67,9 +66,9 @@ export default function TeamAdvanceDetailView({
         setCurrentAction(null);
       }
     },
-    [data, mutation, onAction, onClose, setRefetchAttendance]
+    [data, mutation, onAction, onClose, setRefetchAttendance],
   );
-  
+
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
   if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
   if (!data?.reference_document) return null;

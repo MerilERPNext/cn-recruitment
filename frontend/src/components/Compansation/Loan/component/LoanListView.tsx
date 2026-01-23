@@ -124,9 +124,7 @@ export default function LoanList({ loans }: LoanListProps) {
               <div className="">{loan.loan_tenure || "0"}</div>
 
               {/* Start Date */}
-              <div className="">
-                {formatToIndianDate(loan.loan_start_date)}
-              </div>
+              <div className="">{formatToIndianDate(loan.loan_start_date)}</div>
 
               {/* End Month */}
               <div className="">
