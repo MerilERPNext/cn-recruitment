@@ -58,7 +58,25 @@ const ApprovalList = ({
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
-  
+
+  const normalizeFilters = (filters: Record<string, any>) => {
+    const normalized: Record<string, any> = {};
+
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (
+        typeof value === "object" &&
+        value !== null &&
+        ("name" in value || "value" in value)
+      ) {
+        normalized[key] = value.name || value.value;
+      } else {
+        normalized[key] = value;
+      }
+    });
+
+    return normalized;
+  };
+
   const loading = useLoadingOverlay();
 
   const mutation = useApprovalListActions();
@@ -102,14 +120,14 @@ const ApprovalList = ({
     return () => {
       document.removeEventListener(
         "chatnext:modal:chat:close",
-        handleChatClose
+        handleChatClose,
       );
     };
   }, []);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -122,7 +140,7 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"')
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
               )
             : [];
           if (
@@ -133,18 +151,21 @@ const ApprovalList = ({
           } else {
             return req.todo_id;
           }
-        })
+        }),
       );
     }
   };
 
-const handleAction = useCallback(
-  async (action: string, data: any) => {
-    if (mutation?.isPending) return;
+  const handleAction = useCallback(
+    async (action: string, data: any) => {
+      if (mutation?.isPending) return;
 
-    const actionLoadingShow = ["approve", "reject"].includes(action.toLocaleLowerCase())? action : `Performing Action: ${action}`;
-    await loading?.wrap(
-      async () => {
+      const actionLoadingShow = ["approve", "reject"].includes(
+        action.toLocaleLowerCase(),
+      )
+        ? action
+        : `Performing Action: ${action}`;
+      await loading?.wrap(async () => {
         try {
           setLoadingAction({ id: data?.todo_id, action });
 
@@ -153,13 +174,13 @@ const handleAction = useCallback(
             name: data?.todo_id || "",
           });
 
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
+          console.log("Action response:", response);
+          const responseWithSession = response as unknown as { session?: any };
+          console.log("Session data:", responseWithSession?.session);
+          console.log(
+            "Assistant trigger enabled:",
+            data?.custom_open_chatnext_assistant_on_action,
+          );
 
           if (
             (data?.custom_approval_type === "Approval Matrix" &&
@@ -167,15 +188,15 @@ const handleAction = useCallback(
             (data?.custom_approval_type === "Multi Actions" &&
               data?.custom_open_chatnext_assistant_on_action)
           ) {
-          console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
-          );
+            console.log(
+              "Opening assistant with session:",
+              responseWithSession?.session,
+            );
 
             if (window.trigger_chatnext_assistant) {
               window.trigger_chatnext_assistant(
                 true,
-                responseWithSession?.session
+                responseWithSession?.session,
               );
             }
 
@@ -183,28 +204,27 @@ const handleAction = useCallback(
               triggerRefetch();
             }
           } else {
-            toast.success("Approved Request Successfully!")
+            toast.success("Approved Request Successfully!");
             triggerRefetch();
           }
         } catch (error: any) {
-          const formatedError = errorResponseFormater(error,"Something went wrong" );
+          const formatedError = errorResponseFormater(
+            error,
+            "Something went wrong",
+          );
           toast.error(formatedError);
           console.error("Action Falied:", error);
         } finally {
           setLoadingAction(null);
         }
-      },
-      actionLoadingShow
-    );
-  },
-  [mutation, loading, triggerRefetch]
-);
-
+      }, actionLoadingShow);
+    },
+    [mutation, loading, triggerRefetch],
+  );
 
   const batchActionMutation = useActionOnAttendanceRequest();
- const handleBulkAction = async (action: "Approve" | "Reject") => {
-  await loading?.wrap(
-    async () => {
+  const handleBulkAction = async (action: "Approve" | "Reject") => {
+    await loading?.wrap(async () => {
       try {
         setBulkLoading({ action, isLoading: true });
 
@@ -221,7 +241,7 @@ const handleAction = useCallback(
                     action === "Reject"
                       ? "rejected"
                       : `${action.toLowerCase()}d`
-                  } successfully!`
+                  } successfully!`,
                 );
                 triggerRefetch();
                 resolve();
@@ -231,7 +251,7 @@ const handleAction = useCallback(
                 console.error(error);
                 reject(error);
               },
-            }
+            },
           );
         });
 
@@ -239,11 +259,8 @@ const handleAction = useCallback(
       } finally {
         setBulkLoading(null);
       }
-    },
-    `${action}ing selected requests…`
-  );
-};
-
+    }, `${action}ing selected requests…`);
+  };
 
   return (
     <div>
@@ -256,10 +273,15 @@ const handleAction = useCallback(
             status: status,
             include_allocated_todos: true,
             fields: ["*"],
+            ...activeFilters,
           },
         }}
+        // onFiltersChange={(filters) => {
+        //   setActiveFilters(filters);
+        // }}
         onFiltersChange={(filters) => {
-          setActiveFilters(filters);
+          const normalized = normalizeFilters(filters);
+          setActiveFilters(normalized);
         }}
         isSearch={isSearch}
         isFilter={isFilter}

@@ -28,7 +28,7 @@ const TeamLeaveRequest = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -47,14 +47,23 @@ const TeamLeaveRequest = () => {
         "From Date",
         "To Date",
         "Due Date",
+        "Leave Days",
         "Status",
         "Actions",
       ]
-    : ["Employee", "From Date", "To Date", "Due Date", "Status", "Actions"];
+    : [
+        "Employee",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Actions",
+      ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
-    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
+    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
 
   return (
     <>
@@ -89,7 +98,12 @@ const TeamLeaveRequest = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Open", "Approved", "Rejected"],
+                    // options: ["Open", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Open" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
                 renderCardContent={(item) => (

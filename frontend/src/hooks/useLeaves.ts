@@ -47,7 +47,7 @@ export const useMyLeaveRequests = (employeeId: string | undefined) => {
 export const useGetLeaveBalance = (
   employeeId: string | undefined,
   date: string,
-  leaveType?: string
+  leaveType?: string,
 ) => {
   return useQuery<LeaveBalanceResponse>({
     queryKey: ["leave-balance", employeeId, date, leaveType],
@@ -77,7 +77,7 @@ export function useRequestCompOff() {
 
 export const useGetHolidays = (
   employeeId: string | undefined,
-  year: string
+  year: string,
 ) => {
   return useQuery<HolidayGroup[]>({
     queryKey: ["holidays", employeeId, year],
@@ -145,7 +145,7 @@ export function usePayCompOff() {
 export const useGetLeaveRequestFields = (
   leaveType?: string | undefined,
   fromDate?: string,
-  toDate?: string
+  toDate?: string,
 ) => {
   return useQuery<LeaveFieldResponse>({
     queryKey: ["leave-request-fields", leaveType, fromDate, toDate],
@@ -296,7 +296,7 @@ export function useEditApprovedLeave() {
 
 export const useGetAttendancePolicyForDate = (
   employee?: string | number,
-  targetDate?: string
+  targetDate?: string,
 ) => {
   return useQuery<AttendancePolicyResponse>({
     queryKey: ["attendance-policy-for-date", employee, targetDate],
@@ -306,7 +306,7 @@ export const useGetAttendancePolicyForDate = (
       }
       return leaveService.getAttendancePolicyForDate(
         String(employee),
-        targetDate
+        targetDate,
       );
     },
     enabled: !!employee && !!targetDate,
@@ -317,14 +317,14 @@ export const useGetAttendancePolicyForDate = (
 
 export const useGetLeavePassbookMetadata = (
   employeeId: string | undefined,
-  leaveType: string | undefined
+  leaveType: string | undefined,
 ) => {
   return useQuery<LeavePassbookMetadataResponse>({
     queryKey: ["leave-passbook-metadata", employeeId, leaveType],
     queryFn: () =>
       leaveService.getPassbookTransactionMetadata(
         employeeId as string,
-        leaveType as string
+        leaveType as string,
       ),
     enabled: !!employeeId && !!leaveType,
     staleTime: 5 * 60 * 1000,
@@ -334,7 +334,7 @@ export const useGetLeavePassbookMetadata = (
 export const useGetLeavePassbookTransaction = (
   employeeId: string | undefined,
   leaveType: string | undefined,
-  cycleStart: string | undefined
+  cycleStart: string | undefined,
 ) => {
   return useQuery<LeavePassbookResponse>({
     queryKey: ["leave-passbook", employeeId, leaveType, cycleStart],
@@ -346,7 +346,7 @@ export const useGetLeavePassbookTransaction = (
       return leaveService.getPassbookTransaction(
         employeeId,
         leaveType,
-        cycleStart
+        cycleStart,
       );
     },
     enabled: !!employeeId && !!leaveType && !!cycleStart,
@@ -356,7 +356,7 @@ export const useGetLeavePassbookTransaction = (
 
 export const useGetAccrualJournalMetadata = (
   employeeId: string | undefined,
-  leaveType: string | undefined
+  leaveType: string | undefined,
 ) => {
   return useQuery<AccrualJournalMetadataResponse>({
     queryKey: ["accrual-journal-metadata", employeeId, leaveType],
@@ -375,7 +375,7 @@ export const useGetAccrualJournalMetadata = (
 export const useGetAccrualJournalEntries = (
   employeeId: string | undefined,
   leaveType: string | undefined,
-  periodNumber: number | null
+  periodNumber: number | null,
 ) => {
   return useQuery<AccrualJournalEntriesResponse>({
     queryKey: ["accrual-journal-entries", employeeId, leaveType, periodNumber],
@@ -387,7 +387,7 @@ export const useGetAccrualJournalEntries = (
       return leaveService.getAccrualJournalEntries(
         employeeId,
         leaveType,
-        periodNumber
+        periodNumber,
       );
     },
     enabled: !!employeeId && !!leaveType && periodNumber !== null,
@@ -398,7 +398,7 @@ export const useGetAccrualJournalEntries = (
 
 export const useGetPolicyQuestions = (
   doctypeName: string | undefined,
-  targetDoctype: string | undefined
+  targetDoctype: string | undefined,
 ) => {
   return useQuery<PolicyQuestionsResponse>({
     queryKey: ["policy-questions", doctypeName, targetDoctype],
@@ -423,9 +423,12 @@ export function useCreateLeaveApplication() {
       leaveService.createLeaveApplication(leaveData),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myLeaveRequests"] });
-      queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
-      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({
+        queryKey: ["custom-api"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["custom-api-infinite"],
+      });
     },
   });
 }
@@ -433,7 +436,7 @@ export function useCreateLeaveApplication() {
 export const useGetAttendanceStatus = (
   employeeId: string | undefined,
   fromDate: string,
-  toDate: string
+  toDate: string,
 ) => {
   return useQuery<AttendanceStatusResponse>({
     queryKey: ["attendance-status", employeeId, fromDate, toDate],

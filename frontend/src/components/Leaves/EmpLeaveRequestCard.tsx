@@ -36,12 +36,12 @@ const EmpLeaveRequestCard = ({
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "revoke_replace_edit",
-    "My Requests"
+    "My Requests",
   );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (app: any) => app.name === data?.reference_name
+    (app: any) => app.name === data?.reference_name,
   );
 
   const allowEdit = leaveButtonConfig?.show_edit_button;
@@ -61,7 +61,7 @@ const EmpLeaveRequestCard = ({
             setRefetchAttendance(true);
             setMenuOpen(false);
           },
-        }
+        },
       );
     }
   };
@@ -112,8 +112,10 @@ const EmpLeaveRequestCard = ({
         label: "Approved",
         statusColor: "bg-success/10 text-success",
       };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+    // if (status === "cancelled")
+    //   return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+    if (status === "rejected")
+      return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
     return {
       label: rawStatus || "Unknown",
       statusColor: "bg-gray-100 text-gray-800",
@@ -125,7 +127,7 @@ const EmpLeaveRequestCard = ({
   const formattedFromDate = data?.reference_document?.from_date
     ? formatToIndianDate(data?.reference_document.from_date)
     : "N/A";
- 
+
   const formattedToDate = data?.reference_document?.to_date
     ? formatToIndianDate(data?.reference_document.to_date)
     : "N/A";
