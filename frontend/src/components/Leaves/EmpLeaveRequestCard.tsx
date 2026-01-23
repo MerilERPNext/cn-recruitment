@@ -124,14 +124,6 @@ const EmpLeaveRequestCard = ({
 
   const status = getStatus(data?.reference_document?.status);
 
-  const formattedFromDate = data?.reference_document?.from_date
-    ? formatToIndianDate(data?.reference_document.from_date)
-    : "N/A";
-
-  const formattedToDate = data?.reference_document?.to_date
-    ? formatToIndianDate(data?.reference_document.to_date)
-    : "N/A";
-
   const ActionMenu = () => (
     <div
       ref={menuRef}
@@ -191,8 +183,12 @@ const EmpLeaveRequestCard = ({
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.leave_type}
           </div>
-          <div className="text-sm text-gray-900">{formattedFromDate}</div>
-          <div className="text-sm text-gray-900">{formattedToDate}</div>
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.from_date)}
+          </div>
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.to_date)}
+          </div>
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.description || " - "}
           </div>
@@ -239,7 +235,8 @@ const EmpLeaveRequestCard = ({
               </div>
 
               <div className="card-subtitle">
-                {formattedFromDate} - {formattedToDate}
+                {formatToIndianDate(data?.reference_document.from_date)} -{" "}
+                {formatToIndianDate(data?.reference_document.to_date)}
               </div>
             </div>
 

@@ -108,7 +108,7 @@ export default function TeamAdvanceDetailView({
             >
               <td className="px-4 py-2">{item.expense_type || "-"}</td>
               <td className="px-4 py-2">
-                {formatToIndianDate(item.expense_date) || "-"}
+                {formatToIndianDate(item.expense_date)}
               </td>
               <td className="px-4 py-2">{item.custom_mercent || "-"}</td>
               <td className="px-4 py-2">{item.custom_invoice_number || "-"}</td>

@@ -81,7 +81,7 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
 export default formatToIndianDate;
 
 const formatEndDate = (endDate: string | null | undefined) => {
-  if (!endDate) return "Present"; // ✅ Show Present if end date is missing
+  if (!endDate) return "Present";
   return formatToIndianDate(endDate);
 };
 

@@ -71,8 +71,7 @@ export function MyRequestCard({
               variant="bodySmall"
               className="font-semibold tracking-tight"
             >
-              {formatToIndianDate(request?.reference_document?.creation) ||
-                "--/--/--"}
+              {formatToIndianDate(request?.reference_document?.creation)}
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
@@ -80,7 +79,7 @@ export function MyRequestCard({
               variant="bodySmall"
               className="font-semibold tracking-tight"
             >
-              {formatToIndianDate(request?.due_date) || "--/--/----"}
+              {formatToIndianDate(request?.due_date)}
             </Typography>
           </div>
           <div className="text-gray-900 font-medium text-sm text-start">
@@ -121,7 +120,7 @@ export function MyRequestCard({
                     </Link>
                     {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
                     <p className="card-subtitle">
-                      {formatToIndianDate(request?.due_date) || "--/--/--"}
+                      {formatToIndianDate(request?.due_date)}
                     </p>
                   </div>
                   <Badge
