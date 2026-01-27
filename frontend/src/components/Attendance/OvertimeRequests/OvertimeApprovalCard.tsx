@@ -7,6 +7,7 @@ import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import ApprovalActionPill from "../../shared/atoms/ApprovalActionPill";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -69,9 +70,10 @@ const OvertimeApprovalCard = ({
   };
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
+
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 35% 8% 8% 20%" // With checkbox
-    : "12% 40% 10% 10% 20%"; // Without checkbox
+    ? "0.5fr 1.5fr 3.2fr 1fr 1fr 2.8fr"
+    : "1.8fr 3.7fr 1.2fr 1.3fr 2fr";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -148,33 +150,14 @@ const OvertimeApprovalCard = ({
               />
             </Tooltip>
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.reference_document?.status === "Open" &&
-              actions.map((action: string) => (
-                <Button
-                  key={action}
-                  variant="soft"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
-          </div>
+
+          <ApprovalActionPill
+            actions={actions}
+            status={data?.reference_document?.status}
+            recordId={data?.todo_id}
+            loadingAction={loadingAction}
+            onAction={(action) => onAction(action, data)}
+          />
         </div>
       ) : (
         <div
