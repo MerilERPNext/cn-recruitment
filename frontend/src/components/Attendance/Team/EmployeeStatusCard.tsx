@@ -99,20 +99,19 @@ const EmployeeStatusCard = ({
 
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
-              <Link
-                to={`/webapp/employee-profile?target_user=${data?.employee}`}
-                target="_blank"
-              >
-                <Typography
-                  variant="bodyMedium"
-                  className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
-                >
-                  <WrapperHoverCard employeeId={data?.employee}>
-                    {data?.employee_name}
-                  </WrapperHoverCard>
-                </Typography>
-              </WrapperHoverCard>
-              </Link>
+            <Link
+  to={`/webapp/employee-profile?target_user=${data?.employee}`}
+  target="_blank"
+>
+  <Typography
+    variant="bodyMedium"
+    className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
+  >
+    <WrapperHoverCard employeeId={data?.employee}>
+      {data?.employee_name}
+    </WrapperHoverCard>
+  </Typography>
+</Link>
               {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
               ) : null}
@@ -226,6 +225,7 @@ const EmployeeStatusCard = ({
         </Button>
       </ContextualPopup>
     </div>
+    
   );
 };
 
