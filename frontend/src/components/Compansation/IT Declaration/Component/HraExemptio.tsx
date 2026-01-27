@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
+import LTACards from "./LtaBreakUp";
+
 export interface LTAItem {
   exemption_sub_category: string;
   component_type: string;
   description: string | null;
   editable: number;
-  amount: number;
+  amount: number | null;
   max_amount: number;
 }
 
@@ -36,12 +38,31 @@ export interface HRAData {
   address_line2: string;
   lta?: LTAData;
 }
+
 interface HRAFormProps {
   hraData: HRAData;
+  LATABreakup: any;
   onChange: (field: keyof HRAData | "lta", value: any) => void;
 }
-const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange }) => {
-const LTAData = (hraData as unknown as any[])?.[1];
+
+const HRAForm: React.FC<HRAFormProps> = ({
+  hraData,
+  onChange,
+  LATABreakup,
+}) => {
+  const [showLTAModal, setShowLTAModal] = useState(false);
+
+  const LTAData = (hraData as unknown as any[])?.[1];
+
+  // ✅ PAN mandatory condition
+  const isPanMandatory = Number(hraData.monthly_hra) > 8333;
+
+  // ✅ Auto-mark attachment required when PAN mandatory
+  useEffect(() => {
+    if (isPanMandatory && hraData.attach_reqd === 0) {
+      onChange("attach_reqd", 1);
+    }
+  }, [isPanMandatory, hraData.attach_reqd, onChange]);
 
   return (
     <div className="mt-4">
@@ -52,19 +73,23 @@ const LTAData = (hraData as unknown as any[])?.[1];
           </h3>
         </div>
 
-        <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
-          If rent is more than ₹8,333/month or ₹1,00,000/year, PAN is mandatory.
-        </div>
+        {/* ✅ Show warning only when rent > 8333 */}
+        {isPanMandatory && (
+          <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
+            If rent is more than ₹8,333/month or ₹1,00,000/year, PAN is mandatory.
+          </div>
+        )}
 
         <div className="grid grid-cols-6 gap-4">
           <div className="col-span-2">
-            <label className="text-xs text-gray-500">Address Line 1</label>
+            <label className="text-xs text-gray-500">Address</label>
             <input
               value={hraData.address_line1}
               onChange={(e) => onChange("address_line1", e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
+
           <div>
             <label className="text-xs text-gray-500">Is Metro</label>
             <select
@@ -78,6 +103,7 @@ const LTAData = (hraData as unknown as any[])?.[1];
               <option value={1}>Metro</option>
             </select>
           </div>
+
           <div>
             <label className="text-xs text-gray-500">From</label>
             <input
@@ -87,6 +113,7 @@ const LTAData = (hraData as unknown as any[])?.[1];
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
+
           <div>
             <label className="text-xs text-gray-500">To</label>
             <input
@@ -96,24 +123,20 @@ const LTAData = (hraData as unknown as any[])?.[1];
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
+
+          {/* ✅ Monthly Rental */}
           <div>
             <label className="text-xs text-gray-500">Monthly Rental</label>
             <input
-  type="number"
-  value={hraData.monthly_hra}
-  readOnly
-  className="w-full border rounded px-3 py-2 text-sm bg-gray-100"
-/>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-500">PAN</label>
-            <input
-              value={hraData.pan}
-              onChange={(e) => onChange("pan", e.target.value)}
+              type="number"
+              value={hraData.monthly_hra}
+              onChange={(e) =>
+                onChange("monthly_hra", Number(e.target.value))
+              }
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
+
           <div>
             <label className="text-xs text-gray-500">Owner name</label>
             <input
@@ -122,77 +145,129 @@ const LTAData = (hraData as unknown as any[])?.[1];
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
-          {hraData.attach_reqd !== 0 && 
-            <div className="col-span-2 flex items-end">
-  <label
-    className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-md 
-               text-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition"
-  >
-    📎
-    <span>Attach file</span>
-    <input type="file" className="hidden" />
-  </label>
-</div>
 
-          }
+          {/* ✅ PAN field – mandatory when rent > 8333 */}
+          <div>
+            <label className="text-xs text-gray-500">
+              PAN {isPanMandatory && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              value={hraData.pan}
+              onChange={(e) => onChange("pan", e.target.value)}
+              className={`w-full border rounded px-3 py-2 text-sm ${
+                isPanMandatory && !hraData.pan
+                  ? "border-red-500"
+                  : ""
+              }`}
+              placeholder={
+                isPanMandatory ? "PAN is mandatory" : "Enter PAN"
+              }
+            />
+            {isPanMandatory && !hraData.pan && (
+              <p className="text-xs text-red-500 mt-1">
+                PAN is required when rent exceeds ₹8,333/month.
+              </p>
+            )}
+          </div>
+
+          {/* ✅ Attachment */}
+          {hraData.attach_reqd !== 0 && (
+            <div className="col-span-2 flex items-end">
+              <label
+                className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-md 
+               text-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition"
+              >
+                📎
+                <span>Attach file</span>
+                <input type="file" className="hidden" />
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
       {/* ================= LTA Section ================= */}
       {LTAData?.items && (
         <div className="border rounded p-4 mt-4">
-          <Typography variant="bodySmall" color="body1" className="font-semibold">LTA Details</Typography>
+          <Typography
+            variant="bodySmall"
+            color="body1"
+            className="font-semibold"
+          >
+            LTA Details
+          </Typography>
 
-          {LTAData.items.map((category: { category_name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; items: any[]; }, catIdx: React.Key | null | undefined) => (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowLTAModal(true)}
+              className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Use LTA Breakup
+            </button>
+          </div>
+
+          {showLTAModal && (
+            <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40">
+              <div className="bg-white rounded-lg w-[60%] mt-2 max-w-3xl p-4 relative">
+                <div className="flex justify-between items-center mb-3">
+                  <Typography
+                    variant="bodySmall"
+                    color="body1"
+                    className="font-semibold"
+                  >
+                    LTA Breakup (View Only)
+                  </Typography>
+                  <button
+                    onClick={() => setShowLTAModal(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="max-h-[70vh] overflow-auto">
+                  <LTACards LTAData={LATABreakup} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {LTAData.items.map((category: any, catIdx: number) => (
             <div key={catIdx} className="mb-4">
-              <Typography
-                variant="bodySmall"
-                color="body2"
-                className="mb-2"
-              >
-              Category Name:  {category.category_name}
+              <Typography variant="bodySmall" color="body2" className="mb-2">
+                {category.category_name}
               </Typography>
 
-              {category.items.map((item, idx) => (
+              {category.items.map((item: any, idx: number) => (
                 <div
                   key={item.exemption_sub_category}
                   className="grid grid-cols-2 gap-4 mb-4 border-b pb-4"
                 >
                   <div className="col-span-2 flex justify-between items-center">
-                    <Typography variant="bodySmall" color="body2" className="font-medium">
-                    Sub Category {item.exemption_sub_category}
+                    <Typography
+                      variant="bodySmall"
+                      color="body2"
+                      className="font-medium"
+                    >
+                      {item.exemption_sub_category}
                     </Typography>
-                    <span className="text-sm text-gray-600">
-                      Max: {item.max_amount}
-                    </span>
                   </div>
 
                   <div className="col-span-2">
                     <label className="text-sm text-gray-500">Amount</label>
                     <input
-                      type="number"
-                      value={item.amount}
-                      readOnly={item.editable === 0}
+                      type="text"
+                      value={item.amount ?? ""}
                       onChange={(e) => {
-                        if (catIdx === null || catIdx === undefined) return
-                      
-                        const categoryIndex = Number(catIdx)
-                        if (Number.isNaN(categoryIndex)) return
-                      
-                        const updatedCategories = [...LTAData.items]
-                        const updatedItems = [...category.items]
-                      
-                        updatedItems[idx] = {
-                          ...item,
-                          amount: Number(e.target.value),
-                        }
-                      
-                        updatedCategories[categoryIndex] = {
-                          ...category,
-                          items: updatedItems,
-                        }
-                      
-                        onChange("lta", { items: updatedCategories })
+                        const value = e.target.value;
+                        const numericValue =
+                          value === "" ? null : Number(value);
+
+                        const updatedItems = [...LTAData.items];
+                        updatedItems[catIdx].items[idx].amount =
+                          numericValue;
+
+                        onChange("lta", { items: updatedItems });
                       }}
                       className={`w-full border rounded px-3 py-1 ${
                         item.editable === 0

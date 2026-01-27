@@ -595,3 +595,28 @@ export const useAllShiftBlocks = (filters?: FilterCondition[]) => {
     queryFn: () => getAllShiftBlocks(filters),
   });
 };
+
+
+export const useDataOfAttendance = (employee: string) => {
+  return useQuery<any>({
+    queryKey: ["employee-attendance-details", employee],
+    queryFn: () => attendanceService.getDataOfAttendance(employee),
+    enabled: !!employee, // ⛔ jab tak employee na ho tab tak call mat karo
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// 🔹 Selected reportee ki attendance
+export const useDataOfAttendanceDetails = (selectedReporties: string) => {
+  return useQuery<any>({
+    queryKey: ["reporties-attendance-details", selectedReporties],
+    queryFn: async () => {
+      const res = await attendanceService.getDataOfAttendanceDetails(
+        selectedReporties
+      );
+
+      // ✅ handle frappe-style response
+      return Array.isArray(res?.data) ? res.data : [];
+    },
+  });
+};

@@ -67,18 +67,34 @@ export const getCompareTaxSheetHTML = async (declarationId: string) => {
   );
 };
 
+
 export const getProofDateForITDeclaration = async (currentDate: string, employee: string | null, declarationDoctype: string | null, payroll_period: string | null ) => {
+  console.log("getProofDateForITDeclaration params", {currentDate, employee, declarationDoctype, payroll_period});
   const response = await FrappeAPI.callMethod(
-    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_claim_locking_period",
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.declaration_locking_period_visibility",
     {
         employee: employee,
-        doctype_name: declarationDoctype,
+        doctype: declarationDoctype,
         payroll_period: payroll_period, 
         posting_date: currentDate,
     }
   );
 
-  console.log("FULL API RESPONSE 👉", response);
+
+
+  return response;
+};
+
+
+export const getLTABrakup = async (employee: string | null) => {
+  const response = await FrappeAPI.callMethod(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.lta_breakup.get_lta_breakup",
+    {
+        employee: employee,
+    }
+  );
+
+console.log("LTA BREAKUP RESPONSE", response);
 
   return response;
 };

@@ -351,14 +351,14 @@ export default function SalaryAssignmentList() {
                       <p className="font-medium">{chg.property}</p>
                       <p className="text-gray-500">
                         Old:{" "}
-                        <span className="blur-sm select-none">
-                          {showAmount ? chg.old_value : "XXXXX"}
+                        <span className="">
+                          {chg.old_value}
                         </span>
                       </p>
                       <p className="text-gray-500">
                         New:{" "}
-                        <span className="blur-sm select-none">
-                          {showAmount ? chg.new_value : "XXXXX"}
+                        <span className="">
+                          {chg.new_value}
                         </span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
