@@ -12,6 +12,8 @@ import HelpDeskEmptyState from "./HelpDeskEmptyState";
 import TicketListView from "./TicketListView";
 import RequestIssueModal from "./RequestIssueModal";
 
+type ViewMode = "user" | "admin";
+
 const HelpDeskApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
@@ -21,10 +23,21 @@ const HelpDeskApp: React.FC = () => {
   const isAdmin = isAdminUser(currentUser ?? null);
   const currentUserEmail = currentUser?.email || "";
 
+  // Always show user's own tickets (raised by them)
+  const viewMode: ViewMode = "user";
+
+  // View configuration - always show tickets raised by current user
+  const viewConfig = {
+    title: "Help Desk",
+    subtitle: "Issues raised by you",
+    filterMode: "raised" as const,
+  };
+
   // Pass user context to useTicketStats for role-based filtering
   const { data: stats, refetch: refetchStats } = useTicketStats(
     currentUserEmail,
-    isAdmin
+    isAdmin,
+    viewMode
   );
 
   // Modal state
@@ -49,7 +62,11 @@ const HelpDeskApp: React.FC = () => {
     if (hasTickets) {
       return (
         <div className="p-4 md:p-6">
-          <TicketListView currentUserEmail={currentUserEmail} isAdmin={isAdmin} />
+          <TicketListView
+            currentUserEmail={currentUserEmail}
+            isAdmin={isAdmin}
+            viewMode={viewMode}
+          />
         </div>
       );
     }
@@ -64,7 +81,7 @@ const HelpDeskApp: React.FC = () => {
 
       <div className="px-4 py-3 border-b border-gray-200">
         <Typography variant="bodySmall" color="body2">
-          Issues raised by you
+          {viewConfig.subtitle}
         </Typography>
       </div>
 
@@ -98,12 +115,12 @@ const HelpDeskApp: React.FC = () => {
   );
 
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Help Desk">
+    <DesktopLayoutWrapper title={viewConfig.title}>
       <div className="flex flex-col h-full bg-white rounded-lg">
         {/* Subtitle */}
         <div className="px-8 py-4 border-b border-gray-200">
           <Typography variant="bodySmall" color="body2">
-            Issues raised by you
+            {viewConfig.subtitle}
           </Typography>
         </div>
 

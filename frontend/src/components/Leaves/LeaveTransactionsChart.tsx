@@ -52,12 +52,12 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
       "Nov",
       "Dec",
     ],
-    []
+    [],
   );
 
   const cleanedData = useMemo(
     () => data?.filter((item) => !item.dont_show_in_frontend) ?? [],
-    [data]
+    [data],
   );
 
   // ✅ Series data
@@ -67,13 +67,13 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
         name: item.type,
         data: item.monthly,
       })),
-    [cleanedData]
+    [cleanedData],
   );
 
   // ✅ One color per item.type (stable)
   const colors = useMemo(
     () => cleanedData.map((item) => getColorForType(item.type)),
-    [cleanedData]
+    [cleanedData],
   );
 
   const maxValue = useMemo(() => {
@@ -129,7 +129,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
         },
       },
     }),
-    [colors, months, maxValue, tickAmount]
+    [colors, months, maxValue, tickAmount],
   );
 
   if (!isDesktop) return null;
@@ -137,7 +137,8 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   return (
     <div className="w-full">
       <button
-        onClick={() => setOpen(!open)}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
         className="w-full h-14 bg-white shadow-md rounded-b-xl flex items-center justify-between px-4 hover:bg-primary/10 transition"
       >
         <span className="text-lg font-semibold text-gray-800">

@@ -1,4 +1,3 @@
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
@@ -6,6 +5,8 @@ import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -40,7 +41,7 @@ const ApprovalCard = ({
     : [];
 
   const getActionStyles = (
-    action: string
+    action: string,
   ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
@@ -71,21 +72,6 @@ const ApprovalCard = ({
     return styles;
   };
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   const gridTemplateColumns = isBulkSelectEnabled
     ? "5% 10% 15% 8% 8% 8% 10% 20%"
     : "12% 20% 10% 10% 10% 10% 20%";
@@ -113,14 +99,14 @@ const ApprovalCard = ({
     };
   };
   const cleanExplaination = DOMPurify.sanitize(
-    data?.reference_document?.explanation || ""
+    data?.reference_document?.explanation || "",
   );
   const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -142,32 +128,49 @@ const ApprovalCard = ({
             </div>
           )}
 
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
             <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                {data?.reference_document?.employee_name}
+              </WrapperHoverCard>
             </div>
-          </WrapperHoverCard>
+          </Link>
 
           <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
               {cleanExplaination}
             </Typography>
           </div>
 
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-              {formatDate(data?.reference_document?.from_date)}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(data?.reference_document?.from_date)}
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-              {formatDate(data?.reference_document?.to_date)}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(data?.reference_document?.to_date)}
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-              {formatDate(data?.due_date)}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(data?.due_date)}
             </Typography>
           </div>
           {/* Status + Actions */}
@@ -199,7 +202,7 @@ const ApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -236,9 +239,14 @@ const ApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="card-title">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target="_blank"
+                  >
+                    <p className="card-title">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                   {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
                 </div>
 
@@ -255,7 +263,9 @@ const ApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span className="card-title mb-1">From</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.reference_document?.from_date)}
+                        {formatToIndianDate(
+                          data?.reference_document?.from_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -265,7 +275,7 @@ const ApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col items-center">
                       <span className="card-title mb-1">To</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.reference_document?.to_date)}
+                        {formatToIndianDate(data?.reference_document?.to_date)}
                       </span>
                     </p>
                   )}
@@ -273,7 +283,7 @@ const ApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.due_date)}
+                        {formatToIndianDate(data?.due_date)}
                       </span>
                     </p>
                   )}
@@ -300,7 +310,7 @@ const ApprovalCard = ({
                       }
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

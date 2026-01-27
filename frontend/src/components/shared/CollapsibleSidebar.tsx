@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   Calendar,
@@ -31,7 +31,9 @@ import {
   HandCoins,
   Coins,
   BadgeIndianRupee,
+  FileSpreadsheet,
 } from "lucide-react";
+
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { ROUTES } from "../../constants/routes";
@@ -70,7 +72,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   setIsExpanded,
 }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
@@ -84,7 +85,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       companyLogo.length > 0 &&
       currentEmployeeCompany
       ? companyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany
+        (company) => company.company_name === currentEmployeeCompany,
       )
       : companyLogo?.[0];
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -117,11 +118,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   //     .filter((app) => backendTitles.includes(app.title))
   //     .reduce((sum, app) => sum + (app.count ?? 0), 0);
   // };
-
-  const handleHelpDeskClick = () => {
-    navigate("/webapp/helpdesk");
-  };
-
 
   const allNavigationItems: NavigationItem[] = [
     {
@@ -236,6 +232,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Annual CTC",
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+        },
+        {
+          name: "Invoice",
+          icon: FileSpreadsheet,
+          href: "/webapp/salary-slip-app/invoice-page",
         },
         {
           name: "Salary Slip",
@@ -382,12 +383,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
       ],
     },
-    // {
-    //   icon: Users,
-    //   label: "Employee Directory",
-    //   path: "/webapp/employees-directory",
-    //   permissionKey: "Employee Directory",
-    // },
+    {
+      icon: Users,
+      label: "Employee Directory",
+      path: "/webapp/employees-directory",
+      permissionKey: "Employee Directory",
+    },
     {
       icon: Shield,
       label: "Policies",
@@ -416,7 +417,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     return allNavigationItems
       .map((item) => {
         const appPermission = uiPermissions.find(
-          (perm) => perm.app_name === item.permissionKey
+          (perm) => perm.app_name === item.permissionKey,
         );
 
         if (!appPermission || !appPermission.enabled) {
@@ -429,7 +430,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
         const filteredSubItems = item.subItems.filter((subItem) => {
           const pagePermission = appPermission.pages?.find(
-            (page) => page.page_name === subItem.name
+            (page) => page.page_name === subItem.name,
           );
           return pagePermission && pagePermission.enabled;
         });
@@ -480,7 +481,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         return shiftRoutes.some(
           (route) =>
             location.pathname === route ||
-            location.pathname.startsWith(route + "/")
+            location.pathname.startsWith(route + "/"),
         );
       }
 
@@ -497,10 +498,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const isItemActive = (item: NavigationItem) => {
-    if (item.label === "Help Desk") {
-      return false;
-    }
-
     if (item.label === "Dashboard") {
       return (
         location.pathname === "/webapp/" || location.pathname === "/webapp"
@@ -553,7 +550,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     setIsExpanded(false);
 
     const activeParent = navigationItems.find((item) =>
-      item.subItems?.some((subItem) => isSubItemActive(subItem))
+      item.subItems?.some((subItem) => isSubItemActive(subItem)),
     );
 
     if (!activeParent) {
@@ -565,7 +562,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   useEffect(() => {
     const activeParent = navigationItems.find((item) =>
-      item.subItems?.some((subItem) => isSubItemActive(subItem))
+      item.subItems?.some((subItem) => isSubItemActive(subItem)),
     );
 
     setOpenDropdown(activeParent?.label || null);
@@ -630,7 +627,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               const Icon = item.icon;
               const hasSubItems = item.subItems && item.subItems.length > 0;
               const isAnySubItemActive = item.subItems?.some((subItem) =>
-                isSubItemActive(subItem)
+                isSubItemActive(subItem),
               );
               const isItemDirectlyActive =
                 isItemActive(item) && !isAnySubItemActive;
@@ -639,9 +636,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               let parentItemClasses = "";
               if (isExpanded) {
                 if (isAnySubItemActive) {
-                  parentItemClasses = "bg-primary-50 text-primary-600";
+                  parentItemClasses = "bg-primary text-white";
                 } else if (isItemDirectlyActive && !hasSubItems) {
-                  parentItemClasses = "bg-primary-500 text-white";
+                  parentItemClasses = "bg-primary-50 text-primary-600";
                 } else if (isDropdownOpen) {
                   parentItemClasses = "bg-primary-50 text-primary-600";
                 } else {
@@ -705,47 +702,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         />
                       )}
                     </div>
-                  ) : item.label === "Help Desk" ? (
-                    <div
-                      onClick={handleHelpDeskClick}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ${isItemDirectlyActive
-                        ? "bg-primary-500 text-white hover:text-white"
-                        : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                        }`}
-                    >
-                      <div className="relative flex items-center space-x-3">
-                        <div className="flex-shrink-0 relative">
-                          <Icon className="h-5 w-5" />
-
-                          {!isExpanded && getCount("Help Desk") > 0 && (
-                            <span className="absolute -top-4 -right-4 min-w-[16px] h-4 px-1 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                              {getCount("Help Desk")}
-                            </span>
-                          )}
-                        </div>
-
-                        <span
-                          className={`transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
-                        >
-                          <Typography
-                            variant="bodySmall"
-                            className="font-medium whitespace-nowrap"
-                            color="inherit"
-                          >
-                            {item.label}
-                          </Typography>
-                        </span>
-
-                        {isExpanded && getCount("Help Desk") > 0 && (
-                          <span className="ml-auto min-w-[22px] h-5 px-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
-                            {getCount("Help Desk")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
                   ) : (
                     <Link
                       to={item.path}
@@ -779,7 +735,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     (isDropdownOpen || isAnySubItemActive) &&
                     isExpanded && (
                       <div className="overflow-hidden transition-all duration-300 ease-in-out">
-                        <div className="py-1 space-y-1">
+                        <div className="py-1 space-y-0">
                           {item.subItems?.map((subItem) => {
                             const SubIcon = subItem.icon;
                             const hasSubSubItems =
@@ -789,7 +745,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                               openSubDropdown === subItem.name;
                             const isAnySubSubItemActive =
                               subItem.subItems?.some((subSubItem) =>
-                                isSubSubItemActive(subSubItem)
+                                isSubSubItemActive(subSubItem),
                               );
 
                             return (
@@ -832,13 +788,37 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                 ) : (
                                   <Link
                                     to={subItem.href || "#"}
-                                    className={`flex items-center w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubActive
-                                      ? "bg-primary-500 text-white hover:text-white"
-                                      : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                      }`}
+                                    className={`
+                                              group flex items-center w-full h-8 p-4 text-sm no-underline whitespace-nowrap
+                                              relative left-5 border-l border-gray-400 transition-colors duration-300
+                                              ${isSubActive
+                                        ? "text-primary"
+                                        : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"}
+                                  `}
                                   >
-                                    <div className="flex items-center space-x-2">
-                                      <SubIcon className="h-3.5 w-3.5 opacity-70" />
+                                    {/* dot */}
+                                    <span
+                                      className={`
+                                      absolute left-[-5px] top-1/2 -translate-y-1/2
+                                      h-2 w-2 rounded-full bg-primary
+                                      transition-all duration-400 ease-out
+                                      ${isSubActive ? "scale-100 opacity-100" : "scale-0 opacity-0"}
+                                    `}
+                                    />
+
+                                    {/* vertical bar */}
+                                    <span
+                                      className={`
+                                      absolute left-[-1.5px] top-0
+                                      h-full w-[2px] bg-primary
+                                      origin-center
+                                      rounded-md
+                                      transition-transform transition-opacity duration-400 ease-out
+                                      ${isSubActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}
+                                    `}
+                                    />
+                                    <div className="flex items-center justify-start space-x-2">
+                                      {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
                                       <span
                                         className={`transition-all duration-300 whitespace-nowrap ${isExpanded
                                           ? "opacity-100 translate-x-0"

@@ -65,7 +65,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
   // Get type badge
   const getTypeBadge = () => {
-    const baseClasses = "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full";
+    const baseClasses = "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg";
 
     if (type === "original") {
       return (
@@ -115,11 +115,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           <img
             src={sender.avatar}
             alt={sender.name}
-            className={`${sizeClasses} rounded-full object-cover`}
+            className={`${sizeClasses} rounded-xl object-cover`}
           />
         ) : (
           <div
-            className={`${sizeClasses} rounded-full flex items-center justify-center font-medium ${
+            className={`${sizeClasses} rounded-xl flex items-center justify-center font-medium ${
               isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
             }`}
           >

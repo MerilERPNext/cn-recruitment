@@ -270,10 +270,12 @@ export const useGetAllEmployeeCheckin = (
 
 
 export const useGetAllEmployeeRegularize = (
-  filters: any, enabled: boolean
+  filters: any,
+  enabled: boolean,
+  queryKeySuffix: unknown = filters
 ): UseQueryResult<EmployeeRegularize[], Error> => {
   return useQuery<EmployeeRegularize[], Error>({
-    queryKey: ["all-employee-regularize", filters],
+    queryKey: ["all-employee-regularize", queryKeySuffix, filters],
     queryFn: () => attendanceService.getAllEmployeeRegularize(filters),
     refetchOnWindowFocus: true,
     enabled: enabled,

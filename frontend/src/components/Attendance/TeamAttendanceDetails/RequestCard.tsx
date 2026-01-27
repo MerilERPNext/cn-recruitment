@@ -1,8 +1,8 @@
-import { format, isValid, parse } from "date-fns";
 import { RequestCardProps } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 export function RequestCard({
   request,
@@ -37,25 +37,11 @@ any & {
     };
   };
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
   const status = getStatus(request?.status);
 
   const gridTemplateColumns = "16% 20% 10% 10% 10% 20%";
   const cleanExplaination = DOMPurify.sanitize(
-    request?.reference_document?.explanation || ""
+    request?.reference_document?.explanation || "",
   );
   return (
     <>
@@ -74,13 +60,13 @@ any & {
 
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(request?.reference_document?.from_date)}
+            {formatToIndianDate(request?.reference_document?.from_date)}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(request?.reference_document?.to_date)}
+            {formatToIndianDate(request?.reference_document?.to_date)}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(request?.due_date)}
+            {formatToIndianDate(request?.due_date)}
           </div>
           <div className="w-full flex justify-start">
             <Badge
@@ -118,7 +104,9 @@ any & {
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span>From</span>
                       <span className="text-black font-semibold">
-                        {formatDate(request?.reference_document?.from_date)}
+                        {formatToIndianDate(
+                          request?.reference_document?.from_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -128,7 +116,9 @@ any & {
                     <p className="text-sm text-gray-500 flex flex-col items-center">
                       <span>To</span>
                       <span className="text-black font-semibold">
-                        {formatDate(request?.reference_document?.to_date)}
+                        {formatToIndianDate(
+                          request?.reference_document?.to_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -136,7 +126,7 @@ any & {
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span>Due</span>
                       <span className="text-black font-semibold">
-                        {formatDate(request?.due_date)}
+                        {formatToIndianDate(request?.due_date)}
                       </span>
                     </p>
                   )}

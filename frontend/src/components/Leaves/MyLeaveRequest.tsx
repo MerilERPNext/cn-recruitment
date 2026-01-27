@@ -44,7 +44,7 @@ const MyLeaveRequests = ({
   });
   const { mutate: revokeLeave } = useRevokeApprovedLeave();
   const { data: buttonStatus } = useGetButtonsStatus(
-    currentEmployee?.name || ""
+    currentEmployee?.name || "",
   );
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
@@ -85,7 +85,7 @@ const MyLeaveRequests = ({
             setRefetchAttendance(true);
           }, 2000);
         },
-      }
+      },
     );
   };
 
@@ -164,9 +164,16 @@ const MyLeaveRequests = ({
                         fieldname: "status",
                         label: "Status",
                         fieldtype: "Select",
-                        options: ["Open", "Approved", "Rejected"],
+                        options: [
+                          { label: "Pending", value: "Open" },
+                          { label: "Approved", value: "Approved" },
+                          { label: "Rejected", value: "Rejected" },
+                        ],
                       },
                     ]}
+                    defaultFilters={{
+                      status: "Open",
+                    }}
                     SkeletonComponent={CardSkeleton}
                     onRefetchComplete={() => setRefetchAttendance(false)}
                     refetchTrigger={refetchAttendance}

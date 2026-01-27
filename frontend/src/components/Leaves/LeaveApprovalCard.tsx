@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { getActionStyles } from "../../utils/actionButtonStyles";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -35,21 +36,6 @@ const LeaveApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
-  };
-
   const getStatus = (status: string) => {
     if (status === "Open") {
       return {
@@ -74,13 +60,13 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
-    : "1.5fr 1fr 1fr 1fr 1fr 1.5fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
+    : "1.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr";
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -102,20 +88,28 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
             <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.reference_document?.employee_name}
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                {data?.reference_document?.employee_name}
+              </WrapperHoverCard>
             </div>
-          </WrapperHoverCard>
+          </Link>
           {/* Date */}
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.from_date)}
+            {formatToIndianDate(data?.reference_document?.from_date)}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.reference_document?.to_date)}
+            {formatToIndianDate(data?.reference_document?.to_date)}
           </div>
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
+          </div>
+          <div className="text-gray-700 text-sm text-start">
+            {data?.reference_document?.total_leave_days}
           </div>
 
           {/* Status + Actions */}
@@ -186,9 +180,14 @@ const LeaveApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between">
                 <div className="w-full">
-                  <p className="card-title">
-                    {data?.reference_document?.employee_name}
-                  </p>
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target="_blank"
+                  >
+                    <p className="card-title">
+                      {data?.reference_document?.employee_name}
+                    </p>
+                  </Link>
                   {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
                 </div>
                 <Badge
@@ -204,7 +203,9 @@ const LeaveApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span className="card-title mb-1">From</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.reference_document?.from_date)}
+                        {formatToIndianDate(
+                          data?.reference_document?.from_date,
+                        )}
                       </span>
                     </p>
                   )}
@@ -214,7 +215,7 @@ const LeaveApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col items-center">
                       <span className="card-title mb-1">To</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.reference_document?.to_date)}
+                        {formatToIndianDate(data?.reference_document?.to_date)}
                       </span>
                     </p>
                   )}
@@ -222,7 +223,7 @@ const LeaveApprovalCard = ({
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>
                       <span className="card-subtitle">
-                        {formatDate(data?.due_date)}
+                        {formatToIndianDate(data?.due_date)}
                       </span>
                     </p>
                   )}

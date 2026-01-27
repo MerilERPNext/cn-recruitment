@@ -14,13 +14,13 @@ import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
-import { format } from "date-fns";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -41,9 +41,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
-    : " - ";
+  // const formattedDate = item?.reference_document?.creation
+  //   ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
+  //   : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
@@ -60,7 +60,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {item?.status && (
           <span
             className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-              item?.status
+              item?.status,
             )}`}
           >
             {item?.status === "Draft" ? "Pending" : item?.status}
@@ -71,7 +71,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       <div className="flex justify-between">
         <div className="flex flex-col gap-1">
           <span className="card-title">Claimed Date</span>
-          <span className="card-subtitle">{formattedDate}</span>
+          <span className="card-subtitle">
+            {formatToIndianDate(item?.reference_document?.creation)}
+          </span>
         </div>
 
         <div className="flex flex-col gap-1 text-right">
@@ -90,25 +92,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? new Date(item?.reference_document?.creation).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
-
-  const formattedExpenseDate = item?.reference_document?.expenses[0]
-    ?.expense_date
-    ? new Date(
-        item?.reference_document?.expenses[0]?.expense_date
-      ).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
-
   const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -118,7 +101,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
-    "Expense Claims"
+    "Expense Claims",
   );
 
   const navigate = useNavigate();
@@ -130,21 +113,25 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
-      expenseItem
+      expenseItem,
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
 
   return (
     <div
-      className="grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
+      className="max-w-screen grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
       style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
       <span>{expenseClaim?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
       <span>{formattedSanctionedAmount || " - "}</span>
-      <span>{formattedExpenseDate}</span>
-      <span>{formattedDate}</span>
+      <span>
+        {formatToIndianDate(
+          item?.reference_document?.expenses[0]?.expense_date,
+        )}
+      </span>
+      <span>{formatToIndianDate(item?.reference_document?.creation)}</span>
       <div>
         <Tooltip
           content={
@@ -156,7 +143,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         >
           <span
             className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.status
+              item?.status,
             )}`}
           >
             {item?.status === "Draft" ? "Pending" : item?.status}
@@ -185,7 +172,7 @@ const ExpensesList: React.FC = () => {
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
-    []
+    [],
   );
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
@@ -213,7 +200,7 @@ const ExpensesList: React.FC = () => {
   const openModal = (
     id: string,
     stages: ApprovalStage[],
-    sendBackUser: string
+    sendBackUser: string,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
@@ -368,7 +355,11 @@ const ExpensesList: React.FC = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Draft", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Draft" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
                 SkeletonComponent={CardSkeleton}

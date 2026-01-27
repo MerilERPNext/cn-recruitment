@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import {
@@ -107,10 +108,11 @@ export default function EmployeeProfileSections() {
     if (!employeeId || fieldPermissionsLoading || employeeLoading || !tabs.length) {
         return <ProfileGridSkeleton />;
     }
+    // console.log(tabs, "tabs------------------------------------")
     return (
         <div>
             <div className="flex items-start justify-between">
-                <div className="px-6 py-4">
+                <div className="px-6 py-6">
                     <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
                     </Typography>
@@ -120,7 +122,7 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full border-b border-gray-50 pb-2">
+                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
@@ -140,9 +142,8 @@ export default function EmployeeProfileSections() {
                     </div>
                 </div>
             )}
-
             {/* Scrollable Sections */}
-            <div className="space-y-14 pb-6">
+            <div className="space-y-6 pb-6">
                 {tabs.map(tab => (
                     <section
                         key={tab.key}
@@ -152,7 +153,7 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center justify-between mb-6 py-3 px-6 bg-gray-50/50 border-y border-gray-100/50">
+                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-6 border border-gray-100/50">
                             <Typography variant="subheading" className="font-bold text-gray-800">
                                 {tab.label}
                             </Typography>
@@ -179,7 +180,7 @@ export default function EmployeeProfileSections() {
                                     return (
                                         <div
                                             key={field.key}
-                                            className={`${isTable ? "col-span-full mt-4" : "px-4 py-2 border-l border-gray-100 hover:border-primary-200 transition-colors"}`}
+                                            className={`${isTable ? "col-span-full mt-4" : "px-4 py-2  hover:border-primary-200 transition-colors"}`}
                                         >
                                             <div className="flex items-center justify-between mb-3">
                                                 <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
@@ -242,11 +243,51 @@ const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit
     if (!Array.isArray(items) || items.length === 0) {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
+
+    const getStartDateValue = (item: Record<string, any>) => {
+        for (const [key, field] of Object.entries(item)) {
+            const isStructured = field && typeof field === 'object' && 'value' in field;
+            const label = (isStructured && field.label) ? field.label : formatKey(key);
+            if (label === "Start Date") {
+                return isStructured ? field.value : field;
+            }
+        }
+        return null;
+    };
+
+    const sortedItemsWithOriginalIndex = items
+        .map((item, index) => ({ item, originalIndex: index }))
+        .sort((a, b) => {
+            const aDateStr = getStartDateValue(a.item);
+            const bDateStr = getStartDateValue(b.item);
+
+            if (!aDateStr && !bDateStr) return 0;
+            if (!aDateStr) return 1;
+            if (!bDateStr) return -1;
+
+            const parseDate = (dateStr: any) => {
+                if (!dateStr) return 0;
+                if (typeof dateStr === 'string' && dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    if (parts.length === 3 && parts[0].length === 2) {
+                        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`).getTime();
+                    }
+                }
+                const date = new Date(dateStr);
+                return isNaN(date.getTime()) ? 0 : date.getTime();
+            };
+
+            const aTime = parseDate(aDateStr);
+            const bTime = parseDate(bDateStr);
+
+            return bTime - aTime; // Newest first
+        });
+
     return (
         <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-            {items.map((item, index) => (
-                <div key={item?.id || item?.name || index} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
-                    <GenericCard data={item} onEdit={() => onEdit?.(index)} />
+            {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
+                <div key={item?.id || item?.name || originalIndex} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
+                    <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} />
                 </div>
             ))}
         </div>
@@ -255,7 +296,7 @@ const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GenericCard = ({ data, onEdit }: { data: Record<string, any>, onEdit?: () => void }) => {
     if (!data || typeof data !== "object") return null;
-
+    // console.log(data, "data------------------------------------")
     return (
         <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full relative">
             <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">

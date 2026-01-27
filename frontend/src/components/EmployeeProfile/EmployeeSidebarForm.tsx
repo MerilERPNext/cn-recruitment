@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Form } from "@tsed/react-formio";
 import SideDrawer from "../shared/SideDrawer";
 import toast from "react-hot-toast";
@@ -7,6 +8,19 @@ import Button from "../shared/atoms/Button";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
+interface EditableField {
+    key: string;
+    label: string;
+    fieldname?: string;
+    rowIndex?: number;
+}
+
+interface TabWithSchema {
+    key: string;
+    label: string;
+    schema: any;
+}
+
 const EmployeeSidebarForm = ({
     edit,
     setEdit,
@@ -15,15 +29,21 @@ const EmployeeSidebarForm = ({
     employeeId,
     refetchEmployee,
     employeeIsLoading,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-}: { edit: any, setEdit: any, formioTabs: any, formInstances: any, employeeId: string, refetchEmployee: () => void, employeeIsLoading: boolean | null }) => {
-
+}: {
+    edit: EditableField | null,
+    setEdit: (edit: EditableField | null) => void,
+    formioTabs: TabWithSchema[],
+    formInstances: React.MutableRefObject<Record<string, any>>,
+    employeeId: string,
+    refetchEmployee: () => void,
+    employeeIsLoading: boolean | null
+}) => {
+    // console.log(formioTabs, "---------------------")
     const mutation = useUpdateFrappeDocument();
     const { data: employeeDataQueryResult } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
     const employee = employeeDataQueryResult?.employee;
 
     // Recursive helper to find a component by key in a Formio schema
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const findComponentByKey = (components: any[], key: string): any => {
         if (!components) return null;
         for (const comp of components) {
@@ -42,7 +62,7 @@ const EmployeeSidebarForm = ({
         return null;
     };
 
-    const sectionSchema = formioTabs.find((tab: { key: string }) => tab.key === edit?.key)?.schema;
+    const sectionSchema = formioTabs.find((tab) => tab.key === edit?.key)?.schema;
     let schema = sectionSchema;
 
     // Handle Granular Schema Slicing
@@ -96,7 +116,7 @@ const EmployeeSidebarForm = ({
                     // Regular Field Case
                     Object.assign(allData, submittedFieldData);
                 }
-            } else {
+            } else if (edit?.key) {
                 // Section Edit Case (Original)
                 for (const tab of formioTabs) {
                     const data = await getSubmissionData(tab.key);
@@ -104,18 +124,18 @@ const EmployeeSidebarForm = ({
                 }
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const sanitizeData = (data: any): any => {
+                if (data === null || data === undefined) return "";
+
                 if (Array.isArray(data)) {
                     if (data.length === 0) return "";
-                    if (data[0]?.storage === "customBase64" || data[0]?.storage === "url") {
-                        return data[0]?.url || "";
+                    if (data[0] && (data[0].storage === "customBase64" || data[0].storage === "url")) {
+                        return data[0].url || "";
                     }
                     return data.map(item => sanitizeData(item));
                 }
 
                 if (data !== null && typeof data === 'object') {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const cleansed: Record<string, any> = {};
                     for (const [key, value] of Object.entries(data)) {
                         if (key === "branch") continue;
@@ -142,7 +162,6 @@ const EmployeeSidebarForm = ({
                             toast.success("Updated Successfully.");
                             setEdit(null);
                         },
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onError(err: any) {
                             const error = errorResponseFormater(err)
                             toast.error(error);
@@ -167,21 +186,26 @@ const EmployeeSidebarForm = ({
                             key={`${edit?.key}-${edit?.fieldname}-${edit?.rowIndex}`} // Force re-render on edit change
                             className="profile-form w-full max-w-full bg-white"
                             form={schema}
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             onFormReady={(instance: any) => {
-                                const storageKey = edit?.fieldname
+                                if (!edit) return;
+                                const storageKey = edit.fieldname
                                     ? `${edit.key}-${edit.fieldname}${edit.rowIndex !== undefined ? `-${edit.rowIndex}` : ""}`
-                                    : edit?.key || "";
+                                    : edit.key;
                                 formInstances.current[storageKey] = instance;
 
-                                if (employee && edit?.fieldname) {
-                                    if (edit.rowIndex !== undefined && employee[edit.fieldname]) {
-                                        // Specific row in a table
-                                        const rowData = employee[edit.fieldname][edit.rowIndex];
-                                        instance.submission = { data: rowData };
-                                    } else if (employee[edit.fieldname] !== undefined) {
-                                        // Regular single field
-                                        instance.submission = { data: { [edit.fieldname]: employee[edit.fieldname] } };
+                                if (employee) {
+                                    if (edit.fieldname) {
+                                        if (edit.rowIndex !== undefined && (employee as any)[edit.fieldname]) {
+                                            // Specific row in a table
+                                            const rowData = (employee as any)[edit.fieldname][edit.rowIndex];
+                                            instance.submission = { data: rowData };
+                                        } else if ((employee as any)[edit.fieldname] !== undefined) {
+                                            // Regular single field
+                                            instance.submission = { data: { [edit.fieldname]: (employee as any)[edit.fieldname] } };
+                                        }
+                                    } else {
+                                        // Section Edit Case - Pre-fill with the entire employee object
+                                        instance.submission = { data: employee };
                                     }
                                 }
                             }}
@@ -203,7 +227,7 @@ const EmployeeSidebarForm = ({
                         <div className="w-full bg-white pt-4">
                             <Button
                                 onClick={handleSubmit}
-                                disabled={mutation?.isPending}
+                                disabled={mutation?.isPending || false}
                                 size="md"
                                 fullWidth
                                 className="bg-primary-600 hover:bg-primary-700 text-white font-bold"

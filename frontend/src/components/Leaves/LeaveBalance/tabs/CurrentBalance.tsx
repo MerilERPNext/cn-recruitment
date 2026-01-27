@@ -6,7 +6,7 @@ import { useGetLeaveBalance } from "../../../../hooks/useLeaves";
 import { useCurrentEmployee } from "../../../../hooks/useEmployee";
 import { LeaveBalance } from "../../../../types/leaves";
 import { Typography } from "../../../shared/atoms/Typography";
-
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 interface CurrentBalanceTabProps {
   leaveData: LeaveBalance;
 }
@@ -16,10 +16,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
   const [selectedDate, setSelectedDate] = useState(today);
   const [isMoreDetailsOpen, setIsMoreDetailsOpen] = useState(false);
 
-  const formatDate = (date: string) => {
-    const [year, month, day] = date.split("-");
-    return `${day}-${month}-${year}`;
-  };
+  
 
   const {
     data: currentEmployee,
@@ -45,7 +42,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
         key: "selectedDate",
         label: "Select Date",
         input: true,
-        format: "yyyy-MM-dd",
+        format: "dd-MM-yyyy",
         enableDate: true,
         enableTime: false,
         defaultValue: today,
@@ -59,7 +56,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
           mode: "single",
           enableTime: false,
           noCalendar: false,
-          format: "yyyy-MM-dd",
+          format: "dd-MM-yyyy",
           hourIncrement: 1,
           minuteIncrement: 1,
           time_24hr: false,
@@ -224,7 +221,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
               <div className="bg-primary/10 rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
                   <Typography className="font-medium">
-                    Balance as of {formatDate(selectedDate)}
+                    Balance as of {formatToIndianDate(selectedDate)}
                   </Typography>
                   <span className="text-lg font-bold text-gray-900">
                     {displayData.balance ?? 0}

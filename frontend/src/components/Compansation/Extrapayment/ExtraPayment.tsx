@@ -10,6 +10,7 @@ import Modal from "../Advances/commonModal";
 import ExtraPaymentForm from "./ExtraPaymentForm";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -81,7 +82,7 @@ export default function ExtraPayment() {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const { data: extraPayment } = useExtraPayment(
     user?.company || null,
-    user?.employee || null
+    user?.employee || null,
   );
 
   const [isMobile, setIsMobile] = useState(false);
@@ -100,7 +101,7 @@ export default function ExtraPayment() {
       salary_component: item.salary_component,
       recipient: (extraPayment as any)?.employee,
       invoiceId: item.name,
-      date: item.payment_date,
+      date: formatToIndianDate(item.payment_date),
       amount: item.amount,
       status: item.is_tax_applicable ? "Paid" : "Pending",
     })) ?? [];
@@ -223,7 +224,7 @@ export default function ExtraPayment() {
                   <div className="px-6 py-2 text-xs">
                     <span
                       className={`px-2 py-1 rounded-lg text-sm ${getStatusColor(
-                        payment.status
+                        payment.status,
                       )}`}
                     >
                       {payment.status}
@@ -247,7 +248,7 @@ export default function ExtraPayment() {
                   <h3 className="font-semibold">{payment.recipient}</h3>
                   <span
                     className={`px-3 py-1 text-xs rounded-lg ${getStatusColor(
-                      payment.status
+                      payment.status,
                     )}`}
                   >
                     {payment.status}

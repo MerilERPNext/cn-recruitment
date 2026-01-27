@@ -21,6 +21,7 @@ import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanReq
 import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
 import Requests from "./components/Requests";
 import Perquisite from "./components/Compansation/Perquisite/Perquisite";
+import Invoice from "./components/Compansation/Invoice/Invoice";
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -362,8 +363,6 @@ const SeparationWorkflow = lazyWithRetry(
   "SeparationWorkflow"
 );
 
-
-
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
   "Confirmation"
@@ -443,6 +442,23 @@ const TicketDetailView = lazyWithRetry(
 const TodoPage = lazyWithRetry(
   () => import("./components/Todo/TodoPage"),
   "TodoPage"
+);
+
+const Recruitment = lazyWithRetry(
+  () => import("./components/Recruitment/RecruitmentApp"),
+  "Recruitment"
+);
+const RecruitmentOverview = lazyWithRetry(
+  () => import("./components/Recruitment/Overview"),
+  "RecruitmentOverview"
+);
+const Requisition = lazyWithRetry(
+  () => import("./components/Recruitment/Requisition"),
+  "Requisition"
+);
+const RequisitionForm = lazyWithRetry(
+  () => import("./components/Recruitment/RequisitionForm"),
+  "RequisitionForm"
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -555,6 +571,7 @@ export const routesConfig: AppRoute[] = [
       { path: "pay-package", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
       { path: "perquisite-list", element: <Perquisite /> },
+      {path: "invoice-page", element: <Invoice/> },
     ],
   },
   {
@@ -715,6 +732,20 @@ export const routesConfig: AppRoute[] = [
     ],
   },
 
+  //new recruitment routes
+  {
+    path: "/webapp/recruitment",
+    element: <Recruitment />,
+    children: [
+      { path: "overview", element: <RecruitmentOverview /> },
+      { path: "requisition", element: <Requisition /> },
+      {
+        path: "requisition/new",
+        element: <RequisitionForm />,
+      },
+    ],
+  },
+
   // New route for Expense Advance Form
   {
     path: "/webapp/expenses-app/new-expense-advance",
@@ -781,6 +812,14 @@ export const routesConfig: AppRoute[] = [
   },
   {
     path: "/webapp/helpdesk",
+    element: <HelpDeskApp />,
+  },
+  {
+    path: "/webapp/helpdesk/my-tickets",
+    element: <HelpDeskApp />,
+  },
+  {
+    path: "/webapp/helpdesk/assigned",
     element: <HelpDeskApp />,
   },
   {

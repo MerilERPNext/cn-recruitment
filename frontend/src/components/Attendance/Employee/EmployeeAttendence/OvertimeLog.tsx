@@ -75,7 +75,7 @@ const OvertimeLog = () => {
                                         </td>
 
                                         <td className="whitespace-nowrap border-r px-4 py-3 text-sm text-gray-700">
-                                            {format(new Date(item.creation), "dd MMM yyyy")}
+                                            {format(new Date(item.creation), "dd-MM-yyyy")}
                                         </td>
 
                                         <td className="whitespace-nowrap border-r px-4 py-3 text-sm text-gray-700">

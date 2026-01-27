@@ -84,7 +84,7 @@ export default function TaxSheet() {
           key !== "months" &&
           key !== "status"
       )
-      .map((key) => ({
+      ?.map((key) => ({
         key,
         title: key
           .replace(/_/g, " ")
@@ -103,13 +103,13 @@ export default function TaxSheet() {
           {title}
         </div>
 
-        {data.map((row, idx) => (
+        {data?.map((row, idx) => (
           <React.Fragment key={idx}>
             <div className="border-b px-4 py-3 text-sm">
               {row.name}
             </div>
 
-            {row.values.map((value, i) => (
+            {row.values?.map((value, i) => (
               <div
                 key={i}
                 className="border-b px-4 py-3 text-sm text-center"
@@ -168,7 +168,7 @@ export default function TaxSheet() {
             Particulars
           </div>
 
-          {taxsheetData.months.map((month) => (
+          {taxsheetData.months?.map((month) => (
             <div
               key={month}
               className="bg-gray-50 border-b px-4 py-2 text-center text-sm font-semibold"
@@ -181,7 +181,7 @@ export default function TaxSheet() {
             Total
           </div>
 
-          {sections.map((section) => (
+          {sections?.map((section) => (
             <Section
               key={section.key}
               title={section.title}

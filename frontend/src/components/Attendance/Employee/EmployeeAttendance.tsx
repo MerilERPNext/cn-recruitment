@@ -201,7 +201,7 @@ const EmployeeAttendance = () => {
             default:
               status = "default";
           }
-
+          // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
           if (record?.custom_auto_created === 1) {
             status = "unpaid";
           }

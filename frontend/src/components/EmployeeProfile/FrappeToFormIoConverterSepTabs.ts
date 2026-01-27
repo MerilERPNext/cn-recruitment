@@ -46,7 +46,7 @@ export function clearTableFieldsCache() {
  */
 async function prefetchTableFields(apiFields: any[]): Promise<void> {
   const tableFields = apiFields.filter(
-    (f) => f.fieldtype === "Table" && f.options
+    (f) => f.fieldtype === "Table" || f.fieldtype === "Table Multiselect" || f.fieldtype === "Table MultiSelect" && f.options
   );
   const uniqueDoctypes = [...new Set(tableFields.map((f) => f.options))];
 
@@ -97,6 +97,7 @@ const formioFieldTypeMap: Record<string, string> = {
   // Complex fields
   Table: "datagrid",
   "Table MultiSelect": "select",
+  "Table Multiselect": "select",
 
   // HTML field
   HTML: "content",
@@ -120,10 +121,25 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   };
 
   // Special processing for Table MultiSelect values
-  if (field.fieldtype === "Table MultiSelect" && Array.isArray(fieldValue)) {
-    // Users requested to use the label/fieldname as the key for extraction
+  if (
+    (field.fieldtype === "Table MultiSelect" ||
+      field.fieldtype === "Table Multiselect") &&
+    Array.isArray(fieldValue)
+  ) {
     schema.defaultValue = fieldValue.map((row: any) => {
-      return row[field.fieldname] || row[field.label] || row.label || row.name;
+      // 1. Try common link fields in child tables (e.g. for IP Restriction field, look for ip_restriction field)
+      const linkFieldName = field.child_fields?.find((cf: any) => cf.fieldtype === 'Link')?.fieldname;
+      if (linkFieldName && row[linkFieldName]) return row[linkFieldName];
+
+      // 2. Try the label/fieldname as the key for extraction (User requested fallback)
+      return (
+        row[field.fieldname] ||
+        row[field.label] ||
+        row.label ||
+        row.name ||
+        // 3. Last resort: first property that is a string and not a standard ERPNext field
+        Object.keys(row).find(k => !['name', 'owner', 'parent', 'parentfield', 'parenttype', 'idx', 'docstatus', 'creation', 'modified', 'modified_by'].includes(k) && typeof row[k] === 'string')
+      );
     });
   }
 
@@ -160,17 +176,75 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       }
       break;
 
-    case "Table MultiSelect":
+    case "Table MultiSelect": {
+      schema.type = "select";
+      schema.widget = "choicesjs";
+      schema.dropdown = "body";
+      schema.dataSrc = "url";
+      schema.searchEnabled = true;
+      schema.multiple = true
+      schema.data = {
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
+      };
+
+      schema.lazyLoad = true;
+      schema.dataType = "string";
+      schema.idPath = "name";
+      schema.valueProperty = "name";
+      schema.selectValues = "message";
+      schema.searchField = "q";
+      schema.template = (item: any) => {
+        const data = item?.item || {};
+
+        const name = data.name || "";
+
+        const secondary =
+          data.employee_name ||
+          data.title ||
+          data.label ||
+          data.full_name ||
+          data.fullname ||
+          data.first_name ||
+          "";
+
+        const designation = data.custom_designation_name || "";
+        const branch = data.branch || "";
+
+        const infoText =
+          designation && branch
+            ? `${designation} | ${branch}`
+            : designation || branch;
+
+        return `
+            <div class="formio-select-item">
+              <div class="formio-select-item-main">
+                <span class="primary">${name}</span>
+                ${secondary ? `<span class="secondary">(${secondary})</span>` : ""}
+              </div>
+  
+              ${infoText
+            ? `
+                <div class="formio-select-item-info">
+                  <span>${infoText}</span>
+                </div>
+              `
+            : ""}
+  
+            </div>
+          `;
+      };
+      break;
+    }
     case "Link": {
       schema.type = "select";
       schema.widget = "choicesjs";
       schema.dropdown = "body";
       schema.dataSrc = "url";
       schema.searchEnabled = true;
-      schema.multiple = field.fieldtype === "Table MultiSelect";
+      schema.multiple = false;
 
       schema.data = {
-        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.options ?? ""}&limit=20`,
+        url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
       };
 
       schema.lazyLoad = true;
@@ -339,12 +413,15 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema = {
         ...schema,
         storage: "customBase64",
-        fileTypes:
-          field.fieldtype === "Attach Image"
-            ? [{ label: "Images", value: "image/*" }]
-            : [],
         multiple: false,
+        filePattern: "*",  // Accept all file types by default
       };
+
+      // Only set fileTypes for image attachments
+      if (field.fieldtype === "Attach Image") {
+        schema.fileTypes = [{ label: "Images", value: "image/*" }];
+        schema.filePattern = "image/*";
+      }
 
       if (Array.isArray(fieldValue) && fieldValue.length > 0) {
         // Handle Formio file array (after submit, before reload)
@@ -361,7 +438,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
               type: file.type || "file",
             },
           ]
-          : "";
+          : [];
       } else if (typeof fieldValue === "string" && fieldValue.trim() !== "") {
         // Handle backend string (after reload)
         schema.defaultValue = [
@@ -375,7 +452,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
           },
         ];
       } else {
-        schema.defaultValue = "";
+        schema.defaultValue = [];
       }
       break;
 
@@ -411,7 +488,12 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
 
   // Handle read-only fields
   if (field.read_only === 1 || field.read_only === true) {
-    if (field.fieldtype !== "Table") {
+    // Don't disable Table or Table MultiSelect fields - they need to load their data/options
+    if (
+      field.fieldtype !== "Table" &&
+      field.fieldtype !== "Table MultiSelect" &&
+      field.fieldtype !== "Table Multiselect"
+    ) {
       schema.disabled = true;
     }
   }
@@ -729,17 +811,21 @@ export async function convertToFormioWithTabMetadata(
   }
 
   // Helper: detect if a tab or section actually contains inputs
-  const hasInputs = (components: any[]): boolean =>
-    components?.some((comp) => {
+  const hasInputs = (components: any[]): boolean => {
+    if (!Array.isArray(components)) return false;
+    return components.some((comp) => {
+      if (!comp) return false;
       if (comp.input) return true;
-      if (comp.components && hasInputs(comp.components)) return true;
-      if (
-        comp.columns &&
-        comp.columns.some((col: any) => hasInputs(col.components))
-      )
-        return true;
+      if (comp.components && Array.isArray(comp.components) && hasInputs(comp.components)) return true;
+      if (comp.columns && Array.isArray(comp.columns)) {
+        return comp.columns.some(
+          (col: any) =>
+            col && col.components && Array.isArray(col.components) && hasInputs(col.components)
+        );
+      }
       return false;
     });
+  };
 
   // Remove empty sections (panels without inputs)
   tabs.forEach((tab) => {
@@ -1122,17 +1208,21 @@ export async function convertToFormioWithLayout(
   }
 
   // Helper: detect if a tab or section actually contains inputs
-  const hasInputs = (components: any[]): boolean =>
-    components?.some((comp) => {
+  const hasInputs = (components: any[]): boolean => {
+    if (!Array.isArray(components)) return false;
+    return components.some((comp) => {
+      if (!comp) return false;
       if (comp.input) return true;
-      if (comp.components && hasInputs(comp.components)) return true;
-      if (
-        comp.columns &&
-        comp.columns.some((col: any) => hasInputs(col.components))
-      )
-        return true;
+      if (Array.isArray(comp.components) && hasInputs(comp.components)) return true;
+      if (Array.isArray(comp.columns)) {
+        return comp.columns.some(
+          (col: any) =>
+            col && Array.isArray(col.components) && hasInputs(col.components)
+        );
+      }
       return false;
     });
+  };
 
   // Remove empty sections (panels without inputs)
   tabs.forEach((tab) => {
@@ -1317,68 +1407,89 @@ export async function convertFieldsToSimpleTabbedData(
 
       if (field.fieldtype === 'Table' && field.options) {
         const res = await getTableFields(field.options);
+        const standardFields = new Set(['name', 'owner', 'creation', 'modified', 'modified_by', 'docstatus', 'idx', 'parent', 'parentfield', 'parenttype', 'doctype', 'amended_from']);
+        const fieldMetaMap = new Map((res || []).map(f => [f.fieldname, f]));
 
-        if (res?.length && Array.isArray(fieldValue)) {
-          // Map table rows using child field definitions
+        if (Array.isArray(fieldValue)) {
+          // Map table rows using child field definitions or data keys
           simpleField.value = fieldValue.map((row: any) => {
             const rowData: Record<string, any> = {};
-            res.forEach((childField: any) => {
-              if (
-                childField.fieldtype === "Section Break" ||
-                childField.fieldtype === "Column Break"
-              )
-                return;
 
-              let childSimpleType = "text";
-              if (
-                ["Int", "Float", "Currency", "Percent"].includes(
-                  childField.fieldtype
+            // Iterate over all keys in the row to ensure we don't miss anything that has data
+            Object.keys(row).forEach((key) => {
+              if (standardFields.has(key)) return;
+              if (key.endsWith('_display')) return; // handled via lookup
+
+              const childField = fieldMetaMap.get(key);
+
+              if (childField) {
+                if (
+                  childField.fieldtype === "Section Break" ||
+                  childField.fieldtype === "Column Break"
                 )
-              )
-                childSimpleType = "number";
-              else if (
-                ["Date", "Datetime", "Time"].includes(childField.fieldtype)
-              )
-                childSimpleType = "date";
-              else if (
-                ["Select", "Link", "Dynamic Link"].includes(
-                  childField.fieldtype
+                  return;
+
+                let childSimpleType = "text";
+                if (
+                  ["Int", "Float", "Currency", "Percent"].includes(
+                    childField.fieldtype
+                  )
                 )
-              )
-                childSimpleType = "select";
-              else if (["Check"].includes(childField.fieldtype))
-                childSimpleType = "boolean";
-              else if (["Attach", "Attach Image"].includes(childField.fieldtype))
-                childSimpleType = "file";
+                  childSimpleType = "number";
+                else if (
+                  ["Date", "Datetime", "Time"].includes(childField.fieldtype)
+                )
+                  childSimpleType = "date";
+                else if (
+                  ["Select", "Link", "Dynamic Link"].includes(
+                    childField.fieldtype
+                  )
+                )
+                  childSimpleType = "select";
+                else if (["Check"].includes(childField.fieldtype))
+                  childSimpleType = "boolean";
+                else if (["Attach", "Attach Image"].includes(childField.fieldtype))
+                  childSimpleType = "file";
 
-              let childValue =
-                row[`${childField.fieldname}_display`] !== undefined
-                  ? row[`${childField.fieldname}_display`]
-                  : row[childField.fieldname];
+                let childValue =
+                  row[`${childField.fieldname}_display`] !== undefined
+                    ? row[`${childField.fieldname}_display`]
+                    : row[childField.fieldname];
 
-              // Standardize date format for child table fields
-              if (
-                (childField.fieldtype === "Date" ||
-                  childField.fieldtype === "Datetime") &&
-                typeof childValue === "string" &&
-                childValue
-              ) {
-                const date = parseISO(childValue);
-                if (isValid(date)) {
-                  childValue = format(
-                    date,
-                    childField.fieldtype === "Date"
-                      ? "dd-MM-yyyy"
-                      : "dd-MM-yyyy HH:mm:ss"
-                  );
+                // Standardize date format for child table fields
+                if (
+                  (childField.fieldtype === "Date" ||
+                    childField.fieldtype === "Datetime") &&
+                  childValue &&
+                  typeof childValue === "string"
+                ) {
+                  const date = parseISO(childValue);
+                  if (isValid(date)) {
+                    childValue = format(
+                      date,
+                      childField.fieldtype === "Date"
+                        ? "dd-MM-yyyy"
+                        : "dd-MM-yyyy HH:mm:ss"
+                    );
+                  }
                 }
-              }
 
-              rowData[childField.fieldname] = {
-                value: childValue,
-                type: childSimpleType,
-                label: childField.label || childField.fieldname,
-              };
+                rowData[childField.fieldname] = {
+                  value: childValue,
+                  type: childSimpleType,
+                  label: childField.label || childField.fieldname,
+                };
+              } else {
+                // Fallback for fields not in metadata but present in data
+                const value = row[key];
+                if (value === null || value === undefined) return;
+
+                rowData[key] = {
+                  value: value,
+                  type: "text",
+                  label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+                };
+              }
             });
             return rowData;
           });

@@ -62,6 +62,22 @@ export const profileService = {
       );
     }
   },
+  getEmploymentHistoryData: async (
+    employee_id: string
+  ): Promise<Employee | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("cn_hrms_core.cn_hrms_core.apis.employee.get_employee_doc", {
+        employee_id: employee_id
+      });
+      // Handle different response structures
+
+      return result as Employee;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
   getEmployeeDetailsByEmpId: async (
     employee_id: string
   ): Promise<Employee | null> => {

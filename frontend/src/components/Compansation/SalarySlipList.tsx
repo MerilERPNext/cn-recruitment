@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState, useRef } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -22,6 +22,7 @@ import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
@@ -93,7 +94,7 @@ const SalarySlipsList = () => {
     if (isDesktop) {
       setSelectedSalarySlip({
         name: salaryId,
-        date: startDate ? formatToIndianDateModal(startDate) : "",
+        date: startDate ? formatToIndianDate(startDate) : "",
       });
       setPdfModalOpen(true);
     } else {
@@ -102,19 +103,11 @@ const SalarySlipsList = () => {
     }
   };
 
-  const formatToIndianDateModal = (dateString: string): string => {
-    const date = new Date(dateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-  };
-
   // Handlers for view PDF
   const handleViewPDF = (
     type: "regular" | "tds" | "benefit" | "offcycle",
     salarySlipName: string,
-    salaryDate?: string
+    salaryDate?: string,
   ) => {
     // Reset modal before fetching
     setModalHtmlContent("");
@@ -169,7 +162,7 @@ const SalarySlipsList = () => {
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) =>
-    (currentYear - i).toString()
+    (currentYear - i).toString(),
   );
 
   return (
@@ -354,7 +347,7 @@ const DownloadMenu = ({
                   {item.label}
                 </button>
               </div>
-            )
+            ),
         )}
       </ContextualPopup>
     </div>
@@ -378,25 +371,24 @@ const SalarySlipItemDesktop = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (
     <div className="">
-      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
+      <div className="max-w-screen grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
         <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
-          <WrapperHoverCard employeeId={item.employee}>
-            {item.employee_name}
-          </WrapperHoverCard>
+          <Link
+            to={`/webapp/employee-profile?target_user=${item?.employee}`}
+            target="_blank"
+          >
+            <WrapperHoverCard employeeId={item.employee}>
+              {item.employee_name}
+            </WrapperHoverCard>
+          </Link>
         </span>
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
@@ -451,16 +443,10 @@ const SalarySlipItemMobile = ({
       style: "currency",
       currency: "INR",
     }).format(amount);
-  const formatToIndianDate = (d: string) => {
-    const date = new Date(d);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (

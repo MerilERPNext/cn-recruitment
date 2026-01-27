@@ -59,7 +59,7 @@ export default function PerquisiteList() {
             {perquisites.map((item: any) => (
               <div
                 key={item.id}
-                className="grid px-6 py-3 gap-4 items-center border-b border-gray-200"
+                className="max-w-screen grid px-6 py-3 gap-4 items-center border-b border-gray-200"
                 style={{ gridTemplateColumns: columnWidths.join(" ") }}
               >
                 <div className="font-medium">{item.name}</div>

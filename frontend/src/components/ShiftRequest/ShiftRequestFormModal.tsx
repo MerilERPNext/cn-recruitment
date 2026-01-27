@@ -7,6 +7,13 @@ import {
   useUpdateShiftRequest,
 } from "../../hooks/useShift";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import defaultFormSchema from "./ShiftRequestFormSchema.json";
+import Button from "../shared/atoms/Button";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useRequiredFields } from "../../hooks/useRequiredFields";
+import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+
 
 import type {
   ShiftRequestFormData,
@@ -14,12 +21,7 @@ import type {
   ShiftRequest,
 } from "../../types/shift";
 import { Formio } from "formiojs";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import defaultFormSchema from "./ShiftRequestFormSchema.json";
-import Button from "../shared/atoms/Button";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import { useRequiredFields } from "../../hooks/useRequiredFields";
-import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -50,8 +52,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     error: employeeError,
   } = useCurrentEmployee();
 
-  const isLoading = employeeLoading;
-  const error = employeeError;
+  const loading = useLoadingOverlay(); // ✅ overlay hook
+
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
@@ -63,43 +65,53 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     console.error(message, error);
   };
 
-  const handleSubmit = async () => {
-    if (!formRef.current) {
-      toast.error("Form not ready yet.");
-      return;
-    }
+  // ✅ handleSubmit wrapped in LoadingOverlay
+const handleSubmit = async () => {
+  if (!formRef.current) {
+    toast.error("Form not ready yet.");
+    return;
+  }
 
-    try {
-      const submission: FormioSubmission<ShiftRequestFormData> =
-        await formRef.current.submit();
+  // 1️⃣ Submit the form normally
+  let submission: FormioSubmission<ShiftRequestFormData>;
+  try {
+    submission = await formRef.current.submit();
+  } catch (formError) {
+    console.error("Form submission error:", formError);
+    toast.error("Please check your form inputs and try again.");
+    return;
+  }
 
-      const { shiftType, fromDate, toDate, reason } = submission.data;
+  const { shiftType, fromDate, toDate, reason } = submission.data;
 
-      if (!employeeDetails) {
-        toast.error("Employee details not loaded. Try again.");
-        console.log(error, "Employee details not fetched.");
-        return;
-      }
+  if (!employeeDetails) {
+    toast.error("Employee details not loaded. Try again.");
+    console.log(employeeError, "Employee details not fetched.");
+    return;
+  }
 
-      const formatDate = (dateStr: string) => {
-        const date = new Date(dateStr);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      };
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
-      const payload = {
-        shift_type: shiftType,
-        from_date: formatDate(fromDate),
-        to_date: formatDate(toDate),
-        reason: reason,
-        status: "Draft",
-        employee: employeeDetails.name,
-        shift_request_approver: employeeDetails.shift_request_approver,
-      };
+  const payload = {
+    shift_type: shiftType,
+    from_date: formatDate(fromDate),
+    to_date: formatDate(toDate),
+    reason,
+    status: "Draft",
+    employee: employeeDetails.name,
+    shift_request_approver: employeeDetails.shift_request_approver,
+  };
 
-      if (forActionType === "edit" && defaultShiftRequestData?.name) {
+  // 2️⃣ Wrap only the network mutation inside the overlay
+  await loading?.wrap(async () => {
+    if (forActionType === "edit" && defaultShiftRequestData?.name) {
+      await new Promise<void>((resolve, reject) =>
         updateShiftRequest(
           {
             doctype: defaultShiftRequestData.doctype,
@@ -107,35 +119,41 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             data: payload,
           },
           {
-            onSuccess: handleSubmitonSuccess,
+            onSuccess: () => {
+              handleSubmitonSuccess();
+              resolve();
+            },
             onError: (error: any) => {
               handleSubmitionError("Error updating shift request:", error);
-              const formatedError = errorResponseFormater(
-                error,
-                "Error updating shift request"
+              toast.error(
+                errorResponseFormater(error, "Error updating shift request")
               );
-              toast.error(formatedError);
+              reject(error);
             },
           }
-        );
-      } else {
+        )
+      );
+    } else {
+      await new Promise<void>((resolve, reject) =>
         createShiftRequest(payload, {
-          onSuccess: handleSubmitonSuccess,
+          onSuccess: () => {
+            handleSubmitonSuccess();
+            resolve();
+          },
           onError: (error: any) => {
             handleSubmitionError("Error creating shift request:", error);
-            const formatedError = errorResponseFormater(
-              error,
-              "Error creating shift request"
+            toast.error(
+              errorResponseFormater(error, "Error creating shift request")
             );
-            toast.error(formatedError);
+            reject(error);
           },
-        });
-      }
-    } catch (formError) {
-      console.error("Form submission error:", formError);
-      toast.error("Please check your form inputs and try again.");
+        })
+      );
     }
-  };
+  }, "Submitting shift request…"); // overlay message
+};
+
+
 
   const { data: requiredFields } = useRequiredFields("Shift Request");
   const requiredFieldMap = useMemo(() => {
@@ -147,11 +165,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     return map;
   }, [requiredFields]);
 
-  console.log("requiredFieldMap", requiredFieldMap);
-
-  /**
-   * Helper: deep clone schema and apply required flags + label postfix for required fields
-   */
   const toSnakeCase = (str: string) =>
     str
       .replace(/([a-z])([A-Z])/g, "$1_$2")
@@ -166,7 +179,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
     const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
 
-    // Detect if this form is shiftType (adjust according to your schema)
     const applyToComponents = (components?: SchemaComponent[]) => {
       if (!components) return;
 
@@ -191,7 +203,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           }
         }
 
-        // Recurse inside nested components
         if (comp.components) applyToComponents(comp.components);
         if (comp.columns) {
           comp.columns.forEach((col: any) => applyToComponents(col.components));
@@ -208,7 +219,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     return cloned;
   };
 
-  // Update schema when propSchema changes
   useEffect(() => {
     if (propSchema) {
       setFormSchema(propSchema);
@@ -219,7 +229,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     return transformSchemaWithRequired(formSchema, requiredFieldMap);
   }, [formSchema, requiredFieldMap]);
 
-  if (isLoading) {
+  if (employeeLoading) {
     return (
       <div className="bg-gray-50 flex flex-col font-sans">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
@@ -235,23 +245,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             </div>
           </div>
         </div>
-
-        <div className="sticky bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
-          <div className="max-w-4xl mx-auto flex space-x-4">
-            <button
-              disabled
-              className="flex-1 py-3 rounded-lg border border-gray-300 text-gray-400 font-medium cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button
-              disabled
-              className="flex-1 py-3 rounded-lg bg-gray-400 text-white font-medium cursor-not-allowed"
-            >
-              Loading...
-            </button>
-          </div>
-        </div>
       </div>
     );
   }
@@ -259,7 +252,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   return (
     <div className="bg-app flex flex-col font-sans">
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <div className=" rounded-lg shadow-sm border p-6">
+        <div className="rounded-lg shadow-sm border p-6">
           <Form
             form={validatedSchema}
             onFormReady={(instance: Formio) => {
@@ -306,9 +299,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           <Button
             onClick={handleSubmit}
             size="md"
-            
-        
-            className={" flex-1 font-medium"}
+            className="flex-1 font-medium"
           >
             Submit Request
           </Button>

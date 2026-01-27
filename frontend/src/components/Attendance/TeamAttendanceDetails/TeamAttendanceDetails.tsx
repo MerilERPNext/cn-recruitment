@@ -44,7 +44,7 @@ const TeamAttendanceDetails = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",
@@ -53,7 +53,7 @@ const TeamAttendanceDetails = () => {
         "Actions",
       ]
     : [
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",

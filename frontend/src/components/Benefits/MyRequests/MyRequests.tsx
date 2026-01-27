@@ -25,6 +25,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { Link } from "react-router-dom";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -73,13 +74,13 @@ const MyRequests: React.FC = () => {
   const { data, isLoading } = useGetBenefitRequestLockView(
     effectiveEmployeeId || "",
     selectedYear,
-    today
+    today,
   );
   const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } =
     useGetBenefitClaimLockingPeriod(
       effectiveEmployeeId || "",
       selectedYear,
-      today
+      today,
     );
   const showBenefitRequestButton =
     !benefitClaimLockLoading && benefitClaimLock?.status === "success";
@@ -219,7 +220,7 @@ const MyRequests: React.FC = () => {
               }}
             />
           </Modal>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -235,11 +236,16 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
+    <div className="max-w-screen px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
       <span className="text-sm font-medium text-gray-700 text-start truncate">
-        <WrapperHoverCard employeeId={item?.employee}>
-          {item?.employee_name}
-        </WrapperHoverCard>
+        <Link
+          to={`/webapp/employee-profile?target_user=${item?.employee}`}
+          target="_blank"
+        >
+          <WrapperHoverCard employeeId={item?.employee}>
+            {item?.employee_name}
+          </WrapperHoverCard>
+        </Link>
       </span>
       <span className="text-sm font-medium text-gray-700 text-start truncate">
         {item?.company}
@@ -278,9 +284,14 @@ const BenefitSlipItem = ({
     <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
       <div className="flex w-full">
         <div className="flex flex-col">
-          <span className="text-sm font-medium text-gray-700 text-start truncate">
-            {item?.employee_name}
-          </span>
+          <Link
+            to={`/webapp/employee-profile?target_user=${item?.employee}`}
+            target="_blank"
+          >
+            <span className="text-sm font-medium text-gray-700 text-start truncate">
+              {item?.employee_name}
+            </span>
+          </Link>
           <span className="text-sm font-medium text-gray-700 text-start truncate">
             {item?.company}
           </span>

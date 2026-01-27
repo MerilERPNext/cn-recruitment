@@ -1,4 +1,3 @@
-import { format, isValid, parse } from "date-fns";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -7,6 +6,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
+import { Link } from "react-router-dom";
 
 export function MyRequestCard({
   request,
@@ -48,47 +48,49 @@ export function MyRequestCard({
   };
 
   const status = getStatus(request?.status);
-  const parsedDate = request?.due_date
-    ? parse(String(request.due_date), "dd-MM-yyyy", new Date())
-    : null;
-
-  const formattedDate =
-    parsedDate && isValid(parsedDate)
-      ? format(parsedDate, "dd/MM/yyyy")
-      : "--/--/----";
   const cleanDescription = DOMPurify.sanitize(request?.description || "");
   const gridTemplateColumns = "2fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-primary/20 transition-colors text-center cursor-pointer border-b"
+          className="max-w-screen grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-primary/20 transition-colors text-center cursor-pointer border-b"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
           <div className="text-gray-600 text-sm truncate text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-              {formatToIndianDate(request?.reference_document?.creation) ||
-                "--/--/--"}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(request?.reference_document?.creation)}
             </Typography>
           </div>
           <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-              {formattedDate}
+            <Typography
+              variant="bodySmall"
+              className="font-semibold tracking-tight"
+            >
+              {formatToIndianDate(request?.due_date)}
             </Typography>
           </div>
           <div className="text-gray-900 font-medium text-sm text-start">
-            <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-              {request?.username || ""}
-            </WrapperHoverCard>
+            <Link
+              to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+              target="_blank"
+            >
+              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
+                {request?.username}
+              </WrapperHoverCard>
+            </Link>
           </div>
           <div className="w-full flex justify-start">
             <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
@@ -110,9 +112,16 @@ export function MyRequestCard({
               <div className="w-full">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col gap-1">
-                    <h3 className="card-title">{request?.username}</h3>
+                    <Link
+                      to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+                      target="_blank"
+                    >
+                      <h3 className="card-title">{request?.username}</h3>
+                    </Link>
                     {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
-                    <p className="card-subtitle">{formattedDate}</p>
+                    <p className="card-subtitle">
+                      {formatToIndianDate(request?.due_date)}
+                    </p>
                   </div>
                   <Badge
                     size="sm"

@@ -6,6 +6,8 @@ import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 type ApprovalListProps = {
   doctype: string;
@@ -38,6 +40,24 @@ type ApprovalListProps = {
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
 };
 
+const normalizeFilters = (filters: Record<string, any>) => {
+  const normalized: Record<string, any> = {};
+
+  Object.entries(filters || {}).forEach(([key, value]) => {
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      ("name" in value || "value" in value)
+    ) {
+      normalized[key] = value.name || value.value;
+    } else {
+      normalized[key] = value;
+    }
+  });
+
+  return normalized;
+};
+
 const ApprovalList = ({
   doctype,
   status,
@@ -56,6 +76,13 @@ const ApprovalList = ({
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+
+  const handleFiltersChange = useCallback((filters: Record<string, any>) => {
+    const normalized = normalizeFilters(filters);
+    setActiveFilters(normalized);
+  }, []);
+
+  const loading = useLoadingOverlay();
 
   const mutation = useApprovalListActions();
   const [loadingAction, setLoadingAction] = useState<{
@@ -98,14 +125,14 @@ const ApprovalList = ({
     return () => {
       document.removeEventListener(
         "chatnext:modal:chat:close",
-        handleChatClose
+        handleChatClose,
       );
     };
   }, []);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -118,7 +145,7 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"')
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
               )
             : [];
           if (
@@ -129,99 +156,115 @@ const ApprovalList = ({
           } else {
             return req.todo_id;
           }
-        })
+        }),
       );
     }
   };
 
   const handleAction = useCallback(
     async (action: string, data: any) => {
-      try {
-        if (mutation?.isPending) return;
-        setLoadingAction({ id: data?.todo_id, action });
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.todo_id || "",
-        });
+      if (mutation?.isPending) return;
 
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
+      const actionLoadingShow = ["approve", "reject"].includes(
+        action.toLocaleLowerCase(),
+      )
+        ? action
+        : `Performing Action: ${action}`;
+      await loading?.wrap(async () => {
+        try {
+          setLoadingAction({ id: data?.todo_id, action });
 
-        if (
-          (data?.custom_approval_type === "Approval Matrix" &&
-            responseWithSession?.session) ||
-          (data?.custom_approval_type === "Multi Actions" &&
-            data?.custom_open_chatnext_assistant_on_action)
-        ) {
+          const response = await mutation.mutateAsync({
+            action,
+            name: data?.todo_id || "",
+          });
+
+          console.log("Action response:", response);
+          const responseWithSession = response as unknown as { session?: any };
+          console.log("Session data:", responseWithSession?.session);
           console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
+            "Assistant trigger enabled:",
+            data?.custom_open_chatnext_assistant_on_action,
           );
 
-          if (window.trigger_chatnext_assistant) {
-            window.trigger_chatnext_assistant(
-              true,
-              responseWithSession?.session
+          if (
+            (data?.custom_approval_type === "Approval Matrix" &&
+              responseWithSession?.session) ||
+            (data?.custom_approval_type === "Multi Actions" &&
+              data?.custom_open_chatnext_assistant_on_action)
+          ) {
+            console.log(
+              "Opening assistant with session:",
+              responseWithSession?.session,
             );
-          }
-          if (action.toLowerCase() !== "approve") {
+
+            if (window.trigger_chatnext_assistant) {
+              window.trigger_chatnext_assistant(
+                true,
+                responseWithSession?.session,
+              );
+            }
+
+            if (action.toLowerCase() !== "approve") {
+              triggerRefetch();
+            }
+          } else {
+            toast.success("Approved Request Successfully!");
             triggerRefetch();
           }
-        } else {
-          triggerRefetch();
+        } catch (error: any) {
+          const formatedError = errorResponseFormater(
+            error,
+            "Something went wrong",
+          );
+          toast.error(formatedError);
+          console.error("Action Falied:", error);
+        } finally {
+          setLoadingAction(null);
         }
-        // Query invalidation now handled by Frappe realtime events
-      } catch (error: any) {
-        const exceptions = error?.response?.data?.exception?.split(":");
-        const errMessage =
-          exceptions?.length > 1
-            ? exceptions[1] + " " + exceptions[2]
-            : exceptions[1];
-        console.error("Action failed", error);
-        toast.error(errMessage);
-      } finally {
-        setLoadingAction(null);
-      }
+      }, actionLoadingShow);
     },
-    [mutation, setLoadingAction, triggerRefetch]
+    [mutation, loading, triggerRefetch],
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
-  const handleBulkAction = (action: "Approve" | "Reject") => {
-    try {
-      setBulkLoading({ action, isLoading: true });
-      batchActionMutation.mutate(
-        {
-          todo_ids: selectedIds?.filter((i) => i),
-          selected_action: action,
-        },
-        {
-          onSuccess: () => {
-            toast.success(
-              `Requests ${
-                action === "Reject" ? "rejected" : action.toLowerCase()
-              }d successfully!`
-            );
-            triggerRefetch();
-          },
-          onError: (error) => {
-            toast.error(error?.message);
-            console.error(error);
-          },
-        }
-      );
-      setSelectedIds([]);
-    } catch (error: any) {
-      toast.error(error.message);
-      console.error(error);
-    } finally {
-      setBulkLoading(null);
-    }
+  const handleBulkAction = async (action: "Approve" | "Reject") => {
+    await loading?.wrap(async () => {
+      try {
+        setBulkLoading({ action, isLoading: true });
+
+        await new Promise<void>((resolve, reject) => {
+          batchActionMutation.mutate(
+            {
+              todo_ids: selectedIds.filter(Boolean),
+              selected_action: action,
+            },
+            {
+              onSuccess: () => {
+                toast.success(
+                  `Requests ${
+                    action === "Reject"
+                      ? "rejected"
+                      : `${action.toLowerCase()}d`
+                  } successfully!`,
+                );
+                triggerRefetch();
+                resolve();
+              },
+              onError: (error) => {
+                toast.error(errorResponseFormater(error));
+                console.error(error);
+                reject(error);
+              },
+            },
+          );
+        });
+
+        setSelectedIds([]);
+      } finally {
+        setBulkLoading(null);
+      }
+    }, `${action}ing selected requests…`);
   };
 
   return (
@@ -235,11 +278,13 @@ const ApprovalList = ({
             status: status,
             include_allocated_todos: true,
             fields: ["*"],
+            ...activeFilters,
           },
         }}
-        onFiltersChange={(filters) => {
-          setActiveFilters(filters);
-        }}
+        // onFiltersChange={(filters) => {
+        //   setActiveFilters(filters);
+        // }}
+        onFiltersChange={handleFiltersChange}
         isSearch={isSearch}
         isFilter={isFilter}
         filterFields={filterFields}

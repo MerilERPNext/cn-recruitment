@@ -169,6 +169,16 @@ export const useFrappeDocument = (
     enabled: !!name,
   });
 };
+export const useFrappeDocumentList = (
+  doctype: string,
+  options?: Record<string, unknown>
+) => {
+  return useQuery({
+    queryKey: ["document", doctype, options],
+    queryFn: () => frappeService.getDocumentList(doctype, options),
+    enabled: !!doctype,
+  });
+};
 
 // Hook for document count
 export const useFrappeDocumentCount = (

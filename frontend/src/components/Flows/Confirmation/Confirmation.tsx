@@ -12,9 +12,31 @@ import {
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./Component/ApprovalTracker";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, User, Wallet } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useState } from "react";
+import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useNavigate } from "react-router-dom";
+
+const cardsData = [
+  {
+    id: 1,
+    title: "Update Profile",
+    description: "Make sure your profile information is accurate",
+    icon: User,
+    bgColor: "bg-teal-600",
+    url: "/webapp/employee-profile"
+  },
+  {
+    id: 2,
+    title: "Compensation Details",
+    description: "Review your updated salary and other benefits",
+    icon: Wallet,
+    bgColor: "bg-amber-400",
+    url: "/webapp/salary-slip-app"
+  },
+];
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
@@ -43,7 +65,7 @@ const ConfirmationWorkflow = () => {
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
-
+  const navigate = useNavigate();
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -100,6 +122,7 @@ const ConfirmationWorkflow = () => {
     return (["On Probation", "Probation Extended"].includes((isViewingOtherUser ? targetEmployee : employee_name)?.custom_employment_status || ""));
   }, [item, isViewingOtherUser, targetEmployee, employee_name]);
 
+  const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -114,10 +137,10 @@ const ConfirmationWorkflow = () => {
   /* ---------------------------------------------------------- */
 
   return (
-    <div className=" bg-white  min-h-screen  p-4  text-gray-800  font-sans">
+    <div className=" bg-blue-50  min-h-screen  p-4  text-gray-800  font-sans">
       {/* Header */}
       {!InitiatePageShow ?
-        <main className="min-h-full bg-background mb-2">
+        <main className="min-h-full bg-white mb-2">
           <div className="max-w-full">
             <ApprovalTracker For="Employee Confirmation" data={item} />
             {canInitiate &&
@@ -128,16 +151,49 @@ const ConfirmationWorkflow = () => {
         </main>
         :
         <div className=" items-start  mb-6">
-          <div className="   mt-2  min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl      py-4">
-            <div className="  flex   flex-col md:flex-row   items-center   justify-between   w-full   bg-gray-200 rounded-xl   p-6 md:p-12">
-              {/* Left Text Section */}
-              <div className="  flex-1   text-center md:text-left">
-                <div className="  bg-[#6da8ff]   text-white   font-bold   text-3xl md:text-4xl   p-8   rounded-lg   inline-block">
-                  WE'RE HAPPY TO CONFIRM YOU 🎉
-                </div>
-                <p className="  text-gray-600   mt-6   text-sm md:text-base">
+          <div className="flex flex-col mb-4 ">
+            <Typography variant="h4">Confirmation</Typography>
+            <Typography variant="bodySmall" color="body2">
+              View Your Confirmation Process
+            </Typography>
+          </div>
+          <div className=" min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl  ">
+            <div className="  flex flex-col lg:flex-row   items-center   justify-between   w-full   bg-white rounded-xl   p-6 md:p-12">
+              {/* Left Section */}
+              <div className="flex-1 p-2">
+                <Typography color="primary" variant={isDesktop ? "h1" : "h3"}> We're happy to confirm you 🎉</Typography>
+                <Typography variant="bodyMedium" color="body2" className="mt-1">
                   Please connect with your HRBP for confirmation details.
-                </p>
+                </Typography>
+
+                <div className="flex gap-6 mt-8 flex-wrap">
+                  {cardsData.map((card) => {
+                    const Icon = card.icon;
+
+                    return (
+                      <div
+                        onClick={() => navigate(card.url)}
+                        key={card.id}
+                        className="flex items-center gap-4 w-80 cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                      >
+                        <div
+                          className={`flex h-12 w-12 items-center justify-center rounded-lg text-white ${card.bgColor}`}
+                        >
+                          <Icon size={24} />
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            {card.title}
+                          </h3>
+                          <p className="text-xs text-gray-900">
+                            {card.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Right Illustration */}
@@ -155,7 +211,7 @@ const ConfirmationWorkflow = () => {
                 onClick={handleTriggerChat}
                 size="md"
                 bgColor="blue-500"
-                className="hover:bg-blue-600 text-white"
+                className="hover:bg-blue-600 text-white mt-6"
                 loading={isTriggeringChat}
               >
                 INITIATE CONFIRMATION

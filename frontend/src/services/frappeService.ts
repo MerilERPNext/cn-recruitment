@@ -40,6 +40,21 @@ export const frappeService = {
       throw error;
     }
   },
+  getDocumentList: async (
+    doctype: string,
+    options?: Record<string, unknown>
+  ): Promise<unknown> => {
+    try {
+      console.log(`🔍 Fetching document for doctype: ${doctype}`, {
+        options,
+      });
+      const response = await FrappeAPI.getDocumentList(doctype, options);
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Failed to load document for ${doctype}:`, error);
+      throw error;
+    }
+  },
 
   getDocumentsPage: async ({
     doctype,

@@ -4,18 +4,19 @@ import { X, Info, MessageSquare, Loader2, CheckCircle, XCircle, Edit3 } from "lu
 import {
   useTicketDetail,
   useSendEmailReply,
-  useAddComment,
   useCloseTicket,
   useRequestClosure,
   TicketDetail,
 } from "../../hooks/useHelpDeskTickets";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useCurrentUser, isHDAgent } from "../../hooks/useCurrentUser";
 import ChatMessage, { ChatMessageData } from "./ChatMessage";
-import ChatInput, { InputMode, EmailOptions } from "./ChatInput";
+import ChatInput, { EmailOptions } from "./ChatInput";
 import TicketDetailSidebar from "./TicketDetailSidebar";
+import TicketInfoPanel from "./TicketInfoPanel";
+import SimplifiedChatView from "./SimplifiedChatView";
 import toast from "react-hot-toast";
 
-type TabType = "activity" | "emails" | "comments" | "resolution";
+type TabType = "activity" | "resolution";
 
 // Resolution Modal Component
 interface ResolutionModalProps {
@@ -130,20 +131,24 @@ const TicketDetailView: React.FC = () => {
   // State
   const [activeTab, setActiveTab] = useState<TabType>("activity");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>("reply");
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
 
-  // Queries
-  const { data: ticket, isLoading, error } = useTicketDetail(ticketId || "");
-  const { data: currentUser } = useCurrentUser();
+  // Queries - ALL hooks must be called before any conditional returns
+  const { data: ticket, isLoading: ticketLoading, error } = useTicketDetail(ticketId || "");
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
 
-  // Mutations
+  // Mutations - must be called unconditionally (before any returns)
   const sendEmailMutation = useSendEmailReply();
-  const addCommentMutation = useAddComment();
   const closeTicketMutation = useCloseTicket();
   const requestClosureMutation = useRequestClosure();
 
+  // Combined loading state - wait for BOTH ticket AND user data
+  const isLoading = ticketLoading || userLoading;
+
+  // Check if user is an HD Agent (agents see full view, regular users see simplified view)
+  // IMPORTANT: Only check this AFTER user data is loaded
+  const isAgent = isHDAgent(currentUser ?? null);
   const currentUserEmail = currentUser?.email || "";
 
   // Check if current user is the raiser or admin
@@ -169,6 +174,7 @@ const TicketDetailView: React.FC = () => {
     if (!ticket) return [];
 
     const messages: ChatMessageData[] = [];
+    const ticketCreationTime = new Date(ticket.creation).getTime();
 
     // Add original request as first message
     messages.push({
@@ -185,8 +191,15 @@ const TicketDetailView: React.FC = () => {
       attachments: [],
     });
 
-    // Add communications (emails)
+    // Add communications (emails) - skip the first one if it matches ticket creation time
+    // (to avoid duplicate description message)
     ticket.communications?.forEach((comm) => {
+      const commCreationTime = new Date(comm.creation).getTime();
+      // Skip if this communication was created at the same time as the ticket (within 5 seconds)
+      if (Math.abs(commCreationTime - ticketCreationTime) < 5000) {
+        return;
+      }
+
       messages.push({
         id: comm.name,
         type: "email",
@@ -243,12 +256,6 @@ const TicketDetailView: React.FC = () => {
   // Filter messages based on active tab
   const filteredMessages = useMemo(() => {
     if (activeTab === "activity") return allMessages;
-    if (activeTab === "emails") {
-      return allMessages.filter((m) => m.type === "original" || m.type === "email");
-    }
-    if (activeTab === "comments") {
-      return allMessages.filter((m) => m.type === "comment");
-    }
     // Resolution tab shows nothing in messages - handled separately
     return [];
   }, [allMessages, activeTab]);
@@ -267,6 +274,42 @@ const TicketDetailView: React.FC = () => {
 
     return groups;
   }, [filteredMessages]);
+
+  // ===== LOADING STATE - MUST BE CHECKED BEFORE ROLE-BASED RENDERING =====
+  // We need to wait for BOTH ticket AND user data before deciding which view to show
+  // Otherwise, HD Agents might see the wrong view during the loading state
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-app">
+        <div className="flex items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          <span className="text-gray-600">Loading ticket...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ===== ERROR STATE =====
+  if (error || !ticket) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-app">
+        <p className="text-red-500 mb-4">Failed to load ticket</p>
+        <button
+          onClick={() => navigate("/webapp/helpdesk")}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          Back to HelpDesk
+        </button>
+      </div>
+    );
+  }
+
+  // ===== ROLE-BASED VIEW SELECTION =====
+  // Now that both user and ticket data are loaded, we can determine the correct view
+  // Non-agents see simplified chat view, agents see full view with info panel
+  if (!isAgent) {
+    return <SimplifiedChatView ticket={ticket} currentUserEmail={currentUserEmail} />;
+  }
 
   // Format date for grouping
   function formatDateKey(date: Date): string {
@@ -301,37 +344,51 @@ const TicketDetailView: React.FC = () => {
     return "Unassigned";
   };
 
-  // Handle send message
+  // Build message with attachments embedded as HTML
+  const buildMessageWithAttachments = (
+    msg: string,
+    files: { file_url: string; file_name: string }[]
+  ): string => {
+    let htmlMessage = msg.startsWith("<") ? msg : `<p>${msg.replace(/\n/g, "<br/>")}</p>`;
+
+    if (files.length > 0) {
+      let attachmentHtml = '<br/><div class="attachments"><strong>Attachments:</strong><ul>';
+      files.forEach((file) => {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+        if (isImage) {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+        } else {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
+        }
+      });
+      attachmentHtml += '</ul></div>';
+      htmlMessage += attachmentHtml;
+    }
+
+    return htmlMessage;
+  };
+
+  // Handle send message (email only)
   const handleSendMessage = async (
     message: string,
     attachments: { file_url: string; file_name: string }[],
-    mode: InputMode,
-    emailOptions?: EmailOptions
+    emailOptions: EmailOptions
   ) => {
     if (!ticketId || !ticket) return;
 
+    // Embed attachments in message HTML
+    const messageWithAttachments = buildMessageWithAttachments(message, attachments);
+
     try {
-      if (mode === "comment") {
-        // Send as comment
-        await addCommentMutation.mutateAsync({
-          ticketId,
-          content: message,
-          attachments,
-        });
-        toast.success("Comment added successfully");
-      } else {
-        // Send as email - use emailOptions if provided, fallback to ticket.raised_by
-        const recipient = emailOptions?.to || ticket.raised_by;
-        await sendEmailMutation.mutateAsync({
-          ticketId,
-          to: recipient,
-          cc: emailOptions?.cc,
-          bcc: emailOptions?.bcc,
-          message: message.startsWith("<") ? message : `<p>${message.replace(/\n/g, "<br/>")}</p>`,
-          attachments,
-        });
-        toast.success("Email sent successfully");
-      }
+      // Send as email
+      await sendEmailMutation.mutateAsync({
+        ticketId,
+        to: emailOptions.to || ticket.raised_by,
+        cc: emailOptions.cc,
+        bcc: emailOptions.bcc,
+        message: messageWithAttachments,
+      });
+      toast.success("Email sent successfully");
     } catch {
       toast.error("Failed to send message");
       throw new Error("Failed to send");
@@ -370,34 +427,10 @@ const TicketDetailView: React.FC = () => {
     navigate("/webapp/helpdesk");
   };
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-100">
-        <div className="flex items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-          <span className="text-gray-600">Loading ticket...</span>
-        </div>
-      </div>
-    );
-  }
+  // Note: Loading and error states are already handled above (before role-based rendering)
+  // At this point, we know ticket is loaded and user is an HD Agent
 
-  // Error state
-  if (error || !ticket) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
-        <p className="text-red-500 mb-4">Failed to load ticket</p>
-        <button
-          onClick={handleClose}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Back to HelpDesk
-        </button>
-      </div>
-    );
-  }
-
-  const isSending = sendEmailMutation.isPending || addCommentMutation.isPending;
+  const isSending = sendEmailMutation.isPending;
   const isClosing = closeTicketMutation.isPending || requestClosureMutation.isPending;
   const isTicketClosed = ticket.status === "Closed" || ticket.status === "Resolved";
 
@@ -407,7 +440,7 @@ const TicketDetailView: React.FC = () => {
     if (!ticket.resolution_details && !isTicketClosed) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-app rounded-xl flex items-center justify-center mb-4">
             <CheckCircle className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 font-medium">No Resolution Yet</p>
@@ -442,7 +475,7 @@ const TicketDetailView: React.FC = () => {
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
@@ -473,7 +506,7 @@ const TicketDetailView: React.FC = () => {
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
@@ -522,14 +555,14 @@ const TicketDetailView: React.FC = () => {
       case "Resolved":
         return "bg-green-100 text-green-700";
       case "Closed":
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
     }
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-app">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -545,14 +578,14 @@ const TicketDetailView: React.FC = () => {
                 Issue Discussion
                 <span className="ml-2 text-blue-600">#{ticket.name}</span>
               </h1>
-              <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(ticket.status)}`}>
+              <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
                 {ticket.status}
               </span>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-gray-500">Assigned to</span>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 rounded-full">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg">
+                <span className="w-2 h-2 rounded-lg bg-green-500"></span>
                 <span className="text-sm font-medium text-gray-700">
                   {getAssignedUser(ticket)}
                 </span>
@@ -586,10 +619,10 @@ const TicketDetailView: React.FC = () => {
             </button>
           )}
 
-          {/* Info toggle button */}
+          {/* Info toggle button - visible only on mobile (panel is always visible on desktop) */}
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+            className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors lg:hidden"
             title="View ticket details"
           >
             <Info className="w-5 h-5" />
@@ -598,7 +631,7 @@ const TicketDetailView: React.FC = () => {
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-app rounded-xl transition-colors"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -606,88 +639,89 @@ const TicketDetailView: React.FC = () => {
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 px-6">
-        <nav className="flex gap-1">
-          {[
-            { key: "activity", label: "All Activity", count: allMessages.length },
-            { key: "emails", label: "Emails", count: (ticket.communications?.length || 0) + 1 },
-            { key: "comments", label: "Comments", count: ticket.comments?.length || 0 },
-            { key: "resolution", label: "Resolution", count: ticket.resolution_details ? 1 : 0 },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as TabType)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${
-                activeTab === tab.key
-                  ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {tab.label}
-              {tab.count > 0 && (
-                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
-                  activeTab === tab.key
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {activeTab === "resolution" ? (
-          <ResolutionContent />
-        ) : Object.entries(groupedMessages).length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full">
-            <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
-            <p className="text-gray-500">No messages to display</p>
-            <p className="text-sm text-gray-400 mt-1">Start the conversation by sending a message below</p>
+      {/* Main Content Area with Split Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left: Chat Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tabs */}
+          <div className="bg-white border-b border-gray-200 px-6">
+            <nav className="flex gap-1">
+              {[
+                { key: "activity", label: "All Activity", count: allMessages.length },
+                { key: "resolution", label: "Resolution", count: ticket.resolution_details ? 1 : 0 },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as TabType)}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${
+                    activeTab === tab.key
+                      ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
+                      activeTab === tab.key
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-app text-gray-600"
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
           </div>
-        ) : (
-          <div>
-            {Object.entries(groupedMessages).map(([dateKey, messages]) => (
-              <div key={dateKey}>
-                {/* Date separator */}
-                <div className="flex items-center justify-center my-6">
-                  <span className="px-4 py-1 bg-white border border-gray-200 rounded-full text-xs font-medium text-gray-500 shadow-sm">
-                    {dateKey}
-                  </span>
-                </div>
 
-                {/* Messages for this date */}
-                {messages.map((msg) => (
-                  <ChatMessage key={msg.id} message={msg} />
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 bg-app">
+            {activeTab === "resolution" ? (
+              <ResolutionContent />
+            ) : Object.entries(groupedMessages).length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
+                <p className="text-gray-500">No messages to display</p>
+                <p className="text-sm text-gray-400 mt-1">Start the conversation by sending a message below</p>
+              </div>
+            ) : (
+              <div>
+                {Object.entries(groupedMessages).map(([dateKey, messages]) => (
+                  <div key={dateKey}>
+                    {/* Date separator */}
+                    <div className="flex items-center justify-center my-6">
+                      <span className="px-4 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-500 shadow-sm">
+                        {dateKey}
+                      </span>
+                    </div>
+
+                    {/* Messages for this date */}
+                    {messages.map((msg) => (
+                      <ChatMessage key={msg.id} message={msg} />
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-        <div ref={messagesEndRef} />
+
+          {/* Chat Input - hide on resolution tab */}
+          {activeTab !== "resolution" && (
+            <ChatInput
+              onSend={handleSendMessage}
+              placeholder="Type your reply here....."
+              isSending={isSending}
+              recipientEmail={ticket.raised_by}
+            />
+          )}
+        </div>
+
+        {/* Right: Info Panel (always visible for HD Agents) */}
+        <TicketInfoPanel ticket={ticket} />
       </div>
 
-      {/* Chat Input - hide on resolution tab */}
-      {activeTab !== "resolution" && (
-        <ChatInput
-          onSend={handleSendMessage}
-          placeholder={
-            inputMode === "comment"
-              ? "Type your comment here....."
-              : "Type your reply here....."
-          }
-          isSending={isSending}
-          recipientEmail={ticket.raised_by}
-          mode={inputMode}
-          onModeChange={setInputMode}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Sidebar (for mobile toggle - hidden on desktop since panel is always visible) */}
       <TicketDetailSidebar
         ticket={ticket}
         isOpen={isSidebarOpen}
