@@ -47,7 +47,11 @@ const TeamApprovalActionPill = ({
   loadingAction,
   onAction,
 }: TeamApprovalActionPillProps) => {
-  const isActionable = status === "Open" && actions?.length > 0;
+  const normalizedStatus = status?.toLowerCase();
+
+  const isActionable =
+    (normalizedStatus === "open" || normalizedStatus === "pending") &&
+    actions?.length > 0;
 
   if (!isActionable) {
     return (

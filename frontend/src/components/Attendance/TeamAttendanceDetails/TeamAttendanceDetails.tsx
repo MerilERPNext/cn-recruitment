@@ -50,7 +50,7 @@ const TeamAttendanceDetails = () => {
         "To Date",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -59,12 +59,12 @@ const TeamAttendanceDetails = () => {
         "To Date",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]
-    : ["12%", "20%", "10%", "10%", "10%", "10%", "20%"];
+    ? ["0.6fr", "1.4fr", "2.2fr", "1fr", "1fr", "1fr", "1fr", "2.5fr"]
+    : ["1.6fr", "2.4fr", "1fr", "1fr", "1fr", "1fr", "2.5fr"];
 
   return (
     <>

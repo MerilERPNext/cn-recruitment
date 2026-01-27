@@ -7,6 +7,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -73,8 +74,8 @@ const ApprovalCard = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 15% 8% 8% 8% 10% 20%"
-    : "12% 20% 10% 10% 10% 10% 20%";
+    ? "0.6fr 1.4fr 2.2fr 1fr 1fr 1fr 1fr 2.5fr"
+    : "1.6fr 2.4fr 1fr 1fr 1fr 1fr 2.5fr";
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -183,32 +184,14 @@ const ApprovalCard = ({
               />
             </Tooltip>
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.status === "Pending" &&
-              actions.map((action: string) => (
-                <Button
-                  variant="soft"
-                  key={action}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
+          <div className="flex items-center justify-start">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
           </div>
         </div>
       ) : (
