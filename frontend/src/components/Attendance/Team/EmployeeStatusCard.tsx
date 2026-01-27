@@ -111,7 +111,6 @@ const EmployeeStatusCard = ({
                     {data?.employee_name}
                   </WrapperHoverCard>
                 </Typography>
-              </WrapperHoverCard>
               </Link>
               {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
