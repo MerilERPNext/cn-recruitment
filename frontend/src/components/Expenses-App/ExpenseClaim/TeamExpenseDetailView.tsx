@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { format, isValid, parse } from "date-fns";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   useExpenseLineItemUpdate,
@@ -19,6 +18,8 @@ import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -92,11 +93,15 @@ export function TeamExpenseDetailView({
     setSavingItem(itemId);
 
     try {
-      await updateMutation.mutateAsync({
-        claimId,
-        itemName: item.name,
-        sanctionedAmount: item.sanctionedAmount,
-      });
+          await loading.wrap(
+      () =>
+        updateMutation.mutateAsync({
+          claimId,
+          itemName: item.name,
+          sanctionedAmount: item.sanctionedAmount,
+        }),
+      "Saving sanctioned amount..."
+    );
 
       setExpenseItems((prev) =>
         prev.map((i) =>
@@ -136,6 +141,8 @@ export function TeamExpenseDetailView({
     }
   }, [ref?.expenses]);
 
+  const loading = useLoadingOverlay();
+
   const handleAction = useCallback(
     async (action: string) => {
       if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
@@ -149,8 +156,9 @@ export function TeamExpenseDetailView({
         setShowActionWarning(true);
         return;
       }
-
-      performAction(action);
+     
+     const actionLoadingShow = ["approve", "reject"].includes(action.toLocaleLowerCase())? action : `Performing Action: ${action}`;
+     loading?.wrap(() => performAction(action), actionLoadingShow);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [hasUnsavedChanges, rejectionComment]
@@ -221,17 +229,21 @@ export function TeamExpenseDetailView({
     }
 
     try {
-      await commentMutation.mutateAsync({
-        referenceDoctype: ref?.doctype || "Expense Claim",
-        referenceName: claimId,
-        content: rejectionComment,
-        comment_email: user?.name || "",
-      });
+        await loading.wrap(
+      () =>
+        commentMutation.mutateAsync({
+          referenceDoctype: ref?.doctype || "Expense Claim",
+          referenceName: claimId,
+          content: rejectionComment,
+          comment_email: user?.name || "",
+        }),
+      "Saving comment..."
+    );
 
       setShowCommentModal(false);
 
       if (pendingAction) {
-        performAction(pendingAction);
+        loading?.wrap(() => performAction(pendingAction), "Reject");
         setPendingAction(null);
         setRejectionComment("");
       }
@@ -271,26 +283,6 @@ export function TeamExpenseDetailView({
   const statusSource = data?.status || ref?.approval_status || "";
   const status = getStatus(statusSource);
   const isClaimEditable = ["Open", "Pending", "Draft"].includes(statusSource);
-
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd-MM-yyyy");
-      }
-    }
-
-    const d = new Date(date);
-    if (isValid(d)) {
-      return format(d, "dd-MM-yyyy");
-    }
-
-    return "--/--/----";
-  };
 
   const formatINR = (value?: number | null) =>
     typeof value === "number" ? value.toString() : "0";
@@ -479,7 +471,7 @@ export function TeamExpenseDetailView({
                               EXPENSE DATE:
                             </span>
                             <span className="text-sm font-medium text-gray-900">
-                              {formatDate(item.expense_date || item.creation)}
+                              {formatToIndianDate(item.expense_date || item.creation)}
                             </span>
                           </div>
                           <span className="text-lg font-bold text-gray-900">
@@ -575,7 +567,7 @@ export function TeamExpenseDetailView({
                               START DATE
                             </p>
                             <p className="text-sm font-medium text-gray-800">
-                              {formatDate(item.custom_start_datetime)}
+                              {formatToIndianDate(item.custom_start_datetime)}
                             </p>
                           </div>
                         )}
@@ -586,7 +578,7 @@ export function TeamExpenseDetailView({
                               END DATE
                             </p>
                             <p className="text-sm font-medium text-gray-800">
-                              {formatDate(item.custom_end_datetime)}
+                              {formatToIndianDate(item.custom_end_datetime)}
                             </p>
                           </div>
                         )}

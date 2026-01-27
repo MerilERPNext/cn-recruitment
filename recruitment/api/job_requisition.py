@@ -264,3 +264,70 @@ def get_job_requisition_details(requisition_name):
         "job_applicant_count": job_applicants_count,
         "interview_count": interviews_count
     }
+
+# API for creating Job Requisition with detailed payload
+@frappe.whitelist()
+def create_job_requisition_api(data=None):
+    if not data:
+        data = frappe.form_dict.get("data") # Support getting data from request params if not passed directly
+    
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except json.JSONDecodeError:
+            return {"status": "error", "message": "Invalid JSON format"}
+
+    if not data:
+        return {"status": "error", "message": "No data provided"}
+
+    try:
+        # Create new doc
+        doc = frappe.new_doc("Job Requisition")
+
+        # Set default naming series if not provided
+        if "naming_series" not in data:
+            doc.naming_series = "HR-HIREQ-"
+
+        # Fields to allow directly from payload (Whitelisting)
+        # Standard and Custom fields based on user payload
+        allow_fields = [
+            "naming_series", "requested_by", "company", "department",
+            "designation", "status", "posting_date", 
+            "requested_by_dept", "requested_by_designation", "expected_compensation",
+            "no_of_positions", "description",
+            # Custom Fields
+            "custom_experience_range_from", "custom_experience_range_to", "custom_experience_unit",
+            "custom_hiring_lead", "custom_salary_range_currency",
+            "custom_salary_range_min", "custom_salary_range_max", "custom_salary_timeframe",
+            "custom_type_of_position", "custom_functional_area"
+        ]
+
+        for field in allow_fields:
+            if field in data and data[field] is not None:
+                doc.set(field, data[field])
+
+        # Handle Position Details Child Table
+        if "custom_position_details" in data and isinstance(data["custom_position_details"], list):
+            for item in data["custom_position_details"]:
+                child = doc.append("custom_position_details", {})
+                child_allow_fields = [
+                    "location", "replacement_for", "reporting_manager", "employee_type", "functional_area"
+                ]
+                for child_field in child_allow_fields:
+                     if child_field in item and item[child_field] is not None:
+                         child.set(child_field, item[child_field])
+
+        doc.insert(ignore_permissions=True)
+        
+        return {
+            "status": "success",
+            "name": doc.name,
+            "message": "Job Requisition created successfully"
+        }
+
+    except Exception as e:
+        frappe.log_error(title="Job Requisition Creation API Error", message=frappe.get_traceback())
+        return {
+            "status": "error",
+            "message": str(e)
+        }

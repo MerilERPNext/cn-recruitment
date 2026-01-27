@@ -44,7 +44,7 @@ const MyLeaveRequests = ({
   });
   const { mutate: revokeLeave } = useRevokeApprovedLeave();
   const { data: buttonStatus } = useGetButtonsStatus(
-    currentEmployee?.name || ""
+    currentEmployee?.name || "",
   );
 
   const handleOpenReplaceModal = (leaveData: MyLeaveRequestType) => {
@@ -85,7 +85,7 @@ const MyLeaveRequests = ({
             setRefetchAttendance(true);
           }, 2000);
         },
-      }
+      },
     );
   };
 
@@ -106,10 +106,15 @@ const MyLeaveRequests = ({
   return (
     <>
       <div>
-        <div className=" h-full md:px-4 md:pt-2">
-          <div className=" px-2">
-            <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
-              <Typography variant="subheading">My Leave Requests</Typography>
+        <div className="min-h-screen">
+          <div className="px-4">
+            <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+              <div className="flex flex-col mb-2">
+                <Typography variant="h4">My Leave Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your leave requests
+                </Typography>
+              </div>
             </div>
 
             {isEmployeeLoading ? (
@@ -159,9 +164,16 @@ const MyLeaveRequests = ({
                         fieldname: "status",
                         label: "Status",
                         fieldtype: "Select",
-                        options: ["Open", "Approved", "Rejected"],
+                        options: [
+                          { label: "Pending", value: "Open" },
+                          { label: "Approved", value: "Approved" },
+                          { label: "Rejected", value: "Rejected" },
+                        ],
                       },
                     ]}
+                    defaultFilters={{
+                      status: "Open",
+                    }}
                     SkeletonComponent={CardSkeleton}
                     onRefetchComplete={() => setRefetchAttendance(false)}
                     refetchTrigger={refetchAttendance}

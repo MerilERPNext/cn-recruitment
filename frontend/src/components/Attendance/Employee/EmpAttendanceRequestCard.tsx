@@ -1,4 +1,3 @@
-import { format, isValid } from "date-fns";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -11,11 +10,17 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 
 const EmpAttendanceRequestCard = ({
   data,
   type,
-  columns = 7,
+  columns = 8,
 }: {
   data: MyAttendanceRequest;
   columns?: number;
@@ -25,8 +30,11 @@ const EmpAttendanceRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
+
+  const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
+      loading?.show("Revoking Request...");
       revokeEventMutation.mutate(
         {
           docname: data?.reference_name,
@@ -38,6 +46,13 @@ const EmpAttendanceRequestCard = ({
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
+            toast.success("Attendance Request Revoked Successfully!");
+          }, onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
           },
         }
       );
@@ -71,23 +86,27 @@ const EmpAttendanceRequestCard = ({
   };
 
   const status = getStatus(data?.reference_document?.custom_status);
+  function getDays(from_date: string, to_date: string) {
+    const format = 'dd-MM-yyyy';
 
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return isValid(date) ? format(date, "dd/MM/yyyy") : "N/A";
-  };
+    const fromDate = startOfDay(parse(from_date, format, new Date()));
+    const toDate = startOfDay(parse(to_date, format, new Date()));
 
-  const formattedFromDate = formatDate(data?.reference_document?.from_date);
-  const formattedToDate = formatDate(data?.reference_document?.to_date);
-  const formattedDueDate = formatDate(data?.due_date);
+    const diff = differenceInCalendarDays(toDate, fromDate);
+
+    return diff + 1; // inclusive
+  }
+
+  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
+  const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
+  const formattedDueDate = formatToIndianDate(data?.due_date);
+  const duration = getDays(formattedToDate, formattedFromDate);
   return (
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors cursor-pointer`}
+          className={`max-w-screen grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors cursor-pointer`}
         >
-
           {/* Request Type */}
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.custom_request_type}
@@ -102,15 +121,24 @@ const EmpAttendanceRequestCard = ({
           <div className="text-sm text-gray-900 text-start">
             {formattedToDate}
           </div>
-          {/* To Date */}
+          {/* Duration */}
+          <div className="text-sm text-gray-900 text-start">
+            {duration > 1 ? duration + " Days" : duration + " Day"}
+          </div>
+          {/* Due Date */}
           <div className="text-sm text-gray-900 text-start">
             {formattedDueDate}
           </div>
-          <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
+            target="_blank"
+          >
             <div className="text-sm font-medium text-gray-700 text-start truncate">
-              {data?.username}
+              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
+                {data?.username}
+              </WrapperHoverCard>
             </div>
-          </WrapperHoverCard>
+          </Link>
           {/* Status */}
           <div className="flex justify-start">
             <Tooltip
@@ -158,6 +186,11 @@ const EmpAttendanceRequestCard = ({
                     <p className="whitespace-nowrap card-title">
                       {data?.reference_document?.custom_request_type}
                     </p>
+                    <Badge
+                      size="sm"
+                      backgroundColor={"bg-blue-100 text-blue-800"}
+                      label={duration > 1 ? duration + " Days" : duration + " Day"}
+                    />
                   </div>
                   <div className="text-sm text-gray-900 text-start flex gap-2">
                     {data?.custom_allow_revoke && type === "pending" ? (
@@ -208,7 +241,7 @@ const EmpAttendanceRequestCard = ({
             defaultAttendanceData={data}
             forActionType="edit"
           />,
-          document.body
+          document.body,
         )}
     </>
   );

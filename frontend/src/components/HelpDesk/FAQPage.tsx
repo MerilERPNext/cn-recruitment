@@ -8,6 +8,7 @@ import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import FAQAccordion from "./FAQAccordion";
+import RequestIssueModal from "./RequestIssueModal";
 import emptyStateImage from "../../assets/helpdesk-empty-state.png";
 
 const FAQPage: React.FC = () => {
@@ -17,6 +18,7 @@ const FAQPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   // Fetch categories
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
@@ -52,8 +54,7 @@ const FAQPage: React.FC = () => {
   };
 
   const handleRequestIssue = () => {
-    // TODO: Implement request issue functionality
-    console.log("Request issue");
+    setIsRequestModalOpen(true);
   };
 
   const renderContent = () => (
@@ -198,23 +199,35 @@ const FAQPage: React.FC = () => {
 
   if (!isDesktop) {
     return (
-      <div className="flex flex-col min-h-screen bg-white">
-        <header className="sticky top-0 z-50 bg-white shadow-sm">
-          <HeaderBar title="FAQs" onBack={() => navigate("/webapp/helpdesk")} />
-        </header>
-        <main className="flex-1 overflow-y-auto bg-app">
-          {renderContent()}
-        </main>
-      </div>
+      <>
+        <div className="flex flex-col min-h-screen bg-white">
+          <header className="sticky top-0 z-50 bg-white shadow-sm">
+            <HeaderBar title="FAQs" onBack={() => navigate("/webapp/helpdesk")} />
+          </header>
+          <main className="flex-1 overflow-y-auto bg-app">
+            {renderContent()}
+          </main>
+        </div>
+        <RequestIssueModal
+          isOpen={isRequestModalOpen}
+          onClose={() => setIsRequestModalOpen(false)}
+        />
+      </>
     );
   }
 
   return (
-    <DesktopLayoutWrapper title="FAQs">
-      <div className="flex flex-col h-full bg-white rounded-lg">
-        {renderContent()}
-      </div>
-    </DesktopLayoutWrapper>
+    <>
+      <DesktopLayoutWrapper title="FAQs">
+        <div className="flex flex-col h-full bg-white rounded-lg">
+          {renderContent()}
+        </div>
+      </DesktopLayoutWrapper>
+      <RequestIssueModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
+      />
+    </>
   );
 };
 

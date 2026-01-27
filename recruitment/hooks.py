@@ -200,6 +200,7 @@ doc_events = {
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
         "after_insert": "recruitment.auto_fetch_fields.link_employee_to_onboarding",
+        "before_save": "recruitment.recruitment.employee_confirmation_hooks.calculate_final_confirmation_date",
     },
     "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
@@ -213,6 +214,7 @@ doc_events = {
         "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
     },
     "Employee Separation": {
+        "before_insert": "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_from_notice_period",
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
     },
 }
@@ -226,6 +228,12 @@ scheduler_events = {
         "59 23 * * *": [
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
             "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks",
+        ],
+        "0 6 * * *": [
+            "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
+        ],
+        "0 7 * * *": [
+            "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
         ]
     }
 }

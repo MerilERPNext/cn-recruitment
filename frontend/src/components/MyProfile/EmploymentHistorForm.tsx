@@ -1,159 +1,335 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../shared/atoms/Button";
 import employmentHistoryFormSchema from "./employmentHistoryFormSchema.json";
-import { useAddEmployeeHistoryMutation, useCurrentEmployeeAllDetails, useGetDesignationHierarchy, useGetEmpDesignationHierarchyCurrentDetails } from "../../hooks/useEmployee";
+import {
+  useAddEmployeeHistoryMutation,
+  useCurrentEmployeeAllDetails,
+  useGetDesignationHierarchy,
+  useGetEmpDesignationHierarchyCurrentDetails,
+} from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import useCurrentUser from "../../hooks/useCurrentUser";
 
-
 interface EmploymentHistoryProps {
-    onSuccess?: (data?: any) => void;
-    onCancel?: () => void;
-    isEdit?: boolean;
+  onSuccess?: (data?: any) => void;
+  onCancel?: () => void;
+  isEdit?: boolean;
+  defaultStartDate?: string | null;
 }
 
+const EmploymentHistoryForm = ({
+  onCancel,
+  isEdit = false,
+  defaultStartDate,
+}: EmploymentHistoryProps) => {
+  const [instance, setInstance] = useState<any>(null);
+  const initialDataApplied = useRef(false);
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name || "",
+  );
+  const [formValues, setFormValues] = useState({
+    company: "",
+    department: "",
+    designation: "",
+  });
 
-const EmploymentHistoryForm = ({ onCancel, isEdit = false }: EmploymentHistoryProps) => {
-    const formInstance = useRef<any>(null);
-    const initialSubmissionSet = useRef(false);
-    const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name || ""
+  const { data: designationHierarchy, isLoading: designationHierarchyLoading } =
+    useGetDesignationHierarchy(
+      formValues.company || (isEdit ? "" : ""), // Initial fetch for companies
+      formValues.department,
+      formValues.designation,
     );
-    const { data: designationHierarchy, isLoading: designationHierarchyLoading } = useGetDesignationHierarchy(
-        currentEmployee?.company || "",
-        currentEmployee?.department || "",
-        currentEmployee?.designation || "",
-        isEdit
-    );
-    const { mutateAsync: addEmployeeHistory, isPending: addEmployeeHistoryPending } = useAddEmployeeHistoryMutation();
-    const { data: empDesignationHierarchyCurrentDetails, isLoading: empDesignationHierarchyCurrentDetailsPending } = useGetEmpDesignationHierarchyCurrentDetails(currentEmployee?.employee || "", isEdit);
+  const {
+    mutateAsync: addEmployeeHistory,
+    isPending: addEmployeeHistoryPending,
+  } = useAddEmployeeHistoryMutation();
+  const {
+    data: empDesignationHierarchyCurrentDetails,
+    isLoading: empDesignationHierarchyCurrentDetailsPending,
+  } = useGetEmpDesignationHierarchyCurrentDetails(
+    currentEmployee?.employee || "",
+    isEdit,
+  );
 
+  // Update form options and initial values when data arrives
+  useEffect(() => {
+    if (!instance) return;
 
-    const initialSubmissionData = useMemo(
-        () => ({
-            data: {
-                companies: designationHierarchy?.data?.companies,
-                departments: designationHierarchy?.data?.departments,
-                designations: designationHierarchy?.data?.designations,
-                functional_areas: designationHierarchy?.data?.functional_areas,
-                ...(isEdit && {
-                    company: empDesignationHierarchyCurrentDetails?.data?.company,
-                    department: empDesignationHierarchyCurrentDetails?.data?.department,
-                    designation: empDesignationHierarchyCurrentDetails?.data?.designation,
-                    functional_area: empDesignationHierarchyCurrentDetails?.data?.functional_area,
-                    startDate: empDesignationHierarchyCurrentDetails?.data?.start_date,
-                }),
-            },
-        }),
-        [designationHierarchy, empDesignationHierarchyCurrentDetails, isEdit]
-    );
+    const currentSubmission = instance.submission || { data: {} };
+    const currentData = currentSubmission.data || {};
+    let shouldUpdate = false;
+    const newData = { ...currentData };
 
-    const handleSubmit = async () => {
-        try {
-            const submission = await formInstance.current?.submit(); // returns all form data
-            const data = submission?.data;
+    // Handle hierarchy options
+    if (designationHierarchy?.data) {
+      const hierarchyData = designationHierarchy.data;
+      if (
+        JSON.stringify(hierarchyData.companies) !==
+          JSON.stringify(currentData.companies) ||
+        JSON.stringify(hierarchyData.departments) !==
+          JSON.stringify(currentData.departments) ||
+        JSON.stringify(hierarchyData.designations) !==
+          JSON.stringify(currentData.designations) ||
+        JSON.stringify(hierarchyData.functional_areas) !==
+          JSON.stringify(currentData.functional_areas)
+      ) {
+        newData.companies = hierarchyData.companies || currentData.companies;
+        newData.departments =
+          hierarchyData.departments || currentData.departments;
+        newData.designations =
+          hierarchyData.designations || currentData.designations;
+        newData.functional_areas =
+          hierarchyData.functional_areas || currentData.functional_areas;
+        shouldUpdate = true;
+      }
+    }
 
-            await addEmployeeHistory({
-                company: data.company,
-                department: data.department,
-                designation: data.designation,
-                start_date: data.startDate,
-                functional_area: data.functional_area,
+    // Handle initial edit data (only once)
+    if (
+      isEdit &&
+      empDesignationHierarchyCurrentDetails?.data &&
+      !initialDataApplied.current
+    ) {
+      const editData = empDesignationHierarchyCurrentDetails.data;
+      newData.company = editData.company;
+      newData.department = editData.department;
+      newData.designation = editData.designation;
+      newData.functional_area = editData.functional_area;
+      newData.startDate = editData.start_date;
 
-            });
-            onCancel?.();
-        } catch (err) {
-            toast.error("Please fill in all required fields.");
-            console.warn("Form submission error -", err);
+      // Also update formValues to trigger the queries for the next levels
+      setFormValues({
+        company: editData.company,
+        department: editData.department,
+        designation: editData.designation,
+      });
+
+      initialDataApplied.current = true;
+      shouldUpdate = true;
+    } else if (!isEdit && !initialDataApplied.current) {
+      // Initial empty values for new entry
+      newData.company = "";
+      newData.department = "";
+      newData.designation = "";
+      newData.functional_area = "";
+      if (defaultStartDate) {
+        newData.startDate = defaultStartDate;
+      }
+      initialDataApplied.current = true;
+      shouldUpdate = true;
+    }
+
+    if (shouldUpdate) {
+      // Use pristine: true option to prevent setSubmission from triggering validation
+      instance.setSubmission({ data: newData }, { pristine: true }).then(() => {
+        instance.setPristine(true);
+        instance.clearErrors(); // Explicitly clear any existing errors
+        instance.checkConditions();
+        instance.redraw();
+      });
+    }
+  }, [
+    designationHierarchy,
+    empDesignationHierarchyCurrentDetails,
+    instance,
+    isEdit,
+  ]);
+
+  const validateForm = (data: any) => {
+    if (!instance) return false;
+
+    const requiredFields = [
+      { key: "company", label: "Company" },
+      { key: "department", label: "Department" },
+      { key: "designation", label: "Designation" },
+      { key: "functional_area", label: "Functional Area" },
+      { key: "startDate", label: "Start Date" },
+    ];
+
+    let isValid = true;
+    requiredFields.forEach((field) => {
+      const component = instance.getComponent(field.key);
+      // Only validate if component exists and is visible
+      if (component && component.visible) {
+        if (!data[field.key]) {
+          isValid = false;
+          component.setCustomValidity(`${field.label} is required`);
+        } else {
+          component.setCustomValidity("");
         }
-    };
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) {
-                    onCancel?.();
-                }
+      } else if (component) {
+        // Clear validity for hidden fields
+        component.setCustomValidity("");
+      }
+    });
+
+    if (!isValid) {
+      instance.redraw();
+    }
+    return isValid;
+  };
+
+  const handleSubmit = async () => {
+    if (!instance) return;
+
+    try {
+      const submission = await instance.submit(); // Get raw data
+      const data = submission?.data || {};
+
+      // Perform manual validation
+      const isValid = validateForm(data);
+
+      if (!isValid) {
+        toast.error("Please fill in all required fields.");
+        return;
+      }
+
+      await addEmployeeHistory({
+        company: data.company,
+        department: data.department,
+        designation: data.designation,
+        start_date: data.startDate,
+        functional_area: data.functional_area,
+      });
+      onCancel?.();
+    } catch (err) {
+      console.warn("Form submission error -", err);
+      // Redraw if submission failed due to some other validation (though we removed most)
+      instance.redraw();
+    }
+  };
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onCancel?.();
+        }
+      }}
+    >
+      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Employment History
+          </h2>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancel?.();
             }}
-        >
-            <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
-                {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-                    <h2 className="text-lg font-semibold text-gray-800">
-                        Employment History
-                    </h2>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onCancel?.();
-                        }}
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-                        aria-label="Close"
-                    >
-                        <X className="h-5 w-5 text-gray-600" />
-                    </button>
-                </div>
-
-                {/* Form.io Form */}
-                {empDesignationHierarchyCurrentDetailsPending || designationHierarchyLoading ?
-                    <div className="flex justify-center items-center h-full w-full p-10">
-                        <CircularLoader />
-                    </div>
-                    : <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12">
-                        <Form
-                            form={employmentHistoryFormSchema}
-
-                            /** CRITICAL FIX: Do NOT pass submission prop */
-                            onFormReady={(instance: any) => {
-                                formInstance.current = instance;
-                                if (!initialSubmissionSet.current) {
-                                    instance?.setSubmission?.(initialSubmissionData);
-                                    initialSubmissionSet.current = true;
-                                }
-                            }}
-                            options={{
-                                builder: { styles: false },
-                                submitButton: false,
-                                alerts: false,
-                                disableOnSubmit: true,
-                                clearOnSubmit: false,
-                                formClass: "space-y-6",
-                                rowClass: "flex flex-col md:flex-row md:space-x-4",
-                                labelClass: "mb-1 font-medium text-gray-700",
-                                inputClass:
-                                    "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
-                                validateOnInit: true,
-                                validateOnBlur: true,
-                                validateOnChange: false,
-                            }}
-                        />
-                    </div>
-                }
-                {/* Footer */}
-                <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-                    <Button
-                        onClick={handleSubmit}
-                        fullWidth
-                        size="lg"
-                        variant="contain"
-                        bgColor="primary"
-                    >
-                        {
-                            addEmployeeHistoryPending ? <CircularLoader />
-                                :
-                                "Submit Request"
-                        }
-
-                    </Button>
-                </div>
-            </div>
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         </div>
-    );
+
+        {/* Form.io Form */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 pb-12 relative">
+          {empDesignationHierarchyCurrentDetailsPending && (
+            <div className="absolute inset-0 z-30 flex justify-center items-center bg-white bg-opacity-70">
+              <CircularLoader />
+            </div>
+          )}
+          {designationHierarchyLoading &&
+            instance &&
+            initialDataApplied.current && (
+              <div className="absolute top-2 right-6 z-40">
+                <CircularLoader size="sm" color="blue-500" />
+              </div>
+            )}
+          <Form
+            form={employmentHistoryFormSchema}
+            /** CRITICAL FIX: Do NOT pass submission prop */
+            onFormReady={(form: any) => {
+              setInstance(form);
+              form.setPristine(true);
+
+              form.on("change", (event: any) => {
+                if (event.changed) {
+                  const { company, department, designation } = event.data;
+                  const changedKey = event.changed.component.key;
+
+                  if (changedKey === "company") {
+                    form
+                      .getComponent("department")
+                      ?.setValue("", { noValidate: true });
+                    form
+                      .getComponent("designation")
+                      ?.setValue("", { noValidate: true });
+                    form
+                      .getComponent("functional_area")
+                      ?.setValue("", { noValidate: true });
+                    form.getComponent("department")?.setPristine(true);
+                    form.getComponent("designation")?.setPristine(true);
+                    form.getComponent("functional_area")?.setPristine(true);
+                  } else if (changedKey === "department") {
+                    form
+                      .getComponent("designation")
+                      ?.setValue("", { noValidate: true });
+                    form
+                      .getComponent("functional_area")
+                      ?.setValue("", { noValidate: true });
+                    form.getComponent("designation")?.setPristine(true);
+                    form.getComponent("functional_area")?.setPristine(true);
+                  } else if (changedKey === "designation") {
+                    form
+                      .getComponent("functional_area")
+                      ?.setValue("", { noValidate: true });
+                    form.getComponent("functional_area")?.setPristine(true);
+                  }
+
+                  setFormValues((prev) => {
+                    if (
+                      prev.company !== company ||
+                      prev.department !== department ||
+                      prev.designation !== designation
+                    ) {
+                      return { company, department, designation };
+                    }
+                    return prev;
+                  });
+                }
+              });
+            }}
+            options={{
+              builder: { styles: false },
+              submitButton: false,
+              alerts: false,
+              disableOnSubmit: true,
+              clearOnSubmit: false,
+              formClass: "space-y-6",
+              rowClass: "flex flex-col md:flex-row md:space-x-4",
+              labelClass: "mb-1 font-medium text-gray-700",
+              inputClass:
+                "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
+              validateOnInit: false,
+              validateOnBlur: false,
+              validateOnChange: false,
+            }}
+          />
+        </div>
+        {/* Footer */}
+        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+          <Button
+            onClick={handleSubmit}
+            fullWidth
+            size="lg"
+            variant="contain"
+            bgColor="primary"
+          >
+            {addEmployeeHistoryPending ? <CircularLoader /> : "Submit Request"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default EmploymentHistoryForm;

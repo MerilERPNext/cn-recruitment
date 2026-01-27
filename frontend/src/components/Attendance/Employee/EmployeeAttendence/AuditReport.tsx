@@ -84,7 +84,7 @@ const AuditReport = () => {
                                         <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
                                             {format(
                                                 new Date(item.effective_from),
-                                                "dd MMM yyyy"
+                                                "dd-MM-yyyy"
                                             )}
                                         </td>
                                         <td className="whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
@@ -93,7 +93,7 @@ const AuditReport = () => {
                                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
                                             {format(
                                                 new Date(item.updated_on),
-                                                "dd MMM yyyy"
+                                                "dd-MM-yyyy"
                                             )}
                                         </td>
                                     </tr>

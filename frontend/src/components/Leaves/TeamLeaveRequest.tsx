@@ -28,7 +28,7 @@ const TeamLeaveRequest = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -47,21 +47,35 @@ const TeamLeaveRequest = () => {
         "From Date",
         "To Date",
         "Due Date",
+        "Leave Days",
         "Status",
         "Actions",
       ]
-    : ["Employee", "From Date", "To Date", "Due Date", "Status", "Actions"];
+    : [
+        "Employee",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Actions",
+      ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
-    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
+    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
 
   return (
     <>
       <div className="min-h-screen">
-        <div className=" px-2">
-          <div className="flex justify-between items-center md:pt-4 mb-2 border-b-1 border-gray-200">
-            <Typography variant="subheading">Team Leave Requests</Typography>
+        <div className=" px-4">
+          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">Team Leave Requests</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team leave requests
+              </Typography>
+            </div>
           </div>
 
           <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
@@ -84,7 +98,12 @@ const TeamLeaveRequest = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Open", "Approved", "Rejected"],
+                    // options: ["Open", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Open" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
                 renderCardContent={(item) => (

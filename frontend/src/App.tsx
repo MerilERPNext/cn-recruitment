@@ -28,6 +28,7 @@ import { ViewedUserProvider, useTargetUser } from "./context/ViewedUserContext";
 import { setTargetEmployeeId } from "./utils/frappeAPI";
 import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
+import { LoadingOverlayProvider } from "./context/OverlayContext";
 
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
@@ -79,69 +80,71 @@ const App: React.FC = () => {
         <GlobalStoreProvider>
           <ViewedUserProvider>
             <TargetUserSync />
-            <RequestLeaveModalProvider>
-              <Toaster position="top-center" containerClassName="z-50">
-                {(t) => (
-                  <ToastBar
-                    toast={t}
-                    style={{
-                      ...t.style,
-                      background: "white",
-                      borderLeft:
-                        t.type === "success"
-                          ? "4px solid #34D399"
-                          : "4px solid #EF4444",
-                      boxShadow:
-                        "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                      minWidth: "260px",
-                      padding: "1rem",
-                      borderRadius: "0.5rem",
-                      transition:
-                        "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                    }}
-                  >
-                    {({ message }: { message: React.ReactNode }) => (
-                      <>
-                        {t.type === "success" ? (
-                          <CheckCircle2
-                            className="h-6 w-6 text-green-500 mr-2"
-                            strokeWidth={2}
-                          />
-                        ) : (
-                          <CircleX
-                            className="h-6 w-6 text-red-500 mr-2"
-                            strokeWidth={2}
-                          />
-                        )}
-                        {message
-                        }
-                        {t.type !== "loading" && (
-                          <button
-                            className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
-                            onClick={() => toast.dismiss(t.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </ToastBar>
-                )}
-              </Toaster>
-              <MandatoryPoliciesHandler />
+            <LoadingOverlayProvider>
+              <RequestLeaveModalProvider>
+                <Toaster position="top-center" containerClassName="z-50">
+                  {(t) => (
+                    <ToastBar
+                      toast={t}
+                      style={{
+                        ...t.style,
+                        background: "white",
+                        borderLeft:
+                          t.type === "success"
+                            ? "4px solid #34D399"
+                            : "4px solid #EF4444",
+                        boxShadow:
+                          "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                        minWidth: "260px",
+                        padding: "1rem",
+                        borderRadius: "0.5rem",
+                        transition:
+                          "all 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                      }}
+                    >
+                      {({ message }: { message: React.ReactNode }) => (
+                        <>
+                          {t.type === "success" ? (
+                            <CheckCircle2
+                              className="h-6 w-6 text-green-500 mr-2"
+                              strokeWidth={2}
+                            />
+                          ) : (
+                            <CircleX
+                              className="h-6 w-6 text-red-500 mr-2"
+                              strokeWidth={2}
+                            />
+                          )}
+                          {message
+                          }
+                          {t.type !== "loading" && (
+                            <button
+                              className="ml-4 p-1 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-700 focus:outline-none transition-colors duration-200"
+                              onClick={() => toast.dismiss(t.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </ToastBar>
+                  )}
+                </Toaster>
+                <MandatoryPoliciesHandler />
 
-              <div
-                className="min-h-screen bg-app"
-              >
-                <Routes>
-                  <Route element={<ModalWrapper />}>
-                    <Route path="/webapp/" element={<ResponsiveDashboard />} />
-                    {renderRoutes(routesConfig)}
-                    <Route path="*" element={<Navigate to="/webapp/" replace />} />
-                  </Route>
-                </Routes>
-              </div>
-            </RequestLeaveModalProvider>
+                <div
+                  className="min-h-screen bg-app"
+                >
+                  <Routes>
+                    <Route element={<ModalWrapper />}>
+                      <Route path="/webapp/" element={<ResponsiveDashboard />} />
+                      {renderRoutes(routesConfig)}
+                      <Route path="*" element={<Navigate to="/webapp/" replace />} />
+                    </Route>
+                  </Routes>
+                </div>
+              </RequestLeaveModalProvider>
+            </LoadingOverlayProvider>
           </ViewedUserProvider>
         </GlobalStoreProvider>
       </PermissionProvider>
@@ -187,7 +190,6 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
-  console.log("mandatoryPoliciesCount", mandatoryPoliciesCount);
 
   useEffect(() => {
     if (
@@ -212,7 +214,6 @@ const MandatoryPoliciesHandler = () => {
     }
 
     if (mandatoryPoliciesCount > 0) {
-      console.log("openNestedWebView");
 
       if (window.isApp) {
         window.nativeInterface.logToNative("openNestedWebView");

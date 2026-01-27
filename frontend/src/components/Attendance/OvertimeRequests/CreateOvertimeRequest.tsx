@@ -18,6 +18,7 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -68,7 +69,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
     usePlannedOvertimeRequestAttachments(currentEmployee?.employee || "");
-  
+
   /** Memoized initial value to avoid rerender resets */
   const initialSubmissionData = useMemo(
     () => ({
@@ -92,24 +93,29 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     return format(parseISO(dateString), "yyyy-MM-dd");
   };
 
-    const { data: requiredFieldsChild } = useRequiredFields("Overtime Child table");
-    const { data: requiredFieldsParent } = useRequiredFields("Planned Overtime Request");
-    
-    const requiredFieldMap = useMemo(() => {
-      if (!requiredFieldsChild?.fields) return {};
-      const map: Record<string, boolean> = {};
-      requiredFieldsChild.fields.forEach((f) => {
-        if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-      });
-      requiredFieldsParent?.fields.forEach((f) => {
-        if (f.fieldname && f.fieldname != "overtime_details") map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-      });
-      return map;
-    }, [requiredFieldsChild, requiredFieldsParent ]);
-  
-    console.log("requiredFieldMap", requiredFieldMap);
-   
-    const transformSchemaWithRequired = (
+  const { data: requiredFieldsChild } = useRequiredFields(
+    "Overtime Child table"
+  );
+  const { data: requiredFieldsParent } = useRequiredFields(
+    "Planned Overtime Request"
+  );
+
+  const requiredFieldMap = useMemo(() => {
+    if (!requiredFieldsChild?.fields) return {};
+    const map: Record<string, boolean> = {};
+    requiredFieldsChild.fields.forEach((f) => {
+      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    requiredFieldsParent?.fields.forEach((f) => {
+      if (f.fieldname && f.fieldname != "overtime_details")
+        map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+    });
+    return map;
+  }, [requiredFieldsChild, requiredFieldsParent]);
+
+  console.log("requiredFieldMap", requiredFieldMap);
+
+  const transformSchemaWithRequired = (
     baseSchema: FormSchema,
     requiredMap: Record<string, boolean>
   ): FormSchema => {
@@ -125,7 +131,8 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           comp.validate.required = true;
 
           if (typeof comp.label === "string") {
-            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
             if (!comp.label.includes(asteriskHtml)) {
               comp.label = `${comp.label} ${asteriskHtml}`;
             }
@@ -150,10 +157,12 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     applyToComponents(cloned.components);
     return cloned;
   };
-  
+
+  const loading = useLoadingOverlay();
   const handleSubmit = async () => {
+  await loading?.wrap(async () => {
     try {
-      const submission = await formInstance.current?.submit(); // returns all form data
+      const submission = await formInstance.current?.submit();
       const data = submission?.data;
 
       const formattedOvertimeDetails = data?.overtime_details?.map(
@@ -172,40 +181,50 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           message: entry?.message,
         })
       );
-      mutation.mutate(
-        {
-          employee: currentEmployee?.employee || "",
-          overtime_details: formattedOvertimeDetails || [],
-          // attachment:
-          //   data?.attachment && data?.attachment?.length > 0
-          //     ? data?.attachment?.[0].url
-          //     : "",
-        },
-        {
-          onSuccess: async (data: any) => {
-            if (attachments?.length > 0) {
-              await uploadFiles(attachments, data.doctype, data.name, () => {
-                setAttachments([]);
-                onCancel?.();
 
-                setTimeout(() => {
-                  setRefetchAttendance(true);
-                }, 1000);
-              });
-            }
+      await new Promise<void>((resolve, reject) => {
+        mutation.mutate(
+          {
+            employee: currentEmployee?.employee || "",
+            overtime_details: formattedOvertimeDetails || [],
           },
-          onError: (e: CustomError) => {
-            const formatedError = errorResponseFormater(e, "Request Failed");
-            toast.error(formatedError);
-            console.error(e);
-          },
-        }
-      );
+          {
+            onSuccess: async (data: any) => {
+              if (attachments?.length > 0) {
+                await uploadFiles(
+                  attachments,
+                  data.doctype,
+                  data.name,
+                  () => {
+                    setAttachments([]);
+                    onCancel?.();
+                    setTimeout(() => setRefetchAttendance(true), 1000);
+                  }
+                );
+              }
+              resolve();
+                toast.success("Overtime Requests SuccessFully");
+            },
+            onError: (e: CustomError) => {
+              const formattedError = errorResponseFormater(
+                e,
+                "Request Failed"
+              );
+              toast.error(formattedError);
+              console.error(e);
+              reject(e);
+            },
+          }
+        );
+      });
     } catch (err) {
       toast.error("Please fill in all required fields.");
       console.warn("Form submission error -", err);
+      throw err;
     }
-  };
+  }, "Submitting overtime request…");
+};
+
 
   return (
     <div
@@ -239,13 +258,13 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
           <Form
-            form={transformSchemaWithRequired(overtimeRequestSchema, requiredFieldMap)}
+            form={transformSchemaWithRequired(
+              overtimeRequestSchema,
+              requiredFieldMap
+            )}
             onChange={(submission: any) => {
               if (submission?.changed?.component?.key === "attachment")
-                setAttachments([
-                  ...attachments,
-                  ...(submission?.data?.attachment || []),
-                ]);
+                setAttachments(submission?.data?.attachment || []);
             }}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {

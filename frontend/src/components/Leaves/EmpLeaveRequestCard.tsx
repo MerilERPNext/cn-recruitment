@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { MoreVertical, Repeat1, RotateCcw, SquarePen } from "lucide-react";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -10,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -36,12 +36,12 @@ const EmpLeaveRequestCard = ({
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "revoke_replace_edit",
-    "My Requests"
+    "My Requests",
   );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (app: any) => app.name === data?.reference_name
+    (app: any) => app.name === data?.reference_name,
   );
 
   const allowEdit = leaveButtonConfig?.show_edit_button;
@@ -61,7 +61,7 @@ const EmpLeaveRequestCard = ({
             setRefetchAttendance(true);
             setMenuOpen(false);
           },
-        }
+        },
       );
     }
   };
@@ -112,8 +112,10 @@ const EmpLeaveRequestCard = ({
         label: "Approved",
         statusColor: "bg-success/10 text-success",
       };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+    // if (status === "cancelled")
+    //   return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+    if (status === "rejected")
+      return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
     return {
       label: rawStatus || "Unknown",
       statusColor: "bg-gray-100 text-gray-800",
@@ -121,12 +123,6 @@ const EmpLeaveRequestCard = ({
   };
 
   const status = getStatus(data?.reference_document?.status);
-  const formattedFromDate = data?.reference_document?.from_date
-    ? format(new Date(data?.reference_document.from_date), "dd/MM/yyyy")
-    : "N/A";
-  const formattedToDate = data?.reference_document?.to_date
-    ? format(new Date(data?.reference_document.to_date), "dd/MM/yyyy")
-    : "N/A";
 
   const ActionMenu = () => (
     <div
@@ -182,14 +178,21 @@ const EmpLeaveRequestCard = ({
       {isDesktop ? (
         <div
           style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
+          className={`grid max-w-screen items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
         >
           <div className="text-sm font-medium text-gray-700 text-start truncate">
             {data?.reference_document?.leave_type}
           </div>
-          <div className="text-sm text-gray-900">{formattedFromDate}</div>
-          <div className="text-sm text-gray-900">{formattedToDate}</div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.from_date)}
+          </div>
+          <div className="text-sm text-gray-900">
+            {formatToIndianDate(data?.reference_document.to_date)}
+          </div>
+          <div
+            className="text-sm font-medium text-gray-700 text-start truncate"
+            title={data?.reference_document?.description}
+          >
             {data?.reference_document?.description || " - "}
           </div>
           <div className="text-sm font-medium text-gray-700 text-start truncate">
@@ -235,7 +238,8 @@ const EmpLeaveRequestCard = ({
               </div>
 
               <div className="card-subtitle">
-                {formattedFromDate} - {formattedToDate}
+                {formatToIndianDate(data?.reference_document.from_date)} -{" "}
+                {formatToIndianDate(data?.reference_document.to_date)}
               </div>
             </div>
 

@@ -2,6 +2,7 @@ import React from "react";
 import { ExternalLink, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -11,21 +12,13 @@ interface TicketTableProps {
   onSelectAll: () => void;
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
-  currentUser: string;
+  onRowClick?: (ticket: HDTicket) => void;
   sortField: string;
   sortDirection: "asc" | "desc";
   onSort: (field: string) => void;
+  categoryMap?: Record<string, string>;
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
 
 const getAssignedName = (assignStr: string | null): string => {
   if (!assignStr) return "-";
@@ -42,20 +35,21 @@ const getAssignedName = (assignStr: string | null): string => {
   return "-";
 };
 
-const getStatusStyle = (status: string) => {
+// Status badge styles - rectangular badges (rounded-lg, not rounded-full)
+const getStatusBadgeStyle = (status: string) => {
   switch (status) {
     case "Open":
-      return "text-blue-600";
+      return "bg-blue-100 text-blue-800";
     case "Replied":
-      return "text-yellow-600";
+      return "bg-purple-100 text-purple-800";
     case "Resolved":
-      return "text-green-600";
+      return "bg-green-100 text-green-800";
     case "Closed":
-      return "text-gray-600";
+      return "bg-gray-100 text-gray-700";
     case "Reopened":
-      return "text-orange-600";
+      return "bg-yellow-100 text-yellow-800";
     default:
-      return "text-gray-600";
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -77,23 +71,22 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onSelectAll,
   onReply,
   onClose,
-  currentUser,
+  onRowClick,
   sortField,
   sortDirection,
   onSort,
+  categoryMap = {},
 }) => {
+  // Helper to get category name from ID
+  const getCategoryName = (categoryId: string | undefined): string => {
+    if (!categoryId) return "-";
+    return categoryMap[categoryId] || categoryId;
+  };
   const allSelected = tickets.length > 0 && selectedTickets.size === tickets.length;
 
-  const isRaiserOrAdmin = (ticket: HDTicket) => {
-    // Check if current user is the raiser or an admin
-    return ticket.raised_by === currentUser || ticket.owner === currentUser;
-  };
-
-  const getCloseButtonLabel = (ticket: HDTicket) => {
-    if (isRaiserOrAdmin(ticket)) {
-      return "Close";
-    }
-    return "Request Closure";
+  // Since we only show user's own tickets, always show "Close" button
+  const getCloseButtonLabel = () => {
+    return "Close";
   };
 
   const renderSortIcon = (field: string) => {
@@ -199,9 +192,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
           {tickets.map((ticket) => (
             <tr
               key={ticket.name}
-              className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
+              className={`border-t border-gray-200 hover:bg-gray-50 transition-colors ${
+                onRowClick ? "cursor-pointer" : ""
+              }`}
+              onClick={() => onRowClick?.(ticket)}
             >
-              <td className="px-4 py-3">
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={selectedTickets.has(ticket.name)}
@@ -210,18 +206,18 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 />
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="primary" className="text-blue-600 hover:underline">
                   {ticket.name}
                 </Typography>
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {ticket.custom_category || "-"}
+                  {getCategoryName(ticket.custom_category)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {ticket.custom_sub_category || "-"}
+                  {getCategoryName(ticket.custom_sub_category)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
@@ -231,20 +227,20 @@ const TicketTable: React.FC<TicketTableProps> = ({
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {formatDate(ticket.creation)}
+                  {formatToIndianDate(ticket.creation)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {formatDate(ticket.modified)}
+                  {formatToIndianDate(ticket.modified)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" className={getStatusStyle(ticket.status)}>
+                <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusBadgeStyle(ticket.status)}`}>
                   {ticket.status}
-                </Typography>
+                </span>
               </td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {/* Reply Button */}
                   <button
@@ -259,7 +255,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                     <button
                       onClick={() => onClose(ticket)}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
-                      title={getCloseButtonLabel(ticket)}
+                      title={getCloseButtonLabel()}
                     >
                       <X className="w-4 h-4" />
                     </button>

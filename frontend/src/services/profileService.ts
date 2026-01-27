@@ -46,6 +46,38 @@ export const profileService = {
     );
     return response as IField[];
   },
+  getEmployeeDetailsByEmpIdForProfile: async (
+    employee_id: string
+  ): Promise<{ employee: Employee } | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_with_formatted_links", {
+        employee_id: employee_id
+      });
+      // Handle different response structures
+
+      return result as { employee: Employee };
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
+  getEmploymentHistoryData: async (
+    employee_id: string
+  ): Promise<Employee | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("cn_hrms_core.cn_hrms_core.apis.employee.get_employee_doc", {
+        employee_id: employee_id
+      });
+      // Handle different response structures
+
+      return result as Employee;
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
   getEmployeeDetailsByEmpId: async (
     employee_id: string
   ): Promise<Employee | null> => {

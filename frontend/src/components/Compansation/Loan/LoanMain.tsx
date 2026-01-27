@@ -54,22 +54,17 @@ export default function LoansPage() {
   // Desktop Layout
   const DesktopLayout = (
     <div className="min-h-screen overflow-x-hidden">
-      <div className="w-full mx-auto">
+      <div className="w-full mx-auto px-2">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 px-4">
-<div className="flex flex-col gap-1">
-<Typography variant="subheading">
-            Loans For FY25-26
-          </Typography>
-          <Typography variant="bodySmall" color="body2">
-           Track Loan Details
-          </Typography>
-</div>
+        <div className="flex items-center justify-between mb-2 px-2 border-b border-gray-200">
+          <div className="flex flex-col mb-2">
+            <Typography variant="h4">My Loan Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your loan requests
+            </Typography>
+          </div>
 
-          <Button
-            size="md"
-            onClick={() => setIsDialogOpen(true)}
-          >
+          <Button size="md" onClick={() => setIsDialogOpen(true)}>
             Create Loans
           </Button>
         </div>

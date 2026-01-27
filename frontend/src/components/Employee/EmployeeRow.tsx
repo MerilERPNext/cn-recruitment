@@ -5,6 +5,8 @@ import Tooltip from "../shared/Tooltip";
 import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useNavigate } from "react-router-dom";
 
 function initials(name = ""): string {
   const parts = name.trim().split(/\s+/);
@@ -59,12 +61,12 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   function recentSearch(emp: Employee): void {
     const searches: Employee[] = JSON.parse(
-      localStorage.getItem("recentSearches") || "[]"
+      localStorage.getItem("recentSearches") || "[]",
     );
 
     let filterData = searches.filter(
       (data) =>
-        data.employee_name.toLowerCase() !== emp.employee_name.toLowerCase()
+        data.employee_name.toLowerCase() !== emp.employee_name.toLowerCase(),
     );
 
     filterData.unshift(emp);
@@ -74,9 +76,19 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     return;
   }
 
+  const { data: currentEmployee } = useCurrentEmployee();
+  const navigate = useNavigate();
+
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
-    setTargetEmployee(emp.employee_id, `/webapp/employee-profile`, true);
+
+    if (currentEmployee?.name === emp.employee_id) {
+      navigate("/webapp/employee-profile");
+      return;
+    }
+
+    // ✅ Other user's profile
+    setTargetEmployee(emp.employee_id, "/webapp/employee-profile", true);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";
@@ -96,12 +108,16 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full">
           <div className="flex flex-col min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 min-w-0">
-              <Tooltip content={emp.employee_id || "—"} position="right">
-                <p className="text-sm   font-semibold text-gray-900 truncate">
-                  {emp.employee_name}
-                </p>
-              </Tooltip>
+              <p className="text-sm   font-semibold text-gray-900 truncate">
+                {emp.employee_name}
+              </p>
 
+              <Badge
+                label={emp.employee_id || "—"}
+                backgroundColor="bg-gray-50/70"
+                textColor="text-black"
+                size="sm"
+              />
               <Badge
                 label={emp.status || "—"}
                 backgroundColor={isActive ? "bg-green-100" : "bg-gray-100"}
@@ -112,23 +128,26 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
             <div className="mt-1 flex flex-wrap items-center gap-x-2 sm:gap-y-2 text-xs text-gray-600 min-w-0">
               <span className="sm:inline min-w-0">
-                <Tooltip content={emp.designation || "—"} position="bottom">
+                <Tooltip
+                  content={emp.designation_display || "—"}
+                  position="top"
+                >
                   <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.designation || "—"}
+                    {emp.designation_display || "—"}
                   </span>
                 </Tooltip>
               </span>
 
-              {emp.designation && emp.department && (
+              {emp.designation_display && emp.department_display && (
                 <span className="sm:mx-3  hidden   mx-1 sm:block text-md text-gray-300">
                   •
                 </span>
               )}
 
               <span className="sm:inline min-w-0">
-                <Tooltip content={emp.department || "—"} position="bottom">
+                <Tooltip content={emp.department_display || "—"} position="top">
                   <span className="inline-block text-xs  max-w-[20ch] truncate align-bottom">
-                    {emp.department || "—"}
+                    {emp.department_display || "—"}
                   </span>
                 </Tooltip>
               </span>

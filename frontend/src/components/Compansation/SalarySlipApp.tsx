@@ -118,8 +118,7 @@ const SalarySlipApp: React.FC = () => {
             <Button
               fullWidth
               size="lg"
-              bgColor="blue-600"
-              className="hover:bg-blue-700"
+              bgColor="primary"
               onClick={() => setIsLoanDialogOpen(true)}
             >
               + Create Loan

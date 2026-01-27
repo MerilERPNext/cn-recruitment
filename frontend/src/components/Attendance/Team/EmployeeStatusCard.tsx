@@ -10,6 +10,7 @@ import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
+import { Link } from "react-router-dom";
 
 export interface EmployeeStatusItem {
   reports_to: string | undefined;
@@ -45,7 +46,7 @@ const EmployeeStatusCard = ({
       | "on leave"
       | "half day"
       | "work from home"
-      | "default"
+      | "default",
   ): { indicatorBgColor: string; indicatorBorderColor?: string } => {
     if (isDesktop) {
       switch (status) {
@@ -98,16 +99,23 @@ const EmployeeStatusCard = ({
 
           <div className="flex-1 min-w-10">
             <div className="flex flex-wrap items-start gap-2">
-              <WrapperHoverCard employeeId={data?.employee}>
+              <Link
+                to={`/webapp/employee-profile?target_user=${data?.employee}`}
+                target="_blank"
+              >
                 <Typography
                   variant="bodyMedium"
                   className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
                 >
-                  {data?.employee_name}
+                  <WrapperHoverCard employeeId={data?.employee}>
+                    {data?.employee_name}
+                  </WrapperHoverCard>
                 </Typography>
               </WrapperHoverCard>
-
-              {data?.shift ? <Badge size="sm" label={"Shift " + data?.shift} /> : null}
+              </Link>
+              {data?.shift ? (
+                <Badge size="sm" label={"Shift " + data?.shift} />
+              ) : null}
             </div>
 
             <Typography variant="bodySmall" color="body2" className="capitalize mt-1">
@@ -132,7 +140,11 @@ const EmployeeStatusCard = ({
         <div className="flex justify-center w-full max-w-[700px] gap-4">
           <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] gap-4 sm:gap-6 mt-2 sm:mt-0 w-full py-1 px-4">
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Check-in
               </Typography>
               <Typography variant="bodyMedium" className="font-semibold text-gray-800">
@@ -141,7 +153,11 @@ const EmployeeStatusCard = ({
             </div>
 
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Check-out
               </Typography>
               <Typography variant="bodyMedium" className="font-semibold text-gray-800">
@@ -150,7 +166,11 @@ const EmployeeStatusCard = ({
             </div>
 
             <div className="text-center">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
                 Working Hours
               </Typography>
               <Typography variant="bodyMedium" className="font-semibold text-gray-800">

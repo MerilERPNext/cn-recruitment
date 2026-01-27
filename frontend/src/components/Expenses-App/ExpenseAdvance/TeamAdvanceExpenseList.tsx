@@ -64,9 +64,14 @@ const TeamAdvanceExpenseList = () => {
   return (
     <>
       <div className=" min-h-screen">
-        <div className=" px-0 md:p-6">
-          <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-            <Typography variant="subheading"> Team Advance Requests</Typography>
+        <div className="px-4">
+          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+            <div className="flex flex-col mb-2">
+              <Typography variant="h4">Team Advance Requests</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team advance expense requests
+              </Typography>
+            </div>
           </div>
 
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
