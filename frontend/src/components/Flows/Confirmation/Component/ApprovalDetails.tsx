@@ -3,12 +3,22 @@
 
 import { useMemo } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
+import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
+
+
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 
 interface ApprovalDetailsProps {
   data: any;
   title: "Employee Separation" | "Employee Confirmation";
 }
+
+const formatDashedDate
+= (date: string) => {
+  if (!date) return "";
+  return date.split("-").join("-");
+};
+
 
 export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
   const doc = data.reference_document;
@@ -50,6 +60,65 @@ export default function ApprovalDetails({ data, title }: ApprovalDetailsProps) {
 
     return fields;
   }, [title, doc]);
+
+if (title === "Employee Separation") {
+  const confirmationCards = [
+    {
+      label: "Date of Joining",
+      value: formatDashedDate(doc.date_of_joining),
+      Icon: Calendar,
+      bg: "bg-blue-50",
+      text: "text-blue-600",
+    },
+    {
+      label: "Probation End Date",
+      value: formatDashedDate(doc.probation_end_date),
+      Icon: CalendarCheck,
+      bg: "bg-green-50",
+      text: "text-green-600",
+    },
+    {
+      label: "Trigger Date",
+      value: formatDashedDate(doc.trigger_date),
+      Icon: Clock,
+      bg: "bg-orange-50",
+      text: "text-orange-600",
+    },
+    {
+      label: "Status",
+      value: doc.status,
+      Icon: FileText,
+      bg: "bg-purple-50",
+      text: "text-purple-600",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {confirmationCards.map(({ label, value, Icon, bg, text }, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-4 px-4 py-8 bg-white border border-slate-200 rounded-xl shadow-sm"
+        >
+          <div
+            className={`w-10 h-10 flex items-center justify-center rounded-lg ${bg} ${text}`}
+          >
+            <Icon size={20} strokeWidth={1.75} />
+          </div>
+
+          <div className="space-y-0.5">
+            <Typography variant="bodySmall">
+              {label}
+            </Typography>
+            <Typography variant="bodyMedium" className="font-semibold">
+              {value || "-"}
+            </Typography>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
   return (
     <div className="space-y-4">
