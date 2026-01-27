@@ -80,7 +80,7 @@ const AttendanceRequest = ({
                   "Due Date",
                   "Allocated To",
                   "Status",
-                  "Actions",
+                  "ACTIONS",
                 ]}
               >
                 {effectiveEmployeeId ? (

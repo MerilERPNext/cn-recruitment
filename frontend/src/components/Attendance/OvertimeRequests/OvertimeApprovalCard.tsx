@@ -7,7 +7,8 @@ import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
-import ApprovalActionPill from "../../shared/atoms/ApprovalActionPill";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -151,7 +152,7 @@ const OvertimeApprovalCard = ({
             </Tooltip>
           </div>
 
-          <ApprovalActionPill
+          <TeamApprovalActionPill
             actions={actions}
             status={data?.reference_document?.status}
             recordId={data?.todo_id}

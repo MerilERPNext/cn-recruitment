@@ -16,6 +16,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -47,14 +48,15 @@ const EmpAttendanceRequestCard = ({
               setRefetchAttendance(true);
             }, 2000);
             toast.success("Attendance Request Revoked Successfully!");
-          }, onError: (error) => {
+          },
+          onError: (error) => {
             const formatedError = errorResponseFormater(error);
             toast.error(formatedError);
           },
           onSettled: () => {
             loading?.hide();
           },
-        }
+        },
       );
     }
   };
@@ -87,7 +89,7 @@ const EmpAttendanceRequestCard = ({
 
   const status = getStatus(data?.reference_document?.custom_status);
   function getDays(from_date: string, to_date: string) {
-    const format = 'dd-MM-yyyy';
+    const format = "dd-MM-yyyy";
 
     const fromDate = startOfDay(parse(from_date, format, new Date()));
     const toDate = startOfDay(parse(to_date, format, new Date()));
@@ -97,7 +99,9 @@ const EmpAttendanceRequestCard = ({
     return diff + 1; // inclusive
   }
 
-  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
+  const formattedFromDate = formatToIndianDate(
+    data?.reference_document?.from_date,
+  );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const duration = getDays(formattedToDate, formattedFromDate);
@@ -151,29 +155,15 @@ const EmpAttendanceRequestCard = ({
               />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
-            {data?.custom_allow_revoke && type === "pending" ? (
-              <Button
-                icon={<RotateCcw className="h-3 w-3" />}
-                variant="soft"
-                size="sm"
-                onClick={handleRevokeClick}
-                disabled={revokeEventMutation.isPending}
-              >
-                {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-              </Button>
-            ) : (
-              <></>
-            )}
-            {type == "pending" && data?.can_edit && (
-              <Button
-                onClick={() => {
-                  setEdit(true);
-                }}
-              >
-                Edit
-              </Button>
-            )}
+          <div className="flex justify-start">
+            <MyApprovalActionPill
+              isPending={type === "pending"}
+              canRevoke={!!data?.custom_allow_revoke}
+              canEdit={!!data?.can_edit}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={() => setEdit(true)}
+            />
           </div>
         </div>
       ) : (
@@ -189,7 +179,9 @@ const EmpAttendanceRequestCard = ({
                     <Badge
                       size="sm"
                       backgroundColor={"bg-blue-100 text-blue-800"}
-                      label={duration > 1 ? duration + " Days" : duration + " Day"}
+                      label={
+                        duration > 1 ? duration + " Days" : duration + " Day"
+                      }
                     />
                   </div>
                   <div className="text-sm text-gray-900 text-start flex gap-2">

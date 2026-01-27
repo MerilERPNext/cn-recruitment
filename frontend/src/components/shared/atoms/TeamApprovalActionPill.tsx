@@ -4,7 +4,7 @@ import { Check, X, SendToBack } from "lucide-react";
 import { JSX } from "react";
 import Tooltip from "../Tooltip";
 
-type ApprovalActionPillProps = {
+type TeamApprovalActionPillProps = {
   actions: string[];
   status: string;
   recordId: string;
@@ -40,13 +40,13 @@ const ACTION_CONFIG: Record<
 const normalizeAction = (action: string) =>
   action.toLowerCase().replace(/\s+/g, "");
 
-const ApprovalActionPill = ({
+const TeamApprovalActionPill = ({
   actions,
   status,
   recordId,
   loadingAction,
   onAction,
-}: ApprovalActionPillProps) => {
+}: TeamApprovalActionPillProps) => {
   const isActionable = status === "Open" && actions?.length > 0;
 
   if (!isActionable) {
@@ -84,7 +84,7 @@ const ApprovalActionPill = ({
           h-8
           flex items-center
           gap-1
-          px-2.5
+          px-3
           py-1
           rounded-3xl
           bg-gray-10
@@ -127,4 +127,4 @@ const ApprovalActionPill = ({
   );
 };
 
-export default ApprovalActionPill;
+export default TeamApprovalActionPill;
