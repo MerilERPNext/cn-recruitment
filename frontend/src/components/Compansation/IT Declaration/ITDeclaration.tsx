@@ -6,6 +6,7 @@ import type React from "react";
 
 import {
   useITDeclarationTabData,
+  useLTABrakup,
   useNewRegime,
   useProofDateForITDeclaration,
   useSubmitITDeclaration,
@@ -24,6 +25,8 @@ import toast from "react-hot-toast";
 
 type PayrollPeriod = {
   name: string;
+  start_date: string; 
+  end_date: string;
 };
 
 const ITDeclarationForm = () => {
@@ -37,7 +40,7 @@ const ITDeclarationForm = () => {
   ) as {
     data: PayrollPeriod[] | undefined;
   };
-
+console.log("payrollPeriods", payrollPeriods);
   /* ---------------- State ---------------- */
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(
@@ -77,19 +80,29 @@ const ITDeclarationForm = () => {
     declarationDoctype || null,
     selectedPeriod || null
   ) as { data?: any };
+  const {data: LTABreakup } = useLTABrakup(user?.employee || "");
 
-  console.log("ProofOfITDeclaration DATA", PrrofOfITDeclaration);
+  console.log("ProofOfITDeclaration DATA", LTABreakup, );
 
-  /* ---------------- Initial payroll period ---------------- */
-  useEffect(() => {
-    if (payrollPeriods?.length && !selectedPeriod) {
-      const currentYear = new Date().getFullYear().toString();
-      setSelectedPeriod(
-        payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-          payrollPeriods[0].name
-      );
-    }
-  }, [payrollPeriods, selectedPeriod]);
+  // Initial payroll period 
+useEffect(() => {
+  if (!payrollPeriods?.length || selectedPeriod) return;
+
+  const today = new Date(); 
+
+  const matchedPeriod = payrollPeriods.find((p) => {
+    const start = new Date(p.start_date);
+    const end = new Date(p.end_date);
+
+    // inclusive range check
+    return today >= start && today <= end;
+  });
+
+  setSelectedPeriod(
+    matchedPeriod?.name || payrollPeriods[0].name
+  );
+}, [payrollPeriods, selectedPeriod]);
+
 
   useEffect(() => {
     if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
@@ -334,7 +347,7 @@ const ITDeclarationForm = () => {
             )}
           </div>
           {activeMainTab === "hra" && hraData && (
-            <HRAForm hraData={hraData} onChange={handleHraChange} />
+            <HRAForm hraData={hraData} onChange={handleHraChange} LATABreakup = { LTABreakup}/>
           )}
           {activeMainTab === "category" && (
             <>

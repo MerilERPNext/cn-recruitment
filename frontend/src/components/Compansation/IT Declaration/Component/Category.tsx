@@ -90,46 +90,48 @@ const CategoryDeclarationSelectable = ({
     });
   };
 
-const handleRemoveProof = async (
-  id: string | number | undefined,
-  proofFile?: string | File
-) => {
-  console.log("proofFile:", proofFile, typeof proofFile);
-
-  if (!proofFile || typeof proofFile !== "string") {
-    console.warn("No backend file to delete");
-    return;
-  }
-
-  const confirmDelete = window.confirm(
-    "Are you sure you want to delete this proof file?"
-  );
-  if (!confirmDelete) return;
-
-  try {
-    const parts = proofFile.split("/");
-    const fileName = parts[parts.length - 1];
-
-    console.log("Deleting file:", fileName);
-
-    await deleteDoc({
-      doctype: "File",
-      name: fileName, // or proofFile if backend needs full path
-    });
-
-    const updated = items.map((item) =>
-      item.id === id
-        ? { ...item, proof_file: undefined, proof_comment: "" }
-        : item
+  const handleRemoveProof = async (
+    id: string | number | undefined,
+    proofFile?: string | File
+  ) => {
+    console.log("proofFile:",  typeof proofFile);
+  
+    if (!proofFile || typeof proofFile !== "string") {
+      console.warn("No backend file to delete");
+      return;
+    }
+  
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this proof file?"
     );
-
-    onChange(updated);
-    alert("Proof deleted successfully ✅");
-  } catch (err: any) {
-    console.error("❌ Delete failed:", err);
-    alert("Failed to delete proof. Please try again.");
-  }
-};
+    if (!confirmDelete) return;
+  
+    try {
+      const parts = proofFile.split("/");
+      let fileName = parts[parts.length - 1];
+      fileName = decodeURIComponent(fileName);
+  
+      console.log("Deleting file:", fileName);
+  
+      await deleteDoc({
+        doctype: "File",
+        name: fileName,
+      });
+  
+      const updated = items.map((item) =>
+        item.id === id
+          ? { ...item, proof_file: undefined, proof_comment: "" }
+          : item
+      );
+  
+      onChange(updated);
+      alert("Proof deleted successfully ✅");
+    } catch (err) {
+      console.error("❌ Delete failed:", err);
+      alert("Failed to delete proof. Please try again.");
+    }
+  };
+  
 
   
 
@@ -199,7 +201,7 @@ const handleRemoveProof = async (
       <Typography variant="bodySmall" color="body2" className="semibold">
         {categoryName} | Max Amount:{" "}
         <span className="text-primary text-xs font-semibold">
-          ₹{max_amount || selectable}
+          ₹{max_amount }
         </span>
       </Typography>
 
