@@ -100,7 +100,6 @@ const MyOvertimeRequests = () => {
                     params: {
                       doctype: "Planned Overtime Request",
                       employee: effectiveEmployeeId,
-                      status: "Open",
                     },
                   }}
                   ItemComponent={(props: {
@@ -127,6 +126,7 @@ const MyOvertimeRequests = () => {
                       options: ["Open", "Approved", "Rejected"],
                     },
                   ]}
+                   defaultFilters={{ status: "Open" }}
                   pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"

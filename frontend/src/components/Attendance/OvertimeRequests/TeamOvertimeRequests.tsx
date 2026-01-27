@@ -67,7 +67,6 @@ const TeamOvertimeRequests = () => {
                 pageSize={10}
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
-                status="Open"
                 infiniteScroll={true}
                 showPagination={true}
                 loadMorePagination={false}
@@ -83,6 +82,7 @@ const TeamOvertimeRequests = () => {
                     options: ["Open", "Approved", "Rejected"],
                   },
                 ]}
+                defaultFilters={{ status: "Open" }}
                 renderCardContent={(item) => (
                   <OvertimeApprovalCard
                     isSelected={item?.isSelected}

@@ -278,10 +278,10 @@ const ApprovalList = ({
           method: "cn_leave_shift_managment.api.get_open_approval_todos",
           params: {
             doctype: doctype,
-            status: status,
             include_allocated_todos: true,
             fields: ["*"],
-            ...activeFilters,
+            // status: status,
+            // ...activeFilters,
           },
         }}
         // onFiltersChange={(filters) => {
