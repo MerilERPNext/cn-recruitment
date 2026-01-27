@@ -29,7 +29,7 @@ const TeamAttendanceDetails = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -85,7 +85,6 @@ const TeamAttendanceDetails = () => {
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                status={"Pending"}
                 pageSize={10}
                 showPagination={true}
                 infiniteScroll={true}
@@ -101,6 +100,7 @@ const TeamAttendanceDetails = () => {
                     options: ["Pending", "Approved", "Rejected"],
                   },
                 ]}
+                defaultFilters={{ status: "Pending" }}
                 renderCardContent={(item) => (
                   <ApprovalCard
                     isSelected={item?.isSelected}

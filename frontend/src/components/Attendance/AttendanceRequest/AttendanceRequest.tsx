@@ -92,7 +92,6 @@ const AttendanceRequest = ({
                       params: {
                         doctype: "Attendance Request",
                         employee: effectiveEmployeeId,
-                        status: "Pending",
                       },
                     }}
                     ItemComponent={(props: { item: MyAttendanceRequest }) => {
