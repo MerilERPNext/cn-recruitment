@@ -86,7 +86,6 @@ const TeamLeaveRequest = () => {
                 setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
-                status={"Open"}
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
@@ -98,7 +97,6 @@ const TeamLeaveRequest = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    // options: ["Open", "Approved", "Rejected"],
                     options: [
                       { label: "Pending", value: "Open" },
                       { label: "Approved", value: "Approved" },
@@ -106,6 +104,7 @@ const TeamLeaveRequest = () => {
                     ],
                   },
                 ]}
+                defaultFilters={{ status: "Open" }}
                 renderCardContent={(item) => (
                   <LeaveApprovalCard
                     isSelected={item?.isSelected}

@@ -79,7 +79,11 @@ const TeamOvertimeRequests = () => {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Open", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Open" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
                 defaultFilters={{ status: "Open" }}

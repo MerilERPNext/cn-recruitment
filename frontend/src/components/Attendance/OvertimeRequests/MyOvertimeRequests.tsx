@@ -26,19 +26,19 @@ const MyOvertimeRequests = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    currentEmployee?.employee || ""
+    currentEmployee?.employee || "",
   );
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "My Overtime"
+    "My Overtime",
   );
 
   const [showForm, setShowForm] = useState(false);
@@ -57,7 +57,7 @@ const MyOvertimeRequests = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -123,10 +123,14 @@ const MyOvertimeRequests = () => {
                       fieldname: "status",
                       label: "Status",
                       fieldtype: "Select",
-                      options: ["Open", "Approved", "Rejected"],
+                      options: [
+                        { label: "Pending", value: "Open" },
+                        { label: "Approved", value: "Approved" },
+                        { label: "Rejected", value: "Rejected" },
+                      ],
                     },
                   ]}
-                   defaultFilters={{ status: "Open" }}
+                  defaultFilters={{ status: "Open" }}
                   pageSize={10}
                   showRefreshButton={false}
                   orderBy="modified desc"

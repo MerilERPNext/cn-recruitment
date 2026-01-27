@@ -6,6 +6,7 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { getActionStyles } from "../../utils/actionButtonStyles";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -120,37 +121,13 @@ const LeaveApprovalCard = ({
               backgroundColor={status?.statusColor}
             />
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.reference_document?.status === "Open" &&
-              actions.map((action: string) => {
-                const actionStyle = getActionStyles(action);
-
-                return (
-                  <Button
-                    key={action}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onAction(action, data);
-                    }}
-                    bgColor={actionStyle.bgColor}
-                    variant={actionStyle.variant}
-                    disabled={
-                      loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action
-                    }
-                  >
-                    {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </Button>
-                );
-              })}
-          </div>
+          <TeamApprovalActionPill
+            actions={actions}
+            status={data?.reference_document?.status}
+            recordId={data?.todo_id}
+            loadingAction={loadingAction}
+            onAction={(action) => onAction(action, data)}
+          />
         </div>
       ) : (
         <div
