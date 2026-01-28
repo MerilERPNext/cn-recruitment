@@ -44,8 +44,8 @@ const TeamOvertimeRequests = () => {
     : ["Employee", "Description", "Due Date", "Status", "ACTIONS"];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1.5fr","1fr","1fr", "1fr"]
-    : ["1fr", "1.5fr", "1fr", "1fr","1fr"];
+    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr"];
 
   return (
     <div>
@@ -73,6 +73,7 @@ const TeamOvertimeRequests = () => {
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {

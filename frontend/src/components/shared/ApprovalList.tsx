@@ -39,6 +39,7 @@ type ApprovalListProps = {
   isSearch?: boolean;
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
   defaultFilters?: Record<string, any>;
+  columnWidths?: string[];
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -75,6 +76,7 @@ const ApprovalList = ({
   isSearch = false,
   onBulkSelectVisibilityChange,
   defaultFilters,
+  columnWidths,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -306,6 +308,7 @@ const ApprovalList = ({
                 onSelectAll={handleSelectAll}
                 onBulkAction={handleBulkAction}
                 loadingAction={bulkLoading}
+                 columnWidths={columnWidths}
               />
             )}
           </div>

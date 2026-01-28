@@ -155,7 +155,7 @@ const OvertimeApprovalCard = ({
           <div className="flex items-center justify-center">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
               <Badge
-                size="sm"
+                size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
               />
