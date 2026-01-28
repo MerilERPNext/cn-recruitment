@@ -11,6 +11,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -176,11 +177,12 @@ const ApprovalCard = ({
                   : ""
               }
             >
-              <Badge
+              {/* <Badge
                 size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={data?.status} />
             </Tooltip>
           </div>
           <div className="flex items-center justify-center">

@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import Tooltip from "../shared/Tooltip";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -129,11 +130,12 @@ const LeaveApprovalCard = ({
                   : ""
               }
             >
-              <Badge
+              {/* <Badge
                 size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>
           <div className="flex items-center justify-center">

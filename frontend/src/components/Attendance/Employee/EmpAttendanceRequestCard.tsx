@@ -19,6 +19,7 @@ import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -165,11 +166,12 @@ const EmpAttendanceRequestCard = ({
                   : ""
               }
             >
-              <Badge
+              {/* <Badge
                 size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={data?.reference_document?.custom_status} />
             </Tooltip>
           </div>
           <div className="flex items-center justify-center">

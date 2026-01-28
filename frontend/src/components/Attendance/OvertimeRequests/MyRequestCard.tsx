@@ -10,6 +10,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 export function MyRequestCard({
   request,
@@ -99,11 +100,13 @@ export function MyRequestCard({
                   : ""
               }
             >
-              <Badge
+              {/* <Badge
                 size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={request?.status} />
+
             </Tooltip>
           </div>
         </div>

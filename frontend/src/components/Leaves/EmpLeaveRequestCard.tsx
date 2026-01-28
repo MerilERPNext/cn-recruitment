@@ -17,6 +17,7 @@ import {
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -229,11 +230,12 @@ const EmpLeaveRequestCard = ({
                   : ""
               }
             >
-              <Badge
+              {/* <Badge
                 size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>
           <div className="flex items-center justify-center">
