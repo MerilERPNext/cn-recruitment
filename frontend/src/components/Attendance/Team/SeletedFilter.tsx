@@ -81,8 +81,7 @@ const CustomFilter: React.FC<CustomDropdownProps> = ({
     <div ref={dropdownRef} className={`relative ${className || ""}`}>
       {/* Trigger Button */}
       <Button
-        variant="contain"
-        bgColor="primary"
+        variant="soft"
         size="md"
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex items-center justify-between gap-2 px-4 h-[42px] min-w-[220px] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"

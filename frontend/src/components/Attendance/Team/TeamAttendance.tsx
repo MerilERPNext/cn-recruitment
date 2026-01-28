@@ -204,7 +204,7 @@ const TeamAttendance = () => {
                 placeholder="Search by employee name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-[42px] tw-rounded tw-border tw-border-gray-300 pl-10 pr-3 tw-py-2 focus:tw-outline-none focus:tw-border-blue-500"
+                className="w-full h-[42px] rounded border border-gray-200 pl-10 pr-3 tw-py-2 focus:tw-outline-none focus:tw-border-blue-500"
               />
             </div>
 
@@ -228,7 +228,8 @@ const TeamAttendance = () => {
             </div>
           )}
 
-          {!isReportiesAttendanceLoading &&
+<div className="border border-gray-200 rounded-lg">
+{!isReportiesAttendanceLoading &&
             filteredAttendanceData?.map(
               (item: EmployeeStatusItem) => (
                 <EmployeeStatusCard
@@ -238,6 +239,7 @@ const TeamAttendance = () => {
                 />
               )
             )}
+</div>
 
           {!isReportiesAttendanceLoading &&
             attendanceData?.length === 0 && (

@@ -87,8 +87,8 @@ const EmployeeStatusCard = ({
   );
 
   return (
-    <div className="w-full mt-2 p-3 shadow-sm rounded-xl bg-white hover:shadow-md transition-all">
-      <div className="flex flex-col sm:flex-row gap-3 w-full">
+    <div className="w-full p-3 border-b border-gray-200 shadow-sm rounded-t-lg  bg-white hover:shadow-md transition-shadow">
+      <div className="flex flex-col sm:flex-row gap-1 w-full">
         {/* Left Section */}
         <div className="flex items-start gap-3 flex-1 justify-center">
           <Avatar

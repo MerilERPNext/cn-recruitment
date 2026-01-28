@@ -193,7 +193,7 @@ const CategoryDeclarationSelectable = ({
 
   /* ---------------- Selected Items ---------------- */
   const selectedItems = items.filter(
-    (item) => item.is_selected === true || item.editable === 0
+    (item) => item.is_selected === true || item.editable === 0 
   );
 
   return (
