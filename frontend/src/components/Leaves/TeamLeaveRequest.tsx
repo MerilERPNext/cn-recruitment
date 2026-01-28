@@ -49,7 +49,7 @@ const TeamLeaveRequest = () => {
         "Due Date",
         "Leave Days",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -58,12 +58,12 @@ const TeamLeaveRequest = () => {
         "Due Date",
         "Leave Days",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
-    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <>
@@ -91,6 +91,7 @@ const TeamLeaveRequest = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={finalColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {

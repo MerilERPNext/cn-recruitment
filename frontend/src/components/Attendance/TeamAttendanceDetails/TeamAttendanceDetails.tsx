@@ -63,8 +63,8 @@ const TeamAttendanceDetails = () => {
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.6fr", "1.4fr", "2.2fr", "1fr", "1fr", "1fr", "1fr", "2.5fr"]
-    : ["1.6fr", "2.4fr", "1fr", "1fr", "1fr", "1fr", "2.5fr"];
+    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <>
@@ -91,6 +91,7 @@ const TeamAttendanceDetails = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {

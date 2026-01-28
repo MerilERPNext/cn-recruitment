@@ -108,7 +108,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -132,7 +132,10 @@ const OvertimeApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <Typography variant="bodySmall" className="font-medium text-center">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.username}
               </WrapperHoverCard>

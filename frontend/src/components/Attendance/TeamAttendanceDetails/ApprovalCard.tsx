@@ -1,13 +1,16 @@
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
-import DOMPurify from "dompurify";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../../utils/sanitizeToPlainText";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -74,8 +77,8 @@ const ApprovalCard = ({
   };
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.6fr 1.4fr 2.2fr 1fr 1fr 1fr 1fr 2.5fr"
-    : "1.6fr 2.4fr 1fr 1fr 1fr 1fr 2.5fr";
+    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr";
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -99,21 +102,22 @@ const ApprovalCard = ({
       statusColor: "bg-gray-100 text-gray-600",
     };
   };
-  const cleanExplaination = DOMPurify.sanitize(
-    data?.reference_document?.explanation || "",
+  const cleanExplaination = sanitizeToPlainText(
+    data?.reference_document?.explanation,
   );
+  const truncatedExplaination = truncateByChars(cleanExplaination);
   const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
         <div
-          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
           {/* Checkbox */}
           {isBulkSelectEnabled && (
-            <div className="flex items-center justify-start">
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-blue-500"
@@ -133,58 +137,47 @@ const ApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {" "}
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
               </WrapperHoverCard>
-            </div>
+            </Typography>
           </Link>
-
-          <div className="truncate text-gray-900 font-medium text-sm text-start line-clamp-1">
+          <Tooltip content={cleanExplaination}>
             <Typography
               variant="bodySmall"
-              className="font-semibold tracking-tight"
+              className="font-medium text-center truncate"
             >
-              {cleanExplaination}
+              {truncatedExplaination}
             </Typography>
-          </div>
+          </Tooltip>
 
           {/* Date */}
-          <div className="text-gray-700 text-sm text-start">
-            <Typography
-              variant="bodySmall"
-              className="font-semibold tracking-tight"
-            >
-              {formatToIndianDate(data?.reference_document?.from_date)}
-            </Typography>
-          </div>
-          <div className="text-gray-700 text-sm text-start">
-            <Typography
-              variant="bodySmall"
-              className="font-semibold tracking-tight"
-            >
-              {formatToIndianDate(data?.reference_document?.to_date)}
-            </Typography>
-          </div>
-          <div className="text-gray-700 text-sm text-start">
-            <Typography
-              variant="bodySmall"
-              className="font-semibold tracking-tight"
-            >
-              {formatToIndianDate(data?.due_date)}
-            </Typography>
-          </div>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document?.from_date)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document?.to_date)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.due_date)}
+          </Typography>
+
           {/* Status + Actions */}
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-center">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
               <Badge
-                size="sm"
+                size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
               />
             </Tooltip>
           </div>
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-center">
             <TeamApprovalActionPill
               actions={actions}
               status={data?.status}
