@@ -1,60 +1,53 @@
 "use client";
 
-import { RotateCcw, SquarePen } from "lucide-react";
+import { RotateCcw, SquarePen, Repeat1 } from "lucide-react";
 import Tooltip from "../Tooltip";
 import type { JSX } from "react";
 
 type MyApprovalActionPillProps = {
-  canRevoke: boolean;
-  canEdit: boolean;
+  canRevoke?: boolean;
+  canEdit?: boolean;
+  canReplace?: boolean;
   isPending: boolean;
-  onRevoke: () => void;
-  onEdit: () => void;
+
+  onRevoke?: () => void;
+  onEdit?: () => void;
+  onReplace?: () => void;
+
   revokeLoading?: boolean;
 };
 
 type ActionItem = {
-  key: "revoke" | "edit";
+  key: "revoke" | "edit" | "replace";
   tooltip: string;
   icon: JSX.Element;
-  onClick: () => void;
+  onClick?: () => void;
   loading?: boolean;
 };
 
 const MyApprovalActionPill = ({
   canRevoke,
   canEdit,
-  isPending,
+  canReplace,
+  // isPending,
   onRevoke,
   onEdit,
+  onReplace,
   revokeLoading = false,
 }: MyApprovalActionPillProps) => {
-  const hasActions = isPending && (canRevoke || canEdit);
+  const hasActions = canRevoke || canEdit || canReplace;
 
   if (!hasActions) {
     return (
-      <div
-        className="
-          h-8
-          px-3
-          flex items-center justify-center
-          rounded-3xl
-          bg-gray-10
-          text-gray-600
-          text-xs
-          font-medium
-          w-fit
-        "
-      >
+      <div className="h-8 px-3 flex items-center justify-center rounded-3xl bg-gray-10 text-gray-600 text-xs font-medium w-fit">
         NA
       </div>
     );
   }
 
-  /* ✅ BUILD ACTION LIST (JUST LIKE TEAM UTILITY) */
   const actions: ActionItem[] = [];
 
-  if (canRevoke) {
+  if (canRevoke && onRevoke) {
     actions.push({
       key: "revoke",
       tooltip: "Revoke",
@@ -64,7 +57,7 @@ const MyApprovalActionPill = ({
     });
   }
 
-  if (canEdit) {
+  if (canEdit && onEdit) {
     actions.push({
       key: "edit",
       tooltip: "Edit",
@@ -73,19 +66,17 @@ const MyApprovalActionPill = ({
     });
   }
 
+  if (canReplace && onReplace) {
+    actions.push({
+      key: "replace",
+      tooltip: "Replace",
+      onClick: onReplace,
+      icon: <Repeat1 className="w-4 h-4 text-info" />,
+    });
+  }
+
   return (
-    <div
-      className="
-        h-8
-        flex items-center
-        gap-1
-        px-3
-        py-1
-        rounded-3xl
-        bg-gray-10
-        w-fit
-      "
-    >
+    <div className="h-8 flex items-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit">
       {actions.map((action, index) => (
         <div key={action.key} className="flex items-center gap-2">
           <Tooltip content={action.tooltip} position="top">
@@ -93,20 +84,19 @@ const MyApprovalActionPill = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                action.onClick();
+                action.onClick?.();
               }}
               disabled={action.loading}
               className="flex items-center justify-center"
             >
               {action.loading ? (
-                <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-3xl animate-spin" />
+                <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" />
               ) : (
                 action.icon
               )}
             </button>
           </Tooltip>
 
-          {/* ✅ DIVIDER — SAME LOGIC AS TEAM UTILITY */}
           {index < actions.length - 1 && (
             <span className="w-px h-4 bg-gray-300" />
           )}

@@ -16,6 +16,7 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -119,8 +120,7 @@ const EmpLeaveRequestCard = ({
         label: "Approved",
         statusColor: "bg-success/10 text-success",
       };
-    // if (status === "cancelled")
-    //   return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+
     if (status === "rejected")
       return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
     return {
@@ -135,6 +135,9 @@ const EmpLeaveRequestCard = ({
     data?.reference_document?.description,
   );
   const truncatedDescription = truncateByChars(cleanDescription);
+
+  const isPending = data?.reference_document?.status === "Open";
+  const isApproved = data?.reference_document?.status === "Approved";
 
   const ActionMenu = () => (
     <div
@@ -229,18 +232,20 @@ const EmpLeaveRequestCard = ({
               />
             </Tooltip>
           </div>
-          <div className=" justify-center text-sm text-gray-900 text-start flex gap-2 items-center relative">
-            {data?.custom_allow_revoke && canRequestLeave && (
-              <div className="relative">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                {menuOpen && <ActionMenu />}
-              </div>
-            )}
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              isPending={isPending}
+              canRevoke={
+                isPending && data?.custom_allow_revoke && canRequestLeave
+              }
+              // optional
+              canEdit={allowEdit}
+              canReplace={allowReplace && (isPending || isApproved)}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={handleEditClick}
+              onReplace={handleReplaceClick}
+            />
           </div>
         </div>
       ) : (
