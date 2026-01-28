@@ -4,8 +4,7 @@ import {
   MyPlannedAttendanceRequest,
   OvertimeDetail,
 } from "../../../types/attendance";
-import { format, isValid, parse } from "date-fns";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
+import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
@@ -13,12 +12,13 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import FileRenderer from "../../shared/molecules/FileRenderer";
-import { formatDashedDate } from "../../../utils/formatToIndianDate";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 
 export function MyOvertimeDetails({
   documentName,
@@ -106,39 +106,11 @@ export function MyOvertimeDetails({
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "red-600",
-        };
 
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
   const getStatus = (status: string) => {
     if (status === "Open") {
       return {
-        label: "Open",
+        label: "Pending",
         statusColor: "bg-yellow-100 text-yellow-600",
       };
     } else if (status === "Approved") {
@@ -161,12 +133,6 @@ export function MyOvertimeDetails({
   const status = getStatus(data?.reference_document?.status);
   const doc = data?.reference_document;
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "--/--";
-    const date = parse(dateString, "yyyy-MM-dd", new Date());
-    return isValid(date) ? format(date, "dd/MM/yyyy") : "--/--";
-  };
-
   // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -188,7 +154,9 @@ export function MyOvertimeDetails({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <Typography variant="h4" className="font-semibold text-gray-800">{label}</Typography>
+          <Typography variant="h4" className="font-semibold text-gray-800">
+            {label}
+          </Typography>
           <Button
             variant="subtle"
             onClick={onClose}
@@ -204,7 +172,13 @@ export function MyOvertimeDetails({
           {/* Allocated To + Status */}
           <div className="flex gap-2 justify-between">
             <div className="flex flex-col gap-1">
-              <Typography variant="bodySmall" color="body2" className="card-title">Allocated To</Typography>
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="card-title"
+              >
+                Allocated To
+              </Typography>
               <Typography variant="bodyMedium" className="card-subtitle">
                 {data?.username} ({data.allocated_to})
               </Typography>
@@ -219,22 +193,39 @@ export function MyOvertimeDetails({
 
           {/* Created On */}
           <div className="flex flex-col gap-1">
-            <Typography variant="bodySmall" color="body2" className="card-title">Created On</Typography>
+            <Typography
+              variant="bodySmall"
+              color="body2"
+              className="card-title"
+            >
+              Created On
+            </Typography>
             <Typography variant="bodyMedium" className="card-subtitle">
-              {new Date(doc?.creation).toLocaleString()}
+{formatToIndianDate(doc?.creation)}
             </Typography>
           </div>
           <div className="flex flex-col gap-1">
-            <Typography variant="bodySmall" color="body2" className="card-title">Due Date</Typography>
+            <Typography
+              variant="bodySmall"
+              color="body2"
+              className="card-title"
+            >
+              Due Date
+            </Typography>
             <Typography variant="bodyMedium" className="card-subtitle">
-              {formatDashedDate((data?.due_date || data?.date) as string)}
+              {formatToIndianDate((data?.due_date || data?.date) as string)}
             </Typography>
           </div>
 
           {/* Overtime Details */}
           {doc?.overtime_details?.length > 0 && (
             <div>
-              <Typography variant="bodyMedium" className="base-title mb-1 block font-semibold">Overtime Details</Typography>
+              <Typography
+                variant="bodyMedium"
+                className="base-title mb-1 block font-semibold"
+              >
+                Overtime Details
+              </Typography>
               <div className="grid grid-cols-1 gap-4 ">
                 {doc.overtime_details.map(
                   (item: OvertimeDetail, idx: number) => (
@@ -243,45 +234,103 @@ export function MyOvertimeDetails({
                       className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
                     >
                       <div className="mb-3">
-                        <Typography variant="label" className="card-title">Overtime Entry {idx + 1}</Typography>
+                        <Typography variant="label" className="card-title">
+                          Overtime Entry {idx + 1}
+                        </Typography>
                       </div>
 
                       <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-600">
                         <div className="flex flex-col gap-1">
-                          <Typography variant="bodySmall" color="body2" className="card-title">Start Date</Typography>
-                          <Typography variant="bodySmall" className="card-subtitle">
-                            {formatDate(item.start_date)}
+                          <Typography
+                            variant="bodySmall"
+                            color="body2"
+                            className="card-title"
+                          >
+                            Start Date
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="card-subtitle"
+                          >
+                            {formatToIndianDate(item.start_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <Typography variant="bodySmall" color="body2" className="card-title">Start Time</Typography>
-                          <Typography variant="bodySmall" className="card-subtitle">
+                          <Typography
+                            variant="bodySmall"
+                            color="body2"
+                            className="card-title"
+                          >
+                            Start Time
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="card-subtitle"
+                          >
                             {item.start_time}
                           </Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <Typography variant="bodySmall" color="body2" className="card-title">End Date</Typography>
-                          <Typography variant="bodySmall" className="card-subtitle">
-                            {formatDate(item.end_date)}
+                          <Typography
+                            variant="bodySmall"
+                            color="body2"
+                            className="card-title"
+                          >
+                            End Date
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="card-subtitle"
+                          >
+                            {formatToIndianDate(item.end_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <Typography variant="bodySmall" color="body2" className="card-title">End Time</Typography>
-                          <Typography variant="bodySmall" className="card-subtitle">{item.end_time}</Typography>
+                          <Typography
+                            variant="bodySmall"
+                            color="body2"
+                            className="card-title"
+                          >
+                            End Time
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="card-subtitle"
+                          >
+                            {item.end_time}
+                          </Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <Typography variant="bodySmall" color="body2" className="card-title">Shift Date</Typography>
-                          <Typography variant="bodySmall" className="card-subtitle">
-                            {formatDate(item.shift_date)}
+                          <Typography
+                            variant="bodySmall"
+                            color="body2"
+                            className="card-title"
+                          >
+                            Shift Date
+                          </Typography>
+                          <Typography
+                            variant="bodySmall"
+                            className="card-subtitle"
+                          >
+                            {formatToIndianDate(item.shift_date)}
                           </Typography>
                         </div>
 
                         {item.message && (
                           <div className="flex flex-col gap-1">
-                            <Typography variant="bodySmall" color="body2" className="card-title">Message</Typography>
-                            <Typography variant="bodySmall" className="card-subtitle">
+                            <Typography
+                              variant="bodySmall"
+                              color="body2"
+                              className="card-title"
+                            >
+                              Message
+                            </Typography>
+                            <Typography
+                              variant="bodySmall"
+                              className="card-subtitle"
+                            >
                               {item.message}
                             </Typography>
                           </div>
@@ -293,7 +342,12 @@ export function MyOvertimeDetails({
               </div>
               {data?.attachments && data?.attachments?.length > 0 ? (
                 <div className="py-4">
-                  <Typography variant="bodySmall" className="mb-2 font-bold block">Attachment</Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="mb-2 font-bold block"
+                  >
+                    Attachment
+                  </Typography>
                   {data?.attachments?.map((item) => (
                     <FileRenderer filePath={item?.file_url || ""} />
                   ))}
@@ -310,6 +364,7 @@ export function MyOvertimeDetails({
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length &&
                   actions?.map((action: string) => {
+                    const actionStyle = getActionStyles(action);
                     const isLoading =
                       currentAction === action && mutation.isPending;
                     return (
@@ -320,7 +375,8 @@ export function MyOvertimeDetails({
                           handleAction(action);
                         }}
                         size="md"
-                        bgColor={getActionStyles(action).bg}
+                        bgColor={actionStyle.bgColor}
+                        variant={actionStyle.variant}
                         className="w-full"
                       >
                         {isLoading ? (

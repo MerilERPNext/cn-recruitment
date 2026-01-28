@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -136,7 +136,7 @@ const SalarySlipsList = () => {
     if (isDesktop) {
       setSelectedSalarySlip({
         name: salaryId,
-        date: startDate ? formatToIndianDateModal(startDate) : "",
+        date: startDate ? formatToIndianDate(startDate) : "",
       });
       setPdfModalOpen(true);
     } else {
@@ -148,7 +148,7 @@ const SalarySlipsList = () => {
   const handleViewPDF = (
     type: "regular" | "tds" | "benefit" | "offcycle",
     salarySlipName: string,
-    salaryDate?: string
+    salaryDate?: string,
   ) => {
     setModalHtmlContent("");
     setSelectedSalarySlip({
@@ -349,35 +349,26 @@ const DownloadMenu = ({
             key: "regular_payslip_exists",
           },
           { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
-          {
-            label: "Benefit Payslip",
-            fn: onType3,
-            key: "benefit_payslip_exists",
-          },
-          {
-            label: "Off Cycle Payslip",
-            fn: onType4,
-            key: "off_payslip_exists",
-          },
-        ].map(
-          (item, i) =>
-            printFormatMenuRef?.[item.key] === 1 && (
-              <div key={i} className="flex justify-between items-center">
-                <button
-                  onClick={(e) => {
-                    setOpen(false);
-                    item.fn(e, itemName);
-                  }}
-                  className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
-                >
-                  <Button className="p-2 border rounded" bgColor="none">
-                    <FaRegEye className="w-4 h-4 text-primary" />
-                  </Button>
-                  {item.label}
-                </button>
-              </div>
-            )
-        )}
+          { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
+          { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
+        ].map((item, i) => (
+          printFormatMenuRef?.[item.key] === 1 && (
+            <div key={i} className="flex justify-between items-center ">
+              <button
+                onClick={(e) => {
+                  setOpen(false);
+                  item.fn(e, itemName);
+                }}
+                className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
+              >
+                <Button className="p-2 border rounded" bgColor="none">
+                  <FaRegEye className="w-4 h-4 text-primary" />
+                </Button>
+                {item.label}
+              </button>
+            </div>
+          )
+        ))}
       </ContextualPopup>
     </div>
   );
@@ -411,7 +402,7 @@ const SalarySlipItemDesktop = ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (
@@ -490,7 +481,7 @@ const SalarySlipItemMobile = ({
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
-    item.employee
+    item.employee,
   );
 
   return (

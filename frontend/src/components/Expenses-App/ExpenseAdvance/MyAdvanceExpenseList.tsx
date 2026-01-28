@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CardTable from "../../shared/CardTable";
 import { useState } from "react";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import AdvanceDetailModal from "./AdvanceDetailModal";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -12,10 +12,12 @@ import Tooltip from "../../shared/Tooltip";
 import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
@@ -53,12 +55,17 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
+        className="max-w-screen grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <WrapperHoverCard employeeId={doc.employee}>
-          <span>{doc.employee_name}</span>
-        </WrapperHoverCard>
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
+          <WrapperHoverCard employeeId={doc.employee}>
+            <span>{doc.employee_name}</span>
+          </WrapperHoverCard>
+        </Link>
         <span>{formatToIndianDate(doc.posting_date)}</span>
         <span>{doc.company}</span>
         <span>{doc.department}</span>
@@ -100,10 +107,14 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Employee:</span> {doc.employee_name}
-        </p>
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Employee:</span> {doc.employee_name}
+          </p>
+        </Link>
 
         <p className="text-sm text-gray-600">
           <span className="font-medium">Date:</span>{" "}
@@ -138,13 +149,19 @@ const MyAdvanceExpenseList = () => {
 
   return (
     <div
-      className="relative flex size-full flex-col md:p-6"
+      className="min-h-screen"
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <Typography variant="subheading"> My Advance Expenses</Typography>
-      </div>
-      <div className=" rounded-lg h-full px-0 md:pt-2 pt-0 mb-20">
+      <div className="px-4">
+        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+          <div className="flex flex-col mb-2">
+            <Typography variant="h4">My Advance Expenses</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your advance expense requests
+            </Typography>
+          </div>
+        </div>
+
         <CardTable
           titles={[
             "Employee",

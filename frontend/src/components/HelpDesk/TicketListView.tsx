@@ -13,8 +13,10 @@ import {
   useFilterableFields,
   useCloseTicket,
   useRequestClosure,
+  useCategories,
   HDTicket,
   TicketFilters,
+  HDCategory,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 
@@ -22,9 +24,11 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 interface TicketListViewProps {
   currentUserEmail: string;
+  isAdmin: boolean;
+  viewMode?: "user" | "admin";
 }
 
-const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => {
+const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user" }) => {
   const navigate = useNavigate();
 
   // State
@@ -47,15 +51,23 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => 
   // Order by string
   const orderBy = `${sortField} ${sortDirection}`;
 
-  // Queries
-  const { data: statsData, isLoading: statsLoading } = useTicketStats();
+  // Queries - pass user context and viewMode for role-based filtering
+  const { data: statsData, isLoading: statsLoading } = useTicketStats(
+    currentUserEmail,
+    isAdmin,
+    viewMode
+  );
   const { data: ticketData, isLoading: ticketsLoading } = useTicketList(
     filters,
     orderBy,
     pageLength,
-    debouncedSearch
+    debouncedSearch,
+    currentUserEmail,
+    isAdmin,
+    viewMode
   );
   const { data: filterableFields = [], isLoading: fieldsLoading } = useFilterableFields();
+  const { data: categories = [] } = useCategories();
 
   // Mutations
   const closeTicketMutation = useCloseTicket();
@@ -67,6 +79,21 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => 
     () => statsData || { total: 0, inProgress: 0, closed: 0, resolved: 0 },
     [statsData]
   );
+
+  // Create category lookup map (ID -> Name) including subcategories
+  const categoryMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const addToMap = (cats: HDCategory[]) => {
+      cats.forEach((cat) => {
+        map[cat.name] = cat.category_name;
+        if (cat.subcategories) {
+          addToMap(cat.subcategories);
+        }
+      });
+    };
+    addToMap(categories);
+    return map;
+  }, [categories]);
 
   // Handlers
   const handleSort = useCallback((field: string) => {
@@ -208,10 +235,11 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail }) => 
             onSelectAll={handleSelectAll}
             onReply={handleReply}
             onClose={handleClose}
-            currentUser={currentUserEmail}
+            onRowClick={handleReply}
             sortField={sortField}
             sortDirection={sortDirection}
             onSort={handleSort}
+            categoryMap={categoryMap}
           />
         </div>
 

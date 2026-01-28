@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useTicketStats } from "../../hooks/useHelpDeskTickets";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
@@ -10,30 +10,63 @@ import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import HelpDeskEmptyState from "./HelpDeskEmptyState";
 import TicketListView from "./TicketListView";
+import RequestIssueModal from "./RequestIssueModal";
+
+type ViewMode = "user" | "admin";
 
 const HelpDeskApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const { data: stats } = useTicketStats();
+
+  // Calculate admin status from user roles
+  const isAdmin = isAdminUser(currentUser ?? null);
+  const currentUserEmail = currentUser?.email || "";
+
+  // Always show user's own tickets (raised by them)
+  const viewMode: ViewMode = "user";
+
+  // View configuration - always show tickets raised by current user
+  const viewConfig = {
+    title: "Help Desk",
+    subtitle: "Issues raised by you",
+    filterMode: "raised" as const,
+  };
+
+  // Pass user context to useTicketStats for role-based filtering
+  const { data: stats, refetch: refetchStats } = useTicketStats(
+    currentUserEmail,
+    isAdmin,
+    viewMode
+  );
+
+  // Modal state
+  const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
 
   const hasTickets = stats && stats.total > 0;
-  const currentUserEmail = currentUser?.email || "";
 
   const handleExploreFAQs = () => {
     navigate("/webapp/helpdesk/faq");
   };
 
   const handleRequestIssue = () => {
-    // TODO: Navigate to request issue form
-    console.log("Open request issue form");
+    setIsRequestIssueModalOpen(true);
+  };
+
+  const handleRequestIssueSuccess = () => {
+    // Refetch stats to update the ticket count
+    refetchStats();
   };
 
   const renderContent = () => {
     if (hasTickets) {
       return (
         <div className="p-4 md:p-6">
-          <TicketListView currentUserEmail={currentUserEmail} />
+          <TicketListView
+            currentUserEmail={currentUserEmail}
+            isAdmin={isAdmin}
+            viewMode={viewMode}
+          />
         </div>
       );
     }
@@ -48,7 +81,7 @@ const HelpDeskApp: React.FC = () => {
 
       <div className="px-4 py-3 border-b border-gray-200">
         <Typography variant="bodySmall" color="body2">
-          Issues raised by you
+          {viewConfig.subtitle}
         </Typography>
       </div>
 
@@ -82,12 +115,12 @@ const HelpDeskApp: React.FC = () => {
   );
 
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Help Desk">
+    <DesktopLayoutWrapper title={viewConfig.title}>
       <div className="flex flex-col h-full bg-white rounded-lg">
         {/* Subtitle */}
         <div className="px-8 py-4 border-b border-gray-200">
           <Typography variant="bodySmall" color="body2">
-            Issues raised by you
+            {viewConfig.subtitle}
           </Typography>
         </div>
 
@@ -120,7 +153,18 @@ const HelpDeskApp: React.FC = () => {
     </DesktopLayoutWrapper>
   );
 
-  return isDesktop ? desktopLayout : mobileLayout;
+  return (
+    <>
+      {isDesktop ? desktopLayout : mobileLayout}
+
+      {/* Request Issue Modal */}
+      <RequestIssueModal
+        isOpen={isRequestIssueModalOpen}
+        onClose={() => setIsRequestIssueModalOpen(false)}
+        onSuccess={handleRequestIssueSuccess}
+      />
+    </>
+  );
 };
 
 export default HelpDeskApp;

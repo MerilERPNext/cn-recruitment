@@ -13,7 +13,7 @@
    "columns": 0,
    "creation": "2024-07-24 13:01:51.167340",
    "default": null,
-   "depends_on": "eval:doc.custom_resignaion_type==\"Self-Initiated (Resignation)\" && doc.custom_performancerelated_resignation==0",
+   "depends_on": "",
    "description": null,
    "docstatus": 0,
    "dt": "Employee Separation",

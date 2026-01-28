@@ -276,7 +276,7 @@ code {
   border-radius: 9999px;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
+  transition: background-color 0.2s ease-in-out;
   flex-shrink: 0;
 }
 
@@ -290,7 +290,7 @@ code {
   height: 1rem;
   background-color: white;
   border-radius: 9999px;
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 /* Checked state */
@@ -301,6 +301,14 @@ code {
 .custom-halfday-toggle input[type="checkbox"]:checked::before {
   transform: translateX(1.25rem);
 }
+.custom-halfday-toggle input[type="checkbox"] {
+  background-image: none !important;
+}
+
+.custom-halfday-toggle input[type="checkbox"]:checked {
+  background-image: none !important;
+}
+
 
 /* Utility for hiding scrollbars */
 .scrollbar-hide {

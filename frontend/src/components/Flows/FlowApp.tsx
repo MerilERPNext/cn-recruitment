@@ -102,8 +102,7 @@ const FlowApp: React.FC = () => {
               fullWidth
               onClick={handleInitiate}
               size="lg"
-              bgColor="blue-600"
-              className="hover:bg-blue-700"
+              bgColor="primary"
             >
               Initiate
             </Button>

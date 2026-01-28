@@ -3,9 +3,9 @@ import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import {
   useCurrentEmployeeAllDetails,
-  useGetEmployeeDetailsByEmpId,
   useShowAttendanaceAssignmentButton,
   useFileUpload,
+  useGetEmployeeDetailsByEmpIdForProfile,
 } from "../../hooks/useEmployee";
 import { Employee } from "../../types/employee";
 import defaultProfile from "../../assets/face-rec.png";
@@ -13,7 +13,7 @@ import defaultProfile from "../../assets/face-rec.png";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { Award, IdCard, MapPin, NotebookPen, Pencil } from "lucide-react";
+import { Award, IdCard, Mail, MapPin, NotebookPen, Pencil } from "lucide-react";
 import { Tab } from "../NavigationTab";
 import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
@@ -34,17 +34,23 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Badge from "../shared/Badge";
 
-// import { AwardsSection } from "./EmployeeAwards";
-// import Appreciations from "./Appreciations";
+import { AwardsSection } from "./EmployeeAwards";
+import Appreciations from "./Appreciations";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
   refetch?: () => void;
 }
+
+const EMPLOYEMENT_STATUS = {
+  "on probation": "On Probation",
+  "probation extended": "On Probation",
+  confirm: "Active",
+  "on notice period": "On Notice",
+};
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -54,7 +60,12 @@ const EmployeeProfile: React.FC = () => {
   const canAttendanceAssignments = isActionEnabled(
     userUiPermission,
     "attendance_assignments",
-    "Employee Profile"
+    "Employee Profile",
+  );
+  const canAppreciate = isActionEnabled(
+    userUiPermission,
+    "can_appreciate",
+    "Employee Profile",
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails(userId || "");
@@ -69,13 +80,14 @@ const EmployeeProfile: React.FC = () => {
     "";
 
   const {
-    data: user,
+    data: empData,
     refetch: userRefetch,
     isLoading: userIsLoading,
-  } = useGetEmployeeDetailsByEmpId(employeeId);
+  } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
+  const user = empData?.employee;
   const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
     employeeId,
-    currentUser?.employee || ""
+    currentUser?.employee || "",
   );
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
@@ -112,7 +124,7 @@ const EmployeeProfile: React.FC = () => {
                 toast.error("Failed to update data.");
                 console.warn("Form submission error -", err);
               },
-            }
+            },
           );
         },
         onError(e) {
@@ -133,7 +145,7 @@ const EmployeeProfile: React.FC = () => {
       { key: "employee-holidays", label: "Employee Holidays" },
       { key: "employee-documents", label: "Employee Documents" },
     ],
-    []
+    [],
   );
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
 
@@ -152,7 +164,7 @@ const EmployeeProfile: React.FC = () => {
       "employee-documents": <DocumentLibrary />,
       "reporting-details": <ReportingDetails />,
     }),
-    [user]
+    [user],
   );
 
   // Scroll to section when tab is clicked
@@ -189,7 +201,7 @@ const EmployeeProfile: React.FC = () => {
         if (entry.isIntersecting) {
           // Add or update the section
           const existingIndex = currentIntersecting.findIndex(
-            (item) => item.id === sectionId
+            (item) => item.id === sectionId,
           );
           if (existingIndex >= 0) {
             currentIntersecting[existingIndex].ratio = entry.intersectionRatio;
@@ -202,7 +214,7 @@ const EmployeeProfile: React.FC = () => {
         } else {
           // Remove the section
           currentIntersecting = currentIntersecting.filter(
-            (item) => item.id !== sectionId
+            (item) => item.id !== sectionId,
           );
         }
       });
@@ -210,7 +222,7 @@ const EmployeeProfile: React.FC = () => {
       // Find the section with the highest intersection ratio
       if (currentIntersecting.length > 0) {
         const mostVisible = currentIntersecting.reduce((prev, current) =>
-          current.ratio > prev.ratio ? current : prev
+          current.ratio > prev.ratio ? current : prev,
         );
         setActiveTab(mostVisible.id);
       }
@@ -218,7 +230,7 @@ const EmployeeProfile: React.FC = () => {
 
     const observer = new IntersectionObserver(
       observerCallback,
-      observerOptions
+      observerOptions,
     );
 
     // Observe all sections
@@ -232,7 +244,6 @@ const EmployeeProfile: React.FC = () => {
       observer.disconnect();
     };
   }, [isDesktop]); // Re-run when layout changes
-
   const HeaderInfoSkeleton = () => {
     return (
       <div className="border rounded-tl-lg rounded-tr-lg p-6">
@@ -260,7 +271,6 @@ const EmployeeProfile: React.FC = () => {
       </div>
     );
   };
-
   const mobileLayout = (
     <div className="bg-white font-sans scroll-smooth">
       <div className="bg-white shadow">
@@ -296,49 +306,63 @@ const EmployeeProfile: React.FC = () => {
                   )}
                 </button>
               </div>
-              <div className="flex flex-col flex-1 min-w-0 pt-0.5">
+              <div className="flex flex-col flex-1 min-w-0">
                 <Typography
                   variant="h3"
                   className="font-bold truncate tracking-tight"
                 >
                   {user?.employee_name}
                 </Typography>
-                {user?.custom_designation_name && (
-                  <Tooltip content={user?.custom_designation_name}>
+                {user?.designation_display && (
+                  <Tooltip content={user?.designation_display}>
                     <Typography
                       variant="bodySmall"
                       color="secondary"
                       className="font-medium truncate mt-1 flex gap-1.5 items-center"
                     >
                       <Award size={14} className="text-primary-500" />
-                      <span>{user?.custom_designation_name}</span>
+                      <span>{user?.designation_display}</span>
                     </Typography>
                   </Tooltip>
                 )}
-                {user?.branch && (
+                {user?.branch_display && (
                   <Typography
                     variant="bodySmall"
                     color="secondary"
                     className="font-medium truncate mt-1 flex gap-1.5 items-center"
                   >
                     <MapPin size={14} className="text-primary-500" />
-                    <span>{user?.branch}</span>
+                    <span>{user?.branch_display}</span>
                   </Typography>
                 )}
                 {user?.employee && (
                   <Typography
-                    variant="label"
+                    variant="bodySmall"
                     color="disabled"
                     className="font-medium mt-1.5 flex gap-1.5 items-center uppercase tracking-wider"
                   >
-                    <IdCard size={14} />
+                    <IdCard size={16} />
                     <span>{user?.employee}</span>
+                  </Typography>
+                )}
+                {(user?.company_email || user?.personal_email) && (
+                  <Typography
+                    variant="bodySmall"
+                    color="primary"
+                    className="flex gap-1.5 items-center"
+                  >
+                    <Mail size={14} className="text-primary-500" />
+                    <span>{user?.company_email || user?.personal_email}</span>
                   </Typography>
                 )}
                 <div className="flex flex-wrap items-center gap-3 mt-4">
                   {user?.custom_employment_status && (
                     <Badge
-                      label={user?.custom_employment_status}
+                      label={
+                        EMPLOYEMENT_STATUS[
+                          user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                        ] || user?.custom_employment_status
+                      }
                       size="sm"
                       backgroundColor={
                         user?.status === "Active"
@@ -368,11 +392,11 @@ const EmployeeProfile: React.FC = () => {
                       Attendance
                     </Button>
                   )}
-                  {/* <Appreciations /> */}
+                  {canAppreciate && <Appreciations />}
                 </div>
               </div>
             </div>
-            {/* <AwardsSection isDesktop={false} /> */}
+            <AwardsSection isDesktop={false} />
           </div>
         )}
         {/* Horizontal Tabs */}
@@ -383,10 +407,11 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-gray-600 hover:text-primary-600"
-                  }`}
+                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${
+                  activeTab === tab.key
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-gray-600 hover:text-primary-600"
+                }`}
               >
                 {tab.label}
               </Button>
@@ -402,7 +427,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="p-4 scroll-mt-40"
+              className="px-4 py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
             >
               {tabContent[tab.key]}
             </div>
@@ -424,19 +449,14 @@ const EmployeeProfile: React.FC = () => {
         {/* All Sections Rendered */}
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide"
+          className="flex-1 rounded-md overflow-y-auto overflow-x-hidden scrollbar-hide"
         >
           {userIsLoading ? (
             <HeaderInfoSkeleton />
           ) : (
-            <Card
-              padding="none"
-              radius="none"
-              shadow="none"
-              className="bg-white border rounded-tl-xl rounded-tr-xl p-8 border-gray-100"
-            >
-              <div className="flex items-center justify-between gap-8 w-full">
-                <div className="flex items-center gap-8 flex-1">
+            <div>
+              <div className="flex items-stretch justify-between gap-4 mb-4 w-full">
+                <Card className="flex items-center gap-8 flex-1" shadow="none">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -445,12 +465,12 @@ const EmployeeProfile: React.FC = () => {
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <div className="relative group/avatar">
-                    <div className="w-32 h-32 rounded-full ring-4 ring-white shadow-xl overflow-hidden ">
+                  <div className="relative group/avatar shrink-0">
+                    <div className="w-[120px] h-[120px] rounded-full ring-4 ring-white shadow-md overflow-hidden ">
                       <img
                         src={uploadedImage || user?.image || defaultProfile}
                         alt="User avatar"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110"
+                        className="w-full h-full object-cover bg-gray-50 transition-transform duration-500 group-hover/avatar:scale-110"
                       />
                     </div>
                     <button
@@ -459,7 +479,7 @@ const EmployeeProfile: React.FC = () => {
                       aria-label="Upload new avatar"
                     >
                       {updateDocMutation.isPending ||
-                        uploadMutation.isPending ? (
+                      uploadMutation.isPending ? (
                         <CircularLoader size="sm" color="white" />
                       ) : (
                         <Pencil size={18} />
@@ -469,32 +489,12 @@ const EmployeeProfile: React.FC = () => {
                   <div className="flex flex-col min-w-0">
                     <div className="space-y-1">
                       <Typography
-                        variant="h2"
+                        variant="h4"
                         className="font-bold text-gray-900 tracking-tight"
                       >
                         {user?.employee_name}
                       </Typography>
                       <div className="flex flex-wrap items-center gap-4">
-                        {user?.custom_designation_name && (
-                          <Tooltip content={user?.custom_designation_name}>
-                            <Typography
-                              variant="bodyMedium"
-                              className="font-semibold text-primary-600 flex gap-2 items-center"
-                            >
-                              <Award size={16} />
-                              <span>{user?.custom_designation_name}</span>
-                            </Typography>
-                          </Tooltip>
-                        )}
-                        {user?.branch && (
-                          <Typography
-                            variant="bodyMedium"
-                            className="font-medium flex gap-2 items-center text-primary-500"
-                          >
-                            <MapPin size={16} />
-                            <span>{user?.branch}</span>
-                          </Typography>
-                        )}
                         {user?.employee && (
                           <Typography
                             variant="bodySmall"
@@ -509,7 +509,11 @@ const EmployeeProfile: React.FC = () => {
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         {user?.custom_employment_status && (
                           <Badge
-                            label={user?.custom_employment_status}
+                            label={
+                              EMPLOYEMENT_STATUS[
+                                user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                              ] || user?.custom_employment_status
+                            }
                             size="md"
                             backgroundColor={
                               user?.status === "Active"
@@ -528,60 +532,103 @@ const EmployeeProfile: React.FC = () => {
                             }
                           />
                         )}
-                        <div className="flex items-center gap-2 mt-2">
-
-                          {showAttendanceAssignment && canAttendanceAssignments && (
-                            <Button
-                              icon={<NotebookPen size={14} />}
-                              size="sm"
-                              variant="soft"
-                              onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                              className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
+                      </div>
+                      <div className="flex flex-col justify-start items-start gap-2 mt-4">
+                        {user?.designation_display && (
+                          <Tooltip content={user?.designation_display}>
+                            <Typography
+                              variant="bodyMedium"
+                              className="font-semibold text-primary-600 flex gap-2 items-center"
                             >
-                              Attendance Assignment
-                            </Button>
+                              <Award size={16} />
+                              <span>{user?.designation_display}</span>
+                            </Typography>
+                          </Tooltip>
+                        )}
+                        <div className="flex gap-2">
+                          {user?.branch_display && (
+                            <Typography
+                              variant="bodySmall"
+                              color="disabled"
+                              className="text-primary-500 flex items-center gap-2"
+                            >
+                              <MapPin size={16} />
+                              <span>{user?.branch_display}</span>
+                            </Typography>
                           )}
-                          {/* <Appreciations /> */}
+
+                          {(user?.company_email || user?.personal_email) && (
+                            <Typography
+                              variant="bodySmall"
+                              color="disabled"
+                              className="text-primary-500 flex items-center gap-2"
+                            >
+                              <Mail size={16} />
+                              <span>
+                                {user?.company_email || user?.personal_email}
+                              </span>
+                            </Typography>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-2">
+                          {showAttendanceAssignment &&
+                            canAttendanceAssignments && (
+                              <Button
+                                icon={<NotebookPen size={14} />}
+                                size="sm"
+                                variant="soft"
+                                onClick={() =>
+                                  setIsAttendanceAssignmentsOpen(true)
+                                }
+                                className="uppercase tracking-wider h-full  px-4 py-2 font-medium "
+                              >
+                                Attendance Assignment
+                              </Button>
+                            )}
+                          {canAppreciate && <Appreciations />}
                         </div>
                       </div>
                     </div>
                   </div>
-
-                </div>
-                {/* <AwardsSection isDesktop={true} /> */}
+                </Card>
+                <AwardsSection isDesktop={true} />
               </div>
-            </Card>
+            </div>
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
-          <div className="bg-white border-b sticky top-0 z-10">
-            <div className="flex overflow-x-auto scrollbar-hide px-6 py-3 tracking-wide">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => scrollToSection(tab.key)}
-                  className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-600 hover:text-primary"
+          <div className="rounded-md">
+            <div className="bg-white sticky top-0 z-10 rounded-t-md">
+              <div className="flex overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => scrollToSection(tab.key)}
+                    className={`whitespace-nowrap rounded-[0px] px-6 py-3 text-sm font-medium transition-all duration-200 border-b-2 ${
+                      activeTab === tab.key
+                        ? "border-primary text-primary"
+                        : "border-transparent text-gray-600 hover:text-primary"
                     }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {tabs.map((tab) => (
-            <div
-              key={tab.key}
-              ref={(el) => {
-                sectionRefs.current[tab.key] = el;
-              }}
-              data-section={tab.key}
-              className="bg-white mb-4 w-full max-w-full scroll-mt-20"
-            >
-              {tabContent[tab.key]}
-            </div>
-          ))}
+            {tabs.map((tab) => (
+              <div
+                key={tab.key}
+                ref={(el) => {
+                  sectionRefs.current[tab.key] = el;
+                }}
+                data-section={tab.key}
+                className="bg-white mb-4 w-full max-w-full scroll-mt-20 rounded-md"
+              >
+                {tabContent[tab.key]}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
       <AttendanceAssignments

@@ -41,7 +41,9 @@ def get_employee_details(employee_id):
             "emergency_phone_number": employee.emergency_phone_number,
             "blood_group": employee.blood_group,
             "custom_aadhar_no": employee.custom_aadhar_no,
-            "employment_type": employee.employment_type
+            "employment_type": employee.employment_type,
+            "custom_employment_status": employee.custom_employment_status,
+            "final_confirmation_date": employee.final_confirmation_date,
         }
     except frappe.DoesNotExistError:
         frappe.throw(_("Employee not found"), frappe.DoesNotExistError)
@@ -140,6 +142,222 @@ def get_employee_list(department=None, designation=None, limit=50):
     except Exception as e:
         frappe.log_error(f"Error fetching employee list: {str(e)}")
         frappe.throw(_("Error fetching employee list"))
+
+@frappe.whitelist()
+def get_user_roles(user=None):
+    """Get user roles in a format safe for Administrator and regular users"""
+    try:
+        if not user:
+            user = frappe.session.user
+        
+        # frappe.get_roles() handles Administrator correctly (returns all roles)
+        roles = frappe.get_roles(user)
+        
+        # Return roles in the expected format: [{"role": "Role Name"}, ...]
+        return [{"role": role} for role in roles]
+        
+    except Exception as e:
+        frappe.log_error(f"Error fetching user roles: {str(e)}")
+        # Return empty list on error - frontend will handle gracefully
+        return []
+
+@frappe.whitelist()
+def get_ticket_count(doctype="HD Ticket", filters=None, or_filters=None):
+    """
+    Get count of tickets with support for OR filters.
+    This is a workaround for frappe.client.get_count which doesn't support or_filters.
+    """
+    try:
+        # Parse JSON strings if passed as strings
+        if isinstance(filters, str):
+            filters = json.loads(filters) if filters else None
+        if isinstance(or_filters, str):
+            or_filters = json.loads(or_filters) if or_filters else None
+        
+        # Use frappe.get_list with minimal fields for counting
+        # This properly handles or_filters unlike frappe.client.get_count
+        result = frappe.get_list(
+            doctype,
+            fields=["name"],
+            filters=filters or {},
+            or_filters=or_filters or [],
+            limit_page_length=0,  # Get all matching records
+            ignore_permissions=False,
+        )
+        
+        return len(result)
+        
+    except Exception as e:
+        frappe.log_error(f"Error fetching ticket count: {str(e)}")
+        # Return 0 on error - frontend will handle gracefully
+        return 0
+
+@frappe.whitelist()
+def get_ticket_list_data(
+    doctype="HD Ticket",
+    filters=None,
+    or_filters=None,
+    order_by="modified desc",
+    page_length=20,
+    rows=None,
+    columns=None,
+    show_customer_portal_fields=False,
+):
+    """
+    Get ticket list data with support for OR filters.
+    Custom implementation that uses frappe.get_list() directly with or_filters support.
+    Returns the same structure as helpdesk.api.doc.get_list_data.
+    """
+    try:
+        # Parse JSON strings if passed as strings
+        if isinstance(filters, str):
+            filters = json.loads(filters) if filters else {}
+        if isinstance(or_filters, str):
+            or_filters = json.loads(or_filters) if or_filters else []
+        if isinstance(rows, str):
+            rows = json.loads(rows) if rows else None
+        if isinstance(columns, str):
+            columns = json.loads(columns) if columns else None
+        
+        # Normalize filters and or_filters
+        if filters is None:
+            filters = {}
+        if or_filters is None:
+            or_filters = []
+        
+        # Handle @me support (convert @me to current user)
+        from helpdesk.api.doc import handle_at_me_support
+        filters = handle_at_me_support(filters)
+        
+        # Parse rows and columns
+        if rows is None:
+            rows = []
+        if columns is None:
+            columns = []
+        
+        # Ensure rows is a list
+        if not isinstance(rows, list):
+            rows = []
+        
+        # Ensure columns is a list
+        if not isinstance(columns, list):
+            columns = []
+        
+        # Default columns if empty
+        if not columns:
+            columns = [
+                {"label": "Name", "type": "Data", "key": "name", "width": "16rem"},
+                {
+                    "label": "Last Modified",
+                    "type": "Datetime",
+                    "key": "modified",
+                    "width": "8rem",
+                },
+            ]
+        
+        # Default rows if empty
+        if not rows:
+            rows = ["name"]
+        
+        # Ensure name is in rows
+        if "name" not in rows:
+            rows.append("name")
+        
+        # Add all column keys to rows if not present
+        for column in columns:
+            if column.get("key") and column.get("key") not in rows:
+                rows.append(column.get("key"))
+        
+        # Get field metadata
+        from frappe.model import no_value_fields
+        meta_fields = frappe.get_meta(doctype).fields
+        meta_fields = [field for field in meta_fields if field.fieldtype not in no_value_fields]
+        fields = [
+            {
+                "label": field.label,
+                "type": field.fieldtype,
+                "value": field.fieldname,
+                "options": field.options,
+            }
+            for field in meta_fields
+            if field.label and field.fieldname
+        ]
+        
+        # Add standard fields
+        std_fields = [
+            {"label": "Name", "type": "Data", "value": "name"},
+            {"label": "Created On", "type": "Datetime", "value": "creation"},
+            {"label": "Last Modified", "type": "Datetime", "value": "modified"},
+            {
+                "label": "Modified By",
+                "type": "Link",
+                "value": "modified_by",
+                "options": "User",
+            },
+            {"label": "Assigned To", "type": "Text", "value": "_assign"},
+            {"label": "Owner", "type": "Link", "value": "owner", "options": "User"},
+        ]
+        
+        for field in std_fields:
+            if field.get("value") not in rows:
+                rows.append(field.get("value"))
+            if field not in fields:
+                fields.append(field)
+        
+        # Handle customer portal fields filtering
+        if show_customer_portal_fields:
+            from helpdesk.api.doc import get_customer_portal_fields
+            fields = get_customer_portal_fields(doctype, fields)
+        
+        # Get ticket data using frappe.get_list with or_filters support
+        data = (
+            frappe.get_list(
+                doctype,
+                fields=rows,
+                filters=filters,
+                or_filters=or_filters if or_filters else None,
+                order_by=order_by,
+                page_length=page_length,
+            )
+            or []
+        )
+        
+        # Calculate total count with same filters and or_filters
+        # Use frappe.get_list with minimal fields and count the results
+        total_count_result = frappe.get_list(
+            doctype,
+            filters=filters,
+            or_filters=or_filters if or_filters else None,
+            fields=["name"],
+            limit_page_length=0,  # Get all matching records
+        )
+        total_count = len(total_count_result) if total_count_result else 0
+        
+        # Return response matching helpdesk.api.doc.get_list_data structure
+        return {
+            "data": data,
+            "columns": columns,
+            "rows": rows,
+            "fields": fields if doctype == "HD Ticket" else [],
+            "total_count": total_count,
+            "row_count": len(data),
+            "group_by_field": None,
+            "view_type": None,
+        }
+        
+    except Exception as e:
+        frappe.log_error(f"Error fetching ticket list data: {str(e)}", "get_ticket_list_data")
+        # Return empty structure instead of throwing to avoid 417 errors
+        return {
+            "data": [],
+            "columns": [],
+            "rows": [],
+            "fields": [],
+            "total_count": 0,
+            "row_count": 0,
+            "group_by_field": None,
+            "view_type": None,
+        }
 
 @frappe.whitelist()
 def get_user_notices(filters: Optional[Dict] = None) -> List[Dict[str, Any]]:

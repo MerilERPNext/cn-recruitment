@@ -295,8 +295,8 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         r.amount != null
           ? Number(r.amount)
           : percent != null
-          ? +(totalAmount * (Number(percent) / 100) || 0).toFixed(2)
-          : null;
+            ? +(totalAmount * (Number(percent) / 100) || 0).toFixed(2)
+            : null;
 
       return {
         employee_type: r.employee_type === "Self" ? "Self" : "Employee",
@@ -322,8 +322,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         const val = row.name ?? "";
         if (String(val).trim() === "") {
           toast.error(
-            `Row ${idx}: ${
-              row.employee_type === "Self" ? "Self" : "Employee"
+            `Row ${idx}: ${row.employee_type === "Self" ? "Self" : "Employee"
             } must have an employee selected.`
           );
           return;
@@ -611,7 +610,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                         max={100}
                         value={
                           row.percentage !== null &&
-                          row.percentage !== undefined
+                            row.percentage !== undefined
                             ? row.percentage
                             : ""
                         }
@@ -623,9 +622,8 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                         onFocus={(e) => e.target.select()} // Add this line
                         disabled={mode !== "percentage"}
                         placeholder="0.00"
-                        className={`w-full p-1 border rounded text-sm ${
-                          mode !== "percentage" ? "bg-gray-100" : ""
-                        }`}
+                        className={`w-full p-1 border rounded text-sm ${mode !== "percentage" ? "bg-gray-100" : ""
+                          }`}
                       />
                     </div>
 
@@ -647,9 +645,8 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                         }}
                         disabled={mode !== "amount"}
                         placeholder="0.00"
-                        className={`w-full p-1 border rounded text-sm ${
-                          mode !== "amount" ? "bg-gray-100" : ""
-                        }`}
+                        className={`w-full p-1 border rounded text-sm ${mode !== "amount" ? "bg-gray-100" : ""
+                          }`}
                       />
                     </div>
 

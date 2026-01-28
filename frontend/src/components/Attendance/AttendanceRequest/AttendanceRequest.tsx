@@ -25,7 +25,7 @@ const AttendanceRequest = ({
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
@@ -61,78 +61,91 @@ const AttendanceRequest = ({
         />
       ) : (
         <div>
-          <div className="h-full px-4 pt-2">
-            <div>
-              <div className="px-2 mb-20">
-                <div className="flex justify-between items-center pt-4 mb-2">
-                  <div className="flex flex-col mb-2">
-                    <Typography variant="h4">My Attendance Requests</Typography>
-                    <Typography variant="bodySmall" color="body2">
-                      Track and manage your attendance requests
-                    </Typography>
-                  </div>
+          <div className="min-h-screen">
+            <div className="px-4">
+              <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+                <div className="flex flex-col mb-2">
+                  <Typography variant="h4">My Attendance Requests</Typography>
+                  <Typography variant="bodySmall" color="body2">
+                    Track and manage your attendance requests
+                  </Typography>
                 </div>
-                <CardTable
-                  titles={[
-                    "Request Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Allocated To",
-                    "Status",
-                    "Actions",
-                  ]}
-                >
-                  {effectiveEmployeeId ? (
-                    <DataListView
-                      queryKey={["attendance-requests", effectiveEmployeeId]}
-                      customAPI={{
-                        method:
-                          "cn_leave_shift_managment.api.get_open_approval_todos",
-                        params: {
-                          doctype: "Attendance Request",
-                          employee: effectiveEmployeeId,
-                          status: "Pending",
-                        },
-                      }}
-                      ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                        return (
-                          <EmpAttendanceRequestCard
-                            type="pending"
-                            data={{
-                              ...props?.item,
-                            }}
-                          />
-                        );
-                      }}
-                      SkeletonComponent={CardSkeleton}
-                      onItemClick={(data) => {
-                        console.log(data);
-                      }}
-                      onRefetchComplete={handleRefetchComplete}
-                      refetchTrigger={refetchAttendance}
-                      pageSize={pageSize}
-                      showRefreshButton={false}
-                      orderBy="modified desc"
-                      showPagination={showPagination}
-                      infiniteScroll={true}
-                      loadMorePagination={false}
-                      isSearch={true}
-                      isFilter={true}
-                      filterFields={[
-                        {
-                          fieldname: "status",
-                          label: "Status",
-                          fieldtype: "Select",
-                          options: ["Pending", "Approved", "Rejected"],
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <></>
-                  )}
-                </CardTable>
               </div>
+              <CardTable
+                titles={[
+                  "Request Type",
+                  "From Date",
+                  "To Date",
+                  "Duration",
+                  "Due Date",
+                  "Allocated To",
+                  "Status",
+                  "Actions",
+                ]}
+              >
+                {effectiveEmployeeId ? (
+                  <DataListView
+                    queryKey={["attendance-requests", effectiveEmployeeId]}
+                    customAPI={{
+                      method:
+                        "cn_leave_shift_managment.api.get_open_approval_todos",
+                      params: {
+                        doctype: "Attendance Request",
+                        employee: effectiveEmployeeId,
+                        status: "Pending",
+                      },
+                    }}
+                    ItemComponent={(props: { item: MyAttendanceRequest }) => {
+                      return (
+                        <EmpAttendanceRequestCard
+                          type="pending"
+                          data={{
+                            ...props?.item,
+                          }}
+                        />
+                      );
+                    }}
+                    SkeletonComponent={CardSkeleton}
+                    onItemClick={(data) => {
+                      console.log(data);
+                    }}
+                    onRefetchComplete={handleRefetchComplete}
+                    refetchTrigger={refetchAttendance}
+                    pageSize={pageSize}
+                    showRefreshButton={false}
+                    orderBy="modified desc"
+                    showPagination={showPagination}
+                    infiniteScroll={true}
+                    loadMorePagination={false}
+                    isSearch={true}
+                    isFilter={true}
+                    filterFields={[
+                      {
+                        fieldname: "status",
+                        label: "Status",
+                        fieldtype: "Select",
+                        options: ["Pending", "Approved", "Rejected"],
+                      },
+                      {
+                        fieldname: "custom_request_type",
+                        label: "Request Type",
+                        fieldtype: "Select",
+                        options: [
+                          "Attendance Adjustment",
+                          "Short Attendance Request",
+                          "Out Duty",
+                          "Clockin",
+                        ],
+                      },
+                    ]}
+                    defaultFilters={{
+                      status: "Pending",
+                    }}
+                  />
+                ) : (
+                  <></>
+                )}
+              </CardTable>
             </div>
           </div>
         </div>

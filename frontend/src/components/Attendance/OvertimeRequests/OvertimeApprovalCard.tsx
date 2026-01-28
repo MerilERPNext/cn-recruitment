@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { format, isValid, parse } from "date-fns";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import DOMPurify from "dompurify";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -35,7 +36,9 @@ const OvertimeApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
+  const getActionStyles = (
+    action: string,
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
       bg: "disabled" as ButtonColor,
@@ -63,21 +66,6 @@ const OvertimeApprovalCard = ({
         break;
     }
     return styles;
-  };
-
-  const formatDate = (date: string): string => {
-    if (!date) return "--/--/----";
-
-    const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-    for (const dateFormat of possibleFormats) {
-      const parsedDate = parse(date, dateFormat, new Date());
-      if (isValid(parsedDate)) {
-        return format(parsedDate, "dd/MM/yyyy");
-      }
-    }
-
-    return "--/--/----";
   };
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
@@ -112,7 +100,7 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -132,18 +120,23 @@ const OvertimeApprovalCard = ({
               />
             </div>
           )}
-          <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
             <div className="truncate text-gray-900 font-medium text-sm text-start">
-              {data?.username}
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                {data?.username}
+              </WrapperHoverCard>
             </div>
-          </WrapperHoverCard>
+          </Link>
 
           <div className="text-gray-600 text-sm truncate text-start">
             <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
           </div>
 
           <div className="text-gray-700 text-sm text-start">
-            {formatDate(data?.due_date)}
+            {formatToIndianDate(data?.due_date)}
           </div>
 
           <div className="flex items-center justify-start">
@@ -174,7 +167,7 @@ const OvertimeApprovalCard = ({
                   }
                 >
                   {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                     <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                   ) : (
                     action
@@ -218,7 +211,7 @@ const OvertimeApprovalCard = ({
                   <div className="flex gap-2">
                     {data?.due_date && (
                       <p className="card-subtitle">
-                        Due Date - {formatDate(data?.due_date)}
+                        Due Date - {formatToIndianDate(data?.due_date)}
                       </p>
                     )}
                   </div>
@@ -258,7 +251,7 @@ const OvertimeApprovalCard = ({
                       className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                         <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                       ) : (
                         action

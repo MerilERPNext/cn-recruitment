@@ -1,0 +1,37 @@
+{
+    "title": "Dynamic Employee Update Form",
+    "name": "dynamicEmployeeUpdateForm",
+    "path": "dynamic-employee-update-form",
+    "display": "form",
+    "components": [
+        {
+            "type": "hidden",
+            "key": "doctype",
+            "input": true,
+            "defaultValue": ""
+        },
+        {
+            "type": "hidden",
+            "key": "fieldName",
+            "input": true,
+            "defaultValue": ""
+        },
+        {
+            "label": "",
+            "key": "selected_value",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Value",
+            "customClass": "mb-4",
+            "refreshOn": "doctype",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/{{ data.doctype }}?fields=[\"*\"]"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.employee_name || item.name }}</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        }
+    ]
+}

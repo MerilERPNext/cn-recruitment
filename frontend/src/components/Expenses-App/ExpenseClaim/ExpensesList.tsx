@@ -14,13 +14,13 @@ import { SquarePen, Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
-import { format } from "date-fns";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
 import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -41,9 +41,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
-    : " - ";
+  // const formattedDate = item?.reference_document?.creation
+  //   ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
+  //   : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
@@ -60,12 +60,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {item?.status && (
           <span
             className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-              item?.status
+              item?.status,
             )}`}
           >
-            {item?.status === "Draft"
-              ? "Pending"
-              : item?.status}
+            {item?.status === "Draft" ? "Pending" : item?.status}
           </span>
         )}
       </div>
@@ -73,7 +71,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       <div className="flex justify-between">
         <div className="flex flex-col gap-1">
           <span className="card-title">Claimed Date</span>
-          <span className="card-subtitle">{formattedDate}</span>
+          <span className="card-subtitle">
+            {formatToIndianDate(item?.reference_document?.creation)}
+          </span>
         </div>
 
         <div className="flex flex-col gap-1 text-right">
@@ -92,25 +92,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  const formattedDate = item?.reference_document?.creation
-    ? new Date(item?.reference_document?.creation).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
-
-  const formattedExpenseDate = item?.reference_document?.expenses[0]
-    ?.expense_date
-    ? new Date(
-        item?.reference_document?.expenses[0]?.expense_date
-      ).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
-
   const formattedSanctionedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -120,7 +101,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
-    "Expense Claims"
+    "Expense Claims",
   );
 
   const navigate = useNavigate();
@@ -132,21 +113,25 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
-      expenseItem
+      expenseItem,
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
 
   return (
     <div
-      className="grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
+      className="max-w-screen grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
       style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
     >
       <span>{expenseClaim?.custom_expense_category || " - "}</span>
       <span>{formattedAmount}</span>
       <span>{formattedSanctionedAmount || " - "}</span>
-      <span>{formattedExpenseDate}</span>
-      <span>{formattedDate}</span>
+      <span>
+        {formatToIndianDate(
+          item?.reference_document?.expenses[0]?.expense_date,
+        )}
+      </span>
+      <span>{formatToIndianDate(item?.reference_document?.creation)}</span>
       <div>
         <Tooltip
           content={
@@ -158,12 +143,10 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         >
           <span
             className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.status
+              item?.status,
             )}`}
           >
-            {item?.status === "Draft"
-              ? "Pending"
-              : item?.status}
+            {item?.status === "Draft" ? "Pending" : item?.status}
           </span>
         </Tooltip>
       </div>
@@ -189,7 +172,7 @@ const ExpensesList: React.FC = () => {
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
-    []
+    [],
   );
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
@@ -217,7 +200,7 @@ const ExpensesList: React.FC = () => {
   const openModal = (
     id: string,
     stages: ApprovalStage[],
-    sendBackUser: string
+    sendBackUser: string,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
@@ -229,8 +212,6 @@ const ExpensesList: React.FC = () => {
     setSelectedStages([]);
     setSelectedSendBackUser(null);
   };
-
-
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
@@ -274,10 +255,6 @@ const ExpensesList: React.FC = () => {
     </div>
   );
 
- 
-
- 
-
   const mobileMenuItems = [
     {
       label: "Policy",
@@ -293,98 +270,111 @@ const ExpensesList: React.FC = () => {
 
   return (
     <div
-      className="relative flex size-full flex-col group/design-root md:p-6"
+      className="min-h-screen"
       style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
     >
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        <Typography variant="subheading">My Expense Claims</Typography>
+      <div className="px-4">
+        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
+          <div className="flex flex-col mb-2">
+            <Typography variant="h4">My Expense Claims</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your expense claim requests
+            </Typography>
+          </div>
 
-        <div className="flex items-center space-x-3 pb-1">
-          {isDesktop ? (
-            <>
-              <Button
-                variant="outline"
-                size="md"
-                className="rounded-xl hover:bg-blue-100 py-1"
-                onClick={() => setIsPolicyDrawerOpen(true)}
-              >
-                Policy
-              </Button>
+          <div className="flex items-center space-x-3 pb-1">
+            {isDesktop ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="rounded-xl hover:bg-blue-100 py-1"
+                  onClick={() => setIsPolicyDrawerOpen(true)}
+                >
+                  Policy
+                </Button>
 
-              <Button
-                onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
-                icon={<Users size={16} />}
-                size="md"
-                variant="outline"
-                className="hover:bg-blue-100 rounded-xl py-1"
-              >
-                Shared
-              </Button>
-            </>
-          ) : (
-            <DropdownMenu items={mobileMenuItems} placement="bottom-right">
-              <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                <MoreVertical size={18} />
-              </button>
-            </DropdownMenu>
-          )}
-         
+                <Button
+                  onClick={() =>
+                    navigate("/webapp/expenses-app/shared-expenses")
+                  }
+                  icon={<Users size={16} />}
+                  size="md"
+                  variant="outline"
+                  className="hover:bg-blue-100 rounded-xl py-1"
+                >
+                  Shared
+                </Button>
+              </>
+            ) : (
+              <DropdownMenu items={mobileMenuItems} placement="bottom-left">
+                <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
+                  <MoreVertical size={18} />
+                </button>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="h-full px-0  pt-0 mb-20">
-        {currentEmployee?.name && (
-          <CardTable
-            titles={[
-              "Expense Category",
-              "Claimed Amount",
-              "Sanctioned Amount",
-              "Expense Date",
-              "Claimed Date",
-              "Status",
-              "Actions",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
-          >
-            <DataListView
-              queryKey={["expense-claims-all"]}
-              customAPI={{
-                method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: {
-                  doctype: "Expense Claim",
-                  employee: currentEmployee?.name,
-                  status: "Draft"
-                },
-              }}
-              ItemComponent={(props: { item: any }) =>
-                isDesktop ? (
-                  <RowWrapper item={props.item} />
-                ) : (
-                  <ItemWrapper item={props.item} />
-                )
-              }
-              isSearch={true}
-              isFilter={true}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: ["Draft", "Approved", "Rejected"],
-                },
+        <div className="h-full px-0  pt-0">
+          {currentEmployee?.name && (
+            <CardTable
+              titles={[
+                "Expense Category",
+                "Claimed Amount",
+                "Sanctioned Amount",
+                "Expense Date",
+                "Claimed Date",
+                "Status",
+                "Actions",
               ]}
-              SkeletonComponent={CardSkeleton}
-              onRefetchComplete={() => setRefetchAttendance(false)}
-              refetchTrigger={refetchAttendance}
-              showRefreshButton={false}
-              orderBy="modified desc"
-              pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
-        )}
+              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
+            >
+              <DataListView
+                queryKey={["expense-claims-all"]}
+                customAPI={{
+                  method:
+                    "cn_leave_shift_managment.api.get_open_approval_todos",
+                  params: {
+                    doctype: "Expense Claim",
+                    employee: currentEmployee?.name,
+                    status: "Draft",
+                  },
+                }}
+                ItemComponent={(props: { item: any }) =>
+                  isDesktop ? (
+                    <RowWrapper item={props.item} />
+                  ) : (
+                    <ItemWrapper item={props.item} />
+                  )
+                }
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      { label: "Pending", value: "Draft" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
+                  },
+                ]}
+                SkeletonComponent={CardSkeleton}
+                onRefetchComplete={() => setRefetchAttendance(false)}
+                refetchTrigger={refetchAttendance}
+                showRefreshButton={false}
+                orderBy="modified desc"
+                pageSize={10}
+                infiniteScroll={true}
+                showPagination={true}
+                loadMorePagination={false}
+              />
+            </CardTable>
+          )}
+        </div>
       </div>
 
       {selectedId && (

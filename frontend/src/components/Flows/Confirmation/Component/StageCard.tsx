@@ -1,7 +1,7 @@
 
 import { createPortal } from "react-dom"
 import { Form } from "@tsed/react-formio"
-import { X } from "lucide-react"
+import { CheckCircle, Clock, XCircle } from "lucide-react"
 import Badge from "../../../shared/Badge"
 import useCurrentUser from "../../../../hooks/useCurrentUser"
 import { useApprovalListActions } from "../../../../hooks/userApprovalList"
@@ -13,10 +13,11 @@ import toast from "react-hot-toast"
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee"
 import { Typography } from "../../../shared/atoms/Typography"
 import Button from "../../../shared/atoms/Button"
+import ReivewForm from "./ReivewForm"
 
 interface CardStagesProps {
     data: ApprovalStage;
-    actions: string[];
+    actions: { name: string, hasForm: boolean }[];
     todoId: string;
     isActive: boolean;
     assignedTo: {
@@ -24,14 +25,15 @@ interface CardStagesProps {
         user_id: string;
         role: string | null;
     }
+    isLastStage: boolean;
 };
 
-const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesProps) => {
+const CardStages = ({ data, actions, todoId, isActive, assignedTo, isLastStage }: CardStagesProps) => {
 
 
     const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
     const [show, setShow] = useState(false);
-
+    const [loadingActions, setLoadingActions] = useState(false);
     const handleShowForm = (schema: FormIOComponent[] | undefined, approval_response_data: string) => {
         const data = JSON.parse(approval_response_data);
 
@@ -59,11 +61,53 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
         setShow(true);
     }
 
-    const statusColors = {
-        "Approved": "text-green-500 bg-green-100",
-        "Rejected": "text-red-500 bg-red-100",
-        "Pending": "text-yellow-500 bg-yellow-100",
-    }
+    const getStatusBadgeClasses = (status: string) => {
+        switch (status) {
+            case "Approved":
+                return "bg-green-100 text-green-800";
+            case "Draft":
+                return "bg-yellow-100 text-yellow-800";
+            case "Pending":
+                return "bg-yellow-100 text-yellow-800";
+            case "Rejected":
+                return "bg-red-100 text-red-800";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
+    const getTimelineConfig = (status: string) => {
+        switch (status) {
+            case "Approved":
+                return {
+                    icon: CheckCircle,
+                    color: "text-green-500",
+                    bg: "bg-green-100",
+                    line: "bg-green-300",
+                };
+            case "Rejected":
+                return {
+                    icon: XCircle,
+                    color: "text-red-500",
+                    bg: "bg-red-100",
+                    line: "bg-red-300",
+                };
+            case "Pending":
+                return {
+                    icon: Clock,
+                    color: "text-yellow-500",
+                    bg: "bg-yellow-100",
+                    line: "bg-yellow-300",
+                };
+            default:
+                return {
+                    icon: Clock,
+                    color: "text-yellow-500",
+                    bg: "bg-yellow-100",
+                    line: "bg-gray-300",
+                };
+        }
+    };
 
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(currentUser?.name || "");
@@ -71,12 +115,12 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
     const { isDesktop } = useScreenSize();
 
     const handleAction = useCallback(
-        async (action: string, data: any) => {
+        async (action: { name: string; hasForm: boolean }, data: any) => {
             try {
                 if (mutation?.isPending) return;
-                // setLoadingAction({ id: data?.todo_id, action });
+                setLoadingActions(true);
                 const response = await mutation?.mutateAsync({
-                    action,
+                    action: action.name,
                     name: data?.todo_id || "",
                 });
 
@@ -94,13 +138,14 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
                     responseWithSession?.session
                 );
 
-                if (window.trigger_chatnext_assistant) {
+                if (window.trigger_chatnext_assistant && action.hasForm) {
                     window.trigger_chatnext_assistant(
                         true,
                         responseWithSession?.session
                     );
                 }
-                if (action.toLowerCase() !== "approve") {
+
+                if (action.name.toLowerCase() !== "approve") {
                     // triggerRefetch();
                 }
 
@@ -114,7 +159,7 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
                 console.error("Action failed", error);
                 toast.error(errMessage);
             } finally {
-                // setLoadingAction(null);
+                setLoadingActions(false);
             }
         },
         [mutation]
@@ -140,7 +185,7 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
     }, [currentEmployee, assignedTo, isActive, currentUser]);
 
     return (
-        <div className="grid w-full border-t-1 lg:grid-cols-4  lg:hover:bg-primary/20 cursor-pointer py-3 items-center text-sm  lg:px-6">
+        <div className="grid w-full lg:border-t-1 lg:grid-cols-4  lg:hover:bg-primary/20 cursor-pointer py-3 items-center text-sm  lg:px-6">
             {isDesktop ?
                 <>
                     <Typography variant="bodySmall" className="font-semibold tracking-tight">
@@ -149,103 +194,138 @@ const CardStages = ({ data, actions, todoId, isActive, assignedTo }: CardStagesP
                     <Typography variant="bodySmall" className="font-semibold tracking-tight">
                         {data?.user}
                     </Typography>
-                    <Badge label={data?.status} textColor={statusColors[data?.status]} />
+                    <Badge label={data?.status} textColor={getStatusBadgeClasses(data?.status)} />
                     <span className="flex gap-2">
                         {data?.form_json?.components && data.status !== "Pending" &&
                             <Button
-                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}> Show Review </Button>}
+                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}
+                                variant="contain"
+                                className="text-sm"
+                                loading={loadingActions}
+                                disabled={loadingActions}
+                            > Show Review </Button>}
                         {canPerformActions &&
                             actions.map(action => (
-                                <Button onClick={() => handleAction(action, { todo_id: todoId })}>
-                                    {action}
+                                <Button
+                                    onClick={() => handleAction(action, { todo_id: todoId })}
+                                    loading={loadingActions}
+                                    disabled={loadingActions}
+                                >
+                                    {action.name}
                                 </Button>
                             ))
                         }
                     </span>
                 </>
                 :
-                <div className="w-full rounded-2xl bg-white shadow-sm border border-gray-200  p-4 space-y-4">
+                <div className="w-full flex h-full">
+                    <div className="h-full w-20">
+                        <TimeLineBadge isActive={isActive} isLastStage={isLastStage} data={getTimelineConfig(data?.status)} />
+                    </div>
+                    <div className={`w-full rounded-2xl bg-white shadow-sm border border-gray-200  p-4 space-y-4`}>
 
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Typography variant="bodySmall">
+                                    Stage
+                                </Typography>
+                                <Typography variant="bodyMedium">
+                                    {data?.stage_name}
+                                </Typography>
+                            </div>
+
+                            <Badge
+                                label={data?.status}
+                                textColor={getStatusBadgeClasses(data?.status)}
+                            />
+                        </div>
+
+                        {/* User */}
                         <div>
                             <Typography variant="bodySmall">
-                                Stage
+                                Assigned To
                             </Typography>
                             <Typography variant="bodyMedium">
-                                {data?.stage_name}
+                                {data?.user}
                             </Typography>
                         </div>
 
-                        <Badge
-                            label={data?.status}
-                            textColor={statusColors[data?.status]}
-                        />
+                        {/* Review Button */}
+                        {data?.form_json?.components && data.status !== "Pending" && (
+                            <button
+                                onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}
+                                className="w-full rounded-xl border border-blue-200 bg-primary/10 text-primary py-2 text-sm font-medium hover:bg-primary/20 transition"
+                            >
+                                <Typography variant="body">
+                                    View Review Form
+                                </Typography>
+
+                            </button>
+                        )}
+
+                        {/* Actions */}
+                        {canPerformActions && actions?.length > 0 && (
+                            <div className="flex items-center gap-2 pt-2">
+                                {actions.map((action) => (
+                                    <button
+                                        key={action.name}
+                                        onClick={() => handleAction(action, { todo_id: todoId })}
+                                        className="w-full rounded-xl border border-blue-500 text-blue-600 py-2 text-sm font-semibold hover:bg-blue-500 hover:text-white transition-all"
+                                    >
+                                        {action.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-
-                    {/* User */}
-                    <div>
-                        <Typography variant="bodySmall">
-                            Assigned To
-                        </Typography>
-                        <Typography variant="bodyMedium">
-                            {data?.user}
-                        </Typography>
-                    </div>
-
-                    {/* Review Button */}
-                    {data?.form_json?.components && data.status !== "Pending" && (
-                        <button
-                            onClick={() => handleShowForm(data?.form_json?.components, data?.approval_response_data)}
-                            className="w-full rounded-xl border border-blue-200 bg-primary/10 text-primary py-2 text-sm font-medium hover:bg-primary/20 transition"
-                        >
-                            <Typography variant="body">
-                                View Review Form
-                            </Typography>
-
-                        </button>
-                    )}
-
-                    {/* Actions */}
-                    {canPerformActions && actions?.length > 0 && (
-                        <div className="flex items-center gap-2 pt-2">
-                            {actions.map((action) => (
-                                <button
-                                    key={action}
-                                    onClick={() => handleAction(action, { todo_id: todoId })}
-                                    className="w-full rounded-xl border border-blue-500 text-blue-600 py-2 text-sm font-semibold hover:bg-blue-500 hover:text-white transition-all"
-                                >
-                                    {action}
-                                </button>
-                            ))}
-                        </div>
-                    )}
                 </div>
             }
             {
                 formSchema && show &&
-                createPortal(<div className="fixed inset-0 z-50 bg-black/10 flex justify-center items-center">
-                    <div className="max-w-[500px] mx-2 w-full rounded-xl bg-white p-6">
-                        <div className="flex border-b pb-2 mb-2">
-                            <p className="text-xl font-semibold">Review Form</p>
-                            <X className="ml-auto text-gray-500 hover:text-gray-800 cursor-pointer rounded-full  hover:bg-gray-100 w-10 h-10 p-2" onClick={() => setShow(false)} />
-                        </div>
-                        <div>
-                            <Form
-                                form={formSchema}
-                                options={{
-                                    readOnly: true, // This makes the entire form read-only
-                                    viewAsHtml: false // Set to true to render as plain HTML instead of form inputs
-                                }}
-                                submit={false}
-                            />
-                        </div>
-                    </div>
-                </div>, document.body)
+                createPortal(
+                    <ReivewForm onClose={() => setShow(false)}>
+                        <Form
+                            form={formSchema}
+                            options={{
+                                readOnly: true, // This makes the entire form read-only
+                                viewAsHtml: false // Set to true to render as plain HTML instead of form inputs
+                            }}
+                            submit={false}
+                        />
+                    </ReivewForm>
+                    , document.body)
             }
 
         </div >
     )
+}
+
+interface TimeLineBadgeProps {
+    data: {
+        icon: React.ElementType;
+        color: string;
+        bg: string;
+        line: string;
+    };
+    isLastStage: boolean,
+    isActive: boolean;
+}
+
+const TimeLineBadge = ({ isActive, data, isLastStage }: TimeLineBadgeProps) => {
+    const Icon = data.icon;
+
+    return (
+        <div className="relative flex flex-col items-center h-full">
+            {/* Icon Circle */}
+            <div className={`w-10 h-10 rounded-full ${data.bg} flex items-center justify-center flex-shrink-0 ${isActive ? "animate-pulse" : ""}`}>
+                <Icon className={`w-5 h-5 ${data.color}`} />
+            </div>
+
+            {/* Vertical Line */}
+            {!isLastStage && <div className={`w-0.5 absolute top-10 h-[calc(90%)] ${data.line}`}></div>}
+        </div>
+    );
 }
 
 export default CardStages;

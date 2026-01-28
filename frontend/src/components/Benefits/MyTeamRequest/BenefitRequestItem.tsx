@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import { Link } from "react-router-dom";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -86,7 +87,7 @@ const BenefitRequestItem = ({
     <div>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -105,9 +106,14 @@ const BenefitRequestItem = ({
             />
           </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            <WrapperHoverCard employeeId={data.reference_document.employee}>
-              {data.reference_document.employee_name}
-            </WrapperHoverCard>
+            <Link
+              to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+              target="_blank"
+            >
+              <WrapperHoverCard employeeId={data.reference_document.employee}>
+                {data.reference_document.employee_name}
+              </WrapperHoverCard>
+            </Link>
           </div>
           <div className="flex text-gray-900 text-sm flex-col">
             {data.reference_document.earning_component}
@@ -175,9 +181,14 @@ const BenefitRequestItem = ({
                 }
               />
               <div className="pl-4">
-                <div className="truncate text-gray-900  font-semibold text-lg text-start">
-                  {data.reference_document.employee_name}
-                </div>
+                <Link
+                  to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                  target="_blank"
+                >
+                  <div className="truncate text-gray-900  font-semibold text-lg text-start">
+                    {data.reference_document.employee_name}
+                  </div>
+                </Link>
                 <div className="flex text-gray-500 font-meduim text-sm flex-col">
                   {data.reference_document.earning_component}
                 </div>
@@ -298,7 +309,7 @@ const BenefitRequestItem = ({
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

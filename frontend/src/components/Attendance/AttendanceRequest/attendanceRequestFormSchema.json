@@ -129,85 +129,6 @@
           }
         },
         {
-          "type": "columns",
-          "key": "dateColumns",
-          "columns": [
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "time",
-                  "key": "shift_start",
-                  "label": "Shift Start",
-                  "placeholder": "Loading shift information...",
-                  "input": true,
-                  "defaultValue": "Not Assigned",
-                  "customClass": "mb-4",
-                  "disabled": true,
-                  "hidden": false,
-                  "widget": "choicesjs",
-                  "dataSrc": "url",
-                  "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
-                  "redrawOn": "options.shiftRedraw",
-                  "logic": [
-                    {
-                      "name": "update shift  start time",
-                      "trigger": {
-                        "type": "event",
-                        "event": "change"
-                      },
-                      "actions": [
-                        {
-                          "name": "company action",
-                          "type": "customAction",
-                          "customAction": "if (instance?.defaultDownloadedResources?.start_time) { instance.setValue(instance?.defaultDownloadedResources?.start_time); }"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "width": 6,
-              "components": [
-                {
-                  "type": "time",
-                  "key": "shift_end",
-                  "label": "Shift End",
-                  "placeholder": "Loading shift information...",
-                  "defaultValue": "Not Assigned",
-                  "input": true,
-                  "customClass": "mb-4",
-                  "disabled": true,
-                  "hidden": false,
-                  "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.end_time;}",
-                  "redrawOn": "options.shiftRedraw",
-                  "refreshOn": "currentUserId",
-                  "clearOnRefresh": true,
-                  "lazyLoad": true,
-                  "logic": [
-                    {
-                      "name": "update shift  end time",
-                      "trigger": {
-                        "type": "event",
-                        "event": "change"
-                      },
-                      "actions": [
-                        {
-                          "name": "company action",
-                          "type": "customAction",
-                          "customAction": "if (instance?.defaultDownloadedResources?.end_time) { instance.setValue(instance?.defaultDownloadedResources?.end_time); }"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "label": "From Date",
           "errorLabel": "From Date",
           "key": "from_date",
@@ -253,14 +174,14 @@
           "customClass": "mb-4",
           "enableTime": false,
           "validate": {},
-          "customConditional": "show = !['Clockin','Out Duty'].includes(data.request_type || '');",
+          "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
           "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
           "disabled": false,
           "redrawOn": "from_date"
         },
         {
-          "label": "From Time <span style='color:red;margin-left:3px;'>*</span>",
-          "key": "custom_from_time",
+          "label": "Check-In Time <span style='color:red'>*</span>",
+          "key": "checkin_time",
           "type": "time",
           "input": true,
           "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
@@ -286,9 +207,9 @@
           "customClass": "mb-4"
         },
         {
-          "label": "To Time <span style='color:red;margin-left:3px;'> *</span>",
+          "label": "Check-Out Time <span style='color:red'>*</span>",
           "errorLabel": "To Time",
-          "key": "custom_to_time",
+          "key": "checkout_time",
           "type": "time",
           "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.end_time;}",
           "redrawOn": "options.shiftRedraw",
@@ -311,82 +232,6 @@
             "time_24hr": false,
             "dateFormat": "h:i K"
           }
-        },
-        {
-          "type": "select",
-          "key": "latest_checkin_time",
-          "label": "Latest Check-In Time",
-          "placeholder": "Loading shift information...",
-          "defaultValue": "Not Assigned",
-          "input": true,
-          "disabled": true,
-          "customConditional": "show = data.request_type === 'Attendance Adjustment';",
-          "hidden": false,
-          "widget": "choicesjs",
-          "dataSrc": "url",
-          "data": {
-            "url": "/api/method/cn_leave_shift_managment.api.get_shift_checkins?user={{data.currentUserId}}"
-          },
-          "valueProperty": "time",
-          "template": "<span>{{ item.time }}</span>",
-          "selectValues": "message",
-          "refreshOn": "currentUserId",
-          "clearOnRefresh": true,
-          "lazyLoad": true,
-          "logic": [
-            {
-              "name": "update check in time",
-              "trigger": {
-                "type": "event",
-                "event": "change"
-              },
-              "actions": [
-                {
-                  "name": "company action",
-                  "type": "customAction",
-                  "customAction": "if ( instance?.defaultDownloadedResources && instance?.defaultDownloadedResources?.length>0) { instance.setValue(instance?.defaultDownloadedResources?.[0]?.time); }"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "select",
-          "key": "latest_checkout_time",
-          "label": "Latest Check-Out Time",
-          "placeholder": "Loading Check-out information...",
-          "defaultValue": "Not Assigned",
-          "input": true,
-          "disabled": true,
-          "customConditional": "show = data.request_type === 'Attendance Adjustment';",
-          "hidden": false,
-          "widget": "choicesjs",
-          "dataSrc": "url",
-          "data": {
-            "url": "/api/method/cn_leave_shift_managment.api.get_shift_checkins?user={{data.currentUserId}}"
-          },
-          "valueProperty": "",
-          "template": "<span>{{ item.time }}</span>",
-          "selectValues": "message",
-          "refreshOn": "currentUserId",
-          "clearOnRefresh": true,
-          "lazyLoad": false,
-          "logic": [
-            {
-              "name": "update check out time",
-              "trigger": {
-                "type": "event",
-                "event": "change"
-              },
-              "actions": [
-                {
-                  "name": "company action",
-                  "type": "customAction",
-                  "customAction": "if ( instance?.defaultDownloadedResources && instance?.defaultDownloadedResources?.length>0) {instance.setValue(instance?.defaultDownloadedResources?.[instance?.defaultDownloadedResources?.length - 1]?.time); }"
-                }
-              ]
-            }
-          ]
         },
         {
           "label": "Select Shift",

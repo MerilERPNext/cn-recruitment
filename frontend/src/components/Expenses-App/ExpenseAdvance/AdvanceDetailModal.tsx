@@ -2,10 +2,10 @@ import React from "react";
 import { X } from "lucide-react";
 import { StatusBadge } from "../../Compansation/Advances/StatusBadge";
 import { formatCurrency } from "../../../utils/currencyFormatter";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import ApprovalStagesProgress from "../ExpenseClaim/ApprovalStagesProgress";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface AdvanceDetailModalProps {
   id: string;

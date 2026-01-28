@@ -44,7 +44,7 @@ const TeamAttendanceDetails = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",
@@ -53,7 +53,7 @@ const TeamAttendanceDetails = () => {
         "Actions",
       ]
     : [
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",
@@ -69,8 +69,8 @@ const TeamAttendanceDetails = () => {
   return (
     <>
       <div className="min-h-screen">
-        <div className="px-4 mb-20">
-          <div className="flex justify-between items-center pt-4 mb-2">
+        <div className="px-4">
+          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
             <div className="flex flex-col mb-2">
               <Typography variant="h4">Team Attendance Requests</Typography>
               <Typography variant="bodySmall" color="body2">
