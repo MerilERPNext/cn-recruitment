@@ -51,38 +51,74 @@ const EmployeeStatusCard = ({
     if (isDesktop) {
       switch (status) {
         case "present":
-          return { indicatorBgColor: "bg-green-400", indicatorBorderColor: "border-green-100" };
+          return {
+            indicatorBgColor: "bg-green-400",
+            indicatorBorderColor: "border-green-100",
+          };
         case "absent":
-          return { indicatorBgColor: "bg-red-400", indicatorBorderColor: "border-red-100" };
+          return {
+            indicatorBgColor: "bg-red-400",
+            indicatorBorderColor: "border-red-100",
+          };
         case "on leave":
-          return { indicatorBgColor: "bg-amber-400", indicatorBorderColor: "border-amber-100" };
+          return {
+            indicatorBgColor: "bg-amber-400",
+            indicatorBorderColor: "border-amber-100",
+          };
         case "half day":
-          return { indicatorBgColor: "bg-orange-400", indicatorBorderColor: "border-orange-100" };
+          return {
+            indicatorBgColor: "bg-orange-400",
+            indicatorBorderColor: "border-orange-100",
+          };
         case "work from home":
-          return { indicatorBgColor: "bg-purple-400", indicatorBorderColor: "border-purple-100" };
+          return {
+            indicatorBgColor: "bg-purple-400",
+            indicatorBorderColor: "border-purple-100",
+          };
         default:
-          return { indicatorBgColor: "bg-slate-300", indicatorBorderColor: "border-slate-100" };
+          return {
+            indicatorBgColor: "bg-slate-300",
+            indicatorBorderColor: "border-slate-100",
+          };
       }
     } else {
       switch (status) {
         case "present":
-          return { indicatorBgColor: "bg-green-500", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-green-500",
+            indicatorBorderColor: "border-white",
+          };
         case "absent":
-          return { indicatorBgColor: "bg-red-500", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-red-500",
+            indicatorBorderColor: "border-white",
+          };
         case "on leave":
-          return { indicatorBgColor: "bg-yellow-400", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-yellow-400",
+            indicatorBorderColor: "border-white",
+          };
         case "half day":
-          return { indicatorBgColor: "bg-orange-400", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-orange-400",
+            indicatorBorderColor: "border-white",
+          };
         case "work from home":
-          return { indicatorBgColor: "bg-blue-400", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-blue-400",
+            indicatorBorderColor: "border-white",
+          };
         default:
-          return { indicatorBgColor: "bg-gray-300", indicatorBorderColor: "border-white" };
+          return {
+            indicatorBgColor: "bg-gray-300",
+            indicatorBorderColor: "border-white",
+          };
       }
     }
   };
 
   const statusColors = getStatusIndicatorColor(
-    (data?.status?.toLowerCase() as EmployeeStatusType) || "default"
+    (data?.status?.toLowerCase() as EmployeeStatusType) || "default",
   );
 
   return (
@@ -98,7 +134,7 @@ const EmployeeStatusCard = ({
           />
 
           <div className="flex-1 min-w-10">
-            <div className="flex flex-wrap items-start gap-2">
+            <div className="flex x-wrap items-start gap-2">
             <Link
   to={`/webapp/employee-profile?target_user=${data?.employee}`}
   target="_blank"
@@ -117,7 +153,11 @@ const EmployeeStatusCard = ({
               ) : null}
             </div>
 
-            <Typography variant="bodySmall" color="body2" className="capitalize mt-1">
+            <Typography
+              variant="bodySmall"
+              color="body2"
+              className="capitalize mt-1"
+            >
               {data?.status}
             </Typography>
           </div>
@@ -146,8 +186,13 @@ const EmployeeStatusCard = ({
               >
                 Check-in
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
-                {data?.in_time ? format(new Date(data?.in_time), "HH:mm") : "--:--"}
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
+                {data?.in_time
+                  ? format(new Date(data?.in_time), "HH:mm")
+                  : "--:--"}
               </Typography>
             </div>
 
@@ -159,8 +204,13 @@ const EmployeeStatusCard = ({
               >
                 Check-out
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
-                {data?.out_time ? format(new Date(data?.out_time), "HH:mm") : "--:--"}
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
+                {data?.out_time
+                  ? format(new Date(data?.out_time), "HH:mm")
+                  : "--:--"}
               </Typography>
             </div>
 
@@ -172,8 +222,13 @@ const EmployeeStatusCard = ({
               >
                 Working Hours
               </Typography>
-              <Typography variant="bodyMedium" className="font-semibold text-gray-800">
-                {data?.working_hours ? `${data.working_hours.toFixed(2)} hrs` : "--:--"}
+              <Typography
+                variant="bodyMedium"
+                className="font-semibold text-gray-800"
+              >
+                {data?.working_hours
+                  ? `${data.working_hours.toFixed(2)} hrs`
+                  : "--:--"}
               </Typography>
             </div>
           </div>
