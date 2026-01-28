@@ -153,7 +153,8 @@ export const useGetQuickAttendanceSummary = (
 };
 export const useAllAttendanceRequests = (
   pageSize: number | string,
-  filters?: FilterCondition[]
+  filters?: FilterCondition[],
+  options?: any
 ): UseQueryResult<AttendanceRequest[], Error> => {
   return useQuery<AttendanceRequest[], Error>({
     queryKey: ["attendance", "all", filters],
@@ -161,6 +162,7 @@ export const useAllAttendanceRequests = (
       attendanceService.getAllAttendanceRequests(pageSize, filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
+    ...options,
   });
 };
 export const useGetUserRoles = (
@@ -186,13 +188,15 @@ export const useGetToDoWithReferenceDoc = (
 };
 
 export const useAllEmployeeCheckIns = (
-  filters?: FilterCondition[]
+  filters?: FilterCondition[],
+  options?: any
 ): UseQueryResult<EmployeeCheckInLog[], Error> => {
   return useQuery<EmployeeCheckInLog[], Error>({
     queryKey: ["emp-check-ins", "all", filters],
     queryFn: () => attendanceService.employeeCheckInDetails(filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
+    ...options,
   });
 };
 export const useGetAllEventsAndAttendance = (
