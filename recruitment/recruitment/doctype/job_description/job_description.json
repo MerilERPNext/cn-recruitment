@@ -1,0 +1,181 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:job_description_title",
+ "creation": "2026-01-19 09:55:10.660256",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicability_section",
+  "job_description_title",
+  "company",
+  "business_unit",
+  "column_break_ueon",
+  "department",
+  "designation",
+  "education_and_experience_section",
+  "education_column",
+  "category",
+  "degree",
+  "specialization",
+  "column_break_keqj",
+  "preferred_role",
+  "preferred_company",
+  "preferred_sector",
+  "min_preferred_work_experience_years",
+  "max_preferred_work_experience_years",
+  "competencies_section",
+  "competencies",
+  "skills"
+ ],
+ "fields": [
+  {
+   "fieldname": "applicability_section",
+   "fieldtype": "Section Break",
+   "label": "Applicability"
+  },
+  {
+   "fieldname": "job_description_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Description Title",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "designation",
+   "fieldtype": "Table MultiSelect",
+   "label": "Designation",
+   "options": "JD Designations",
+   "reqd": 1
+  },
+  {
+   "fieldname": "business_unit",
+   "fieldtype": "Table MultiSelect",
+   "label": "Business Unit",
+   "options": "JD Business Unit"
+  },
+  {
+   "fieldname": "department",
+   "fieldtype": "Table MultiSelect",
+   "label": "Department",
+   "options": "JD Department"
+  },
+  {
+   "fieldname": "column_break_ueon",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "education_and_experience_section",
+   "fieldtype": "Section Break",
+   "label": "Education and Experience"
+  },
+  {
+   "fieldname": "category",
+   "fieldtype": "Table MultiSelect",
+   "label": "Category",
+   "options": "Education Category Table"
+  },
+  {
+   "fieldname": "degree",
+   "fieldtype": "Table MultiSelect",
+   "label": "Degree",
+   "options": "Education Degree Table"
+  },
+  {
+   "fieldname": "specialization",
+   "fieldtype": "Table MultiSelect",
+   "label": "Specialization",
+   "options": "Education Specialization Table"
+  },
+  {
+   "fieldname": "column_break_keqj",
+   "fieldtype": "Column Break",
+   "label": "Experience"
+  },
+  {
+   "fieldname": "preferred_role",
+   "fieldtype": "Data",
+   "label": "Preferred Role"
+  },
+  {
+   "fieldname": "preferred_company",
+   "fieldtype": "Data",
+   "label": "Preferred Company"
+  },
+  {
+   "fieldname": "preferred_sector",
+   "fieldtype": "Table MultiSelect",
+   "label": "Preferred Sector",
+   "options": "Experience Sector Table"
+  },
+  {
+   "fieldname": "min_preferred_work_experience_years",
+   "fieldtype": "Float",
+   "label": "Min Preferred Work Experience (Years)"
+  },
+  {
+   "fieldname": "max_preferred_work_experience_years",
+   "fieldtype": "Float",
+   "label": "Max Preferred Work Experience (Years)"
+  },
+  {
+   "fieldname": "education_column",
+   "fieldtype": "Column Break",
+   "label": "Education"
+  },
+  {
+   "fieldname": "competencies_section",
+   "fieldtype": "Section Break",
+   "label": "Competencies"
+  },
+  {
+   "fieldname": "competencies",
+   "fieldtype": "Table",
+   "label": "Competencies",
+   "options": "Competencies Table"
+  },
+  {
+   "fieldname": "skills",
+   "fieldtype": "Table",
+   "label": "Skills",
+   "options": "Candidate Skills"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-01-20 16:36:00.877013",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Description",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
