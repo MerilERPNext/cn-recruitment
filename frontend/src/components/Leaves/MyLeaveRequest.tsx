@@ -130,7 +130,7 @@ const MyLeaveRequests = ({
                   "Status",
                   "Actions",
                 ]}
-                columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr"]}
+                columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 1fr"]}
               >
                 {currentEmployee?.name && (
                   <DataListView

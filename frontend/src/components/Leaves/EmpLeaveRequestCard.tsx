@@ -10,6 +10,11 @@ import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Typography } from "../shared/atoms/Typography";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../utils/sanitizeToPlainText";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -124,6 +129,11 @@ const EmpLeaveRequestCard = ({
 
   const status = getStatus(data?.reference_document?.status);
 
+  const cleanDescription = sanitizeToPlainText(
+    data?.reference_document?.description,
+  );
+  const truncatedDescription = truncateByChars(cleanDescription);
+
   const ActionMenu = () => (
     <div
       ref={menuRef}
@@ -177,39 +187,47 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid max-w-screen items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 1fr" }}
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.leave_type}
-          </div>
-          <div className="text-sm text-gray-900">
-            {formatToIndianDate(data?.reference_document.from_date)}
-          </div>
-          <div className="text-sm text-gray-900">
-            {formatToIndianDate(data?.reference_document.to_date)}
-          </div>
-          <div
-            className="text-sm font-medium text-gray-700 text-start truncate"
-            title={data?.reference_document?.description}
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
           >
-            {data?.reference_document?.description || " - "}
-          </div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.total_leave_days}
-          </div>
-          <div className="flex justify-start">
+            {data?.reference_document?.leave_type}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document.from_date)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document.to_date)}
+          </Typography>
+
+          <Tooltip content={cleanDescription}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {truncatedDescription}
+            </Typography>
+          </Tooltip>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.total_leave_days > 1
+              ? data?.reference_document?.total_leave_days + " Days"
+              : data?.reference_document?.total_leave_days + " Day"}
+          </Typography>
+          <div className="flex items-center justify-center">
             <Tooltip
               content={status?.label === "Pending" ? data?.allocated_to : ""}
             >
               <Badge
-                size="sm"
+                size="md"
+                label={status?.label as string}
                 backgroundColor={status?.statusColor}
-                label={status?.label || ""}
               />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2 items-center relative">
+          <div className=" justify-center text-sm text-gray-900 text-start flex gap-2 items-center relative">
             {data?.custom_allow_revoke && canRequestLeave && (
               <div className="relative">
                 <button

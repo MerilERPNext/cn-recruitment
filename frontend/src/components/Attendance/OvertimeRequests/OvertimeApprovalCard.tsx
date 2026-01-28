@@ -218,7 +218,6 @@ const OvertimeApprovalCard = ({
                     <div
                       dangerouslySetInnerHTML={{ __html: cleanDescription }}
                     />
-                    {/* {cleanDescription} */}
                   </p>
                 </div>
                 <Tooltip content={data?.allocated_to}>

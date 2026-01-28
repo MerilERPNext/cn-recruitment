@@ -5,7 +5,7 @@ import DOMPurify from "dompurify";
  * and returns safe, clean plain text.
  */
 export const sanitizeToPlainText = (
-  value: string | null | undefined
+  value: string | null | undefined,
 ): string => {
   if (!value) return "";
 
@@ -19,9 +19,7 @@ export const sanitizeToPlainText = (
   return temp.textContent || temp.innerText || "";
 };
 
-export const truncateByChars = (text: string, maxChars = 40) => {
+export const truncateByChars = (text: string, maxChars = 30) => {
   if (!text) return "";
-  return text.length > maxChars
-    ? text.slice(0, maxChars) + "…"
-    : text;
+  return text.length > maxChars ? text.slice(0, maxChars) + "…" : text;
 };

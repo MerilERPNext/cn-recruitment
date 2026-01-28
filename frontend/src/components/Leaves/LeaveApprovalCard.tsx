@@ -115,7 +115,9 @@ const LeaveApprovalCard = ({
             {formatToIndianDate(data?.due_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.total_leave_days}
+            {data?.reference_document?.total_leave_days > 1
+              ? data?.reference_document?.total_leave_days + " Days"
+              : data?.reference_document?.total_leave_days + " Day"}
           </Typography>
 
           {/* Status + Actions */}

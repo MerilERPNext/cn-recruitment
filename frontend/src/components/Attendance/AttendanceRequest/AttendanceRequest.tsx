@@ -72,12 +72,22 @@ const AttendanceRequest = ({
                 </div>
               </div>
               <CardTable
+                columnWidths={[
+                  "1.5fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                ]}
                 titles={[
                   "Request Type",
                   "From Date",
                   "To Date",
-                  "Duration",
                   "Due Date",
+                  "Duration",
                   "Allocated To",
                   "Status",
                   "ACTIONS",
