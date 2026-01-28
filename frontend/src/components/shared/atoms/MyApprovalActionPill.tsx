@@ -2,7 +2,7 @@
 
 import { RotateCcw, SquarePen } from "lucide-react";
 import Tooltip from "../Tooltip";
-import { JSX } from "react";
+import type { JSX } from "react";
 
 type MyApprovalActionPillProps = {
   canRevoke: boolean;

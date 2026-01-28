@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, X, SendToBack } from "lucide-react";
-import { JSX } from "react";
+import type { JSX } from "react";
 import Tooltip from "../Tooltip";
 
 type TeamApprovalActionPillProps = {
@@ -25,15 +25,15 @@ const ACTION_CONFIG: Record<
 > = {
   approve: {
     tooltip: "Approve",
-    icon: <Check className="w-4 h-w-4 text-green-600" strokeWidth={2} />,
+    icon: <Check className="w-4 h-4 text-green-600" strokeWidth={2} />,
   },
   reject: {
     tooltip: "Reject",
-    icon: <X className="w-4 h-w-4 text-red-500" strokeWidth={2} />,
+    icon: <X className="w-4 h-4 text-red-500" strokeWidth={2} />,
   },
   sendback: {
     tooltip: "Send Back",
-    icon: <SendToBack className="w-4 h-w-4 text-amber-600" strokeWidth={2} />,
+    icon: <SendToBack className="w-4 h-4 text-amber-600" strokeWidth={2} />,
   },
 };
 
