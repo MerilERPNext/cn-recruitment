@@ -33,6 +33,7 @@ import {
   BadgeIndianRupee,
   FileSpreadsheet,
   Sheet,
+  BriefcaseBusiness,
 } from "lucide-react";
 
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
@@ -395,6 +396,24 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Employee Directory",
       path: "/webapp/employees-directory",
       permissionKey: "Employee Directory",
+    },
+    {
+      icon: BriefcaseBusiness,
+      label: "Recruitment",
+      path: "/webapp/recruitment/",
+      permissionKey: "Recruitment",
+      subItems: [
+        {
+          name: "Overview",
+          icon: Telescope,
+          href: "/webapp/recruitment/overview",
+        },
+        {
+          name: "Requisitions",
+          icon: FileText,
+          href: "/webapp/recruitment/requisition",
+        },
+      ],
     },
     {
       icon: Shield,
