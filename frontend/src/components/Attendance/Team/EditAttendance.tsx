@@ -38,7 +38,7 @@ export const EditAttendance = ({
   console.log("EditAttendance Rendered", { requestId, effectiveEmployeeId, employeeName, onRefetchData });
 
   const { data, isLoading } = useAttendanceById(open, [
-    ["employee", "=", employeeId],
+    ["name", "=", requestId],
     // ["employee", "=", effectiveEmployeeId],
   ]);
   const mutation = useEditAttendance();

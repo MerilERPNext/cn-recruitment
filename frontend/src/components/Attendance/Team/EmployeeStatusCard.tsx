@@ -22,6 +22,7 @@ export interface EmployeeStatusItem {
   working_hours: number | null;
   shift?: string | null;
   name?: string;
+  attendance_name?: string;
 }
 
 const EmployeeStatusCard = ({
@@ -201,7 +202,7 @@ const EmployeeStatusCard = ({
           setIsPopupOpen(false);
         }}
         open={editAttendance}
-        requestId={data?.reports_to}
+        requestId={data?.attendance_name}
         onRefetchData={onRefetchData}
       />
 
