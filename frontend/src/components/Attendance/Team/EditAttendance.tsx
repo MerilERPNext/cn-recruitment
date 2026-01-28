@@ -35,11 +35,11 @@ export const EditAttendance = ({
   const effectiveEmployeeId = targetEmployeeId || employeeId;
   const formInstance = useRef<any>(null);
 
-  console.log("EditAttendance Rendered", { requestId, effectiveEmployeeId,  employeeName, onRefetchData });
+  console.log("EditAttendance Rendered", { requestId, effectiveEmployeeId, employeeName, onRefetchData });
 
   const { data, isLoading } = useAttendanceById(open, [
-    ["name", "=", requestId],
-    ["employee", "=", effectiveEmployeeId],
+    ["employee", "=", employeeId],
+    // ["employee", "=", effectiveEmployeeId],
   ]);
   const mutation = useEditAttendance();
   // Only build form after data is available

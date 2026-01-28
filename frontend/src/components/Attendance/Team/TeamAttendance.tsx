@@ -15,7 +15,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
 
 const TeamAttendance = () => {
-  
+
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
@@ -34,8 +34,8 @@ const TeamAttendance = () => {
     isLoading: isReportiesAttendanceLoading,
     isError: isReportiesAttendanceError,
     refetch: refetchReportiesAttendance, // ✅ added
-  } = useDataOfAttendanceDetails(selectedReporties);
-  console.log("TeamAttendance attendanceData", attendanceData,isReportiesAttendanceError, isEmployeeAttendanceError, isEmployeeAttendanceLoading); 
+  } = useDataOfAttendanceDetails(selectedReporties, selectedDate?.toISOString().split("T")[0] || "");
+  console.log("TeamAttendance attendanceData", attendanceData, isReportiesAttendanceError, isEmployeeAttendanceError, isEmployeeAttendanceLoading);
 
   // ✅ refetch when reportee or date changes
   useEffect(() => {
@@ -140,8 +140,27 @@ const TeamAttendance = () => {
 
                 navigate(
                   "/webapp/attendance/team-attendance?filters=" +
-                    encodeURIComponent(JSON.stringify(filters))
+                  encodeURIComponent(JSON.stringify(filters))
                 );
+              }}
+              renderDayContents={(day, date) => {
+                const isSelected =
+                  selectedDate?.toDateString() === date.toDateString();
+                return (
+                  <div
+                    style={{
+                      borderRadius: "0.375rem",
+                      color: "black",
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      backgroundColor: isSelected ? "#f0f0f0" : "transparent",
+                    }}
+                  >
+                    {day}
+                  </div>)
               }}
             />
 
@@ -215,7 +234,7 @@ const TeamAttendance = () => {
                 <EmployeeStatusCard
                   key={item.employee}
                   data={item}
-                  onRefetchData={refetchReportiesAttendance} 
+                  onRefetchData={refetchReportiesAttendance}
                 />
               )
             )}

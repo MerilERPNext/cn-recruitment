@@ -607,12 +607,13 @@ export const useDataOfAttendance = (employee: string) => {
 };
 
 // 🔹 Selected reportee ki attendance
-export const useDataOfAttendanceDetails = (selectedReporties: string) => {
+export const useDataOfAttendanceDetails = (selectedReporties: string, selectedDate: string) => {
   return useQuery<any>({
-    queryKey: ["reporties-attendance-details", selectedReporties],
+    queryKey: ["reporties-attendance-details", selectedReporties, selectedDate],
     queryFn: async () => {
       const res = await attendanceService.getDataOfAttendanceDetails(
-        selectedReporties
+        selectedReporties,
+        selectedDate
       );
 
       // ✅ handle frappe-style response

@@ -18,6 +18,7 @@ const AuditReport = () => {
     const { data: auditReports, isLoading, isError, error } = useGetAuditReport({
         employee: currentEmployee?.employee,
     });
+    console.log(auditReports, "----------------------------------")
 
     if (isLoading) {
         return <div className="space-y-8">
