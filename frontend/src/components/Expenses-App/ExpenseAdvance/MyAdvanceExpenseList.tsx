@@ -72,10 +72,14 @@ const MyAdvanceExpenseList = () => {
         <span>{formatCurrency(doc.advance_amount)}</span>
         <div className="flex justify-start">
           <Tooltip
-            content={status?.label === "Pending" ? item?.allocated_to : ""}
+            content={
+              status?.label === "Pending"
+                ? `Allocated to : ${item?.allocated_to}`
+                : ""
+            }
           >
             <Badge
-              size="sm"
+              size="md"
               backgroundColor={status?.statusColor}
               label={status?.label || ""}
             />

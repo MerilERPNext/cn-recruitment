@@ -92,7 +92,13 @@ export function MyRequestCard({
             </Typography>
           </Link>
           <div className="flex items-center justify-center">
-            <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${request?.allocated_to}`
+                  : ""
+              }
+            >
               <Badge
                 size="md"
                 label={status?.label as string}

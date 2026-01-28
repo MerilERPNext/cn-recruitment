@@ -122,7 +122,13 @@ const LeaveApprovalCard = ({
 
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
-            <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
               <Badge
                 size="md"
                 label={status?.label as string}

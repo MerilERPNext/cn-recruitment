@@ -159,7 +159,11 @@ const EmpAttendanceRequestCard = ({
           {/* Status */}
           <div className="flex items-center justify-center">
             <Tooltip
-              content={status?.label === "Pending" ? data?.allocated_to : ""}
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
             >
               <Badge
                 size="md"

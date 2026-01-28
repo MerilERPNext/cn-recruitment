@@ -136,8 +136,8 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         <Tooltip
           content={
             item?.status === "Draft"
-              ? item?.reference_document?.custom_assigned_user ||
-                item?.allocated_to
+              ? `Allocated to : ${item?.reference_document?.custom_assigned_user}` ||
+                `Allocated to : ${item?.allocated_to}`
               : ""
           }
         >
