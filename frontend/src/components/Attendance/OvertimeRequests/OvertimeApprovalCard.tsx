@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import DOMPurify from "dompurify";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../../utils/sanitizeToPlainText";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -70,11 +74,12 @@ const OvertimeApprovalCard = ({
     return styles;
   };
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const cleanDescription = sanitizeToPlainText(data?.description);
+  const truncatedDescription = truncateByChars(cleanDescription);
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1.5fr 3.2fr 1fr 1fr 2.8fr"
-    : "1.8fr 3.7fr 1.2fr 1.3fr 2fr";
+    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr"
+    : "1fr 1.5fr 1fr 1fr 1fr";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -108,7 +113,7 @@ const OvertimeApprovalCard = ({
           onClick={() => onClick?.(data)}
         >
           {isBulkSelectEnabled && (
-            <div className="flex items-center justify-start">
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-blue-500"
@@ -127,22 +132,27 @@ const OvertimeApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+            <Typography variant="bodySmall" className="font-medium text-center">
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.username}
               </WrapperHoverCard>
-            </div>
+            </Typography>
           </Link>
 
-          <div className="text-gray-600 text-sm truncate text-start">
-            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-          </div>
+          <Tooltip content={cleanDescription}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {truncatedDescription}
+            </Typography>
+          </Tooltip>
 
-          <div className="text-gray-700 text-sm text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
-          </div>
+          </Typography>
 
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-center">
             <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
               <Badge
                 size="sm"
@@ -151,14 +161,15 @@ const OvertimeApprovalCard = ({
               />
             </Tooltip>
           </div>
-
-          <TeamApprovalActionPill
-            actions={actions}
-            status={data?.reference_document?.status}
-            recordId={data?.todo_id}
-            loadingAction={loadingAction}
-            onAction={(action) => onAction(action, data)}
-          />
+          <div className="flex items-center justify-center">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.reference_document?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
+          </div>
         </div>
       ) : (
         <div
@@ -204,6 +215,7 @@ const OvertimeApprovalCard = ({
                     <div
                       dangerouslySetInnerHTML={{ __html: cleanDescription }}
                     />
+                    {/* {cleanDescription} */}
                   </p>
                 </div>
                 <Tooltip content={data?.allocated_to}>

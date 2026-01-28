@@ -44,8 +44,8 @@ const TeamOvertimeRequests = () => {
     : ["Employee", "Description", "Due Date", "Status", "ACTIONS"];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1.5fr", "3.2fr", "1fr", "1fr", "2.8fr"]
-    : ["1.8fr", "3.7fr", "1.2fr", "1.3fr", "2fr"];
+    ? ["0.5fr", "1fr", "1.5fr","1fr","1fr", "1fr"]
+    : ["1fr", "1.5fr", "1fr", "1fr","1fr"];
 
   return (
     <div>

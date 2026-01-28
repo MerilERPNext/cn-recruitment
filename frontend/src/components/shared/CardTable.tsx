@@ -33,7 +33,7 @@ const CardTable = ({
             style={{ gridTemplateColumns }}
           >
             {titles.map((item, i) => (
-              <Typography key={i} variant="bodySmall" className="font-medium">
+              <Typography key={i} variant="bodySmall" className="font-bold text-center">
                 {item}
               </Typography>
             ))}
