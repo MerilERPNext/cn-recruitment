@@ -1,32 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-
-const invoices = [
-  {
-    invoiceNo: "INV-001",
-    invoiceDate: "2025-05-01",
-    dueDate: "2025-05-10",
-    customerName: "ABC Pvt Ltd",
-    status: "Paid",
-    subTotal: 100000,
-    tax: 18000,
-    totalAmount: 118000,
-  },
-  {
-    invoiceNo: "INV-002",
-    invoiceDate: "2025-04-15",
-    dueDate: "2025-04-25",
-    customerName: "XYZ Solutions",
-    status: "Pending",
-    subTotal: 75000,
-    tax: 13500,
-    totalAmount: 88500,
-  },
-];
+import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import InvoicePDFview from "./Component/InvoicePDFview";
 
 const formatINR = (num: number) => `₹ ${num.toLocaleString("en-IN")}`;
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(false);
+
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+
+  const { data: invoiceData } = useInvoiceSalarySlip(
+    user?.employee || "",
+    user?.company || ""
+  );
+
+  const invoices = Array.isArray(invoiceData) ? invoiceData : [];
+
+  // ✅ parent click handler
+  const handleInvoiceClick = (invoiceID: string) => {
+    console.log("Clicked invoiceID:", invoiceID);
+  };
 
   return (
     <div className="py-4 min-h-screen">
@@ -57,72 +54,68 @@ export default function Invoice() {
                 />
               </button>
             </div>
-
-            {/* Year Dropdown (UI only) */}
-            <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow">
-              25-26
-              <span className="text-xs">▼</span>
-            </button>
           </div>
         </div>
 
         {/* Table Wrapper */}
         <div className="bg-white rounded-xl shadow border overflow-hidden">
           {/* Header Row */}
-          <div className="grid grid-cols-8 bg-gray-100 text-gray-700 font-medium text-sm px-4 py-3">
+          <div className="grid grid-cols-7 bg-gray-100 text-gray-700 font-medium text-sm px-4 py-3">
             <div>Invoice No</div>
             <div>Invoice Date</div>
             <div>Due Date</div>
             <div>Customer</div>
-            <div>Status</div>
             <div>Sub Total</div>
             <div>Total Amount</div>
-            <div className="text-center">Action</div>
+            <div>Action</div>
           </div>
 
-          {/* Data Rows */}
-          {invoices.map((inv, idx) => (
-            <div
-              key={idx}
-              className="grid grid-cols-8 items-center px-4 py-4 border-t text-sm"
-            >
-              <div className="font-medium">{inv.invoiceNo}</div>
-              <div>{inv.invoiceDate}</div>
-              <div>{inv.dueDate}</div>
-              <div>{inv.customerName}</div>
+          {invoices.length === 0 && (
+            <div className="px-4 py-6 text-center text-gray-500">
+              No invoices found
+            </div>
+          )}
 
-              <div>
-                <span
-                  className={`px-3 py-1 rounded-xl text-xs font-medium ${
-                    inv.status === "Paid"
-                      ? "bg-green-100 text-green-700"
-                      : inv.status === "Pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-200 text-gray-500"
+          {invoices.map((inv: any, idx: number) => {
+            const invoiceNo = inv.name;
+            const invoiceDate = inv.start_date;
+            const dueDate = inv.end_date;
+            const customerName = inv.employee_name;
+            const subTotal = inv.gross_pay;
+            const totalAmount = inv.net_pay;
+
+            return (
+              <div
+                key={invoiceNo || idx}
+                className="grid grid-cols-7 items-center px-4 py-4 border-t text-sm"
+              >
+                <div className="font-medium">{invoiceNo}</div>
+                <div>{invoiceDate}</div>
+                <div>{dueDate}</div>
+                <div>{customerName}</div>
+
+                <div className="font-medium">
+                  {hideAmount ? "•••••" : formatINR(subTotal || 0)}
+                </div>
+
+                <div
+                  className={`font-medium ${
+                    !hideAmount ? "blur-sm select-none" : ""
                   }`}
                 >
-                  {inv.status}
-                </span>
-              </div>
+                  {hideAmount ? "•••••" : formatINR(totalAmount || 0)}
+                </div>
 
-              <div className="font-medium">
-                {hideAmount ? "•••••" : formatINR(inv.subTotal)}
+                <div className="flex items-center justify-start">
+                  <InvoicePDFview
+                    invoiceID={invoiceNo}
+                    disabled={false}
+                    onClick={handleInvoiceClick} // ✅ pass callback
+                  />
+                </div>
               </div>
-
-              <div className="font-medium">
-                {hideAmount ? "•••••" : formatINR(inv.totalAmount)}
-              </div>
-
-              <div className="flex justify-center gap-2">
-                <button className="px-3 py-1.5 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50">
-                  View
-                </button>
-                <button className="px-3 py-1.5 border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50">
-                  Download
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

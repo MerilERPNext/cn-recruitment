@@ -418,9 +418,17 @@ export interface WeekOffAudit {
   updated_on: string;
 }
 
+export interface AttendancePolicyAudit {
+  policy: string | null;
+  effective_from: string;
+  updated_by: string;
+  updated_on: string;
+}
+
 export interface AuditReportResponse {
   shift_and_policy: ShiftAndPolicyAudit[];
   week_off: WeekOffAudit[];
+  attedance_policies: AttendancePolicyAudit[];
 }
 
 export interface IOvertimeLog {

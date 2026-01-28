@@ -10,6 +10,7 @@ import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { queryClient } from "../../providers/QueryProvider";
 import { Typography } from "../shared/atoms/Typography";
 import {
   sanitizeToPlainText,
@@ -63,6 +64,7 @@ const EmpLeaveRequestCard = ({
         },
         {
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             setRefetchAttendance(true);
             setMenuOpen(false);
           },

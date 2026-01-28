@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { useState, useRef } from "react";
-import { EmployeeStatus, EmployeeStatusType } from "../../../types/attendance";
+import { EmployeeStatusType } from "../../../types/attendance";
 import Avatar from "../../shared/Avatar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Edit, EllipsisVertical } from "lucide-react";
@@ -12,17 +12,32 @@ import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { Link } from "react-router-dom";
 
+export interface EmployeeStatusItem {
+  reports_to: string | undefined;
+  employee: string;
+  employee_name: string;
+  status: string;
+  in_time: string | null;
+  out_time: string | null;
+  working_hours: number | null;
+  shift?: string | null;
+  name?: string;
+}
+
 const EmployeeStatusCard = ({
   data,
   onRefetchData,
 }: {
-  data: EmployeeStatus;
+  data: EmployeeStatusItem;
   onRefetchData?: (() => void) | null;
 }) => {
   const { isDesktop } = useScreenSize();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editAttendance, setEditAttendance] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  console.log("EmployeeStatusCard data", data);
+
+  const desktopButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileButtonRef = useRef<HTMLButtonElement>(null);
 
   const getStatusIndicatorColor = (
     status:
@@ -34,7 +49,6 @@ const EmployeeStatusCard = ({
       | "default",
   ): { indicatorBgColor: string; indicatorBorderColor?: string } => {
     if (isDesktop) {
-      // Lighter colors for desktop
       switch (status) {
         case "present":
           return {
@@ -68,7 +82,6 @@ const EmployeeStatusCard = ({
           };
       }
     } else {
-      // Original colors for mobile
       switch (status) {
         case "present":
           return {
@@ -105,13 +118,13 @@ const EmployeeStatusCard = ({
   };
 
   const statusColors = getStatusIndicatorColor(
-    data?.status?.toLowerCase() as EmployeeStatusType,
+    (data?.status?.toLowerCase() as EmployeeStatusType) || "default",
   );
 
   return (
-    <div className="w-full mt-2 p-3 shadow-sm rounded-xl transition-all duration-200 bg-white hover:shadow-xl hover:shadow-slate-200/50 border-gray-100">
-      <div className="flex flex-col sm:flex-row  gap-3 w-full">
-        {/* Left Section - Avatar + Info */}
+    <div className="w-full mt-2 p-3 border shadow-sm rounded-xl bg-white  border-gray-100">
+      <div className="flex flex-col sm:flex-row gap-3 w-full">
+        {/* Left Section */}
         <div className="flex items-start gap-3 flex-1 justify-center">
           <Avatar
             name={data?.employee_name}
@@ -119,25 +132,27 @@ const EmployeeStatusCard = ({
             avatarTextColor={isDesktop ? "text-gray-700" : "text-indigo-800"}
             {...statusColors}
           />
+
           <div className="flex-1 min-w-10">
-            <div className="flex flex-wrap items-start gap-2">
-              <Link
-                to={`/webapp/employee-profile?target_user=${data?.employee}`}
-                target="_blank"
-              >
-                <Typography
-                  variant="bodyMedium"
-                  className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
-                >
-                  <WrapperHoverCard employeeId={data?.employee}>
-                    {data?.employee_name}
-                  </WrapperHoverCard>
-                </Typography>
-              </Link>
+            <div className="flex x-wrap items-start gap-2">
+            <Link
+  to={`/webapp/employee-profile?target_user=${data?.employee}`}
+  target="_blank"
+>
+  <Typography
+    variant="bodyMedium"
+    className="font-semibold text-gray-800 truncate max-w-[150px] sm:max-w-none"
+  >
+    <WrapperHoverCard employeeId={data?.employee}>
+      {data?.employee_name}
+    </WrapperHoverCard>
+  </Typography>
+</Link>
               {data?.shift ? (
                 <Badge size="sm" label={"Shift " + data?.shift} />
               ) : null}
             </div>
+
             <Typography
               variant="bodySmall"
               color="body2"
@@ -146,9 +161,10 @@ const EmployeeStatusCard = ({
               {data?.status}
             </Typography>
           </div>
+
           {!isDesktop && (
             <Button
-              ref={buttonRef}
+              ref={mobileButtonRef}
               variant="subtle"
               size="sm"
               onClick={() => setIsPopupOpen(!isPopupOpen)}
@@ -158,9 +174,10 @@ const EmployeeStatusCard = ({
             </Button>
           )}
         </div>
-        <div className="flex justify-center w-full  max-w-[700px]  gap-4">
-          {/* Middle Section - Time Info */}
-          <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] sm:justify-between gap-4 sm:gap-6 mt-2 sm:mt-0  w-full py-1 px-4">
+
+        {/* Middle Section */}
+        <div className="flex justify-center w-full max-w-[700px] gap-4">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between max-w-[700px] gap-4 sm:gap-6 mt-2 sm:mt-0 w-full py-1 px-4">
             <div className="text-center">
               <Typography
                 variant="bodySmall"
@@ -178,6 +195,7 @@ const EmployeeStatusCard = ({
                   : "--:--"}
               </Typography>
             </div>
+
             <div className="text-center">
               <Typography
                 variant="bodySmall"
@@ -195,6 +213,7 @@ const EmployeeStatusCard = ({
                   : "--:--"}
               </Typography>
             </div>
+
             <div className="text-center">
               <Typography
                 variant="bodySmall"
@@ -214,10 +233,9 @@ const EmployeeStatusCard = ({
             </div>
           </div>
 
-          {/* Right Section - Menu */}
           {isDesktop && (
             <Button
-              ref={buttonRef}
+              ref={desktopButtonRef}
               variant="subtle"
               size="sm"
               onClick={() => setIsPopupOpen(!isPopupOpen)}
@@ -233,30 +251,36 @@ const EmployeeStatusCard = ({
       <EditAttendance
         employeeId={data?.employee}
         employeeName={data?.employee_name}
-        onClose={() => setEditAttendance(false)}
+        onClose={() => {
+          setEditAttendance(false);
+          setIsPopupOpen(false);
+        }}
         open={editAttendance}
-        requestId={data?.name}
+        requestId={data?.reports_to}
         onRefetchData={onRefetchData}
       />
+
       <ContextualPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
-        triggerRef={buttonRef}
+        triggerRef={isDesktop ? desktopButtonRef : mobileButtonRef}
       >
-        <div className="">
-          <Button
-            variant="subtle"
-            fullWidth
-            contentAlign="start"
-            onClick={() => setEditAttendance(true)}
-            className="text-sm px-4 py-2"
-          >
-            <Edit size={16} />
-            Edit
-          </Button>
-        </div>
+        <Button
+          variant="subtle"
+          fullWidth
+          contentAlign="start"
+          onClick={() => {
+            setIsPopupOpen(false);
+            setEditAttendance(true);
+          }}
+          className="text-sm px-4 py-2"
+        >
+          <Edit size={16} />
+          Edit
+        </Button>
       </ContextualPopup>
     </div>
+    
   );
 };
 

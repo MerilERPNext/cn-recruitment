@@ -33,6 +33,7 @@ export function useRevokeEvent() {
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
     },
     onError: (e) => {
       console.log(e);
