@@ -5,7 +5,7 @@ import type React from "react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -27,6 +27,7 @@ import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 
 type PayrollPeriod = {
   name: string;
@@ -124,13 +125,6 @@ const SalarySlipsList = () => {
     });
 
   const isDownloading = isDownloading2 || isDownloading3 || isDownloading4;
-
-  const formatToIndianDateModal = (dateString: string): string => {
-    const date = new Date(dateString);
-    return `${String(date.getDate()).padStart(2, "0")}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${date.getFullYear()}`;
-  };
 
   const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
     if (isDesktop) {
