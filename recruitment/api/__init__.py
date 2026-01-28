@@ -41,7 +41,9 @@ def get_employee_details(employee_id):
             "emergency_phone_number": employee.emergency_phone_number,
             "blood_group": employee.blood_group,
             "custom_aadhar_no": employee.custom_aadhar_no,
-            "employment_type": employee.employment_type
+            "employment_type": employee.employment_type,
+            "custom_employment_status": employee.custom_employment_status,
+            "final_confirmation_date": employee.final_confirmation_date,
         }
     except frappe.DoesNotExistError:
         frappe.throw(_("Employee not found"), frappe.DoesNotExistError)
