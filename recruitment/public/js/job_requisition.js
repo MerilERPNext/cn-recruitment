@@ -67,22 +67,20 @@ frappe.ui.form.on("Job Requisition", {
                           <table style="width:100%">
                               <tr>
                               <td class="hide-name-column" >${note.name}</td>
-                              <td style="width:20%">${
-                                note.custom_comment_type
-                              }</td>
+                              <td style="width:20%">${note.custom_comment_type
+            }</td>
                                
                                   <td style="width:40%">${note.note}</td>
                                   <td style="width:30%">${note.added_by}<br>
                                   
                                   ${frappe.datetime.global_date_format(
-                                    note.added_on
-                                  )}</td>
+              note.added_on
+            )}</td>
       
                                   
                                   
-                                  <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${
-                                    note.note
-                                  }"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
+                                  <td style="width:5%"><button class="edit-note-btn btn btn-sm btn-primary" data-note="${note.note
+            }"><svg class="icon icon-sm"><use xlink:href="#icon-edit"></use></svg></button></td>
       
                               </tr>
       
@@ -298,13 +296,14 @@ frappe.ui.form.on("Job Requisition", {
           assign_to: frm.doc.custom_assign_to_recruiter,
           description: "Please Do The Needful",
         },
-        callback: function (r) {},
+        callback: function (r) { },
       });
     }
   },
   // based on the selected designation, this will fetch the skills from the Designation doctype.
   designation(frm) {
     if (frm.doc.designation) {
+      // 1. Fetch Skills (Existing Logic)
       frappe.call({
         method: "frappe.client.get",
         args: {
@@ -315,14 +314,48 @@ frappe.ui.form.on("Job Requisition", {
         callback: (rs) => {
           let res = rs.message.skills;
           let crops = [];
-
           for (var index in res) {
             crops.push(res[index]);
           }
-
           frm.set_value("custom_skills", crops);
           refresh_field("custom_skills");
         },
+      });
+
+      // 2. Auto-fetch Matching JD Template
+      frappe.call({
+        method: "recruitment.recruitment.doctype.jd_template.jd_template.get_matching_template",
+        args: {
+          designation: frm.doc.designation,
+          department: frm.doc.department || null
+        },
+        callback: function (r) {
+          if (r.message && r.message.name) {
+            // If template found, render it against current doc
+            frappe.call({
+              method: "recruitment.recruitment.doctype.jd_template.jd_template.render_template",
+              args: {
+                template_name: r.message.name,
+                doc_data: JSON.stringify(frm.doc)
+              },
+              callback: function (render_res) {
+                if (render_res.message) {
+                  // Assuming we want to populate the main 'description' field or a custom one
+                  // User requirement says "replace placeholders with Job Requisition values"
+                  // and "Auto-fill JD in Job Requisition"
+                  if (frm.doc.description !== render_res.message) {
+                    frm.set_value('description', render_res.message);
+                    frappe.msgprint({
+                      title: 'JD Template Applied',
+                      message: `Applied template <b>${r.message.name}</b> based on Designation match.`,
+                      indicator: 'green'
+                    });
+                  }
+                }
+              }
+            });
+          }
+        }
       });
     }
   },
@@ -374,28 +407,28 @@ frappe.ui.form.on("Job Requisition", {
 });
 
 function update_description_field(frm) {
-    const rows = frm.doc.custom_jd_details || [];
-    if (!rows.length) {
-        frm.set_value("description", "");
-        return;
+  const rows = frm.doc.custom_jd_details || [];
+  if (!rows.length) {
+    frm.set_value("description", "");
+    return;
+  }
+
+  let html = "";
+
+  rows.forEach(row => {
+    if (row.label) {
+      html += `<p><strong>${frappe.utils.escape_html(row.label.trim())}</strong></p>`;
     }
-
-    let html = "";
-
-    rows.forEach(row => {
-        if (row.label) {
-            html += `<p><strong>${frappe.utils.escape_html(row.label.trim())}</strong></p>`;
+    if (row.description) {
+      const lines = row.description.trim().split("\n");
+      lines.forEach(line => {
+        if (line.trim()) {
+          html += `<p>${frappe.utils.escape_html(line.trim())}</p>`;
         }
-        if (row.description) {
-            const lines = row.description.trim().split("\n");
-            lines.forEach(line => {
-                if (line.trim()) {
-                    html += `<p>${frappe.utils.escape_html(line.trim())}</p>`;
-                }
-            });
-        }
-        html += `<p><br></p>`;  // Spacer between sections
-    });
+      });
+    }
+    html += `<p><br></p>`;  // Spacer between sections
+  });
 
-    frm.set_value("description", html);
+  frm.set_value("description", html);
 }
