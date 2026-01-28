@@ -10,6 +10,7 @@ import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { queryClient } from "../../providers/QueryProvider";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -58,6 +59,7 @@ const EmpLeaveRequestCard = ({
         },
         {
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             setRefetchAttendance(true);
             setMenuOpen(false);
           },

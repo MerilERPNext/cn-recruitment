@@ -51,6 +51,7 @@ const EmployeeAttendance = () => {
     date: Date;
     status: string;
     data: AttendanceRecord;
+    events?: AttendanceRecord[];
   } | null>(null);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -358,6 +359,7 @@ const EmployeeAttendance = () => {
         <div className="w-1/3 h-screen sticky top-2">
           <EmployeeAttendanceDetails
             data={showDetailsFor?.data}
+            events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}
@@ -374,6 +376,7 @@ const EmployeeAttendance = () => {
         >
           <EmployeeAttendanceDetails
             data={showDetailsFor?.data}
+            events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}

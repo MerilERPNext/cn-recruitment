@@ -83,6 +83,7 @@ const AllEmpAttendance = () => {
     date: Date;
     status: string;
     data: AttendanceRecord;
+    events?: AttendanceRecord[];
   } | null>(null);
 
   /* Auto refresh */
@@ -296,10 +297,15 @@ const AllEmpAttendance = () => {
               key={index}
               onClick={() => {
                 if (item.status?.toLowerCase() !== "weekly off") {
+                  const dayEvents = allEventsAndAttendance?.filter(e =>
+                    format(new Date(e.start), "yyyy-MM-dd") === format(dateObj, "yyyy-MM-dd")
+                    && e.doctype !== "Attendance"
+                  );
                   setShowDetailsFor({
                     date: dateObj,
                     data: item,
                     status: item.status?.toLowerCase(),
+                    events: dayEvents
                   });
                 }
               }}
@@ -370,6 +376,7 @@ const AllEmpAttendance = () => {
         >
           <EmployeeAttendanceDetails
             data={showDetailsFor.data}
+            events={showDetailsFor.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
             onClose={() => setShowDetailsFor(null)}
