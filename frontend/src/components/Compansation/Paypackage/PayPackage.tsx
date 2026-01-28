@@ -23,6 +23,8 @@ type CTCComponentItem = {
 
 type PayrollPeriod = {
   name: string;
+  start_date: string;
+  end_date: string;
 };
 
 export default function SalaryAssignmentList() {
@@ -55,17 +57,23 @@ export default function SalaryAssignmentList() {
   const toggleAmount = () => {
     setShowAmount((prev) => !prev);
   };
+useEffect(() => {
+  if (!payrollPeriods?.length || selectedPeriod) return;
 
-  useEffect(() => {
-    if (payrollPeriods?.length && !selectedPeriod) {
-      const currentYear = new Date().getFullYear().toString();
-      const defaultPeriod =
-        payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-        payrollPeriods[0].name;
+  const today = new Date(); 
 
-      setSelectedPeriod(defaultPeriod);
-    }
-  }, [payrollPeriods, selectedPeriod]);
+  const matchedPeriod = payrollPeriods.find((p) => {
+    const start = new Date(p.start_date);
+    const end = new Date(p.end_date);
+
+    // inclusive range check
+    return today >= start && today <= end;
+  });
+
+  setSelectedPeriod(
+    matchedPeriod?.name || payrollPeriods[0].name
+  );
+}, [payrollPeriods, selectedPeriod]);
 
   const list = useMemo(
     () => (Array.isArray(apiResponse) ? apiResponse : []),

@@ -42,7 +42,7 @@ export const attendanceService = {
 
   getDataOfAttendance: async (
     empId: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> => {
     try {
       const res = await FrappeAPI.callMethod(
@@ -53,27 +53,28 @@ export const attendanceService = {
       );
       console.log("Raw response from getDataOfAttendance:", res);
       return res;
-      
+
     } catch (error) {
       console.error("📡 Error while fetching attendance:", error);
       throw error;
     }
   },
   getDataOfAttendanceDetails: async (
-    selectedReporties: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    selectedReporties: string,
+    selectedDate: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> => {
     try {
       const res = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.attendance_api.get_attendance_status_today",
         {
           reports_to: selectedReporties,
-          date: new Date().toISOString().split("T")[0],
+          date: selectedDate,
         }
       );
       console.log("Raw response from getDataOfAttendance:", res);
       return res;
-      
+
     } catch (error) {
       console.error("📡 Error while fetching attendance:", error);
       throw error;
