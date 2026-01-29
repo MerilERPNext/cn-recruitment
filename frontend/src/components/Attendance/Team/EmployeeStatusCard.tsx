@@ -163,7 +163,7 @@ const EmployeeStatusCard = ({
             </Typography>
           </div>
 
-          {!isDesktop && (
+          {!isDesktop && data?.attendance_name && (
             <Button
               ref={mobileButtonRef}
               variant="subtle"
@@ -234,7 +234,7 @@ const EmployeeStatusCard = ({
             </div>
           </div>
 
-          {isDesktop && (
+          {isDesktop && data?.attendance_name && (
             <Button
               ref={desktopButtonRef}
               variant="subtle"
