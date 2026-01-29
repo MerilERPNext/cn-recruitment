@@ -26,7 +26,7 @@ const TeamAdvanceExpenseList = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -62,18 +62,17 @@ const TeamAdvanceExpenseList = () => {
     : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
 
   return (
-    <>
-      <div className=" min-h-screen">
-        <div className="px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Advance Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team advance expense requests
-              </Typography>
-            </div>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">Team Advance Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team advance expense requests
+            </Typography>
           </div>
-
+        </div>
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name && (
               <ApprovalList
@@ -112,7 +111,6 @@ const TeamAdvanceExpenseList = () => {
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <TeamAdvanceDetailView
           documentName={requestId}
@@ -121,7 +119,7 @@ const TeamAdvanceExpenseList = () => {
           onAction={handleActionComplete}
         />
       )}
-    </>
+    </div>
   );
 };
 

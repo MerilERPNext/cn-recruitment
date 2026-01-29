@@ -269,54 +269,52 @@ const ExpensesList: React.FC = () => {
   ];
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
-    >
-      <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
-            <Typography variant="h4">My Expense Claims</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your expense claim requests
-            </Typography>
-          </div>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">My Expense Claims</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your expense claim requests
+              </Typography>
+            </div>
+            <div className="flex items-center space-x-3 pb-1">
+              {isDesktop ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="rounded-xl hover:bg-blue-100 py-1"
+                    onClick={() => setIsPolicyDrawerOpen(true)}
+                  >
+                    Policy
+                  </Button>
 
-          <div className="flex items-center space-x-3 pb-1">
-            {isDesktop ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="rounded-xl hover:bg-blue-100 py-1"
-                  onClick={() => setIsPolicyDrawerOpen(true)}
-                >
-                  Policy
-                </Button>
-
-                <Button
-                  onClick={() =>
-                    navigate("/webapp/expenses-app/shared-expenses")
-                  }
-                  icon={<Users size={16} />}
-                  size="md"
-                  variant="outline"
-                  className="hover:bg-blue-100 rounded-xl py-1"
-                >
-                  Shared
-                </Button>
-              </>
-            ) : (
-              <DropdownMenu items={mobileMenuItems} placement="bottom-left">
-                <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                  <MoreVertical size={18} />
-                </button>
-              </DropdownMenu>
-            )}
+                  <Button
+                    onClick={() =>
+                      navigate("/webapp/expenses-app/shared-expenses")
+                    }
+                    icon={<Users size={16} />}
+                    size="md"
+                    variant="outline"
+                    className="hover:bg-blue-100 rounded-xl py-1"
+                  >
+                    Shared
+                  </Button>
+                </>
+              ) : (
+                <DropdownMenu items={mobileMenuItems} placement="bottom-left">
+                  <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
+                    <MoreVertical size={18} />
+                  </button>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="h-full px-0  pt-0">
+        <div className="px-4">
           {currentEmployee?.name && (
             <CardTable
               titles={[
