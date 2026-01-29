@@ -12,6 +12,8 @@ import { Typography } from "../../../shared/atoms/Typography";
 import { Card } from "../../../shared/atoms/Card";
 
 type PayrollPeriod = {
+  start_date: string | number | Date;
+  end_date: string | number | Date;
   name: string;
 };
 type taxsheetData = {
@@ -29,16 +31,21 @@ export default function IncomeComputationSheetContainer() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
 
   useEffect(() => {
-    if (payrollPeriods?.length && !selectedPeriod) {
-      const currentYear = new Date().getFullYear().toString();
-
-      // Try to find payroll period that includes the current year
-      const periodForCurrentYear =
-        payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-        payrollPeriods[0].name; // fallback to first period
-
-      setSelectedPeriod(periodForCurrentYear);
-    }
+    if (!payrollPeriods?.length || selectedPeriod) return;
+  
+    const today = new Date(); 
+  
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+  
+      // inclusive range check
+      return today >= start && today <= end;
+    });
+  
+    setSelectedPeriod(
+      matchedPeriod?.name || payrollPeriods[0].name
+    );
   }, [payrollPeriods, selectedPeriod]);
 
   const { data: taxsheetData } = useIncomeTaxComputationData(

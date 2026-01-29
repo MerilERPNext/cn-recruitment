@@ -26,7 +26,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import ReplaceLeaveModal from "../../Leaves/ReplaceLeaveModal";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import CircularLoader from "../../shared/atoms/CircularLoader";
-import RequestLeave from "../../Leaves/RequestLeave";
 import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
@@ -42,12 +41,14 @@ interface EmployeeAttendanceDetailsProps {
   status?: string;
   onClose?: () => void;
   data?: AttendanceRecord;
+  events?: AttendanceRecord[];
 }
 
 const EmployeeAttendanceDetails = ({
   date: propDate,
   status: propStatus,
   data,
+  events,
   onClose,
 }: EmployeeAttendanceDetailsProps = {}) => {
   const { search } = useLocation();
@@ -55,7 +56,7 @@ const EmployeeAttendanceDetails = ({
   const dateParam = query.get("date");
   const { targetEmployeeId } = useTargetUser();
 
-  const status = propStatus || query.get("status");
+  const status = propStatus?.toLowerCase().replace(/-/g, " ") || query.get("status")?.toLowerCase().replace(/-/g, " ");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
@@ -73,9 +74,19 @@ const EmployeeAttendanceDetails = ({
     return isValid(d) ? d : null;
   }, [propDate, dateParam]);
 
-  // If this is a leave record (custom_auto_created === 1), fetch leave details
+  // Check if there are leave or attendance request events
+  const leaveEvent = useMemo(() => {
+    return events?.find(e => e.doctype === "Leave Request");
+  }, [events]);
+
+  const hasAttendanceRequestEvent = useMemo(() => {
+    return events?.some(e => e.doctype === "Attendance Request");
+  }, [events]);
+
   const isLeaveRecord =
-    data?.custom_auto_created === 1 || status === "on-leave";
+    data?.custom_auto_created === 1 || status === "on leave" || !!leaveEvent;
+
+  const leaveApplicationName = data?.leave_application_name || leaveEvent?.name;
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -85,12 +96,12 @@ const EmployeeAttendanceDetails = ({
   // Only fetch leave details if it's a leave record
   const { data: leaveDetails } = useFrappeDocument(
     "Leave Application",
-    isLeaveRecord && data?.leave_application_name
-      ? data.leave_application_name
+    isLeaveRecord && leaveApplicationName
+      ? leaveApplicationName
       : null!,
   ) as { data: LeaveApplication | undefined };
 
-  const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
+  const effectiveEmployeeId = data?.employee || targetEmployeeId || currentEmployee?.employee;
 
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.employee || "",
@@ -106,29 +117,31 @@ const EmployeeAttendanceDetails = ({
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
     validDate && effectiveEmployeeId
       ? [
-          ["time", "between", [start, end]],
-          ["employee", "=", effectiveEmployeeId],
-        ]
+        ["time", "between", [start, end]],
+        ["employee", "=", effectiveEmployeeId],
+      ]
       : [],
+    { enabled: !!validDate && !!effectiveEmployeeId }
   );
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
-    validDate && effectiveEmployeeId
+    validDate && effectiveEmployeeId && (hasAttendanceRequestEvent || status === "absent" || status === "half day")
       ? [
-          ["employee", "=", effectiveEmployeeId],
-          ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
-          ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
-          ["docstatus", "!=", 2],
-        ]
+        ["employee", "=", effectiveEmployeeId],
+        ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
+        ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+        ["docstatus", "!=", 2],
+      ]
       : [],
+    { enabled: !!validDate && !!effectiveEmployeeId && (hasAttendanceRequestEvent || status === "absent" || status === "half day") }
   );
 
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance",
+    "Attendance Summary",
   );
   const canRevokeLeave = isActionEnabled(
     userUiPermission,
@@ -227,8 +240,11 @@ const EmployeeAttendanceDetails = ({
     let headerTitle = "Attendance Details";
     if (status === "holiday") {
       headerTitle = "Holiday Details";
-    } else if (data?.custom_auto_created === 1 || status === "on-leave") {
+    } else if (status === "on leave") {
       headerTitle = "Leave Details";
+      // if custom_auto_created is 1 that means its a Unpaid Leave and we show it like a leave on UI in yellow color
+    } else if (data?.custom_auto_created === 1 || !!leaveEvent) {
+      headerTitle = "Leave Details (System Generated)"
     }
     return (
       <div className="flex justify-between items-center p-4 border-b">
@@ -251,24 +267,27 @@ const EmployeeAttendanceDetails = ({
 
   const renderLeaveDetailsActions = () => {
     const showButton = buttonStatus?.leave_applications?.find(
-      (item) => item?.name === data?.leave_application_name,
+      (item) => item?.name === leaveApplicationName,
     );
 
     return (
-      <div className="mt-10 flex gap-2">
-        {showButton?.show_revoke_button && canRevokeLeave && (
-          <Button size="md" fullWidth onClick={handleRevoke}>
-            {revokePending ? <CircularLoader color="white" /> : "Revoke"}
-          </Button>
-        )}
-        {showButton?.show_replace_button && canReplaceLeave && (
-          <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
-            Replace
-          </Button>
-        )}
+      <div className="mt-10 flex flex-col gap-2">
+        <div className="flex gap-2">
+
+          {showButton?.show_revoke_button && canRevokeLeave && (
+            <Button size="md" fullWidth onClick={handleRevoke}>
+              {revokePending ? <CircularLoader color="white" /> : "Revoke"}
+            </Button>
+          )}
+          {showButton?.show_replace_button && canReplaceLeave && (
+            <Button size="md" fullWidth onClick={() => setShowReplaceModal(true)}>
+              Replace
+            </Button>
+          )}
+        </div>
         {showButton?.show_edit_button && canEditLeave && (
           <Button size="md" fullWidth onClick={handleEdit}>
-            Edit
+            Attendance Adjustment
           </Button>
         )}
       </div>
@@ -320,12 +339,8 @@ const EmployeeAttendanceDetails = ({
     return (
       <div>
         <LeaveDetailsCard data={leaveDetails} />
-        {data?.custom_auto_created === 1 ? renderLeaveDetailsActions() : null}
+        {data?.custom_auto_created === 1 || (leaveEvent && status === "on leave") ? renderLeaveDetailsActions() : null}
         <div className="border-t-2 border-gray-100 mt-6"></div>
-
-        {hasExistingRequest ? (
-          <AttendanceRequestInfo data={attendanceRequests?.[0]} />
-        ) : null}
       </div>
     );
   };
@@ -338,18 +353,8 @@ const EmployeeAttendanceDetails = ({
       {hasExistingRequest || renderAbsentMessage()}
     </>
   );
-  const renderMainContent = () => {
-    if (isLeaveRecord) {
-      return (
-        <div className="flex-grow overflow-y-auto p-4">
-          {renderLeaveDetails()}
-        </div>
-      );
-    }
 
-    if (isLoading) {
-      return renderLoadingState();
-    }
+  const renderMainContent = () => {
     if (data?.status.toLowerCase() === "holiday" && data?.title) {
       return (
         <div className="p-2">
@@ -364,16 +369,33 @@ const EmployeeAttendanceDetails = ({
         </div>
       );
     }
+
     return (
-      <>
-        <div className="flex-grow overflow-y-auto p-4">
-          {renderRegularContent()}
-          <div className="border-t-2 border-gray-100 mt-6"></div>
-          {hasExistingRequest ? (
-            <AttendanceRequestInfo data={attendanceRequests?.[0]} />
-          ) : null}
-        </div>
-      </>
+      <div className="flex-grow overflow-y-auto p-4 space-y-6">
+        {isLeaveRecord && leaveDetails && (
+          <div className="animate-in fade-in slide-in-from-top-4 duration-300">
+            {renderLeaveDetails()}
+          </div>
+        )}
+
+        {isLoading ? (
+          renderLoadingState()
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {renderRegularContent()}
+          </div>
+        )}
+
+        {attendanceRequests && attendanceRequests.length > 0 && (
+          <div className="pt-4 border-t-2 border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex flex-col gap-6">
+              {attendanceRequests.map((req, idx) => (
+                <AttendanceRequestInfo key={req.name || idx} data={req} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -381,7 +403,7 @@ const EmployeeAttendanceDetails = ({
     if (isLeaveRecord) return null;
     if (!canRequestAttendance) return null;
     const isButtonDisabled =
-      status !== "absent" && status !== "half-day" && status !== "half day";
+      status !== "absent" && status !== "half day";
 
     if (hasExistingRequest) {
       return (
@@ -444,40 +466,9 @@ const EmployeeAttendanceDetails = ({
 
       {showEditModal &&
         createPortal(
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-2xl h-[90vh] flex flex-col overflow-hidden shadow-xl">
-              <div className="flex justify-between items-center p-4 border-b flex-shrink-0">
-                <Typography
-                  variant="h3"
-                  className="font-semibold text-gray-900"
-                >
-                  Edit Leave Application
-                </Typography>
-                <Button
-                  variant="subtle"
-                  size="sm"
-                  onClick={() => setShowEditModal(false)}
-                  className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </Button>
-              </div>
-              <div className="flex-1 min-h-0">
-                <RequestLeave
-                  onSuccess={() => {
-                    setShowEditModal(false);
-                    queryClient.invalidateQueries({
-                      queryKey: ["get-All-Events-And-Attendance"],
-                    });
-                    if (onClose) {
-                      onClose();
-                    }
-                  }}
-                  onCancel={() => setShowEditModal(false)}
-                />
-              </div>
-            </div>
-          </div>,
+          <AttendanceRequestFormV2
+            onClose={() => setShowEditModal(false)}
+          />,
           document.body,
         )}
     </div>

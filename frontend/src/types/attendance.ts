@@ -80,7 +80,7 @@ export interface MyAttendanceRequest {
   attachments?: [
     {
       file_url: string;
-    }
+    },
   ];
 }
 
@@ -122,9 +122,7 @@ export type PlannedOvertimeRequest = {
 };
 
 export interface MyPlannedAttendanceRequest {
-  attachments?: [
-    { file_url: string }
-  ]
+  attachments?: [{ file_url: string }];
   due_date: string | number | Date;
   reference_document: PlannedOvertimeRequest;
   custom_doctype_actions: string;
@@ -165,6 +163,7 @@ export interface BulkActionProps {
     action: "Approve" | "Reject";
     isLoading: boolean;
   } | null;
+  columnWidths?: string[];
 }
 
 export type EmployeeCheckInLog = {
@@ -359,7 +358,6 @@ export type ShiftBlock = {
   weekly_off: string;
 };
 
-
 export interface EmployeeAllCheckin {
   name: string;
   creation: string;
@@ -413,7 +411,6 @@ export interface EmployeeRegularize {
   date: string;
   status: string;
   day: string;
-
 }
 export interface WeekOffAudit {
   week_off: string | null;
@@ -421,9 +418,17 @@ export interface WeekOffAudit {
   updated_on: string;
 }
 
+export interface AttendancePolicyAudit {
+  policy: string | null;
+  effective_from: string;
+  updated_by: string;
+  updated_on: string;
+}
+
 export interface AuditReportResponse {
   shift_and_policy: ShiftAndPolicyAudit[];
   week_off: WeekOffAudit[];
+  attedance_policies: AttendancePolicyAudit[];
 }
 
 export interface IOvertimeLog {
@@ -436,4 +441,4 @@ export interface IOvertimeLog {
   overtime_hrs: number;
   compoff_created: number;
   owner: string;
-};
+}

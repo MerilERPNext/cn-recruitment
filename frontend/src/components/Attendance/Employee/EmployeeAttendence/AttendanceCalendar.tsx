@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -6,6 +6,8 @@ import DatePicker from "react-datepicker";
 import { AttendanceRecord } from "../../../../types/attendance";
 import { gradientClassMap } from "../../../../utils/helperUtils";
 import Button from "../../../shared/atoms/Button";
+import { useSearchParams } from "react-router-dom";
+
 type Status =
   | "present"
   | "absent"
@@ -45,6 +47,7 @@ type ShowDetailsType = {
   date: Date;
   status: string;
   data: AttendanceRecord;
+  events?: AttendanceRecord[];
 };
 type attendanceProps = {
   selectedDate: Date | null;
@@ -58,6 +61,19 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   getAttendanceStatus,
   setShowDetailsFor,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!selectedDate && !searchParams.get("date")) return;
+
+    setSearchParams(
+      {
+        date: selectedDate?.toISOString() || "",
+      },
+      { replace: true }
+    );
+  }, [selectedDate, setSearchParams]);
+
   return (
     <div className="p-1 employee-datepicker-lg">
       <DatePicker
@@ -70,13 +86,15 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
           const attendance = getAttendanceStatus(date as Date);
 
           if (
-            attendance?.status !== "default" &&
+            // attendance?.status !== "default" &&
+            // attendance?.events?.length > 0 &&
             attendance?.status !== "week-off"
           ) {
             setShowDetailsFor({
               date: date as Date,
               status: attendance?.status,
               data: attendance?.record as AttendanceRecord,
+              events: attendance?.events as AttendanceRecord[],
             });
           } else {
             setShowDetailsFor(null);
@@ -126,12 +144,11 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             switch (attendance?.status) {
               case "present":
                 return "!bg-green-100 !text-green-700 rounded-md";
+              case "unpaid":
               case "absent":
                 return "!bg-red-100 !text-red-700 rounded-md";
               case "on-leave":
                 return "!bg-yellow-100 !text-yellow-700 rounded-md";
-              case "unpaid":
-                return "!bg-orange-100 !text-orange-700 rounded-md";
               case "holiday":
                 return "!bg-blue-100 !text-blue-700 rounded-md";
               case "week-off":
@@ -154,7 +171,6 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             const secondColor =
               gradientClassMap[attendance?.secondHalf?.toLowerCase() || ""];
             const gradient = `linear-gradient(to bottom right, ${firstColor} 50%, ${secondColor} 50%)`;
-
             return (
               <div
                 className={dayBoxStyles}

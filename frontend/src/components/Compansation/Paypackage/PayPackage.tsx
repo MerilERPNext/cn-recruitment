@@ -23,6 +23,8 @@ type CTCComponentItem = {
 
 type PayrollPeriod = {
   name: string;
+  start_date: string;
+  end_date: string;
 };
 
 export default function SalaryAssignmentList() {
@@ -55,17 +57,23 @@ export default function SalaryAssignmentList() {
   const toggleAmount = () => {
     setShowAmount((prev) => !prev);
   };
+useEffect(() => {
+  if (!payrollPeriods?.length || selectedPeriod) return;
 
-  useEffect(() => {
-    if (payrollPeriods?.length && !selectedPeriod) {
-      const currentYear = new Date().getFullYear().toString();
-      const defaultPeriod =
-        payrollPeriods.find((p) => p.name.includes(currentYear))?.name ||
-        payrollPeriods[0].name;
+  const today = new Date(); 
 
-      setSelectedPeriod(defaultPeriod);
-    }
-  }, [payrollPeriods, selectedPeriod]);
+  const matchedPeriod = payrollPeriods.find((p) => {
+    const start = new Date(p.start_date);
+    const end = new Date(p.end_date);
+
+    // inclusive range check
+    return today >= start && today <= end;
+  });
+
+  setSelectedPeriod(
+    matchedPeriod?.name || payrollPeriods[0].name
+  );
+}, [payrollPeriods, selectedPeriod]);
 
   const list = useMemo(
     () => (Array.isArray(apiResponse) ? apiResponse : []),
@@ -75,10 +83,10 @@ export default function SalaryAssignmentList() {
   const titles = [
     "Effective Date",
     "Status",
-    "Monthly CTC",
-    "Annual CTC",
     "Fixed Gross Monthly",
+    "Monthly CTC",
     "Fixed Gross Annual",
+    "Annual CTC",  
     "Action",
   ];
 
@@ -149,12 +157,16 @@ export default function SalaryAssignmentList() {
                       </span>
                     </div>
 
+
+
+                    <div>{renderAmount(item.fixed_gross_monthly)}</div>
                     <div className="font-medium">
                       {renderAmount(item.monthly_ctc)}
                     </div>
-                    <div>{renderAmount(item.annual_ctc)}</div>
-                    <div>{renderAmount(item.fixed_gross_monthly)}</div>
                     <div>{renderAmount(item.fixed_gross_annual)}</div>
+                    <div>{renderAmount(item.annual_ctc)}</div>
+                   
+                    
 
                     <div className="flex items-center justify-start gap-2">
                       <button
@@ -347,14 +359,14 @@ export default function SalaryAssignmentList() {
                       <p className="font-medium">{chg.property}</p>
                       <p className="text-gray-500">
                         Old:{" "}
-                        <span className="blur-sm select-none">
-                          {showAmount ? chg.old_value : "XXXXX"}
+                        <span className="">
+                          {chg.old_value}
                         </span>
                       </p>
                       <p className="text-gray-500">
                         New:{" "}
-                        <span className="blur-sm select-none">
-                          {showAmount ? chg.new_value : "XXXXX"}
+                        <span className="">
+                          {chg.new_value}
                         </span>
                       </p>
                       <p className="text-xs text-gray-400 mt-1">

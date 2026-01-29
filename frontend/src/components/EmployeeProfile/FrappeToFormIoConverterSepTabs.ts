@@ -46,7 +46,7 @@ export function clearTableFieldsCache() {
  */
 async function prefetchTableFields(apiFields: any[]): Promise<void> {
   const tableFields = apiFields.filter(
-    (f) => f.fieldtype === "Table" && f.options
+    (f) => f.fieldtype === "Table" || f.fieldtype === "Table Multiselect" || f.fieldtype === "Table MultiSelect" && f.options
   );
   const uniqueDoctypes = [...new Set(tableFields.map((f) => f.options))];
 

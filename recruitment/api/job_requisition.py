@@ -299,7 +299,9 @@ def create_job_requisition_api(data=None):
             "custom_experience_range_from", "custom_experience_range_to", "custom_experience_unit",
             "custom_hiring_lead", "custom_salary_range_currency",
             "custom_salary_range_min", "custom_salary_range_max", "custom_salary_timeframe",
-            "custom_type_of_position", "custom_functional_area"
+            "custom_type_of_position", "custom_functional_area",
+            "custom_additional_roles__responsibilities", "custom_additional_skills",
+            "custom_comments__instructions", "custom_cost_centre", "custom_designation_change"
         ]
 
         for field in allow_fields:

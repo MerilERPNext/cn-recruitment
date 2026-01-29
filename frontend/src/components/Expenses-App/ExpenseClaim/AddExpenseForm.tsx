@@ -23,6 +23,7 @@ import ParticipantsDrawer from "./ParticipantDrawer";
 import { Employee } from "../../../types/employee";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 export interface EmployeeOption {
   name: string;
@@ -67,6 +68,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 }) => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
+  const [expenseTypeKey, setExpenseTypeKey] = useState(0);
   const [formKey, setFormKey] = useState<number>(0);
   const [vehicleType, setVehicleType] = useState<string | null>(null);
   const [previousCategory, setPreviousCategory] = useState<string | null>(null);
@@ -319,6 +321,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   customClass: "mt-4 md:mt-0",
                   html: true,
                   disabled: !!editingExpenseId,
+                  redrawOn: "expenseCategory",
                 },
               ],
             },
@@ -580,7 +583,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       })
       .filter(Boolean);
 
-  const expenseTypeValue: string | undefined = mainFormData?.expenseType;
+  const expenseTypeValue = useMemo(
+    () => mainFormData?.expenseType || undefined,
+    [mainFormData?.expenseType, expenseTypeKey],
+  );
+
   const { data: expenseTypeData, isFetching: isFetchingFields } =
     useGetExpenseTypeFields(expenseTypeValue);
 
@@ -747,67 +754,77 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
   }, [isSharePanelOpen]);
 
-  const submitAll = () => {
-    const participantsForClaim: any[] =
-      (dynamicFormData?.participants &&
-      Array.isArray(dynamicFormData.participants)
-        ? dynamicFormData.participants
-        : null) ||
-      expenses.flatMap((e) =>
-        Array.isArray(e.participants) ? e.participants : [],
-      );
+  const loading = useLoadingOverlay();
 
-    const payload = {
-      employee: currentEmployee?.name,
-      employee_name: currentEmployee?.employee_name,
-      company: currentEmployee?.company,
-      posting_date: new Date().toISOString().split("T")[0],
-      expenses: expenses.map(
-        (
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          { id, submitButton, expenseType, expenseCategory, ...rest },
-        ) => {
-          const filteredRest = Object.fromEntries(
-            Object.entries(rest).filter(
-              ([, value]) =>
-                value !== null && value !== undefined && value !== "",
-            ),
-          );
+  const submitAll = async () => {
+    await loading?.wrap(async () => {
+      const participantsForClaim: any[] =
+        (dynamicFormData?.participants &&
+        Array.isArray(dynamicFormData.participants)
+          ? dynamicFormData.participants
+          : null) ||
+        expenses.flatMap((e) =>
+          Array.isArray(e.participants) ? e.participants : [],
+        );
 
-          if (filteredRest.expense_date) {
-            filteredRest.expense_date = format(
-              new Date(filteredRest.expense_date),
-              "yyyy-MM-dd",
+      const payload = {
+        employee: currentEmployee?.name,
+        employee_name: currentEmployee?.employee_name,
+        company: currentEmployee?.company,
+        posting_date: new Date().toISOString().split("T")[0],
+        expenses: expenses.map(
+          (
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            { id, submitButton, expenseType, expenseCategory, ...rest },
+          ) => {
+            const filteredRest = Object.fromEntries(
+              Object.entries(rest).filter(
+                ([, value]) =>
+                  value !== null && value !== undefined && value !== "",
+              ),
             );
-          }
-          if (filteredRest.start_datetime) {
-            filteredRest.start_datetime = format(
-              new Date(filteredRest.start_datetime),
-              "yyyy-MM-dd HH:mm:ss",
-            );
-          }
-          if (filteredRest.end_datetime) {
-            filteredRest.end_datetime = format(
-              new Date(filteredRest.end_datetime),
-              "yyyy-MM-dd HH:mm:ss",
-            );
-          }
 
-          return {
-            ...filteredRest,
-            expense_type: expenseType,
-            reimbursement_category: expenseCategory,
-          };
-        },
-      ),
-      participants: participantsForClaim || [],
-    };
+            if (filteredRest.expense_date) {
+              filteredRest.expense_date = format(
+                new Date(filteredRest.expense_date),
+                "yyyy-MM-dd",
+              );
+            }
+            if (filteredRest.start_datetime) {
+              filteredRest.start_datetime = format(
+                new Date(filteredRest.start_datetime),
+                "yyyy-MM-dd HH:mm:ss",
+              );
+            }
+            if (filteredRest.end_datetime) {
+              filteredRest.end_datetime = format(
+                new Date(filteredRest.end_datetime),
+                "yyyy-MM-dd HH:mm:ss",
+              );
+            }
 
-    submitExpenseClaim(JSON.stringify(payload), {
-      onSuccess: () => {
-        clearLocal();
-      },
-    } as any);
+            return {
+              ...filteredRest,
+              expense_type: expenseType,
+              reimbursement_category: expenseCategory,
+            };
+          },
+        ),
+        participants: participantsForClaim || [],
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        submitExpenseClaim(JSON.stringify(payload), {
+          onSuccess: () => {
+            clearLocal();
+            resolve();
+          },
+          onError: (err: any) => {
+            reject(err);
+          },
+        } as any);
+      });
+    }, "Submitting all expenses…");
   };
 
   const handleEdit = (expense: Expense) => {
@@ -865,8 +882,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             onChange={(change: any) => {
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
+              const newExpenseType = change.data.expenseType;
+              const prevCategory = previousCategory;
 
-              // FIX 3: Better handling of category type changes
+              // Handle category type changes
               if (
                 selectedCategoryType &&
                 newCategoryType &&
@@ -891,6 +910,50 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 } catch (e) {
                   console.error(e);
                 }
+                return;
+              }
+
+              // NEW: Handle category clearing
+              if (prevCategory && !newCategory) {
+                setPreviousCategory(null);
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setCalcParams(undefined);
+                setVehicleType(null);
+                setExpenseTypeKey((k) => k + 1);
+                setMainFormData({ ...change.data });
+
+                // Force form refresh to clear cache
+                setFormKey((k) => k + 1);
+                return;
+              }
+
+              // Handle category changes
+              if (newCategory && prevCategory !== newCategory) {
+                change.data.expenseType = null;
+
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setCalcParams(undefined);
+                setVehicleType(null);
+                setExpenseTypeKey((k) => k + 1);
+                setPreviousCategory(newCategory);
+                setMainFormData({ ...change.data });
+                setFormKey((k) => k + 1);
+
+                try {
+                  dynamicFormRef.current?.reset();
+                } catch (e) {
+                  console.error(e);
+                }
+
+                return;
+              }
+
+              // NEW: Handle expense type changes to trigger field fetch
+              if (newExpenseType !== mainFormData?.expenseType) {
+                setMainFormData(change.data);
+                setExpenseTypeKey((k) => k + 1);
                 return;
               }
 

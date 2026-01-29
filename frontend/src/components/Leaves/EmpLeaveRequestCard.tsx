@@ -10,6 +10,14 @@ import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { queryClient } from "../../providers/QueryProvider";
+import { Typography } from "../shared/atoms/Typography";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -36,12 +44,12 @@ const EmpLeaveRequestCard = ({
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "revoke_replace_edit",
-    "My Requests"
+    "My Requests",
   );
 
   const leaveButtonConfig = buttonStatus?.leave_applications?.find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (app: any) => app.name === data?.reference_name
+    (app: any) => app.name === data?.reference_name,
   );
 
   const allowEdit = leaveButtonConfig?.show_edit_button;
@@ -58,10 +66,11 @@ const EmpLeaveRequestCard = ({
         },
         {
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             setRefetchAttendance(true);
             setMenuOpen(false);
           },
-        }
+        },
       );
     }
   };
@@ -112,8 +121,9 @@ const EmpLeaveRequestCard = ({
         label: "Approved",
         statusColor: "bg-success/10 text-success",
       };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-danger/10 text-danger" };
+
+    if (status === "rejected")
+      return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
     return {
       label: rawStatus || "Unknown",
       statusColor: "bg-gray-100 text-gray-800",
@@ -122,13 +132,13 @@ const EmpLeaveRequestCard = ({
 
   const status = getStatus(data?.reference_document?.status);
 
-  const formattedFromDate = data?.reference_document?.from_date
-    ? formatToIndianDate(data?.reference_document.from_date)
-    : "N/A";
- 
-  const formattedToDate = data?.reference_document?.to_date
-    ? formatToIndianDate(data?.reference_document.to_date)
-    : "N/A";
+  const cleanDescription = sanitizeToPlainText(
+    data?.reference_document?.description,
+  );
+  const truncatedDescription = truncateByChars(cleanDescription);
+
+  const isPending = data?.reference_document?.status === "Open";
+  const isApproved = data?.reference_document?.status === "Approved";
 
   const ActionMenu = () => (
     <div
@@ -183,43 +193,65 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 0.5fr" }}
-          className={`grid items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer relative`}
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 1fr" }}
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
+          >
             {data?.reference_document?.leave_type}
-          </div>
-          <div className="text-sm text-gray-900">{formattedFromDate}</div>
-          <div className="text-sm text-gray-900">{formattedToDate}</div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.description || " - "}
-          </div>
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.total_leave_days}
-          </div>
-          <div className="flex justify-start">
-            <Tooltip
-              content={status?.label === "Pending" ? data?.allocated_to : ""}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document.from_date)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document.to_date)}
+          </Typography>
+
+          <Tooltip content={cleanDescription}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
             >
-              <Badge
-                size="sm"
+              {truncatedDescription}
+            </Typography>
+          </Tooltip>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.total_leave_days > 1
+              ? data?.reference_document?.total_leave_days + " Days"
+              : data?.reference_document?.total_leave_days + " Day"}
+          </Typography>
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              {/* <Badge
+                size="md"
+                label={status?.label as string}
                 backgroundColor={status?.statusColor}
-                label={status?.label || ""}
-              />
+              /> */}
+              <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2 items-center relative">
-            {data?.custom_allow_revoke && canRequestLeave && (
-              <div className="relative">
-                <button
-                  onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                {menuOpen && <ActionMenu />}
-              </div>
-            )}
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              isPending={isPending}
+              canRevoke={
+                isPending && data?.custom_allow_revoke && canRequestLeave
+              }
+              // optional
+              canEdit={allowEdit}
+              canReplace={allowReplace && (isPending || isApproved)}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={handleEditClick}
+              onReplace={handleReplaceClick}
+            />
           </div>
         </div>
       ) : (
@@ -237,7 +269,8 @@ const EmpLeaveRequestCard = ({
               </div>
 
               <div className="card-subtitle">
-                {formattedFromDate} - {formattedToDate}
+                {formatToIndianDate(data?.reference_document.from_date)} -{" "}
+                {formatToIndianDate(data?.reference_document.to_date)}
               </div>
             </div>
 

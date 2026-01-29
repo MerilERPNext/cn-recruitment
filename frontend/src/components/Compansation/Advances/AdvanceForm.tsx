@@ -28,6 +28,7 @@ import {
   SchemaComponent,
 } from "../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { Typography } from "../../shared/atoms/Typography";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface AdvanceFormProps {
   user?: any;
@@ -136,39 +137,43 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     }
   }, [advanceAmountData, selectedAdvanceType]);
 
+  const loading = useLoadingOverlay();
   /** ✅ Handle Submit */
   const handleSubmit = async () => {
-    try {
-      const submission = await formAdvanceInstance.current?.submit();
-      const formData = submission?.data;
+  try {
+    const submission = await formAdvanceInstance.current?.submit();
+    const formData = submission?.data;
 
-      if (!formData) {
-        toast.error("Please fill all required fields.");
-        return;
-      }
+    if (!formData) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
 
-      if (formData.custom_repayment_start_date) {
-        formData.custom_repayment_start_date = new Date(
-          formData.custom_repayment_start_date
-        )
-          .toISOString()
-          .split("T")[0];
-      }
+    if (formData.custom_repayment_start_date) {
+      formData.custom_repayment_start_date = new Date(
+        formData.custom_repayment_start_date
+      )
+        .toISOString()
+        .split("T")[0];
+    }
 
-      const submissionData = {
-        ...formData,
-        custom_advance_type:
-          selectedAdvanceType || formData.custom_advance_type,
-        applicant_type: "Employee",
-        company: user?.company,
-        employee: user?.employee,
-        advance_account: advanceAmountData?.advance_account,
-        exchange_rate: 1.0,
-        custom_repayment_methods: formData.repayment_method || "",
-        custom_repayment_period_in_months: formData.repayment_periods || 0,
-        custom_monthly_repayment_amount: formData.repayment_amount || 0,
-      };
+    const submissionData = {
+      ...formData,
+      custom_advance_type:
+        selectedAdvanceType || formData.custom_advance_type,
+      applicant_type: "Employee",
+      company: user?.company,
+      employee: user?.employee,
+      advance_account: advanceAmountData?.advance_account,
+      exchange_rate: 1.0,
+      custom_repayment_methods: formData.repayment_method || "",
+      custom_repayment_period_in_months: formData.repayment_periods || 0,
+      custom_monthly_repayment_amount: formData.repayment_amount || 0,
+    };
 
+    // ✅ Wrap only the mutation + file upload
+    await loading?.wrap(async () => {
+       await new Promise<void>((resolve, reject) => {
       mutation.mutate(submissionData, {
         onSuccess: async (data: any) => {
           if (attachments?.length > 0) {
@@ -177,21 +182,24 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
           toast.success("Advance Request submitted successfully!");
           onClose?.();
           setTimeout(() => setRefetchAttendance(true), 2000);
+          resolve();
         },
         onError: (error: any) => {
-          const formatedError = errorResponseFormater(
-            error,
-            "Submission failed. Please try again."
-          );
-          toast.error(formatedError);
           console.error(error);
+          reject(error);
         },
-      });
-    } catch (err) {
-      console.error("❌ Form submission error", err);
-      toast.error("Form submission failed!");
-    }
-  };
+      })});
+    }, "Submitting advance request…");
+  } catch (err) {
+    console.error("❌ Form submission error", err);
+    const formatedError = errorResponseFormater(
+        err,
+        "Submission failed. Please try again."
+      );
+      toast.error(formatedError);
+  }
+};
+
 
   const handleCancel = useCallback(() => {
     if (formAdvanceInstance.current) {

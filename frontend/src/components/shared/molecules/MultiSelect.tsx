@@ -17,6 +17,7 @@ interface MultiSelectProps<T extends Option> {
     className?: string;
     searchValue?: string;
     onSearchChange?: (value: string) => void;
+    isLoading?: boolean;
     renderOption?: (option: T) => React.ReactNode;
 
 
@@ -34,6 +35,7 @@ const MultiSelect = <T extends Option>({
     className = "",
     searchValue,
     onSearchChange,
+    isLoading,
     renderOption
 }: MultiSelectProps<T>) => {
     const [query, setQuery] = useState("");
@@ -144,6 +146,19 @@ const MultiSelect = <T extends Option>({
                 />
             </Button>
 
+            {isLoading &&
+                <div
+                    className="
+            absolute z-50 mt-2 w-full
+            rounded-xl border border-gray-200
+            bg-white shadow-lg
+            animate-in fade-in zoom-in-95 flex flex-col gap-2 p-2
+          ">
+                    {Array.from({ length: 3 }).map(() => (
+                        <div className="h-6 w-full bg-gray-200 rounded" />
+                    ))}
+
+                </div>}
             {/* Dropdown */}
             {open && !disabled && filteredOptions.length > 0 && (
                 <div
@@ -154,6 +169,7 @@ const MultiSelect = <T extends Option>({
             animate-in fade-in zoom-in-95
           "
                 >
+
                     <ul className="max-h-60 overflow-auto p-1">
                         {filteredOptions.map((opt) => (
                             <li

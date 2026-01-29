@@ -15,7 +15,6 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Award, IdCard, Mail, MapPin, NotebookPen, Pencil } from "lucide-react";
 import { Tab } from "../NavigationTab";
-import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import Button from "../shared/atoms/Button";
 import AttendanceAssignments from "../Attendance/AttendanceAssignments";
@@ -39,6 +38,7 @@ import Appreciations from "./Appreciations";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import Overview from "./Overview/Overview";
 
 export interface PersonalInfoProps {
   user: Employee | null | undefined;
@@ -48,9 +48,9 @@ export interface PersonalInfoProps {
 const EMPLOYEMENT_STATUS = {
   "on probation": "On Probation",
   "probation extended": "On Probation",
-  "confirm": "Active",
-  "on notice period": "On Notice"
-}
+  confirm: "Active",
+  "on notice period": "On Notice",
+};
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -138,8 +138,8 @@ const EmployeeProfile: React.FC = () => {
 
   const tabs: Tab[] = useMemo(
     () => [
+      { key: "overview", label: "Overview" },
       { key: "personal-information", label: "Personal Information" },
-      { key: "ORG-chart", label: "Organization Chart" },
       { key: "employment-history", label: "Employment History" },
       { key: "reporting-details", label: "Reporting Details" },
       { key: "employee-holidays", label: "Employee Holidays" },
@@ -157,8 +157,8 @@ const EmployeeProfile: React.FC = () => {
 
   const tabContent: Record<string, React.ReactNode> = useMemo(
     () => ({
+      "overview": <Overview />,
       "personal-information": <EmployeeProfileSections />,
-      "ORG-chart": <TwoLevelOrgChart />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
       "employee-holidays": <ShowHolidays />,
       "employee-documents": <DocumentLibrary />,
@@ -345,20 +345,24 @@ const EmployeeProfile: React.FC = () => {
                     <span>{user?.employee}</span>
                   </Typography>
                 )}
-                {(user?.company_email || user?.personal_email) && <Typography
-                  variant="bodySmall"
-                  color="primary"
-                  className="flex gap-1.5 items-center"
-                >
-                  <Mail size={14} className="text-primary-500" />
-                  <span>
-                    {user?.company_email || user?.personal_email}
-                  </span>
-                </Typography>}
+                {(user?.company_email || user?.personal_email) && (
+                  <Typography
+                    variant="bodySmall"
+                    color="primary"
+                    className="flex gap-1.5 items-center"
+                  >
+                    <Mail size={14} className="text-primary-500" />
+                    <span>{user?.company_email || user?.personal_email}</span>
+                  </Typography>
+                )}
                 <div className="flex flex-wrap items-center gap-3 mt-4">
                   {user?.custom_employment_status && (
                     <Badge
-                      label={EMPLOYEMENT_STATUS[user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS] || user?.custom_employment_status}
+                      label={
+                        EMPLOYEMENT_STATUS[
+                        user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                        ] || user?.custom_employment_status
+                      }
                       size="sm"
                       backgroundColor={
                         user?.status === "Active"
@@ -403,7 +407,7 @@ const EmployeeProfile: React.FC = () => {
                 key={tab.key}
                 variant="subtle"
                 onClick={() => scrollToSection(tab.key)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
+                className={`whitespace-nowrap px-4 py-2 rounded-none text-sm font-medium transition-all duration-200 border-b-2 ${activeTab === tab.key
                   ? "border-primary-600 text-primary-600"
                   : "border-transparent text-gray-600 hover:text-primary-600"
                   }`}
@@ -500,9 +504,15 @@ const EmployeeProfile: React.FC = () => {
                             <span>{user?.employee}</span>
                           </Typography>
                         )}
+                      </div>
+                      <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         {user?.custom_employment_status && (
                           <Badge
-                            label={EMPLOYEMENT_STATUS[user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS] || user?.custom_employment_status}
+                            label={
+                              EMPLOYEMENT_STATUS[
+                              user?.custom_employment_status.toLowerCase() as keyof typeof EMPLOYEMENT_STATUS
+                              ] || user?.custom_employment_status
+                            }
                             size="md"
                             backgroundColor={
                               user?.status === "Active"
@@ -521,7 +531,6 @@ const EmployeeProfile: React.FC = () => {
                             }
                           />
                         )}
-
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
                         {user?.designation_display && (
@@ -536,7 +545,6 @@ const EmployeeProfile: React.FC = () => {
                           </Tooltip>
                         )}
                         <div className="flex gap-2">
-
                           {user?.branch_display && (
                             <Typography
                               variant="bodySmall"
@@ -555,7 +563,9 @@ const EmployeeProfile: React.FC = () => {
                               className="text-primary-500 flex items-center gap-2"
                             >
                               <Mail size={16} />
-                              <span>{user?.company_email || user?.personal_email}</span>
+                              <span>
+                                {user?.company_email || user?.personal_email}
+                              </span>
                             </Typography>
                           )}
                         </div>
@@ -587,8 +597,7 @@ const EmployeeProfile: React.FC = () => {
           )}
           {/* Horizontal Tabs - Sticky inside scroll container */}
           <div className="rounded-md">
-
-            <div className="bg-white sticky top-0 z-10 rounded-t-md">
+            <div className="bg-white sticky top-0 rounded-t-md z-10">
               <div className="flex overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
                 {tabs.map((tab) => (
                   <button
@@ -612,14 +621,12 @@ const EmployeeProfile: React.FC = () => {
                   sectionRefs.current[tab.key] = el;
                 }}
                 data-section={tab.key}
-                className="bg-white mb-4 w-full max-w-full scroll-mt-20 rounded-md"
+                className="bg-white mb-4 w-full max-w-full scroll-mt-8 rounded-md"
               >
                 {tabContent[tab.key]}
               </div>
             ))}
-
           </div>
-
         </div>
       </div>
       <AttendanceAssignments

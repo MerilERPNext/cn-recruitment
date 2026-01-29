@@ -1,22 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useEmployeeDocument, useSubmitAcknowledgement } from "../../hooks/useEmployeeDocuments";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { data: userId } = useLoggedInUser();
+  const { targetEmployeeId } = useTargetUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data } = useEmployeeDocument(user?.employee || "");
+  const TargetEmployeeID = useMemo(() => {
+    const f: Record<string, string> = {};
+    if (targetEmployeeId) f.employee = targetEmployeeId;
+    return f;
+  }, [targetEmployeeId]);
+  const { data } = useEmployeeDocument(
+    (TargetEmployeeID as unknown as string) || user?.employee || ""
+  );
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+
   const {
     mutate: submitAcknowledgement,
   } = useSubmitAcknowledgement();
@@ -79,6 +89,9 @@ const DocumentLibrary = () => {
   );
 
   const getFileUrl = (path: string) => `${path}`;
+
+
+
 
   return (
     <div className="bg-white p-4 ">

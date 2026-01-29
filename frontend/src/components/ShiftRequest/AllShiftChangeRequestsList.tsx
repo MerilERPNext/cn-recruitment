@@ -43,7 +43,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
     <div className="w-full mx-auto pt-2 px-6">
       <div>
         <HeaderBar
-          title="All Shift Change Requests"
+          title="Team Shift Requests"
           onBack={() => navigate(-1)}
         />
         <CardTable

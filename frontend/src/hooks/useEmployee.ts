@@ -301,6 +301,22 @@ export const useGetEmployeeDetailsByEmpIdForProfile = (employee_id: string) => {
     enabled: !!employee_id,
   });
 };
+export const useGetEmployeeProfileOverview = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["all-emp-profile-overview", employee_id],
+    queryFn: () => profileService.getEmployeeProfileOverview(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
+export const useGetEmploymentHistoryData = (employee_id: string) => {
+  return useQuery({
+    queryKey: ["employment-history-data", employee_id],
+    queryFn: () => profileService.getEmploymentHistoryData(employee_id),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!employee_id,
+  });
+};
 export const useGetEmployeeAppreciations = () => {
   return useQuery<{ badges: Award[] } | null>({
     queryKey: ["all-emp-appreciations"],

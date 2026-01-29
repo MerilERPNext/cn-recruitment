@@ -14,46 +14,96 @@ export const requisitionFormSchemas = {
   basicDetails: {
     components: [
       {
-        type: "textfield",
+        type: "select",
         key: "hiring_manager",
         label: "Hiring Manager",
-        placeholder: "Ambreen Admin (TST_00045)",
-        validate: { required: true },
+        placeholder: "Select Hiring Manager",
+        dataSrc: "url",
+        data: {
+          url: '/api/resource/Employee?fields=["name","employee_name"]',
+          headers: [{ key: "Accept", value: "application/json" }],
+        },
+        selectValues: "data",
+        valueProperty: "name",
+        template:
+          "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
+        validate: {
+          required: true,
+        },
       },
+
       {
         type: "select",
         key: "company",
         label: "Company",
+        placeholder: "Select Company",
+        input: true,
+        dataSrc: "url",
         data: {
-          values: [{ label: "Edtech", value: "edtech" }],
+          url: '/api/resource/Company?fields=["name"]',
+          headers: [{ key: "Accept", value: "application/json" }],
         },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
         validate: { required: true },
       },
+
       {
         type: "select",
         key: "department",
         label: "Department",
+        placeholder: "Select Department",
+        input: true,
+        dataSrc: "url",
         data: {
-          values: [{ label: "Test Department (DEP_132)", value: "dep_132" }],
+          url: '/api/resource/Department?filters=[["company","=","{{ data.company }}"]]',
+          headers: [{ key: "Accept", value: "application/json" }],
         },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
         validate: { required: true },
+        refreshOn: "company",
+        clearOnRefresh: true,
       },
+
       {
         type: "select",
         key: "designation",
         label: "Designation",
+        placeholder: "Select Designation",
+        input: true,
+        dataSrc: "url",
         data: {
-          values: [{ label: "Senior Associate (DES_360)", value: "des_360" }],
+          url: '/api/resource/Designation?filters=[["custom_department","=","{{ data.department }}"]]',
+          headers: [{ key: "Accept", value: "application/json" }],
         },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
         validate: { required: true },
+        refreshOn: "department",
+        clearOnRefresh: true,
       },
+
       {
         type: "select",
         key: "functional_area",
         label: "Functional Area",
+        placeholder: "Select Functional Area",
+        input: true,
+        dataSrc: "url",
         data: {
-          values: [{ label: "EBM (HR_EBM)", value: "hr_ebm" }],
+          url: '/api/resource/Functional Area?filters=[["designation","=","{{ data.designation }}"]]',
+          headers: [{ key: "Accept", value: "application/json" }],
         },
+        selectValues: "data",
+        valueProperty: "name",
+        template: "<span>{{ item.name }}</span>",
+        refreshOn: "designation",
+        clearOnRefresh: true,
+        customConditional: "show = !!data.designation",
       },
     ],
   },
@@ -77,15 +127,12 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "experience_from",
                 label: "Experience Range - From",
+                placeholder: "Select",
                 data: {
-                  values: [
-                    { label: "0", value: 0 },
-                    { label: "1", value: 1 },
-                    { label: "2", value: 2 },
-                    { label: "3", value: 3 },
-                    { label: "4", value: 4 },
-                    { label: "5", value: 5 },
-                  ],
+                  values: Array.from({ length: 50 }, (_, i) => ({
+                    label: i.toString(),
+                    value: i,
+                  })),
                 },
               },
             ],
@@ -100,14 +147,16 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "experience_to",
                 label: "To",
+                placeholder: "Select",
                 data: {
-                  values: [
-                    { label: "1", value: 1 },
-                    { label: "2", value: 2 },
-                    { label: "3", value: 3 },
-                    { label: "5", value: 5 },
-                    { label: "10", value: 10 },
-                  ],
+                  values: Array.from({ length: 50 }, (_, i) => ({
+                    label: (i + 1).toString(),
+                    value: i + 1,
+                  })),
+                },
+                validate: {
+                  custom:
+                    "valid = (input >= data.experience_from) ? true : 'To must be greater than or equal to From'",
                 },
               },
             ],
@@ -116,6 +165,7 @@ export const requisitionFormSchemas = {
             push: 0,
             pull: 0,
           },
+
           {
             components: [
               {
@@ -148,12 +198,15 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "salary_currency",
                 label: "Salary Range (Currency)",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "₹ (INR)", value: "INR" },
-                    { label: "$ (USD)", value: "USD" },
-                  ],
+                  url: '/api/resource/Currency?fields=["name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
+                defaultValue: "INR",
                 validate: { required: true },
               },
             ],
@@ -200,10 +253,15 @@ export const requisitionFormSchemas = {
                 label: "Salary Timeframe",
                 data: {
                   values: [
-                    { label: "Annual", value: "annual" },
-                    { label: "Monthly", value: "monthly" },
+                    { label: "Hourly", value: "Hourly" },
+                    { label: "Daily", value: "Daily" },
+                    { label: "Weekly", value: "Weekly" },
+                    { label: "Fortnightly", value: "Fortnightly" },
+                    { label: "Monthly", value: "Monthly" },
+                    { label: "Annual", value: "Annual" },
                   ],
                 },
+                defaultValue: "Annual",
                 validate: { required: true },
               },
             ],
@@ -224,7 +282,7 @@ export const requisitionFormSchemas = {
                 type: "datetime",
                 key: "recruitment_start_date",
                 label: "Recruitment Start Date",
-                format: "yyyy-MM-dd",
+                format: "dd-MM-yyyy",
                 enableDate: true,
                 enableTime: false,
               },
@@ -240,10 +298,16 @@ export const requisitionFormSchemas = {
                 type: "select",
                 key: "hiring_lead",
                 label: "Hiring lead",
-                placeholder: "Select",
+                placeholder: "Select Hiring Lead",
+                dataSrc: "url",
                 data: {
-                  values: [],
+                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template:
+                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
                 validate: { required: true },
                 tooltip: "Select the hiring lead for this position",
               },
@@ -320,7 +384,6 @@ export const requisitionFormSchemas = {
             defaultValue: "new",
             validate: { required: true },
           },
-
           {
             type: "number",
             key: "number_of_new_positions",
@@ -345,8 +408,7 @@ export const requisitionFormSchemas = {
             type: "number",
             key: "number_of_positions",
             label: "Number of Position(s)",
-            default: 5,
-            // suffix: '<span class="text-muted">Max Position Allowed: 👁️</span>',
+            defaultValue: 1,
             description: "(Max Allowed Positions per Requisition is 100)",
           },
         ],
@@ -360,7 +422,9 @@ export const requisitionFormSchemas = {
             type: "datagrid",
             key: "positions",
             label: "Position Details",
-            addAnother: "Add Position",
+            disableAddingRemovingRows: true,
+            addAnother: "",
+            removeRow: "",
             components: [
               {
                 type: "number",
@@ -373,16 +437,14 @@ export const requisitionFormSchemas = {
                 key: "location",
                 label: "Location",
                 placeholder: "Select Location",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Branch Office - Mumbai", value: "mumbai" },
-                    { label: "Prayagraj, Uttar Pradesh", value: "prayagraj" },
-                    {
-                      label: "Corporate Office, Uttar Pradesh",
-                      value: "corporate_up",
-                    },
-                  ],
+                  url: "/api/resource/Branch",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
               {
@@ -390,28 +452,29 @@ export const requisitionFormSchemas = {
                 key: "functional_area",
                 label: "Functional Area",
                 placeholder: "Select",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    {
-                      label: "Facility Manager (ASS_O...)",
-                      value: "facility_manager",
-                    },
-                  ],
+                  url: '/api/resource/Functional Area?fields=["name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
               },
               {
                 type: "select",
                 key: "reporting_manager",
                 label: "Reporting manager",
                 placeholder: "Search Employees",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Gopal Sharma (PW1005)", value: "pw1005" },
-                    { label: "Geetanjali . (PW0616)", value: "pw0616" },
-                    { label: "Anjali Sharma (TST_00047)", value: "tst_00047" },
-                    { label: "Anjali Kumari (PW1882)", value: "pw1882" },
-                  ],
+                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template:
+                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
                 validate: { required: true },
               },
               {
@@ -419,13 +482,14 @@ export const requisitionFormSchemas = {
                 key: "employee_type",
                 label: "Employee Type",
                 placeholder: "Select",
+                dataSrc: "url",
                 data: {
-                  values: [
-                    { label: "Full Time", value: "full_time" },
-                    { label: "Part Time", value: "part_time" },
-                    { label: "Contract", value: "contract" },
-                  ],
+                  url: "/api/resource/Employment Type",
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template: "<span>{{ item.name }}</span>",
                 validate: { required: true },
               },
             ],
@@ -439,7 +503,9 @@ export const requisitionFormSchemas = {
             type: "datagrid",
             key: "replacement_positions",
             label: "Position Details",
-            addAnother: "Add Position",
+            disableAddingRemovingRows: true,
+            addAnother: "",
+            removeRow: "",
             components: [
               {
                 type: "number",
@@ -463,10 +529,19 @@ export const requisitionFormSchemas = {
                 validate: { required: true },
               },
               {
-                type: "textfield",
+                type: "select",
                 key: "replacement_for",
                 label: "Replacement for",
                 placeholder: "Search Employees",
+                dataSrc: "url",
+                data: {
+                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
+                },
+                selectValues: "data",
+                valueProperty: "name",
+                template:
+                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
                 validate: { required: true },
               },
               {
@@ -474,9 +549,15 @@ export const requisitionFormSchemas = {
                 key: "reporting_manager",
                 label: "Reporting manager",
                 placeholder: "Search Employees",
+                dataSrc: "url",
                 data: {
-                  values: [],
+                  url: '/api/resource/Employee?fields=["name","employee_name"]',
+                  headers: [{ key: "Accept", value: "application/json" }],
                 },
+                selectValues: "data",
+                valueProperty: "name",
+                template:
+                  "<span>{{ item.employee_name }} <span style='color:#7f8c8d'>({{item.name}})</span></span>",
                 validate: { required: true },
               },
               {
