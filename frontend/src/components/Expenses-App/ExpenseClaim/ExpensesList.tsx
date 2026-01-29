@@ -10,7 +10,7 @@ import DataListView from "../../DataListView";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
-import { SquarePen, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
@@ -21,6 +21,8 @@ import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -107,8 +109,8 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click from opening modal
+
+  const handleEditClick = () => {
     if (!expenseClaim?.name || !expenseItem?.name) return;
 
     const navigationState = buildExpenseNavigationState(
@@ -120,19 +122,30 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="max-w-screen grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
-      <span>{expenseClaim?.custom_expense_category || " - "}</span>
-      <span>{formattedAmount}</span>
-      <span>{formattedSanctionedAmount || " - "}</span>
-      <span>
+      <Typography
+        variant="bodySmall"
+        className="font-medium text-center truncate"
+      >
+        {expenseClaim?.custom_expense_category}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedAmount}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedSanctionedAmount}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(
           item?.reference_document?.expenses[0]?.expense_date,
         )}
-      </span>
-      <span>{formatToIndianDate(item?.reference_document?.creation)}</span>
-      <div>
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(item?.reference_document?.creation)}
+      </Typography>
+      <div className="flex items-center justify-center">
         <Tooltip
           content={
             item?.status === "Draft"
@@ -141,26 +154,27 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
               : ""
           }
         >
-          <span
+          {/* <span
             className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
               item?.status,
             )}`}
           >
             {item?.status === "Draft" ? "Pending" : item?.status}
-          </span>
+          </span> */}
+          <StatusBadge status={item?.status} />
         </Tooltip>
       </div>
 
-      {currentUser?.name?.toLowerCase() ===
-        item?.send_back_user?.toLowerCase() &&
-        canEditExpense && (
-          <button
-            onClick={handleEditClick}
-            className="text-gray-500 hover:text-blue-600"
-          >
-            <SquarePen size={18} />
-          </button>
-        )}
+      <div className="flex items-center justify-center">
+        <MyApprovalActionPill
+          isPending={item?.status === "Draft"}
+          canEdit={
+            currentUser?.name?.toLowerCase() ===
+              item?.send_back_user?.toLowerCase() && canEditExpense
+          }
+          onEdit={handleEditClick}
+        />
+      </div>
     </div>
   );
 };
@@ -324,9 +338,9 @@ const ExpensesList: React.FC = () => {
                 "Expense Date",
                 "Claimed Date",
                 "Status",
-                "Actions",
+                "ACTIONS",
               ]}
-              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
+              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
             >
               <DataListView
                 queryKey={["expense-claims-all"]}
@@ -336,7 +350,6 @@ const ExpensesList: React.FC = () => {
                   params: {
                     doctype: "Expense Claim",
                     employee: currentEmployee?.name,
-                    status: "Draft",
                   },
                 }}
                 ItemComponent={(props: { item: any }) =>
@@ -360,6 +373,9 @@ const ExpensesList: React.FC = () => {
                     ],
                   },
                 ]}
+                defaultFilters={{
+                  status: "Draft",
+                }}
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}

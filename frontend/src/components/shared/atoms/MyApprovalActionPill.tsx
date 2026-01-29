@@ -29,7 +29,6 @@ const MyApprovalActionPill = ({
   canRevoke,
   canEdit,
   canReplace,
-  // isPending,
   onRevoke,
   onEdit,
   onReplace,

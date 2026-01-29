@@ -59,8 +59,8 @@ const TeamExpense = () => {
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
-    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="max-h-screen flex flex-col">
@@ -78,7 +78,6 @@ const TeamExpense = () => {
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Expense Claim"}
-                status={"Draft"}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
@@ -87,15 +86,21 @@ const TeamExpense = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Draft", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Draft" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
+                defaultFilters={{ status: "Draft" }}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard
                     isSelected={item?.isSelected}
@@ -104,7 +109,7 @@ const TeamExpense = () => {
                     onAction={item?.onAction}
                     onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
-                    showCheckbox={isBulkSelectEnabled}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
                   />
                 )}
               />

@@ -58,8 +58,8 @@ const TeamAdvanceExpenseList = () => {
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
-    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="max-h-screen flex flex-col">
@@ -77,7 +77,6 @@ const TeamAdvanceExpenseList = () => {
             {currentUser?.name && (
               <ApprovalList
                 doctype={"Employee Advance"}
-                status={"Pending"}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
@@ -86,6 +85,7 @@ const TeamAdvanceExpenseList = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
@@ -95,13 +95,14 @@ const TeamAdvanceExpenseList = () => {
                     options: ["Pending", "Approved", "Rejected"],
                   },
                 ]}
+                defaultFilters={{ status: "Pending" }}
                 renderCardContent={(item) => (
                   <AdvanceApprovalCard
                     data={item?.data}
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     loadingAction={item?.loadingAction}
-                    showCheckbox={isBulkSelectEnabled}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
                     onClick={(request: any) => handleRequestClick(request)}
                     onAction={item?.onAction}
                   />

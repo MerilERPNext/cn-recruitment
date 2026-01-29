@@ -14,6 +14,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -55,22 +56,35 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="max-w-screen grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
+        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <Link
           to={`/webapp/employee-profile?target_user=${doc?.employee}`}
           target="_blank"
         >
-          <WrapperHoverCard employeeId={doc.employee}>
-            <span>{doc.employee_name}</span>
-          </WrapperHoverCard>
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
+          >
+            <WrapperHoverCard employeeId={doc.employee}>
+              {doc.employee_name}
+            </WrapperHoverCard>
+          </Typography>
         </Link>
-        <span>{formatToIndianDate(doc.posting_date)}</span>
-        <span>{doc.company}</span>
-        <span>{doc.department}</span>
-        <span>{formatCurrency(doc.advance_amount)}</span>
-        <div className="flex justify-start">
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(doc.posting_date)}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.company}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.department}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatCurrency(doc.advance_amount)}
+        </Typography>
+        <div className="flex items-center justify-center">
           <Tooltip
             content={
               status?.label === "Pending"
@@ -78,11 +92,12 @@ const MyAdvanceExpenseList = () => {
                 : ""
             }
           >
-            <Badge
+            {/* <Badge
               size="md"
               backgroundColor={status?.statusColor}
               label={status?.label || ""}
-            />
+            /> */}
+            <StatusBadge status={item?.reference_document?.status} />
           </Tooltip>
         </div>
       </div>
@@ -181,11 +196,11 @@ const MyAdvanceExpenseList = () => {
                 params: {
                   doctype: "Employee Advance",
                   employee: currentEmployee?.name,
-                  status: "Pending",
                 },
               }}
               defaultFilters={{
                 custom_type: "Reimbursement / Expense Advance",
+                status: "Pending",
               }}
               ItemComponent={RowWrapper}
               SkeletonComponent={() => (

@@ -50,7 +50,9 @@ const TeamApprovalActionPill = ({
   const normalizedStatus = status?.toLowerCase();
 
   const isActionable =
-    (normalizedStatus === "open" || normalizedStatus === "pending") &&
+    (normalizedStatus === "open" ||
+      normalizedStatus === "pending" ||
+      normalizedStatus === "draft") &&
     actions?.length > 0;
 
   if (!isActionable) {

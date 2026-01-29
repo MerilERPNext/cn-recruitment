@@ -6,6 +6,10 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -16,7 +20,7 @@ type ApprovalCardProps = {
   refetch?: () => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
-  showCheckbox?: boolean;
+  isBulkSelectEnabled?: boolean;
 };
 
 const AdvanceApprovalCard = ({
@@ -27,7 +31,7 @@ const AdvanceApprovalCard = ({
   onAction,
   onClick,
   loadingAction,
-  showCheckbox = true,
+  isBulkSelectEnabled = true,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = (() => {
@@ -50,9 +54,9 @@ const AdvanceApprovalCard = ({
     }
   })();
 
-  const gridTemplateColumns = showCheckbox
-    ? "0.5fr 1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr"
-    : "1.25fr 1.25fr 1.25fr 1.25fr 1.25fr 2fr";
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr";
 
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
@@ -87,12 +91,12 @@ const AdvanceApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          {showCheckbox && (
-            <div className="flex items-center justify-start">
+          {isBulkSelectEnabled && (
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-blue-500"
@@ -111,63 +115,51 @@ const AdvanceApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
               </WrapperHoverCard>
-            </div>
+            </Typography>
           </Link>
 
-          <div className="text-gray-700 truncate text-sm text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {data?.reference_document?.department}
-          </div>
-          <div className="text-gray-700 text-sm text-start">
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
-          </div>
-
-          <div className="text-gray-700 text-sm text-start">
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
-          </div>
+          </Typography>
 
           {/* Status + Actions */}
           <div className="flex items-center justify-start">
-            <Badge
+            {/* <Badge
               size="sm"
               label={status?.label as string}
               backgroundColor={status?.statusColor}
-            />
+            /> */}
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              <StatusBadge status={data?.status} />
+            </Tooltip>
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.status !== "Approved" &&
-              data?.status !== "Rejected" &&
-              actions.map((action: string) => {
-                const actionStyle = getActionStyles(action);
-
-                return (
-                  <Button
-                    key={action}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onAction(action, data);
-                    }}
-                    bgColor={actionStyle.bgColor}
-                    variant={actionStyle.variant}
-                    disabled={
-                      loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action
-                    }
-                  >
-                    {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </Button>
-                );
-              })}
+          <div className="flex items-center justify-start">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
           </div>
         </div>
       ) : (
@@ -180,7 +172,7 @@ const AdvanceApprovalCard = ({
           }}
         >
           <div className="p-4 flex items-start gap-3 w-full">
-            {showCheckbox && (
+            {isBulkSelectEnabled && (
               <input
                 type="checkbox"
                 className="mt-1 accent-blue-500"
