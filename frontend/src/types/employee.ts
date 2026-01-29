@@ -90,6 +90,13 @@ export interface Employee {
   custom_work_history?: IEmployeeWorkHistory[];
 }
 
+export interface EmployeeProfileOverview {
+  field_label: string;
+  display: string;
+  value: string;
+
+}
+
 export interface IEmployeeWorkHistory {
   name: string;
   owner: string;
