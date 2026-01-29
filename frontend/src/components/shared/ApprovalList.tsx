@@ -38,6 +38,8 @@ type ApprovalListProps = {
   isFilter?: boolean;
   isSearch?: boolean;
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
+  defaultFilters?: Record<string, any>;
+  columnWidths?: string[];
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -73,6 +75,8 @@ const ApprovalList = ({
   isFilter = false,
   isSearch = false,
   onBulkSelectVisibilityChange,
+  defaultFilters,
+  columnWidths,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -271,14 +275,15 @@ const ApprovalList = ({
     <div>
       <DataListView
         queryKey={["todo-approvals", doctype]}
+        defaultFilters={defaultFilters || { status }}
         customAPI={{
           method: "cn_leave_shift_managment.api.get_open_approval_todos",
           params: {
             doctype: doctype,
-            status: status,
             include_allocated_todos: true,
             fields: ["*"],
-            ...activeFilters,
+            // status: status,
+            // ...activeFilters,
           },
         }}
         // onFiltersChange={(filters) => {
@@ -303,6 +308,7 @@ const ApprovalList = ({
                 onSelectAll={handleSelectAll}
                 onBulkAction={handleBulkAction}
                 loadingAction={bulkLoading}
+                 columnWidths={columnWidths}
               />
             )}
           </div>

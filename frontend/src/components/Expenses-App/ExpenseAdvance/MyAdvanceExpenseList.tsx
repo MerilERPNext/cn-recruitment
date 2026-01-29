@@ -14,6 +14,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -55,30 +56,48 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="max-w-screen grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
+        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <Link
           to={`/webapp/employee-profile?target_user=${doc?.employee}`}
           target="_blank"
         >
-          <WrapperHoverCard employeeId={doc.employee}>
-            <span>{doc.employee_name}</span>
-          </WrapperHoverCard>
-        </Link>
-        <span>{formatToIndianDate(doc.posting_date)}</span>
-        <span>{doc.company}</span>
-        <span>{doc.department}</span>
-        <span>{formatCurrency(doc.advance_amount)}</span>
-        <div className="flex justify-start">
-          <Tooltip
-            content={status?.label === "Pending" ? item?.allocated_to : ""}
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
           >
-            <Badge
-              size="sm"
+            <WrapperHoverCard employeeId={doc.employee}>
+              {doc.employee_name}
+            </WrapperHoverCard>
+          </Typography>
+        </Link>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(doc.posting_date)}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.company}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.department}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatCurrency(doc.advance_amount)}
+        </Typography>
+        <div className="flex items-center justify-center">
+          <Tooltip
+            content={
+              status?.label === "Pending"
+                ? `Allocated to : ${item?.allocated_to}`
+                : ""
+            }
+          >
+            {/* <Badge
+              size="md"
               backgroundColor={status?.statusColor}
               label={status?.label || ""}
-            />
+            /> */}
+            <StatusBadge status={item?.reference_document?.status} />
           </Tooltip>
         </div>
       </div>
@@ -148,76 +167,74 @@ const MyAdvanceExpenseList = () => {
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
-    >
-      <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
             <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
           </div>
         </div>
-
-        <CardTable
-          titles={[
-            "Employee",
-            "Posting Date",
-            "Company",
-            "Department",
-            "Advance Amount",
-            "Status",
-          ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-        >
-          <DataListView
-            queryKey={["employee-advance"]}
-            customAPI={{
-              method: "cn_leave_shift_managment.api.get_open_approval_todos",
-              params: {
-                doctype: "Employee Advance",
-                employee: currentEmployee?.name,
-                status: "Pending",
-              },
-            }}
-            defaultFilters={{
-              custom_type: "Reimbursement / Expense Advance",
-            }}
-            ItemComponent={RowWrapper}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
-            isSearch={true}
-            isFilter={true}
-            filterFields={[
-              {
-                fieldname: "status",
-                label: "Status",
-                fieldtype: "Select",
-                options: ["Pending", "Approved", "Rejected"],
-              },
+        <div className="px-4">
+          <CardTable
+            titles={[
+              "Employee",
+              "Posting Date",
+              "Company",
+              "Department",
+              "Advance Amount",
+              "Status",
             ]}
-            refetchTrigger={refetchAttendance}
-            onRefetchComplete={() => setRefetchAttendance(false)}
-            showRefreshButton={false}
-            orderBy="creation desc"
-            pageSize={10}
-            infiniteScroll={true}
-            showPagination={true}
-            loadMorePagination={false}
-          />
-        </CardTable>
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          >
+            <DataListView
+              queryKey={["employee-advance"]}
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Employee Advance",
+                  employee: currentEmployee?.name,
+                },
+              }}
+              defaultFilters={{
+                custom_type: "Reimbursement / Expense Advance",
+                status: "Pending",
+              }}
+              ItemComponent={RowWrapper}
+              SkeletonComponent={() => (
+                <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                  <div className="px-4 py-2 flex justify-between">
+                    <div>
+                      <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                      <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+                  </div>
+                </div>
+              )}
+              isSearch={true}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Approved", "Rejected"],
+                },
+              ]}
+              refetchTrigger={refetchAttendance}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              showRefreshButton={false}
+              orderBy="creation desc"
+              pageSize={10}
+              infiniteScroll={true}
+              showPagination={true}
+              loadMorePagination={false}
+            />
+          </CardTable>
+        </div>
       </div>
 
       {selectedAdvanceId && (

@@ -49,7 +49,7 @@ const TeamLeaveRequest = () => {
         "Due Date",
         "Leave Days",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -58,26 +58,25 @@ const TeamLeaveRequest = () => {
         "Due Date",
         "Leave Days",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"]
-    : ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
-    <>
-      <div className="min-h-screen">
-        <div className=" px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Leave Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team leave requests
-              </Typography>
-            </div>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">Team Leave Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team leave requests
+            </Typography>
           </div>
-
+        </div>
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList
@@ -86,19 +85,18 @@ const TeamLeaveRequest = () => {
                 setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
-                status={"Open"}
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={finalColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    // options: ["Open", "Approved", "Rejected"],
                     options: [
                       { label: "Pending", value: "Open" },
                       { label: "Approved", value: "Approved" },
@@ -106,6 +104,7 @@ const TeamLeaveRequest = () => {
                     ],
                   },
                 ]}
+                defaultFilters={{ status: "Open" }}
                 renderCardContent={(item) => (
                   <LeaveApprovalCard
                     isSelected={item?.isSelected}
@@ -122,7 +121,6 @@ const TeamLeaveRequest = () => {
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <LeaveDetailView
           documentName={requestId}
@@ -131,7 +129,7 @@ const TeamLeaveRequest = () => {
           onAction={handleActionComplete}
         />
       )}
-    </>
+    </div>
   );
 };
 

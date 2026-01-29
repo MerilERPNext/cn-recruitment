@@ -1,12 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import DOMPurify from "dompurify";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
+
 type ApprovalCardProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
@@ -68,10 +75,12 @@ const OvertimeApprovalCard = ({
     return styles;
   };
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const cleanDescription = sanitizeToPlainText(data?.description);
+  const truncatedDescription = truncateByChars(cleanDescription);
+
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "5% 10% 35% 8% 8% 20%" // With checkbox
-    : "12% 40% 10% 10% 20%"; // Without checkbox
+    ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr"
+    : "1fr 1.5fr 1fr 1fr 1fr";
 
   const getStatus = (status: string) => {
     if (status === "Open") {
@@ -100,12 +109,12 @@ const OvertimeApprovalCard = ({
     <>
       {isDesktop ? (
         <div
-          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/20"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
           {isBulkSelectEnabled && (
-            <div className="flex items-center justify-start">
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-blue-500"
@@ -124,56 +133,53 @@ const OvertimeApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.username}
               </WrapperHoverCard>
-            </div>
+            </Typography>
           </Link>
 
-          <div className="text-gray-600 text-sm truncate text-start">
-            <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-          </div>
+          <Tooltip content={cleanDescription}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {truncatedDescription}
+            </Typography>
+          </Tooltip>
 
-          <div className="text-gray-700 text-sm text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
-          </div>
+          </Typography>
 
-          <div className="flex items-center justify-start">
-            <Tooltip content={`Allocated to : ${data?.allocated_to}`}>
-              <Badge
-                size="sm"
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              {/* <Badge
+                size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={data?.status} />
             </Tooltip>
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.reference_document?.status === "Open" &&
-              actions.map((action: string) => (
-                <Button
-                  key={action}
-                  variant="soft"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onAction(action, data);
-                  }}
-                  bgColor={getActionStyles(action).bg}
-                  disabled={
-                    loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action
-                  }
-                >
-                  {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                    <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    action
-                  )}
-                </Button>
-              ))}
+          <div className="flex items-center justify-center">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.reference_document?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
           </div>
         </div>
       ) : (

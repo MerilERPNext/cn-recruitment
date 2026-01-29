@@ -6,6 +6,10 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { getActionStyles } from "../../utils/actionButtonStyles";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../shared/atoms/Typography";
+import Tooltip from "../shared/Tooltip";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -60,19 +64,19 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr"
-    : "1.5fr 1fr 1fr 1fr 1fr 1fr 1.5fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
         <div
-          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/10 transition-colors cursor-pointer"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
           {/* Checkbox */}
           {isBulkSelectEnabled && (
-            <div className="flex items-center justify-start">
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-primary"
@@ -92,64 +96,56 @@ const LeaveApprovalCard = ({
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
           >
-            <div className="truncate text-gray-900 font-medium text-sm text-start">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
               </WrapperHoverCard>
-            </div>
+            </Typography>
           </Link>
           {/* Date */}
-          <div className="text-gray-700 text-sm text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
-          </div>
-          <div className="text-gray-700 text-sm text-start">
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.to_date)}
-          </div>
-          <div className="text-gray-700 text-sm text-start">
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
-          </div>
-          <div className="text-gray-700 text-sm text-start">
-            {data?.reference_document?.total_leave_days}
-          </div>
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.total_leave_days > 1
+              ? data?.reference_document?.total_leave_days + " Days"
+              : data?.reference_document?.total_leave_days + " Day"}
+          </Typography>
 
           {/* Status + Actions */}
-          <div className="flex items-center justify-start">
-            <Badge
-              size="sm"
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              {/* <Badge
+                size="md"
+                label={status?.label as string}
+                backgroundColor={status?.statusColor}
+              /> */}
+              <StatusBadge status={data?.reference_document?.status} />
+            </Tooltip>
           </div>
-          <div className="flex w-full justify-start gap-2">
-            {actions?.length &&
-              data?.reference_document?.status === "Open" &&
-              actions.map((action: string) => {
-                const actionStyle = getActionStyles(action);
-
-                return (
-                  <Button
-                    key={action}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onAction(action, data);
-                    }}
-                    bgColor={actionStyle.bgColor}
-                    variant={actionStyle.variant}
-                    disabled={
-                      loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action
-                    }
-                  >
-                    {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </Button>
-                );
-              })}
+          <div className="flex items-center justify-center">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.reference_document?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
           </div>
         </div>
       ) : (
