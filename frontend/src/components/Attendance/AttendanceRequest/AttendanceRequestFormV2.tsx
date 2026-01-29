@@ -17,7 +17,6 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { MyAttendanceRequest } from "../../../types/attendance";
-import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
@@ -161,7 +160,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
-  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
@@ -1035,26 +1033,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             </Button>
           </div>
         </div>
-
-        {/* <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-          <div className="max-w-4xl mx-auto">
-            <Button
-              onClick={() => formAddressInstance.current?.submit()}
-              fullWidth
-              size="lg"
-              variant="contain"
-              className={`flex-1 ${
-                isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-              } font-medium`}
-            >
-              {mutation.isPending || uploadFileLoading ? (
-                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-              ) : (
-                "Submit"
-              )}
-            </Button>
-          </div>
-        </div> */}
       </div>
     </div>
   );

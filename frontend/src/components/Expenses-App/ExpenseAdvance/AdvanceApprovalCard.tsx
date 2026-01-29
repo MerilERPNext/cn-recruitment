@@ -136,7 +136,7 @@ const AdvanceApprovalCard = ({
           </Typography>
 
           {/* Status + Actions */}
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-center">
             {/* <Badge
               size="sm"
               label={status?.label as string}
@@ -152,7 +152,7 @@ const AdvanceApprovalCard = ({
               <StatusBadge status={data?.status} />
             </Tooltip>
           </div>
-          <div className="flex items-center justify-start">
+          <div className="flex items-center justify-center">
             <TeamApprovalActionPill
               actions={actions}
               status={data?.status}
