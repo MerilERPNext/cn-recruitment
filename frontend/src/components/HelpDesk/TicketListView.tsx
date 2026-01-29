@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { Search, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -7,6 +6,7 @@ import TicketStatsCards from "./TicketStatsCards";
 import TicketTable from "./TicketTable";
 import TicketFiltersComponent from "./TicketFilters";
 import ResolutionModal from "./ResolutionModal";
+import TicketDrawer from "./TicketDrawer";
 import {
   useTicketList,
   useTicketStats,
@@ -14,6 +14,7 @@ import {
   useCloseTicket,
   useRequestClosure,
   useCategories,
+  useUserLookup,
   HDTicket,
   TicketFilters,
   HDCategory,
@@ -29,8 +30,6 @@ interface TicketListViewProps {
 }
 
 const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user" }) => {
-  const navigate = useNavigate();
-
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<TicketFilters>({});
@@ -44,6 +43,10 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [selectedTicketForClose, setSelectedTicketForClose] = useState<HDTicket | null>(null);
   const [isRequestClosureMode, setIsRequestClosureMode] = useState(false);
+
+  // Ticket Drawer State
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Debounced search
   const debouncedSearch = useDebounce(searchTerm, 300);
@@ -68,6 +71,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
   );
   const { data: filterableFields = [], isLoading: fieldsLoading } = useFilterableFields();
   const { data: categories = [] } = useCategories();
+  const { data: userLookup } = useUserLookup();
 
   // Mutations
   const closeTicketMutation = useCloseTicket();
@@ -126,9 +130,10 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
   }, [selectedTickets.size, tickets]);
 
   const handleReply = useCallback((ticket: HDTicket) => {
-    // Navigate to ticket detail page
-    navigate(`/webapp/helpdesk/ticket/${ticket.name}`);
-  }, [navigate]);
+    // Open ticket in drawer
+    setSelectedTicketId(ticket.name);
+    setIsDrawerOpen(true);
+  }, []);
 
   const handleClose = useCallback((ticket: HDTicket) => {
     const isRaiserOrAdmin =
@@ -240,6 +245,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
             sortDirection={sortDirection}
             onSort={handleSort}
             categoryMap={categoryMap}
+            userLookup={userLookup || new Map()}
           />
         </div>
 
@@ -312,6 +318,17 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
         ticketId={selectedTicketForClose?.name || ""}
         isRequestClosure={isRequestClosureMode}
         isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
+      />
+
+      {/* Ticket Detail Drawer */}
+      <TicketDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedTicketId(null);
+        }}
+        ticketId={selectedTicketId}
+        currentUserEmail={currentUserEmail}
       />
     </div>
   );

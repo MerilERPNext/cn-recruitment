@@ -87,30 +87,30 @@ const HelpDeskApp: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto bg-app">
         {renderContent()}
-
-        {/* Bottom buttons - inside scroll area */}
-        <div className="bg-white border-t border-gray-200 py-4 px-4 flex gap-3 mt-4">
-          <Button
-            variant="outline"
-            bgColor="primary"
-            size="lg"
-            fullWidth
-            onClick={handleExploreFAQs}
-          >
-            Explore FAQ's
-          </Button>
-          <Button
-            variant="contain"
-            bgColor="primary"
-            size="lg"
-            fullWidth
-            onClick={handleRequestIssue}
-          >
-            <Plus className="w-4 h-4" />
-            Request Issue
-          </Button>
-        </div>
       </main>
+
+      {/* Fixed bottom buttons - OUTSIDE main scroll area */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 py-4 px-4 flex gap-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+        <Button
+          variant="outline"
+          bgColor="primary"
+          size="lg"
+          fullWidth
+          onClick={handleExploreFAQs}
+        >
+          Explore FAQ's
+        </Button>
+        <Button
+          variant="contain"
+          bgColor="primary"
+          size="lg"
+          fullWidth
+          onClick={handleRequestIssue}
+        >
+          <Plus className="w-4 h-4" />
+          Request Issue
+        </Button>
+      </div>
     </div>
   );
 
@@ -127,27 +127,27 @@ const HelpDeskApp: React.FC = () => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-app">
           {renderContent()}
+        </div>
 
-          {/* Bottom Action Buttons - Below content */}
-          <div className="flex justify-end gap-3 px-6 py-4">
-            <Button
-              variant="outline"
-              bgColor="primary"
-              size="lg"
-              onClick={handleExploreFAQs}
-            >
-              Explore FAQ's
-            </Button>
-            <Button
-              variant="contain"
-              bgColor="primary"
-              size="lg"
-              onClick={handleRequestIssue}
-            >
-              <Plus className="w-4 h-4" />
-              Request Issue
-            </Button>
-          </div>
+        {/* Fixed bottom buttons - OUTSIDE scroll area */}
+        <div className="sticky bottom-0 bg-white flex justify-end gap-3 px-6 py-4 border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+          <Button
+            variant="outline"
+            bgColor="primary"
+            size="lg"
+            onClick={handleExploreFAQs}
+          >
+            Explore FAQ's
+          </Button>
+          <Button
+            variant="contain"
+            bgColor="primary"
+            size="lg"
+            onClick={handleRequestIssue}
+          >
+            <Plus className="w-4 h-4" />
+            Request Issue
+          </Button>
         </div>
       </div>
     </DesktopLayoutWrapper>

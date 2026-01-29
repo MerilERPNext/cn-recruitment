@@ -499,6 +499,36 @@ export const useMentionUsers = () => {
   });
 };
 
+/**
+ * Fetch user lookup map (email -> full_name)
+ * Used for displaying assignee names in ticket list instead of emails
+ */
+export const useUserLookup = () => {
+  return useQuery<Map<string, string>>({
+    queryKey: ["user-lookup"],
+    queryFn: async () => {
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "User",
+          fields: ["name", "full_name"],
+          filters: { enabled: 1 },
+          limit_page_length: 500,
+        });
+        const map = new Map<string, string>();
+        ((result as Array<{ name: string; full_name: string }>) || []).forEach((u) => {
+          map.set(u.name, u.full_name || u.name.split("@")[0]);
+        });
+        return map;
+      } catch {
+        return new Map<string, string>();
+      }
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
 // ============== Ticket Detail View Hooks ==============
 
 export interface TicketContact {
