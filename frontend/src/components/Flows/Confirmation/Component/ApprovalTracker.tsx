@@ -4,7 +4,6 @@
 import { useMemo, useState } from "react"
 import ApprovalDetails from "./ApprovalDetails"
 import ApprovalModal from "./ApprovalModel"
-import CardTable from "../../../shared/CardTable"
 import { FormIOComponent } from "../../../../types/formio"
 import CardStages from "./StageCard"
 import { TodoType } from "../../../../types/todos"
@@ -108,76 +107,71 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
     <div className="space-y-6">
       <div className="bg-white rounded-lg border shadow-sm p-6">
         <div className="flex flex-col gap-4">
-          {/* Header Section */}
-          <div className="flex justify-between">
-            <div className="space-y-2">
-              <Typography variant="h4">{data.reference_type}</Typography>
-              <Typography variant="bodySmall" color="body2">{data.reference_name}</Typography>
-              <Typography variant="bodySmall" color="body1">{data.description}</Typography>
+          {For=="Employee Separation" &&
+         <div>
+            {/* Header Section */}
+            <div className="flex justify-between">
+              <div className="space-y-2">
+                <Typography variant="h4">{data.reference_type}</Typography>
+                <Typography variant="bodySmall" color="body2">{data.reference_name}</Typography>
+                <Typography variant="bodySmall" color="body1">{data.description}</Typography>
+              </div>
+              <div className="flex ml-auto">
+                <Typography variant="bodySmall" color="body2" className="mr-2">Due Date:</Typography>
+                <Typography variant="bodySmall" color="body1">{formatDateToDDMMYYYY(data.due_date)}</Typography>
+              </div>
             </div>
-            <div className="flex ml-auto">
-              <Typography variant="bodySmall" color="body2" className="mr-2">Due Date:</Typography>
-              <Typography variant="bodySmall" color="body1">{formatDateToDDMMYYYY(data.due_date)}</Typography>
+            {/* Status Badge */}
+            <div className="flex items-center gap-2">
+              {allStagesComplete ? (
+                <>
+                  <div className="w-5 h-5 text-green-400">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <Typography variant="bodySmall" color="success">Completed all stages</Typography>
+                </>
+              ) : Rejected ? (
+                <>
+                  <div className="w-5 h-5 text-red-500">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-red-600">Rejected</span>
+                </>
+              ) : (
+                <>
+                  <div className="w-5 h-5 text-yellow-500">
+                    <svg fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-yellow-600">Pending - {pendingCount} approvals</span>
+                </>
+              )}
             </div>
           </div>
-          {/* Status Badge */}
-          <div className="flex items-center gap-2">
-            {allStagesComplete ? (
-              <>
-                <div className="w-5 h-5 text-green-400">
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <Typography variant="bodySmall" color="success">Completed all stages</Typography>
-              </>
-            ) : Rejected ? (
-              <>
-                <div className="w-5 h-5 text-red-500">
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-red-600">Rejected</span>
-              </>
-            ) : (
-              <>
-                <div className="w-5 h-5 text-yellow-500">
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-yellow-600">Pending - {pendingCount} approvals</span>
-              </>
-            )}
-          </div>
-
-          {/* Action Button or Details */}
+          }
           <div className="mt-4">
-            {allStagesComplete && (
+            {!allStagesComplete && (
               <ApprovalDetails data={data} title={For} />
             )}
             <div className="w-full mt-8 lg:border-1 rounded-lg">
-              <CardTable
-                titles={[
-                  "Stage",
-                  "Assigned To",
-                  "Status",
-                  "Action"
-                ]}
-              >
+            <Typography className="mb-2" variant="subheading">{For=="Employee Confirmation" ? "Confirmation Workflow Timeline" : "Separation Workflow Timeline"}</Typography>
                 <div className="flex flex-col pt-1">
                   {data?.approval_stages_status.map((item, idx) => {
                     const isActive = item.status === "Pending" && (idx == 0 || data?.approval_stages_status[idx - 1].status != "Pending");
@@ -194,7 +188,6 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                     );
                   })}
                 </div>
-              </CardTable>
             </div>
 
           </div>

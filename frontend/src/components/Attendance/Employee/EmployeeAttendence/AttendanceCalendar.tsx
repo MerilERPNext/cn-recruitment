@@ -47,6 +47,7 @@ type ShowDetailsType = {
   date: Date;
   status: string;
   data: AttendanceRecord;
+  events?: AttendanceRecord[];
 };
 type attendanceProps = {
   selectedDate: Date | null;
@@ -93,6 +94,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
               date: date as Date,
               status: attendance?.status,
               data: attendance?.record as AttendanceRecord,
+              events: attendance?.events as AttendanceRecord[],
             });
           } else {
             setShowDetailsFor(null);

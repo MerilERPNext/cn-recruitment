@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import img from "../../../assets/pngegg.png";
-import { useCurrentEmployeeAllDetails, useEmployee } from "../../../hooks/useEmployee";
+import {
+  useCurrentEmployeeAllDetails,
+  useEmployee,
+} from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
+  useConfirmationApproval,
   useDifinitaionNameForSeparation,
+  useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
@@ -11,73 +15,75 @@ import {
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
-import ApprovalTracker from "./Component/ApprovalTracker";
-import { ArrowRight, Loader2, User, Wallet } from "lucide-react";
+import {
+  Calendar,
+  CalendarCheck,
+  Clock,
+  FileText,
+  Loader2,
+} from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useNavigate } from "react-router-dom";
-
-const cardsData = [
-  {
-    id: 1,
-    title: "Update Profile",
-    description: "Make sure your profile information is accurate",
-    icon: User,
-    bgColor: "bg-teal-600",
-    url: "/webapp/employee-profile"
-  },
-  {
-    id: 2,
-    title: "Compensation Details",
-    description: "Review your updated salary and other benefits",
-    icon: Wallet,
-    bgColor: "bg-amber-400",
-    url: "/webapp/salary-slip-app"
-  },
-];
+import { Card } from "../../shared/atoms/Card";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import toast from "react-hot-toast";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import StageCard from "./StageCard";
+import StatusTimelineItem from "./components/StatusTimelineItem";
+import { statusConfig } from "./constants";
 
 const ConfirmationWorkflow = () => {
   const { data: userId } = useLoggedInUser();
-  const { data: employee_name } = useCurrentEmployeeAllDetails(userId || "");
-  const { targetEmployeeId, isViewingOtherUser } =
-    useTargetUser();
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee, isLoading: loadingCurrentEmployee } =
+    useCurrentEmployeeAllDetails(userId || "");
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
-  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
-  const document_name = isViewingOtherUser ? targetEmployee?.name || "" : employee_name?.name || "";
+  const document_name = isViewingOtherUser
+    ? targetEmployee?.name || ""
+    : currentEmployee?.name || "";
+  const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
 
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-        (item: any) =>
-          item?.trigger_category?.name === trigger_category
-      )
+          (item: any) => item?.trigger_category?.name === trigger_category,
+        )
       : [];
   }
 
-  const { data: confirmationCreationData, isLoading, refetch: refetchConfirmationAndSeparation } = useConfirmation(doctype);
-  const item = confirmationCreationData?.[0];
+  const { data: showConfirmatoinButton, isLoading: loadingCardData } =
+    useGetShouldShowConfirmationButton(document_name);
+
+  const {
+    data: employeeConfirmation,
+    isLoading: loadingConfirmationTodo,
+    refetch: refetchConfirmationAndSeparation,
+  } = useConfirmation(doctype);
+  const item = employeeConfirmation?.[0];
+
+  const stages = item?.approval_stages_status;
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
-  const navigate = useNavigate();
+  const isLoading =
+    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee;
 
   const { data } = useChatAssistant(
     doctype_name,
     document_name,
     definition_name,
-    l
+    l,
   );
 
-  const handleTriggerChat = () => {
+  const handleInitiateConfirmation = () => {
     const maxAttempts = 500; // 50 seconds max (500 * 100ms)
     let attempts = 0;
-    setIsTriggeringChat(true);
 
     const checkAndTrigger = () => {
       if (
@@ -85,7 +91,6 @@ const ConfirmationWorkflow = () => {
         typeof window.trigger_chatnext_assistant === "function"
       ) {
         window.trigger_chatnext_assistant(true, data?.session);
-        setIsTriggeringChat(false);
         return;
       }
 
@@ -93,13 +98,90 @@ const ConfirmationWorkflow = () => {
       if (attempts < maxAttempts) {
         setTimeout(checkAndTrigger, 100);
       } else {
-        console.warn("⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.");
-        setIsTriggeringChat(false);
+        console.warn(
+          "⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.",
+        );
       }
     };
 
     checkAndTrigger();
   };
+
+  /** Actions for approver actions */
+
+  const mutation = useConfirmationApproval();
+  const handleAct = useCallback(
+    async (action: { name: string; hasForm: boolean; todo: any }) => {
+      try {
+        if (mutation?.isPending) return;
+        const response = await mutation?.mutateAsync({
+          action: action.name,
+          name: action?.todo?.todo_id || "",
+        });
+
+        console.log("Action response:", response);
+        const responseWithSession = response as unknown as { session?: any };
+        console.log("Session data:", responseWithSession?.session);
+        console.log(
+          "Assistant trigger enabled:",
+          action?.todo?.custom_open_chatnext_assistant_on_action,
+        );
+
+        console.log(
+          "Opening assistant with session:",
+          responseWithSession?.session,
+        );
+
+        if (window.trigger_chatnext_assistant && action.hasForm) {
+          window.trigger_chatnext_assistant(true, responseWithSession?.session);
+        }
+
+        if (action.name.toLowerCase() !== "approve") {
+          // triggerRefetch();
+        }
+
+        // Query invalidation now handled by Frappe realtime events
+      } catch (error: any) {
+        const exceptions = error?.response?.data?.exception?.split(":");
+        const errMessage =
+          exceptions?.length > 1
+            ? exceptions[1] + " " + exceptions[2]
+            : exceptions[1];
+        console.error("Action failed", error);
+        toast.error(errMessage);
+      }
+    },
+    [mutation],
+  );
+
+  const canPerformAction = useMemo(() => {
+    let actionPermission = false;
+
+    if (!item?.custom_doctype_actions) return false;
+    if (item?.allocated_to_emp_id && currentEmployee?.name)
+      actionPermission = item.allocated_to_emp_id === currentEmployee.name;
+
+    if (currentUser?.roles && item?.role)
+      actionPermission ||= currentUser.roles.some(
+        (role) => role.role === item.role,
+      );
+
+    return actionPermission;
+  }, [item, currentEmployee, currentUser]);
+
+  const allStagesComplted = useMemo(() => {
+    return item?.approval_stages_status?.every(
+      (stage) => stage.status === "Approved",
+    );
+  }, [item?.approval_stages_status]);
+
+  const postStagesStarted = Array.isArray(stages) && stages.length > 0;
+
+  const canInitiateConfirmation =
+    (!postStagesStarted ||
+      (allStagesComplted &&
+        item?.reference_document?.status !== "Confirmed")) &&
+    showConfirmatoinButton?.show_button;
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -110,19 +192,80 @@ const ConfirmationWorkflow = () => {
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
 
     return () => {
-      document.removeEventListener("chatnext:modal:chat:close", handleChatClose);
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose,
+      );
     };
   }, [refetchConfirmationAndSeparation, refetch]);
 
-  const InitiatePageShow = !item;
+  const confirmationCards = useMemo(
+    () => [
+      {
+        label: "Date of Joining",
+        value: formatToIndianDate(activeEmployee?.date_of_joining || ""),
+        Icon: Calendar,
+        bg: "bg-blue-50",
+        text: "text-blue-600",
+      },
+      {
+        label: "Probation End Date",
+        value: formatToIndianDate(
+          activeEmployee?.final_confirmation_date || "",
+        ),
+        Icon: CalendarCheck,
+        bg: "bg-green-50",
+        text: "text-green-600",
+      },
+      ...(item?.reference_document?.creation
+        ? [
+            {
+              label: "Trigger Date",
+              value: formatToIndianDate(item.reference_document.creation),
+              Icon: Clock,
+              bg: "bg-orange-50",
+              text: "text-orange-600",
+            },
+          ]
+        : []),
+      ...(item?.reference_document?.creation
+        ? [
+            {
+              label: "Status",
+              value:
+                item?.reference_document?.status === "Draft"
+                  ? "Review Pending"
+                  : item?.reference_document?.status,
+              Icon: FileText,
+              bg: "bg-purple-50",
+              text: "text-purple-600",
+            },
+          ]
+        : []),
+    ],
+    [activeEmployee, item],
+  );
 
-  const canInitiate = useMemo(() => {
-    if (!item) return true;
-    if (["Draft", "Confirmed"].includes(item?.status)) return false;
-    return (["On Probation", "Probation Extended"].includes((isViewingOtherUser ? targetEmployee : employee_name)?.custom_employment_status || ""));
-  }, [item, isViewingOtherUser, targetEmployee, employee_name]);
+  const timelineData = [
+    {
+      id: 1,
+      title: "Date of Joining",
+      description: "Initial onboarding process started",
+      time: formatToIndianDate(activeEmployee?.date_of_joining || ""),
+      status: "completed",
+    },
+    {
+      id: 2,
+      title: "Employee Self Form Submission",
+      description: "Please submit all required fields",
+      time: formatToIndianDate(item?.reference_document?.creation || ""),
+      status: showConfirmatoinButton?.show_button
+        ? "action_required"
+        : "pending",
+      show_confirmation_button: canInitiateConfirmation,
+    },
+  ];
 
-  const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
     return (
@@ -138,89 +281,99 @@ const ConfirmationWorkflow = () => {
 
   return (
     <div className=" bg-blue-50  min-h-screen  p-4  text-gray-800  font-sans">
-      {/* Header */}
-      {!InitiatePageShow ?
-        <main className="min-h-full bg-white mb-2">
-          <div className="max-w-full">
-            <ApprovalTracker For="Employee Confirmation" data={item} />
-            {canInitiate &&
-              <button
-                onClick={handleTriggerChat} className="px-2 py-1 rounded-lg bg-blue-500 text-white flex items-center gap-2 hover:bg-blue-600">
-                Reinitiate Confirmation <ArrowRight className="w-4 h-4" /></button>}
-          </div>
-        </main>
-        :
-        <div className=" items-start  mb-6">
-          <div className="flex flex-col mb-4 ">
-            <Typography variant="h4">Confirmation</Typography>
-            <Typography variant="bodySmall" color="body2">
-              View Your Confirmation Process
-            </Typography>
-          </div>
-          <div className=" min-h-auto  flex   flex-col   items-center   justify-center   rounded-xl  ">
-            <div className="  flex flex-col lg:flex-row   items-center   justify-between   w-full   bg-white rounded-xl   p-6 md:p-12">
-              {/* Left Section */}
-              <div className="flex-1 p-2">
-                <Typography color="primary" variant={isDesktop ? "h1" : "h3"}> We're happy to confirm you 🎉</Typography>
-                <Typography variant="bodyMedium" color="body2" className="mt-1">
-                  Please connect with your HRBP for confirmation details.
-                </Typography>
+      <div className="flex flex-col mb-4 ">
+        <Typography variant="h4">Confirmation</Typography>
+        <Typography variant="bodySmall" color="body2">
+          View Your Confirmation Process
+        </Typography>
+      </div>
 
-                <div className="flex gap-6 mt-8 flex-wrap">
-                  {cardsData.map((card) => {
-                    const Icon = card.icon;
-
-                    return (
-                      <div
-                        onClick={() => navigate(card.url)}
-                        key={card.id}
-                        className="flex items-center gap-4 w-80 cursor-pointer rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md"
-                      >
-                        <div
-                          className={`flex h-12 w-12 items-center justify-center rounded-lg text-white ${card.bgColor}`}
-                        >
-                          <Icon size={24} />
-                        </div>
-
-                        <div>
-                          <h3 className="text-sm font-semibold text-gray-900">
-                            {card.title}
-                          </h3>
-                          <p className="text-xs text-gray-900">
-                            {card.description}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+      <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Confirmation Cards Section */}
+          {confirmationCards.map(({ label, value, Icon, bg, text }, index) => (
+            <div
+              key={index}
+              className="flex items-center gap-4 px-4 py-8 bg-white border border-slate-200 hover:border-primary rounded-xl shadow-sm"
+            >
+              <div
+                className={`w-10 h-10 flex items-center justify-center rounded-lg ${bg} ${text}`}
+              >
+                <Icon size={20} strokeWidth={1.75} />
               </div>
 
-              {/* Right Illustration */}
-              <div className="  flex-1   flex   justify-center   mt-8 md:mt-0">
-                <img
-                  src={img}
-                  alt="confirmation illustration"
-                  className="  w-72 md:w-96   h-auto"
-                />
+              <div className="space-y-0.5">
+                <Typography variant="bodyMedium" className="font-semibold">
+                  {value || "-"}
+                </Typography>
+                <Typography variant="bodySmall">{label}</Typography>
               </div>
             </div>
-
-            {canInitiate &&
-              <Button
-                onClick={handleTriggerChat}
-                size="md"
-                bgColor="blue-500"
-                className="hover:bg-blue-600 text-white mt-6"
-                loading={isTriggeringChat}
-              >
-                INITIATE CONFIRMATION
-              </Button>
-            }
-          </div>
+          ))}
         </div>
-      }
+      </Card>
 
+      {/* Workflow Section  */}
+      <Card className="mt-4">
+        <Typography variant="subheading">
+          Confirmation Workflow Timeline
+        </Typography>
+
+        {/* TimelineDummy  */}
+        {timelineData.map((item, idx) => {
+          const isLast = idx === timelineData.length - 1 && !postStagesStarted;
+          const status = postStagesStarted ? "completed" : item.status;
+          return (
+            <div
+              className="grid grid-cols-[80px_1fr] hover:bg-primary-10"
+              key={item.id}
+            >
+              <StatusTimelineItem
+                isLast={isLast}
+                status={status as keyof typeof statusConfig}
+              />
+
+              <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
+                <div className="ml-4 flex flex-col">
+                  <Typography variant="subheading">{item.title}</Typography>
+                  <Typography variant="bodySmall">
+                    {item.description}
+                  </Typography>
+                </div>
+
+                <div className="flex justify-between items-start px-4 pt-1 pb-3">
+                  {item.show_confirmation_button ? (
+                    <Button
+                      variant="contain"
+                      size="md"
+                      onClick={handleInitiateConfirmation}
+                    >
+                      Act
+                    </Button>
+                  ) : (
+                    <div></div>
+                  )}
+
+                  <div>{item.time}</div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {/* Approval Stages Timeline  */}
+        {stages?.map((_, idx) => (
+          <div className="grid grid-cols-[80px_1fr] hover:bg-primary-10">
+            <StageCard
+              handleAct={handleAct}
+              canPerformAction={canPerformAction}
+              key={stages[idx].stage_name}
+              stages={stages}
+              idx={idx}
+              item={item}
+            />
+          </div>
+        ))}
+      </Card>
     </div>
   );
 };

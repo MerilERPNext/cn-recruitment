@@ -4,8 +4,10 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { useFileUpload } from "../../../../hooks/useEmployee";
 import { FiX } from "react-icons/fi";
+import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 
 type Item = {
+  idx: string;
   proof_file?: File | string;
   attach_proof: string | null;
   attach_reqd: number;
@@ -42,6 +44,8 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
 
+  const { mutateAsync: deleteDoc,} = useDeleteDocument();
+
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
     return items.map((item) => ({
@@ -59,7 +63,9 @@ const CategoryDeclarationSelectable = ({
     value: File | string | null
   ) => {
     const updated = items.map((item) =>
-      item.exemption_sub_category === key ? { ...item, [field]: value } : item
+      item.exemption_sub_category === key
+        ? { ...item, [field]: value }
+        : item
     );
 
     onChange(updated);
@@ -84,18 +90,50 @@ const CategoryDeclarationSelectable = ({
     });
   };
 
-  /* ✅ FIXED: remove proof from state */
-  const handleRemoveProof = (id: string | number | undefined) => {
-    if (!id) return;
-
-    const updated = items.map((item) =>
-      item.id === id
-        ? { ...item, proof_file: undefined, proof_comment: "" }
-        : item
+  const handleRemoveProof = async (
+    id: string | number | undefined,
+    proofFile?: string | File
+  ) => {
+    console.log("proofFile:",  typeof proofFile);
+  
+    if (!proofFile || typeof proofFile !== "string") {
+      console.warn("No backend file to delete");
+      return;
+    }
+  
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this proof file?"
     );
-
-    onChange(updated);
+    if (!confirmDelete) return;
+  
+    try {
+      const parts = proofFile.split("/");
+      let fileName = parts[parts.length - 1];
+      fileName = decodeURIComponent(fileName);
+  
+      console.log("Deleting file:", fileName);
+  
+      await deleteDoc({
+        doctype: "File",
+        name: fileName,
+      });
+  
+      const updated = items.map((item) =>
+        item.id === id
+          ? { ...item, proof_file: undefined, proof_comment: "" }
+          : item
+      );
+  
+      onChange(updated);
+      alert("Proof deleted successfully ✅");
+    } catch (err) {
+      console.error("❌ Delete failed:", err);
+      alert("Failed to delete proof. Please try again.");
+    }
   };
+  
+
+  
 
   /* ---------------- Select Item ---------------- */
   const handleSelectItem = (value: string) => {
@@ -155,7 +193,7 @@ const CategoryDeclarationSelectable = ({
 
   /* ---------------- Selected Items ---------------- */
   const selectedItems = items.filter(
-    (item) => item.is_selected === true || item.editable === 0
+    (item) => item.is_selected === true || item.editable === 0 
   );
 
   return (
@@ -163,7 +201,7 @@ const CategoryDeclarationSelectable = ({
       <Typography variant="bodySmall" color="body2" className="semibold">
         {categoryName} | Max Amount:{" "}
         <span className="text-primary text-xs font-semibold">
-          ₹{max_amount || selectable}
+          ₹{max_amount }
         </span>
       </Typography>
 
@@ -191,7 +229,9 @@ const CategoryDeclarationSelectable = ({
             {showProofFields && item.attach_reqd === 1 && (
               <div className="flex gap-2 pb-1 bg-white">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-600">Attachment</label>
+                  <label className="text-xs text-gray-600">
+                    Attachment
+                  </label>
 
                   <input
                     type="file"
@@ -217,8 +257,11 @@ const CategoryDeclarationSelectable = ({
 
                       <button
                         type="button"
-                        onClick={() => handleRemoveProof(item.id)}
-                        className="text-gray-500 hover:text-red-600 transition"
+                      
+                        onClick={() =>
+                          handleRemoveProof(item.id)
+                        }
+                        className="text-gray-500 hover:text-red-600 transition disabled:opacity-50"
                         title="Remove file"
                       >
                         <FiX size={16} />
@@ -227,7 +270,7 @@ const CategoryDeclarationSelectable = ({
                   )}
                 </div>
 
-                <div className="flex flex-col gap-1">
+{  item.idx === "we" &&          <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">
                     Note / Comment
                   </label>
@@ -243,7 +286,7 @@ const CategoryDeclarationSelectable = ({
                     placeholder="Enter your comment..."
                     className="border rounded px-3 py-1 text-xs resize-none"
                   />
-                </div>
+                </div>}
               </div>
             )}
 
@@ -255,8 +298,15 @@ const CategoryDeclarationSelectable = ({
                 <input
                   type="number"
                   placeholder="Amount"
-                  disabled={item.editable === 0 || lockingDate === "failed"}
-                  value={item.amount === 0 ? "" : item.amount ?? ""}
+                  disabled={
+                    item.editable === 0 ||
+                    lockingDate === "failed"
+                  }
+                  value={
+                    item.amount === 0
+                      ? ""
+                      : item.amount ?? ""
+                  }
                   onChange={(e) => {
                     const raw = e.target.value;
 
@@ -309,7 +359,9 @@ const CategoryDeclarationSelectable = ({
           onClick={() => setIsOpen((prev) => !prev)}
           className="w-full flex justify-between items-center border border-gray-200 rounded px-3 py-1 text-xs bg-white"
         >
-          <span className="text-gray-400">Select Items</span>
+          <span className="text-gray-400">
+            Select Items
+          </span>
           <span className="text-gray-400">▼</span>
         </Button>
 
@@ -343,4 +395,3 @@ const CategoryDeclarationSelectable = ({
 };
 
 export default CategoryDeclarationSelectable;
-

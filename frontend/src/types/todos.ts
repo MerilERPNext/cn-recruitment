@@ -81,6 +81,8 @@ export interface ApprovalStage {
     role: null | string;
     status: string;
     form_json?: FormJson;
+    approval_response_data: string;
+    approval_time: string;
 }
 
 export interface ReferenceDocument {

@@ -2,10 +2,10 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import FrappeListView from "../ListView";
 import {
   useBenefitClaimPDF,
@@ -21,23 +21,66 @@ import CardTable from "../shared/CardTable";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import Button from "../shared/atoms/Button";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import CustomDropdown from "../shared/CustomDropdown";
+import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+
+type PayrollPeriod = {
+  name: string;
+  start_date: string;
+  end_date: string;
+};
 
 const SalarySlipsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const [selectedYear, setSelectedYear] = useState("");
+  const { targetEmployeeId } = useTargetUser();
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);
   const [maskSalary, setMaskSalary] = useState(true);
+
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
+
   const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
     name: string;
     date: string;
   } | null>(null);
 
-  // Hook 1 - Regular Salary Slip
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    user?.company || null
+  ) as {
+    data: PayrollPeriod[] | undefined;
+  };
+
+  // ✅ Auto select current payroll period
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+
+    const today = new Date();
+
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
+
+  // ✅ Refresh list on filter change
+  useEffect(() => {
+    setFiltersKey((prev) => prev + 1);
+  }, [selectedPeriod, targetEmployeeId]);
+
+  // ---------------- PDF HOOKS ----------------
   const { mutate: downloadType1 } = useDownloadSalarySlipPDF({
     onSuccess: (data) => {
       const html = data.response;
@@ -48,19 +91,17 @@ const SalarySlipsList = () => {
     },
   });
 
-  // Hook 2 - TDS Print View
   const { mutate: downloadType2, isPending: isDownloading2 } =
     useTDSPRintViewPDF({
       onSuccess: (data) => {
         const html = data.response;
         if (html) {
-          setModalHtmlContent(html); // Pass HTML here
+          setModalHtmlContent(html);
           setPdfModalOpen(true);
         } else alert("No HTML found for TDS Sheet!");
       },
     });
 
-  // Hook 3 - Benefit Payslip
   const { mutate: downloadType3, isPending: isDownloading3 } =
     useBenefitClaimPDF({
       onSuccess: (data) => {
@@ -72,7 +113,6 @@ const SalarySlipsList = () => {
       },
     });
 
-  // Hook 4 - Off Cycle Payslip
   const { mutate: downloadType4, isPending: isDownloading4 } =
     useOffCyclePaySlipPDF({
       onSuccess: (data) => {
@@ -85,10 +125,6 @@ const SalarySlipsList = () => {
     });
 
   const isDownloading = isDownloading2 || isDownloading3 || isDownloading4;
-
-  useEffect(() => {
-    setFiltersKey((prev) => prev + 1);
-  }, [selectedYear]);
 
   const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
     if (isDesktop) {
@@ -103,20 +139,17 @@ const SalarySlipsList = () => {
     }
   };
 
-  // Handlers for view PDF
   const handleViewPDF = (
     type: "regular" | "tds" | "benefit" | "offcycle",
     salarySlipName: string,
     salaryDate?: string,
   ) => {
-    // Reset modal before fetching
     setModalHtmlContent("");
     setSelectedSalarySlip({
       name: salarySlipName,
       date: salaryDate || "",
     });
 
-    // Call appropriate API
     switch (type) {
       case "regular":
         downloadType1(salarySlipName);
@@ -137,33 +170,26 @@ const SalarySlipsList = () => {
     e.stopPropagation();
     handleViewPDF("regular", name);
   };
-
   const handleDownloadType2 = (e: React.MouseEvent, name: string) => {
     e.stopPropagation();
     handleViewPDF("tds", name);
   };
-
   const handleDownloadType3 = (e: React.MouseEvent, name: string) => {
     e.stopPropagation();
     handleViewPDF("benefit", name);
   };
-
   const handleDownloadType4 = (e: React.MouseEvent, name: string) => {
     e.stopPropagation();
     handleViewPDF("offcycle", name);
   };
 
-  const filters: Record<string, [string, string]> | undefined = selectedYear
-    ? {
-        start_date: [">=", `${selectedYear}-01-01`],
-        end_date: ["<=", `${selectedYear}-12-31`],
-      }
-    : undefined;
-
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (currentYear - i).toString(),
-  );
+  // ---------------- FILTER ----------------
+  const filter = useMemo(() => {
+    const f: Record<string, string> = {};
+    if (targetEmployeeId) f.employee = targetEmployeeId;
+    if (selectedPeriod) f.custom_payroll_period = selectedPeriod; // optional backend support
+    return f;
+  }, [targetEmployeeId, selectedPeriod]);
 
   return (
     <div>
@@ -181,100 +207,99 @@ const SalarySlipsList = () => {
           htmlContent={modalHtmlContent}
         />
       )}
-      <div className="px-2">
-        <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
-          <div className="flex md:flex-row flex-col w-full gap-2 justify-between border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">My Salary Slips</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your salary slips
-              </Typography>
-            </div>
-            <div className="flex items-center gap-5 justify-between mb-2">
-              <div className="flex-1 max-w-xs min-w-[150px]">
-                <select
-                  id="yearFilter"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="my-form-input"
-                >
-                  <option value="">All Years</option>
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <button
-                onClick={() => setMaskSalary((prev) => !prev)}
-                className="my-btn-secondary"
-                title={maskSalary ? "Show amounts" : "Hide amounts"}
-              >
-                {maskSalary ? (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Show Amounts
-                    </span>
-                    <BsToggleOff className="w-5 h-5 text-gray-400" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Hide Amounts
-                    </span>
-                    <BsToggleOn className="w-5 h-5 text-primary" />
-                  </>
-                )}
-              </button>
-            </div>
+      {/* Toolbar */}
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex flex-col">
+          <Typography variant="h4">Salary Slip</Typography>
+          <Typography variant="bodySmall" color="body2">
+            View and download your salary slips here.
+          </Typography>
+        </div>
+
+        <div className="flex flex-row md:flex-row md:items-center md:gap-4">
+          <button
+            onClick={() => setMaskSalary((prev) => !prev)}
+            className="my-btn-secondary"
+            title={maskSalary ? "Show amounts" : "Hide amounts"}
+          >
+            {maskSalary ? (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  Show Amounts
+                </span>
+                <BsToggleOff className="w-6 h-6 text-gray-400" />
+              </>
+            ) : (
+              <>
+                <span className="text-sm font-medium text-gray-700">
+                  Hide Amounts
+                </span>
+                <BsToggleOn className="w-6 h-6 text-primary" />
+              </>
+            )}
+          </button>
+          <div className="">
+            <CustomDropdown
+              value={selectedPeriod}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedPeriod(e.target.value)
+              }
+              options={
+                payrollPeriods?.map((p) => ({
+                  value: p.name,
+                  label: p.name,
+                })) || []
+              }
+            />
           </div>
         </div>
-        <CardTable
-          titles={[
-            "Employee",
-            "Start Date",
-            "End Date",
-            "Gross Pay",
-            "Net Pay",
-            "Actions",
-          ]}
-        >
-          <FrappeListView
-            key={filtersKey}
-            doctype="Salary Slip"
-            ItemComponent={(props) => (
-              <SalarySlipItem
-                {...props}
-                maskSalary={maskSalary}
-                onDownloadType1={handleDownloadType1}
-                onDownloadType2={handleDownloadType2}
-                onDownloadType3={handleDownloadType3}
-                onDownloadType4={handleDownloadType4}
-                onViewPDF={handleGoToSalarySlip}
-                isDownloading={isDownloading}
-              />
-            )}
-            isSearch={false}
-            pageSize={10}
-            defaultFields={[
-              "name",
-              "employee",
-              "employee_name",
-              "start_date",
-              "end_date",
-              "gross_pay",
-              "net_pay",
-              "status",
-              "posting_date",
-            ]}
-            searchFields={["employee", "status", "posting_date"]}
-            infiniteScroll={true}
-            defaultFilters={filters as any}
-          />
-        </CardTable>
       </div>
+
+      <CardTable
+        titles={[
+          "Employee",
+          "Start Date",
+          "End Date",
+          "Gross Pay",
+          "Net Pay",
+          "Actions",
+        ]}
+      >
+        <FrappeListView
+          key={filtersKey}
+          doctype="Salary Slip"
+          ItemComponent={(props) => (
+            <SalarySlipItem
+              {...props}
+              maskSalary={maskSalary}
+              onDownloadType1={handleDownloadType1}
+              onDownloadType2={handleDownloadType2}
+              onDownloadType3={handleDownloadType3}
+              onDownloadType4={handleDownloadType4}
+              onViewPDF={handleGoToSalarySlip}
+              isDownloading={isDownloading}
+            />
+          )}
+          isSearch={false}
+          pageSize={10}
+          defaultFields={[
+            "name",
+            "employee",
+            "employee_name",
+            "start_date",
+            "end_date",
+            "gross_pay",
+            "net_pay",
+            "status",
+            "posting_date",
+          ]}
+          searchFields={["employee", "status", "posting_date"]}
+          infiniteScroll={true}
+          isFilter={false}
+          defaultFilters={filter as any}
+        />
+      </CardTable>
     </div>
   );
 };
@@ -287,15 +312,14 @@ const DownloadMenu = ({
   onType2,
   onType3,
   onType4,
-  onShowPrintFormatMenu = {},
+  onShowPrintFormatMenu,
 }: any) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLButtonElement | null>(null);
-  const printFormatMenuRef = onShowPrintFormatMenu.data;
+  const printFormatMenuRef = onShowPrintFormatMenu?.data;
 
   return (
     <div className="relative">
-      {/* Trigger Button */}
       <button
         ref={menuRef}
         onClick={() => setOpen(!open)}
@@ -306,7 +330,6 @@ const DownloadMenu = ({
         <MoreVertical className="w-4 h-4" />
       </button>
 
-      {/* ContextualPopup */}
       <ContextualPopup
         isOpen={open}
         onClose={() => setOpen(false)}
@@ -320,35 +343,26 @@ const DownloadMenu = ({
             key: "regular_payslip_exists",
           },
           { label: "TDS Sheet", fn: onType2, key: "tds_payslip_exists" },
-          {
-            label: "Benefit Payslip",
-            fn: onType3,
-            key: "benefit_payslip_exists",
-          },
-          {
-            label: "Off Cycle Payslip",
-            fn: onType4,
-            key: "off_payslip_exists",
-          },
-        ].map(
-          (item, i) =>
-            printFormatMenuRef?.[item.key] === 1 && (
-              <div key={i} className="flex justify-between items-center ">
-                <button
-                  onClick={(e) => {
-                    setOpen(false);
-                    item.fn(e, itemName);
-                  }}
-                  className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
-                >
-                  <Button className="p-2 border rounded" bgColor="none">
-                    <FaRegEye className="w-4 h-4 text-primary" />
-                  </Button>
-                  {item.label}
-                </button>
-              </div>
-            ),
-        )}
+          { label: "Benefit Payslip", fn: onType3, key: "benefit_payslip_exists" },
+          { label: "Off Cycle Payslip", fn: onType4, key: "off_payslip_exists" },
+        ].map((item, i) => (
+          printFormatMenuRef?.[item.key] === 1 && (
+            <div key={i} className="flex justify-between items-center ">
+              <button
+                onClick={(e) => {
+                  setOpen(false);
+                  item.fn(e, itemName);
+                }}
+                className="flex items-center gap-2 text-sm hover:bg-blue-100 px-2 py-1 rounded-md w-full text-left"
+              >
+                <Button className="p-2 border rounded" bgColor="none">
+                  <FaRegEye className="w-4 h-4 text-primary" />
+                </Button>
+                {item.label}
+              </button>
+            </div>
+          )
+        ))}
       </ContextualPopup>
     </div>
   );
@@ -362,15 +376,23 @@ const SalarySlipItemDesktop = ({
   onDownloadType2,
   onDownloadType3,
   onDownloadType4,
-  onViewPDF,
   isDownloading,
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
     }).format(amount);
+
+  const formatToIndianDate = (d: string) => {
+    const date = new Date(d);
+    return `${String(date.getDate()).padStart(2, "0")}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}-${date.getFullYear()}`;
+  };
+
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
@@ -378,24 +400,22 @@ const SalarySlipItemDesktop = ({
   );
 
   return (
-    <div className="">
-      <div className="max-w-screen grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
-        <span className="text-sm font-medium text-gray-700 text-start  relative group inline-block overflow-visible">
-          <Link
-            to={`/webapp/employee-profile?target_user=${item?.employee}`}
-            target="_blank"
-          >
-            <WrapperHoverCard employeeId={item.employee}>
-              {item.employee_name}
-            </WrapperHoverCard>
-          </Link>
+    <div>
+      <div className="grid grid-cols-6 items-center gap-4 px-6 h-14 border-gray-200 hover:bg-primary/20 cursor-pointer">
+        <span className="text-sm font-medium text-gray-700 text-start">
+          <WrapperHoverCard employeeId={item.employee}>
+            {item.employee_name}
+          </WrapperHoverCard>
         </span>
+
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.start_date)}
         </div>
+
         <div className="card-subtitle text-gray-700 text-start truncate">
           {formatToIndianDate(item.end_date)}
         </div>
+
         <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
@@ -403,6 +423,7 @@ const SalarySlipItemDesktop = ({
             formatCurrency(item.gross_pay)
           )}
         </div>
+
         <div className="card-subtitle text-gray-700 text-start truncate">
           {maskSalary ? (
             <span className="blur-sm text-gray-400">₹XX,XXX</span>
@@ -410,7 +431,8 @@ const SalarySlipItemDesktop = ({
             formatCurrency(item.net_pay)
           )}
         </div>
-        <div className="flex items-center justify-start gap-2 text-sm font-medium text-gray-700 text-start ">
+
+        <div className="flex items-center justify-start gap-2">
           <DownloadMenu
             itemName={item.name}
             isDownloading={isDownloading}
@@ -418,7 +440,6 @@ const SalarySlipItemDesktop = ({
             onType2={onDownloadType2}
             onType3={onDownloadType3}
             onType4={onDownloadType4}
-            onViewPDF={onViewPDF}
             onShowPrintFormatMenu={printFormatMenuRef}
           />
         </div>
@@ -434,15 +455,23 @@ const SalarySlipItemMobile = ({
   onDownloadType2,
   onDownloadType3,
   onDownloadType4,
-  onViewPDF,
   isDownloading,
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
     }).format(amount);
+
+  const formatToIndianDate = (d: string) => {
+    const date = new Date(d);
+    return `${String(date.getDate()).padStart(2, "0")}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}-${date.getFullYear()}`;
+  };
+
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
@@ -453,12 +482,15 @@ const SalarySlipItemMobile = ({
     <div className="border rounded-lg mb-3 bg-white">
       <div className="flex justify-between p-4 items-center border-b">
         <div className="flex flex-col">
-          <span className="font-semibold text-gray-800">{item.employee}</span>
+          <span className="font-semibold text-gray-800">
+            {item.employee_name}
+          </span>
           <span className="flex flex-row gap-2 text-xs text-gray-600">
             <p>{formatToIndianDate(item.start_date)}</p>To
             <p>{formatToIndianDate(item.end_date)}</p>
           </span>
         </div>
+
         <DownloadMenu
           itemName={item.name}
           isDownloading={isDownloading}
@@ -466,10 +498,10 @@ const SalarySlipItemMobile = ({
           onType2={onDownloadType2}
           onType3={onDownloadType3}
           onType4={onDownloadType4}
-          onViewPDF={onViewPDF}
           onShowPrintFormatMenu={printFormatMenuRef}
         />
       </div>
+
       <div className="text-sm text-gray-600 p-4">
         <div className="flex justify-between pb-2">
           <span className="font-medium text-gray-700">Gross Pay</span>
@@ -481,6 +513,7 @@ const SalarySlipItemMobile = ({
             )}
           </span>
         </div>
+
         <div className="flex justify-between">
           <span className="font-medium text-gray-700">Net Pay</span>
           <span className="text-blue-600 font-semibold">

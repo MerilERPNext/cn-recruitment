@@ -18,7 +18,7 @@ import { Typography } from "../../shared/atoms/Typography";
 interface EditAttendanceProps {
   onClose: () => void;
   open?: boolean;
-  requestId: string;
+  requestId: string | undefined;
   employeeName: string;
   employeeId: string;
   onRefetchData?: (() => void) | null;
@@ -35,9 +35,11 @@ export const EditAttendance = ({
   const effectiveEmployeeId = targetEmployeeId || employeeId;
   const formInstance = useRef<any>(null);
 
+  console.log("EditAttendance Rendered", { requestId, effectiveEmployeeId, employeeName, onRefetchData });
+
   const { data, isLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
-    ["employee", "=", effectiveEmployeeId],
+    // ["employee", "=", effectiveEmployeeId],
   ]);
   const mutation = useEditAttendance();
   // Only build form after data is available

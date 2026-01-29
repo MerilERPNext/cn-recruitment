@@ -21,6 +21,8 @@ interface SectionProps {
 }
 
 type PayrollPeriod = {
+  start_date: string | number | Date;
+  end_date: string | number | Date;
   name: string;
 };
 
@@ -33,9 +35,19 @@ export default function TaxSheet() {
     };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(payrollPeriods?.[0]?.name || "");
   useEffect(() => {
-    if (!selectedPeriod) {
-      setSelectedPeriod(payrollPeriods?.[0]?.name || "");
-    }
+    if (!payrollPeriods?.length || selectedPeriod) return;
+  
+    const today = new Date(); 
+  
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      return today >= start && today <= end;
+    });
+  
+    setSelectedPeriod(
+      matchedPeriod?.name || payrollPeriods[0].name
+    );
   }, [payrollPeriods, selectedPeriod]);
 
   const payrollPeriodOptions =

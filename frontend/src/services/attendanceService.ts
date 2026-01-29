@@ -36,6 +36,52 @@ export const attendanceService = {
     return response.data as Attendance[];
   },
 
+
+
+
+
+  getDataOfAttendance: async (
+    empId: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance_api.get_first_level_reports",
+        {
+          manager_id: empId,
+        }
+      );
+      console.log("Raw response from getDataOfAttendance:", res);
+      return res;
+
+    } catch (error) {
+      console.error("📡 Error while fetching attendance:", error);
+      throw error;
+    }
+  },
+  getDataOfAttendanceDetails: async (
+    selectedReporties: string,
+    selectedDate: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance_api.get_attendance_status_today",
+        {
+          reports_to: selectedReporties,
+          date: selectedDate,
+        }
+      );
+      console.log("Raw response from getDataOfAttendance:", res);
+      return res;
+
+    } catch (error) {
+      console.error("📡 Error while fetching attendance:", error);
+      throw error;
+    }
+  },
+
+
   getHomeSummaryDetails: async (
     userId: string,
     filters?: string
@@ -742,3 +788,5 @@ export const getAllShiftBlocks = async (
     data: res.data as ShiftBlock[], // Return the expected format
   };
 };
+
+

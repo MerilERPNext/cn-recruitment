@@ -29,6 +29,7 @@ import DailyConfiguration from "./DailyConfiguration";
 import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
 import AttendanceStatusModal from "./AttendanceStatusModal";
 import { X } from "lucide-react";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -275,7 +276,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
   }, [formData.fromDate, formData.toDate]);
 
+   const loading = useLoadingOverlay();
   const handleSubmit = useCallback(async () => {
+
     if (!currentEmployee?.name || !formInstance.current) return;
 
     try {
@@ -293,9 +296,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         dailyConfig:
           submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
       });
-
+      
+      await loading?.wrap(async () => {
       await createLeaveMutation.mutateAsync(payload);
-
+          }, "Submitting  Leave Request...");
       toast.success("Leave request submitted successfully!");
       triggerRefetch();
       onSuccess?.();
@@ -307,6 +311,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       );
       toast.error(formatted);
     }
+    
   }, [
     currentEmployee,
     dailyConfig,

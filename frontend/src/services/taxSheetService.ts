@@ -72,7 +72,7 @@ export const getTaxSheetHTML = async (employee: string, payroll_period: string, 
 export const PayrollPeriodsService = {
   getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
-      fields: ["name"],
+      fields: ["name","start_date","end_date"],
       orderBy: "creation desc",
       filters: [["company", "=", company]],
     });
