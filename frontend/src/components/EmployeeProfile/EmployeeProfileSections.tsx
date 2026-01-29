@@ -15,12 +15,12 @@ import {
 } from "./FrappeToFormIoConverterSepTabs";
 import Button from "../shared/atoms/Button";
 import EmployeeSidebarForm from "./EmployeeSidebarForm";
-import ProfileGridSkeleton from "./ProfileSkeleton";
 import { PencilIcon, FileText } from "lucide-react";
 import usePermission from "../../hooks/usePermission";
 import { Link } from "react-router-dom";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
+import ProfileSkeleton from "../shared/molecules/Skeletons/ProfileSkeleton";
 
 interface EditableField {
     key: string;
@@ -106,7 +106,7 @@ export default function EmployeeProfileSections() {
         });
     };
     if (!employeeId || fieldPermissionsLoading || employeeLoading || !tabs.length) {
-        return <ProfileGridSkeleton />;
+        return <ProfileSkeleton />;
     }
     // console.log(tabs, "tabs------------------------------------")
     return (

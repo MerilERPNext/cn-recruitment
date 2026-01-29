@@ -413,15 +413,12 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema = {
         ...schema,
         storage: "customBase64",
+        fileTypes:
+          field.fieldtype === "Attach Image"
+            ? [{ label: "Images", value: "image/*" }]
+            : [],
         multiple: false,
-        filePattern: "*",  // Accept all file types by default
       };
-
-      // Only set fileTypes for image attachments
-      if (field.fieldtype === "Attach Image") {
-        schema.fileTypes = [{ label: "Images", value: "image/*" }];
-        schema.filePattern = "image/*";
-      }
 
       if (Array.isArray(fieldValue) && fieldValue.length > 0) {
         // Handle Formio file array (after submit, before reload)
@@ -438,7 +435,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
               type: file.type || "file",
             },
           ]
-          : [];
+          : "";
       } else if (typeof fieldValue === "string" && fieldValue.trim() !== "") {
         // Handle backend string (after reload)
         schema.defaultValue = [
@@ -455,7 +452,6 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         schema.defaultValue = [];
       }
       break;
-
     case "Signature":
       schema.width = "400";
       schema.height = "150";
@@ -506,6 +502,11 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   // Set placeholder if not set and field has one
   if (!schema.placeholder && field.placeholder) {
     schema.placeholder = field.placeholder;
+  }
+
+  // Final safety check for multiple selects
+  if (schema.multiple && (schema.defaultValue === undefined || schema.defaultValue === null || schema.defaultValue === "")) {
+    schema.defaultValue = [];
   }
 
   return schema;
@@ -1176,6 +1177,8 @@ export async function convertToFormioWithLayout(
                       type: "file",
                     },
                   ];
+                } else if (!val || val === "") {
+                  newRow[key] = [];
                 }
               });
               return newRow;
