@@ -71,7 +71,6 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
         leading-4
         capitalize
       `}
-      style={{ fontFamily: "Reddit Sans" }}
     >
       {badge.icon}
       <span>{badge.label}</span>

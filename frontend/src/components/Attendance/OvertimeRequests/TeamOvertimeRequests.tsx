@@ -14,12 +14,13 @@ const TeamOvertimeRequests = () => {
 
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const handleApprovalRefetchComplete = useCallback(() => {
-    setRefetchApprovalList(false);
-  }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+  }, []);
 
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
@@ -48,22 +49,25 @@ const TeamOvertimeRequests = () => {
     : ["1fr", "1.5fr", "1fr", "1fr", "1fr"];
 
   return (
-    <div>
-      <div className="min-h-screen">
-        <div className="px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Overtime Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team overtime requests
-              </Typography>
-            </div>
+    <div className="max-h-screen flex flex-col">
+      {/* ================= Scroll Container ================= */}
+      <div className="flex-1 overflow-y-auto">
+        {/* ================= Sticky Page Title ================= */}
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">Team Overtime Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team overtime requests
+            </Typography>
           </div>
+        </div>
 
+        {/* ================= Table ================= */}
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-            {currentUser?.name ? (
+            {currentUser?.name && (
               <ApprovalList
-                doctype={"Planned Overtime Request"}
+                doctype="Planned Overtime Request"
                 pageSize={10}
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
@@ -102,11 +106,10 @@ const TeamOvertimeRequests = () => {
                   />
                 )}
               />
-            ) : null}
+            )}
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <MyOvertimeDetails
           documentName={requestId}

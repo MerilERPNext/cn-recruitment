@@ -69,78 +69,76 @@ const MyOvertimeRequests = () => {
   }, [setSearchParams]);
 
   return (
-    <div>
-      <div className="min-h-screen">
-        <div className="px-4">
-          <div>
-            <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-              <div className="flex flex-col mb-2">
-                <Typography variant="h4">My Overtime Requests</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Track and manage your overtime requests
-                </Typography>
-              </div>
-            </div>
-            <CardTable
-              columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr"]}
-              titles={[
-                "Description",
-                "Creation",
-                "Due Date",
-                "Allocated To",
-                "Status",
-              ]}
-            >
-              {effectiveEmployeeId ? (
-                <DataListView
-                  queryKey={["planned-overtime-request", effectiveEmployeeId]}
-                  customAPI={{
-                    method:
-                      "cn_leave_shift_managment.api.get_open_approval_todos",
-                    params: {
-                      doctype: "Planned Overtime Request",
-                      employee: effectiveEmployeeId,
-                    },
-                  }}
-                  ItemComponent={(props: {
-                    item: MyPlannedAttendanceRequest;
-                  }) => {
-                    return (
-                      <MyRequestCard
-                        request={props?.item}
-                        onClick={(request: MyPlannedAttendanceRequest) =>
-                          handleRequestClick(request)
-                        }
-                      />
-                    );
-                  }}
-                  onRefetchComplete={handleMyRequestsRefetchComplete}
-                  refetchTrigger={refetchMyRequestsList || refetchAttendance}
-                  isSearch={true}
-                  isFilter={true}
-                  filterFields={[
-                    {
-                      fieldname: "status",
-                      label: "Status",
-                      fieldtype: "Select",
-                      options: [
-                        { label: "Pending", value: "Open" },
-                        { label: "Approved", value: "Approved" },
-                        { label: "Rejected", value: "Rejected" },
-                      ],
-                    },
-                  ]}
-                  defaultFilters={{ status: "Open" }}
-                  pageSize={10}
-                  showRefreshButton={false}
-                  orderBy="modified desc"
-                  showPagination={true}
-                  infiniteScroll={true}
-                  loadMorePagination={false}
-                />
-              ) : null}
-            </CardTable>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">My Overtime Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage your overtime requests
+            </Typography>
           </div>
+        </div>
+        <div className="px-4">
+          <CardTable
+            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr"]}
+            titles={[
+              "Description",
+              "Creation",
+              "Due Date",
+              "Allocated To",
+              "Status",
+            ]}
+          >
+            {effectiveEmployeeId ? (
+              <DataListView
+                queryKey={["planned-overtime-request", effectiveEmployeeId]}
+                customAPI={{
+                  method:
+                    "cn_leave_shift_managment.api.get_open_approval_todos",
+                  params: {
+                    doctype: "Planned Overtime Request",
+                    employee: effectiveEmployeeId,
+                  },
+                }}
+                ItemComponent={(props: {
+                  item: MyPlannedAttendanceRequest;
+                }) => {
+                  return (
+                    <MyRequestCard
+                      request={props?.item}
+                      onClick={(request: MyPlannedAttendanceRequest) =>
+                        handleRequestClick(request)
+                      }
+                    />
+                  );
+                }}
+                onRefetchComplete={handleMyRequestsRefetchComplete}
+                refetchTrigger={refetchMyRequestsList || refetchAttendance}
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      { label: "Pending", value: "Open" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
+                  },
+                ]}
+                defaultFilters={{ status: "Open" }}
+                pageSize={10}
+                showRefreshButton={false}
+                orderBy="modified desc"
+                showPagination={true}
+                infiniteScroll={true}
+                loadMorePagination={false}
+              />
+            ) : null}
+          </CardTable>
         </div>
       </div>
       {!isDesktop && plannedOvertimAllowed && canRequestAttendance && (
