@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useState, useRef } from "react";
 import { EmployeeStatusType } from "../../../types/attendance";
 import Avatar from "../../shared/Avatar";
@@ -39,6 +39,21 @@ const EmployeeStatusCard = ({
 
   const desktopButtonRef = useRef<HTMLButtonElement>(null);
   const mobileButtonRef = useRef<HTMLButtonElement>(null);
+
+  const formatTimeSafe = (value?: string | null) => {
+    if (!value) return "--:--";
+  
+    // ✅ Case 1: backend sends only time (HH:mm or HH:mm:ss)
+    if (/^\d{2}:\d{2}(:\d{2})?$/.test(value)) {
+      return value.slice(0, 5); // "09:30"
+    }
+  
+    // ✅ Case 2: full datetime string
+    const date = new Date(value);
+    if (!isValid(date)) return "--:--";
+  
+    return format(date, "HH:mm");
+  };
 
   const getStatusIndicatorColor = (
     status:
@@ -192,7 +207,7 @@ const EmployeeStatusCard = ({
                 className="font-semibold text-gray-800"
               >
                 {data?.in_time
-                  ? format(new Date(data?.in_time), "HH:mm")
+                  ? formatTimeSafe(data.in_time)
                   : "--:--"}
               </Typography>
             </div>
@@ -210,7 +225,7 @@ const EmployeeStatusCard = ({
                 className="font-semibold text-gray-800"
               >
                 {data?.out_time
-                  ? format(new Date(data?.out_time), "HH:mm")
+                  ? formatTimeSafe(data?.out_time)
                   : "--:--"}
               </Typography>
             </div>
