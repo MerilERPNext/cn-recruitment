@@ -18,7 +18,7 @@ function ProfileSkeleton({
                         {/* Section Header */}
                         <div className="mx-6 mb-6 flex items-center justify-between rounded-xl bg-gray-50 px-6 py-3">
                             <div className="h-5 w-40 bg-gray-200 rounded" />
-                            <div className="h-8 w-16 bg-gray-200 rounded-full" />
+                            <div className="h-8 w-16 bg-gray-200 rounded-lg" />
                         </div>
 
                         {/* Grid */}
