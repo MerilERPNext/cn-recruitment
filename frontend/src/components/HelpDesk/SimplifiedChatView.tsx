@@ -17,6 +17,8 @@ interface SimplifiedChatViewProps {
 interface SimpleChatMessage {
   id: string;
   content: string;
+  quotedContent?: string | null;
+  quotedSender?: string | null;
   sender: {
     name: string;
     email: string;
@@ -26,6 +28,57 @@ interface SimpleChatMessage {
   isCurrentUser: boolean;
   attachments: { file_name: string; file_url: string }[];
 }
+
+// Parse quoted content from HTML (blockquotes, gmail_quote, etc.)
+interface ParsedMessage {
+  quotedContent: string | null;
+  quotedSender: string | null;
+  mainContent: string;
+}
+
+const parseQuotedContent = (htmlContent: string): ParsedMessage => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+
+    // Find blockquote or gmail_quote or outlook reply markers
+    const blockquote = doc.querySelector('blockquote, .gmail_quote, #appendonsend, .reply-to-content');
+
+    if (blockquote) {
+      const quotedContent = blockquote.innerHTML;
+
+      // Try to parse sender from "On [date], [name] wrote:" pattern
+      let quotedSender: string | null = null;
+      const prevSibling = blockquote.previousElementSibling;
+      if (prevSibling && prevSibling.textContent) {
+        const match = prevSibling.textContent.match(/On .+?, (.+?) wrote:/);
+        if (match) {
+          quotedSender = match[1];
+        }
+      }
+
+      // Remove the blockquote from the document
+      blockquote.remove();
+
+      // Also remove the "On [date], [name] wrote:" line if present
+      if (prevSibling && prevSibling.textContent?.includes(' wrote:')) {
+        prevSibling.remove();
+      }
+
+      const mainContent = doc.body.innerHTML.trim();
+
+      return {
+        quotedContent: quotedContent.trim() || null,
+        quotedSender,
+        mainContent: mainContent || htmlContent
+      };
+    }
+
+    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+  } catch {
+    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+  }
+};
 
 // Resolution Modal Component
 interface ResolutionModalProps {
@@ -186,9 +239,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         return;
       }
 
+      // Parse quoted content from the message
+      const parsed = parseQuotedContent(comm.content || '');
+
       msgs.push({
         id: comm.name,
-        content: comm.content,
+        content: parsed.mainContent,
+        quotedContent: parsed.quotedContent,
+        quotedSender: parsed.quotedSender,
         sender: {
           name: comm.user?.full_name || comm.user?.name || comm.sender,
           email: comm.sender,
@@ -444,9 +502,26 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     );
   };
 
+  // Quoted message component
+  const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
+    <div className={`mb-2 p-3 rounded-lg border-l-4 ${
+      isCurrentUser
+        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
+        : 'bg-gray-100 border-gray-300 text-gray-600'
+    }`}>
+      <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
+        {sender ? `${sender} wrote:` : 'Previous message:'}
+      </div>
+      <div
+        className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? 'prose-invert' : ''} [&>p]:mb-0`}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    </div>
+  );
+
   // Chat message component (simplified, no type badges)
   const ChatBubble = ({ message }: { message: SimpleChatMessage }) => {
-    const { content, sender, timestamp, isCurrentUser, attachments } = message;
+    const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } = message;
 
     if (isCurrentUser) {
       // Right-aligned message (current user) - blue gradient
@@ -455,6 +530,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           <div className="flex flex-col items-end max-w-[75%]">
             {/* Message bubble */}
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
+              {/* Quoted message - appears ABOVE main content */}
+              {quotedContent && (
+                <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={true} />
+              )}
+
+              {/* Main content */}
               <div
                 className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
                 dangerouslySetInnerHTML={{ __html: content }}
@@ -482,6 +563,11 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             <div className="text-xs text-gray-500 mb-2 font-medium">
               {sender.name}
             </div>
+
+            {/* Quoted message - appears ABOVE main content */}
+            {quotedContent && (
+              <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={false} />
+            )}
 
             {/* Content */}
             <div
