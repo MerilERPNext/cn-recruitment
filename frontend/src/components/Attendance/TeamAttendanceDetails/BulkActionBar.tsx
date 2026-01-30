@@ -20,11 +20,13 @@ export function BulkActionBar({
   return (
     <div className="bg-primary/20">
       <div
-        className="grid items-center gap-4 px-6 py-3"
+        className="flex items-center gap-4 px-6 py-3"
         style={gridTemplateColumns ? { gridTemplateColumns } : undefined}
       >
+        {/* Checkbox column (table aligned) */}
+        <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
         {/* Content column (spans all except checkbox visually) */}
-        <div className="col-span-full flex flex-col">
+        <div className="flex flex-col">
           <Typography variant="bodyMedium">
             Select all pending requests
           </Typography>
@@ -46,7 +48,7 @@ export function BulkActionBar({
                 }
               >
                 {loadingAction?.isLoading &&
-                loadingAction?.action === "Reject" ? (
+                  loadingAction?.action === "Reject" ? (
                   <span className="animate-spin border-2 border-red-600 border-t-transparent rounded-full w-4 h-4 inline-block" />
                 ) : (
                   <>Bulk Reject ({selectedCount})</>
@@ -64,7 +66,7 @@ export function BulkActionBar({
                 }
               >
                 {loadingAction?.isLoading &&
-                loadingAction?.action === "Approve" ? (
+                  loadingAction?.action === "Approve" ? (
                   <span className="animate-spin border-2 border-green-600 border-t-transparent rounded-full w-4 h-4 inline-block" />
                 ) : (
                   <>Bulk Approve ({selectedCount})</>
@@ -74,10 +76,7 @@ export function BulkActionBar({
           )}
         </div>
 
-        {/* Checkbox column (table aligned) */}
-        <div className="flex justify-center">
-          <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
-        </div>
+
       </div>
     </div>
   );

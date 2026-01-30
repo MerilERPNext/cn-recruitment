@@ -124,66 +124,193 @@ const AllEmpAttendance = () => {
       );
     }
   }, [currentMonth, setSearchParams, searchParams]);
-  /* 🔥 Generate full month data (NO FEATURE LOSS) */
-  const completeMonthData = useMemo(() => {
-    if (!allEventsAndAttendance) return [];
 
+  /* 🔥 Types and helper functions from EmployeeAttendance */
+  type Status =
+    | "present"
+    | "absent"
+    | "on-leave"
+    | "half-day"
+    | "half-day-first-half"
+    | "half-day-second-half"
+    | "work-from-home"
+    | "default"
+    | "holiday"
+    | "unpaid"
+    | "week-off";
+
+  type AttendanceStatusInfo = {
+    status: Status;
+    firstHalf?: string;
+    secondHalf?: string;
+    events: AttendanceRecord[]; // all non-attendance-type records on the same day
+    record?: AttendanceRecord; // the attendance record whose status is being used
+  };
+
+  const parseLocalDate = (dateStr: string): Date =>
+    parse(dateStr, "yyyy-MM-dd", new Date());
+
+  const formatDateKey = (date: Date): string => format(date, "yyyy-MM-dd");
+
+  const createAttendanceStatusGetter = (
+    attendances: AttendanceRecord[] = [],
+  ) => {
+    const statusMap: Record<string, AttendanceStatusInfo> = {};
+    const groupedByDate: Record<string, AttendanceRecord[]> = {};
+
+    // Helper: expand a start-end date range into all dates
+    const expandDateRange = (start: string, end: string): string[] => {
+      const days: string[] = [];
+      const current = new Date(start);
+      const last = new Date(end);
+
+      while (current <= last) {
+        days.push(formatDateKey(current));
+        current.setDate(current.getDate() + 1);
+      }
+
+      return days;
+    };
+
+    // First pass → group attendance + range events by date
+    attendances.forEach((record) => {
+      const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+        record.doctype,
+      );
+
+      const hasRange = record.start && record.end;
+
+      // --- If it's an EVENT (not attendance) and has range, expand ---
+      if (!isAttendanceType && hasRange) {
+        const rangeKeys = expandDateRange(record.start, record.end);
+
+        rangeKeys.forEach((dateKey) => {
+          if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+          groupedByDate[dateKey].push(record);
+        });
+
+        return;
+      }
+
+      // --- Default: single-day add ---
+      const dateKey = formatDateKey(parseLocalDate(record.start));
+      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+      groupedByDate[dateKey].push(record);
+    });
+
+    // Second pass → build final statusMap
+    Object.entries(groupedByDate).forEach(([dateKey, records]) => {
+      let status: Status = "default";
+      let firstHalf = "";
+      let secondHalf = "";
+      const events: AttendanceRecord[] = [];
+      let attendanceRecord: AttendanceRecord | undefined = undefined;
+
+      records.forEach((record) => {
+        const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+          record.doctype,
+        );
+
+        if (isAttendanceType) {
+          attendanceRecord = record;
+          const rawStatus = record.status?.toLowerCase().trim();
+
+          switch (rawStatus) {
+            case "present":
+              status = "present";
+              break;
+            case "absent":
+              status = "absent";
+              break;
+            case "on leave":
+            case "leave":
+              status = "on-leave";
+              break;
+            case "holiday":
+              status = "holiday";
+              break;
+            case "weekly off":
+              status = "week-off";
+              break;
+            case "work from home":
+              status = "work-from-home";
+              break;
+            case "half day":
+              status = "half-day";
+              firstHalf = record.half_day_status_first_half || "";
+              secondHalf = record.half_day_status_second_half || "";
+              break;
+            default:
+              status = "default";
+          }
+          // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
+          if (record?.custom_auto_created === 1) {
+            status = "unpaid";
+          }
+        } else {
+          // Range-expanded events land here automatically
+          events.push(record);
+        }
+      });
+
+      // Build final object
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (status === "half-day") {
+        statusMap[dateKey] = {
+          status,
+          firstHalf,
+          secondHalf,
+          events,
+          record: attendanceRecord,
+        };
+      } else {
+        statusMap[dateKey] = { status, events, record: attendanceRecord };
+      }
+    });
+
+    // Getter
+    return (date: Date): AttendanceStatusInfo => {
+      const key = formatDateKey(date);
+      return statusMap[key] || { status: "default", events: [] };
+    };
+  };
+
+  const getAttendanceStatus = useMemo(() => {
+    return createAttendanceStatusGetter(allEventsAndAttendance ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEventsAndAttendance]);
+
+  /* 🔥 Generate complete month data for list view */
+  const completeMonthData = useMemo(() => {
     const allDates = eachDayOfInterval({
       start: startOfMonth(currentMonth),
       end: endOfMonth(currentMonth),
     });
 
-    const dataByDate = new Map<string, AttendanceRecord[]>();
-
-    allEventsAndAttendance.forEach((item) => {
-      const key = format(new Date(item.start), "yyyy-MM-dd");
-      if (!dataByDate.has(key)) dataByDate.set(key, []);
-      dataByDate.get(key)?.push(item);
-    });
-
-    const priority: Record<string, number> = {
-      Holiday: 1,
-      "Attendance Request": 2,
-      Attendance: 3,
-    };
-
-    const result: AttendanceRecord[] = [];
+    // Build list of dates with their attendance and events
+    const items: Array<{
+      date: Date;
+      statusInfo: AttendanceStatusInfo;
+    }> = [];
 
     allDates.forEach((date) => {
-      const key = format(date, "yyyy-MM-dd");
-      const items = dataByDate.get(key);
+      const statusInfo = getAttendanceStatus(date);
 
-      if (items?.length) {
-        const sorted = [...items].sort(
-          (a, b) => (priority[a.doctype] || 99) - (priority[b.doctype] || 99),
-        );
-        result.push(...sorted);
-      } else {
-        result.push({
-          name: `placeholder-${key}`,
-          doctype: "Attendance",
-          start: key,
-          end: key,
-          title: "No Data",
-          status: "Not Marked",
-          docstatus: "",
-          employee: "",
-          half_day_status_first_half: undefined,
-          half_day_status_second_half: undefined,
-          in_time: undefined,
-          out_time: undefined,
-          shift: undefined,
-        } as AttendanceRecord);
-      }
+      // Always add an item for each date (even if no data)
+      items.push({
+        date,
+        statusInfo,
+      });
     });
 
-    return result;
-  }, [allEventsAndAttendance, currentMonth]);
+    return items;
+  }, [getAttendanceStatus, currentMonth]);
 
   /* Error state */
   if (isError) {
     return (
-      <>
+      <div className="bg-white">
         <LayoutHeader tab="All Attendance" onBack={() => navigate(-1)} />
         <div className="h-screen flex flex-col items-center justify-center gap-3">
           <Typography color="error">
@@ -193,12 +320,12 @@ const AllEmpAttendance = () => {
             Retry
           </Button>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="bg-white">
       {/* Header */}
       <LayoutHeader tab="All Attendance" onBack={() => navigate(-1)} />
 
@@ -257,7 +384,7 @@ const AllEmpAttendance = () => {
                 { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
               ]}
             >
-              <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
+              <button className="p-1 border-1 rounded-lg hover:bg-gray-200">
                 <MoreVertical className="h-5 w-5" />
               </button>
             </DropdownMenu>
@@ -284,49 +411,107 @@ const AllEmpAttendance = () => {
       {/* Attendance List */}
       <div className="px-4 pb-4 flex flex-col gap-2">
         {completeMonthData.map((item, index) => {
-          const dateObj = new Date(item.start);
-          const date = dateObj.getDate();
-          const day = dateObj.toLocaleString("default", {
+          const { date, statusInfo } = item;
+          const dateNum = date.getDate();
+          const day = date.toLocaleString("default", {
             weekday: "short",
           });
 
-          if (item.doctype === "Attendance Request") return null;
+          const record = statusInfo.record;
 
-          return (
+          // Map status to display string
+          const getStatusDisplay = (status: Status): string => {
+            switch (status) {
+              case "present":
+                return "Present";
+              case "absent":
+                return "Absent";
+              case "on-leave":
+                return "On Leave";
+              case "half-day":
+                return "Half Day";
+              case "work-from-home":
+                return "Work From Home";
+              case "holiday":
+                return "Holiday";
+              case "week-off":
+                return "Weekly Off";
+              case "unpaid":
+                return "On Leave";
+              case "default":
+                return "Not Marked";
+              default:
+                return status;
+            }
+          };
+
+          // Get event badge color
+          const getEventColor = (doctype: string): string => {
+            switch (doctype) {
+              case "Attendance Request":
+                return "bg-blue-50 text-blue-600";
+              case "Leave Request":
+                return "bg-pink-50 text-pink-600";
+              case "Overtime Request":
+                return "bg-orange-50 text-orange-600";
+              case "Out Duty":
+                return "bg-purple-50 text-purple-600";
+              default:
+                return "bg-gray-40 text-gray-600";
+            }
+          };
+
+          // Filter out approved attendance requests (they're already reflected in attendance)
+          const displayEvents = statusInfo.events.filter(
+            (event) => !(event.doctype === "Attendance Request" && event.status === "Approved")
+          );
+
+          // Skip weekly offs for modal
+          const shouldOpenModal = statusInfo.status !== "week-off";
+
+          return (<>
             <div
-              key={index}
+              key={`${format(date, "yyyy-MM-dd")}-${index}`}
               onClick={() => {
-                if (item.status?.toLowerCase() !== "weekly off") {
-                  const dayEvents = allEventsAndAttendance?.filter(e =>
-                    format(new Date(e.start), "yyyy-MM-dd") === format(dateObj, "yyyy-MM-dd")
-                    && e.doctype !== "Attendance"
-                  );
+                if (shouldOpenModal) {
                   setShowDetailsFor({
-                    date: dateObj,
-                    data: item,
-                    status: item.status?.toLowerCase(),
-                    events: dayEvents
+                    date: date,
+                    data: record || ({
+                      name: `placeholder-${format(date, "yyyy-MM-dd")}`,
+                      doctype: "Attendance",
+                      start: format(date, "yyyy-MM-dd"),
+                      end: format(date, "yyyy-MM-dd"),
+                      title: "No Data",
+                      status: getStatusDisplay(statusInfo.status),
+                      docstatus: "",
+                      employee: "",
+                    } as AttendanceRecord),
+                    status: statusInfo.status.replace(/-/g, " "),
+                    events: statusInfo.events
                   });
                 }
               }}
-              className="flex items-center p-4 border border-gray-100 bg-white shadow-sm rounded-xl hover:shadow-md transition cursor-pointer"
+              className="flex items-center p-4 bg-white rounded-xl hover-lift transition cursor-pointer"
             >
               {/* Date Box */}
               <div
-                className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
-                  item.status?.toLowerCase(),
-                  item.custom_auto_created === 1,
-                )}`}
+                className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${statusInfo.status === "unpaid"
+                  ? "bg-orange-100 text-orange-600"
+                  : getStatusColor(
+                    statusInfo.status,
+                    false,
+                  )
+                  }`}
                 style={
-                  item.status?.toLowerCase() === "half day"
+                  statusInfo.status === "half-day"
                     ? getStatusGradient(
-                      item.half_day_status_first_half || "",
-                      item.half_day_status_second_half || "",
+                      statusInfo.firstHalf || "",
+                      statusInfo.secondHalf || "",
                     )
                     : {}
                 }
               >
-                <div className="text-lg font-bold">{date}</div>
+                <div className="text-lg font-bold">{dateNum}</div>
                 <div className="text-sm capitalize">{day}</div>
               </div>
 
@@ -334,35 +519,60 @@ const AllEmpAttendance = () => {
               <div className="flex flex-1 flex-col gap-1 ml-4">
                 <div className="flex justify-between items-center">
                   <Typography className="font-semibold">
-                    {item.status}
+                    {getStatusDisplay(statusInfo.status)}
                   </Typography>
-                  {item.shift && (
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      Shift {item.shift}
+                  {record?.shift && (
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded-xl">
+                      Shift {record.shift}
                     </span>
                   )}
                 </div>
 
-                {item.doctype === "Attendance" && (
+                {/* Show check-in/out times for Attendance records */}
+                {record?.doctype === "Attendance" && (
                   <div className="flex justify-between mt-1">
                     <div className="flex items-center gap-2">
                       <LogIn
-                        className={`h-4 w-4 ${item.in_time ? "text-green-600" : "text-gray-600"
+                        className={`h-4 w-4 ${record.in_time ? "text-green-600" : "text-gray-600"
                           }`}
                       />
-                      {formatTimeSafe(item.in_time)}
+                      {formatTimeSafe(record.in_time)}
                     </div>
                     <div className="flex items-center gap-2">
                       <LogOut
-                        className={`h-4 w-4 ${item.out_time ? "text-red-600" : "text-gray-600"
+                        className={`h-4 w-4 ${record.out_time ? "text-red-600" : "text-gray-600"
                           }`}
                       />
-                      {formatTimeSafe(item.out_time)}
+                      {formatTimeSafe(record.out_time)}
                     </div>
+                  </div>
+                )}
+
+                {/* Show events as badges */}
+                {displayEvents.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {displayEvents.map((event, eventIndex) => {
+                      // Handle Out Duty as a special request type
+                      const eventType = event.doctype === "Attendance Request" && event.request_type === "Out Duty"
+                        ? event.request_type
+                        : event.doctype;
+
+                      return (
+                        <span
+                          key={eventIndex}
+                          className={`text-xs px-2 py-1 rounded-xl ${getEventColor(eventType)}`}
+                          title={event.request_type === "Out Duty" ? event.request_type : event.title || eventType}
+                        >
+                          {event.request_type === "Out Duty" ? event.request_type : event.title || eventType}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </div>
             </div>
+            <div className="w-full border-b-1 border-gray-50" />
+          </>
           );
         })}
       </div>
@@ -383,7 +593,7 @@ const AllEmpAttendance = () => {
           />
         </Modal>
       )}
-    </>
+    </div>
   );
 };
 
