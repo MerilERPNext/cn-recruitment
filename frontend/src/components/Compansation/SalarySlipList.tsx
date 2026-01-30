@@ -220,20 +220,20 @@ const SalarySlipsList = () => {
         <div className="flex flex-row md:flex-row md:items-center md:gap-4">
           <button
             onClick={() => setMaskSalary((prev) => !prev)}
-            className="my-btn-secondary"
-            title={maskSalary ? "Show amounts" : "Hide amounts"}
+            className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm"
+            title={maskSalary ? "Show amount" : "Hide amount"}
           >
             {maskSalary ? (
               <>
                 <span className="text-sm font-medium text-gray-700">
-                  Show Amounts
+                  Show Amount
                 </span>
                 <BsToggleOff className="w-6 h-6 text-gray-400" />
               </>
             ) : (
               <>
                 <span className="text-sm font-medium text-gray-700">
-                  Hide Amounts
+                  Hide Amount
                 </span>
                 <BsToggleOn className="w-6 h-6 text-primary" />
               </>

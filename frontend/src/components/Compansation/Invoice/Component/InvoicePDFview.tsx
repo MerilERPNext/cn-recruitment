@@ -5,6 +5,7 @@ import { useState } from "react";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import Button from "../../../shared/atoms/Button";
 import { useInvoiceSheetViewPDF } from "../../../../hooks/payroll/usePerquisite";
+import { FiEye } from "react-icons/fi";
 
 type Props = {
   invoiceID: string;
@@ -44,6 +45,7 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
       },
     });
   };
+  
 
   return (
     <>
@@ -52,7 +54,7 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
   onClick={handleView}
   disabled={disabled || isPending}
   className={`px-4 py-1 text-sm border rounded-xl
-    whitespace-nowrap inline-flex items-center justify-center
+    whitespace-nowrap inline-flex items-center gap-2 justify-center
     ${
       disabled || isPending
         ? "bg-gray-300 text-primary cursor-not-allowed"
@@ -60,8 +62,16 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
     }
   `}
 >
-  {isPending ? "Loading..." : "View Invoice"}
+  {isPending ? (
+    "Loading..."
+  ) : (
+    <>
+      <FiEye className="text-base" />
+      View PDF
+    </>
+  )}
 </Button>
+
 
 
       <SalarySlipPDFModal

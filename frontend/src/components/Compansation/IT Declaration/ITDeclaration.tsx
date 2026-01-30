@@ -19,9 +19,9 @@ import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
 import Button from "../../shared/atoms/Button";
-import CategoryDeclarationSelectable from "./Component/Category";
 import { Typography } from "../../shared/atoms/Typography";
 import toast from "react-hot-toast";
+import CategorySection from "./Component/CategoryDeclarationSelectable";
 
 type PayrollPeriod = {
   name: string;
@@ -30,7 +30,6 @@ type PayrollPeriod = {
 };
 
 const ITDeclarationForm = () => {
-  /* ---------------- User & hooks ---------------- */
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const mutation = useSubmitITDeclaration();
@@ -170,20 +169,41 @@ useEffect(() => {
 
   /* ---------------- Submit ---------------- */
   const handleSubmit = () => {
-    const declarations = groupedCategories.flatMap((sec) =>
+    const ltaDeclarations =
+  hraData?.lta?.items?.flatMap((cat: any) =>
+    cat.items
+      .filter((item: any) => Number(item.amount) > 0)
+      .map((item: any) => ({
+        exemption_category: cat.category_name, // usually "LTA"
+        exemption_sub_category: item.exemption_sub_category,
+        amount: Number(item.amount),
+        max_amount: Number(item.max_amount),
+        attach_proof: null,
+        note: "",
+      }))
+  ) || [];
+    const itDeclarations = groupedCategories.flatMap((sec) =>
       sec.categories.flatMap((cat: any) =>
         cat.items
-          .filter((item: any) => Number(item.amount) > 0)
+          .filter(
+            (item: any) =>
+              item.is_selected &&
+              Number(item.amount) > 0
+          )
           .map((item: any) => ({
             exemption_category: cat.category_name,
             exemption_sub_category: item.exemption_sub_category,
-            custom_remarks: item.proof_comment || "",
             amount: Number(item.amount),
             max_amount: Number(item.max_amount),
+            attach_proof:
+              typeof item.proof_file === "string"
+                ? item.proof_file
+                : null,
+            note: item.proof_comment || "",
           }))
       )
     );
-
+    const declarations = [...itDeclarations, ...ltaDeclarations];
     const payload = {
       declaration_id: declarationId,
       doctype: declarationDoctype,
@@ -212,16 +232,6 @@ useEffect(() => {
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
-        // declarations: [
-        //   {
-        //     exemption_category: "EXEMPT U/S 80C, 80CCC & 80 CCD",
-        //     exemption_sub_category: "LIC- Life Insurance Premium Directly Paid By Employee",
-        //     amount: 22,
-        //     max_amount: 510000,
-        //     attach_proof:"/files/Screenshot from 2025-12-27 15-10-51.png",
-        //     note:"This is a sample note",
-        //   }
-        // ]
       },
     };
 
@@ -366,37 +376,13 @@ useEffect(() => {
                   </button>
                 ))}
               </div>
-              {sectionCategories.map((cat: any) => (
-                <div key={cat.category_name} className="mt-6">
-                  <CategoryDeclarationSelectable
-                    categoryName={cat.category_name}
-                    max_amount={cat.max_amount}
-                    lockingDate={PrrofOfITDeclaration?.status}
-                    selectable={cat.custom_select_type}
-                    showProofFields={
-                      responseData?.doctype ===
-                      "Employee Tax Exemption Proof Submission"
-                    }
-                    items={cat.items}
-                    onChange={(updatedItems) => {
-                      setGroupedCategories((prev) =>
-                        prev.map((sec) =>
-                          sec.section === activeSection
-                            ? {
-                                ...sec,
-                                categories: sec.categories.map((c: any) =>
-                                  c.category_name === cat.category_name
-                                    ? { ...c, items: updatedItems }
-                                    : c
-                                ),
-                              }
-                            : sec
-                        )
-                      );
-                    }}
-                  />
-                </div>
-              ))}
+              <CategorySection
+      sectionCategories={sectionCategories}
+      activeSection={activeSection}
+      lockingDate={PrrofOfITDeclaration?.status}
+      responseDoctype={responseData?.doctype}
+      setGroupedCategories={setGroupedCategories}
+    />
             </>
           )}
         </div>

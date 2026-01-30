@@ -4,6 +4,9 @@
 import React, { useState, useEffect } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
 import LTACards from "./LtaBreakUp";
+import { FiX } from "react-icons/fi";
+import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
+import { useFileUpload } from "../../../../hooks/useEmployee";
 
 export interface LTAItem {
   exemption_sub_category: string;
@@ -12,6 +15,8 @@ export interface LTAItem {
   editable: number;
   amount: number | null;
   max_amount: number;
+  proof_file?: string;
+  file_id?: string;
 }
 
 export interface LTACategory {
@@ -51,6 +56,9 @@ const HRAForm: React.FC<HRAFormProps> = ({
   LATABreakup,
 }) => {
   const [showLTAModal, setShowLTAModal] = useState(false);
+  const uploadMutation = useFileUpload();
+const { mutateAsync: deleteDoc } = useDeleteDocument();
+
 
   const LTAData = (hraData as unknown as any[])?.[1];
 
@@ -63,6 +71,63 @@ const HRAForm: React.FC<HRAFormProps> = ({
       onChange("attach_reqd", 1);
     }
   }, [isPanMandatory, hraData.attach_reqd, onChange]);
+
+  const handleLTAFileUpload = (
+    catIdx: number,
+    itemIdx: number,
+    file: File | null
+  ) => {
+    if (!file) return;
+  
+    uploadMutation.mutate(file, {
+      onSuccess(data) {
+        const updatedItems = [...LTAData.items];
+  
+        updatedItems[catIdx].items[itemIdx] = {
+          ...updatedItems[catIdx].items[itemIdx],
+          proof_file: data?.file_url,file_id: data.name,
+        };
+  
+        onChange("lta", { items: updatedItems });
+      },
+      onError(err) {
+        console.error("LTA proof upload failed", err);
+        alert("File upload failed");
+      },
+    });
+  };
+  const handleLTARemoveProof = async (
+    catIdx: number,
+    itemIdx: number,
+    fileId?: string
+  ) => {
+    if (!fileId) {
+      alert("File id missing");
+      return;
+    }
+
+    if (!window.confirm("Delete this file?")) return;
+
+    try {
+      await deleteDoc({
+        doctype: "File",
+        name: fileId, // ✅ ONLY THIS WORKS
+      });
+
+      const updated = [...LTAData.items];
+      updated[catIdx].items[itemIdx] = {
+        ...updated[catIdx].items[itemIdx],
+        proof_file: undefined,
+        file_id: undefined,
+      };
+
+      onChange("lta", { items: updated });
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed");
+    }
+  };
+    
 
   return (
     <div className="mt-4">
@@ -241,7 +306,7 @@ const HRAForm: React.FC<HRAFormProps> = ({
               {category.items.map((item: any, idx: number) => (
                 <div
                   key={item.exemption_sub_category}
-                  className="grid grid-cols-2 gap-4 mb-4 border-b pb-4"
+                  className=" gap-4 mb-4 border-b pb-4"
                 >
                   <div className="col-span-2 flex justify-between items-center">
                     <Typography
@@ -253,7 +318,10 @@ const HRAForm: React.FC<HRAFormProps> = ({
                     </Typography>
                   </div>
 
-                  <div className="col-span-2">
+              <div className="flex gap-4 w-full justify-between">
+
+
+              <div className=" w-full flex flex-col gap-2">
                     <label className="text-sm text-gray-500">Amount</label>
                     <input
                       type="text"
@@ -269,13 +337,54 @@ const HRAForm: React.FC<HRAFormProps> = ({
 
                         onChange("lta", { items: updatedItems });
                       }}
-                      className={`w-full border rounded px-3 py-1 ${
+                      className={`max-w-[500px] border rounded px-3 py-1 ${
                         item.editable === 0
-                          ? "bg-gray-200 cursor-not-allowed"
+                          ? "bg-gray-200 cursor-not-allowed w-full"
                           : ""
                       }`}
                     />
                   </div>
+                  <div className=" flex flex-col gap-2 ">
+  <label className="text-xs text-gray-600">Attachment</label>
+
+<div className="flex flex-row items-center gap-2">
+<input
+    type="file"
+    onChange={(e) =>
+      handleLTAFileUpload(
+        catIdx,
+        idx,
+        e.target.files?.[0] || null
+      )
+    }
+    className="border rounded pr-3 text-xs
+      file:text-xs file:border-0
+      file:bg-primary file:text-white
+      file:px-3 file:py-1"
+  />
+
+  {item.proof_file && (
+    <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+      <span className="text-xs text-gray-700 truncate">
+        {item.proof_file}
+      </span>
+
+      <button
+        type="button"
+        onClick={() =>
+          handleLTARemoveProof(catIdx, idx, item.proof_file)
+        }
+        className="text-gray-500 hover:text-red-600"
+        title="Remove file"
+      >
+        <FiX size={14} />
+      </button>
+    </div>
+  )}
+</div>
+</div>
+
+              </div>
                 </div>
               ))}
             </div>
