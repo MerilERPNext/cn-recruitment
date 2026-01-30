@@ -289,10 +289,17 @@ export const useGetAllEmployeeRegularize = (
 
 
 export function useMarkBulkAttendance() {
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.markBulkAttendance(body),
+
+    onSuccess: ()=>{
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+    },
     onError: (e) => {
       console.log(e);
     },
@@ -555,8 +562,10 @@ export function useCreatePlannedOvertimeRequest() {
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.createPlannedOvertimeRequest(body),
-    onSuccess: () => {
+    onSuccess: async() => {
       // Invalidate relevant queries
+      //  await new Promise((res)=> setTimeout(res, 4000));
+      queryClient.invalidateQueries({ queryKey: ["custom-api-infinite", "cn_leave_shift_managment.api.get_open_approval_todos"] });
       queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });

@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { approvalListServices } from "../services/approvalListService";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export function useApprovalListActions() {
   const queryClient = useQueryClient();
@@ -18,7 +20,6 @@ export function useApprovalListActions() {
 }
 
 export function useRevokeEvent() {
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -30,12 +31,11 @@ export function useRevokeEvent() {
       todo: string;
       doctype: string;
     }) => approvalListServices.revokeEvent(docname, todo, doctype),
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
-      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
-    },
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (e) => {
+      const formatedError = errorResponseFormater(e, "Could not Revoked the request");
+      toast.error(formatedError);
       console.log(e);
     },
   });

@@ -18,6 +18,8 @@ import {
 } from "../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -65,10 +67,28 @@ const EmpLeaveRequestCard = ({
           todo: data?.todo_id,
         },
         {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
-            setRefetchAttendance(true);
-            setMenuOpen(false);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onSuccess: (data: any) => {
+            if (!data.ok) {
+              const formatedError = errorResponseFormater(
+                data,
+                "Could not Revoked the request",
+              );
+              toast.error(formatedError);
+            } else {
+              queryClient.invalidateQueries({
+                queryKey: ["my-leave-requests"],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["attendance", "all"],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["employee-attendance-summary"],
+              });
+              setRefetchAttendance(true);
+              setMenuOpen(false);
+              toast.success("Revoked Leave request Successfully!");
+            }
           },
         },
       );

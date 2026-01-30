@@ -13,6 +13,7 @@ import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import { useNavigate } from "react-router-dom";
 import { useShiftTypes } from "../../hooks/useShift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useQueryClient } from "@tanstack/react-query";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
@@ -32,7 +33,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
       `/webapp/shift-request/shift-change-form/${data?.reference_document?.name}`,
     );
   };
-
+  const queryClient = useQueryClient();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
       revokeEventMutation.mutate(
@@ -43,6 +44,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         },
         {
           onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 1000);

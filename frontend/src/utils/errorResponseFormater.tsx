@@ -2,12 +2,16 @@ import DOMPurify from "dompurify";
 
 export const errorResponseFormater = (
   error: any,
-  fallback = "Something went wrong, please try again."
+  fallback = "Something went wrong, please try again.",
 ) => {
   let err = null;
 
   if (!error) {
-    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) }} />;
+    return (
+      <span
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fallback) }}
+      />
+    );
   }
 
   try {
@@ -22,11 +26,12 @@ export const errorResponseFormater = (
       }
     }
 
-    err = err || error?.response?.data?.exception
-      ?.split(":")
-      .slice(1)
-      .join(":")
-      .trim() || error?.response?.data?.message || error?.response?.data?.message?.error;
+    err =
+      err ||
+      error?.response?.data?.exception?.split(":").slice(1).join(":").trim() ||
+      error?.response?.data?.message ||
+      error?.response?.data?.message?.error ||
+      error?.error;
   } catch {
     console.error("Failed to parse error message:", error);
     err = fallback;
@@ -34,5 +39,10 @@ export const errorResponseFormater = (
 
   if (err == null) err = fallback;
   // ❗ Always return sanitized HTML ReactNode
-  return <span className="text-sm" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }} />;
+  return (
+    <span
+      className="text-sm"
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(err) }}
+    />
+  );
 };

@@ -20,6 +20,7 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { useQueryClient } from "@tanstack/react-query";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -33,6 +34,7 @@ const EmpAttendanceRequestCard = ({
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
 
+  const queryClient = useQueryClient();
   const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -44,15 +46,27 @@ const EmpAttendanceRequestCard = ({
           todo: data?.todo_id,
         },
         {
-          onSuccess: () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onSuccess: (data: any) => {
+            if (!data.ok) {
+              const formatedError = errorResponseFormater(
+                data,
+                "Could not Revoked the request",
+              );
+              toast.error(formatedError);
+            } else {
+              // Invalidate relevant queries
+              toast.success("Attendance Request Revoked Successfully!");
+              queryClient.invalidateQueries({
+                queryKey: ["attendance", "all"],
+              });
+              queryClient.invalidateQueries({
+                queryKey: ["employee-attendance-summary"],
+              });
+            }
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
-            toast.success("Attendance Request Revoked Successfully!");
-          },
-          onError: (error) => {
-            const formatedError = errorResponseFormater(error);
-            toast.error(formatedError);
           },
           onSettled: () => {
             loading?.hide();

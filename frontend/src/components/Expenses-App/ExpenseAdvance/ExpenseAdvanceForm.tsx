@@ -22,6 +22,7 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface ExpenseClaim {
   id: string;
@@ -73,6 +74,7 @@ const ExpenseAdvanceForm: React.FC<{
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
   };
 
+  const loading = useLoadingOverlay();
   const handleSubmit = async () => {
     try {
       const submission = await formRef.current?.submit();
@@ -142,22 +144,29 @@ const ExpenseAdvanceForm: React.FC<{
         return;
       }
 
-      setSubmitting(true);
-      mutation.mutate(payload, {
-        onSuccess: () => {
-          toast.success("Expense Advance submitted successfully!");
-          navigate("/webapp/expenses-app/my-advance-expense");
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 1000);
-        },
+      await loading?.wrap(async () => {
+        return new Promise<void>((resolve) => {
+          setSubmitting(true);
+          mutation.mutate(payload, {
+            onSuccess: () => {
+              toast.success("Expense Advance submitted successfully!");
+              navigate("/webapp/expenses-app/my-advance-expense");
+              setTimeout(() => {
+                setRefetchAttendance(true);
+              }, 1000);
+            },
 
-        onError: (error: any) => {
-          const msg = errorResponseFormater(error);
-          toast.error(msg);
-        },
-        onSettled: () => setSubmitting(false),
-      });
+            onError: (error: any) => {
+              const msg = errorResponseFormater(error);
+              toast.error(msg);
+            },
+            onSettled: () => {
+              setSubmitting(false);
+              resolve();
+            },
+          });
+        });
+      }, "Submitting Expense Request...");
     } catch (err) {
       console.error("❌ Submission error:", err);
       toast.error("Form submission failed!");
@@ -699,7 +708,7 @@ const ExpenseAdvanceForm: React.FC<{
           onClick={handleSubmit}
           disabled={submitting}
           bgColor="blue-600"
-          className="hover:bg-blue-700"
+          className="hover:bg-blue-700 text-white"
         >
           {submitting ? "Submitting..." : "Submit"}
         </Button>

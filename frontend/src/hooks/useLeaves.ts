@@ -21,6 +21,7 @@ import type {
   AttendanceStatusResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export type LeaveType = {
   allocated_leaves: number;
@@ -195,28 +196,15 @@ export function useReplaceLeave() {
 
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["custom-api"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
     },
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
-      let errorMsg = "Submission failed. Please try again.";
-
-      try {
-        const raw = err?.response?.data?._server_messages;
-        if (raw) {
-          const messages = JSON.parse(raw);
-          if (Array.isArray(messages) && messages.length > 0) {
-            const firstMessage = JSON.parse(messages[0]);
-            if (firstMessage?.message) {
-              errorMsg = firstMessage.message.replace(/<[^>]*>/g, "").trim();
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse server error message:", e);
-      }
-
-      toast.error(errorMsg);
+      const formatedError = errorResponseFormater(err);
+      toast.error(formatedError);
+      console.log("Errorr Replacing Leave", err);
     },
   });
 }
@@ -422,13 +410,25 @@ export function useCreateLeaveApplication() {
     mutationFn: (leaveData: any) =>
       leaveService.createLeaveApplication(leaveData),
 
-    onSuccess: () => {
+    onSuccess: async() => {
+      
+      await new Promise((res)=> setTimeout(res, 4000));
+
       queryClient.invalidateQueries({
         queryKey: ["custom-api"],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["custom-api-infinite"],
+
+       queryClient.invalidateQueries({
+        queryKey: ["leave-requests"],
       });
+
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+     
+      queryClient.invalidateQueries({
+        queryKey: ["custom-api-infinite", "cn_leave_shift_managment.api.get_open_approval_todos"],
+      });
+
     },
   });
 }

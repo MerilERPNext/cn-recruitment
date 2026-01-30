@@ -213,7 +213,22 @@ const ApprovalList = ({
               triggerRefetch();
             }
           } else {
-            toast.success("Approved Request Successfully!");
+            let actionShow;
+
+            switch (action) {
+              case "Approve":
+                actionShow = "Approved";
+                break;
+              case "Reject":
+                actionShow = "Rejected";
+                break;
+              case "Send Back":
+                actionShow = "Sent Back";
+                break;
+              default:
+                actionShow = `Performed action ${action} on`;
+            }
+            toast.success(`${actionShow} Request Successfully!`);
             triggerRefetch();
           }
         } catch (error: any) {
@@ -308,7 +323,7 @@ const ApprovalList = ({
                 onSelectAll={handleSelectAll}
                 onBulkAction={handleBulkAction}
                 loadingAction={bulkLoading}
-                 columnWidths={columnWidths}
+                columnWidths={columnWidths}
               />
             )}
           </div>

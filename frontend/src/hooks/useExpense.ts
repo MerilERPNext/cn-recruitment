@@ -89,14 +89,21 @@ export function usePostExpenseClaim() {
   return useMutation({
     mutationFn: (expenses_data: string) =>
       expenseService.postExpenseClaim(expenses_data),
-    onSuccess: () => {
+    onSuccess: async() => {
+      queryClient.invalidateQueries({
+        queryKey: ["expense-claims"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["expense-claims-all"],
+      });
+         queryClient.invalidateQueries({
+        queryKey: ["custom-api-infinite", "cn_leave_shift_managment.api.get_open_approval_todos"],
+      });
+     
+      await new Promise((res)=> setTimeout(res, 3000));
       toast.success("Expense claim submitted successfully!");
       navigate("/webapp/expenses-app/expenses-list", {
         state: { refresh: true },
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["expense-claims"],
       });
     },
     onError: handleError,
