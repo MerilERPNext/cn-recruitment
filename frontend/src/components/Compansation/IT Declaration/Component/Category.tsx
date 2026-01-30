@@ -5,7 +5,6 @@ import Button from "../../../shared/atoms/Button";
 import { useFileUpload } from "../../../../hooks/useEmployee";
 import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
-
 type Item = {
   idx: string;
   proof_file?: File | string;
@@ -48,14 +47,25 @@ const CategoryDeclarationSelectable = ({
 
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
-    return items.map((item) => ({
+    const normalized = items.map(item => ({
+      ...item,
+      is_effectively_selected:
+        item.is_selected === true || Number(item.amount ?? 0) > 0,
+    }));
+  
+    const hasAnySelected = normalized.some(i => i.is_effectively_selected);
+  
+    return normalized.map(item => ({
       label: item.exemption_sub_category,
       value: item.exemption_sub_category,
-      disabled:
-        (!isMultipleSelect && items.some((i) => i.is_selected)) ||
-        (isMultipleSelect && item.is_selected),
+  
+      disabled: isMultipleSelect
+        ? item.is_effectively_selected
+        : hasAnySelected,
     }));
-  }, [isMultipleSelect, items]);
+  }, [items, isMultipleSelect]);
+  
+  
 
   const handleProofChange = (
     key: string,
@@ -193,7 +203,11 @@ const CategoryDeclarationSelectable = ({
 
   /* ---------------- Selected Items ---------------- */
   const selectedItems = items.filter(
-    (item) => item.is_selected === true || item.editable === 0 
+    (item) =>
+      item?.is_selected === true ||
+      item?.editable === 0 ||
+      Number(item?.amount ?? 0) > 0
+    
   );
 
   return (
@@ -375,7 +389,8 @@ const CategoryDeclarationSelectable = ({
                 onClick={() => {
                   if (opt.disabled) return;
                   handleSelectItem(opt.value);
-                  setIsOpen(false);
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                - setIsOpen(false);
                 }}
                 className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-100
                   ${

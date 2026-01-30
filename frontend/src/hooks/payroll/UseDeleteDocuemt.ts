@@ -15,13 +15,11 @@ export const useDeleteDocument = () => {
       deleteDocument(doctype, name),
 
     onSuccess: (_data, variables) => {
-      console.log(
-        `✅ Deleted ${variables.doctype} - ${variables.name}`
-      );
+      console.log(`✅ Deleted ${variables.doctype} - ${variables.name}`);
 
-      // 🔄 invalidate common list queries (adjust keys as needed)
-      queryClient.invalidateQueries({ queryKey: [variables.doctype] });
-      queryClient.invalidateQueries({ queryKey: ["loan"] }); // example (like your loan hook)
+      queryClient.invalidateQueries({
+        queryKey: [variables.doctype],
+      });
     },
 
     onError: (error: any) => {
@@ -32,3 +30,4 @@ export const useDeleteDocument = () => {
     },
   });
 };
+
