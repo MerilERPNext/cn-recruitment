@@ -1,4 +1,11 @@
-import { Check, Clock, X } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Ban,
+  Check,
+  Clock,
+  X,
+} from "lucide-react";
 import type { ReactNode } from "react";
 
 export type StatusBadgeConfig = {
@@ -17,25 +24,82 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
     case "draft":
       return {
         label: "Pending",
-        bgClass: "bg-[#FFB90033]",
-        textClass: "text-[#9F741F]",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-800",
         icon: <Clock className="w-4 h-4" />,
       };
 
     case "approved":
       return {
         label: "Approved",
-        bgClass: "bg-[#00C95033]",
-        textClass: "text-[#199638]",
+        bgClass: "bg-emerald-100",
+        textClass: "text-emerald-700",
         icon: <Check className="w-4 h-4" />,
       };
 
     case "rejected":
+      return {
+        label: "Rejected",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
+        icon: <X className="w-4 h-4" />,
+      };
+
     case "cancelled":
       return {
-        label: status === "cancelled" ? "Cancelled" : "Rejected",
-        bgClass: "bg-[#E7000B33]",
-        textClass: "text-[#E7000B]",
+        label: "Cancelled",
+        bgClass: "bg-red-50",
+        textClass: "text-red-600",
+        icon: <Ban className="w-4 h-4" />,
+      };
+
+    case "completed":
+      return {
+        label: "Completed",
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
+        icon: <Check className="w-4 h-4" />,
+      };
+
+    /* ---------- Timeline statuses ---------- */
+    case "current":
+      return {
+        label: "Current",
+        bgClass: "bg-emerald-50",
+        textClass: "text-emerald-700",
+        icon: <Clock className="w-4 h-4" />,
+      };
+
+    case "upcoming":
+      return {
+        label: "Upcoming",
+        bgClass: "bg-blue-50",
+        textClass: "text-blue-700",
+        icon: <ArrowUpRight className="w-4 h-4" />,
+      };
+
+    case "previous":
+      return {
+        label: "Previous",
+        bgClass: "bg-slate-100",
+        textClass: "text-slate-600",
+        icon: <ArrowDownRight className="w-4 h-4" />,
+      };
+
+    /* ---------- State statuses ---------- */
+    case "active":
+      return {
+        label: "Active",
+        bgClass: "bg-emerald-50",
+        textClass: "text-emerald-700",
+        icon: <Check className="w-4 h-4" />,
+      };
+
+    case "inactive":
+      return {
+        label: "Inactive",
+        bgClass: "bg-gray-100",
+        textClass: "text-gray-600",
         icon: <X className="w-4 h-4" />,
       };
 

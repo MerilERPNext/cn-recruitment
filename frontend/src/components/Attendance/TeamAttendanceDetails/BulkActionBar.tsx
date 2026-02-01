@@ -20,13 +20,13 @@ export function BulkActionBar({
   return (
     <div className="bg-primary/20">
       <div
-        className="flex items-center gap-4 px-6 py-3"
+        className="grid items-center gap-4 px-6 py-3"
         style={gridTemplateColumns ? { gridTemplateColumns } : undefined}
       >
         {/* Checkbox column (table aligned) */}
         <input type="checkbox" checked={allSelected} onChange={onSelectAll} />
         {/* Content column (spans all except checkbox visually) */}
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ gridColumn: "2 / -1" }}>
           <Typography variant="bodyMedium">
             Select all pending requests
           </Typography>

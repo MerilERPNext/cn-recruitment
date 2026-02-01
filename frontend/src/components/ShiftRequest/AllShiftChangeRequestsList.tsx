@@ -22,7 +22,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -39,41 +39,39 @@ const AllShiftChangeRequestsList: React.FC = () => {
     setRefetchApprovalList(false);
   }, []);
 
+  const tableTitles = [
+    "Select",
+    "Employee",
+    "Shift Type",
+    "From Date",
+    "To Date",
+    "Due Date",
+    "Status",
+    "ACTIONS",
+  ];
+
+  const tableColumnWidths = [
+    "0.5fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+  ];
   return (
     <div className="w-full mx-auto pt-2 px-6">
       <div>
-        <HeaderBar
-          title="Team Shift Requests"
-          onBack={() => navigate(-1)}
-        />
-        <CardTable
-          titles={[
-            "Select",
-            "Employee",
-            "Shift Type",
-            "From Date",
-            "To Date",
-            "Due Date",
-            "Status",
-            "Actions",
-          ]}
-          columnWidths={[
-            "8%",
-            "10%",
-            "10%",
-            "10%",
-            "10%",
-            "10%",
-            "10%",
-            "20%",
-          ]}
-        >
+        <HeaderBar title="Team Shift Requests" onBack={() => navigate(-1)} />
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
             status="Draft"
             doctype={"Shift Request"}
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
+            columnWidths={tableColumnWidths}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue
                 isSelected={item?.isSelected}
@@ -81,7 +79,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 data={item?.data}
                 onAction={item?.onAction}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) =>handleRequestClick(request)}
+                onClick={(request: any) => handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
               />
             )}
