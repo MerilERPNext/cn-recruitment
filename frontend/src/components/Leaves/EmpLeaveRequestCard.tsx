@@ -18,6 +18,7 @@ import {
 } from "../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
+import toast from "react-hot-toast";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -69,6 +70,7 @@ const EmpLeaveRequestCard = ({
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             setRefetchAttendance(true);
             setMenuOpen(false);
+            toast.success("Leave revoked successfully");
           },
         },
       );

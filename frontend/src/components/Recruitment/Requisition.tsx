@@ -1,130 +1,11 @@
-import React from "react";
-import CardTable from "../shared/CardTable";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { FileText, Users, CheckCircle, FolderOpen } from "lucide-react";
 import Badge from "../shared/Badge";
+import FrappeListView from "../ListView";
 
 const Requisition = () => {
-  const { isDesktop } = useScreenSize();
-
-  // Dummy data based on the image
-  const requisitions = [
-    {
-      code: "REQ_0092",
-      designation: "Intern (DES_367)",
-      department: "Test Department (DEP_132)",
-      location: "Corporate Office, Uttar Pradesh, Utta...",
-      status: "Approved Draft",
-      statusColor: "bg-orange-100 text-orange-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "--",
-      draft: "0",
-      closedPositions: "--",
-      lastUpdated: "05-01-2026",
-      initiated: "05-01-2026",
-    },
-    {
-      code: "REQ_0091",
-      designation: "Intern (DES_367)",
-      department: "Test Department (DEP_132)",
-      location: "Corporate Office, Uttar Pradesh, Utta...",
-      status: "Approved Active",
-      statusColor: "bg-green-100 text-green-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "1",
-      draft: "0",
-      closedPositions: "0",
-      lastUpdated: "07-10-2025",
-      initiated: "07-10-2025",
-    },
-    {
-      code: "REQ_0032",
-      designation: "Crew Manager (DES_362)",
-      department: "Crew (DEP_140)",
-      location: "Andenes Port, Norway, Andenes, Nor...",
-      status: "Approved Draft",
-      statusColor: "bg-orange-100 text-orange-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "--",
-      draft: "0",
-      closedPositions: "--",
-      lastUpdated: "07-10-2025",
-      initiated: "22-05-2024",
-    },
-    {
-      code: "REQ_0045",
-      designation: "Associate (ASS_AC_DGN)",
-      department: "Academics - Design (DEP_34)",
-      location: "Prayagraj, Uttar Pradesh, India (PW_...",
-      status: "Approval Pending",
-      statusColor: "bg-yellow-100 text-yellow-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "--",
-      draft: "0",
-      closedPositions: "--",
-      lastUpdated: "29-09-2025",
-      initiated: "26-06-2024",
-    },
-    {
-      code: "REQ_0014",
-      designation: "Faculty Member (FCM_AC_PHY)",
-      department: "Foundation - Academics Physics (DE...",
-      location: "Prayagraj, Uttar Pradesh, India (PW_...",
-      status: "Approval Pending",
-      statusColor: "bg-yellow-100 text-yellow-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "--",
-      draft: "0",
-      closedPositions: "--",
-      lastUpdated: "29-09-2025",
-      initiated: "02-09-2022",
-    },
-    {
-      code: "REQ_0090",
-      designation: "Associate (ASS_SP_ONB)",
-      department: "Human Resources (DEP_76)",
-      location: "Branch Office - Mumbai - MH, Mumb...",
-      status: "Approved Active",
-      statusColor: "bg-green-100 text-green-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "1",
-      activeOffer: "0",
-      draft: "0",
-      closedPositions: "0",
-      lastUpdated: "07-07-2025",
-      initiated: "07-07-2025",
-    },
-    {
-      code: "REQ_0089",
-      designation: "Associate (ASS_SP_ONB)",
-      department: "Human Resources (DEP_76)",
-      location: "Prayagraj, Uttar Pradesh, India (PW_...",
-      status: "Approved Active",
-      statusColor: "bg-green-100 text-green-700",
-      totalPositions: "1",
-      positionDetail: "(1 New, 0 Repl..)",
-      activeEvaluation: "0",
-      activeOffer: "1",
-      draft: "0",
-      closedPositions: "0",
-      lastUpdated: "03-07-2025",
-      initiated: "03-07-2025",
-    },
-  ];
-
   const stats = [
     {
       title: "Total Positions",
@@ -182,6 +63,240 @@ const Requisition = () => {
     "130px",
   ];
 
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+      case "approved active":
+      case "open":
+      case "open & approved":
+        return "bg-green-100 text-green-700";
+      case "pending":
+      case "approval pending":
+        return "bg-yellow-100 text-yellow-700";
+      case "draft":
+      case "approved draft":
+        return "bg-orange-100 text-orange-700";
+      case "rejected":
+      case "cancelled":
+        return "bg-red-100 text-red-700";
+      case "filled":
+      case "closed":
+        return "bg-gray-100 text-gray-700";
+      default:
+        return "bg-gray-50 text-gray-600";
+    }
+  };
+
+  const RequisitionListHeader = () => {
+    const { isDesktop } = useScreenSize();
+    if (!isDesktop) return null;
+
+    return (
+      <div className="overflow-x-auto">
+        <div
+          className="grid gap-4 px-6 py-4 bg-gray-50 border-b border-gray-200 mt-2 rounded-t-lg min-w-max"
+          style={{ gridTemplateColumns: columnWidths.join(" ") }}
+        >
+          {titles.map((title, index) => (
+            <Typography
+              key={index}
+              variant="bodySmall"
+              className="font-bold whitespace-nowrap"
+            >
+              {title}
+            </Typography>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const RequisitionItem = ({ item }: { item: any }) => {
+    const { isDesktop } = useScreenSize();
+    
+
+    const handleRowClick = () => {
+      
+    };
+
+    
+    const code = item.name;
+    const designation = item.designation;
+    const department = item.department;
+    const location = item.custom_location || item.location;
+    const status = item.status;
+    
+    
+    const totalPositions = item.no_of_positions || item.total_positions || "1";
+    
+    const positionDetail = item.position_detail || "(1 New, 0 Repl..)"; 
+    const activeEvaluation = item.active_evaluation || "0";
+    const activeOffer = item.active_offer || "--";
+    const draft = item.draft_count || "0";
+    const closedPositions = item.closed_positions || "--";
+    
+    const lastUpdated = item.modified ? item.modified.split(" ")[0] : "--";
+    const initiated = item.creation ? item.creation.split(" ")[0] : "--";
+    
+    const statusColor = getStatusColor(status);
+
+    if (isDesktop) {
+      return (
+        <div className="overflow-x-auto">
+            <div
+              className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer items-center min-w-max bg-white"
+              style={{ gridTemplateColumns: columnWidths.join(" ") }}
+              onClick={handleRowClick}
+            >
+              <div className="flex items-center">
+                <Typography variant="bodySmall" className="font-medium text-gray-900">
+                  {code}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-0.5">
+                <Typography variant="bodySmall" className="font-medium text-blue-600">
+                  {designation}
+                </Typography>
+                <Typography variant="bodySmall" className="text-gray-600 text-xs">
+                  {department}
+                </Typography>
+                <Typography variant="bodySmall" className="text-gray-600 text-xs">
+                  {location}
+                </Typography>
+              </div>
+
+              <div className="flex items-center">
+                <Badge label={status} backgroundColor={statusColor} />
+              </div>
+
+              <div className="flex flex-col gap-0.5">
+                <Typography variant="bodySmall" className="font-semibold">
+                  {totalPositions}
+                </Typography>
+                <Typography variant="bodySmall" className="text-gray-500 text-xs text-nowrap truncate">
+                  {positionDetail}
+                </Typography>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <Typography
+                  variant="bodySmall"
+                  className={activeEvaluation === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+                >
+                  {activeEvaluation}
+                </Typography>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <Typography
+                  variant="bodySmall"
+                  className={activeOffer === "--" || activeOffer === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+                >
+                  {activeOffer}
+                </Typography>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <Typography
+                  variant="bodySmall"
+                  className={draft === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+                >
+                  {draft}
+                </Typography>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <Typography
+                  variant="bodySmall"
+                  className={closedPositions === "--" || closedPositions === "0" ? "text-gray-400" : "text-gray-900 font-medium"}
+                >
+                  {closedPositions}
+                </Typography>
+              </div>
+
+              <div className="flex items-center">
+                <Typography variant="bodySmall" className="text-gray-600">
+                  {lastUpdated}
+                </Typography>
+              </div>
+
+              <div className="flex items-center">
+                <Typography variant="bodySmall" className="text-gray-600">
+                  {initiated}
+                </Typography>
+              </div>
+            </div>
+        </div>
+      );
+    }
+
+  
+    return (
+      <Card
+        radius="lg"
+        className="border p-4 mb-3 hover:shadow-md transition-shadow"
+        onClick={handleRowClick}
+      >
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <Typography variant="bodySmall" className="font-bold text-gray-900 mb-1">
+                {code}
+              </Typography>
+              <Typography variant="bodySmall" className="font-medium text-blue-600">
+                {designation}
+              </Typography>
+            </div>
+            <span className={`px-2.5 py-1 rounded-xl text-xs font-medium ${statusColor} shrink-0`}>
+              {status}
+            </span>
+          </div>
+
+          {/* Department & Location */}
+          <div className="space-y-0.5">
+            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+              {department}
+            </Typography>
+            <Typography variant="bodySmall" className="text-gray-600 text-xs">
+              {location}
+            </Typography>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+            <div>
+              <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+                Total Positions
+              </Typography>
+              <Typography variant="bodySmall" className="font-semibold">
+                {totalPositions}{" "}
+                <span className="text-gray-500 text-xs font-normal">{positionDetail}</span>
+              </Typography>
+            </div>
+            <div>
+              <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+                Active Evaluation
+              </Typography>
+              <Typography variant="bodySmall" className="font-semibold">
+                {activeEvaluation}
+              </Typography>
+            </div>
+            <div>
+               <Typography variant="bodySmall" className="text-gray-500 text-xs mb-0.5">
+                Last Updated
+              </Typography>
+              <Typography variant="bodySmall" className="font-semibold text-xs">
+                {lastUpdated}
+              </Typography>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-4 md:space-y-6 p-2">
       {/* Stats Cards */}
@@ -201,11 +316,7 @@ const Requisition = () => {
                   <Icon className={`size-5 md:size-6 ${stat.iconColor}`} />
                 </div>
                 <div>
-                  <Typography
-                    variant="bodySmall"
-                    className="mb-1"
-                    color="body2"
-                  >
+                  <Typography variant="bodySmall" className="mb-1" color="body2">
                     {stat.title}
                   </Typography>
                   <Typography variant="subheading" color="primary">
@@ -218,268 +329,27 @@ const Requisition = () => {
         })}
       </div>
 
-      {/* Table */}
-      <CardTable titles={titles} columnWidths={columnWidths}>
-        {requisitions.map((req, index) => (
-          <React.Fragment key={index}>
-            {isDesktop ? (
-              // Desktop Row with better hover
-              <div
-                className="grid gap-4 px-6 py-4 border-t border-gray-100 hover:bg-blue-50/50 transition-colors cursor-pointer"
-                style={{ gridTemplateColumns: columnWidths.join(" ") }}
-              >
-                <div className="flex items-center">
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-gray-900"
-                  >
-                    {req.code}
-                  </Typography>
-                </div>
-
-                <div className="flex flex-col gap-0.5">
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-blue-600"
-                  >
-                    {req.designation}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="text-gray-600 text-xs"
-                  >
-                    {req.department}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="text-gray-600 text-xs"
-                  >
-                    {req.location}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center">
-                  <Badge label={req.status} backgroundColor={req.statusColor} />
-                </div>
-
-                <div className="flex flex-col gap-0.5">
-                  <Typography variant="bodySmall" className="font-semibold">
-                    {req.totalPositions}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    className="text-gray-500 text-xs"
-                  >
-                    {req.positionDetail}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <Typography
-                    variant="bodySmall"
-                    className={
-                      req.activeEvaluation === "0"
-                        ? "text-gray-400"
-                        : "text-gray-900 font-medium"
-                    }
-                  >
-                    {req.activeEvaluation}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <Typography
-                    variant="bodySmall"
-                    className={
-                      req.activeOffer === "--"
-                        ? "text-gray-400"
-                        : "text-gray-900 font-medium"
-                    }
-                  >
-                    {req.activeOffer}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <Typography
-                    variant="bodySmall"
-                    className={
-                      req.draft === "0"
-                        ? "text-gray-400"
-                        : "text-gray-900 font-medium"
-                    }
-                  >
-                    {req.draft}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center justify-center">
-                  <Typography
-                    variant="bodySmall"
-                    className={
-                      req.closedPositions === "--"
-                        ? "text-gray-400"
-                        : "text-gray-900 font-medium"
-                    }
-                  >
-                    {req.closedPositions}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center">
-                  <Typography variant="bodySmall" className="text-gray-600">
-                    {req.lastUpdated}
-                  </Typography>
-                </div>
-
-                <div className="flex items-center">
-                  <Typography variant="bodySmall" className="text-gray-600">
-                    {req.initiated}
-                  </Typography>
-                </div>
-              </div>
-            ) : (
-              // Mobile Card
-              <Card
-                radius="lg"
-                className="border p-4 mb-3 hover:shadow-md transition-shadow"
-              >
-                <div className="space-y-3">
-                  {/* Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <Typography
-                        variant="bodySmall"
-                        className="font-bold text-gray-900 mb-1"
-                      >
-                        {req.code}
-                      </Typography>
-                      <Typography
-                        variant="bodySmall"
-                        className="font-medium text-blue-600"
-                      >
-                        {req.designation}
-                      </Typography>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-xl text-xs font-medium ${req.statusColor} shrink-0`}
-                    >
-                      {req.status}
-                    </span>
-                  </div>
-
-                  {/* Department & Location */}
-                  <div className="space-y-0.5">
-                    <Typography
-                      variant="bodySmall"
-                      className="text-gray-600 text-xs"
-                    >
-                      {req.department}
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      className="text-gray-600 text-xs"
-                    >
-                      {req.location}
-                    </Typography>
-                  </div>
-
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Total Positions
-                      </Typography>
-                      <Typography variant="bodySmall" className="font-semibold">
-                        {req.totalPositions}{" "}
-                        <span className="text-gray-500 text-xs font-normal">
-                          {req.positionDetail}
-                        </span>
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Active Evaluation
-                      </Typography>
-                      <Typography variant="bodySmall" className="font-semibold">
-                        {req.activeEvaluation}
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Active Offer
-                      </Typography>
-                      <Typography variant="bodySmall" className="font-semibold">
-                        {req.activeOffer}
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Draft
-                      </Typography>
-                      <Typography variant="bodySmall" className="font-semibold">
-                        {req.draft}
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Closed Positions
-                      </Typography>
-                      <Typography variant="bodySmall" className="font-semibold">
-                        {req.closedPositions}
-                      </Typography>
-                    </div>
-
-                    <div>
-                      <Typography
-                        variant="bodySmall"
-                        className="text-gray-500 text-xs mb-0.5"
-                      >
-                        Last Updated
-                      </Typography>
-                      <Typography
-                        variant="bodySmall"
-                        className="font-semibold text-xs"
-                      >
-                        {req.lastUpdated}
-                      </Typography>
-                    </div>
-                  </div>
-
-                  {/* Initiated Date */}
-                  <div className="pt-2 border-t">
-                    <Typography
-                      variant="bodySmall"
-                      className="text-gray-500 text-xs"
-                    >
-                      Initiated: {req.initiated}
-                    </Typography>
-                  </div>
-                </div>
-              </Card>
-            )}
-          </React.Fragment>
-        ))}
-      </CardTable>
+      {/* Table Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col p-2">
+        <FrappeListView
+          doctype="Job Requisition"
+          ItemComponent={RequisitionItem}
+          PreListComponent={RequisitionListHeader}
+          defaultFields={[
+            "name",
+            "designation",
+            "department",
+            "status",
+            "no_of_positions",
+            "creation",
+            "modified"
+          ]}
+          searchFields={["name", "designation", "department"]}
+          infiniteScroll={true}
+          pageSize={20}
+          isFilter={true}
+        />
+      </div>
     </div>
   );
 };
