@@ -4,8 +4,8 @@ import formatToIndianDate, {
   formatEndDate,
 } from "../../utils/formatToIndianDate";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
-import { StatusBadge } from "./AllShiftsDashboard";
 import getShiftStatus from "../../utils/getShiftStatus";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
   item,

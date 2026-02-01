@@ -43,9 +43,6 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  // const formattedDate = item?.reference_document?.creation
-  //   ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
-  //   : " - ";
 
   return (
     <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">

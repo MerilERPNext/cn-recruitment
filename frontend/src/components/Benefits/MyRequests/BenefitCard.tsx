@@ -1,6 +1,6 @@
-import { StatusBadge } from "../../ShiftRequest/AllShiftsDashboard";
 import { format } from "date-fns";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const BenefitCard = ({
     data,

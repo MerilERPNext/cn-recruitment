@@ -2,13 +2,16 @@
 import { useState } from "react";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
-import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import { Link } from "react-router-dom";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import Tooltip from "../../../shared/Tooltip";
+import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -94,6 +97,8 @@ const ApprovalRejectionLoanList = ({
       toast.error("Failed to save comment");
     }
   };
+
+  const gridTemplateColumns = "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   /* ===================== MOBILE UI ===================== */
   if (isMobile) {
@@ -235,13 +240,11 @@ const ApprovalRejectionLoanList = ({
   return (
     <>
       <div
-        className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20  cursor-pointer"
-        style={{
-          gridTemplateColumns: "5% 8% 8% 8% 8% 10% 8% 8% 8% 20%",
-        }}
+        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+        style={{ gridTemplateColumns }}
         onClick={() => onClick?.(data)}
       >
-        <div className="flex items-center">
+        <div className="flex items-center justify-center">
           <input
             type="checkbox"
             className="accent-blue-500"
@@ -256,7 +259,7 @@ const ApprovalRejectionLoanList = ({
           />
         </div>
 
-        <div className="text-sm font-medium text-start">
+        <div className="flex items-center justify-center">
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`}
             target="_blank"
@@ -264,53 +267,63 @@ const ApprovalRejectionLoanList = ({
             <WrapperHoverCard
               employeeId={data?.reference_document?.custom_employee}
             >
-              {data?.reference_document?.applicant_name ||
-                data?.reference_document?.custom_employee}
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center truncate"
+              >
+                {data?.reference_document?.applicant_name ||
+                  data?.reference_document?.custom_employee}
+              </Typography>
             </WrapperHoverCard>
           </Link>
         </div>
 
-        <div className="text-sm">{data?.reference_document?.loan_product}</div>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {data?.reference_document?.loan_product}
+        </Typography>
 
-        <div>{data?.reference_document?.loan_amount}</div>
-        <div>{data?.reference_document?.rate_of_interest}%</div>
-        <div>{data?.reference_document?.total_payable_interest}</div>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {data?.reference_document?.loan_amount}
+        </Typography>
 
-        <div>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {data?.reference_document?.rate_of_interest}%
+        </Typography>
+
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {data?.reference_document?.total_payable_interest}
+        </Typography>
+
+        <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(
             data?.reference_document?.custom_repayment_start_date,
           )}
+        </Typography>
+
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(data?.reference_document?.posting_date)}
+        </Typography>
+
+        <div className="flex items-center justify-center">
+          <Tooltip
+            content={
+              data?.reference_document?.status === "Open"
+                ? `Allocated to : ${data?.allocated_to}`
+                : ""
+            }
+          >
+            <StatusBadge status={data?.reference_document?.status} />
+          </Tooltip>
         </div>
 
-        <div>{formatToIndianDate(data?.reference_document?.posting_date)}</div>
-
-        <div>
-          <StatusBadge status={data?.reference_document?.status} />
-        </div>
-
-        <div className="flex gap-2">
-          {actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleActionClick(action);
-              }}
-              bgColor={getActionStyles(action).bg}
-              className={`text-${getActionStyles(action).text}`}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
+        <div className="flex items-center justify-center">
+          <TeamApprovalActionPill
+            actions={actions}
+            status={data?.reference_document?.status}
+            recordId={data?.todo_id}
+            loadingAction={loadingAction}
+            onAction={(action) => onAction(action, data)}
+          />
         </div>
       </div>
 
