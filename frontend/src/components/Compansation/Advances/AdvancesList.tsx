@@ -17,6 +17,7 @@ import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import Tooltip from "../../shared/Tooltip";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -211,7 +212,9 @@ const AdvancesList: React.FC = () => {
 
               {/* Status with Tooltip */}
               <div className="flex items-center justify-center">
-                <StatusBadge status={advance.advanceStatus} />
+                <Tooltip content={advance.employee_name}>
+                  <StatusBadge status={advance.advanceStatus} />
+                </Tooltip>
               </div>
             </div>
           ))}
