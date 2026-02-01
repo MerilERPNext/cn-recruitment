@@ -3,7 +3,6 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import InstallmentsList from "./InstallmentsList";
-import { StatusBadge } from "./StatusBadge";
 import AdvanceForm from "./AdvanceForm";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -17,6 +16,7 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);

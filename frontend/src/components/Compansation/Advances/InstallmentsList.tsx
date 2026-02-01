@@ -5,13 +5,13 @@ import type React from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 interface InstallmentsListProps {
   advance: UiAdvance;

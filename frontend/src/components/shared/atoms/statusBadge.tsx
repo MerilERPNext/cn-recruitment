@@ -103,6 +103,14 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <X className="w-4 h-4" />,
       };
 
+    case "Pending Approval":
+      return {
+        label: "Pending Approval",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-800",
+        icon: <Clock className="w-4 h-4" />,
+      };
+
     default:
       return {
         label: rawStatus || "Unknown",

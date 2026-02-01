@@ -2,13 +2,13 @@
 import { useState } from "react";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import Button from "../../../shared/atoms/Button";
-import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import { Link } from "react-router-dom";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
