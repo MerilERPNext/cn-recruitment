@@ -137,11 +137,6 @@ const AdvanceApprovalCard = ({
 
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
-            {/* <Badge
-              size="sm"
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            /> */}
             <Tooltip
               content={
                 status?.label === "Pending"

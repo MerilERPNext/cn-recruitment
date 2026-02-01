@@ -20,50 +20,64 @@ const TeamAdvanceRequest = () => {
     setSelectedItem(item);
   }, []);
 
+  const tableColumnWidths = [
+    "0.5fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+  ];
+
   return (
-    <div className="px-2">
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
-        <div className="flex flex-col mb-2">
-          <Typography variant="h4">Team Advance Requests</Typography>
-          <Typography variant="bodySmall" color="body2">
-            Track and manage team advance requests
-          </Typography>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-3 pb-4">
+            <Typography variant="h4">Team Advance Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team advance requests
+            </Typography>
+          </div>
         </div>
-      </div>
-      <div className="max-w-screen rounded-lg overflow-x-auto">
-        <CardTable
-          titles={[
-            "Select",
-            "Employee Name",
-            "Advance Type",
-            "Amount",
-            "Start Date",
-            "End Date",
-            "Status",
-            "Actions",
-          ]}
-          columnWidths={["5%", "15%", "15%", "10%", "12%", "12%", "10%", "13%"]}
-        >
-          <ApprovalList
-            status="Pending"
-            doctype={"Employee Advance"}
-            pageSize={10000}
-            showPagination={false}
-            refetch={refetchApprovalList}
-            setRefetch={setRefetchApprovalList}
-            onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            renderCardContent={(item: any) => (
-              <ApprovalRejectionAdvanceList
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                onClick={() => handleRequestClick(item)}
-                loadingAction={item?.loadingAction}
-              />
-            )}
-          />
-        </CardTable>
+        <div className="px-2">
+          <CardTable
+            titles={[
+              "Select",
+              "Employee Name",
+              "Advance Type",
+              "Amount",
+              "Start Date",
+              "End Date",
+              "Status",
+              "Actions",
+            ]}
+            columnWidths={tableColumnWidths}
+          >
+            <ApprovalList
+              status="Pending"
+              doctype={"Employee Advance"}
+              pageSize={10000}
+              showPagination={false}
+              refetch={refetchApprovalList}
+              setRefetch={setRefetchApprovalList}
+              onApprovalRefetchComplete={handleApprovalRefetchComplete}
+              columnWidths={tableColumnWidths}
+              renderCardContent={(item: any) => (
+                <ApprovalRejectionAdvanceList
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  onClick={() => handleRequestClick(item)}
+                  loadingAction={item?.loadingAction}
+                />
+              )}
+            />
+          </CardTable>
+        </div>
       </div>
       <AdvanceDetailsModal
         open={!!selectedItem}

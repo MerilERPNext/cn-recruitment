@@ -164,11 +164,6 @@ const OvertimeApprovalCard = ({
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.status} />
             </Tooltip>
           </div>
