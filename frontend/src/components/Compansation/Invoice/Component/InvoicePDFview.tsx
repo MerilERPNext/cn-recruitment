@@ -70,9 +70,12 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
       <SalarySlipPDFModal
         isOpen={open}
         onClose={() => {
-          setOpen(false);
-          setPdfUrl("");
-        }}
+            setOpen(false);
+            if (pdfUrl) {
+              URL.revokeObjectURL(pdfUrl);
+            }
+            setPdfUrl("");
+          }}
         salarySlipName={invoiceID}
         pdfUrl={pdfUrl}
       />
