@@ -18,7 +18,7 @@ const Avatar: React.FC<AvatarProps> = ({
   name,
   size = "h-12 w-12",
   indicatorBgColor,
-  indicatorBorderColor = "border-white",
+  indicatorBorderColor = "border-black",
   indicatorNode,
   indicatorSize = "h-4 w-4",
   indicatorPositionClass = "absolute bottom-0 right-0",

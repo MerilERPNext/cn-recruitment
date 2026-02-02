@@ -42,16 +42,16 @@ const EmployeeStatusCard = ({
 
   const formatTimeSafe = (value?: string | null) => {
     if (!value) return "--:--";
-  
+
     // ✅ Case 1: backend sends only time (HH:mm or HH:mm:ss)
     if (/^\d{2}:\d{2}(:\d{2})?$/.test(value)) {
       return value.slice(0, 5); // "09:30"
     }
-  
+
     // ✅ Case 2: full datetime string
     const date = new Date(value);
     if (!isValid(date)) return "--:--";
-  
+
     return format(date, "HH:mm");
   };
 
@@ -137,6 +137,7 @@ const EmployeeStatusCard = ({
     (data?.status?.toLowerCase() as EmployeeStatusType) || "default",
   );
 
+  console.log("data", data);
   return (
     <div className="w-full p-3 border-b border-gray-200 shadow-sm rounded-t-lg  bg-white hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row gap-1 w-full">
@@ -144,7 +145,9 @@ const EmployeeStatusCard = ({
         <div className="flex items-start gap-3 flex-1 justify-center">
           <Avatar
             name={data?.employee_name}
-            avatarBgColor={isDesktop ? "bg-white" : "bg-indigo-100"}
+            avatarBgColor={
+              isDesktop ? "bg-white border-1 border-gray-400" : "bg-indigo-100"
+            }
             avatarTextColor={isDesktop ? "text-gray-700" : "text-indigo-800"}
             {...statusColors}
           />
@@ -206,9 +209,7 @@ const EmployeeStatusCard = ({
                 variant="bodyMedium"
                 className="font-semibold text-gray-800"
               >
-                {data?.in_time
-                  ? formatTimeSafe(data.in_time)
-                  : "--:--"}
+                {data?.in_time ? formatTimeSafe(data.in_time) : "--:--"}
               </Typography>
             </div>
 
@@ -224,9 +225,7 @@ const EmployeeStatusCard = ({
                 variant="bodyMedium"
                 className="font-semibold text-gray-800"
               >
-                {data?.out_time
-                  ? formatTimeSafe(data?.out_time)
-                  : "--:--"}
+                {data?.out_time ? formatTimeSafe(data?.out_time) : "--:--"}
               </Typography>
             </div>
 
@@ -296,7 +295,6 @@ const EmployeeStatusCard = ({
         </Button>
       </ContextualPopup>
     </div>
-
   );
 };
 
