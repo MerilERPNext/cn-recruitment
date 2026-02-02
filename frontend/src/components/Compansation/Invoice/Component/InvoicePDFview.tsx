@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -15,20 +14,14 @@ type Props = {
 
 const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
   const [open, setOpen] = useState(false);
-  const [html, setHtml] = useState<any>("");
+  const [pdfUrl, setPdfUrl] = useState<string>("");
 
   const { mutate, isPending } = useInvoiceSheetViewPDF({
-    onSuccess: (data: any) => {
-      const htmlResponse = data?.response;
-
-      if (!htmlResponse) {
-        alert("No TDS HTML found");
-        return;
-      }
-
-      setHtml(htmlResponse);
-      setOpen(true);
-    },
+    onSuccess: (data: Blob) => {
+        const url = URL.createObjectURL(data);
+        setPdfUrl(url);
+        setOpen(true);
+      },
   });
 
   const handleView = () => {
@@ -78,10 +71,10 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
         isOpen={open}
         onClose={() => {
           setOpen(false);
-          setHtml("");
+          setPdfUrl("");
         }}
         salarySlipName={invoiceID}
-        htmlContent={html?.html}
+        pdfUrl={pdfUrl}
       />
     </>
   );
