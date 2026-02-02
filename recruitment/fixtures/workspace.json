@@ -30,35 +30,40 @@
     "label": "Hiring-Pipeline",
     "parent": "Recruitment",
     "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
+    "parenttype": "Workspace",
+    "type": "Custom Block"
    },
    {
     "custom_block_name": "final interview dashboard",
     "label": "final interview dashboard",
     "parent": "Recruitment",
     "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
+    "parenttype": "Workspace",
+    "type": "Custom Block"
    },
    {
     "custom_block_name": "Recruiter Job Opening Count",
     "label": "Recruiter Job Opening Count",
     "parent": "Recruitment",
     "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
+    "parenttype": "Workspace",
+    "type": "Custom Block"
    },
    {
     "custom_block_name": "Time-To-Fill",
     "label": "Time-To-Fill",
     "parent": "Recruitment",
     "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
+    "parenttype": "Workspace",
+    "type": "Custom Block"
    },
    {
     "custom_block_name": "Department-Wise-Openings",
     "label": "Department-Wise-Openings",
     "parent": "Recruitment",
     "parentfield": "custom_blocks",
-    "parenttype": "Workspace"
+    "parenttype": "Workspace",
+    "type": "Custom Block"
    }
   ],
   "docstatus": 0,
