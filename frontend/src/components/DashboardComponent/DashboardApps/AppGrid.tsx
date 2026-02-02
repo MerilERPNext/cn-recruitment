@@ -41,7 +41,7 @@ const MicroAppGrid: FC<MicroAppGridProps> = ({
     };
 
     return (
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
             {items.map((item, index) => (
                 <MyMicroApp
                     key={item.name}

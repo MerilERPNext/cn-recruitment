@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { ChevronLeft, ChevronRight, ClipboardPlus, LogIn, MoreVertical, Shield } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, ClipboardPlus, Edit, LogIn, MoreVertical, Shield } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -31,9 +31,10 @@ import AuditReport from "../Employee/EmployeeAttendence/AuditReport";
 import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import { EditAttendance } from "../Team/EditAttendance";
+import Tooltip from "../../shared/Tooltip";
 
 /* -------------------- Helpers -------------------- */
-
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
   try {
@@ -45,8 +46,6 @@ const formatTimeSafe = (timeStr?: string) => {
   }
 };
 
-
-
 /* -------------------- Component -------------------- */
 
 const AllEmpAttendance = () => {
@@ -55,9 +54,9 @@ const AllEmpAttendance = () => {
   const queryClient = useQueryClient();
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
-  /* 🔑 Single month state */
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-
+  const [editAttendance, setEditAttendance] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
@@ -65,13 +64,17 @@ const AllEmpAttendance = () => {
     events?: AttendanceRecord[];
   } | null>(null);
 
-  /* Auto refresh */
-  useEffect(() => {
+  const onRefetchData = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: ["get-All-Events-And-Attendance"],
       exact: false,
     });
   }, [queryClient]);
+
+  /* Auto refresh */
+  useEffect(() => {
+    onRefetchData();
+  }, [onRefetchData]);
 
   /* API range */
   const start = format(startOfMonth(currentMonth), "yyyy-MM-dd");
@@ -411,6 +414,9 @@ const AllEmpAttendance = () => {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Check Out
                 </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -529,13 +535,43 @@ const AllEmpAttendance = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {record?.doctype === "Attendance" ? formatTimeSafe(record.out_time) : "-"}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        contentAlign="start"
+                        disabled={record?.doctype !== "Attendance"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          if (record && record.doctype === "Attendance") {
+                            setSelectedRecord(record);
+                            setEditAttendance(true);
+                          }
+                        }}
+                      >
+                        <Tooltip content="Edit">
+                          <Edit size={16} />
+                        </Tooltip>
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-
+        <EditAttendance
+          employeeId={selectedRecord?.employee || ""}
+          employeeName={selectedRecord?.employee_name || ""}
+          onClose={() => {
+            setEditAttendance(false);
+            setSelectedRecord(null);
+          }}
+          open={editAttendance}
+          requestId={selectedRecord?.name}
+          onRefetchData={onRefetchData}
+        />
         {/* Details Modal */}
         {showDetailsFor && (
           <Modal

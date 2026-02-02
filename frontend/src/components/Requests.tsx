@@ -16,8 +16,7 @@ import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeR
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import { useScreenSize } from "../hooks/useScreenSize";
-import HeaderBar from "./HeaderBar";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
@@ -26,6 +25,7 @@ import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import RequestLeave from "./Leaves/RequestLeave";
+import HeaderBar from "./HeaderBar";
 
 const Requests = () => {
   const { data: userId } = useLoggedInUser();
@@ -54,19 +54,19 @@ const Requests = () => {
 
   const requestsCards = () => {
     return (
-      <div className="bg-white rounded-lg p-6 shadow-sm h-full">
-        <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,250px)] gap-3 justify-center">
+      <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
+        <div className="grid grid-cols-4 md:grid-cols-4 gap-3 justify-center">
           {/* Apply Leave */}
           <div
             className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setShowLeaveRequest(true)}
           >
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <Calendar className="w-5 h-5 text-blue-600" />
             </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Apply Leave
+            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
+              Apply Leaves
             </p>
           </div>
 
@@ -76,7 +76,7 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setShowAttendanceRequest(true)}
           >
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
@@ -90,7 +90,7 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setShowOvertimeRequest(true)}
           >
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <Timer className="w-5 h-5 text-purple-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
@@ -104,11 +104,11 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={handleShiftForm}
           >
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <ArrowUpDown className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
-              Shift Change
+              Change Shifts
             </p>
           </div>
 
@@ -118,11 +118,11 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setIsLoanDialogOpen(true)}
           >
-            <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-pink-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <Wallet className="w-5 h-5 text-pink-600" />
             </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Loan
+            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
+              Create Loan Request
             </p>
           </div>
 
@@ -132,7 +132,7 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setShowAdvanceForm(true)}
           >
-            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-orange-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <IndianRupee className="w-5 h-5 text-orange-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
@@ -146,7 +146,7 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => navigate("/webapp/expenses-app/add-expense")}
           >
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <ReceiptIndianRupeeIcon className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
@@ -160,7 +160,7 @@ const Requests = () => {
         h-28 w-full flex flex-col items-center justify-center p-2"
             onClick={() => setShowInitiateModel(true)}
           >
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-2">
+            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <Workflow className="w-5 h-5 text-purple-600" />
             </div>
             <p className="text-xs text-gray-600 font-medium text-center">
@@ -230,14 +230,14 @@ const Requests = () => {
       </div>
     );
   };
-
+  const isRequestPage = useLocation().pathname === "/webapp/requests";
   const mobileLayout = (
-    <div className="flex flex-col min-h-screen bg-white">
-      <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
-      <main className="md:p-4 z-100 flex-grow overflow-y-auto">
+    <div className="flex flex-col min-h-fit bg-white h-fit">
+      {isRequestPage && <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />}
+      <div className="md:p-4 z-100 flex-grow overflow-y-auto h-fit">
         {requestsCards()}
         <Outlet />
-      </main>
+      </div>
     </div>
   );
 

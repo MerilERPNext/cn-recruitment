@@ -26,9 +26,11 @@ import type {
   EmployeeRegularize,
   EmployeeShift,
   EmployeeShiftSummary,
+  EmployeeTeamCheckIns,
   IOvertimeLog,
   PolicyQuestion,
   UserRoles,
+  WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -119,6 +121,34 @@ export const useGetEmployeeShift = (
   return useQuery<EmployeeShift, Error>({
     queryKey: ["employee-shift", userId, filters],
     queryFn: () => attendanceService.getEmployeeShift(userId, filters),
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetTeamCheckinSummary = (
+  userId: string,
+  filters?: object
+): UseQueryResult<EmployeeTeamCheckIns, Error> => {
+  return useQuery<EmployeeTeamCheckIns, Error>({
+    queryKey: ["team-checkin-summary", userId, filters],
+    queryFn: () => attendanceService.getTeamCheckinSummary(userId, filters),
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetEmployeeWorkingHours = (
+  userId: string,
+  from_date: string,
+  to_date: string,
+  filters?: object
+): UseQueryResult<WorkingHoursResponse, Error> => {
+  return useQuery<WorkingHoursResponse, Error>({
+    queryKey: ["employee-working-hours", userId, from_date, to_date, filters],
+    queryFn: () => attendanceService.getEmployeeWorkingHours(userId, from_date, to_date, filters),
     enabled: !!userId,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,

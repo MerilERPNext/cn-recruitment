@@ -61,7 +61,7 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: employeeName || "",
+              defaultValue: employeeName || employeeId || "",
             },
             {
               label: "Attendance Date",

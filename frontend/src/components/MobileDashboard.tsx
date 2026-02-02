@@ -1,24 +1,15 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
-  Calendar,
-  ArrowUpDown,
-  ReceiptIndianRupee,
-  Shield,
   Bell,
   CheckCircle,
   AlertCircle,
-  User,
-  IndianRupee,
   XCircle,
   FileEdit,
   Timer,
   BanknoteX,
-  Workflow,
-  ChartNoAxesCombined,
   RotateCcw,
-  Gift,
 } from "lucide-react";
-import { useUnreadNoticesCount } from "../hooks/useNotices";
+import { useGetUserNotices, useUnreadNoticesCount } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useCompanyLogo } from "../hooks/useCompanyLogo";
 import {
@@ -57,10 +48,16 @@ import toast from "react-hot-toast";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import ViewingAsBanner from "./ViewingAsBanner";
 import SearchMembers from "./shared/SearchMembers";
-import { useAppNotificationCounts } from "../hooks/useAppNotificationCounts";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
 import { formatDateDDMonthYYYY } from "../utils/formatToIndianDate";
+import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import { NoticeSlide } from "./shared/molecules/NoticeSlide";
+import Badge from "./shared/Badge";
+import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
+import Requests from "./Requests";
+import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
 
 const statusStyles = {
   unpaid: {
@@ -107,7 +104,6 @@ const MobileDashboard: React.FC = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
-  const { getCount } = useAppNotificationCounts();
   const fetchLocation = async () => {
     setIsLocationLoading(true);
     setLocationError(null);
@@ -184,11 +180,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-    CompanyLogo.length > 0 &&
-    currentEmployeeCompany
+      CompanyLogo.length > 0 &&
+      currentEmployeeCompany
       ? CompanyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany,
-        )
+        (company) => company.company_name === currentEmployeeCompany,
+      )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -197,6 +193,7 @@ const MobileDashboard: React.FC = () => {
     data: homeSummary,
     refetch: refetchHomeSummary,
     isRefetching,
+    isLoading: homeSummaryLoading
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
@@ -206,30 +203,30 @@ const MobileDashboard: React.FC = () => {
 
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T")),
-          ),
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -371,10 +368,65 @@ const MobileDashboard: React.FC = () => {
       .padStart(2, "0")}`;
   };
 
+
+  const getWorkPercentage = () => {
+    if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
+      return 0;
+    }
+
+    let totalWorkedMinutes = 0;
+
+    if (homeSummary && homeSummary.length > 0) {
+      const sortedLogs = [...homeSummary].sort((a, b) =>
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      );
+
+      let currentCheckIn: (typeof sortedLogs)[0] | null = null;
+
+      for (const log of sortedLogs) {
+        if (log.log_type === "IN") {
+          currentCheckIn = log;
+        } else if (log.log_type === "OUT" && currentCheckIn) {
+          const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+          const checkOutTime = parseISO(log.time.replace(" ", "T"));
+          totalWorkedMinutes += differenceInMinutes(checkOutTime, checkInTime);
+          currentCheckIn = null;
+        }
+      }
+
+      if (currentCheckIn && isCurrentlyCheckedIn) {
+        const checkInTime = parseISO(currentCheckIn.time.replace(" ", "T"));
+        totalWorkedMinutes += differenceInMinutes(currentTime, checkInTime);
+      }
+    }
+
+    const shiftStart = parseISO(firstCheckIn.shift_start.replace(" ", "T"));
+    const shiftEnd = parseISO(firstCheckIn.shift_end.replace(" ", "T"));
+    const totalShiftMinutes = differenceInMinutes(shiftEnd, shiftStart);
+
+    if (totalShiftMinutes <= 0) {
+      return 0;
+    }
+
+    const percentage = Math.round(
+      (totalWorkedMinutes / totalShiftMinutes) * 100
+    );
+    return Math.min(percentage, 100);
+  };
+
+  const { data: userNotices, isLoading: userNoticeIsLoading } =
+    useGetUserNotices();
+
+  if (userNoticeIsLoading || employeeState.isLoading || homeSummaryLoading) {
+    return <MobileDashboardSkeleton />
+  }
   return (
-    <div className="h-screen bg-white font-sans max-w-md mx-auto flex flex-col">
+    <div className="h-screen font-sans max-w-md mx-auto flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-4 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
           <Button
             variant="subtle"
@@ -385,6 +437,7 @@ const MobileDashboard: React.FC = () => {
               alt="CompnayLogo"
               className="w-12 h-12 p-1 rounded-full flex-shrink-0"
             />
+            <Typography variant="subheading">Welcome, <span className="text-primary-900 whitespace-nowrap">{currentEmployee?.employee_name.split(" ")[0] || ""}!</span></Typography>
           </Button>
 
           <div className="flex items-center gap-3">
@@ -421,11 +474,32 @@ const MobileDashboard: React.FC = () => {
       <ViewingAsBanner />
 
       {/* Search Bar */}
-      <div className="px-4 py-2 mt-2 bg-white border-b border-gray-100 flex-shrink-0">
+      <div className="py-2 bg-white border-b border-gray-100 flex-shrink-0">
         <SearchMembers />
       </div>
 
-      <div className="px-4 py-3 flex-1 overflow-y-auto">
+
+
+
+      <div className="flex-1 overflow-y-auto gap-2">
+        {/* ------------------------ User Notice Banner ------------------------ */}
+        {!userNoticeIsLoading &&
+          userNotices &&
+          userNotices?.length > 0 ? <div className=" w-full max-w-full overflow-hidden mb-4">
+          <Carousel
+            className="w-full h-full max-h-[150px] sm:rounded-none"
+            showNavigation={false}
+          >
+            {userNotices?.map((item) => (
+              <CarouselSlide
+                key={item.name}
+                autoScrollDelay={item.auto_scroll_frequency * 1000}
+              >
+                <NoticeSlide data={item} />
+              </CarouselSlide>
+            ))}
+          </Carousel>
+        </div> : null}
         {!employeeState.isLoading && !employeeState.hasValidData && (
           <EmployeeFallback
             message={
@@ -439,328 +513,241 @@ const MobileDashboard: React.FC = () => {
           />
         )}
 
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-100 border-1 border-gray-300 px-2 py-2 rounded-lg">
-            <Typography variant="label" color="body2" className="mb-1 block">
-              Shift Start
+        <div className="h-fit flex flex-col px-4 mb-2 bg-white">
+          <div className="w-full">
+            <Typography
+              variant="subheading"
+              className="mb-4 text-left block"
+            >
+              Attendance Tracker
             </Typography>
-            <Typography variant="h3" className="font-bold text-gray-900">
-              {employeeShift?.start_time
-                ? formatTimeSafe(employeeShift?.start_time)
-                : "--:--"}
-            </Typography>
-          </div>
-          <div className="text-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <Typography variant="label" color="body2" className="mb-1 block">
-              In Time
-            </Typography>
+            <div>
+              <div className="flex items-start justify-between w-full mb-2">
+                <div>
 
-            <Typography variant="h3" className="font-bold text-gray-900">
-              {firstCheckIn?.time
-                ? formatTo24HourTime((firstCheckIn?.time as string) || "")
-                : "--:--"}
-            </Typography>
-          </div>
-        </div>
+                  <Typography
+                    variant="subheading"
+                    className="flex items-center gap-1.5"
+                  >
+                    {employeeShift?.start_time
+                      ? formatTimeSafe(employeeShift.start_time)
+                      : "--:--"}{" "}
+                    -{" "}
+                    {employeeShift?.end_time
+                      ? formatTimeSafe(employeeShift.end_time)
+                      : "--:--"}
+                  </Typography>
+                  <Typography variant="bodySmall" color="body2">Shift Timings</Typography>
+                </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center bg-gray-100 border-1 border-gray-300 px-2 py-2 rounded-lg">
-            <Typography variant="label" color="body2" className="mb-1 block">
-              Shift End
-            </Typography>
-            <Typography variant="h3" className="font-bold text-gray-900">
-              {employeeShift?.end_time
-                ? formatTimeSafe(employeeShift?.end_time)
-                : "--:--"}
-            </Typography>
-          </div>
-          <div className="text-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <Typography variant="label" color="body2" className="mb-1 block">
-              Out Time
-            </Typography>
-            <Typography variant="h3" className="font-bold text-gray-900">
-              {lastCheckOut?.time
-                ? formatTo24HourTime(lastCheckOut?.time)
-                : "--:--"}
-            </Typography>
-          </div>
-        </div>
 
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex flex-col flex-1 justify-center items-center bg-gray-100 border-1 border-gray-300  px-2 py-2 rounded-lg">
-            <Typography variant="label" color="body2" className="mb-1 block">
-              Total Hours
-            </Typography>
-            <Typography variant="h3" className="font-bold text-gray-900">
-              {getTotalTime()}
-            </Typography>
+                {homeSummary && homeSummary.length > 0 && (
+                  <Badge
+                    label={
+                      isCurrentlyCheckedIn ? "Checked In" : "Checked Out"
+                    }
+                    size="md"
+                    pulse={{
+                      show: true,
+                      color: isCurrentlyCheckedIn
+                        ? "bg-success"
+                        : "bg-error",
+                    }}
+                    backgroundColor={
+                      isCurrentlyCheckedIn
+                        ? "bg-success-100 border-success-100"
+                        : "bg-error-50 border-error-100"
+                    }
+                    textColor={
+                      isCurrentlyCheckedIn ? "text-success" : "text-error"
+                    }
+                  />
+                )}
+              </div>
+
+            </div>
+            <div className="flex items-center justify-between w-full mb-3">
+              <Typography
+                variant="bodySmall"
+                color="primary"
+                className="font-semibold uppercase tracking-wider"
+              >
+                8h 30m target
+              </Typography>
+              <div className="flex items-center gap-3">
+                <Typography variant="bodyMedium" className="font-bold">
+                  {getTotalTime()}
+                </Typography>
+                <div className="h-4 w-px bg-gray-200" />
+                <Typography variant="bodySmall" className="font-bold">
+                  {getWorkPercentage()}%
+                </Typography>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="relative mb-2">
+              <div className="bg-primary-50 h-3 rounded-lg overflow-hidden p-[1px]">
+                <div
+                  className="bg-primary-700 h-full rounded-lg transition-all duration-700 ease-out shadow-sm"
+                  style={{
+                    width: `${Math.min(getWorkPercentage(), 100)}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
-          {currentEmployee?.custom_allow_mobile_checkin ? (
-            <div className="w-full">
+
+          <div className="border-t border-gray-100 pt-4">
+
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* IN TIME */}
+              <div className="p-2 rounded-xl border border-primary">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <Typography
+                      variant="label"
+                      color="disabled"
+                      className="font-bold text-[10px] text-primary"
+                    >
+                      IN TIME
+                    </Typography>
+                    <Typography
+                      variant="bodyMedium"
+                      className="font-bold text-primary"
+                    >
+                      {firstCheckIn?.time
+                        ? formatTo24HourTime(firstCheckIn.time)
+                        : "--:--"}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+
+              {/* OUT TIME */}
+              <div className="p-2 rounded-xl border border-purple-400">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <XCircle className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <Typography
+                      variant="label"
+                      color="disabled"
+                      className="font-bold text-[10px] text-purple-400"
+                    >
+                      OUT TIME
+                    </Typography>
+                    <Typography
+                      variant="bodyMedium"
+                      className="font-bold text-purple-400"
+                    >
+                      {lastCheckOut?.time
+                        ? formatTo24HourTime(lastCheckOut.time)
+                        : "--:--"}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 my-4">
+            {currentEmployee?.custom_allow_mobile_checkin ? (
+              <div className="w-full">
+                <Button
+                  variant="contain"
+                  fullWidth
+                  size="lg"
+                  onClick={() =>
+                    handleCheckInOut(
+                      isCurrentlyCheckedIn ? "checkOut" : "checkIn",
+                    )
+                  }
+                  disabled={
+                    checkInCheckOutPending ||
+                    !employeeShift?.shift ||
+                    isLocationLoading ||
+                    !location
+                  }
+                  className="font-medium"
+                >
+                  {checkInCheckOutPending || isRefetching ? (
+                    <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                  ) : isLocationLoading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+                      Getting location...
+                    </span>
+                  ) : isCurrentlyCheckedIn ? (
+                    "Check Out"
+                  ) : (
+                    "Check In"
+                  )}
+                </Button>
+                {locationError && !isLocationLoading && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <Typography
+                      variant="bodySmall"
+                      color="error"
+                      className="font-medium"
+                    >
+                      {locationError}
+                    </Typography>
+                    <Button
+                      variant="soft"
+                      bgColor="error"
+                      size="sm"
+                      onClick={fetchLocation}
+                      className="p-1.5 rounded-full border border-red-200"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : null}
+            {canShowClockIn?.can_show ? (
               <Button
                 variant="contain"
                 fullWidth
                 size="lg"
                 onClick={() =>
-                  handleCheckInOut(
-                    isCurrentlyCheckedIn ? "checkOut" : "checkIn",
-                  )
+                  handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
                 }
-                disabled={
-                  checkInCheckOutPending ||
-                  !employeeShift?.shift ||
-                  isLocationLoading ||
-                  !location
-                }
+                disabled={clockInCheckOutPending || !employeeShift?.shift}
                 className="font-medium"
               >
-                {checkInCheckOutPending || isRefetching ? (
+                {clockInCheckOutPending || isRefetching ? (
                   <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-                ) : isLocationLoading ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
-                    Getting location...
-                  </span>
                 ) : isCurrentlyCheckedIn ? (
-                  "Check Out"
+                  "Clock Out"
                 ) : (
-                  "Check In"
+                  "Clock In"
                 )}
               </Button>
-              {locationError && !isLocationLoading && (
-                <div className="flex items-center justify-center gap-2 mt-3">
-                  <Typography
-                    variant="bodySmall"
-                    color="error"
-                    className="font-medium"
-                  >
-                    {locationError}
-                  </Typography>
-                  <Button
-                    variant="soft"
-                    bgColor="error"
-                    size="sm"
-                    onClick={fetchLocation}
-                    className="p-1.5 rounded-full border border-red-200"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : null}
-          {canShowClockIn?.can_show ? (
-            <Button
-              variant="contain"
-              fullWidth
-              size="lg"
-              onClick={() =>
-                handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
-              }
-              disabled={clockInCheckOutPending || !employeeShift?.shift}
-              className="font-medium"
-            >
-              {clockInCheckOutPending || isRefetching ? (
-                <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-              ) : isCurrentlyCheckedIn ? (
-                "Clock Out"
-              ) : (
-                "Clock In"
-              )}
-            </Button>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
 
-        <div className="mb-5">
+
+        </div>
+        {/* ---------------------------------Tasks Awaiting--------------------------------- */}
+        <div className="mb-2 bg-white px-2 pt-4 pb-2">
+          <TasksAwaiting />
+        </div>
+        {/* --------------------------------- Requests --------------------------------- */}
+        <div className="mb-2 bg-white px-4 pt-4 pb-2">
           <Typography variant="subheading" className="mb-3 block">
-            Quick Links
+            Requests
           </Typography>
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <Link
-              to="/webapp/leave-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-blue-50 border-2 border-blue-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-blue-200 transition-colors">
-                <Calendar className="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition-colors" />
-                {getCount("Leaves & Holidays") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Leaves & Holidays")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-blue-700 text-center"
-              >
-                Leaves & Holidays
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/attendance"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-green-50 border-2 border-green-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-green-200 transition-colors">
-                <User className="w-6 h-6 text-green-600 group-hover:text-green-800 transition-colors" />
-                {getCount("Attendance") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Attendance")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-green-700 text-center"
-              >
-                Attendance
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/salary-slip-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-yellow-50 border-2 border-yellow-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-yellow-200 transition-colors">
-                <IndianRupee className="w-6 h-6 text-yellow-600 group-hover:text-yellow-800 transition-colors" />
-                {getCount("Compensation") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Compensation")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-yellow-700 text-center"
-              >
-                Compensation
-              </Typography>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <Link
-              to="/webapp/benefits-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
-                <Gift className="w-6 h-6 text-orange-600 group-hover:text-orange-800 transition-colors" />
-                {getCount("Benefits") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Benefits")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-orange-700 text-center"
-              >
-                Benefits
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/shift-request"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-purple-50 border-2 border-purple-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-purple-200 transition-colors">
-                <ArrowUpDown className="w-6 h-6 text-purple-600 group-hover:text-purple-800 transition-colors" />
-                {getCount("Shifts") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Shifts")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-purple-700 text-center"
-              >
-                Shifts
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/flow-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
-                <Workflow className="w-6 h-6 text-fuchsia-600 group-hover:text-fuchsia-800 transition-colors" />
-                {getCount("Flows") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Flows")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-pink-700 text-center"
-              >
-                Flows
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/performance-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
-                <ChartNoAxesCombined className="w-6 h-6 text-fuchsia-600 group-hover:text-fuchsia-800 transition-colors" />
-                {getCount("Performance") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Performance")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-pink-700 text-center"
-              >
-                Performance
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/expenses-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-pink-50 border-2 border-pink-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-pink-200 transition-colors">
-                <ReceiptIndianRupee className="w-6 h-6 text-pink-600 group-hover:text-pink-800 transition-colors" />
-                {getCount("Expenses") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Expenses")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-pink-700 text-center"
-              >
-                Expenses
-              </Typography>
-            </Link>
-
-            <Link
-              to="/webapp/policies-app"
-              className="flex flex-col items-center group"
-            >
-              <div className="relative w-16 h-16 bg-orange-50 border-2 border-orange-100 rounded-xl flex items-center justify-center mb-2 group-hover:bg-orange-200 transition-colors">
-                <Shield className="w-6 h-6 text-orange-600 group-hover:text-orange-800 transition-colors" />
-                {getCount("Policies") > 0 && (
-                  <span className="absolute -top-2 -right-2 min-w-[18px] h-5 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {getCount("Policies")}
-                  </span>
-                )}
-              </div>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-orange-700 text-center"
-              >
-                Policies
-              </Typography>
-            </Link>
-          </div>
+          <Requests />
         </div>
 
-        <div className="mb-5">
+        <div className="mb-2 bg-white px-4 pt-4 pb-2">
           <div className="flex justify-between items-center mb-3">
             <Typography variant="subheading" className="block">
               Attendance
@@ -830,7 +817,7 @@ const MobileDashboard: React.FC = () => {
         </div>
 
         {expenseData?.length > 0 && (
-          <div className="rounded-xl mb-4 sm:mb-5">
+          <div className="rounded-xl mb-2 px-4 bg-white pt-4 pb-2">
             <div className="flex justify-between items-center mb-3">
               <Typography variant="subheading" className="block">
                 Unpaid Expense Claims
@@ -851,7 +838,7 @@ const MobileDashboard: React.FC = () => {
                 }) => {
                   const styles =
                     statusStyles[
-                      item.status?.toLowerCase() as keyof typeof statusStyles
+                    item.status?.toLowerCase() as keyof typeof statusStyles
                     ] || statusStyles.draft;
 
                   return (
@@ -899,6 +886,9 @@ const MobileDashboard: React.FC = () => {
             </div>
           </div>
         )}
+        <div className="mb-2 bg-white">
+          <MicroAppInDashboard />
+        </div>
       </div>
     </div>
   );
