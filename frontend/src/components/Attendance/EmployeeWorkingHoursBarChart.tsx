@@ -115,36 +115,40 @@ const EmployeeWorkingHoursBarChart: React.FC<Props> = ({ data, isLoading }) => {
         colors: ["#6366F1"],
     };
 
-    if (!weekOptions.length) return null;
 
     if (isLoading) {
-        return (
-            <Card radius="xl" className="p-4">
-                <div className="mb-3 flex justify-between items-center">
-                    <div>
-                        <Typography variant="subheading">Daily Working Hours</Typography>
-                        <Typography variant="bodySmall" className="text-gray-500">
-                            Attendance for selected month
-                        </Typography>
-                    </div>
-
-                    <Select
-                        className="w-fit"
-                        options={weekOptions}
-                        value={selectedWeek}
-                        onChange={setSelectedWeek}
-                    />
+        return <Card className="p-4 w-full min-w-[70%] rounded-xl">
+            <div className="mb-3 flex justify-between items-center w-full">
+                <div>
+                    <Typography variant="subheading">Daily Working Hours</Typography>
+                    <Typography variant="bodySmall" className="text-gray-500">
+                        Attendance for selected month
+                    </Typography>
                 </div>
 
-                <div className="flex justify-center items-center h-64">
-                    <div className="w-full h-64 bg-gray-200 rounded-lg animate-pulse">
-                    </div>
+                <Select
+                    className="w-fit"
+                    options={weekOptions}
+                    value={selectedWeek}
+                    onChange={setSelectedWeek}
+                />
+            </div>
+
+            <div className="flex justify-center items-center h-64">
+                <div className="w-full h-64 bg-gray-200 rounded-lg animate-pulse">
                 </div>
-            </Card>
-        );
+            </div>
+        </Card>
+
     }
+    if (!weekOptions.length) return <Card className="p-4 w-full min-w-[70%] rounded-xl">
+        <Typography variant="bodySmall" className="text-gray-500">
+            No working hours data available for this week.
+        </Typography>
+
+    </Card>;
     return (
-        <Card radius="xl" className="p-4 w-full ">
+        <Card radius="xl" className="p-4 w-[70%]">
             <div className="mb-3 flex justify-between items-center">
                 <div>
                     <Typography variant="subheading">Daily Working Hours</Typography>

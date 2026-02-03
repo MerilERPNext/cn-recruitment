@@ -405,8 +405,6 @@ const AttendanceSummary = () => {
           isLoading={isEmployeeWorkingHoursLoading}
           data={employeeWorkingHours}
         />
-
-
         <AttendanceSummaryCards
           present={employeeAttendanceSummary?.present || 0}
           absent={employeeAttendanceSummary?.absent || 0}

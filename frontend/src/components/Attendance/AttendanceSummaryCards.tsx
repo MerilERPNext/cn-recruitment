@@ -29,7 +29,7 @@ const AttendanceSummaryCards: React.FC<AttendanceSummaryCardsProps> = ({
     const total = present + absent + leaves;
 
     return (
-        <div className={`${isDesktop ? "w-[40%]" : "w-full"} ${className}`}>
+        <div className={`${isDesktop ? "min-w-[29.8%]" : "w-full"} ${className}`}>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-4">
                 <SummaryCard
                     icon={CheckCircle}
