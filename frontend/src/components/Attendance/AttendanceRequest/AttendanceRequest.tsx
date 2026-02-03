@@ -60,26 +60,37 @@ const AttendanceRequest = ({
           }}
         />
       ) : (
-        <div>
-          <div className="min-h-screen">
-            <div className="px-4">
-              <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-                <div className="flex flex-col mb-2">
-                  <Typography variant="h4">My Attendance Requests</Typography>
-                  <Typography variant="bodySmall" color="body2">
-                    Track and manage your attendance requests
-                  </Typography>
-                </div>
+        <div className="max-h-screen flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            <div className="border-gray-100">
+              <div className="px-6 py-4">
+                <Typography variant="h4">My Attendance Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your attendance requests
+                </Typography>
               </div>
+            </div>
+            <div className="px-4">
               <CardTable
+                columnWidths={[
+                  "1.5fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                  "1fr",
+                ]}
                 titles={[
                   "Request Type",
                   "From Date",
                   "To Date",
                   "Due Date",
+                  "Duration",
                   "Allocated To",
                   "Status",
-                  "Actions",
+                  "ACTIONS",
                 ]}
               >
                 {effectiveEmployeeId ? (
@@ -91,7 +102,6 @@ const AttendanceRequest = ({
                       params: {
                         doctype: "Attendance Request",
                         employee: effectiveEmployeeId,
-                        status: "Pending",
                       },
                     }}
                     ItemComponent={(props: { item: MyAttendanceRequest }) => {

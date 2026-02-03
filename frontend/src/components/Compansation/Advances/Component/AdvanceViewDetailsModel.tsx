@@ -5,11 +5,11 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import Button from "../../../shared/atoms/Button";
-import { StatusBadge } from "../../../ShiftRequest/AllShiftsDashboard";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { EmployeeAdvanceUpdatePayload, useEmployeeAdvanceUpdate } from "../../../../hooks/useEmployeeAdvances";
 import { Typography } from "../../../shared/atoms/Typography";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 type Props = {
   open: boolean;

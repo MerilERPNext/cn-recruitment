@@ -6,10 +6,12 @@ import {
   getDifinitionNameForSeparation,
   getSeparationFunnelData,
   getSeparationWorkflow,
+  getShouldShowConfirmationButton,
   postSelectEventFromOptions
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
+import { approvalListServices } from "../services/approvalListService";
 
 
 export const useDifinitaionNameForSeparation = () => {
@@ -114,4 +116,33 @@ export const usePostSelectEventFromOptions = () => {
       ),
   });
 };
+
+type shouldShowConfirmationType = {
+  show_button: boolean;
+  days_until_confirmation: number;
+  trigger_days: number;
+};
+
+export const useGetShouldShowConfirmationButton = (
+  targetEmp: string
+) => {
+  return useQuery<shouldShowConfirmationType>({
+    queryKey: [
+      "should-show-confirmation",
+      targetEmp
+    ],
+    queryFn: () => getShouldShowConfirmationButton(),
+    enabled: !!targetEmp
+  });
+};
+
+
+export function useConfirmationApproval() {
+
+  return useMutation({
+    mutationFn: async ({ action, name }: { action: string; name: string }) =>
+      approvalListServices.multiActionHandler(action, name),
+  });
+}
+
 

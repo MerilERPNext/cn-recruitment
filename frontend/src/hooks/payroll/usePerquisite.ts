@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { getPerquisite } from "../../services/payrollApi/perquisiteService";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getInvoiceHTMLSheet, getInvoiceSalarySlip, getPerquisite } from "../../services/payrollApi/perquisiteService";
 
 
 
@@ -15,3 +16,28 @@ enabled: true,
 staleTime: 5 * 60 * 1000, // 5 minutes
 });
 }
+
+export const useInvoiceSalarySlip = (
+  employeeId?: string,
+  company?: string,
+) => {
+return useQuery({
+queryKey: ["invoice-salary-slip", employeeId, company],
+queryFn: () =>  getInvoiceSalarySlip (employeeId,   company),
+enabled: true,
+staleTime: 5 * 60 * 1000, // 5 minutes
+});
+}
+
+
+export const useInvoiceSheetViewPDF = (
+  options: { onSuccess?: (data: any) => void } = {}
+) => {
+  return useMutation({
+    mutationFn: async (invoiceID: string) => {
+      const html = await getInvoiceHTMLSheet(invoiceID);
+      return { response: html };
+    },
+    onSuccess: options.onSuccess,
+  });
+};

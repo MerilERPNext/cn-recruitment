@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
@@ -9,6 +9,8 @@ import EmployeeTable from "./EmployeeTable";
 import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 import Button from "../shared/atoms/Button";
 import DynamicEmployeeUpdateForm from "./DynamicEmployeeUpdateForm";
+import ContextualPopup from "../shared/molecules/ContextualPopup";
+import { EllipsisVertical } from "lucide-react";
 
 
 const EmployeeDirectoryLayout: React.FC = () => {
@@ -16,7 +18,15 @@ const EmployeeDirectoryLayout: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] = useState(false);
-  const [isUpdateFormOpen, setIsUpdateFormOpen] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [updateDetails, setUpdateDetails] = useState({
+    doctype: "", // Doctype we want to update
+    fieldDoctype: "", // field's data that we want to fetch
+    updateValue: "",// field key we want to update
+    fieldName: ""
+  })
+
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -33,11 +43,59 @@ const EmployeeDirectoryLayout: React.FC = () => {
           setSelectedEmployees={setSelectedEmployees}
         />
         {selectedEmployees.length > 0 && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 bg-primary rounded-md p-2 justify-end">
             <Button variant="soft" size="sm" onClick={() => { setIsAttendanceAssignmentsOpen(true) }}>Attendance Assignments</Button>
-            <Button variant="soft" size="sm" onClick={() => { setIsUpdateFormOpen(true) }}>Update Probation</Button>
+            <Button variant="soft" size="sm" onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "probation_period", fieldDoctype: "Probation Period", fieldName: 'Probation Period' }) }}>Update Probation</Button>
+            <Button
+              ref={buttonRef}
+              variant="soft"
+              size="sm"
+              onClick={() => setIsPopupOpen(!isPopupOpen)}
+              className="self-center  h-full px-2"
+            >
+              <EllipsisVertical size={18} />
+            </Button>
           </div>
         )}
+        <ContextualPopup
+          isOpen={isPopupOpen}
+          onClose={() => setIsPopupOpen(false)}
+          triggerRef={buttonRef}
+          className="mt-4"
+        >
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="subtle"
+              fullWidth
+              size="sm"
+              contentAlign="start"
+              className="text-sm px-4 py-2"
+              onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_dotted_line_manager", fieldDoctype: "Employee", fieldName: "Dotted Line Manager" }) }}
+            >
+              Change Dottend Line Manager
+            </Button>
+            <Button
+              variant="subtle"
+              fullWidth
+              contentAlign="start"
+              size="sm"
+              className="text-sm px-4 py-2"
+              onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_hrbp", fieldDoctype: "Employee", fieldName: "HRBP" }) }}
+            >
+              Change HRBP
+            </Button>
+            <Button
+              variant="subtle"
+              fullWidth
+              contentAlign="start"
+              size="sm"
+              className="text-sm px-4 py-2"
+              onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_weekly_off", fieldDoctype: "Week Off", fieldName: "Week Off" }) }}
+            >
+              Change Weekly Off
+            </Button>
+          </div>
+        </ContextualPopup>
         <Outlet />
         <AttendanceAssignments
           open={isAttendanceAssignmentsOpen}
@@ -45,9 +103,18 @@ const EmployeeDirectoryLayout: React.FC = () => {
           employees={selectedEmployees}
         />
         <DynamicEmployeeUpdateForm
-          doctype="Probation Period"
-          isOpen={isUpdateFormOpen}
-          onClose={() => setIsUpdateFormOpen(false)}
+          doctype={
+            updateDetails.doctype
+          }
+          fieldDoctype={
+            updateDetails.fieldDoctype
+          }
+          fieldName={
+            updateDetails.fieldName
+          }
+          updateValue={updateDetails.updateValue}
+          isOpen={!!updateDetails.doctype}
+          onClose={() => setUpdateDetails({ doctype: "", updateValue: "", fieldDoctype: "", fieldName: "" })}
         />
       </main>
     </div>
@@ -67,21 +134,78 @@ const EmployeeDirectoryLayout: React.FC = () => {
           {selectedEmployees.length > 0 && (
             <div className="flex justify-end bg-primary rounded-md p-2 gap-2">
               <Button variant="soft" size="sm" onClick={() => { setIsAttendanceAssignmentsOpen(true) }}>Attendance Assignments</Button>
-              <Button variant="soft" size="sm" onClick={() => { setIsUpdateFormOpen(true) }}>Update Probation</Button>
+              <Button variant="soft" size="sm" onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "probation_period", fieldDoctype: "Probation Period", fieldName: 'Probation Period' }) }}>Update Probation</Button>
+              <Button
+                ref={buttonRef}
+                variant="soft"
+                size="sm"
+                onClick={() => setIsPopupOpen(!isPopupOpen)}
+                className="self-center  h-full px-2"
+              >
+                <EllipsisVertical size={18} />
+              </Button>
             </div>
           )}
           <Outlet />
         </div>
       </div>
+      <ContextualPopup
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        triggerRef={buttonRef}
+        className="mt-4"
+      >
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="subtle"
+            fullWidth
+            size="sm"
+            contentAlign="start"
+            className="text-sm px-4 py-2"
+            onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_dotted_line_manager", fieldDoctype: "Employee", fieldName: "Dotted Line Manager" }) }}
+          >
+            Change Dottend Line Manager
+          </Button>
+          <Button
+            variant="subtle"
+            fullWidth
+            contentAlign="start"
+            size="sm"
+            className="text-sm px-4 py-2"
+            onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_hrbp", fieldDoctype: "Employee", fieldName: "HRBP" }) }}
+          >
+            Change HRBP
+          </Button>
+          <Button
+            variant="subtle"
+            fullWidth
+            contentAlign="start"
+            size="sm"
+            className="text-sm px-4 py-2"
+            onClick={() => { setUpdateDetails({ doctype: "Employee", updateValue: "custom_weekly_off", fieldDoctype: "Week Off", fieldName: "Week Off" }) }}
+          >
+            Change Weekly Off
+          </Button>
+        </div>
+      </ContextualPopup>
       <AttendanceAssignments
         open={isAttendanceAssignmentsOpen}
         onClose={() => { setIsAttendanceAssignmentsOpen(false) }}
         employees={selectedEmployees}
       />
       <DynamicEmployeeUpdateForm
-        doctype="Probation Period"
-        isOpen={isUpdateFormOpen}
-        onClose={() => setIsUpdateFormOpen(false)}
+        doctype={
+          updateDetails.doctype
+        }
+        fieldDoctype={
+          updateDetails.fieldDoctype
+        }
+        fieldName={
+          updateDetails.fieldName
+        }
+        updateValue={updateDetails.updateValue}
+        isOpen={!!updateDetails.doctype}
+        onClose={() => setUpdateDetails({ doctype: "", updateValue: "", fieldDoctype: "", fieldName: "" })}
       />
     </DesktopLayoutWrapper>
   );

@@ -121,7 +121,7 @@ const Carousel = ({
 
     return (
         <div
-            className={`relative w-full max-w-full h-full overflow-hidden rounded-2xl shadow-2xl ${className}`}
+            className={`relative w-full max-w-full h-full overflow-hidden rounded-none md:rounded-2xl shadow-2xl ${className}`}
             style={style}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

@@ -80,7 +80,7 @@ export interface MyAttendanceRequest {
   attachments?: [
     {
       file_url: string;
-    }
+    },
   ];
 }
 
@@ -122,9 +122,7 @@ export type PlannedOvertimeRequest = {
 };
 
 export interface MyPlannedAttendanceRequest {
-  attachments?: [
-    { file_url: string }
-  ]
+  attachments?: [{ file_url: string }];
   due_date: string | number | Date;
   reference_document: PlannedOvertimeRequest;
   custom_doctype_actions: string;
@@ -165,6 +163,7 @@ export interface BulkActionProps {
     action: "Approve" | "Reject";
     isLoading: boolean;
   } | null;
+  columnWidths?: string[];
 }
 
 export type EmployeeCheckInLog = {
@@ -198,6 +197,15 @@ export type EmployeeShiftSummary = {
   my_overtime_requests: number;
   team_overtime_requests: number;
 };
+
+export type EmployeeTeamCheckIns = {
+  data: {
+    checked_in_count: number;
+    not_checked_in_count: number;
+    total_employees: number;
+  }
+}
+
 export type EmployeeStatusType =
   | "present"
   | "absent"
@@ -246,6 +254,7 @@ export type AttendanceRecord = {
   working_hours?: string;
   message?: string;
   request_type?: string;
+  employee_name?: string;
 };
 
 export type PolicyQuestion = {
@@ -359,7 +368,6 @@ export type ShiftBlock = {
   weekly_off: string;
 };
 
-
 export interface EmployeeAllCheckin {
   name: string;
   creation: string;
@@ -413,7 +421,6 @@ export interface EmployeeRegularize {
   date: string;
   status: string;
   day: string;
-
 }
 export interface WeekOffAudit {
   week_off: string | null;
@@ -421,9 +428,17 @@ export interface WeekOffAudit {
   updated_on: string;
 }
 
+export interface AttendancePolicyAudit {
+  policy: string | null;
+  effective_from: string;
+  updated_by: string;
+  updated_on: string;
+}
+
 export interface AuditReportResponse {
   shift_and_policy: ShiftAndPolicyAudit[];
   week_off: WeekOffAudit[];
+  attedance_policies: AttendancePolicyAudit[];
 }
 
 export interface IOvertimeLog {
@@ -436,4 +451,30 @@ export interface IOvertimeLog {
   overtime_hrs: number;
   compoff_created: number;
   owner: string;
-};
+}
+
+
+/* =======================
+   Types
+======================= */
+
+export interface DayWiseData {
+  date: string;
+  day: string;
+  status: string;
+  working_hours: number;
+  in_time: string | null;
+  out_time: string | null;
+}
+
+export interface WorkingHoursResponse {
+  employee: string;
+  employee_name: string;
+  from_date: string;
+  to_date: string;
+  day_wise_data: DayWiseData[];
+}
+
+export interface WorkingHoursProps {
+  data: WorkingHoursResponse;
+}

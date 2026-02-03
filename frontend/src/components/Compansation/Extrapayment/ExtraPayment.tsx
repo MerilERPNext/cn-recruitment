@@ -101,7 +101,7 @@ export default function ExtraPayment() {
       salary_component: item.salary_component,
       recipient: (extraPayment as any)?.employee,
       invoiceId: item.name,
-      date: formatToIndianDate(item.payment_date) || "--/--/----",
+      date: formatToIndianDate(item.payment_date),
       amount: item.amount,
       status: item.is_tax_applicable ? "Paid" : "Pending",
     })) ?? [];

@@ -78,7 +78,7 @@ export default function LoanList({ loans }: LoanListProps) {
           >
             {/* Row */}
             <div
-              className=" grid gap-4 px-6 py-3"
+              className="max-w-screen grid gap-4 px-6 py-3"
               style={{
                 gridTemplateColumns: columnWidths.join(" "),
                 alignItems: "center",
@@ -124,9 +124,7 @@ export default function LoanList({ loans }: LoanListProps) {
               <div className="">{loan.loan_tenure || "0"}</div>
 
               {/* Start Date */}
-              <div className="">
-                {formatToIndianDate(loan.loan_start_date) || "-"}
-              </div>
+              <div className="">{formatToIndianDate(loan.loan_start_date)}</div>
 
               {/* End Month */}
               <div className="">

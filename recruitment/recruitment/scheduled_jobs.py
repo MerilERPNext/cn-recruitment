@@ -15,8 +15,7 @@ def trigger_confirmation_todos():
         fields=[
             "name",
             "policy_title",
-            "triggered_number_of_days_before_confirmation",
-            "triggered_days_before_extension_confirmation"
+            "triggered_number_of_days_before_confirmation"
         ]
     )
 
@@ -50,9 +49,7 @@ def trigger_confirmation_todos():
             if extension_count > 0:
                 trigger_days = get_extension_trigger_days(policy_doc, extension_count)
                 if not trigger_days:
-                    if not policy.triggered_days_before_extension_confirmation:
-                        continue
-                    trigger_days = policy.triggered_days_before_extension_confirmation
+                    continue
                 todo_type = "extension"
             else:
                 if not policy.triggered_number_of_days_before_confirmation:
@@ -246,8 +243,7 @@ def should_show_confirmation_button():
         "Confirmation Policy",
         fields=[
             "name",
-            "triggered_number_of_days_before_confirmation",
-            "triggered_days_before_extension_confirmation"
+            "triggered_number_of_days_before_confirmation"
         ]
     )
 
@@ -266,24 +262,40 @@ def should_show_confirmation_button():
             }
         )
 
+        trigger_days = None
+        confirmation_type = "confirmation"
+
         if extension_count > 0:
-            trigger_days = get_extension_trigger_days(policy_doc, extension_count)
+            if policy_doc.extension_workflow_configurations:
+                for row in policy_doc.extension_workflow_configurations:
+                    if row.extension_number == extension_count:
+                        trigger_days = row.trigger_days_before_extension or 0
+                        break
+
             if not trigger_days:
-                trigger_days = policy_doc.triggered_days_before_extension_confirmation
+                return
+
+            confirmation_type = "extension"
         else:
             trigger_days = policy_doc.triggered_number_of_days_before_confirmation
 
         if not trigger_days:
             continue
 
+        button_visible_from_date = add_days(confirmation_date, -trigger_days)
+
         if 0 <= days_until_confirmation <= trigger_days:
             return {
                 "show_button": True,
                 "days_until_confirmation": days_until_confirmation,
-                "trigger_days": trigger_days
+                "trigger_days": trigger_days,
+                "confirmation_date": str(confirmation_date),
+                "button_visible_from_date": str(button_visible_from_date),
+                "confirmation_type": confirmation_type,
+                "extension_count": extension_count
             }
 
     return {
         "show_button": False,
-        "days_until_confirmation": days_until_confirmation
+        "days_until_confirmation": days_until_confirmation if 'days_until_confirmation' in dir() else None
     }

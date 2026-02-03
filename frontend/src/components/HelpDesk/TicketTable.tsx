@@ -17,17 +17,18 @@ interface TicketTableProps {
   sortDirection: "asc" | "desc";
   onSort: (field: string) => void;
   categoryMap?: Record<string, string>;
+  userLookup?: Map<string, string>;
 }
 
 
-const getAssignedName = (assignStr: string | null): string => {
+const getAssignedName = (assignStr: string | null, userLookup?: Map<string, string>): string => {
   if (!assignStr) return "-";
   try {
     const parsed = JSON.parse(assignStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      // Extract name from email
       const email = parsed[0];
-      return email.split("@")[0].replace(/[._]/g, " ");
+      // Use full name from lookup if available, otherwise extract from email
+      return userLookup?.get(email) || email.split("@")[0].replace(/[._]/g, " ");
     }
   } catch {
     return "-";
@@ -76,6 +77,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   sortDirection,
   onSort,
   categoryMap = {},
+  userLookup,
 }) => {
   // Helper to get category name from ID
   const getCategoryName = (categoryId: string | undefined): string => {
@@ -222,7 +224,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               </td>
               <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="primary">
-                  {getAssignedName(ticket._assign)}
+                  {getAssignedName(ticket._assign, userLookup)}
                 </Typography>
               </td>
               <td className="px-4 py-3">

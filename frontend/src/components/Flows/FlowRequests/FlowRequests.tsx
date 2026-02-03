@@ -1,16 +1,15 @@
-import React, { useState } from 'react'
-import Badge from '../../shared/Badge';
-import { useNavigate } from 'react-router-dom';
-import { useCurrentEmployee, useEmployee } from '../../../hooks/useEmployee';
-import { useTargetUser } from '../../../context/ViewedUserContext';
-import { TodoItem } from '../../../types/flows';
-import DataListView from '../../DataListView';
-import CardTable from '../../shared/CardTable';
-import { Typography } from '../../shared/atoms/Typography';
-import formatToIndianDate from '../../../utils/formatToIndianDate';
-import ApprovalTracker from '../Confirmation/Component/ApprovalTracker';
-import HeaderBar from '../../HeaderBar';
-
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCurrentEmployee, useEmployee } from "../../../hooks/useEmployee";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { TodoItem } from "../../../types/flows";
+import DataListView from "../../DataListView";
+import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import ApprovalTracker from "../Confirmation/Component/ApprovalTracker";
+import HeaderBar from "../../HeaderBar";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const titles = [
   "Request ID",
@@ -19,34 +18,14 @@ const titles = [
   "Initiated By",
   "Initiated For",
   "Allocated To",
-  "Approval Status"
-]
+  "Approval Status",
+];
 
-const getStatusTagColor = (status: string) => {
-  switch (status) {
-    case 'Approved':
-    case 'Completed':
-    case 'Success':
-      return 'bg-green-100 text-green-800';
-    case 'Pending':
-    case 'In Progress':
-    case 'Ongoing':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'Rejected':
-    case 'Terminated':
-    case 'Failed':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
+const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
 
 const FlowRequests: React.FC = () => {
-
-
   const { data: currentEmployee } = useCurrentEmployee();
-  const { targetEmployeeId, isViewingOtherUser } =
-    useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
@@ -54,8 +33,8 @@ const FlowRequests: React.FC = () => {
   const navigate = useNavigate();
   const handleShowDetails = (data: any) => {
     // setDetails(data);
-    navigate("/webapp/flow-app/flow-request/" + data?.todo_id)
-  }
+    navigate("/webapp/flow-app/flow-request/" + data?.todo_id);
+  };
 
   if (details) {
     return (
@@ -63,45 +42,37 @@ const FlowRequests: React.FC = () => {
         <HeaderBar onBack={() => setDetails(null)} />
         <ApprovalTracker For="Employee Separation" data={details} />
       </div>
-    )
+    );
   }
   return (
-    <div className=" bg-white">
-
-      <div>
-        <div className="flex flex-col mb-2 px-6 mt-4">
-          <Typography variant="h4">Flows</Typography>
-          <Typography variant="bodySmall" color="body2">
-            Manage your Flows
-          </Typography>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">Flow Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Manage your Flows
+            </Typography>
+          </div>
         </div>
 
         {/*Flows List*/}
-        <div className='px-6 mt-4'>
-          <CardTable
-            titles={titles}
-          >
+        <div className="px-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
             <DataListView
               queryKey={["employee-flows", activeEmployee?.name || ""]}
               customAPI={{
-                method:
-                  "cn_leave_shift_managment.api.get_open_approval_todos",
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
                 params: {
                   doctype: "employee",
-                  // status: "Open",
                 },
               }}
-              ItemComponent={(props: {
-                item: TodoItem;
-              }) => {
+              ItemComponent={(props: { item: TodoItem }) => {
                 return (
-                  <MyFlowRequestCard handleShowDetails={handleShowDetails} request={props?.item} />
-                  // <MyRequestCard
-                  //   request={props?.item}
-                  //   // onClick={(request: MyPlannedAttendanceRequest) =>
-                  //     // handleRequestClick(request)
-                  //   }
-                  // />
+                  <MyFlowRequestCard
+                    handleShowDetails={handleShowDetails}
+                    request={props?.item}
+                  />
                 );
               }}
               // onRefetchComplete={handleMyRequestsRefetchComplete}
@@ -127,25 +98,45 @@ const FlowRequests: React.FC = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
+export default FlowRequests;
 
-export default FlowRequests
-
-
-const MyFlowRequestCard = ({ request, handleShowDetails }: { request: TodoItem, handleShowDetails: (data: any) => void }) => {
+const MyFlowRequestCard = ({
+  request,
+  handleShowDetails,
+}: {
+  request: TodoItem;
+  handleShowDetails: (data: any) => void;
+}) => {
   return (
     <div
       onClick={() => handleShowDetails(request)}
-      className="cursor-pointer hover:bg-blue-100 py-2 px-6 text-sm font-medium text-gray-800 grid grid-cols-7">
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight">{request.todo_id}</Typography>
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight">{formatToIndianDate(request?.reference_document?.creation)}</Typography>
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight">{request.due_date.replace(/-/g, "/")}</Typography>
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight">{request.reference_name}</Typography>
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight">{request.username}</Typography>
-      <Typography variant="bodySmall" className="py-4 font-semibold tracking-tight"> {request.allocated_to}</Typography>
-      <span className="px-4 py-4 inline-block text-black"><Badge size="md" backgroundColor={getStatusTagColor(request.status)} label={request.status} /></span>
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+    >
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {request.todo_id}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(request?.reference_document?.creation)}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {request.due_date.replace(/-/g, "/")}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {request.reference_name}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {request.username}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {request.allocated_to}
+      </Typography>
+      <div className="flex items-center justify-center">
+        <StatusBadge status={request.status} />
+      </div>
     </div>
-  )
-}
+  );
+};

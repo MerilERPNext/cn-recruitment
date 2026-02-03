@@ -2,7 +2,7 @@
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
-import { StatusBadge } from "../AllShiftsDashboard";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 // Props type
 type ApprovalRejectionQueueProps = {

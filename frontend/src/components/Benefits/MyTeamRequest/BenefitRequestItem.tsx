@@ -87,7 +87,7 @@ const BenefitRequestItem = ({
     <div>
       {isDesktop ? (
         <div
-          className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
@@ -106,11 +106,14 @@ const BenefitRequestItem = ({
             />
           </div>
           <div className="truncate text-gray-900 font-medium text-sm text-start">
-            <WrapperHoverCard employeeId={data.reference_document.employee}>
-              <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+            <Link
+              to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+              target="_blank"
+            >
+              <WrapperHoverCard employeeId={data.reference_document.employee}>
                 {data.reference_document.employee_name}
-              </Link>
-            </WrapperHoverCard>
+              </WrapperHoverCard>
+            </Link>
           </div>
           <div className="flex text-gray-900 text-sm flex-col">
             {data.reference_document.earning_component}
@@ -147,7 +150,7 @@ const BenefitRequestItem = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -178,7 +181,10 @@ const BenefitRequestItem = ({
                 }
               />
               <div className="pl-4">
-                <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
+                <Link
+                  to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                  target="_blank"
+                >
                   <div className="truncate text-gray-900  font-semibold text-lg text-start">
                     {data.reference_document.employee_name}
                   </div>
@@ -235,7 +241,7 @@ const BenefitRequestItem = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
+                    loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action
@@ -303,7 +309,7 @@ const BenefitRequestItem = ({
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

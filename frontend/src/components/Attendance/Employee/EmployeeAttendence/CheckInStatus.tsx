@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { useState } from "react";
 import { useGetAllEmployeeCheckin } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
@@ -9,6 +9,7 @@ import { MonthOption } from "../../AllEmpAttendance/SelectByMonth";
 import { endOfMonth, parse, startOfMonth } from "date-fns";
 import { Select } from "../../../shared/atoms/Select";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { useSearchParams } from "react-router-dom";
 
 const getMonthDateRange = (monthValue: string) => {
     const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
@@ -20,6 +21,15 @@ const getMonthDateRange = (monthValue: string) => {
 };
 
 const CheckInStatus = () => {
+
+    const [searchParams] = useSearchParams();
+    const encodedDate = searchParams.get("date") || "";
+    const decodedDate = decodeURIComponent(encodedDate);
+
+    // 2️⃣ Parse ISO string → Date
+    const parsedDate = decodedDate ? parseISO(decodedDate) : new Date();
+    const date = isValid(parsedDate) ? parsedDate : new Date();
+    const formattedDate = format(date, "yyyy-MM");
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
@@ -27,11 +37,10 @@ const CheckInStatus = () => {
 
     const monthOptions: MonthOption[] = generateMonthOptions(12);
 
-    const [selectedMonth, setSelectedMonth] = useState<MonthOption>(monthOptions[0]);
+    const [selectedMonth, setSelectedMonth] = useState<MonthOption>(formattedDate ? monthOptions.find((month) => month.value === formattedDate) || monthOptions[0] : monthOptions[0]);
 
 
-    const { frm_date, to_date } = getMonthDateRange(selectedMonth.value);
-
+    const { frm_date, to_date } = getMonthDateRange(formattedDate || selectedMonth.value);
     const {
         data: checkins,
         isLoading,

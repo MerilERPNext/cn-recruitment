@@ -3,9 +3,9 @@ import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import formatToIndianDate, {
   formatEndDate,
 } from "../../utils/formatToIndianDate";
-import { StatusBadge } from "./AllShiftsDashboard";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { User } from "lucide-react";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 const TeamShiftItemComponent: React.FC<{ item: ApiShiftAssignment }> = ({
   item,

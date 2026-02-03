@@ -17,6 +17,8 @@ interface SimplifiedChatViewProps {
 interface SimpleChatMessage {
   id: string;
   content: string;
+  quotedContent?: string | null;
+  quotedSender?: string | null;
   sender: {
     name: string;
     email: string;
@@ -26,6 +28,57 @@ interface SimpleChatMessage {
   isCurrentUser: boolean;
   attachments: { file_name: string; file_url: string }[];
 }
+
+// Parse quoted content from HTML (blockquotes, gmail_quote, etc.)
+interface ParsedMessage {
+  quotedContent: string | null;
+  quotedSender: string | null;
+  mainContent: string;
+}
+
+const parseQuotedContent = (htmlContent: string): ParsedMessage => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+
+    // Find blockquote or gmail_quote or outlook reply markers
+    const blockquote = doc.querySelector('blockquote, .gmail_quote, #appendonsend, .reply-to-content');
+
+    if (blockquote) {
+      const quotedContent = blockquote.innerHTML;
+
+      // Try to parse sender from "On [date], [name] wrote:" pattern
+      let quotedSender: string | null = null;
+      const prevSibling = blockquote.previousElementSibling;
+      if (prevSibling && prevSibling.textContent) {
+        const match = prevSibling.textContent.match(/On .+?, (.+?) wrote:/);
+        if (match) {
+          quotedSender = match[1];
+        }
+      }
+
+      // Remove the blockquote from the document
+      blockquote.remove();
+
+      // Also remove the "On [date], [name] wrote:" line if present
+      if (prevSibling && prevSibling.textContent?.includes(' wrote:')) {
+        prevSibling.remove();
+      }
+
+      const mainContent = doc.body.innerHTML.trim();
+
+      return {
+        quotedContent: quotedContent.trim() || null,
+        quotedSender,
+        mainContent: mainContent || htmlContent
+      };
+    }
+
+    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+  } catch {
+    return { quotedContent: null, quotedSender: null, mainContent: htmlContent };
+  }
+};
 
 // Resolution Modal Component
 interface ResolutionModalProps {
@@ -160,6 +213,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Transform ticket data into simple chat messages (emails only, no comments/activity)
   const messages = useMemo<SimpleChatMessage[]>(() => {
     const msgs: SimpleChatMessage[] = [];
+    const ticketCreationTime = new Date(ticket.creation).getTime();
 
     // Add original request as first message
     msgs.push({
@@ -175,11 +229,24 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       attachments: [],
     });
 
-    // Add communications (emails) - no comments or activity for simplified view
+    // Add communications (emails) - skip the first one if it matches ticket creation time
+    // (to avoid duplicate description message)
     ticket.communications?.forEach((comm) => {
+      const commCreationTime = new Date(comm.creation).getTime();
+      // Skip if this communication was created at the same time as the ticket (within 5 seconds)
+      // This is likely the initial description being saved as a communication
+      if (Math.abs(commCreationTime - ticketCreationTime) < 5000) {
+        return;
+      }
+
+      // Parse quoted content from the message
+      const parsed = parseQuotedContent(comm.content || '');
+
       msgs.push({
         id: comm.name,
-        content: comm.content,
+        content: parsed.mainContent,
+        quotedContent: parsed.quotedContent,
+        quotedSender: parsed.quotedSender,
         sender: {
           name: comm.user?.full_name || comm.user?.name || comm.sender,
           email: comm.sender,
@@ -274,10 +341,34 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       case "Resolved":
         return "bg-green-100 text-green-700";
       case "Closed":
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-app text-gray-700";
     }
+  };
+
+  // Build message with attachments embedded as HTML
+  const buildMessageWithAttachments = (
+    msg: string,
+    files: { file_url: string; file_name: string }[]
+  ): string => {
+    let htmlMessage = msg.startsWith("<") ? msg : `<p>${msg.replace(/\n/g, "<br/>")}</p>`;
+
+    if (files.length > 0) {
+      let attachmentHtml = '<br/><div class="attachments"><strong>Attachments:</strong><ul>';
+      files.forEach((file) => {
+        const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.file_name);
+        if (isImage) {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank"><img src="${file.file_url}" alt="${file.file_name}" style="max-width: 300px; max-height: 200px;" /><br/>${file.file_name}</a></li>`;
+        } else {
+          attachmentHtml += `<li><a href="${file.file_url}" target="_blank">${file.file_name}</a></li>`;
+        }
+      });
+      attachmentHtml += '</ul></div>';
+      htmlMessage += attachmentHtml;
+    }
+
+    return htmlMessage;
   };
 
   // Handle send message (always as email for simplified view)
@@ -290,11 +381,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       const assignedAgent = getAssignedUser();
       const recipient = assignedAgent !== "Unassigned" ? assignedAgent : ticket.raised_by;
 
+      // Embed attachments in message HTML instead of passing separately
+      const messageWithAttachments = buildMessageWithAttachments(message, attachments);
+
       await sendEmailMutation.mutateAsync({
         ticketId: ticket.name,
         to: recipient,
-        message: message.startsWith("<") ? message : `<p>${message.replace(/\n/g, "<br/>")}</p>`,
-        attachments,
+        message: messageWithAttachments,
       });
       toast.success("Message sent successfully");
     } catch {
@@ -409,9 +502,26 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     );
   };
 
+  // Quoted message component
+  const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
+    <div className={`mb-2 p-3 rounded-lg border-l-4 ${
+      isCurrentUser
+        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
+        : 'bg-gray-100 border-gray-300 text-gray-600'
+    }`}>
+      <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
+        {sender ? `${sender} wrote:` : 'Previous message:'}
+      </div>
+      <div
+        className={`text-sm line-clamp-3 prose prose-sm max-w-none ${isCurrentUser ? 'prose-invert' : ''} [&>p]:mb-0`}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    </div>
+  );
+
   // Chat message component (simplified, no type badges)
   const ChatBubble = ({ message }: { message: SimpleChatMessage }) => {
-    const { content, sender, timestamp, isCurrentUser, attachments } = message;
+    const { content, quotedContent, quotedSender, sender, timestamp, isCurrentUser, attachments } = message;
 
     if (isCurrentUser) {
       // Right-aligned message (current user) - blue gradient
@@ -420,6 +530,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           <div className="flex flex-col items-end max-w-[75%]">
             {/* Message bubble */}
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
+              {/* Quoted message - appears ABOVE main content */}
+              {quotedContent && (
+                <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={true} />
+              )}
+
+              {/* Main content */}
               <div
                 className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
                 dangerouslySetInnerHTML={{ __html: content }}
@@ -448,6 +564,11 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               {sender.name}
             </div>
 
+            {/* Quoted message - appears ABOVE main content */}
+            {quotedContent && (
+              <QuotedMessage content={quotedContent} sender={quotedSender} isCurrentUser={false} />
+            )}
+
             {/* Content */}
             <div
               className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
@@ -469,7 +590,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     if (!ticket.resolution_details && !isTicketClosed) {
       return (
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
+          <div className="w-16 h-16 bg-app rounded-xl flex items-center justify-center mb-4">
             <CheckCircle className="w-8 h-8 text-gray-400" />
           </div>
           <p className="text-gray-500 font-medium">No Resolution Yet</p>
@@ -560,7 +681,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-gray-100">
+    <div className="h-screen flex flex-col bg-app">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -582,7 +703,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-gray-500">Assigned to</span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-lg">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg">
                 <span className="w-2 h-2 rounded-lg bg-green-500"></span>
                 <span className="text-sm font-medium text-gray-700">
                   {getAssignedUser()}
@@ -608,7 +729,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-app rounded-xl transition-colors"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -632,7 +753,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
                 activeTab === "chat"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-app text-gray-600"
               }`}>
                 {messages.length}
               </span>
@@ -651,7 +772,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
                 activeTab === "resolution"
                   ? "bg-blue-100 text-blue-700"
-                  : "bg-gray-100 text-gray-600"
+                  : "bg-app text-gray-600"
               }`}>
                 1
               </span>
@@ -727,7 +848,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
 // Loading component
 export const SimplifiedChatViewLoading: React.FC = () => (
-  <div className="h-screen flex items-center justify-center bg-gray-100">
+  <div className="h-screen flex items-center justify-center bg-app">
     <div className="flex items-center gap-3">
       <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
       <span className="text-gray-600">Loading ticket...</span>
@@ -737,7 +858,7 @@ export const SimplifiedChatViewLoading: React.FC = () => (
 
 // Error component
 export const SimplifiedChatViewError: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="h-screen flex flex-col items-center justify-center bg-gray-100">
+  <div className="h-screen flex flex-col items-center justify-center bg-app">
     <p className="text-red-500 mb-4">Failed to load ticket</p>
     <button
       onClick={onClose}

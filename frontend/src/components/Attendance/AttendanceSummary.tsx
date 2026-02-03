@@ -22,8 +22,10 @@ import { useMemo, useState } from "react";
 
 import {
   useGetEmployeeShift,
+  useGetEmployeeWorkingHours,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
+  useGetTeamCheckinSummary,
   useReqValidationsForOvertimeRequest,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
@@ -31,7 +33,6 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
-import AttendanceChart from "../AttendanceChart";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import { ViewAll } from "../shared/atoms/ViewAll";
@@ -41,7 +42,9 @@ import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Button from "../shared/atoms/Button";
 import { useFrappeDocumentList } from "../../hooks/useFrappeQuery";
-import { Attendance, EmployeeCheckInLog } from "../../types/attendance";
+import { Attendance } from "../../types/attendance";
+import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
+import AttendanceSummaryCards from "./AttendanceSummaryCards";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -67,6 +70,15 @@ const AttendanceSummary = () => {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+  const { data: teamCheckInSummary } = useGetTeamCheckinSummary(
+    currentEmployee?.user_id || ""
+  );
+  const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
+    currentEmployee?.user_id || "",
+    format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+    format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  );
+
   const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
     currentEmployee?.employee || ""
   );
@@ -93,37 +105,6 @@ const AttendanceSummary = () => {
     ]
   })
 
-  const { data } = useFrappeDocumentList(
-    "Employee Checkin", {
-    fields: ["*"],
-    filters: [
-      ["time", "between", [startOfDay(currentDate), endOfDay(currentDate)]],
-    ]
-  })
-
-  function useUniqueInOutCount(records: EmployeeCheckInLog[]) {
-    return useMemo(() => {
-      if (!Array.isArray(records)) {
-        return { IN: 0, OUT: 0 };
-      }
-
-      const inSet = new Set();
-      const outSet = new Set();
-
-      for (const record of records) {
-        if (record.log_type === "IN") {
-          inSet.add(record.employee);
-        } else if (record.log_type === "OUT") {
-          outSet.add(record.employee);
-        }
-      }
-
-      return {
-        IN: inSet.size,
-        OUT: outSet.size
-      };
-    }, [records]);
-  }
   function useUniqueAttendanceLeaveCount(records: Attendance[]) {
     return useMemo(() => {
       if (!Array.isArray(records)) {
@@ -153,13 +134,13 @@ const AttendanceSummary = () => {
       icon: CheckCircle,
       color: "green",
       label: "Logged In",
-      value: useUniqueInOutCount(data as EmployeeCheckInLog[] || []).IN || 0,
+      value: teamCheckInSummary?.data?.checked_in_count || 0,
     },
     {
       icon: AlertCircle,
       color: "red",
       label: "Not Logged In",
-      value: useUniqueInOutCount(data as EmployeeCheckInLog[] || []).OUT || 0,
+      value: teamCheckInSummary?.data?.not_checked_in_count || 0,
     },
     {
       icon: Calendar,
@@ -418,19 +399,24 @@ const AttendanceSummary = () => {
           <ChevronRight className="h-5 w-5 text-slate-600" />
         </Button>
       </Card>
+      <div className={`w-full flex gap-4 ${isDesktop ? "flex-row" : "flex-col"}`}>
 
-      <AttendanceChart
-        present={employeeAttendanceSummary?.present || 0}
-        absent={employeeAttendanceSummary?.absent || 0}
-        leaves={employeeAttendanceSummary?.leaves || 0}
-        week_offs={employeeAttendanceSummary?.week_offs || 0}
-        avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
-        avg_working_hours={
-          Number(employeeAttendanceSummary?.avg_working_hours) || 0
-        }
-        avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
-        selectedMonth={currentDate}
-      />
+        <EmployeeWorkingHoursBarChart
+          isLoading={isEmployeeWorkingHoursLoading}
+          data={employeeWorkingHours}
+        />
+        <AttendanceSummaryCards
+          present={employeeAttendanceSummary?.present || 0}
+          absent={employeeAttendanceSummary?.absent || 0}
+          leaves={employeeAttendanceSummary?.leaves || 0}
+          week_offs={employeeAttendanceSummary?.week_offs || 0}
+          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+          avg_working_hours={
+            Number(employeeAttendanceSummary?.avg_working_hours) || 0
+          }
+          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
+        />
+      </div>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}

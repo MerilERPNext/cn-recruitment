@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "react-router-dom";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { StatusBadge } from "../AllShiftsDashboard";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import Tooltip from "../../shared/Tooltip";
 
 // Props type
 type ApprovalRejectionQueueProps = {
@@ -35,45 +37,16 @@ const ApprovalRejectionQueue = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string): { bg: string; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "gray-100",
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success-100",
-          text: "success",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error-50",
-          text: "error",
-        };
 
-        break;
-      default:
-        styles = {
-          bg: "gray-200",
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
-  const gridTemplateColumns = "8% 10% 10% 10% 10% 10% 10% 20%";
+  const gridTemplateColumns = "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <div
-      className="grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer"
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{ gridTemplateColumns }}
       onClick={() => onClick?.(data)}
     >
-      <div className="flex items-center">
+      <div className="flex items-center justify-center">
         <input
           type="checkbox"
           className="accent-primary"
@@ -87,62 +60,58 @@ const ApprovalRejectionQueue = ({
           }
         />
       </div>
-      <div className="truncate text-gray-900 font-medium text-sm text-start">
-        <WrapperHoverCard employeeId={data?.reference_document.employee}>
-          <Link to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`} target="_blank">
-            <span>{data.reference_document.employee_name}</span>
-          </Link>
-        </WrapperHoverCard>
-      </div>
-      <div className="flex text-gray-900 text-sm flex-col">
-        <span>{data.reference_document.shift_type}</span>
-        <span className="text-[12px] text-gray-700 whitespace-nowrap">
+      <Link
+        to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+        target="_blank"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          <WrapperHoverCard employeeId={data?.reference_document.employee}>
+            {data.reference_document.employee_name}
+          </WrapperHoverCard>
+        </Typography>
+      </Link>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {data.reference_document.shift_type}
+        <Typography variant="bodySmall" className="font-medium text-center">
           {data.reference_document.custom_start_time &&
-            data.reference_document.custom_end_time
+          data.reference_document.custom_end_time
             ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
-            : "---"}
-        </span>
-      </div>
-      <div className="flex items-center text-gray-900 text-sm">
-        {formatToIndianDate(data.reference_document.from_date)}
-      </div>
-      <div className="flex items-center text-gray-900 text-sm">
-        {formatToIndianDate(data.reference_document.to_date)}
-      </div>
-      <div className="flex items-center text-gray-900 text-sm">
-        {formatToIndianDate(data?.due_date)}
-      </div>
+            : ""}
+        </Typography>
+      </Typography>
 
-      <div className="flex items-center text-sm">
-        <StatusBadge status={data.reference_document.status} />
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(data.reference_document.from_date)}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(data.reference_document.to_date)}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(data?.due_date)}
+      </Typography>
+
+      <div className="flex items-center justify-center">
+        <Tooltip
+          content={
+            data.reference_document.status === "Draft"
+              ? `Allocated to : ${data?.allocated_to}`
+              : ""
+          }
+        >
+          <StatusBadge status={data.reference_document.status} />
+        </Tooltip>
       </div>
-      <div className="flex w-full justify-start gap-2 whitespace-nowrap">
-        {actions?.length &&
-          actions.map((action: string) => {
-            return (
-              <Button
-                key={action}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onAction(action, data);
-                }}
-                bgColor={getActionStyles(action).bg}
-                className={`text-${getActionStyles(action).text}`}
-                disabled={
-                  loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action
-                }
-              >
-                {loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action ? (
-                  <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  action
-                )}
-              </Button>
-            );
-          })}
+      <div className="flex items-center justify-center">
+        <TeamApprovalActionPill
+          actions={actions}
+          status={data?.reference_document?.status}
+          recordId={data?.todo_id}
+          loadingAction={loadingAction}
+          onAction={(action) => onAction(action, data)}
+        />
       </div>
     </div>
   );

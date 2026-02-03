@@ -46,7 +46,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
   const { data: currentUser } = useCurrentUser();
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role)
+    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
   );
   // logout logic
   const logoutHandler = async () => {
@@ -69,7 +69,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
       onError: (error: any) => {
         const formatedError = errorResponseFormater(
           error,
-          "Failed to send password reset email!"
+          "Failed to send password reset email!",
         );
         toast.error(formatedError);
       },
@@ -77,7 +77,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   };
 
   const currentUserIsAdmin = currentUser?.roles?.some(
-    (role) => "Administrator" == role.role
+    (role) => "Administrator" == role.role,
   );
 
   // Handle click outside profile dropdown
@@ -188,7 +188,11 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
               Manage your {getPageTitle().toLowerCase()}
             </Typography>
           </div>
-          {location.pathname !== ROUTES.SEARCH_MEMBERS && <SearchMembers />}
+          {location.pathname !== ROUTES.SEARCH_MEMBERS && (
+            <div className="flex-1 min-w-0 flex justify-center">
+              <SearchMembers />
+            </div>
+          )}
           <div className="flex items-center gap-4 flex-shrink-0">
             <button
               onClick={handleNotificationClick}
@@ -219,8 +223,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee?.employee ? (
@@ -259,8 +264,9 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       />
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 text-white transition-transform ${
+                        showProfileDropdown ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                 </>
@@ -268,7 +274,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
 
               {/* Profile Dropdown */}
               {showProfileDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]">
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center gap-3">
                       {/* Avatar */}

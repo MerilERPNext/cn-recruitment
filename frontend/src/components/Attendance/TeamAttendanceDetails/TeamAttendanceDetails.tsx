@@ -29,7 +29,7 @@ const TeamAttendanceDetails = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -44,40 +44,40 @@ const TeamAttendanceDetails = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
-        "Employeee",
+        "Employee",
         "Explanation",
         "From Date",
         "To Date",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["5%", "10%", "15%", "8%", "8%", "8%", "10%", "20%"]
-    : ["12%", "20%", "10%", "10%", "10%", "10%", "20%"];
+    ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
-    <>
-      <div className="min-h-screen">
-        <div className="px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Attendance Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team attendance requests
-              </Typography>
-            </div>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            <Typography variant="h4">Team Attendance Requests</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team attendance requests
+            </Typography>
           </div>
+        </div>
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList
@@ -85,13 +85,13 @@ const TeamAttendanceDetails = () => {
                 refetch={refetchApprovalList}
                 setRefetch={setRefetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                status={"Pending"}
                 pageSize={10}
                 showPagination={true}
                 infiniteScroll={true}
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
@@ -101,6 +101,7 @@ const TeamAttendanceDetails = () => {
                     options: ["Pending", "Approved", "Rejected"],
                   },
                 ]}
+                defaultFilters={{ status: "Pending" }}
                 renderCardContent={(item) => (
                   <ApprovalCard
                     isSelected={item?.isSelected}
@@ -119,7 +120,6 @@ const TeamAttendanceDetails = () => {
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <AttendanceDetailView
           documentName={requestId}
@@ -127,7 +127,7 @@ const TeamAttendanceDetails = () => {
           onAction={handleActionComplete}
         />
       )}
-    </>
+    </div>
   );
 };
 

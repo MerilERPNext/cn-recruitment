@@ -238,11 +238,12 @@ export const useCloseTicket = () => {
       );
       return result;
     },
-    onSuccess: (_data, variables) => {
-      // Invalidate ticket list and stats
+    onSuccess: async (_data, variables) => {
+      // Refetch ticket detail immediately to update UI without refresh
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      // Invalidate list and stats to refresh on next view
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
     },
   });
 };
@@ -270,7 +271,10 @@ export const useRequestClosure = () => {
       );
       return result;
     },
-    onSuccess: () => {
+    onSuccess: async (_data, variables) => {
+      // Refetch ticket detail immediately to update UI without refresh
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      // Invalidate list to refresh on next view
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
     },
   });
@@ -368,21 +372,17 @@ export const useSearchEmployees = (searchText: string) => {
 };
 
 /**
- * Fetch all accessible employees for dropdown
- * Uses frappe.client.get_list which respects Frappe's User Permissions
+ * Fetch subordinate employees for "Raise for Others" dropdown
+ * Returns employees where current user is their reports_to, HRBP, or HOD
  */
-export const useEmployeeList = () => {
+export const useSubordinateEmployees = () => {
   return useQuery<EmployeeSearchResult[]>({
-    queryKey: ["employee-list"],
+    queryKey: ["subordinate-employees"],
     queryFn: async () => {
-      // Use get_list which properly respects User Permissions
-      const result = await FrappeAPI.callMethod("frappe.client.get_list", {
-        doctype: "Employee",
-        filters: { status: "Active" },
-        fields: ["name", "employee_name", "department", "designation"],
-        limit_page_length: 500,
-        order_by: "employee_name asc",
-      });
+      // Use the get_reportees API which returns employees reporting to current user
+      const result = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.api.get_reportees"
+      );
 
       // Transform to expected format (value/description for compatibility)
       return ((result as Array<{ name: string; employee_name: string; department?: string; designation?: string }>) || []).map(emp => ({
@@ -403,24 +403,24 @@ export const useCreateTicket = () => {
   return useMutation({
     mutationFn: async ({
       doc,
-      attachments = [],
     }: {
       doc: CreateTicketPayload;
-      attachments?: Array<{ file_url: string; file_name: string }>;
     }) => {
+      // Only pass doc - attachments should be embedded in description as HTML
       const result = await FrappeAPI.callMethod(
         "helpdesk.helpdesk.doctype.hd_ticket.api.new",
         {
           doc,
-          attachments,
         }
       );
       return result;
     },
-    onSuccess: () => {
-      // Invalidate ticket list and stats to refresh
-      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
-      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+    onSuccess: async () => {
+      // Refetch ticket list and stats immediately to show new ticket without refresh
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["hd-tickets"] }),
+        queryClient.refetchQueries({ queryKey: ["hd-ticket-stats"] }),
+      ]);
     },
   });
 };
@@ -495,6 +495,36 @@ export const useMentionUsers = () => {
     },
     retry: false,
     staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
+/**
+ * Fetch user lookup map (email -> full_name)
+ * Used for displaying assignee names in ticket list instead of emails
+ */
+export const useUserLookup = () => {
+  return useQuery<Map<string, string>>({
+    queryKey: ["user-lookup"],
+    queryFn: async () => {
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "User",
+          fields: ["name", "full_name"],
+          filters: { enabled: 1 },
+          limit_page_length: 500,
+        });
+        const map = new Map<string, string>();
+        ((result as Array<{ name: string; full_name: string }>) || []).forEach((u) => {
+          map.set(u.name, u.full_name || u.name.split("@")[0]);
+        });
+        return map;
+      } catch {
+        return new Map<string, string>();
+      }
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
     gcTime: 1000 * 60 * 30,
   });
 };
@@ -616,15 +646,14 @@ export const useSendEmailReply = () => {
       cc,
       bcc,
       message,
-      attachments = [],
     }: {
       ticketId: string;
       to: string;
       cc?: string;
       bcc?: string;
       message: string;
-      attachments?: TicketAttachment[];
     }) => {
+      // Attachments are now embedded in message HTML
       const result = await FrappeAPI.callMethod("run_doc_method", {
         dt: "HD Ticket",
         dn: ticketId,
@@ -634,14 +663,13 @@ export const useSendEmailReply = () => {
           cc,
           bcc,
           message,
-          attachments,
         },
       });
       return result;
     },
-    onSuccess: (_data, variables) => {
-      // Invalidate ticket detail to refresh communications
-      queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      // Refetch ticket detail immediately to show new communication without refresh
+      await queryClient.refetchQueries({
         queryKey: ["hd-ticket-detail", variables.ticketId],
       });
     },
@@ -658,26 +686,24 @@ export const useAddComment = () => {
     mutationFn: async ({
       ticketId,
       content,
-      attachments = [],
     }: {
       ticketId: string;
       content: string;
-      attachments?: TicketAttachment[];
     }) => {
+      // Attachments are now embedded in content HTML
       const result = await FrappeAPI.callMethod("run_doc_method", {
         dt: "HD Ticket",
         dn: ticketId,
         method: "new_comment",
         args: {
           content,
-          attachments,
         },
       });
       return result;
     },
-    onSuccess: (_data, variables) => {
-      // Invalidate ticket detail to refresh comments
-      queryClient.invalidateQueries({
+    onSuccess: async (_data, variables) => {
+      // Refetch ticket detail immediately to show new comment without refresh
+      await queryClient.refetchQueries({
         queryKey: ["hd-ticket-detail", variables.ticketId],
       });
     },

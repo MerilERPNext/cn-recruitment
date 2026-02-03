@@ -74,13 +74,13 @@ const MyRequests: React.FC = () => {
   const { data, isLoading } = useGetBenefitRequestLockView(
     effectiveEmployeeId || "",
     selectedYear,
-    today
+    today,
   );
   const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } =
     useGetBenefitClaimLockingPeriod(
       effectiveEmployeeId || "",
       selectedYear,
-      today
+      today,
     );
   const showBenefitRequestButton =
     !benefitClaimLockLoading && benefitClaimLock?.status === "success";
@@ -88,8 +88,9 @@ const MyRequests: React.FC = () => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-          }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
+          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+        }`}
       >
         {data?.message}
       </div>
@@ -219,7 +220,7 @@ const MyRequests: React.FC = () => {
               }}
             />
           </Modal>,
-          document.body
+          document.body,
         )}
     </div>
   );
@@ -235,13 +236,16 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
+    <div className="max-w-screen px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
       <span className="text-sm font-medium text-gray-700 text-start truncate">
-        <WrapperHoverCard employeeId={item?.employee}>
-          <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+        <Link
+          to={`/webapp/employee-profile?target_user=${item?.employee}`}
+          target="_blank"
+        >
+          <WrapperHoverCard employeeId={item?.employee}>
             {item?.employee_name}
-          </Link>
-        </WrapperHoverCard>
+          </WrapperHoverCard>
+        </Link>
       </span>
       <span className="text-sm font-medium text-gray-700 text-start truncate">
         {item?.company}
@@ -251,20 +255,23 @@ const BenefitSlipItem = ({
         {formatToIndianDate(item?.claim_date || "")}
       </span>
       <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""
-          }`}
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
       >
         ₹{maskAmounts ? "#####" : item?.claimed_amount}
       </span>
       <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""
-          }`}
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
       >
         ₹{maskAmounts ? "#####" : item?.custom_taxable_amount}
       </span>
       <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${maskAmounts ? "blur-[3px]" : ""
-          }`}
+        className={`text-sm font-medium text-gray-700 text-start truncate ${
+          maskAmounts ? "blur-[3px]" : ""
+        }`}
       >
         ₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}
       </span>
@@ -277,7 +284,10 @@ const BenefitSlipItem = ({
     <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
       <div className="flex w-full">
         <div className="flex flex-col">
-          <Link to={`/webapp/employee-profile?target_user=${item?.employee}`} target="_blank">
+          <Link
+            to={`/webapp/employee-profile?target_user=${item?.employee}`}
+            target="_blank"
+          >
             <span className="text-sm font-medium text-gray-700 text-start truncate">
               {item?.employee_name}
             </span>
@@ -309,8 +319,9 @@ const BenefitSlipItem = ({
         <div className="flex ml-auto flex-col">
           <label className="text-gray-500 text-sm">Claim Amount</label>
           <span
-            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${maskAmounts ? "blur-[3px]" : ""
-              }`}
+            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${
+              maskAmounts ? "blur-[3px]" : ""
+            }`}
           >
             ₹{maskAmounts ? "#####" : item?.claimed_amount}
           </span>

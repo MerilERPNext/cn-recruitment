@@ -18,6 +18,7 @@ import Button from "../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -157,9 +158,11 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     return cloned;
   };
 
+  const loading = useLoadingOverlay();
   const handleSubmit = async () => {
+  await loading?.wrap(async () => {
     try {
-      const submission = await formInstance.current?.submit(); // returns all form data
+      const submission = await formInstance.current?.submit();
       const data = submission?.data;
 
       const formattedOvertimeDetails = data?.overtime_details?.map(
@@ -178,40 +181,50 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           message: entry?.message,
         })
       );
-      mutation.mutate(
-        {
-          employee: currentEmployee?.employee || "",
-          overtime_details: formattedOvertimeDetails || [],
-          // attachment:
-          //   data?.attachment && data?.attachment?.length > 0
-          //     ? data?.attachment?.[0].url
-          //     : "",
-        },
-        {
-          onSuccess: async (data: any) => {
-            if (attachments?.length > 0) {
-              await uploadFiles(attachments, data.doctype, data.name, () => {
-                setAttachments([]);
-                onCancel?.();
 
-                setTimeout(() => {
-                  setRefetchAttendance(true);
-                }, 1000);
-              });
-            }
+      await new Promise<void>((resolve, reject) => {
+        mutation.mutate(
+          {
+            employee: currentEmployee?.employee || "",
+            overtime_details: formattedOvertimeDetails || [],
           },
-          onError: (e: CustomError) => {
-            const formatedError = errorResponseFormater(e, "Request Failed");
-            toast.error(formatedError);
-            console.error(e);
-          },
-        }
-      );
+          {
+            onSuccess: async (data: any) => {
+              if (attachments?.length > 0) {
+                await uploadFiles(
+                  attachments,
+                  data.doctype,
+                  data.name,
+                  () => {
+                    setAttachments([]);
+                    onCancel?.();
+                    setTimeout(() => setRefetchAttendance(true), 1000);
+                  }
+                );
+              }
+              resolve();
+                toast.success("Overtime Requests SuccessFully");
+            },
+            onError: (e: CustomError) => {
+              const formattedError = errorResponseFormater(
+                e,
+                "Request Failed"
+              );
+              toast.error(formattedError);
+              console.error(e);
+              reject(e);
+            },
+          }
+        );
+      });
     } catch (err) {
       toast.error("Please fill in all required fields.");
       console.warn("Form submission error -", err);
+      throw err;
     }
-  };
+  }, "Submitting overtime request…");
+};
+
 
   return (
     <div

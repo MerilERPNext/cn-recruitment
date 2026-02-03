@@ -275,9 +275,11 @@ def create_job_requisition_api(data=None):
         try:
             data = json.loads(data)
         except json.JSONDecodeError:
+            frappe.response["http_status_code"] = 400
             return {"status": "error", "message": "Invalid JSON format"}
 
     if not data:
+        frappe.response["http_status_code"] = 400
         return {"status": "error", "message": "No data provided"}
 
     try:
@@ -299,7 +301,9 @@ def create_job_requisition_api(data=None):
             "custom_experience_range_from", "custom_experience_range_to", "custom_experience_unit",
             "custom_hiring_lead", "custom_salary_range_currency",
             "custom_salary_range_min", "custom_salary_range_max", "custom_salary_timeframe",
-            "custom_type_of_position", "custom_functional_area"
+            "custom_type_of_position", "custom_functional_area",
+            "custom_additional_roles__responsibilities", "custom_additional_skills",
+            "custom_comments__instructions", "custom_cost_centre", "custom_designation_change"
         ]
 
         for field in allow_fields:
@@ -327,6 +331,8 @@ def create_job_requisition_api(data=None):
 
     except Exception as e:
         frappe.log_error(title="Job Requisition Creation API Error", message=frappe.get_traceback())
+        frappe.db.rollback()
+        frappe.response["http_status_code"] = 500
         return {
             "status": "error",
             "message": str(e)

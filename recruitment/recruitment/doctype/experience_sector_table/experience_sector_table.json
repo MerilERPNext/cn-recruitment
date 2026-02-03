@@ -1,0 +1,35 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-01-20 12:45:25.337711",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "experience_sector"
+ ],
+ "fields": [
+  {
+   "fieldname": "experience_sector",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Experience Sector",
+   "options": "Experience Sector"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-01-20 12:46:12.101996",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Experience Sector Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

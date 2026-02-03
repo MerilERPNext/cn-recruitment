@@ -64,6 +64,11 @@ export interface PostListComponentProps<T> {
   totalCount: number;
 }
 
+export interface FilterOption {
+  label: string;
+  value: string;
+}
+
 export interface FilterField {
   fieldname: string;
   label: string;
@@ -76,7 +81,8 @@ export interface FilterField {
     | "Check"
     | "Date"
     | "Datetime";
-  options?: string[];
+  // options?: string[];
+  options?: (string | FilterOption)[];
 }
 
 interface DataListViewProps<T extends BaseItem> {
@@ -720,11 +726,21 @@ const DataListView = <T extends BaseItem>({
                     className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select</option>
-                    {field.options?.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
+
+                    {field.options?.map((option) => {
+                      if (typeof option === "string") {
+                        return (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        );
+                      }
+                      return (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      );
+                    })}
                   </select>
                 ) : field.fieldtype === "Check" ? (
                   <input

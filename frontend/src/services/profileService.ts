@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award } from "../types/employee";
+import { Employee, IDesignationHierarchy, IGetEmpDesignationHierarchyCurrentDetails, Award, EmployeeProfileOverview } from "../types/employee";
 import { GenderResponse, IField } from "../types/profile";
 import FrappeAPI from "../utils/frappeAPI";
 
@@ -56,6 +56,22 @@ export const profileService = {
       // Handle different response structures
 
       return result as { employee: Employee };
+    } catch (e) {
+      throw new Error(
+        `Some error occured while fetching employee details.- ${e}`
+      );
+    }
+  },
+  getEmployeeProfileOverview: async (
+    employee_id: string
+  ): Promise<EmployeeProfileOverview[] | null> => {
+    try {
+      const result = await FrappeAPI.callMethod("cn_leave_shift_managment.cn_leave_shift_managment.doctype.overview_settings.overview_settings.get_overview_details", {
+        employee_id: employee_id
+      });
+      // Handle different response structures
+
+      return result as EmployeeProfileOverview[];
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`
