@@ -466,10 +466,10 @@ const AllEmpAttendance = () => {
                   }
                 };
 
-                // Filter out approved attendance requests (they're already reflected in attendance)
-                const displayEvents = statusInfo.events.filter(
-                  (event) => !(event.doctype === "Attendance Request" && event.status === "Approved")
-                );
+                // // Filter out approved attendance requests (they're already reflected in attendance)
+                // const displayEvents = statusInfo.events.filter(
+                //   (event) => !(event.doctype === "Attendance Request" && event.status === "Approved")
+                // );
 
                 // Skip weekly offs for modal
                 const shouldOpenModal = statusInfo.status !== "week-off";
@@ -505,9 +505,9 @@ const AllEmpAttendance = () => {
                       {getStatusDisplay(statusInfo.status)}
                     </td>
                     <td className="px-4 py-3 whitespace-normal text-sm text-gray-700">
-                      {displayEvents.length > 0 ? (
+                      {statusInfo.events.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {displayEvents.map((event, i) => {
+                          {statusInfo.events.map((event, i) => {
                             const eventType = event.doctype === "Attendance Request" && event.request_type === "Out Duty"
                               ? event.request_type
                               : event.doctype;

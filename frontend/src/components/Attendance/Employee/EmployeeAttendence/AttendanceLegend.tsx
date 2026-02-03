@@ -53,12 +53,12 @@ const AttendanceLegend: React.FC<AttendanceLegendProps> = ({
   const eventDotLegendItems = [
     { label: "Attendance Request", dotColor: "bg-blue-500" },
     { label: "Leave Request", dotColor: "bg-pink-500" },
-    { label: "Overtime Request", dotColor: "bg-orange-500" },
     { label: "Out Duty", dotColor: "bg-purple-500" },
+    { label: "Overtime Request", dotColor: "bg-orange-500" },
   ];
 
   const containerClass = isCompact
-    ? "flex flex-wrap gap-2 text-xs justify-between px-4"
+    ? "flex flex-wrap whitespace-nowrap gap-2 text-xs justify-start px-2"
     : "flex flex-wrap gap-7 text-xs ml-5";
 
   const itemClass = isCompact
@@ -77,7 +77,7 @@ const AttendanceLegend: React.FC<AttendanceLegendProps> = ({
           </span>
         ))}
       </div>
-      <div className={containerClass}>
+      <div className={`${containerClass} px-4`}>
         {eventDotLegendItems.map((item, index) => (
           <span key={index} className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${item.dotColor}`}></div>
