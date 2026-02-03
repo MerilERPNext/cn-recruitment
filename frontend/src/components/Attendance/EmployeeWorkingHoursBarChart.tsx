@@ -142,11 +142,30 @@ const EmployeeWorkingHoursBarChart: React.FC<Props> = ({ data, isLoading }) => {
 
     }
     if (!weekOptions.length) return <Card className="p-4 w-full min-w-[70%] rounded-xl">
+        <div className="mb-3 flex justify-between items-center w-full">
+            <div>
+                <Typography variant="subheading">Daily Working Hours</Typography>
+                <Typography variant="bodySmall" className="text-gray-500">
+                    Attendance for selected month
+                </Typography>
+            </div>
+
+            <Select
+                className="w-fit"
+                options={weekOptions}
+                value={selectedWeek}
+                onChange={setSelectedWeek}
+            />
+        </div>
+
         <Typography variant="bodySmall" className="text-gray-500">
-            No working hours data available for this week.
+            No working hours data available.
         </Typography>
 
-    </Card>;
+    </Card>
+
+
+
     return (
         <Card radius="xl" className="p-4 w-[70%]">
             <div className="mb-3 flex justify-between items-center">
