@@ -167,7 +167,7 @@ const EmployeeWorkingHoursBarChart: React.FC<Props> = ({ data, isLoading }) => {
 
 
     return (
-        <Card radius="xl" className="p-4 w-[70%]">
+        <Card radius="xl" className="p-4 w-[100%] md:w-[70%]">
             <div className="mb-3 flex justify-between items-center">
                 <div>
                     <Typography variant="subheading">Daily Working Hours</Typography>
