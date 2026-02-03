@@ -21,6 +21,7 @@ export type ApprovalRejectionLoanProps = {
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
+  isBulkSelectEnabled: boolean;
 };
 
 const ApprovalRejectionAdvanceList = ({
@@ -31,6 +32,7 @@ const ApprovalRejectionAdvanceList = ({
   onAction,
   onClick,
   loadingAction,
+  isBulkSelectEnabled,
 }: ApprovalRejectionLoanProps) => {
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentUser();
@@ -96,29 +98,35 @@ const ApprovalRejectionAdvanceList = ({
     }
   };
 
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+
   /* ===================== DESKTOP UI ===================== */
   if (isDesktop) {
     return (
       <>
         <div
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns: "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+          style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          <div className="flex items-center justify-center">
-            <input
-              type="checkbox"
-              className="accent-primary"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
-          </div>
+          {isBulkSelectEnabled && (
+            <div className="flex items-center justify-center">
+              <input
+                type="checkbox"
+                className="accent-primary"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            </div>
+          )}
 
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
@@ -239,18 +247,20 @@ const ApprovalRejectionAdvanceList = ({
             </p>
           </div>
 
-          <input
-            type="checkbox"
-            className="accent-blue-500 mt-1"
-            checked={isSelected}
-            onClick={(e) => e.stopPropagation()}
-            onChange={() => onToggleSelect?.(data?.todo_id)}
-            disabled={
-              isDisabled ||
-              actionsWithForm?.includes("Approve") ||
-              actionsWithForm?.includes("Reject")
-            }
-          />
+          {isBulkSelectEnabled && (
+            <input
+              type="checkbox"
+              className="accent-blue-500 mt-1"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.todo_id)}
+              disabled={
+                isDisabled ||
+                actionsWithForm?.includes("Approve") ||
+                actionsWithForm?.includes("Reject")
+              }
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">

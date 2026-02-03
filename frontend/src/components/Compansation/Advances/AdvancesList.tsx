@@ -106,126 +106,129 @@ const AdvancesList: React.FC = () => {
   const DesktopLayout = () => (
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        {/* Header Actions */}
-        <div className="px-3 pb-4 flex justify-between">
-          <div>
-            <Typography variant="h4"> My Advance Request</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your advance requests
-            </Typography>
-          </div>
-          <div className="flex items-center gap-5">
-            <button
-              onClick={() => setMaskAmounts(!maskAmounts)}
-              className="my-btn-secondary flex items-center gap-2"
-              title={maskAmounts ? "Show amounts" : "Hide amounts"}
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Show Amounts
-                  </span>
-                  <BsToggleOff className="w-6 h-6 text-gray-400" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Hide Amounts
-                  </span>
-                  <BsToggleOn className="w-6 h-6 text-primary" />
-                </>
-              )}
-            </button>
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex justify-between">
+            <div>
+              <Typography variant="h4"> My Advance Request</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your advance requests
+              </Typography>
+            </div>
+            <div className="flex items-center gap-5">
+              <button
+                onClick={() => setMaskAmounts(!maskAmounts)}
+                className="my-btn-secondary flex items-center gap-2"
+                title={maskAmounts ? "Show amounts" : "Hide amounts"}
+              >
+                {maskAmounts ? (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Show Amounts
+                    </span>
+                    <BsToggleOff className="w-6 h-6 text-gray-400" />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Hide Amounts
+                    </span>
+                    <BsToggleOn className="w-6 h-6 text-primary" />
+                  </>
+                )}
+              </button>
 
-            {/* Create Advance Button */}
-            <Button
-              bgColor="primary"
-              size="md"
-              onClick={handleCreateAdvance}
-              className="hover:bg-primary-700 py-[0.65rem] font-semibold"
-            >
-              Create Advance
-            </Button>
+              {/* Create Advance Button */}
+              <Button
+                bgColor="primary"
+                size="md"
+                onClick={handleCreateAdvance}
+                className="hover:bg-primary-700 py-[0.65rem] font-semibold"
+              >
+                Create Advance
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Table Wrapper */}
-        <CardTable titles={titles} columnWidths={columnWidths}>
-          {formattedData.map((advance, index) => (
-            <div
-              key={`${advance.name}-${index}`}
-              className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-              style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
-              onClick={() => handleViewInstallments(advance)}
-            >
-              {/* Advance Name */}
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
+        <div className="px-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            {formattedData.map((advance, index) => (
+              <div
+                key={`${advance.name}-${index}`}
+                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+                onClick={() => handleViewInstallments(advance)}
               >
-                {advance.name}
-              </Typography>
+                {/* Advance Name */}
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {advance.name}
+                </Typography>
 
-              {/* Amount */}
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
-                ) : (
-                  <span>{formatCurrency(advance.amount)}</span>
-                )}
-              </Typography>
+                {/* Amount */}
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none text-gray-400">
+                      ₹XX,XXX
+                    </span>
+                  ) : (
+                    <span>{formatCurrency(advance.amount)}</span>
+                  )}
+                </Typography>
 
-              {/* Deductions */}
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
-                ) : (
-                  <span>{advance.numberOfDeductions}</span>
-                )}
-              </Typography>
+                {/* Deductions */}
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none text-gray-400">
+                      ₹XX,XXX
+                    </span>
+                  ) : (
+                    <span>{advance.numberOfDeductions}</span>
+                  )}
+                </Typography>
 
-              {/* Start Date */}
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {formatToIndianDate(advance.startDate)}
-              </Typography>
+                {/* Start Date */}
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {formatToIndianDate(advance.startDate)}
+                </Typography>
 
-              {/* End Date */}
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {formatToIndianDate(advance.endDate)}
-              </Typography>
+                {/* End Date */}
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {formatToIndianDate(advance.endDate)}
+                </Typography>
 
-              {/* Status with Tooltip */}
-              <div className="flex items-center justify-center">
-                <Tooltip content={advance.employee_name}>
-                  <StatusBadge status={advance.advanceStatus} />
-                </Tooltip>
+                {/* Status with Tooltip */}
+                <div className="flex items-center justify-center">
+                  <Tooltip content={advance.employee_name}>
+                    <StatusBadge status={advance.advanceStatus} />
+                  </Tooltip>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* Empty State */}
-          {formattedData.length === 0 && (
-            <div className="text-center py-12 px-4 text-gray-500">
-              No advances found.
-            </div>
-          )}
-        </CardTable>
+            {/* Empty State */}
+            {formattedData.length === 0 && (
+              <div className="text-center py-12 px-4 text-gray-500">
+                No advances found.
+              </div>
+            )}
+          </CardTable>
+        </div>
       </div>
     </div>
   );

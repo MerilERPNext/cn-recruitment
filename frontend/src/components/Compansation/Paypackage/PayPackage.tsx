@@ -37,15 +37,20 @@ export default function SalaryAssignmentList() {
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [showAmount, setShowAmount] = useState(true); // 👁 toggle state
 
-  const { data: payrollPeriods } =
-    useTaxSheetPayrollPriodsData(user?.company ?? null) as {
-      data: PayrollPeriod[] | undefined;
-    };
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    user?.company ?? null,
+  ) as {
+    data: PayrollPeriod[] | undefined;
+  };
 
-  const { data: apiResponse, isLoading, isError } = usePayPackage(
+  const {
+    data: apiResponse,
+    isLoading,
+    isError,
+  } = usePayPackage(
     user?.employee || "",
     selectedPeriod || "",
-    user?.company || ""
+    user?.company || "",
   );
 
   const { isDesktop } = useScreenSize();
@@ -57,27 +62,25 @@ export default function SalaryAssignmentList() {
   const toggleAmount = () => {
     setShowAmount((prev) => !prev);
   };
-useEffect(() => {
-  if (!payrollPeriods?.length || selectedPeriod) return;
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
 
-  const today = new Date(); 
+    const today = new Date();
 
-  const matchedPeriod = payrollPeriods.find((p) => {
-    const start = new Date(p.start_date);
-    const end = new Date(p.end_date);
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
 
-    // inclusive range check
-    return today >= start && today <= end;
-  });
+      // inclusive range check
+      return today >= start && today <= end;
+    });
 
-  setSelectedPeriod(
-    matchedPeriod?.name || payrollPeriods[0].name
-  );
-}, [payrollPeriods, selectedPeriod]);
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
 
   const list = useMemo(
     () => (Array.isArray(apiResponse) ? apiResponse : []),
-    [apiResponse]
+    [apiResponse],
   );
 
   const titles = [
@@ -86,11 +89,11 @@ useEffect(() => {
     "Fixed Gross Monthly",
     "Monthly CTC",
     "Fixed Gross Annual",
-    "Annual CTC",  
+    "Annual CTC",
     "Action",
   ];
 
-  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.4fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const SkeletonLoader = () => (
     <div className="space-y-4 animate-pulse mt-6">
@@ -110,276 +113,294 @@ useEffect(() => {
   };
 
   return (
-    <div className="mt-4">
-      {/* 🔹 Header ALWAYS visible */}
-      <SalaryAssignmentHeader
-        selectedPeriod={selectedPeriod}
-        onPeriodChange={handlePeriodChange}
-        payrollPeriods={payrollPeriods}
-        isLoading={isLoading}
-        showAmount={showAmount}
-        onToggleAmount={toggleAmount}
-      />
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        {/* 🔹 Header ALWAYS visible */}
+        <SalaryAssignmentHeader
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={handlePeriodChange}
+          payrollPeriods={payrollPeriods}
+          isLoading={isLoading}
+          showAmount={showAmount}
+          onToggleAmount={toggleAmount}
+        />
 
-      {/* 🔹 Page content ONLY */}
-      {isLoading && <SkeletonLoader />}
+        {/* 🔹 Page content ONLY */}
+        {isLoading && <SkeletonLoader />}
 
-      {isError && !isLoading && (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
-          <MdErrorOutline size={40} className="mb-2" />
-          <p className="text-lg font-semibold">Error loading data</p>
-          <p className="text-sm text-red-400">Please try again later</p>
-        </div>
-      )}
+        {isError && !isLoading && (
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
+            <MdErrorOutline size={40} className="mb-2" />
+            <p className="text-lg font-semibold">Error loading data</p>
+            <p className="text-sm text-red-400">Please try again later</p>
+          </div>
+        )}
 
-      {!isLoading && !isError && (
-        <>
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            <div>
-              {list.map((item) =>
-                isDesktop ? (
-                  <div
-                    key={item.name}
-                    className="my-data-row grid px-6 py-3 gap-4 items-center text-sm border hover:bg-primary/20 border-gray-100"
-                    style={{ gridTemplateColumns: columnWidths.join(" ") }}
-                  >
-                    <div>{item.from_date}</div>
-
-                    <div>
-                      <span
-                        className={`text-xs font-medium px-2 py-[1px] rounded-xl ${
-                          item.active === 1
-                            ? "bg-success-100 text-success border border-success-200"
-                            : "bg-gray-100 text-gray-400 border border-gray-200"
-                        }`}
+        {!isLoading && !isError && (
+          <>
+            <div className="px-4">
+              <CardTable titles={titles} columnWidths={columnWidths}>
+                {list.map((item) =>
+                  isDesktop ? (
+                    <div
+                      key={item.name}
+                      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                      style={{ gridTemplateColumns: columnWidths.join(" ") }}
+                    >
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
                       >
-                        {item.active === 1 ? "Active" : "Inactive"}
-                      </span>
-                    </div>
+                        {item.from_date}
+                      </Typography>
 
-
-
-                    <div>{renderAmount(item.fixed_gross_monthly)}</div>
-                    <div className="font-medium">
-                      {renderAmount(item.monthly_ctc)}
-                    </div>
-                    <div>{renderAmount(item.fixed_gross_annual)}</div>
-                    <div>{renderAmount(item.annual_ctc)}</div>
-                   
-                    
-
-                    <div className="flex items-center justify-start gap-2">
-                      <button
-                        onClick={() => setSelected(item)}
-                        className="text-primary border border-primary/40 px-2 py-0.5 rounded hover:bg-primary/20 text-sm font-medium"
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
                       >
-                        View
-                      </button>
-                      <button
-                        onClick={() => setSelectedVersionItem(item)}
-                        className="text-primary border border-primary-300 px-2 py-0.5 rounded hover:bg-primary/20 text-sm font-medium"
+                        <span
+                          className={`text-xs font-medium px-2 py-[1px] rounded-xl ${
+                            item.active === 1
+                              ? "bg-success-100 text-success border border-success-200"
+                              : "bg-gray-100 text-gray-400 border border-gray-200"
+                          }`}
+                        >
+                          {item.active === 1 ? "Active" : "Inactive"}
+                        </span>
+                      </Typography>
+
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
                       >
-                        Versions
-                      </button>
+                        {renderAmount(item.fixed_gross_monthly)}
+                      </Typography>
+
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
+                      >
+                        {renderAmount(item.monthly_ctc)}
+                      </Typography>
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
+                      >
+                        {renderAmount(item.fixed_gross_annual)}
+                      </Typography>
+
+                      <Typography
+                        variant="bodySmall"
+                        className="font-medium text-center"
+                      >
+                        {renderAmount(item.annual_ctc)}
+                      </Typography>
+
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelected(item)}
+                          className="text-primary border border-primary/40 px-2 py-0.5 rounded hover:bg-primary/20 text-sm font-medium"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => setSelectedVersionItem(item)}
+                          className="text-primary border border-primary-300 px-2 py-0.5 rounded hover:bg-primary/20 text-sm font-medium"
+                        >
+                          Versions
+                        </button>
+                      </div>
                     </div>
+                  ) : null,
+                )}
+
+                {!list.length && (
+                  <div className="my-empty-state-card py-10 text-center text-gray-500">
+                    No records found.
                   </div>
-                ) : null
-              )}
-
-              {!list.length && (
-                <div className="my-empty-state-card py-10 text-center text-gray-500">
-                  No records found.
-                </div>
-              )}
+                )}
+              </CardTable>
             </div>
-          </CardTable>
-        </>
-      )}
+          </>
+        )}
 
-      {/* ================= CTC MODAL ================= */}
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
-          <div
-            className={`bg-white w-full ${
-              isDesktop ? "max-w-[600px]" : ""
-            } shadow-lg relative h-screen overflow-y-auto`}
-          >
-            {isDesktop ? (
+        {/* ================= CTC MODAL ================= */}
+        {selected && (
+          <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
+            <div
+              className={`bg-white w-full ${
+                isDesktop ? "max-w-[600px]" : ""
+              } shadow-lg relative h-screen overflow-y-auto`}
+            >
+              {isDesktop ? (
+                <div className="flex justify-between items-center p-4 border-b">
+                  <Typography variant="subheading" color="body1">
+                    CTC Breakdown
+                  </Typography>
+                  <button
+                    onClick={() => setSelected(null)}
+                    className="text-gray-500 hover:text-black"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <HeaderBar
+                  title="CTC Breakdown"
+                  onBack={() => setSelected(null)}
+                />
+              )}
+
+              <div className="p-4 space-y-6 text-sm">
+                <div className="flex justify-between">
+                  <span className="font-semibold">Effective From</span>
+                  <span className="font-semibold">{selected.from_date}</span>
+                </div>
+
+                <Card className="grid gap-3 border border-gray-200 p-4 rounded">
+                  <div className="flex justify-between">
+                    <Typography variant="bodySmall" className="font-medium">
+                      Fixed Gross Monthly CTC
+                    </Typography>
+                    <Typography>
+                      {renderAmount(selected.fixed_gross_monthly)}
+                    </Typography>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Typography variant="bodySmall" className="font-medium">
+                      Monthly CTC
+                    </Typography>
+                    <Typography>
+                      {renderAmount(selected.monthly_ctc)}
+                    </Typography>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Typography variant="bodySmall" className="font-medium">
+                      Fixed Gross Annual CTC
+                    </Typography>
+                    <span className="font-semibold">
+                      {renderAmount(selected.fixed_gross_annual)}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Typography variant="bodySmall" className="font-medium">
+                      Annual CTC
+                    </Typography>
+                    <Typography>{renderAmount(selected.annual_ctc)}</Typography>
+                  </div>
+                </Card>
+
+                <div className="space-y-6">
+                  <p className="font-semibold">Salary Components</p>
+
+                  <Card className="space-y-2 border border-gray-200 rounded p-4">
+                    {selected.component_part_of_ctc?.map(
+                      (item: CTCComponentItem, index: number) => (
+                        <div
+                          key={item.component ?? index}
+                          className="flex justify-between items-start"
+                        >
+                          <Typography
+                            variant="bodySmall"
+                            className="font-medium flex"
+                          >
+                            {item.component}
+                            <Typography
+                              variant="bodySmall"
+                              className="ml-1"
+                              color="body2"
+                            >
+                              ({item.type})
+                            </Typography>
+                          </Typography>
+
+                          <div className="text-right">
+                            <Typography
+                              variant="bodySmall"
+                              className="font-medium"
+                            >
+                              Annual: {renderAmount(item.amount)}
+                            </Typography>
+                            <Typography
+                              variant="bodySmall"
+                              className="ml-1"
+                              color="body2"
+                            >
+                              Monthly:
+                              {renderAmount(
+                                item.amount ? item.amount / 12 : undefined,
+                              )}
+                            </Typography>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </Card>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= VERSION MODAL ================= */}
+        {selectedVersionItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white w-full max-w-[900px] shadow-lg rounded-lg overflow-hidden">
               <div className="flex justify-between items-center p-4 border-b">
-                <Typography variant="subheading" color="body1">
-                  CTC Breakdown
-                </Typography>
+                <Typography variant="subheading">Version History</Typography>
                 <button
-                  onClick={() => setSelected(null)}
+                  onClick={() => setSelectedVersionItem(null)}
                   className="text-gray-500 hover:text-black"
                 >
                   ✕
                 </button>
               </div>
-            ) : (
-              <HeaderBar
-                title="CTC Breakdown"
-                onBack={() => setSelected(null)}
-              />
-            )}
 
-            <div className="p-4 space-y-6 text-sm">
-              <div className="flex justify-between">
-                <span className="font-semibold">Effective From</span>
-                <span className="font-semibold">{selected.from_date}</span>
-              </div>
+              <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                {!selectedVersionItem.version?.length && (
+                  <p className="text-sm text-gray-500">
+                    No version history found.
+                  </p>
+                )}
 
-              <Card className="grid gap-3 border border-gray-200 p-4 rounded">
-                <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">
-                    Fixed Gross Monthly CTC
-                  </Typography>
-                  <Typography>
-                    {renderAmount(selected.fixed_gross_monthly)}
-                  </Typography>
-                </div>
-
-                <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">
-                    Monthly CTC
-                  </Typography>
-                  <Typography>
-                    {renderAmount(selected.monthly_ctc)}
-                  </Typography>
-                </div>
-
-                <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">
-                    Fixed Gross Annual CTC
-                  </Typography>
-                  <span className="font-semibold">
-                    {renderAmount(selected.fixed_gross_annual)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <Typography variant="bodySmall" className="font-medium">
-                    Annual CTC
-                  </Typography>
-                  <Typography>
-                    {renderAmount(selected.annual_ctc)}
-                  </Typography>
-                </div>
-              </Card>
-
-              <div className="space-y-6">
-                <p className="font-semibold">Salary Components</p>
-
-                <Card className="space-y-2 border border-gray-200 rounded p-4">
-                  {selected.component_part_of_ctc?.map(
-                    (item: CTCComponentItem, index: number) => (
-                      <div
-                        key={item.component ?? index}
-                        className="flex justify-between items-start"
-                      >
-                        <Typography
-                          variant="bodySmall"
-                          className="font-medium flex"
-                        >
-                          {item.component}
-                          <Typography
-                            variant="bodySmall"
-                            className="ml-1"
-                            color="body2"
-                          >
-                            ({item.type})
-                          </Typography>
-                        </Typography>
-
-                        <div className="text-right">
-                          <Typography
-                            variant="bodySmall"
-                            className="font-medium"
-                          >
-                            Annual: {renderAmount(item.amount)}
-                          </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            className="ml-1"
-                            color="body2"
-                          >
-                            Monthly:{" "}
-                            {renderAmount(
-                              item.amount ? item.amount / 12 : undefined
-                            )}
-                          </Typography>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= VERSION MODAL ================= */}
-      {selectedVersionItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-[900px] shadow-lg rounded-lg overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b">
-              <Typography variant="subheading">Version History</Typography>
-              <button
-                onClick={() => setSelectedVersionItem(null)}
-                className="text-gray-500 hover:text-black"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-              {!selectedVersionItem.version?.length && (
-                <p className="text-sm text-gray-500">
-                  No version history found.
-                </p>
-              )}
-
-              {selectedVersionItem.version?.map((ver: any) => (
-                <Card
-                  key={ver.version_name}
-                  className="border border-gray-200 rounded p-4 space-y-3"
-                >
-                  <div className="flex justify-between items-center">
-                    <Typography variant="bodySmall" className="font-semibold">
-                      Version: {ver.version_name}
-                    </Typography>
-                  </div>
-
-                  {ver.values_changed?.map((chg: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="text-sm border-l-4 border-indigo-400 pl-3"
-                    >
-                      <p className="font-medium">{chg.property}</p>
-                      <p className="text-gray-500">
-                        Old:{" "}
-                        <span className="">
-                          {chg.old_value}
-                        </span>
-                      </p>
-                      <p className="text-gray-500">
-                        New:{" "}
-                        <span className="">
-                          {chg.new_value}
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {chg.modified} by {chg.modified_by}
-                      </p>
+                {selectedVersionItem.version?.map((ver: any) => (
+                  <Card
+                    key={ver.version_name}
+                    className="border border-gray-200 rounded p-4 space-y-3"
+                  >
+                    <div className="flex justify-between items-center">
+                      <Typography variant="bodySmall" className="font-semibold">
+                        Version: {ver.version_name}
+                      </Typography>
                     </div>
-                  ))}
-                </Card>
-              ))}
+
+                    {ver.values_changed?.map((chg: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="text-sm border-l-4 border-indigo-400 pl-3"
+                      >
+                        <p className="font-medium">{chg.property}</p>
+                        <p className="text-gray-500">
+                          Old: <span className="">{chg.old_value}</span>
+                        </p>
+                        <p className="text-gray-500">
+                          New: <span className="">{chg.new_value}</span>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {chg.modified} by {chg.modified_by}
+                        </p>
+                      </div>
+                    ))}
+                  </Card>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

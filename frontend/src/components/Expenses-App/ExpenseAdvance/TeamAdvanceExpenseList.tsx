@@ -46,7 +46,7 @@ const TeamAdvanceExpenseList = () => {
         "Advance Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -54,7 +54,7 @@ const TeamAdvanceExpenseList = () => {
         "Advance Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
