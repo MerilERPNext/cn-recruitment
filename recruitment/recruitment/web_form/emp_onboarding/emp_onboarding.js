@@ -180,6 +180,13 @@ frappe.ready(function () {
                         safeSet("custom_initiate_onboarding_id", initiate_id);
                         safeSet("designation", d.designation);
                         safeSet("company", d.company);
+
+                        // Set department directly in doc model (field is hidden)
+                        if (d.department) {
+                            frappe.web_form.doc.department = d.department;
+                            console.log("✅ Department set in doc model:", d.department);
+                        }
+
                         console.log("✅ All Initiate fields set");
                     }, 2000);
                 }

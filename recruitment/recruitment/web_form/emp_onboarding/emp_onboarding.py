@@ -6,7 +6,7 @@ import base64
 # from frappe.utils.pdf import get_pdf
 # from frappe.utils.file_manager import save_file
 from frappe import _
-from frappe.utils import today
+from frappe.utils import today, add_days
 
 def get_context(context):
 	# do your magic here
@@ -279,12 +279,17 @@ def create_and_submit_job_offer(email, first_name, designation, job_applicant):
 		print(f"  designation: {designation}")
 		print(f"  offer_date: {today()}")
 
+		# Calculate expiry date (30 days from offer date)
+		offer_date = today()
+		expiry_date = add_days(offer_date, 30)
+
 		job_offer = frappe.get_doc({
 			"doctype": "Job Offer",
 			"job_applicant": job_applicant,
 			"applicant_name": first_name,
 			"designation": designation,
-			"offer_date": today(),
+			"offer_date": offer_date,
+			"custom_jo_expiry_date": expiry_date,
 			"company": default_company,
 			"status": "Awaiting Response"
 		})
