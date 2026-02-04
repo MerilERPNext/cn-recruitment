@@ -68,33 +68,28 @@ const AllTeamShiftsList: React.FC = () => {
   const teamShifts = data?.filter((shift) => shift.is_self === 0) ?? [];
 
   return (
-    <div className="w-full mx-auto pb-20">
-      <HeaderBar title="All Team Shifts123" onBack={() => navigate(-1)} />
-
-      <div className="px-4 mt-6">
-        <CardTable
-          /* ✅ Unified headers */
-          titles={[
-            "Employee",
-            "Shift Type",
-            "Start Date",
-            "End Date",
-            "Status",
-          ]}
-          /* ✅ Column widths synced with row */
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
-        >
-          {teamShifts.length > 0 ? (
-            teamShifts.map((shift, index) => (
-              <TeamShiftRowItem key={shift.name} item={shift} index={index} />
-            ))
-          ) : (
-            <div className="p-4 text-center text-gray-500">
-              No team shifts found.
-            </div>
-          )}
-        </CardTable>
-      </div>
+    <div className="w-full mx-auto py-4 px-4">
+      <HeaderBar
+        title="All Team Shifts"
+        className="mb-3"
+        onBack={() => navigate(-1)}
+      />
+      <CardTable
+        /* ✅ Unified headers */
+        titles={["Employee", "Shift Type", "Start Date", "End Date", "Status"]}
+        /* ✅ Column widths synced with row */
+        columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+      >
+        {teamShifts.length > 0 ? (
+          teamShifts.map((shift, index) => (
+            <TeamShiftRowItem key={shift.name} item={shift} index={index} />
+          ))
+        ) : (
+          <div className="p-4 text-center text-gray-500">
+            No team shifts found.
+          </div>
+        )}
+      </CardTable>
     </div>
   );
 };

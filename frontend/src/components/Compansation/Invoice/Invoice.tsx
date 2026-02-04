@@ -7,6 +7,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
 
 const formatINR = (num: number) => `₹ ${num.toLocaleString("en-IN")}`;
 
@@ -18,7 +19,7 @@ export default function Invoice() {
 
   const { data: invoiceData } = useInvoiceSalarySlip(
     user?.employee || "",
-    user?.company || ""
+    user?.company || "",
   );
 
   const invoices = Array.isArray(invoiceData) ? invoiceData : [];
@@ -41,79 +42,94 @@ export default function Invoice() {
     "Action",
   ];
 
-  const columnWidths = [
-    "1.2fr",
-    "1fr",
-    "1fr",
-    "1.5fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-gray-900">Invoices</h2>
-          <p className="text-sm text-gray-500">
-            Track and manage your invoices
-          </p>
-        </div>
-
-        {/* Hide Amount Toggle */}
-        <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
-          <span className="text-sm text-gray-600">
-            {hideAmount ? "Show Amount" : "Hide Amount"}
-          </span>
-          <button
-            onClick={() => setHideAmount((prev) => !prev)}
-            className={`w-8 h-5 rounded-xl relative transition ${
-              hideAmount ? "bg-primary-500" : "bg-gray-300"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${
-                hideAmount ? "right-0.5" : "left-0.5"
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* ✅ CardTable Wrapper */}
-      <CardTable titles={titles} columnWidths={columnWidths}>
-        <div className="border bg-white divide-y">
-          {invoices.map((inv: any, idx: number) => {
-            const invoiceNo = inv.name;
-
-            return (
-              <div
-                key={invoiceNo || idx}
-                className="hover:bg-primary/10"
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">Invoices</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your invoices
+              </Typography>
+            </div>
+            {/* Hide Amount Toggle */}
+            <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
+              <span className="text-sm text-gray-600">
+                {hideAmount ? "Show Amount" : "Hide Amount"}
+              </span>
+              <button
+                onClick={() => setHideAmount((prev) => !prev)}
+                className={`w-8 h-5 rounded-xl relative transition ${
+                  hideAmount ? "bg-primary-500" : "bg-gray-300"
+                }`}
               >
+                <span
+                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${
+                    hideAmount ? "right-0.5" : "left-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            {invoices.map((inv: any, idx: number) => {
+              const invoiceNo = inv.name;
+
+              return (
                 <div
-                  className="grid gap-4 px-6 py-4 text-sm"
-                  style={{
-                    gridTemplateColumns: columnWidths.join(" "),
-                    alignItems: "center",
-                  }}
+                  key={invoiceNo || idx}
+                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
                 >
-                  <div className="font-medium">{invoiceNo}</div>
-                  <div>{inv.start_date}</div>
-                  <div>{inv.end_date}</div>
-                  <div>{inv.employee_name}</div>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {invoiceNo}
+                  </Typography>
 
-                  <div className={`font-medium ${amountClass}`}>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.start_date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.end_date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.employee_name}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
                     {formatINR(inv.gross_pay || 0)}
-                  </div>
+                  </Typography>
 
-                  <div className={`font-medium ${amountClass}`}>
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
                     {formatINR(inv.net_pay || 0)}
-                  </div>
+                  </Typography>
 
-                  <div>
+                  <div className="flex items-center justify-center">
                     <InvoicePDFview
                       invoiceID={invoiceNo}
                       disabled={false}
@@ -121,17 +137,17 @@ export default function Invoice() {
                     />
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
-          {invoices.length === 0 && (
-            <div className="py-10 text-center text-gray-500">
-              No invoices found
-            </div>
-          )}
+            {invoices.length === 0 && (
+              <div className="py-10 text-center text-gray-500">
+                No invoices found
+              </div>
+            )}
+          </CardTable>
         </div>
-      </CardTable>
+      </div>
     </div>
   );
 }

@@ -130,11 +130,6 @@ const LeaveApprovalCard = ({
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>

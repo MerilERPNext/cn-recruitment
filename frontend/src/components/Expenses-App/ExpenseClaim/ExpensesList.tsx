@@ -43,7 +43,6 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-
   return (
     <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
       <div className="flex justify-between items-start">
@@ -151,13 +150,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
               : ""
           }
         >
-          {/* <span
-            className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.status,
-            )}`}
-          >
-            {item?.status === "Draft" ? "Pending" : item?.status}
-          </span> */}
           <StatusBadge status={item?.status} />
         </Tooltip>
       </div>

@@ -44,7 +44,7 @@ interface ViewModeContextType {
 }
 
 const ViewModeContext = createContext<ViewModeContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const SalarySlipApp: React.FC = () => {
@@ -66,7 +66,7 @@ const SalarySlipApp: React.FC = () => {
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -138,11 +138,7 @@ const SalarySlipApp: React.FC = () => {
   const desktopLayout = (
     <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
       <DesktopLayoutWrapper title="Compensation">
-        <div className="flex flex-col h-full bg-app">
-          <div className="flex-1 overflow-y-auto px-2 py-4">
-            <Outlet />
-          </div>
-        </div>
+        <Outlet />
       </DesktopLayoutWrapper>
     </ViewModeContext.Provider>
   );

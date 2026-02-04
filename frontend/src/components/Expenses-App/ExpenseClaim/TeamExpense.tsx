@@ -47,7 +47,7 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -55,7 +55,7 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled

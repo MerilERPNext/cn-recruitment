@@ -47,57 +47,58 @@ export default function LoansPage() {
       (loan) =>
         loan.loan_name?.toLowerCase().includes(lower) ||
         loan.loan_type?.toLowerCase().includes(lower) ||
-        loan.status?.toLowerCase().includes(lower)
+        loan.status?.toLowerCase().includes(lower),
     );
   }, [loanData, searchTerm]);
 
   // Desktop Layout
   const DesktopLayout = (
-    <div className="min-h-screen overflow-x-hidden">
-      <div className="w-full mx-auto px-2">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-2 px-2 border-b border-gray-200">
-          <div className="flex flex-col mb-2">
-            <Typography variant="h4">My Loan Requests</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your loan requests
-            </Typography>
-          </div>
-
-          <Button size="md" onClick={() => setIsDialogOpen(true)}>
-            Create Loans
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="pb-2 w-full">
-          <div className="relative w-full ">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <SearchIcon />
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">My Loan Requests</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your loan requests
+              </Typography>
             </div>
-            <input
-              type="text"
-              placeholder="Search loans..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
+            <Button size="md" onClick={() => setIsDialogOpen(true)}>
+              Create Loans
+            </Button>
+          </div>
+        </div>
+
+        <div className="px-4">
+          {/* Search */}
+          <div className="pb-2 w-full">
+            <div className="relative w-full ">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <SearchIcon />
+              </div>
+              <input
+                type="text"
+                placeholder="Search loans..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Loans List */}
-        <div className="">
-          <LoanList loans={filteredLoans} />
-        </div>
-
-        {filteredLoans.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <p className="text-gray-500">
-              No loans found matching your search criteria.
-            </p>
+          <div className="max-w-screen">
+            <LoanList loans={filteredLoans} />
           </div>
-        )}
+
+          {filteredLoans.length === 0 && (
+            <div className="text-center py-12 px-4">
+              <p className="text-gray-500">
+                No loans found matching your search criteria.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
