@@ -1,8 +1,9 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { useUpdateRejectionReason } from "../../hooks/useLeaves";
+import Button from "../shared/atoms/Button";
 import DOMPurify from "dompurify";
-import Badge from "../shared/Badge";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
@@ -32,6 +33,7 @@ export function LeaveDetailView({
   label?: string;
 }) {
   const mutation = useApprovalListActions();
+  const updateRejectionReasonMutation = useUpdateRejectionReason();
   const { setRefetchAttendance } = useGlobalStore();
 
   const {
@@ -69,8 +71,17 @@ export function LeaveDetailView({
   const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [rejectionComment, setRejectionComment] = useState("");
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
   const handleAction = useCallback(
     async (action: string) => {
+      if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+        setPendingAction(action);
+        setShowCommentModal(true);
+        return;
+      }
       setCurrentAction(action);
 
       try {
@@ -79,7 +90,15 @@ export function LeaveDetailView({
           action,
           name: data?.todo_id || "",
         });
-        toast.success(`Leave ${action} successfully`);
+        // toast.success(`Request ${action}ed Successfully!`);
+        const actionMap: Record<string, string> = {
+          Approve: "Approved",
+          Reject: "Rejected",
+        };
+
+        const finalAction = actionMap[action] ?? `${action}ed`;
+
+        toast.success(`Request ${finalAction} Successfully!`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
 
@@ -103,6 +122,9 @@ export function LeaveDetailView({
         if (onAction) {
           onAction();
         }
+        if (action.toLowerCase() === "reject") {
+          setRejectionComment("");
+        }
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
@@ -111,8 +133,37 @@ export function LeaveDetailView({
       }
     },
 
-    [data, mutation, onAction, setRefetchAttendance],
+    [data, mutation, onAction, setRefetchAttendance, rejectionComment],
   );
+
+  const handleSaveComment = async () => {
+    if (!rejectionComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    try {
+      await updateRejectionReasonMutation.mutateAsync({
+        id: data?.reference_document?.name || data?.reference_name || "",
+        reason: rejectionComment,
+      });
+
+      setShowCommentModal(false);
+
+      if (pendingAction) {
+        handleAction(pendingAction);
+        setPendingAction(null);
+        setRejectionComment("");
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingAction(null);
+  };
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -288,6 +339,70 @@ export function LeaveDetailView({
           </div>
         )}
       </div>
+      {showCommentModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onMouseDown={(e) => {
+            // e.preventDefault(); // Do not prevent default, otherwise input focus might break
+            e.stopPropagation();
+            // If we want clicking outside to close, we can check e.target
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Comment Required
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please add a comment before rejecting this leave request.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase mb-1 block">
+                REJECTION REASON *
+              </label>
+              <textarea
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="Enter rejection reason..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={4}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleCancelComment}
+                size="sm"
+                bgColor="disabled"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveComment}
+                size="sm"
+                bgColor="primary"
+                disabled={
+                  !rejectionComment.trim() ||
+                  updateRejectionReasonMutation.isPending
+                }
+              >
+                {updateRejectionReasonMutation.isPending ? (
+                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Save & Continue"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   ) : null;
 }

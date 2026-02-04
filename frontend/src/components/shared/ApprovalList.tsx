@@ -215,7 +215,15 @@ const ApprovalList = ({
               triggerRefetch();
             }
           } else {
-            toast.success("Approved Request Successfully!");
+            // toast.success(`Request ${action} Successfully!`);
+            const actionMap: Record<string, string> = {
+              Approve: "Approved",
+              Reject: "Rejected",
+            };
+
+            const finalAction = actionMap[action] ?? `${action}ed`;
+
+            toast.success(`Request ${finalAction} Successfully!`);
             triggerRefetch();
           }
         } catch (error: any) {

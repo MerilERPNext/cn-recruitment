@@ -450,3 +450,20 @@ export const useGetAttendanceStatus = (
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export function useUpdateRejectionReason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      leaveService.updateRejectionReason(id, reason),
+    onSuccess: () => {
+      // Invalidate relevant queries if needed, mainly specific document or list
+      queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
+      queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
+    },
+    onError: (err: unknown) => {
+      console.error("Failed to update rejection reason:", err);
+      toast.error("Failed to save rejection reason");
+    },
+  });
+}
