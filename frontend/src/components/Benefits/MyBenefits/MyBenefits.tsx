@@ -20,6 +20,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { getCurrentPeriod } from "../shared/logic";
 
 export const COLUMN_LAYOUT =
   "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
@@ -52,15 +53,8 @@ const MyBenefits: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      const currentYear = new Date().getFullYear();
-      const currentYearOption = optionYears.find((option) => {
-        const [startYear] = option.value.split("-").map(Number);
-        return startYear + 1 === currentYear % 100;
-      });
-      setSelectedYear(currentYearOption?.value || optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const { data: allAccruedReimbursements, isLoading } =
     useGetAllAccruedReimbursements(
