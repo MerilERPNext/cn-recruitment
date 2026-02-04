@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useMemo } from "react";
 import { X, HelpCircle, Upload, Trash2, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -48,6 +48,28 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
   // Mutation
   const createTicketMutation = useCreateTicket();
+
+  // Check if attachment is mandatory based on selected category/subcategory
+  const isAttachmentMandatory = useMemo(() => {
+    // Check subcategory first
+    if (subcategory) {
+      const selectedSubcat = subcategories.find(s => s.name === subcategory);
+      if (selectedSubcat) {
+        // If subcategory has same_attachment_setting_as_category, check parent category
+        if (selectedSubcat.same_attachment_setting_as_category) {
+          const selectedCat = categories.find(c => c.name === category);
+          return selectedCat?.make_attachment_mandatory ?? false;
+        }
+        return selectedSubcat.make_attachment_mandatory ?? false;
+      }
+    }
+    // Check category
+    if (category) {
+      const selectedCat = categories.find(c => c.name === category);
+      return selectedCat?.make_attachment_mandatory ?? false;
+    }
+    return false;
+  }, [category, subcategory, categories, subcategories]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -149,6 +171,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
     if (!description.trim()) {
       toast.error("Description is required");
+      return;
+    }
+    if (isAttachmentMandatory && attachments.length === 0) {
+      toast.error("Attachment is required for this category");
       return;
     }
 
@@ -344,7 +370,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
           {/* Attachments */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attachments
+              Attachments{isAttachmentMandatory && <span className="text-red-500">*</span>}
             </label>
             <div
               onDragOver={handleDragOver}
