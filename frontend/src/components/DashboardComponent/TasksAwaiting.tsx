@@ -7,6 +7,8 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { useNavigate } from "react-router-dom";
+import CustomDropdown from "../shared/CustomDropdown";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface ToDo {
   priority: string;
@@ -83,6 +85,7 @@ const TasksAwaiting: React.FC = () => {
   const currentEmployeeId = currentEmployee?.name;
 
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
 
   const handleTodoClick = () => navigate("/webapp/todo-app");
 
@@ -129,6 +132,17 @@ const TasksAwaiting: React.FC = () => {
 
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
+  const filterOptions = useMemo(
+    () => [
+      { label: `All (${totalCount})`, value: "All" },
+      ...Object.entries(categoryCounts).map(([cat, count]) => ({
+        label: `${cat} (${count})`,
+        value: cat,
+      })),
+    ],
+    [categoryCounts, totalCount],
+  );
+
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -138,35 +152,54 @@ const TasksAwaiting: React.FC = () => {
         <ViewAll title="View to-do" onClick={handleTodoClick} />
       </div>
 
-      <div className="flex gap-3 mb-4 p-2">
-        <button
-          onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
-              ? "bg-primary text-white scale-105"
-              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+      {/* Mobile Filter Dropdown */}
+      {!isDesktop && (
+        <div className="block mb-4 w-full">
+          <CustomDropdown
+            value={activeCategory}
+            options={filterOptions}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            label="All"
+            variant="soft"
+            className="w-full [&>button]:w-full [&>button]:justify-between"
+          />
+        </div>
+      )}
+
+      {/* <div className="flex gap-3 mb-4 p-2"> */}
+      {isDesktop && (
+        <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
+          <button
+            onClick={() => setActiveCategory("All")}
+            className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
+              activeCategory === "All"
+                ? "bg-primary text-white scale-105"
+                : "bg-primary-100 text-primary-700 hover:bg-primary-300"
             } transition-all`}
-        >
-          All ({totalCount})
-        </button>
+          >
+            All ({totalCount})
+          </button>
 
-        {Object.entries(categoryCounts).map(([cat, count], idx) => {
-          const isActive = activeCategory === cat;
-          const colors = generatePastelColor(idx);
+          {Object.entries(categoryCounts).map(([cat, count], idx) => {
+            const isActive = activeCategory === cat;
+            const colors = generatePastelColor(idx);
 
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                  ? `scale-105 ring-2 ${colors}`
-                  : `${colors} opacity-70 hover:opacity-100`
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                  isActive
+                    ? `scale-105 ring-2 ${colors}`
+                    : `${colors} opacity-70 hover:opacity-100`
                 } `}
-            >
-              {cat} ({count})
-            </button>
-          );
-        })}
-      </div>
+              >
+                {cat} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {currentEmployeeId && fullData.length === 0 && (
         <FrappeListView
