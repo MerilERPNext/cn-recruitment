@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CardTable from "../../shared/CardTable";
 import { useState } from "react";
 import { formatCurrency } from "../../../utils/currencyFormatter";
@@ -12,10 +13,12 @@ import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
-    null
+    null,
   );
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
@@ -53,25 +56,48 @@ const MyAdvanceExpenseList = () => {
 
     return (
       <div
-        className="grid gap-4 px-6 py-5 border-b hover:bg-primary/10 border-gray-100 text-sm text-gray-700 items-center"
+        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <WrapperHoverCard employeeId={doc.employee}>
-          <span>{doc.employee_name}</span>
-        </WrapperHoverCard>
-        <span>{formatToIndianDate(doc.posting_date)}</span>
-        <span>{doc.company}</span>
-        <span>{doc.department}</span>
-        <span>{formatCurrency(doc.advance_amount)}</span>
-        <div className="flex justify-start">
-          <Tooltip
-            content={status?.label === "Pending" ? item?.allocated_to : ""}
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate"
           >
-            <Badge
-              size="sm"
+            <WrapperHoverCard employeeId={doc.employee}>
+              {doc.employee_name}
+            </WrapperHoverCard>
+          </Typography>
+        </Link>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatToIndianDate(doc.posting_date)}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.company}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.department}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formatCurrency(doc.advance_amount)}
+        </Typography>
+        <div className="flex items-center justify-center">
+          <Tooltip
+            content={
+              status?.label === "Pending"
+                ? `Allocated to : ${item?.allocated_to}`
+                : ""
+            }
+          >
+            {/* <Badge
+              size="md"
               backgroundColor={status?.statusColor}
               label={status?.label || ""}
-            />
+            /> */}
+            <StatusBadge status={item?.reference_document?.status} />
           </Tooltip>
         </div>
       </div>
@@ -100,10 +126,14 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Employee:</span> {doc.employee_name}
-        </p>
+        <Link
+          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          target="_blank"
+        >
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Employee:</span> {doc.employee_name}
+          </p>
+        </Link>
 
         <p className="text-sm text-gray-600">
           <span className="font-medium">Date:</span>{" "}
@@ -137,21 +167,18 @@ const MyAdvanceExpenseList = () => {
   };
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
-    >
-      <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
             <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
           </div>
         </div>
-
-        <CardTable
+        <div className="px-4">
+          <CardTable
             titles={[
               "Employee",
               "Posting Date",
@@ -169,11 +196,11 @@ const MyAdvanceExpenseList = () => {
                 params: {
                   doctype: "Employee Advance",
                   employee: currentEmployee?.name,
-                  status: "Pending",
                 },
               }}
               defaultFilters={{
                 custom_type: "Reimbursement / Expense Advance",
+                status: "Pending",
               }}
               ItemComponent={RowWrapper}
               SkeletonComponent={() => (
@@ -207,6 +234,7 @@ const MyAdvanceExpenseList = () => {
               loadMorePagination={false}
             />
           </CardTable>
+        </div>
       </div>
 
       {selectedAdvanceId && (

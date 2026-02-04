@@ -1,4 +1,9 @@
+import axios from "axios";
 import FrappeAPI from "../../utils/frappeAPI";
+
+type FetchHTMLArgs = {
+  salary_slip: string;
+};
 
 export const getPerquisite = async (
   employeeId?: string,
@@ -12,4 +17,35 @@ export const getPerquisite = async (
   })  
 
   return response;  
+};
+
+
+export const getInvoiceSalarySlip = async (
+  employeeId?: string,
+  company?: string,
+) => {
+  const response = await FrappeAPI.callMethod("cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.get_salary_slip_list", {
+    employee: employeeId,
+    company: company,
+  })  
+
+  return response;  
+};
+
+const fetchHTML = async (method: string, args: FetchHTMLArgs) => {
+  const response = await axios.get(`/api/method/${method}`, {
+    params: args, 
+  });
+
+  const data = response.data?.message ?? response.data;
+  return data?.response ?? data;
+};
+
+export const getInvoiceHTMLSheet = async (invoiceID: string) => {
+  return fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.leegality.view_signed_payslip",
+    {
+      salary_slip: invoiceID, 
+    }
+  );
 };

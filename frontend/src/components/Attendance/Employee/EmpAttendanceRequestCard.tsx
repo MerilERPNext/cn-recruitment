@@ -11,22 +11,32 @@ import { createPortal } from "react-dom";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Link } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import { truncateByChars } from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const EmpAttendanceRequestCard = ({
   data,
   type,
-  columns = 7,
 }: {
   data: MyAttendanceRequest;
-  columns?: number;
   type: "actioned" | "pending";
 }) => {
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
+
+  const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
+      loading?.show("Revoking Request...");
       revokeEventMutation.mutate(
         {
           docname: data?.reference_name,
@@ -38,8 +48,16 @@ const EmpAttendanceRequestCard = ({
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
+            toast.success("Attendance Request Revoked Successfully!");
           },
-        }
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
       );
     }
   };
@@ -71,76 +89,100 @@ const EmpAttendanceRequestCard = ({
   };
 
   const status = getStatus(data?.reference_document?.custom_status);
+  function getDays(from_date: string, to_date: string) {
+    const format = "dd-MM-yyyy";
 
+    const fromDate = startOfDay(parse(from_date, format, new Date()));
+    const toDate = startOfDay(parse(to_date, format, new Date()));
 
-  const formattedFromDate = formatToIndianDate(data?.reference_document?.from_date);
+    const diff = differenceInCalendarDays(toDate, fromDate);
+
+    return diff + 1; // inclusive
+  }
+
+  const formattedFromDate = formatToIndianDate(
+    data?.reference_document?.from_date,
+  );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
+  const duration = getDays(formattedToDate, formattedFromDate);
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+
   return (
     <>
       {isDesktop ? (
         <div
-          className={`grid grid-cols-${columns} items-center gap-4 px-6 h-14 border-b border-gray-50 transition-colors cursor-pointer`}
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+          style={{ gridTemplateColumns }}
         >
-
           {/* Request Type */}
-          <div className="text-sm font-medium text-gray-700 text-start truncate">
-            {data?.reference_document?.custom_request_type}
-          </div>
+          <Tooltip content={data?.reference_document?.custom_request_type}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {truncateByChars(data?.reference_document?.custom_request_type)}
+            </Typography>
+          </Tooltip>
 
           {/* From Date */}
-          <div className="text-sm text-gray-900 text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formattedFromDate}
-          </div>
+          </Typography>
 
           {/* To Date */}
-          <div className="text-sm text-gray-900 text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formattedToDate}
-          </div>
-          {/* To Date */}
-          <div className="text-sm text-gray-900 text-start">
+          </Typography>
+          {/* Due Date */}
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formattedDueDate}
-          </div>
-          <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-            <div className="text-sm font-medium text-gray-700 text-start truncate">
-              {data?.username}
-            </div>
-          </WrapperHoverCard>
-          {/* Status */}
-          <div className="flex justify-start">
-            <Tooltip
-              content={status?.label === "Pending" ? data?.allocated_to : ""}
+          </Typography>
+          {/* Duration */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {duration > 1 ? duration + " Days" : duration + " Day"}
+          </Typography>
+
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
+            target="_blank"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
             >
-              <Badge
-                size="sm"
+              {" "}
+              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
+                {data?.username}
+              </WrapperHoverCard>
+            </Typography>
+          </Link>
+          {/* Status */}
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              {/* <Badge
+                size="md"
+                label={status?.label as string}
                 backgroundColor={status?.statusColor}
-                label={status?.label || ""}
-              />
+              /> */}
+              <StatusBadge status={data?.reference_document?.custom_status} />
             </Tooltip>
           </div>
-          <div className="text-sm text-gray-900 text-start flex gap-2 items-center">
-            {data?.custom_allow_revoke && type === "pending" ? (
-              <Button
-                icon={<RotateCcw className="h-3 w-3" />}
-                variant="soft"
-                size="sm"
-                onClick={handleRevokeClick}
-                disabled={revokeEventMutation.isPending}
-              >
-                {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-              </Button>
-            ) : (
-              <></>
-            )}
-            {type == "pending" && data?.can_edit && (
-              <Button
-                onClick={() => {
-                  setEdit(true);
-                }}
-              >
-                Edit
-              </Button>
-            )}
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              isPending={type === "pending"}
+              canRevoke={!!data?.custom_allow_revoke}
+              canEdit={!!data?.can_edit}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={() => setEdit(true)}
+            />
           </div>
         </div>
       ) : (
@@ -153,6 +195,13 @@ const EmpAttendanceRequestCard = ({
                     <p className="whitespace-nowrap card-title">
                       {data?.reference_document?.custom_request_type}
                     </p>
+                    <Badge
+                      size="sm"
+                      backgroundColor={"bg-blue-100 text-blue-800"}
+                      label={
+                        duration > 1 ? duration + " Days" : duration + " Day"
+                      }
+                    />
                   </div>
                   <div className="text-sm text-gray-900 text-start flex gap-2">
                     {data?.custom_allow_revoke && type === "pending" ? (
@@ -203,7 +252,7 @@ const EmpAttendanceRequestCard = ({
             defaultAttendanceData={data}
             forActionType="edit"
           />,
-          document.body
+          document.body,
         )}
     </>
   );

@@ -13,6 +13,7 @@ import type {
   EmployeeRegularize,
   EmployeeShift,
   EmployeeShiftSummary,
+  EmployeeTeamCheckIns,
   IOvertimeLog,
   IPRestrictionsT,
   Policy,
@@ -21,6 +22,7 @@ import type {
   ShiftLocationT,
   UserRoles,
   WeeklyOff,
+  WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -35,6 +37,52 @@ export const attendanceService = {
     });
     return response.data as Attendance[];
   },
+
+
+
+
+
+  getDataOfAttendance: async (
+    empId: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance_api.get_first_level_reports",
+        {
+          manager_id: empId,
+        }
+      );
+      console.log("Raw response from getDataOfAttendance:", res);
+      return res;
+
+    } catch (error) {
+      console.error("📡 Error while fetching attendance:", error);
+      throw error;
+    }
+  },
+  getDataOfAttendanceDetails: async (
+    selectedReporties: string,
+    selectedDate: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const res = await FrappeAPI.callMethod(
+        "cn_leave_shift_managment.attendance_api.get_attendance_status_today",
+        {
+          reports_to: selectedReporties,
+          date: selectedDate,
+        }
+      );
+      console.log("Raw response from getDataOfAttendance:", res);
+      return res;
+
+    } catch (error) {
+      console.error("📡 Error while fetching attendance:", error);
+      throw error;
+    }
+  },
+
 
   getHomeSummaryDetails: async (
     userId: string,
@@ -63,6 +111,7 @@ export const attendanceService = {
         "nextai.api.microapps.user_preferences.get_user_microapps",
         {
           filters: filters || "",
+          limit: 100,
         }
       );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,6 +152,46 @@ export const attendanceService = {
         }
       );
       return response as EmployeeShift;
+    } catch (error) {
+      console.error("📡 Error in fetching employee shift:", error);
+      throw error;
+    }
+  },
+  getTeamCheckinSummary: async (
+    userId: string,
+    filters?: object
+  ): Promise<EmployeeTeamCheckIns> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.attendance_api.get_team_checkin_summary",
+        {
+          user: userId,
+          filters: filters,
+        }
+      );
+      return response as EmployeeTeamCheckIns;
+    } catch (error) {
+      console.error("📡 Error in fetching employee shift:", error);
+      throw error;
+    }
+  },
+  getEmployeeWorkingHours: async (
+    userId: string,
+    from_date: string,
+    to_date: string,
+    filters?: object
+  ): Promise<WorkingHoursResponse> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.attendance_api.get_employee_working_hours",
+        {
+          user: userId,
+          from_date: from_date,
+          to_date: to_date,
+          filters: filters,
+        }
+      );
+      return response as WorkingHoursResponse;
     } catch (error) {
       console.error("📡 Error in fetching employee shift:", error);
       throw error;
@@ -289,12 +378,10 @@ export const attendanceService = {
     filters: any
   ): Promise<AttendanceRecord[]> => {
     try {
-      console.log("📅 Calling get_events with filters:", filters);
       const response = await FrappeAPI.callMethod(
         `cn_leave_shift_managment.get_events`,
         filters
       );
-      console.log("📅 Successfully got events response:", response);
       return response as AttendanceRecord[];
     } catch (error) {
       console.error("📡 Error while getting events and attendance:", error);
@@ -743,3 +830,5 @@ export const getAllShiftBlocks = async (
     data: res.data as ShiftBlock[], // Return the expected format
   };
 };
+
+

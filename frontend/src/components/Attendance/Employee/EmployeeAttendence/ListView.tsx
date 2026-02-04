@@ -3,7 +3,7 @@ import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useNavigate } from "react-router-dom";
 import { ViewAll } from "../../../shared/atoms/ViewAll";
 import DropdownMenu from "../../../shared/DropDownMenu";
-import { ClipboardPlus, LogIn, MoreVertical, Shield } from "lucide-react";
+import { ClipboardPlus, Clock12, LogIn, MoreVertical, Shield } from "lucide-react";
 import SideDrawer, { DrawerSize } from "../../../shared/SideDrawer";
 import { useState } from "react";
 import ViewPolicies from "./ViewPolicies";
@@ -26,7 +26,7 @@ const ListView = () => {
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   return (
-    <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
+    <div className="w-full flex justify-end md:justify-between items-center border-b border-gray-100 pb-2">
       {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
       {isDesktop && (
         <div className="flex flex-col gap-2 mt-4 mx-5">
@@ -64,7 +64,7 @@ const ListView = () => {
               { label: "View Policies", icon: <Shield className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "policies", label: "View Policies", sideBarSize: "xl" }) } },
               { label: "Check In Status", icon: <LogIn className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "checkInStatus", label: "Check In Status", sideBarSize: "xxl" }) } },
               { label: "Audit Report", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "auditReport", label: "Audit Report", sideBarSize: "xxl" }) } },
-              { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
+              { label: "Overtime Log", icon: <Clock12 className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
             ]}
           >
             <button className="p-1  border-1 rounded-lg hover:bg-gray-200">

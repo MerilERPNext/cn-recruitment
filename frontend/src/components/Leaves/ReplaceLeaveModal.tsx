@@ -8,6 +8,9 @@ import {
 } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import Button from "../shared/atoms/Button";
+import { useScreenSize } from "../../hooks/useScreenSize";
+
 
 interface ReplaceLeaveOverlayProps {
   isOpen: boolean;
@@ -20,6 +23,7 @@ interface ReplaceLeaveOverlayProps {
   fromDate?: string;
   toDate?: string;
 }
+
 const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
   isOpen,
   onClose,
@@ -36,6 +40,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
     currentEmployee?.name,
     today
   );
+  const {isDesktop}  = useScreenSize() 
 
   const [activeLeaveType, setActiveLeaveType] = useState<string | undefined>();
 
@@ -159,10 +164,6 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
           required: fields?.mandatory?.custom_attachment === 1,
           customMessage: "Attachment is required",
         },
-        fileTypes: [
-          { label: "Documents", value: ".pdf,.doc,.docx" },
-          { label: "Images", value: ".jpg,.jpeg,.png" },
-        ],
         filePattern: "*/*",
         customClass: "px-2 mb-4",
       });
@@ -212,7 +213,7 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
             Replace Leave Type
           </h2>
           <button
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full"
             onClick={onClose}
           >
             <X />
@@ -241,12 +242,13 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
                 "border border-gray-300 rounded px-2 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200",
             }}
           />
-          <button
-            onClick={handleReplace}
-            className="w-full bg-primary hover:bg-primary-600 text-white py-2 rounded-md transition-colors"
-          >
-            Replace
-          </button>
+          <div className="flex justify-end">
+           {isDesktop ? <Button onClick={handleReplace} variant="contain" size="md">
+              Replace    
+            </Button> : <Button onClick={handleReplace} variant="contain" size="md" fullWidth>
+              Replace    
+            </Button>}
+          </div>
         </div>
       </div>
     </div>

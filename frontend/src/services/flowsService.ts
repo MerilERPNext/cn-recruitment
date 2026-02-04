@@ -90,3 +90,9 @@ export const postSelectEventFromOptions = async (
 
   return response as any;
 };
+
+export const getShouldShowConfirmationButton = async (
+) => {
+  const response = FrappeAPI.callMethod('recruitment.recruitment.scheduled_jobs.should_show_confirmation_button');
+  return response as any;
+};

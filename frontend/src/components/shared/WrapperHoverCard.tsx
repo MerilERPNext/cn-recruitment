@@ -97,19 +97,43 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     const rect = targetRef.current.getBoundingClientRect();
     const cardRect = cardRef.current.getBoundingClientRect();
 
-    let top = rect.top + window.scrollY;
-    let left = rect.right + window.scrollX - 12;
+    let top = 0;
+    let left = 0;
 
-    if (placement === "center-left") {
-      left = rect.left + window.scrollX - cardRect.width - 12;
+    switch (placement) {
+      case "bottom-right":
+        top = rect.bottom + window.scrollY + 8;
+        left = rect.left + window.scrollX;
+        break;
+
+      case "bottom-left":
+        top = rect.bottom + window.scrollY + 8;
+        left = rect.right + window.scrollX - cardRect.width;
+        break;
+
+      case "top-right":
+        top = rect.top + window.scrollY - cardRect.height - 8;
+        left = rect.left + window.scrollX;
+        break;
+
+      case "top-left":
+        top = rect.top + window.scrollY - cardRect.height - 8;
+        left = rect.right + window.scrollX - cardRect.width;
+        break;
+
+      case "center-left":
+        top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+        left = rect.left + window.scrollX - cardRect.width - 12;
+        break;
+
+      case "center-right":
+      default:
+        top = rect.top + window.scrollY + rect.height / 2 - cardRect.height / 2;
+        left = rect.right + window.scrollX + 12;
     }
 
-    setPos({
-      top: top + rect.height / 2 - cardRect.height / 2,
-      left: left ,
-    });
+    setPos({ top, left });
   };
-
 
   useLayoutEffect(() => {
     if (show) updatePosition();
@@ -189,7 +213,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                             className="w-16 h-16 rounded-full flex items-center justify-center text-white font-semibold text-lg"
                             style={{
                               background: stringToPastelColor(
-                                emp["Full Name"] || "U"
+                                emp["Full Name"] || "U",
                               ),
                             }}
                           >
@@ -197,14 +221,16 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           </div>
                         )}
 
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900">
+                        <div className="flex-1 min-w-0 group">
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                             {emp["Full Name"]}
                           </p>
-                          <p className="text-sm text-gray-600 mt-0.5">
+
+                          <p className="text-sm text-gray-600 mt-0.5 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                             @{emp.Designation}
                           </p>
-                          <p className="text-sm text-gray-500 mt-1">
+
+                          <p className="text-sm text-gray-500 mt-1 truncate group-hover:whitespace-normal group-hover:overflow-visible">
                             {emp["Company Email"] || emp["Personal Email"]}
                           </p>
                         </div>
@@ -233,7 +259,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           <p className="font-medium text-gray-900">
                             {emp["Date of Joining"]
                               ? new Date(
-                                  emp["Date of Joining"]
+                                  emp["Date of Joining"],
                                 ).toLocaleDateString("en-IN", {
                                   day: "2-digit",
                                   month: "long",
@@ -262,7 +288,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
               )}
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

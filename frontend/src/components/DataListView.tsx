@@ -28,6 +28,7 @@ import {
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
+import { useScreenSize } from "../hooks/useScreenSize";
 
 interface BaseItem {
   name?: string;
@@ -63,6 +64,11 @@ export interface PostListComponentProps<T> {
   totalCount: number;
 }
 
+export interface FilterOption {
+  label: string;
+  value: string;
+}
+
 export interface FilterField {
   fieldname: string;
   label: string;
@@ -75,7 +81,8 @@ export interface FilterField {
     | "Check"
     | "Date"
     | "Datetime";
-  options?: string[];
+  // options?: string[];
+  options?: (string | FilterOption)[];
 }
 
 interface DataListViewProps<T extends BaseItem> {
@@ -159,6 +166,7 @@ const DataListView = <T extends BaseItem>({
 
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
+  const { isDesktop } = useScreenSize();
 
   useEffect(() => {
     if (onFiltersChange) {
@@ -184,7 +192,7 @@ const DataListView = <T extends BaseItem>({
   // Memoize stringified defaultFilters to avoid complex dependency
   const defaultFiltersString = useMemo(
     () => JSON.stringify(defaultFilters),
-    [defaultFilters]
+    [defaultFilters],
   );
 
   useEffect(() => {
@@ -211,7 +219,7 @@ const DataListView = <T extends BaseItem>({
   // Memoize stringified filters to avoid complex dependency
   const currentFiltersString = useMemo(
     () => JSON.stringify(debouncedFilters),
-    [debouncedFilters]
+    [debouncedFilters],
   );
 
   // Reset to first page when search or filters change
@@ -254,7 +262,7 @@ const DataListView = <T extends BaseItem>({
       queryParamsFilters,
       searchFields,
       orderBy,
-    ]
+    ],
   );
 
   // Infinite query for infinite scroll - always call both hooks but enable conditionally
@@ -270,7 +278,7 @@ const DataListView = <T extends BaseItem>({
     {
       enabled: infiniteScroll && !isLoading && !!customAPI,
       refetchOnWindowFocus: false,
-    }
+    },
   );
 
   const fetchFunctionInfiniteResult = useInfiniteQuery({
@@ -306,7 +314,7 @@ const DataListView = <T extends BaseItem>({
       enabled:
         !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
       refetchOnWindowFocus: false,
-    }
+    },
   );
 
   const fetchFunctionPaginationResult = useQuery({
@@ -344,7 +352,7 @@ const DataListView = <T extends BaseItem>({
     {
       enabled: loadMorePagination && !isLoading && !!customAPI,
       refetchOnWindowFocus: false,
-    }
+    },
   );
 
   const fetchFunctionLoadMoreResult = useQuery({
@@ -403,8 +411,8 @@ const DataListView = <T extends BaseItem>({
   const queryResult = infiniteScroll
     ? infiniteQueryResult
     : loadMorePagination
-    ? loadMoreQueryResult
-    : paginationQueryResult;
+      ? loadMoreQueryResult
+      : paginationQueryResult;
 
   // Process data based on query type
   const processedData = useMemo(() => {
@@ -442,7 +450,7 @@ const DataListView = <T extends BaseItem>({
         setAccumulatedData((prev) => {
           // Check if this data is already included to prevent duplicates
           const existingIds = new Set(
-            prev.map((item) => item.name || item.id || JSON.stringify(item))
+            prev.map((item) => item.name || item.id || JSON.stringify(item)),
           );
           const filteredNewData = newData.filter((item) => {
             const id = item.name || item.id || JSON.stringify(item);
@@ -510,11 +518,16 @@ const DataListView = <T extends BaseItem>({
       ...prev,
       [fieldname]: value,
     }));
+
+    setShowFilters(false);
   };
 
   const clearFilters = () => {
-    setFilters({});
-    setDebouncedFilters({});
+    // setFilters({});
+    // setDebouncedFilters({});
+    setFilters(defaultFilters);
+    setDebouncedFilters(defaultFilters);
+
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
@@ -675,117 +688,101 @@ const DataListView = <T extends BaseItem>({
 
     return (
       <>
-        {/* Backdrop overlay */}
+        {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 bg-black bg-opacity-40 z-40"
           onClick={() => setShowFilters(false)}
         />
-        {/* Action sheet */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-xl shadow-2xl z-50 transform transition-transform duration-300 ease-in-out">
-          {/* Handle bar */}
-          <div className="flex justify-center pt-3 pb-2">
-            <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
-          </div>
+
+        {/* Right Side Drawer */}
+        <div
+          className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50
+        transform transition-transform duration-300 ease-in-out
+        ${showFilters ? "translate-x-0" : "translate-x-full"}`}
+        >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+          <div className="px-6 py-4 border-b flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <button
+              onClick={() => setShowFilters(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
           </div>
-          {/* Filters content */}
-          <div className="px-6 py-4 max-h-96 overflow-y-auto">
-            <div className="space-y-4">
-              {filterFields.map((field) => (
-                <div key={field.fieldname}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {field.label}
-                  </label>
-                  {field.fieldtype === "Select" ? (
-                    <select
-                      value={filters[field.fieldname] || ""}
-                      onChange={(e) =>
-                        handleFilterChange(field.fieldname, e.target.value)
+
+          {/* Filters Content */}
+          <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
+            {filterFields.map((field) => (
+              <div key={field.fieldname}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {field.label}
+                </label>
+
+                {field.fieldtype === "Select" ? (
+                  <select
+                    value={filters[field.fieldname] || ""}
+                    onChange={(e) =>
+                      handleFilterChange(field.fieldname, e.target.value)
+                    }
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select</option>
+
+                    {field.options?.map((option) => {
+                      if (typeof option === "string") {
+                        return (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        );
                       }
-                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    >
-                      {field.options?.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
+                      return (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
-                      ))}
-                    </select>
-                  ) : field.fieldtype === "Check" ? (
-                    <input
-                      type="checkbox"
-                      checked={filters[field.fieldname] || false}
-                      onChange={(e) =>
-                        handleFilterChange(field.fieldname, e.target.checked)
-                      }
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  ) : field.fieldtype === "Date" ||
-                    field.fieldtype === "Datetime" ? (
-                    <input
-                      type={
-                        field.fieldtype === "Datetime"
-                          ? "datetime-local"
-                          : "date"
-                      }
-                      value={filters[field.fieldname] || ""}
-                      onChange={(e) =>
-                        handleFilterChange(field.fieldname, e.target.value)
-                      }
-                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={filters[field.fieldname] || ""}
-                      onChange={(e) =>
-                        handleFilterChange(field.fieldname, e.target.value)
-                      }
-                      placeholder={`Filter by ${field.label}`}
-                      className="block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+                      );
+                    })}
+                  </select>
+                ) : field.fieldtype === "Check" ? (
+                  <input
+                    type="checkbox"
+                    checked={filters[field.fieldname] || false}
+                    onChange={(e) =>
+                      handleFilterChange(field.fieldname, e.target.checked)
+                    }
+                    className="h-4 w-4"
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={filters[field.fieldname] || ""}
+                    onChange={(e) =>
+                      handleFilterChange(field.fieldname, e.target.value)
+                    }
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              </div>
+            ))}
           </div>
-          {/* Action buttons */}
-          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            <div className="flex space-x-3">
-              <button
-                onClick={clearFilters}
-                className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                Clear All
-              </button>
+
+          {/* Footer Actions */}
+          <div className="px-6 py-4 flex gap-3">
+            <button
+              onClick={clearFilters}
+              className="flex-1 px-4 py-2 border rounded-md text-gray-700 bg-white hover:bg-gray-100"
+            >
+              Clear
+            </button>
+            {!isDesktop && (
               <button
                 onClick={() => setShowFilters(false)}
-                className="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
               >
-                Apply Filters
+                Apply
               </button>
-            </div>
+            )}
           </div>
         </div>
       </>

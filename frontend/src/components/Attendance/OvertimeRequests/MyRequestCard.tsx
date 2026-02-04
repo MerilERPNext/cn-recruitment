@@ -1,11 +1,16 @@
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import DOMPurify from "dompurify";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
+import { Link } from "react-router-dom";
+import {
+  sanitizeToPlainText,
+  truncateByChars,
+} from "../../../utils/sanitizeToPlainText";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 export function MyRequestCard({
   request,
@@ -47,48 +52,61 @@ export function MyRequestCard({
   };
 
   const status = getStatus(request?.status);
-  const cleanDescription = DOMPurify.sanitize(request?.description || "");
-  const gridTemplateColumns = "2fr 1fr 1fr 1fr 1fr";
+
+  const cleanDescription = sanitizeToPlainText(request?.description);
+  const truncatedDescription = truncateByChars(cleanDescription);
+
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
         <div
-          className="grid grid-cols-4 gap-4 items-center px-6 h-14 hover:bg-primary/20 transition-colors text-center cursor-pointer border-b"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(request)}
         >
-          <div className="text-gray-600 text-sm truncate text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+          <Tooltip content={cleanDescription}>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              {truncatedDescription}
             </Typography>
-          </div>
-          <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-              {formatToIndianDate(request?.reference_document?.creation) ||
-                "--/--/--"}
+          </Tooltip>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(request?.reference_document?.creation)}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(request?.due_date)}
+          </Typography>
+          <Link
+            to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+            target="_blank"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
+                {request?.username}
+              </WrapperHoverCard>
             </Typography>
-          </div>
-          <div className="text-gray-700 text-sm text-start">
-            <Typography variant="bodySmall" className="font-semibold tracking-tight">
-
-               {formatToIndianDate(request?.due_date) ||
-                "--/--/----"}
-            </Typography>
-          </div>
-          <div className="text-gray-900 font-medium text-sm text-start">
-            <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-              {request?.username || ""}
-            </WrapperHoverCard>
-          </div>
-          <div className="w-full flex justify-start">
-            <Tooltip content={`Allocated to : ${request?.allocated_to}`}>
-              <Badge
-                size="sm"
+          </Link>
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                status?.label === "Pending"
+                  ? `Allocated to : ${request?.allocated_to}`
+                  : ""
+              }
+            >
+              {/* <Badge
+                size="md"
                 label={status?.label as string}
                 backgroundColor={status?.statusColor}
-              />
+              /> */}
+              <StatusBadge status={request?.status} />
+
             </Tooltip>
           </div>
         </div>
@@ -102,9 +120,16 @@ export function MyRequestCard({
               <div className="w-full">
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col gap-1">
-                    <h3 className="card-title">{request?.username}</h3>
+                    <Link
+                      to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
+                      target="_blank"
+                    >
+                      <h3 className="card-title">{request?.username}</h3>
+                    </Link>
                     {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
-                    <p className="card-subtitle">{formatToIndianDate(request?.due_date) || "--/--/--"}</p>
+                    <p className="card-subtitle">
+                      {formatToIndianDate(request?.due_date)}
+                    </p>
                   </div>
                   <Badge
                     size="sm"

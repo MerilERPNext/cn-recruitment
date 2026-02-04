@@ -5,18 +5,20 @@ import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../hooks/useEmployee";
 import { LeaveBalanceSkeleton } from "./LeaveSkeletons";
-import { FaRegCalendarCheck } from "react-icons/fa";
-import { FaClockRotateLeft } from "react-icons/fa6";
-import { FiPieChart } from "react-icons/fi";
 import HeaderBar from "../HeaderBar";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import LeaveTransactionsChart from "./LeaveTransactionsChart";
-import { EllipsisVertical, ListChecks, Plus } from "lucide-react";
-import DropdownMenu from "../shared/DropDownMenu";
+import {
+  Briefcase,
+  Calendar,
+  Plane,
+  Plus,
+  ScrollText,
+  ChevronDown,
+} from "lucide-react";
 import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 
 type LeaveTransactionEntry = {
@@ -52,7 +54,7 @@ const LeaveTransactionCard: React.FC<{
 
   const toggle = useCallback(
     (index: number) => setOpenIndex((prev) => (prev === index ? null : index)),
-    []
+    [],
   );
 
   return (
@@ -65,24 +67,44 @@ const LeaveTransactionCard: React.FC<{
           <button
             type="button"
             aria-expanded={openIndex === idx}
-            className="w-full flex justify-between items-center p-4 rounded-t-xl bg-white"
             onClick={() => toggle(idx)}
+            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${
+              openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
+            }`}
           >
-            <Typography variant="subheading" color="title">
+            <Typography
+              variant="bodyMedium"
+              color="title"
+              className="font-medium"
+            >
               {entry.type}
             </Typography>
 
-            <Typography variant="subheading" color="title">
-              {entry.total.toString()}
-            </Typography>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Typography
+                variant="bodyMedium"
+                color="title"
+                className="font-semibold"
+              >
+                {entry.total.toString()}
+              </Typography>
+
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${
+                  openIndex === idx ? "rotate-180" : ""
+                }`}
+              />
+            </div>
           </button>
 
           {openIndex === idx && (
-            <div className="grid grid-cols-4 gap-2 p-4 bg-primary/10 rounded-b-xl">
+            // <div className="grid grid-cols-4 gap-2 p-4 bg-primary/10 rounded-b-xl">
+            <div className="grid grid-cols-4 gap-3 px-4 py-3 bg-primary/5 rounded-b-xl border border-t-0 border-gray-200">
               {entry.monthly.map((count, mIdx) => (
                 <div
                   key={`${entry.type}-${mIdx}`}
-                  className="text-sm text-center p-2 border rounded-lg bg-white"
+                  // className="text-sm text-center p-2 border rounded-lg bg-white"
+                  className="text-xs text-center px-2 py-1.5 border border-gray-200 rounded-md bg-white"
                 >
                   <Typography variant="bodyMedium" color="title">
                     {monthLabels[mIdx]}
@@ -116,7 +138,7 @@ const LeaveBalance: React.FC = () => {
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "lb_request_leave",
-    "Leave Balance"
+    "Leave Balance",
   );
 
   const today = new Date().toISOString().split("T")[0];
@@ -173,13 +195,13 @@ const LeaveBalance: React.FC = () => {
   }
 
   const leaveBalance = (data?.leave_balance ?? []).filter(
-    (leave) => leave.dont_show_in_frontend !== 1
+    (leave) => leave.dont_show_in_frontend !== 1,
   );
 
   const visibleTypes = leaveBalance.map((l) => l.type);
 
   const transactions = (data?.leave_transactions ?? []).filter((t) =>
-    visibleTypes.includes(t.type)
+    visibleTypes.includes(t.type),
   );
 
   return (
@@ -201,7 +223,7 @@ const LeaveBalance: React.FC = () => {
             title="Transactions History"
             onBack={() => toggleTransactions(null)}
           />
-          <main className="flex-1 overflow-y-auto p-4">
+          <main className="flex-1 overflow-y-auto px-4">
             <LeaveTransactionCard
               data={transactions}
               defaultOpenType={selectedType}
@@ -211,113 +233,180 @@ const LeaveBalance: React.FC = () => {
       ) : (
         <>
           <div className="md:pt-4 md:p-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6 max-w-4xl mx-auto">
-              {leaveBalance.map((leave) => (
-                <div key={leave?.type}>
-                  <Card shadow="sm" radius="xl" className="hover:shadow-md">
-                    <div className="text-xl font-semibold mb-3 text-[#0094FF] flex justify-between items-center">
-                      <Typography variant="subheading" color="title">
-                        {leave?.type}
-                      </Typography>
-                      <div className="flex items-center gap-3">
+            <div className="p-4 space-y-4">
+              <div className="flex justify-between items-center">
+                <Typography
+                  variant="subheading"
+                  color="title"
+                  className="font-semibold"
+                >
+                  Leave Summary
+                </Typography>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div
+                  // style={{ backgroundColor: "#EFF6FF" }}
+                  className="rounded-xl flex flex-col items-center p-3 gap-2 bg-primary/10"
+                >
+                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                    <Calendar size={24} className="text-primary-600" />
+                  </span>
+
+                  <Typography
+                    variant="bodyMedium"
+                    color="title"
+                    className="font-semibold leading-none mt-1"
+                  >
+                    {leaveBalance.reduce(
+                      (sum, leave) => sum + (leave.entitled || 0),
+                      0,
+                    )}
+                  </Typography>
+
+                  <p className="text-sm text-gray-500 font-medium leading-none">
+                    Total Leaves
+                  </p>
+                </div>
+
+                <div
+                  style={{ backgroundColor: "#FFF4ED" }}
+                  className="rounded-xl flex flex-col items-center p-3 gap-2"
+                >
+                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                    <Plane size={24} className="text-[#E17100]" />
+                  </span>
+
+                  <Typography
+                    variant="bodyMedium"
+                    color="title"
+                    className="font-semibold leading-none mt-1"
+                  >
+                    {leaveBalance.reduce(
+                      (sum, leave) => sum + (leave.availed || 0),
+                      0,
+                    )}
+                  </Typography>
+
+                  <p className="text-sm text-gray-500 font-medium leading-none">
+                    Availed Leaves
+                  </p>
+                </div>
+
+                <div
+                  style={{ backgroundColor: "#F0FDF4" }}
+                  className="rounded-xl flex flex-col items-center p-3 gap-2"
+                >
+                  <span className="bg-white rounded-lg w-12 h-12 flex items-center justify-center">
+                    <Calendar size={24} className="text-[#00A63E]" />
+                  </span>
+
+                  <Typography
+                    variant="bodyMedium"
+                    color="title"
+                    className="font-semibold leading-none mt-1"
+                  >
+                    {leaveBalance.reduce(
+                      (sum, leave) => sum + (leave.balance || 0),
+                      0,
+                    )}
+                  </Typography>
+
+                  <p className="text-sm text-gray-500 font-medium leading-none">
+                    Balance Leaves
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Leave Balance
+                </h3>
+                <p className="text-sm text-gray-500">Balances as of today</p>
+              </div>
+
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(20rem,1fr))] ">
+                {leaveBalance.map((leave) => (
+                  <div
+                    key={leave?.type}
+                    className="border border-primary/20 rounded-2xl p-4 flex items-start gap-4 bg-white"
+                    onClick={() => toggleTransactions(leave.type)}
+                  >
+                    <div className="bg-primary/10 rounded-lg p-3">
+                      <Briefcase className="text-primary-600" size={20} />
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Typography variant="subheading">
+                            {leave.balance}
+                          </Typography>
+
+                          <p className="text-sm text-gray-500">{leave.type}</p>
+                        </div>
                         {leave?.visibility_flags?.show_carry_over && (
-                          <Typography color="success">
-                            {leave.carry_over} Carry Forwarded
+                          <Typography
+                            variant="bodySmall"
+                            className="ml-auto mr-2.5 text-primary"
+                          >
+                            <span className="font-semibold">
+                              {leave.carry_over}
+                            </span>{" "}
+                            Carry Forwarded
                           </Typography>
                         )}
-
                         {canRequestLeave && (
                           <button
-                            onClick={() =>
+                            onClick={(e) => {
+                              e.stopPropagation();
                               openModal({
                                 source: "balances",
                                 leaveType: leave?.type,
-                              })
-                            }
-                            className="rounded-full bg-primary/10 text-primary p-0.5"
+                              });
+                            }}
+                            className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
                           >
-                            <span>
-                              <Plus size={20} />
-                            </span>
+                            <Plus size={18} />
                           </button>
                         )}
 
-                        <DropdownMenu
-                          placement="bottom-left"
-                          className="text-gray-800 hover:primary-10"
-                          items={[
-                            {
-                              label: "Details",
-                              icon: <ListChecks size={16} />,
-                              onClick: () => handleOpenDrawer(leave),
-                            },
-                          ]}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDrawer(leave);
+                          }}
+                          className="text-[#98A9CD] hover:text-[#98b1e6]"
                         >
-                          <EllipsisVertical
-                            size={18}
-                            className="text-primary"
-                          />
-                        </DropdownMenu>
+                          <ScrollText size={18} />
+                        </button>
                       </div>
-                    </div>
-                    <div
-                      className="flex justify-between mt-2 gap-2 cursor-pointer"
-                      onClick={() => toggleTransactions(leave.type)}
-                    >
-                      {leave?.visibility_flags?.show_entitled && (
-                        <div className="flex-1 text-center  rounded-xl py-2 flex flex-col items-center justify-center bg-primary/10">
-                          <FaRegCalendarCheck className="w-6 h-6 text-primary mb-1" />
-                          <p className="md:text-lg text-base font-bold text-primary">
-                            {leave.entitled}
-                          </p>
-                          <Typography color="primary" variant="bodyMedium">
-                            Entitled
-                          </Typography>
-                        </div>
-                      )}
-                      {leave?.visibility_flags?.show_availed && (
-                        <div className="flex-1 text-center  rounded-xl py-2 flex flex-col items-center justify-center bg-success/10">
-                          <FaClockRotateLeft className="w-6 h-6 text-success mb-1" />
-                          <p className="md:text-lg text-base font-bold text-success">
+
+                      <div className="my-3 h-px bg-primary/20" />
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
                             {leave.availed}
                           </p>
-                          <Typography color="success" variant="bodyMedium">
-                            Availed
-                          </Typography>
+                          <p className="text-xs text-gray-500">Already taken</p>
                         </div>
-                      )}
-                      {leave?.visibility_flags?.show_balance && (
-                        <div className="flex-1 text-center rounded-xl py-2 flex flex-col items-center justify-center bg-warning/20">
-                          <FiPieChart className="w-6 h-6 text-orange-700 mb-1" />
-                          <p className="md:text-lg text-base font-bold text-orange-700">
-                            {leave.balance}
+
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {leave.entitled - leave.balance - leave.availed}
                           </p>
-                          <Typography
-                            variant="bodyMedium"
-                            className="text-orange-700"
-                          >
-                            Balance
-                          </Typography>
+                          <p className="text-xs text-gray-500">Pending</p>
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </Card>
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          {canRequestLeave && (
-            <div className="w-full mt-6 px-4 md:hidden">
-              <button
-                type="button"
-                className="w-full py-3 rounded-lg bg-primary text-white font-medium hover:bg-blue-700 transition-colors"
-                onClick={() => openModal()}
-              >
-                + Request Leave
-              </button>
-            </div>
-          )}
         </>
       )}
     </div>

@@ -21,10 +21,11 @@ import {
 import { useMemo, useState } from "react";
 
 import {
-  useAllAttendance,
   useGetEmployeeShift,
+  useGetEmployeeWorkingHours,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
+  useGetTeamCheckinSummary,
   useReqValidationsForOvertimeRequest,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
@@ -32,7 +33,6 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
-import AttendanceChart from "../AttendanceChart";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
 import { ViewAll } from "../shared/atoms/ViewAll";
@@ -41,6 +41,10 @@ import PolicyDrawer from "./PolicyDrawer";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import Button from "../shared/atoms/Button";
+import { useFrappeDocumentList } from "../../hooks/useFrappeQuery";
+import { Attendance } from "../../types/attendance";
+import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
+import AttendanceSummaryCards from "./AttendanceSummaryCards";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -66,6 +70,15 @@ const AttendanceSummary = () => {
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || ""
   );
+  const { data: teamCheckInSummary } = useGetTeamCheckinSummary(
+    currentEmployee?.user_id || ""
+  );
+  const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
+    currentEmployee?.user_id || "",
+    format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+    format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  );
+
   const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
     currentEmployee?.employee || ""
   );
@@ -82,43 +95,58 @@ const AttendanceSummary = () => {
     },
     !!currentEmployee?.employee
   );
+
+  const { data: attendanceData } = useFrappeDocumentList(
+    "Attendance", {
+    fields: ["*"],
+    filters: [
+      ["status", "=", "On Leave"],
+      ["attendance_date", "between", [startOfDay(currentDate), endOfDay(currentDate)]],
+    ]
+  })
+
+  function useUniqueAttendanceLeaveCount(records: Attendance[]) {
+    return useMemo(() => {
+      if (!Array.isArray(records)) {
+        return 0;
+      }
+
+      const attendanceLeaveSet = new Set();
+
+      for (const record of records) {
+        if (record.status === "On Leave") {
+          attendanceLeaveSet.add(record.employee);
+        }
+      }
+
+      return attendanceLeaveSet.size;
+    }, [records]);
+  }
+
   const goToPreviousMonth = () => {
     setCurrentDate((prev) => subMonths(prev, 1));
   };
   const goToNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
 
-  const start = format(startOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-  const end = format(endOfDay(new Date()), "yyyy-MM-dd HH:mm:ss");
-
-  const { data: teamDataInfo } = useAllAttendance(
-    ["attendance_date", "status"],
-    [["attendance_date", "between", [start, end]]]
-  );
-
-  function countStatus(statusToCount: string) {
-    return teamDataInfo?.reduce((count: number, record: { status: string }) => {
-      return record.status === statusToCount ? count + 1 : count;
-    }, 0);
-  }
 
   const teamSummaryData = [
     {
       icon: CheckCircle,
       color: "green",
       label: "Logged In",
-      value: countStatus("Present") || 0,
+      value: teamCheckInSummary?.data?.checked_in_count || 0,
     },
     {
       icon: AlertCircle,
       color: "red",
       label: "Not Logged In",
-      value: countStatus("Absent") || 0,
+      value: teamCheckInSummary?.data?.not_checked_in_count || 0,
     },
     {
       icon: Calendar,
       color: "orange",
       label: "On Leave",
-      value: countStatus("On Leave") || 0,
+      value: useUniqueAttendanceLeaveCount(attendanceData as Attendance[] || []) || 0,
     },
   ];
 
@@ -371,19 +399,24 @@ const AttendanceSummary = () => {
           <ChevronRight className="h-5 w-5 text-slate-600" />
         </Button>
       </Card>
+      <div className={`w-full flex gap-4 ${isDesktop ? "flex-row" : "flex-col"}`}>
 
-      <AttendanceChart
-        present={employeeAttendanceSummary?.present || 0}
-        absent={employeeAttendanceSummary?.absent || 0}
-        leaves={employeeAttendanceSummary?.leaves || 0}
-        week_offs={employeeAttendanceSummary?.week_offs || 0}
-        avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
-        avg_working_hours={
-          Number(employeeAttendanceSummary?.avg_working_hours) || 0
-        }
-        avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
-        selectedMonth={currentDate}
-      />
+        <EmployeeWorkingHoursBarChart
+          isLoading={isEmployeeWorkingHoursLoading}
+          data={employeeWorkingHours}
+        />
+        <AttendanceSummaryCards
+          present={employeeAttendanceSummary?.present || 0}
+          absent={employeeAttendanceSummary?.absent || 0}
+          leaves={employeeAttendanceSummary?.leaves || 0}
+          week_offs={employeeAttendanceSummary?.week_offs || 0}
+          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+          avg_working_hours={
+            Number(employeeAttendanceSummary?.avg_working_hours) || 0
+          }
+          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
+        />
+      </div>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}

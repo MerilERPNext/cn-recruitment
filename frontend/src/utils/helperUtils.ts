@@ -23,8 +23,9 @@ export const gradientClassMap: Record<string, string> = {
 };
 
 export const getStatusGradient = (firstHalf: string, secondHalf: string) => {
-  const gradient = `linear-gradient(to bottom right, ${gradientClassMap[firstHalf?.toLowerCase()]
-    } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
+  const gradient = `linear-gradient(to bottom right, ${
+    gradientClassMap[firstHalf?.toLowerCase()]
+  } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
   return { background: gradient };
 };
 
@@ -39,7 +40,7 @@ export function timeSinceFormatted(date: Date): string {
   if (hours > 0) {
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(
       2,
-      "0"
+      "0",
     )}h`;
   } else {
     return `00:${String(minutes).padStart(2, "0")}m`;
@@ -52,15 +53,6 @@ export function formatDateToYYYYMMDD(date: Date): string {
   const day = String(date.getDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
-}
-
-export function formatDateString(dateString: string) {
-  if (!dateString || isNaN(Date.parse(dateString))) return "Invalid date";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 export function formatTo24HourTime(isoString: string): string {
@@ -87,7 +79,7 @@ export const getTotalTime = (logs: LogEntry[] | undefined): string => {
   const sortedLogs = [...logs].sort(
     (a, b) =>
       new Date(a.time.replace(" ", "T")).getTime() -
-      new Date(b.time.replace(" ", "T")).getTime()
+      new Date(b.time.replace(" ", "T")).getTime(),
   );
 
   let totalMinutes = 0;
@@ -174,7 +166,7 @@ export async function getDeviceLocationWeb(): Promise<Coordinates> {
       },
       (error: GeolocationPositionError) => {
         reject(new Error("Error getting location: " + error.message));
-      }
+      },
     );
   });
 }
@@ -219,7 +211,7 @@ const isFilterTuple = (val: unknown): val is FilterTuple => {
 };
 
 export const mapFiltersToConditions = (
-  filtersObj: FiltersObject
+  filtersObj: FiltersObject,
 ): FilterCondition[] => {
   return Object.entries(filtersObj).map(([key, value]) => {
     if (isFilterTuple(value)) {
@@ -244,7 +236,7 @@ export interface BadgePropsFromHelper {
  * For status strings like "Open", "Closed", "In Progress", etc.
  */
 export const getBadgePropsByStatus = (
-  status?: string
+  status?: string,
 ): BadgePropsFromHelper => {
   if (!status) {
     return {
@@ -302,7 +294,7 @@ export const getBadgePropsByStatus = (
  * For priority strings like "Low", "Medium", "High", "Urgent"
  */
 export const getBadgePropsByPriority = (
-  priority?: string
+  priority?: string,
 ): BadgePropsFromHelper => {
   if (!priority) {
     return {
@@ -393,7 +385,7 @@ export const buildLeavePayload = ({
 }: {
   employee: string;
   submission: any;
-  dailyConfig: Record<string, "Full Day" | "First Half" | "Second Half">;
+  dailyConfig?: Record<string, "Full Day" | "First Half" | "Second Half">;
 }) => {
   const isSingleDay =
     submission.fromDate?.split("T")[0] === submission.toDate?.split("T")[0];
@@ -408,6 +400,7 @@ export const buildLeavePayload = ({
     custom_attachment: submission?.custom_attachment?.[0]?.url,
   };
 
+  // No half-day selected
   if (!submission.halfDay) {
     return {
       ...basePayload,
@@ -415,37 +408,27 @@ export const buildLeavePayload = ({
     };
   }
 
+  // Single day with half-day
   if (isSingleDay) {
     return {
       ...basePayload,
       half_day: 1,
-      custom_half_day_type: submission.halfDayOption,
+      custom_half_day_type: submission.halfDayOption, // "First Half" or "Second Half"
     };
   }
 
-  if (submission.half_day_mode === "individual") {
-    return {
-      ...basePayload,
-      individual: 1,
-      individual_dates: Object.entries(dailyConfig).map(([date, type]) => ({
-        date,
-        half_day: type === "Full Day" ? 0 : 1,
-        half_day_type: type === "Full Day" ? "" : type,
-      })),
-    };
-  }
-
+  // Multiple days with half-day - always use individual mode
   return {
     ...basePayload,
-    half_day: 1,
-    custom_half_day_type: "Continuous",
-    half_day_date: submission.half_day_date?.split("T")[0],
-    custom_second_half_day_date:
-      submission.custom_second_half_day_date?.split("T")[0],
+    individual: 1,
+    individual_dates: Object.entries(dailyConfig || {}).map(([date, type]) => ({
+      date,
+      half_day: type === "Full Day" ? 0 : 1,
+      half_day_type: type === "Full Day" ? "" : type,
+    })),
   };
 };
 
-//sidebar dot counts mapper
 export const NOTIFICATION_TITLE_MAP: Record<string, string[]> = {
   "Help Desk": ["Helpdesk"],
   Compensation: ["Salary Slip"],

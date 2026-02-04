@@ -119,7 +119,7 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-6 sticky top-12 md:top-16 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
+                <div className="px-6 sticky top-12 md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button

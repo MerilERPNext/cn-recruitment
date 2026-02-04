@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
 import Badge from "../shared/Badge";
-import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
@@ -11,9 +10,11 @@ import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
-import { getActionStyles } from "../../utils/actionButtonStyles";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 export function LeaveDetailView({
   documentName,
@@ -23,6 +24,7 @@ export function LeaveDetailView({
   label = "Leave Request",
 }: {
   documentName?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   onClose: () => void;
   onAction?: () => void;
@@ -76,7 +78,7 @@ export function LeaveDetailView({
           action,
           name: data?.todo_id || "",
         });
-
+        toast.success(`Leave ${action} successfully`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
 
@@ -89,7 +91,7 @@ export function LeaveDetailView({
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
-              responseWithSession?.session
+              responseWithSession?.session,
             );
           }
         } else {
@@ -103,17 +105,16 @@ export function LeaveDetailView({
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
-
+        toast.error(errorResponseFormater(error));
         console.error("Action failed", error);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
-
 
   // Loading state
   if (isLoading && documentName) {
@@ -229,7 +230,7 @@ export function LeaveDetailView({
         {/* Actions */}
         {actions?.length > 0 && status?.label === "Pending" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+            {/* <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
               {actions?.length &&
                 actions?.map((action: string) => {
                   const actionStyle = getActionStyles(action);
@@ -256,7 +257,19 @@ export function LeaveDetailView({
                     </Button>
                   );
                 })}
-            </div>
+            </div> */}
+            <TeamApprovalActionPill
+              actions={actions}
+              status={status.label} // or data?.status if you want raw
+              recordId={data.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={handleAction}
+              isModalAction
+            />
           </div>
         )}
       </div>

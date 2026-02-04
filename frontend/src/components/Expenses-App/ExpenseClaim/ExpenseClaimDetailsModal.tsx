@@ -117,7 +117,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               <p className="text-sm text-gray-700">
                 <span className="card-title">Claimed Date:</span>
                 <span className="card-subtitle ml-2">
-                  {data?.creation ? formatToIndianDate(data.creation) : "—"}
+                  {formatToIndianDate(data?.creation || "")}
                 </span>
               </p>
 
@@ -234,10 +234,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                               {item.expense_type ?? "—"}
                             </td>
                             <td className="px-4 py-2 border-b align-top">
-                              {/* {formatDateString(item.expense_date) ?? "—"} */}
-                              {item.expense_date
-                                ? formatToIndianDate(item.expense_date)
-                                : "—"}
+                              {formatToIndianDate(item.expense_date)}
                             </td>
 
                             <td className="px-4 py-2 border-b align-top">

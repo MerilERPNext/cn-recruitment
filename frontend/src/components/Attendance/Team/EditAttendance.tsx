@@ -11,14 +11,13 @@ import {
 } from "../../../hooks/useAttendance";
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { format } from "date-fns";
-import { useTargetUser } from "../../../context/ViewedUserContext";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 
 interface EditAttendanceProps {
   onClose: () => void;
   open?: boolean;
-  requestId: string;
+  requestId: string | undefined;
   employeeName: string;
   employeeId: string;
   onRefetchData?: (() => void) | null;
@@ -31,13 +30,10 @@ export const EditAttendance = ({
   employeeName,
   onRefetchData,
 }: EditAttendanceProps) => {
-  const { targetEmployeeId } = useTargetUser();
-  const effectiveEmployeeId = targetEmployeeId || employeeId;
   const formInstance = useRef<any>(null);
-
   const { data, isLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
-    ["employee", "=", effectiveEmployeeId],
+    // ["employee", "=", effectiveEmployeeId],
   ]);
   const mutation = useEditAttendance();
   // Only build form after data is available
@@ -59,7 +55,7 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: employeeName || "",
+              defaultValue: employeeName || employeeId || "",
             },
             {
               label: "Attendance Date",

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getCompareTaxSheetHTML, getITDecalarationData, getNewRegime, upDateITDeclarationSheet } from "../../services/payrollApi/itDeclarationService";
+import { getCompareTaxSheetHTML, getITDecalarationData, getLTABrakup, getNewRegime, getProofDateForITDeclaration, upDateITDeclarationSheet } from "../../services/payrollApi/itDeclarationService";
 
 
 export function useNewRegime(employee: string | null, company: string | null, payroll_period: string | null) {
@@ -38,3 +38,21 @@ export function useITDeclarationTabData(goHeadValue: boolean, employee: string |
     });
   };
   
+  export function useProofDateForITDeclaration(currentDate: string, employee: string | null, declarationDoctype: string | null, payroll_period: string | null) {
+    return useQuery({
+      queryKey: ["income-tax-sheet", currentDate, employee, declarationDoctype, payroll_period],
+      queryFn:() => getProofDateForITDeclaration(currentDate, employee, declarationDoctype, payroll_period),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    });
+  }
+
+
+  export function useLTABrakup(employee: string | null,) {
+    return useQuery({
+      queryKey: ["lta-breakup", employee],
+      queryFn:() => getLTABrakup(employee),
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    });
+  }

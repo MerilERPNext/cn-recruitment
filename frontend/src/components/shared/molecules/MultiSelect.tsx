@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../atoms/Button";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,6 +17,7 @@ interface MultiSelectProps<T extends Option> {
     className?: string;
     searchValue?: string;
     onSearchChange?: (value: string) => void;
+    isLoading?: boolean;
     renderOption?: (option: T) => React.ReactNode;
 
 
@@ -34,11 +35,25 @@ const MultiSelect = <T extends Option>({
     className = "",
     searchValue,
     onSearchChange,
+    isLoading,
     renderOption
 }: MultiSelectProps<T>) => {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(0);
     const ref = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+
+    /* ---------- calculate filtered options ---------- */
+    const filteredOptions = useMemo(
+        () =>
+            options.filter(
+                (opt) =>
+                    String(opt[labelKey]).toLowerCase().includes(query.toLowerCase()) &&
+                    !selected.some((s) => s[valueKey] === opt[valueKey])
+            ),
+        [options, labelKey, query, selected, valueKey]
+    );
 
     /* ---------- click outside ---------- */
     useEffect(() => {
@@ -51,11 +66,27 @@ const MultiSelect = <T extends Option>({
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    const filteredOptions = options.filter(
-        (opt) =>
-            String(opt[labelKey]).toLowerCase().includes(query.toLowerCase()) &&
-            !selected.some((s) => s[valueKey] === opt[valueKey])
-    );
+    /* ---------- adjust highlighted index when options change ---------- */
+    useEffect(() => {
+        // If highlighted index is beyond the new length, move to the last item
+        // Otherwise, keep the current position (or previous position if possible)
+        if (highlightedIndex >= filteredOptions.length && filteredOptions.length > 0) {
+            setHighlightedIndex(filteredOptions.length - 1);
+        } else if (filteredOptions.length === 0) {
+            setHighlightedIndex(0);
+        }
+        // If highlightedIndex is still valid, don't change it (maintains position)
+    }, [filteredOptions.length]);
+
+    /* ---------- scroll highlighted item into view ---------- */
+    useEffect(() => {
+        if (open && listRef.current) {
+            const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
+            if (highlightedElement) {
+                highlightedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            }
+        }
+    }, [highlightedIndex, open]);
 
     const addOption = (opt: T) => {
         onChange([...selected, opt]);
@@ -79,7 +110,7 @@ const MultiSelect = <T extends Option>({
                 variant="subtle"
                 size="md"
                 disabled={disabled}
-                onClick={() => setOpen(true)}
+                onClick={() => setOpen(!open)}
                 className={`
           flex w-full items-center justify-between
           rounded-lg border border-gray-300
@@ -125,7 +156,43 @@ const MultiSelect = <T extends Option>({
                             onSearchChange?.(e.target.value);
                             setQuery(e.target.value);
                         }}
+                        onClick={(e) => e.stopPropagation()}
                         onFocus={() => setOpen(true)}
+                        onKeyDown={(e) => {
+                            // Remove last selected item on backspace when input is empty
+                            if (e.key === "Backspace" && (searchValue ?? query) === "" && selected.length > 0) {
+                                e.preventDefault();
+                                removeOption(selected[selected.length - 1]);
+                                return;
+                            }
+
+                            // Keyboard navigation
+                            if (!open) return;
+
+                            switch (e.key) {
+                                case "ArrowDown":
+                                    e.preventDefault();
+                                    setHighlightedIndex((prev) =>
+                                        prev < filteredOptions.length - 1 ? prev + 1 : prev
+                                    );
+                                    break;
+                                case "ArrowUp":
+                                    e.preventDefault();
+                                    setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+                                    break;
+                                case "Enter":
+                                case " ": // Space key
+                                    e.preventDefault();
+                                    if (filteredOptions[highlightedIndex]) {
+                                        addOption(filteredOptions[highlightedIndex]);
+                                    }
+                                    break;
+                                case "Escape":
+                                    e.preventDefault();
+                                    setOpen(false);
+                                    break;
+                            }
+                        }}
                         placeholder={selected.length === 0 ? placeholder : ""}
                         className="
                             flex-1 min-w-[60px]
@@ -144,6 +211,19 @@ const MultiSelect = <T extends Option>({
                 />
             </Button>
 
+            {isLoading &&
+                <div
+                    className="
+            absolute z-50 mt-2 w-full
+            rounded-xl border border-gray-200
+            bg-white shadow-lg
+            animate-in fade-in zoom-in-95 flex flex-col gap-2 p-2
+          ">
+                    {Array.from({ length: 3 }).map(() => (
+                        <div className="h-6 w-full bg-gray-200 rounded" />
+                    ))}
+
+                </div>}
             {/* Dropdown */}
             {open && !disabled && filteredOptions.length > 0 && (
                 <div
@@ -154,17 +234,23 @@ const MultiSelect = <T extends Option>({
             animate-in fade-in zoom-in-95
           "
                 >
-                    <ul className="max-h-60 overflow-auto p-1">
-                        {filteredOptions.map((opt) => (
+
+                    <ul className="max-h-60 overflow-auto p-1" ref={listRef}>
+                        {filteredOptions.map((opt, index) => (
                             <li
                                 key={String(opt[valueKey])}
                                 onClick={() => addOption(opt)}
-                                className="
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                                className={`
                                 flex cursor-pointer items-center
                                 rounded-lg px-3 py-2 text-sm
                                 text-gray-700 transition
                                 hover:bg-gray-100
-                                "
+                                ${index === highlightedIndex
+                                        ? "bg-primary-50 border-l-2 border-primary-500"
+                                        : ""
+                                    }
+                                `}
                             >
                                 {renderOption ? renderOption(opt) : String(opt[labelKey])}
                             </li>

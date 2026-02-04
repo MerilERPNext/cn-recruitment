@@ -20,6 +20,8 @@ import { IoChevronForwardOutline } from "react-icons/io5";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import dagre from "dagre";
+import { Typography } from "../shared/atoms/Typography";
+import Button from "../shared/atoms/Button";
 
 const normalizeId = (id: unknown): string | null => {
   if (!id) return null;
@@ -330,25 +332,22 @@ export default function ThreeLevelOrgChart() {
 
   return (
     <div className="w-full rounded-md bg-white">
-      <div className="py-3 rounded-md flex items-start justify-between">
-        <div className="flex items-start justify-between">
-          <div className="border-gray-200 px-6 my-2 pb-2">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Organizational Chart
-            </h2>
-            <p className="text-gray-600">
-              Your organizational information
-            </p>
-          </div>
+      <div className="py-2 mx-6 rounded-md flex items-start justify-between rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 border border-gray-100/50">
+
+        <div className="flex items-center ">
+          <Typography variant="subheading" className="font-bold text-gray-800">
+            Organizational Chart
+          </Typography>
         </div>
 
-        <button
-          onClick={() => navigate("/webapp/organizational-chart")}
-          className="flex items-center space-x-1 text-gray-700 hover:text-black mt-3"
+        <Button
+          variant="subtle"
+          size="sm"
+          onClick={() => navigate(`/webapp/organizational-chart?employee=${employeeId}`)}
         >
           <span className="text-sm font-medium text-blue-600">View All</span>
           <IoChevronForwardOutline size={18} />
-        </button>
+        </Button>
       </div>
 
       <div className="h-[400px] px-2 bg-white rounded-md">

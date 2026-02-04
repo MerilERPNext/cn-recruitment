@@ -15,6 +15,7 @@ import { useRequiredFields } from "../../../../hooks/useRequiredFields";
 import { FormSchema, SchemaComponent } from "../../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import HeaderBar from "../../../HeaderBar";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { useLoadingOverlay } from "../../../../context/OverlayContext";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -94,37 +95,48 @@ export default function CreateLoanDialog({
     return cloned;
   };
 
-  const transformedSchema = useMemo(() => {
+ const transformedSchema = useMemo(() => {
     return transformSchemaWithRequired(createLoanFormSchema as FormSchema, requiredFieldMap);
   }, [requiredFieldMap]);
 
-  const handleSubmit = async () => {
-    const submission = await formRef.current?.submit();
+const loading = useLoadingOverlay();
+const handleSubmit = async () => {
+  try {
+     const submission = await formRef.current?.submit();
     const formData = submission?.data;
-    const submissionData = {
-      ...formData,
-      company: currentEmployee?.company,
-      applicant_type: "Employee",
-      applicant: currentEmployee?.employee,
-    };
-    mutation.mutate(submissionData as Record<string, unknown>, {
-      onSuccess: () => {
-        onClose();
-        setTimeout(() => {
-          setRefetchAttendance(true);
-        }, 2000);
+    await loading?.wrap(async () => {
+     
+      const submissionData = {
+        ...formData,
+        company: currentEmployee?.company,
+        applicant_type: "Employee",
+        applicant: currentEmployee?.employee,
+      };
 
-        toast.success("Added Loan Request successfully!");
-      },
-      onError: (error: CustomError) => {
-        const formatedError = errorResponseFormater(error, "Submission failed. Please try again.");
-        toast.error(formatedError);
-        console.error(error);
-      },
-    });
-
-    // Call API here
-  };
+      await new Promise<void>((resolve, reject) => {
+        mutation.mutate(submissionData as Record<string, unknown>, {
+          onSuccess: () => {
+            onClose();
+            setTimeout(() => setRefetchAttendance(true), 2000);
+            toast.success("Added Loan Request successfully!");
+            resolve();
+          },
+          onError: (error: CustomError) => {
+            const formatedError = errorResponseFormater(
+              error,
+              "Submission failed. Please try again."
+            );
+            toast.error(formatedError);
+            console.error(error);
+            reject(error);
+          },
+        });
+      });
+    }, "Submitting loan request…"); // optional message
+  } catch (error) {
+    console.error("Error submitting loan:", error);
+  }
+};
 
   if (!isOpen) return null;
 

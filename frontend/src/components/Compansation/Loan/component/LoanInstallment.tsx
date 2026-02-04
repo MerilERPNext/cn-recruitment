@@ -63,7 +63,7 @@ export default function LoanInstallments({
               >
                 <div className=" ">{index + 1}</div>
                 <div className=" ">
-                  {formatToIndianDate(installment.payment_date) || "-"}
+                  {formatToIndianDate(installment.payment_date)}
                 </div>
 
                 <div className=" ">

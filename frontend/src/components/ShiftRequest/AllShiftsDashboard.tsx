@@ -2,7 +2,6 @@
 import React, { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ApprovalList from "../shared/ApprovalList";
-import { FaCheck, FaInfoCircle, FaMinusCircle } from "react-icons/fa";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import formatToIndianDate, {
   formatEndDate,
@@ -19,31 +18,7 @@ import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
 import getShiftStatus from "../../utils/getShiftStatus";
 import { ViewAll } from "../shared/atoms/ViewAll";
-
-export const StatusBadge = ({ status }: { status: string }) => {
-  const baseStyle = "px-2 py-1 rounded-2xl text-xs inline-block";
-  const statusStyles: { [key: string]: string } = {
-    Open: "bg-success/30 text-success",
-    Pending: "bg-yellow-100 text-yellow-800",
-    Draft: "bg-yellow-100 text-yellow-800",
-    Rejected: "bg-red-100 text-red-800",
-    Completed: "bg-blue-100 text-blue-800",
-    Current: "bg-emerald-100 text-emerald-700 border border-emerald-200",
-    Upcoming: "bg-blue-100 text-blue-700 border border-blue-200",
-    Previous: "bg-slate-100 text-slate-600 border border-slate-300",
-    Active: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    Inactive: "bg-gray-100 text-gray-600 border border-gray-300",
-  };
-  return (
-    <span
-      className={`${baseStyle} ${
-        statusStyles[status] || "bg-gray-100 text-gray-800"
-      }`}
-    >
-      {status==="Draft"?"Pending": status}
-    </span>
-  );
-};
+import StatusBadge from "../shared/atoms/statusBadge";
 
 const Card = ({
   children,
@@ -118,21 +93,6 @@ const TeamShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-      case "approved":
-        return <FaCheck className="ml-1 text-success-600 w-3 h-3" />;
-      case "pending":
-        return <FaInfoCircle className="ml-1 text-yellow-600 w-3 h-3" />;
-      case "rejected":
-      case "inactive":
-        return <FaMinusCircle className="ml-1 text-error w-3 h-3" />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="my-list-item-card">
       <div className="flex-grow">
@@ -159,9 +119,6 @@ const TeamShiftItem: React.FC<{
 
       <div className="flex items-center gap-2">
         <StatusBadge status={item.status} />
-        <span className="flex items-center justify-center">
-          {getStatusIcon(item.status)}
-        </span>
       </div>
     </div>
   );
@@ -192,7 +149,7 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name ?? ""
+    currentUser?.name ?? "",
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -215,13 +172,14 @@ const AllMyShiftRequestsList = () => {
 
   return (
     <>
-      <Card className="   p-4  mt-6 border">
+      <Card className="p-4 mt-6 border">
         <CardHeader
           title="My Shift Requests"
           onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
         />
         <CardTable
-          titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
+          titles={["Shift Type", "From Date", "To Date", "Status", "ACTIONS"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           {currentEmployee?.employee ? (
             <DataListView
@@ -279,7 +237,7 @@ export default function AllShiftsDashboard() {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -296,6 +254,28 @@ export default function AllShiftsDashboard() {
     setRefetchApprovalList(false);
   }, []);
 
+  const tableTitles = [
+    "Select",
+    "Employee",
+    "Shift Type",
+    "From Date",
+    "To Date",
+    "Due Date",
+    "Status",
+    "ACTIONS",
+  ];
+
+  const tableColumnWidths = [
+    "0.5fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+  ];
+
   return (
     <div className=" min-h-screen font-sans text-sm">
       <main className="p-2 sm:p-2 lg:p-2">
@@ -303,33 +283,15 @@ export default function AllShiftsDashboard() {
           <div>
             <Card>
               <CardHeader
-                title="Shift Change Requests"
+                title="Team Shift Requests"
                 onSeeAll={() =>
                   navigate("/webapp/shift-request/shift-change-request")
                 }
               />
               <div className="border border-gray-100 rounded-lg overflow-x-auto">
                 <CardTable
-                  titles={[
-                    "Select",
-                    "Employee",
-                    "Shift Type",
-                    "From Date",
-                    "To Date",
-                    "Due Date",
-                    "Status",
-                    "Actionsasdfasdf",
-                  ]}
-                  columnWidths={[
-                    "8%",
-                    "10%",
-                    "10%",
-                    "10%",
-                    "10%",
-                    "10%",
-                    "10%",
-                    "20%",
-                  ]}
+                  titles={tableTitles}
+                  columnWidths={tableColumnWidths}
                 >
                   <ApprovalList
                     status="Draft"
@@ -339,6 +301,7 @@ export default function AllShiftsDashboard() {
                     refetch={refetchApprovalList}
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
+                    columnWidths={tableColumnWidths}
                     renderCardContent={(item) => (
                       <ApprovalRejectionQueue
                         isSelected={item?.isSelected}

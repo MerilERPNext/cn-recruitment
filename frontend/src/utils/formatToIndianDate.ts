@@ -1,5 +1,3 @@
-import { format, isValid, parse } from "date-fns";
-
 const formatToIndianDate = (dateInput: string | number | Date): string => {
   if (!dateInput) {
     return "";
@@ -80,24 +78,9 @@ const formatToIndianDate = (dateInput: string | number | Date): string => {
 
 export default formatToIndianDate;
 
-const formatEndDate = (endDate: string | null | undefined) => {
-  if (!endDate) return "Present"; // ✅ Show Present if end date is missing
+export const formatEndDate = (endDate: string | null | undefined) => {
+  if (!endDate) return "Present";
   return formatToIndianDate(endDate);
-};
-
-const formatDashedDate = (date: string): string => {
-  if (!date) return "--/--/----";
-
-  const possibleFormats = ["dd-MM-yyyy", "yyyy-MM-dd"];
-
-  for (const dateFormat of possibleFormats) {
-    const parsedDate = parse(date, dateFormat, new Date());
-    if (isValid(parsedDate)) {
-      return format(parsedDate, "dd/MM/yyyy");
-    }
-  }
-
-  return "--/--/----";
 };
 
 export function formatDateDDMonthYYYY(dateString: string) {
@@ -109,4 +92,3 @@ export function formatDateDDMonthYYYY(dateString: string) {
 
   return `${day} ${month} ${year}`;
 }
-export { formatEndDate, formatDashedDate };
