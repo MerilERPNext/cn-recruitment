@@ -25,6 +25,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Typography } from "../../shared/atoms/Typography";
+import { getCurrentPeriod } from "../shared/logic";
 
 const BenefitsSlips = () => {
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
@@ -49,10 +50,8 @@ const BenefitsSlips = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
@@ -186,7 +185,7 @@ const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
             benefitSlipName={item.name}
             benefitSlipDate={benefitSlipDate || ""}
           />,
-          document.body
+          document.body,
         )}
     </div>
   );

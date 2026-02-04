@@ -26,6 +26,7 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Link } from "react-router-dom";
+import { getCurrentPeriod } from "../shared/logic";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -64,10 +65,8 @@ const MyRequests: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const today = new Date().toISOString().split("T")[0];
 

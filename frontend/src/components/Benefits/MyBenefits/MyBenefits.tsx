@@ -20,6 +20,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { getCurrentPeriod } from "../shared/logic";
 
 export const COLUMN_LAYOUT =
   "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
@@ -52,16 +53,14 @@ const MyBenefits: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const { data: allAccruedReimbursements, isLoading } =
     useGetAllAccruedReimbursements(
       effectiveEmployeeId || "",
       effectiveEmployee?.company || "",
-      selectedYear
+      selectedYear,
     );
   // Keep track of which benefit cards are expanded — map by component name
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
@@ -207,7 +206,7 @@ const MyBenefits: React.FC = () => {
               : details.filter((r) =>
                   r.month
                     .toLowerCase()
-                    .includes(params.searchTerm!.toLowerCase())
+                    .includes(params.searchTerm!.toLowerCase()),
                 );
 
             const response: FrappePageResponse = {
