@@ -23,7 +23,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 100,
- "modified": "2026-02-03 14:57:33.196526",
+ "modified": "2026-02-04 10:48:32.356333",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "employee-onboarding",
@@ -152,7 +152,7 @@
    "max_length": 0,
    "max_value": 0,
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 1,
    "show_in_filter": 0
   },
@@ -219,8 +219,8 @@
    "max_value": 0,
    "options": "Company",
    "precision": "",
-   "read_only": 0,
-   "reqd": 1,
+   "read_only": 1,
+   "reqd": 0,
    "show_in_filter": 0
   },
   {
@@ -365,7 +365,7 @@
    "max_value": 0,
    "options": "Department",
    "precision": "",
-   "read_only": 0,
+   "read_only": 1,
    "reqd": 0,
    "show_in_filter": 0
   },
@@ -734,7 +734,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -815,7 +815,7 @@
    "options": "Bank",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
