@@ -44,14 +44,17 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
   return (
-    <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
-      <div className="flex justify-between items-start">
+    <div className="rounded-2xl  my-1 border-t-4 border-primary p-5  transition-shadow duration-200 flex flex-col gap-4">
+      <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col gap-1">
-          <span className="card-title">Expense category</span>
+          <span className="card-subtitle-sm uppercase">Expense category</span>
           {item?.reference_document?.custom_expense_category && (
-            <span className="card-subtitle">
+            <Typography
+              variant="body"
+              className="leading-[13px]  font-semibold"
+            >
               {item?.reference_document?.custom_expense_category}
-            </span>
+            </Typography>
           )}
         </div>
 
@@ -68,16 +71,26 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
       <div className="flex justify-between">
         <div className="flex flex-col gap-1">
-          <span className="card-title">Claimed Date</span>
-          <span className="card-subtitle">
+          <span className="card-subtitle-sm uppercase">Claimed Date</span>
+          <Typography variant="body" className="leading-[13px]  font-semibold">
             {formatToIndianDate(item?.reference_document?.creation)}
-          </span>
+          </Typography>
         </div>
 
         <div className="flex flex-col gap-1 text-right">
-          <span className="card-title">Claimed Amount</span>
-          <span className="card-subtitle">{formattedAmount}</span>
+          <span className="card-subtitle-sm uppercase">Claimed Amount</span>
+          <Typography variant="body" className="leading-[13px] font-semibold">
+            {formattedAmount}
+          </Typography>
         </div>
+      </div>
+
+      <div>
+        <div className="h-[1px] w-full bg-gray-100 mb-3" />
+        <Typography className="text-gray-300 text-sm mb-3">
+          Last Updated on{" "}
+          {formatToIndianDate(item?.reference_document?.modified)}
+        </Typography>
       </div>
     </div>
   );
@@ -146,7 +159,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           content={
             item?.status === "Draft"
               ? `Allocated to : ${item?.reference_document?.custom_assigned_user}` ||
-                `Allocated to : ${item?.allocated_to}`
+              `Allocated to : ${item?.allocated_to}`
               : ""
           }
         >
@@ -159,7 +172,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() && canEditExpense
+            item?.send_back_user?.toLowerCase() && canEditExpense
           }
           onEdit={handleEditClick}
         />
@@ -258,6 +271,57 @@ const ExpensesList: React.FC = () => {
     </div>
   );
 
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
+          title: "No Pending Claims",
+          description: "You have no pending expense claim requests."
+        },
+        Approved: {
+          title: "All Claims Approved",
+          description: "You have no approved expense claims to review."
+        },
+        Rejected: {
+          title: "No Rejected Claims",
+          description: "You have no rejected expense claims."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const mobileMenuItems = [
     {
       label: "Policy",
@@ -277,7 +341,9 @@ const ExpensesList: React.FC = () => {
         <div className="border-gray-100">
           <div className="px-6 py-4 flex items-center justify-between">
             <div>
-              <Typography variant="h4">My Expense Claims</Typography>
+              {isDesktop ? (
+                <Typography variant="h4">My Expense Claims</Typography>
+              ) : null}
               <Typography variant="bodySmall" color="body2">
                 Track and manage your expense claim requests
               </Typography>
@@ -374,6 +440,7 @@ const ExpensesList: React.FC = () => {
                 infiniteScroll={true}
                 showPagination={true}
                 loadMorePagination={false}
+                noRecordsScreen={noRecordsScreen}
               />
             </CardTable>
           )}

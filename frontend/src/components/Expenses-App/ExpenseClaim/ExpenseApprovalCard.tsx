@@ -213,7 +213,7 @@ const ExpenseApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
@@ -243,9 +243,9 @@ const ExpenseApprovalCard = ({
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <p className="card-title">
+                    <Typography variant="body" className="font-semibold">
                       {data?.reference_document?.employee_name}
-                    </p>
+                    </Typography>
                   </Link>
                 </div>
 
@@ -255,39 +255,53 @@ const ExpenseApprovalCard = ({
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="flex flex-col items-start justify-between mt-1 rounded-md p-1">
-                <div className="flex justify-between w-full">
+              <div className="flex flex-col items-start justify-between mt-1 rounded-md p-1 gap-4">
+                <div className="flex justify-between  w-full">
                   <div className="flex flex-col gap-1">
-                    <p className="card-title">Category</p>
-                    <p className="card-subtitle">
+                    <p className="card-subtitle-sm uppercase">Category</p>
+                    <Typography
+                      variant="body"
+                      className="leading-[13px]  font-semibold"
+                    >
                       {data?.reference_document?.custom_expense_category}
-                    </p>
+                    </Typography>
                   </div>
                   <div className="flex flex-col gap-1 text-right">
-                    <p className="card-title">Claimed Amount</p>
-                    <p className="card-subtitle">{totalClaimedAmount}</p>
+                    <p className="card-subtitle-sm uppercase">Claimed Amount</p>
+                    <Typography
+                      variant="body"
+                      className="leading-[13px]  font-semibold"
+                    >
+                      {totalClaimedAmount}
+                    </Typography>
                   </div>
                 </div>
 
                 <div className="flex justify-between w-full mt-2">
                   <div className="flex flex-col gap-1">
-                    <p className="card-title">Claim Date</p>
-                    <p className="card-subtitle">
+                    <p className="card-subtitle-sm uppercase">Claim Date</p>
+                    <Typography
+                      variant="body"
+                      className="leading-[13px]  font-semibold"
+                    >
                       {formatToIndianDate(
                         data?.reference_document?.expenses[0]?.expense_date,
                       )}
-                    </p>
+                    </Typography>
                   </div>
                   <div className="flex flex-col gap-1 text-right">
-                    <p className="card-title">Due Date</p>
-                    <p className="card-subtitle">
+                    <p className="card-subtitle-sm uppercase">Due Date</p>
+                    <Typography
+                      variant="body"
+                      className="leading-[13px]  font-semibold"
+                    >
                       {formatToIndianDate(data?.due_date)}
-                    </p>
+                    </Typography>
                   </div>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3 mb-3">
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&
