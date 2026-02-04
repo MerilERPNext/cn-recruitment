@@ -21,7 +21,6 @@ interface ToDo {
   reference_type?: string;
   reference_name?: string;
   date?: string;
-  subject?: string;
   due_date?: string;
   custom_redirect_url?: string;
 }
@@ -169,7 +168,6 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {/* <div className="flex gap-3 mb-4 p-2"> */}
       {isDesktop && (
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
