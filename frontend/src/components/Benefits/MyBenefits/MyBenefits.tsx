@@ -53,7 +53,12 @@ const MyBenefits: React.FC = () => {
 
   useEffect(() => {
     if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
+      const currentYear = new Date().getFullYear();
+      const currentYearOption = optionYears.find((option) => {
+        const [startYear] = option.value.split("-").map(Number);
+        return startYear + 1 === currentYear % 100;
+      });
+      setSelectedYear(currentYearOption?.value || optionYears[0].value);
     }
   }, [optionYears, selectedYear]);
 
@@ -61,7 +66,7 @@ const MyBenefits: React.FC = () => {
     useGetAllAccruedReimbursements(
       effectiveEmployeeId || "",
       effectiveEmployee?.company || "",
-      selectedYear
+      selectedYear,
     );
   // Keep track of which benefit cards are expanded — map by component name
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
@@ -207,7 +212,7 @@ const MyBenefits: React.FC = () => {
               : details.filter((r) =>
                   r.month
                     .toLowerCase()
-                    .includes(params.searchTerm!.toLowerCase())
+                    .includes(params.searchTerm!.toLowerCase()),
                 );
 
             const response: FrappePageResponse = {
