@@ -69,28 +69,25 @@ const TeamAdvanceExpenseList = () => {
 
     const getEmptyStateMessage = () => {
       const status = filters.status;
-
-      if (status === "Pending") {
-        return {
+      const messages: Record<string, { title: string; description: string }> = {
+        Pending: {
           title: "No Pending Requests",
           description: "You have no team advance requests to review."
-        };
-      } else if (status === "Approved") {
-        return {
+        },
+        Approved: {
           title: "No Approved Advances",
           description: "There are no approved advance requests."
-        };
-      } else if (status === "Rejected") {
-        return {
+        },
+        Rejected: {
           title: "No Rejected Advances",
           description: "There are no rejected advance requests."
-        };
-      } else {
-        return {
-          title: "No Advance Requests",
-          description: "No advance requests match your filters."
-        };
-      }
+        }
+      };
+
+      return messages[status] || {
+        title: "No Advance Requests",
+        description: "No advance requests match your filters."
+      };
     };
 
     const message = getEmptyStateMessage();

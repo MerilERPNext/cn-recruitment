@@ -209,28 +209,25 @@ const MyAdvanceExpenseList = () => {
 
     const getEmptyStateMessage = () => {
       const status = filters.status;
-
-      if (status === "Pending") {
-        return {
+      const messages: Record<string, { title: string; description: string }> = {
+        Pending: {
           title: "No Pending Advances",
           description: "You have no pending advance expense requests."
-        };
-      } else if (status === "Approved") {
-        return {
+        },
+        Approved: {
           title: "No Approved Advances",
           description: "You have no approved advance requests."
-        };
-      } else if (status === "Rejected") {
-        return {
+        },
+        Rejected: {
           title: "No Rejected Advances",
           description: "You have no rejected advance requests."
-        };
-      } else {
-        return {
-          title: "No Advance Requests",
-          description: "No advance requests match your filters."
-        };
-      }
+        }
+      };
+
+      return messages[status] || {
+        title: "No Advance Requests",
+        description: "No advance requests match your filters."
+      };
     };
 
     const message = getEmptyStateMessage();

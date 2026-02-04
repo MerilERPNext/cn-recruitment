@@ -203,7 +203,7 @@ const AdvanceApprovalCard = ({
               </div>
               <div className="flex flex-col items-start justify-between  gap-2 mt-1 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">
-                  <p className="card-subtitle">Category</p>
+                  <p className="w-1/2 truncate font-semibold text-gray-600">Category</p>
                   <Typography
                     variant="body"
                     className="leading-[13px]  font-semibold"
@@ -259,7 +259,7 @@ const AdvanceApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

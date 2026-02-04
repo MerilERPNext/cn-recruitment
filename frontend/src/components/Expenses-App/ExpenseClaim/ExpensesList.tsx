@@ -283,28 +283,25 @@ const ExpensesList: React.FC = () => {
 
     const getEmptyStateMessage = () => {
       const status = filters.status;
-
-      if (status === "Draft") {
-        return {
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
           title: "No Pending Claims",
           description: "You have no pending expense claim requests."
-        };
-      } else if (status === "Approved") {
-        return {
+        },
+        Approved: {
           title: "All Claims Approved",
           description: "You have no approved expense claims to review."
-        };
-      } else if (status === "Rejected") {
-        return {
+        },
+        Rejected: {
           title: "No Rejected Claims",
           description: "You have no rejected expense claims."
-        };
-      } else {
-        return {
-          title: "No Expense Claims",
-          description: "No expense claims match your filters."
-        };
-      }
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your filters."
+      };
     };
 
     const message = getEmptyStateMessage();

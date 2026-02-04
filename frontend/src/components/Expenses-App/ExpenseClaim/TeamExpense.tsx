@@ -70,28 +70,25 @@ const TeamExpense = () => {
 
     const getEmptyStateMessage = () => {
       const status = filters.status;
-
-      if (status === "Draft") {
-        return {
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
           title: "No Pending Requests",
           description: "You have no pending team expense claim requests to review."
-        };
-      } else if (status === "Approved") {
-        return {
+        },
+        Approved: {
           title: "No Approved Claims",
           description: "There are no approved expense claims at this time."
-        };
-      } else if (status === "Rejected") {
-        return {
+        },
+        Rejected: {
           title: "No Rejected Claims",
           description: "There are no rejected expense claims."
-        };
-      } else {
-        return {
-          title: "No Expense Claims",
-          description: "No expense claims match your current filters."
-        };
-      }
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your current filters."
+      };
     };
 
     const message = getEmptyStateMessage();

@@ -799,6 +799,18 @@ const DataListView = <T extends BaseItem>({
     );
   };
 
+  const emptyStateContent = useMemo(() => {
+    const customScreen = typeof noRecordsScreen === 'function'
+      ? noRecordsScreen(debouncedFilters)
+      : noRecordsScreen;
+
+    return customScreen ?? (
+      <div className="flex items-center justify-center py-12">
+        <span className="text-gray-500">No records found</span>
+      </div>
+    );
+  }, [noRecordsScreen, debouncedFilters]);
+
   return (
     <>
       {/* Header */}
@@ -931,17 +943,7 @@ const DataListView = <T extends BaseItem>({
             </div>
           )
         ) : processedData.length === 0 ? (
-          (() => {
-            const customScreen = typeof noRecordsScreen === 'function'
-              ? noRecordsScreen(debouncedFilters)
-              : noRecordsScreen;
-
-            return customScreen ?? (
-              <div className="flex items-center justify-center py-12">
-                <span className="text-gray-500">No records found</span>
-              </div>
-            );
-          })()
+          emptyStateContent
         ) : (
           <div>
             {processedData.map((item, index) => {
