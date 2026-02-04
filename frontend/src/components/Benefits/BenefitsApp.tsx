@@ -35,7 +35,7 @@ const BenefitsApp: React.FC = () => {
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -69,11 +69,7 @@ const BenefitsApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Benefits">
-      <div className="flex flex-col h-full">
-        <div className="flex-1 p-4 overflow-y-auto relative">
-          <Outlet />
-        </div>
-      </div>
+      <Outlet />
     </DesktopLayoutWrapper>
   );
 
