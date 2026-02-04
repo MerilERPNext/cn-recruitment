@@ -9,6 +9,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { useNavigate } from "react-router-dom";
 import CustomDropdown from "../shared/CustomDropdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 
 interface ToDo {
   priority: string;
@@ -41,6 +42,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
     navigate("/webapp/todo-app");
   };
 
+  const cleanDescription = sanitizeToPlainText(item.description);
+
   return (
     <div
       onClick={handleClick}
@@ -56,7 +59,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
             variant="bodySmall"
             className="font-medium block line-clamp-1"
           >
-            {item.subject || item.description || "Task"}
+            {cleanDescription || "Task"}
           </Typography>
 
           <Typography variant="label" color="body2">
@@ -206,7 +209,7 @@ const TasksAwaiting: React.FC = () => {
           doctype="ToDo"
           ItemComponent={() => null}
           isSearch={false}
-          pageSize={3}
+          pageSize={1000}
           orderBy="date desc"
           onDataLoad={handleDataLoad}
           defaultFilters={{
@@ -229,7 +232,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}
