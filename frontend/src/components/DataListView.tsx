@@ -520,6 +520,8 @@ const DataListView = <T extends BaseItem>({
       ...prev,
       [fieldname]: value,
     }));
+
+    setShowFilters(false);
   };
 
   const clearFilters = () => {

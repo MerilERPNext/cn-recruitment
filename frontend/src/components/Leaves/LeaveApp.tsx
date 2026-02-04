@@ -46,7 +46,7 @@ const LeaveAppInner: React.FC = () => {
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "request_leave",
-    "My Requests"
+    "My Requests",
   );
 
   const tabs: Tab[] = useMemo(
@@ -59,7 +59,7 @@ const LeaveAppInner: React.FC = () => {
         label: "Compensatory",
       },
     ],
-    []
+    [],
   );
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
@@ -71,7 +71,7 @@ const LeaveAppInner: React.FC = () => {
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -80,7 +80,7 @@ const LeaveAppInner: React.FC = () => {
 
     if (location.pathname.includes("/leave-requests/")) {
       const matchedSubTab = (Object.keys(subTabRoutes) as SubTabName[]).find(
-        (subTab) => location.pathname.startsWith(subTabRoutes[subTab])
+        (subTab) => location.pathname.startsWith(subTabRoutes[subTab]),
       );
       if (matchedSubTab) {
         setActiveSubTab(matchedSubTab);
@@ -147,7 +147,7 @@ const LeaveAppInner: React.FC = () => {
         />
 
         {isLeaveRequestsActive && (
-          <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+          <div className="px-4 py-2 border-b border-gray-200">
             <div className="flex bg-white rounded-lg p-1 border border-gray-200">
               {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
                 <button
@@ -172,10 +172,10 @@ const LeaveAppInner: React.FC = () => {
       </main>
 
       {!showModal &&
-        activeTab === "requests-status" &&
+        activeTab !== "holidays" &&
         !isViewAllActive &&
         canRequestLeave && (
-          <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-4 px-4 w-full z-50">
+          <div className="sticky bottom-0 bg-white rounded-md shadow-lg py-2 px-4 w-full z-50">
             <div className="max-w-4xl mx-auto flex">
               <button
                 onClick={() => openModal()}

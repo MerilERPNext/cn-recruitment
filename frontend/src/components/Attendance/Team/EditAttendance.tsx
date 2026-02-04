@@ -11,7 +11,6 @@ import {
 } from "../../../hooks/useAttendance";
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { format } from "date-fns";
-import { useTargetUser } from "../../../context/ViewedUserContext";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 
@@ -31,12 +30,7 @@ export const EditAttendance = ({
   employeeName,
   onRefetchData,
 }: EditAttendanceProps) => {
-  const { targetEmployeeId } = useTargetUser();
-  const effectiveEmployeeId = targetEmployeeId || employeeId;
   const formInstance = useRef<any>(null);
-
-  console.log("EditAttendance Rendered", { requestId, effectiveEmployeeId, employeeName, onRefetchData });
-
   const { data, isLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
     // ["employee", "=", effectiveEmployeeId],

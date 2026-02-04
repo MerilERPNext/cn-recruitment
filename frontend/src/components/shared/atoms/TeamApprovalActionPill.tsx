@@ -10,10 +10,11 @@ type TeamApprovalActionPillProps = {
   recordId: string;
   loadingAction?: { id: string; action: string } | null;
   onAction: (action: string) => void;
+  isModalAction?: boolean;
 };
 
 /* ===============================
-   ACTION → ICON CONFIG (EXTENSIBLE)
+   ACTION → ICON + COLOR CONFIG (EXTENSIBLE)
 ================================ */
 
 const ACTION_CONFIG: Record<
@@ -21,19 +22,26 @@ const ACTION_CONFIG: Record<
   {
     tooltip: string;
     icon: JSX.Element;
+    // FIXED: Direct class strings for reliable Tailwind colors
+    buttonClasses: string;
   }
 > = {
   approve: {
     tooltip: "Approve",
     icon: <Check className="w-4 h-4 text-green-600" strokeWidth={2} />,
+    buttonClasses:
+      "bg-green-50 text-green-600 hover:bg-green-100 focus:ring-green-500",
   },
   reject: {
     tooltip: "Reject",
     icon: <X className="w-4 h-4 text-red-500" strokeWidth={2} />,
+    buttonClasses: "bg-red-50 text-red-500 hover:bg-red-100 focus:ring-red-500",
   },
   sendback: {
     tooltip: "Send Back",
     icon: <SendToBack className="w-4 h-4 text-amber-600" strokeWidth={2} />,
+    buttonClasses:
+      "bg-amber-50 text-amber-600 hover:bg-amber-100 focus:ring-amber-500",
   },
 };
 
@@ -46,6 +54,7 @@ const TeamApprovalActionPill = ({
   recordId,
   loadingAction,
   onAction,
+  isModalAction = false,
 }: TeamApprovalActionPillProps) => {
   const normalizedStatus = status?.toLowerCase();
 
@@ -57,33 +66,65 @@ const TeamApprovalActionPill = ({
 
   if (!isActionable) {
     return (
-      <div
-        className="
-          h-8
-          px-3
-          flex items-center justify-center
-          rounded-md
-          bg-gray-10
-          text-gray-600
-          text-xs
-          font-medium
-          w-fit
-        "
-      >
+      <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
         Action Taken
       </div>
     );
   }
 
-  /* ✅ FIX STARTS HERE (DATA ONLY) */
   const visibleActions = actions
     .map((action) => ({
-      original: action, // <-- API SAFE
-      normalized: normalizeAction(action), // <-- UI SAFE
+      original: action,
+      normalized: normalizeAction(action),
     }))
     .filter(({ normalized }) => ACTION_CONFIG[normalized]);
-  /* ✅ FIX ENDS HERE */
 
+  // FIXED: Modal button rendering with DIRECT color classes
+  if (isModalAction) {
+    return (
+      <div className="flex sm:flex-row sm:justify-end gap-3">
+        {visibleActions.map(({ original, normalized }) => {
+          const meta = ACTION_CONFIG[normalized];
+          const isLoading =
+            loadingAction?.id === recordId &&
+            normalizeAction(loadingAction.action) === normalized;
+
+          return (
+            <button
+              key={original}
+              disabled={isLoading}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAction(original);
+              }}
+              className={`
+                flex items-center justify-center gap-2
+                px-6 py-1.5
+                rounded-md font-medium text-sm min-w-[120px]
+                transition-all duration-200
+                border border-transparent shadow-sm
+                hover:shadow-md focus:outline-none focus:ring-4 focus:ring-offset-2
+                ${meta.buttonClasses}
+                disabled:opacity-50 disabled:cursor-not-allowed
+                disabled:shadow-none disabled:hover:shadow-none
+              `.trim()}
+            >
+              {isLoading ? (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span className="flex-shrink-0">{meta.icon}</span>
+                  <span className="font-semibold">{original}</span>
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+  // existing pill UI (unchanged)
   return (
     <div
       className="
@@ -110,7 +151,7 @@ const TeamApprovalActionPill = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onAction(original); // ✅ ORIGINAL STRING SENT
+                  onAction(original);
                 }}
                 disabled={isLoading}
                 className="flex items-center justify-center"

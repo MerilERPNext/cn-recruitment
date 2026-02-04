@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3 } from "lucide-react";
+import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
   useCloseTicket,
+  useRejectResolution,
+  useUserLookup,
+  useEmployeeByUserEmail,
 } from "../../hooks/useHelpDeskTickets";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SimplifiedChatInput from "./SimplifiedChatInput";
 import toast from "react-hot-toast";
 
@@ -186,19 +189,116 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
   );
 };
 
+// Reject Resolution Modal Component
+interface RejectResolutionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (reason: string) => void;
+  isLoading: boolean;
+}
+
+const RejectResolutionModal: React.FC<RejectResolutionModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  isLoading,
+}) => {
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      setReason("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    if (!reason.trim()) {
+      toast.error("Please enter a rejection reason");
+      return;
+    }
+    onSubmit(reason);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Reject Resolution</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="px-6 py-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Rejection Reason <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Explain why the resolution is not acceptable..."
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-500"
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            This will reject the resolution and set the ticket status back to Replied.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isLoading || !reason.trim()}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Rejecting...
+              </>
+            ) : (
+              <>
+                <XCircle className="w-4 h-4" />
+                Reject Resolution
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ticket,
   currentUserEmail,
 }) => {
-  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "resolution">("chat");
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
 
   // Mutations
   const sendEmailMutation = useSendEmailReply();
   const closeTicketMutation = useCloseTicket();
+  const rejectResolutionMutation = useRejectResolution();
+
+  // User lookup for displaying names instead of emails
+  const { data: userLookup } = useUserLookup();
 
   // Check ticket status
   const isTicketClosed = ticket.status === "Closed" || ticket.status === "Resolved";
@@ -317,9 +417,9 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       .slice(0, 2);
   };
 
-  // Get assigned user name
-  const getAssignedUser = (): string => {
-    if (!ticket._assign) return "Unassigned";
+  // Get assigned user email
+  const getAssignedUserEmail = (): string | null => {
+    if (!ticket._assign) return null;
     try {
       const assigned = JSON.parse(ticket._assign);
       if (Array.isArray(assigned) && assigned.length > 0) {
@@ -328,8 +428,20 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     } catch {
       return ticket._assign;
     }
-    return "Unassigned";
+    return null;
   };
+
+  // Get assigned user name (display name instead of email)
+  const getAssignedUser = (): string => {
+    const email = getAssignedUserEmail();
+    if (!email) return "Unassigned";
+    // Use full name from lookup if available, otherwise extract from email
+    return userLookup?.get(email) || email.split("@")[0].replace(/[._]/g, " ");
+  };
+
+  // Get employee data for hover card
+  const assignedEmail = getAssignedUserEmail();
+  const { data: employeeData } = useEmployeeByUserEmail(assignedEmail);
 
   // Get status badge color
   const getStatusColor = (status: string) => {
@@ -345,6 +457,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       default:
         return "bg-app text-gray-700";
     }
+  };
+
+  // Helper to truncate HTML content for quoted messages
+  const truncateHtml = (html: string, maxLength: number): string => {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const text = div.textContent || div.innerText || '';
+    if (text.length <= maxLength) return html;
+    return `<span>${text.substring(0, maxLength)}...</span>`;
   };
 
   // Build message with attachments embedded as HTML
@@ -378,11 +499,23 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ) => {
     try {
       // Get the assigned agent email to send to
-      const assignedAgent = getAssignedUser();
-      const recipient = assignedAgent !== "Unassigned" ? assignedAgent : ticket.raised_by;
+      const assignedEmail = getAssignedUserEmail();
+      const recipient = assignedEmail || ticket.raised_by;
+
+      // Build final message with quoted content if replying
+      let finalMessage = message;
+      if (replyingTo) {
+        const quotedContent = `
+          <div class="reply-to-content" style="border-left: 3px solid #3b82f6; padding-left: 12px; margin-bottom: 12px; color: #6b7280;">
+            <div style="font-size: 12px; font-weight: 500;">${replyingTo.sender.name} wrote:</div>
+            <div style="font-size: 14px;">${truncateHtml(replyingTo.content, 200)}</div>
+          </div>
+        `;
+        finalMessage = quotedContent + message;
+      }
 
       // Embed attachments in message HTML instead of passing separately
-      const messageWithAttachments = buildMessageWithAttachments(message, attachments);
+      const messageWithAttachments = buildMessageWithAttachments(finalMessage, attachments);
 
       await sendEmailMutation.mutateAsync({
         ticketId: ticket.name,
@@ -390,6 +523,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         message: messageWithAttachments,
       });
       toast.success("Message sent successfully");
+      setReplyingTo(null);
     } catch {
       toast.error("Failed to send message");
       throw new Error("Failed to send");
@@ -447,9 +581,18 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
-  // Handle close
-  const handleClose = () => {
-    navigate("/webapp/helpdesk");
+  // Handle reject resolution
+  const handleRejectResolution = async (rejectionReason: string) => {
+    try {
+      await rejectResolutionMutation.mutateAsync({
+        ticketId: ticket.name,
+        rejectionReason,
+      });
+      toast.success("Resolution rejected");
+      setIsRejectModalOpen(false);
+    } catch {
+      toast.error("Failed to reject resolution");
+    }
   };
 
   const isSending = sendEmailMutation.isPending;
@@ -526,7 +669,17 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     if (isCurrentUser) {
       // Right-aligned message (current user) - blue gradient
       return (
-        <div className="flex justify-end gap-3 mb-6">
+        <div className="group flex justify-end gap-3 mb-6">
+          {/* Reply button - shows on hover */}
+          {!isTicketClosed && (
+            <button
+              onClick={() => setReplyingTo(message)}
+              className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+              title="Reply"
+            >
+              <Reply className="w-4 h-4" />
+            </button>
+          )}
           <div className="flex flex-col items-end max-w-[75%]">
             {/* Message bubble */}
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
@@ -553,7 +706,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
     // Left-aligned message (other users) - warm cream color
     return (
-      <div className="flex justify-start gap-3 mb-6">
+      <div className="group flex justify-start gap-3 mb-6">
         <Avatar sender={sender} isCurrentUser={false} />
 
         <div className="flex flex-col items-start max-w-[75%]">
@@ -580,6 +733,17 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           {/* Timestamp */}
           <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
         </div>
+
+        {/* Reply button - shows on hover */}
+        {!isTicketClosed && (
+          <button
+            onClick={() => setReplyingTo(message)}
+            className="opacity-0 group-hover:opacity-100 self-center p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+            title="Reply"
+          >
+            <Reply className="w-4 h-4" />
+          </button>
+        )}
       </div>
     );
   };
@@ -660,16 +824,27 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 )}
               </div>
             </div>
-            <button
-              onClick={() => {
-                setIsEditingResolution(true);
-                setIsResolutionModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <Edit3 className="w-4 h-4" />
-              Edit
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setIsEditingResolution(true);
+                  setIsResolutionModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+                Edit
+              </button>
+              {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail && (
+                <button
+                  onClick={() => setIsRejectModalOpen(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Reject
+                </button>
+              )}
+            </div>
           </div>
           <div
             className="prose prose-sm max-w-none text-gray-700"
@@ -703,12 +878,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm text-gray-500">Assigned to</span>
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg">
-                <span className="w-2 h-2 rounded-lg bg-green-500"></span>
-                <span className="text-sm font-medium text-gray-700">
-                  {getAssignedUser()}
-                </span>
-              </div>
+              <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
+                  <span className="w-2 h-2 rounded-lg bg-green-500"></span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {getAssignedUser()}
+                  </span>
+                </div>
+              </WrapperHoverCard>
             </div>
           </div>
         </div>
@@ -726,14 +903,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </button>
           )}
 
-          {/* Close button */}
-          <button
-            onClick={handleClose}
-            className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-app rounded-xl transition-colors"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
       </header>
 
@@ -825,6 +994,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             onSend={handleSendMessage}
             placeholder="Type your reply here....."
             isSending={isSending}
+            replyingTo={replyingTo ? {
+              id: replyingTo.id,
+              content: replyingTo.content,
+              senderName: replyingTo.sender.name
+            } : null}
+            onCancelReply={() => setReplyingTo(null)}
           />
         </>
       )}
@@ -841,6 +1016,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         isRaiser={true}
         isEditing={isEditingResolution}
         existingResolution={isEditingResolution ? ticket.resolution_details : undefined}
+      />
+
+      {/* Reject Resolution Modal */}
+      <RejectResolutionModal
+        isOpen={isRejectModalOpen}
+        onClose={() => setIsRejectModalOpen(false)}
+        onSubmit={handleRejectResolution}
+        isLoading={rejectResolutionMutation.isPending}
       />
     </div>
   );

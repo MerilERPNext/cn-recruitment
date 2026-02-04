@@ -163,13 +163,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
               : ""
           }
         >
-          {/* <span
-            className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.status,
-            )}`}
-          >
-            {item?.status === "Draft" ? "Pending" : item?.status}
-          </span> */}
           <StatusBadge status={item?.status} />
         </Tooltip>
       </div>
