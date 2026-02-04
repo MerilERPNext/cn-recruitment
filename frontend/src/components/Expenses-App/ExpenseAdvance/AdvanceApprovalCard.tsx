@@ -159,7 +159,7 @@ const AdvanceApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-primary bg-white rounded-2xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
@@ -201,34 +201,41 @@ const AdvanceApprovalCard = ({
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="flex flex-col items-start justify-between bg-gray-100 mt-1 rounded-md p-1">
+              <div className="flex flex-col items-start justify-between  gap-2 mt-1 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
-                    Category
-                  </p>
-                  <p className="w-1/2 truncate text-end">
-                    {data?.reference_document?.custom_expense_category}
-                  </p>
+                  <p className="card-subtitle">Category</p>
+                  <Typography
+                    variant="body"
+                    className="leading-[13px]  font-semibold"
+                  >
+                    {data?.reference_document?.custom_expense_category || "-"}
+                  </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
                   <p className="w-1/2 truncate font-semibold text-gray-600">
                     Advance Amount
                   </p>
-                  <p className="w-1/2 truncate text-end">
+                  <Typography
+                    variant="body"
+                    className="leading-[13px]  font-semibold"
+                  >
                     {totalClaimedAmount}
-                  </p>
+                  </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
                   <p className="w-1/2 truncate font-semibold text-gray-600">
                     Due Date
                   </p>
-                  <p className="w-1/2 truncate text-end">
+                  <Typography
+                    variant="body"
+                    className="leading-[13px]  font-semibold"
+                  >
                     {formatToIndianDate(data?.due_date)}
-                  </p>
+                  </Typography>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3 mb-3">
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&
