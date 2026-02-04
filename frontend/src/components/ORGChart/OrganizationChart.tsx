@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ReactFlow,
   type Node,
@@ -9,6 +9,7 @@ import {
   useNodesState,
   useEdgesState,
   Controls,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
@@ -21,6 +22,9 @@ import {
 } from "../../hooks/useEmployee";
 import HeaderBar from "../HeaderBar";
 import { useLocation, useNavigate } from "react-router";
+import dagre from "dagre";
+import { Position } from "@xyflow/react";
+import OrgChartSkeleton from "../shared/molecules/Skeletons/OrgChartSkeleton";
 
 const nodeTypes = {
   person: PersonNode,
@@ -100,6 +104,7 @@ export default function OrganizationChart() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [collapsedNodes, setCollapsedNodes] = useState<CollapsedState>({});
   const navigate = useNavigate();
+  const [layoutReady, setLayoutReady] = useState(false);
 
   const { search } = useLocation();
   const query = new URLSearchParams(search);
@@ -115,6 +120,56 @@ export default function OrganizationChart() {
     data: employeeSubordinateHierarchy,
     isLoading: employeeSubordinateHierarchyIsLoading,
   } = useGetEmployeeSubordinateHierarchy(employeeId ?? "");
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  const NODE_WIDTH = 320;
+  const NODE_HEIGHT = 120;
+
+  const getLayoutedElements = (
+    nodes: Node<NodeData>[],
+    edges: Edge[],
+    direction: "TB" | "LR" = "TB"
+  ) => {
+    dagreGraph.setGraph({
+      rankdir: direction,
+      nodesep: 80,
+      ranksep: 100,
+      marginx: 50,
+      marginy: 50,
+    });
+
+    nodes.forEach((node) => {
+      dagreGraph.setNode(node.id, {
+        width: NODE_WIDTH,
+        height: NODE_HEIGHT,
+      });
+    });
+
+    edges.forEach((edge) => {
+      dagreGraph.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(dagreGraph);
+
+    const isHorizontal = direction === "LR";
+
+    const layoutedNodes = nodes.map((node) => {
+      const dagreNode = dagreGraph.node(node.id);
+
+      return {
+        ...node,
+        targetPosition: isHorizontal ? Position.Left : Position.Top,
+        sourcePosition: isHorizontal ? Position.Right : Position.Bottom,
+        position: {
+          x: dagreNode.x - NODE_WIDTH / 2,
+          y: dagreNode.y - NODE_HEIGHT / 2,
+        },
+      };
+    });
+
+    return { nodes: layoutedNodes, edges };
+  };
 
   // Build nodes/edges when data comes
   useEffect(() => {
@@ -141,8 +196,13 @@ export default function OrganizationChart() {
         allEdges = [...allEdges, ...edges];
       });
 
-      setNodes(allNodes);
-      setEdges(allEdges);
+      const { nodes: layoutedNodes, edges: layoutedEdges } =
+        getLayoutedElements(allNodes, allEdges);
+
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+      setLayoutReady(true); // 👈 signal
+
       return;
     }
 
@@ -242,8 +302,20 @@ export default function OrganizationChart() {
 
   const proOptions = { hideAttribution: true };
 
+  if (!layoutReady) {
+    return (
+      <div className="w-full h-screen bg-white">
+        <HeaderBar title="organizational chart" onBack={() => navigate(-1)} />
+        {/* ---------------- Skeleton Loader ---------------- */}
+        <OrgChartSkeleton />
+        {/* ---------------- Skeleton Loader ---------------- */}
+      </div>
+    );
+  }
+
+
   return (
-    <div className="w-full h-screen  bg-gray-100">
+    <div className="w-full h-screen  bg-white">
       <HeaderBar title="organizational chart" onBack={() => navigate(-1)} />
       <ReactFlow
         nodes={nodesWithToggle}
@@ -257,15 +329,50 @@ export default function OrganizationChart() {
         proOptions={proOptions}
         minZoom={0.1}
         maxZoom={2}
+        zoomOnPinch={true}
         defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
       >
+        <AutoFocusNode nodeId={employeeId} layoutReady={layoutReady} />
+
         <Controls
           position="top-right"
-          showZoom={true}
-          showFitView={true}
+          showZoom
+          showFitView
           showInteractive={false}
         />
       </ReactFlow>
+
     </div>
   );
+}
+
+
+function AutoFocusNode({
+  nodeId,
+  layoutReady,
+}: {
+  nodeId: string | null;
+  layoutReady: boolean;
+}) {
+  const { fitView, getNodes } = useReactFlow();
+  const hasFocused = useRef(false);
+
+  useEffect(() => {
+    if (!layoutReady || !nodeId || hasFocused.current) return;
+
+    const node = getNodes().find((n) => n.id === nodeId);
+    if (!node || node.position.x === 0 && node.position.y === 0) return;
+
+    requestAnimationFrame(() => {
+      fitView({
+        nodes: [node],
+        padding: 0.6,
+        duration: 800,
+        maxZoom: 1.2,
+      });
+      hasFocused.current = true;
+    });
+  }, [layoutReady, nodeId, fitView, getNodes]);
+
+  return null;
 }

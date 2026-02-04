@@ -8,11 +8,19 @@ interface UploadedFile {
   file_name: string;
 }
 
+interface ReplyingTo {
+  id: string;
+  content: string;
+  senderName: string;
+}
+
 interface SimplifiedChatInputProps {
   onSend: (message: string, attachments: UploadedFile[]) => Promise<void>;
   placeholder?: string;
   disabled?: boolean;
   isSending?: boolean;
+  replyingTo?: ReplyingTo | null;
+  onCancelReply?: () => void;
 }
 
 const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
@@ -20,6 +28,8 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
   placeholder = "Type your reply here.....",
   disabled = false,
   isSending = false,
+  replyingTo = null,
+  onCancelReply,
 }) => {
   const [message, setMessage] = useState("");
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
@@ -101,6 +111,25 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
 
   return (
     <div className="border-t border-gray-200 bg-white">
+      {/* Reply preview */}
+      {replyingTo && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100">
+          <div className="flex-1 border-l-4 border-blue-500 pl-3">
+            <div className="text-xs font-medium text-gray-500">{replyingTo.senderName}</div>
+            <div
+              className="text-sm text-gray-700 truncate max-w-md"
+              dangerouslySetInnerHTML={{ __html: replyingTo.content }}
+            />
+          </div>
+          <button
+            onClick={onCancelReply}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Attachments preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100">

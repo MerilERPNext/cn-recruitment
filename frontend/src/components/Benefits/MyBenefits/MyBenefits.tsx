@@ -20,6 +20,7 @@ import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { getCurrentPeriod } from "../shared/logic";
 
 export const COLUMN_LAYOUT =
   "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
@@ -52,10 +53,8 @@ const MyBenefits: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const { data: allAccruedReimbursements, isLoading } =
     useGetAllAccruedReimbursements(
@@ -204,14 +203,14 @@ const MyBenefits: React.FC = () => {
             const fetchFunction = async (params: FetchParams) => {
               const details = component.details ?? [];
 
-              // basic searchTerm filter
-              const filtered = !params.searchTerm
-                ? details
-                : details.filter((r) =>
-                    r.month
-                      .toLowerCase()
-                      .includes(params.searchTerm!.toLowerCase()),
-                  );
+            // basic searchTerm filter
+            const filtered = !params.searchTerm
+              ? details
+              : details.filter((r) =>
+                  r.month
+                    .toLowerCase()
+                    .includes(params.searchTerm!.toLowerCase()),
+                );
 
               const response: FrappePageResponse = {
                 data: filtered,

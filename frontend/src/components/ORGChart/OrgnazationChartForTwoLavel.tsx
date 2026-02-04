@@ -343,7 +343,7 @@ export default function ThreeLevelOrgChart() {
         <Button
           variant="subtle"
           size="sm"
-          onClick={() => navigate("/webapp/organizational-chart")}
+          onClick={() => navigate(`/webapp/organizational-chart?employee=${employeeId}`)}
         >
           <span className="text-sm font-medium text-blue-600">View All</span>
           <IoChevronForwardOutline size={18} />
