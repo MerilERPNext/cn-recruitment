@@ -64,8 +64,8 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -105,6 +105,10 @@ const LeaveApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
+          {/* Leave Type */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.leave_type}
+          </Typography>
           {/* Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
@@ -210,6 +214,7 @@ const LeaveApprovalCard = ({
                       </span>
                     </p>
                   )}
+
                   {data?.due_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>

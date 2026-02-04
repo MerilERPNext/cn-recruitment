@@ -68,9 +68,8 @@ const LeaveTransactionCard: React.FC<{
             type="button"
             aria-expanded={openIndex === idx}
             onClick={() => toggle(idx)}
-            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${
-              openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
-            }`}
+            className={`w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 transition-all text-left hover:bg-gray-50 ${openIndex === idx ? "rounded-t-lg border-b-0" : "rounded-lg"
+              }`}
           >
             <Typography
               variant="bodyMedium"
@@ -90,9 +89,8 @@ const LeaveTransactionCard: React.FC<{
               </Typography>
 
               <ChevronDown
-                className={`h-4 w-4 transition-transform ${
-                  openIndex === idx ? "rotate-180" : ""
-                }`}
+                className={`h-4 w-4 transition-transform ${openIndex === idx ? "rotate-180" : ""
+                  }`}
               />
             </div>
           </button>
@@ -342,10 +340,10 @@ const LeaveBalance: React.FC = () => {
                       <div className="flex justify-between items-start">
                         <div>
                           <Typography variant="subheading">
-                            {leave.balance}
+                            {leave.entitled}
                           </Typography>
 
-                          <p className="text-sm text-gray-500">{leave.type}</p>
+                          <p className="text-sm text-gray-600">{leave.type}</p>
                         </div>
                         {leave?.visibility_flags?.show_carry_over && (
                           <Typography
@@ -391,14 +389,16 @@ const LeaveBalance: React.FC = () => {
                           <p className="text-sm font-semibold text-gray-900">
                             {leave.availed}
                           </p>
-                          <p className="text-xs text-gray-500">Already taken</p>
+                          <p className="text-xs text-gray-600">Already taken</p>
                         </div>
 
                         <div>
                           <p className="text-sm font-semibold text-gray-900">
-                            {leave.entitled - leave.balance - leave.availed}
+                            {leave.balance}
                           </p>
-                          <p className="text-xs text-gray-500">Pending</p>
+                          <p className="text-xs text-gray-600">
+                            Remaining balance
+                          </p>
                         </div>
                       </div>
                     </div>

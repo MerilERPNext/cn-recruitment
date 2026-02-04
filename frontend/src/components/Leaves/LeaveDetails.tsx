@@ -15,6 +15,7 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 export function LeaveDetailView({
   documentName,
@@ -109,8 +110,8 @@ export function LeaveDetailView({
         console.error("Action failed", error);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+
+    [data, mutation, onAction, setRefetchAttendance],
   );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -144,21 +145,28 @@ export function LeaveDetailView({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-primary/10 transition-colors duration-200"
+            className="p-2 rounded-full hover:bg-gray-50 transition-colors duration-200"
             aria-label="Close"
           >
-            <X className="h-5 w-5 text-primary" />
+            <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
-          <div className="py-4">
-            <Badge
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />{" "}
+          <div className="flex items-center justify-between">
+            <p className=" flex flex-col gap-1">
+              <Typography variant="bodyMedium">Leave Type</Typography>
+              <Typography
+                variant="bodySmall"
+                // className="text-gray-500/80 font-medium"
+                color="body2"
+              >
+                {data?.reference_document?.leave_type}
+              </Typography>
+            </p>
+            <StatusBadge status={data?.reference_document?.status} />
           </div>
           <div className="py-2">
             <div className="flex gap-2 justify-between">
@@ -168,7 +176,8 @@ export function LeaveDetailView({
                   <Typography variant="bodyMedium">From Date</Typography>
                   <Typography
                     variant="bodySmall"
-                    className="text-gray-500/80 font-medium"
+                    // className="text-gray-500/50 font-medium"
+                    color="body2"
                   >
                     {formatToIndianDate(data?.reference_document?.from_date)}
                   </Typography>
@@ -181,7 +190,8 @@ export function LeaveDetailView({
                   <Typography variant="bodyMedium">To Date</Typography>
                   <Typography
                     variant="bodySmall"
-                    className="text-gray-500/80 font-medium"
+                    // className="text-gray-500/80 font-medium"
+                    color="body2"
                   >
                     {formatToIndianDate(data?.reference_document?.to_date)}
                   </Typography>
@@ -189,31 +199,36 @@ export function LeaveDetailView({
               )}
             </div>
           </div>
-          {data?.due_date && (
-            <p className=" flex flex-col gap-1">
-              <Typography variant="bodyMedium">Due Date</Typography>
+          <div className="flex justify-between items-center">
+            <div className="py-2 flex flex-col gap-1">
+              <Typography variant="bodyMedium">Reason</Typography>
+
               <Typography
                 variant="bodySmall"
-                className="text-gray-500/80 font-medium"
+                // className="text-gray-500/80 font-medium"
+                color="body2"
               >
-                {formatToIndianDate(data?.due_date)}
+                {data?.reference_document?.custom_reason}
               </Typography>
-            </p>
-          )}
-          <div className="py-2 flex flex-col gap-1">
-            <Typography variant="bodyMedium">Reason</Typography>
-
-            <Typography
-              variant="bodySmall"
-              className="text-gray-500/80 font-medium"
-            >
-              {data?.reference_document?.custom_reason}
-            </Typography>
+            </div>
+            {data?.date && (
+              <p className=" flex flex-col gap-1">
+                <Typography variant="bodyMedium">Due Date</Typography>
+                <Typography
+                  variant="bodySmall"
+                  // className="text-gray-500/80 font-medium"
+                  color="body2"
+                >
+                  {formatToIndianDate(data?.date)}
+                </Typography>
+              </p>
+            )}
           </div>
+
           {/* explanation */}
           <div className="py-2">
             <Typography variant="bodyMedium">Description</Typography>
-            <div className="text-xs bg-primary/10 p-3 rounded-lg">
+            <div className="text-sm text-gray-700 bg-primary/10 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
