@@ -61,7 +61,7 @@ const MyBenefits: React.FC = () => {
     useGetAllAccruedReimbursements(
       effectiveEmployeeId || "",
       effectiveEmployee?.company || "",
-      selectedYear
+      selectedYear,
     );
   // Keep track of which benefit cards are expanded — map by component name
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
@@ -158,176 +158,180 @@ const MyBenefits: React.FC = () => {
   // At this point we have real data in allAccruedReimbursements.data
   const components = allAccruedReimbursements?.data ?? [];
   return (
-    <div className="min-h-screen font-sans text-slate-800 pb-12">
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200 px-2">
-        <div className="flex flex-col mb-2">
-          <Typography variant="h4">
-            My Benefits for FY {selectedYear}
-          </Typography>
-          <Typography variant="bodySmall" color="body2">
-            Track and manage your benefits
-          </Typography>
-        </div>
-
-        <div className="flex items-center space-x-3 pb-1">
-          <CustomDropdown
-            position="bottom-left"
-            value={selectedYear}
-            onChange={(event) => setSelectedYear(event?.target.value)}
-            options={optionYears}
-          />
-        </div>
-      </div>
-      {!components || components.length === 0 ? (
-        <div className="w-full">
-          <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-600">No data found</p>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">
+                My Benefits for FY {selectedYear}
+              </Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your benefits
+              </Typography>
+            </div>
+            <div className="flex items-center space-x-3 pb-1">
+              <CustomDropdown
+                position="bottom-left"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(event?.target.value)}
+                options={optionYears}
+              />
+            </div>
           </div>
         </div>
-      ) : null}
-      <main className="w-full px-4 sm:px-6 lg:px-8 pb-8 space-y-6">
-        {components?.map((component, compIdx) => {
-          // compute summary stats based on the SalaryComponent fields
-          const carryForward = component.carry_forward_amount ?? 0;
-          const totalAccrual = component.total_accrued_amount ?? 0;
-          const periodicAccrual = component.periodic_original_amount ?? 0;
-          const totalClaim = component.total_claimed_amount ?? 0;
-          const advancePeriods = component.advance_period ?? 0;
-          const totalBalance = component.total_balance_amount ?? 0;
 
-          const isExpanded = !!expandedMap[component.salary_component];
+        {!components || components.length === 0 ? (
+          <div className="w-full">
+            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
+              <p className="text-gray-600">No data found</p>
+            </div>
+          </div>
+        ) : null}
+        <main className="w-full px-4 sm:px-6 lg:px-4 pb-8 space-y-6">
+          {components?.map((component, compIdx) => {
+            // compute summary stats based on the SalaryComponent fields
+            const carryForward = component.carry_forward_amount ?? 0;
+            const totalAccrual = component.total_accrued_amount ?? 0;
+            const periodicAccrual = component.periodic_original_amount ?? 0;
+            const totalClaim = component.total_claimed_amount ?? 0;
+            const advancePeriods = component.advance_period ?? 0;
+            const totalBalance = component.total_balance_amount ?? 0;
 
-          // DataListView fetch function uses the details already present in memory.
-          const fetchFunction = async (params: FetchParams) => {
-            const details = component.details ?? [];
+            const isExpanded = !!expandedMap[component.salary_component];
 
-            // basic searchTerm filter
-            const filtered = !params.searchTerm
-              ? details
-              : details.filter((r) =>
-                  r.month
-                    .toLowerCase()
-                    .includes(params.searchTerm!.toLowerCase())
-                );
+            // DataListView fetch function uses the details already present in memory.
+            const fetchFunction = async (params: FetchParams) => {
+              const details = component.details ?? [];
 
-            const response: FrappePageResponse = {
-              data: filtered,
-              totalCount: filtered.length,
-              nextCursor: null,
-            } as unknown as FrappePageResponse;
+              // basic searchTerm filter
+              const filtered = !params.searchTerm
+                ? details
+                : details.filter((r) =>
+                    r.month
+                      .toLowerCase()
+                      .includes(params.searchTerm!.toLowerCase()),
+                  );
 
-            return response;
-          };
+              const response: FrappePageResponse = {
+                data: filtered,
+                totalCount: filtered.length,
+                nextCursor: null,
+              } as unknown as FrappePageResponse;
 
-          return (
-            <div
-              key={`${component.salary_component}-${compIdx}`}
-              className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden"
-            >
-              {/* Header */}
+              return response;
+            };
+
+            return (
               <div
-                className="p-6 md:p-8 cursor-pointer hover:bg-blue-50/10 transition-colors duration-200 group"
-                onClick={() => toggleExpanded(component.salary_component)}
+                key={`${component.salary_component}-${compIdx}`}
+                className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden"
               >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
-                        <Wallet className="h-5 w-5 text-emerald-600" />
+                {/* Header */}
+                <div
+                  className="p-6 md:p-8 cursor-pointer hover:bg-blue-50/10 transition-colors duration-200 group"
+                  onClick={() => toggleExpanded(component.salary_component)}
+                >
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 rounded-lg group-hover:bg-emerald-100 transition-colors">
+                          <Wallet className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <h2 className="text-lg md:text-xl font-bold text-slate-800 leading-tight">
+                          {component.salary_component}
+                        </h2>
                       </div>
-                      <h2 className="text-lg md:text-xl font-bold text-slate-800 leading-tight">
-                        {component.salary_component}
-                      </h2>
+                    </div>
+                    <div
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${
+                        isExpanded ? "rotate-180 bg-gray-50" : ""
+                      }`}
+                    >
+                      <ChevronDown className="h-5 w-5 text-slate-500" />
                     </div>
                   </div>
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${
-                      isExpanded ? "rotate-180 bg-gray-50" : ""
-                    }`}
-                  >
-                    <ChevronDown className="h-5 w-5 text-slate-500" />
-                  </div>
-                </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-8">
-                  <StatItem
-                    label="Carry Forward"
-                    value={carryForward}
-                    subLabel="Amount"
-                  />
-                  <StatItem
-                    label="Total Accrual"
-                    value={totalAccrual}
-                    subLabel="Amount"
-                    highlighted
-                  />
-                  <StatItem
-                    label="Periodic Accrual"
-                    value={periodicAccrual}
-                    subLabel="At Present"
-                  />
-                  <StatItem
-                    label="Total Claim"
-                    value={totalClaim}
-                    subLabel="Amount"
-                  />
-                  <StatItem
-                    label="Advance Periods"
-                    value={advancePeriods}
-                    isNumber
-                    subLabel="Months"
-                  />
-                  <StatItem
-                    label="Total Balance"
-                    value={totalBalance}
-                    subLabel="Amount"
-                  />
-                </div>
-              </div>
-
-              {/* Divider */}
-              {isExpanded && <div className="h-px w-full bg-gray-100"></div>}
-
-              {/* Expanded details (list) */}
-              {isExpanded && (
-                <div className="bg-gray-100 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
-                  <div className="flex items-center gap-2 mb-6">
-                    <TrendingUp className="h-4 w-4 text-slate-500" />
-                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
-                      Accrual Calculation
-                    </h3>
-                  </div>
-                  <CardTable
-                    titles={[
-                      "Period",
-                      "Work Days",
-                      "Payment Days",
-                      "Arrear Days",
-                      "LOP Days",
-                      "Original Accrual",
-                      "Periodic Accrued",
-                      "Claimed Amt",
-                      "Paid Amt",
-                      "Closing Bal",
-                    ]}
-                    columnWidths={[COLUMN_LAYOUT]}
-                  >
-                    <DataListView<SalaryComponentDetail>
-                      queryKey={`accrualData-${component.salary_component}`}
-                      fetchFunction={fetchFunction}
-                      ItemComponent={AccrualItem}
-                      isSearch={false}
-                      showPagination={false}
-                      pageSize={20}
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-8">
+                    <StatItem
+                      label="Carry Forward"
+                      value={carryForward}
+                      subLabel="Amount"
                     />
-                  </CardTable>
+                    <StatItem
+                      label="Total Accrual"
+                      value={totalAccrual}
+                      subLabel="Amount"
+                      highlighted
+                    />
+                    <StatItem
+                      label="Periodic Accrual"
+                      value={periodicAccrual}
+                      subLabel="At Present"
+                    />
+                    <StatItem
+                      label="Total Claim"
+                      value={totalClaim}
+                      subLabel="Amount"
+                    />
+                    <StatItem
+                      label="Advance Periods"
+                      value={advancePeriods}
+                      isNumber
+                      subLabel="Months"
+                    />
+                    <StatItem
+                      label="Total Balance"
+                      value={totalBalance}
+                      subLabel="Amount"
+                    />
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </main>
+
+                {/* Divider */}
+                {isExpanded && <div className="h-px w-full bg-gray-100"></div>}
+
+                {/* Expanded details (list) */}
+                {isExpanded && (
+                  <div className="bg-gray-100 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className="flex items-center gap-2 mb-6">
+                      <TrendingUp className="h-4 w-4 text-slate-500" />
+                      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                        Accrual Calculation
+                      </h3>
+                    </div>
+                    <CardTable
+                      titles={[
+                        "Period",
+                        "Work Days",
+                        "Payment Days",
+                        "Arrear Days",
+                        "LOP Days",
+                        "Original Accrual",
+                        "Periodic Accrued",
+                        "Claimed Amt",
+                        "Paid Amt",
+                        "Closing Bal",
+                      ]}
+                      columnWidths={[COLUMN_LAYOUT]}
+                    >
+                      <DataListView<SalaryComponentDetail>
+                        queryKey={`accrualData-${component.salary_component}`}
+                        fetchFunction={fetchFunction}
+                        ItemComponent={AccrualItem}
+                        isSearch={false}
+                        showPagination={false}
+                        pageSize={20}
+                      />
+                    </CardTable>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </main>
+      </div>
     </div>
   );
 };

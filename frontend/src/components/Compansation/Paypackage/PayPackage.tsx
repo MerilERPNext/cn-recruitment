@@ -12,6 +12,7 @@ import { MdErrorOutline } from "react-icons/md";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import SalaryAssignmentHeader from "./PayPackageHeader";
 import HeaderBar from "../../HeaderBar";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 type SalaryItem = any;
 
@@ -154,20 +155,11 @@ export default function SalaryAssignmentList() {
                         {item.from_date}
                       </Typography>
 
-                      <Typography
-                        variant="bodySmall"
-                        className="font-medium text-center"
-                      >
-                        <span
-                          className={`text-xs font-medium px-2 py-[1px] rounded-xl ${
-                            item.active === 1
-                              ? "bg-success-100 text-success border border-success-200"
-                              : "bg-gray-100 text-gray-400 border border-gray-200"
-                          }`}
-                        >
-                          {item.active === 1 ? "Active" : "Inactive"}
-                        </span>
-                      </Typography>
+                      <div className="flex items-center justify-center">
+                        <StatusBadge
+                          status={item.active === 1 ? "Active" : "Inactive"}
+                        />
+                      </div>
 
                       <Typography
                         variant="bodySmall"

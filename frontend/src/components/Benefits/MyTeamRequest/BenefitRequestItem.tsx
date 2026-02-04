@@ -9,6 +9,10 @@ import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import { Link } from "react-router-dom";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import Tooltip from "../../shared/Tooltip";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -21,6 +25,7 @@ type BenefitRequestItemProps = {
   onClick?: (data: any) => void;
   refetch?: () => void;
   loadingAction?: { id: string; action: string } | null;
+  isBulkSelectEnabled: boolean;
 };
 
 const BenefitRequestItem = ({
@@ -31,6 +36,7 @@ const BenefitRequestItem = ({
   onAction,
   onClick,
   loadingAction,
+  isBulkSelectEnabled,
 }: BenefitRequestItemProps) => {
   const { isDesktop } = useScreenSize();
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -81,93 +87,20 @@ const BenefitRequestItem = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const gridTemplateColumns = "2% 10% 18% 10% 10% 10% 10% 20%";
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <div>
       {isDesktop ? (
         <div
-          className="max-w-screen grid items-center gap-4 px-6 h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              className="accent-blue-500"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
-          </div>
-          <div className="truncate text-gray-900 font-medium text-sm text-start">
-            <Link
-              to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-              target="_blank"
-            >
-              <WrapperHoverCard employeeId={data.reference_document.employee}>
-                {data.reference_document.employee_name}
-              </WrapperHoverCard>
-            </Link>
-          </div>
-          <div className="flex text-gray-900 text-sm flex-col">
-            {data.reference_document.earning_component}
-          </div>
-          <div className="flex items-center text-gray-900 text-sm">
-            {data.reference_document.claimed_amount}
-          </div>
-          <div className="flex items-center text-gray-900 text-sm">
-            {data.reference_document.custom_max_amount}
-          </div>
-          <div className="flex items-center text-gray-900 text-sm">
-            {formatToIndianDate(data.reference_document.claim_date)}
-          </div>
-          <div className="flex items-center text-sm">
-            <StatusBadge status={data?.status} />
-          </div>
-          <div className="flex w-full justify-start gap-2 whitespace-nowrap">
-            {actions?.length &&
-              actions.map((action: string) => {
-                const actionStyle = getActionStyles(action);
-                return (
-                  <Button
-                    key={action}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handlePreSaveAction(action);
-                    }}
-                    bgColor={actionStyle.bgColor}
-                    variant={actionStyle.variant}
-                    disabled={
-                      loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action
-                    }
-                  >
-                    {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </Button>
-                );
-              })}
-          </div>
-        </div>
-      ) : (
-        <div
-          className="flex flex-col gap-4 border rounded-lg p-4 mt-2 border-gray-300  hover:bg-gray-50 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns }}
-          onClick={() => onClick?.(data)}
-        >
-          <div className="flex-1  w-full">
-            <div className="flex items-baseline">
+          {isBulkSelectEnabled && (
+            <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 className="accent-blue-500"
@@ -180,6 +113,77 @@ const BenefitRequestItem = ({
                   actionsWithForm?.includes("Reject")
                 }
               />
+            </div>
+          )}
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate"
+            >
+              <WrapperHoverCard employeeId={data.reference_document.employee}>
+                {data.reference_document.employee_name}
+              </WrapperHoverCard>
+            </Typography>
+          </Link>
+
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data.reference_document.earning_component}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data.reference_document.claimed_amount}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data.reference_document.custom_max_amount}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data.reference_document.claim_date)}
+          </Typography>
+          <div className="flex items-center justify-center">
+            <Tooltip
+              content={
+                data?.status === "Pending"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
+            >
+              <StatusBadge status={data?.status} />
+            </Tooltip>
+          </div>
+          <div className="flex items-center justify-center">
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
+          </div>
+        </div>
+      ) : (
+        <div
+          className="flex flex-col gap-4 border rounded-lg p-4 mt-2 border-gray-300  hover:bg-gray-50 transition-colors cursor-pointer"
+          style={{ gridTemplateColumns }}
+          onClick={() => onClick?.(data)}
+        >
+          <div className="flex-1  w-full">
+            <div className="flex items-baseline">
+              {isBulkSelectEnabled && (
+                <input
+                  type="checkbox"
+                  className="accent-blue-500"
+                  checked={isSelected}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => onToggleSelect?.(data?.todo_id)}
+                  disabled={
+                    isDisabled ||
+                    actionsWithForm?.includes("Approve") ||
+                    actionsWithForm?.includes("Reject")
+                  }
+                />
+              )}
               <div className="pl-4">
                 <Link
                   to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
@@ -312,44 +316,6 @@ const BenefitRequestItem = ({
           document.body,
         )}
     </div>
-  );
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusConfig: Record<
-    string,
-    { bg: string; text: string; borderColor: string }
-  > = {
-    Pending: {
-      bg: "bg-yellow-100",
-      text: "text-yellow-800",
-      borderColor: "border-yellow-300",
-    },
-    Cancelled: {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      borderColor: "border-gray-300",
-    },
-    Rejected: {
-      bg: "bg-red-100",
-      text: "text-red-800",
-      borderColor: "border-red-300",
-    },
-    Approved: {
-      bg: "bg-green-100",
-      text: "text-green-800",
-      borderColor: "border-green-300",
-    },
-  };
-
-  const config = statusConfig[status] || statusConfig.Pending;
-
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}
-    >
-      {status}
-    </span>
   );
 };
 
