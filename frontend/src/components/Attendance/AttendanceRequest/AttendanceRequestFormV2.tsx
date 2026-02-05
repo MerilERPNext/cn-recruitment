@@ -28,6 +28,7 @@ import {
   transformSchemaWithRequired,
 } from "../../../utils/transformSchemaWithRequired";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -145,6 +146,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
   const [shiftCheckins, setShiftCheckins] = useState<any[]>([]);
+    const { isDesktop } = useScreenSize();
 
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -699,7 +701,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               data: requestBody as Record<string, unknown>,
             },
             {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               onSuccess: async (data: any) => {
                 if (attachments?.length > 0) {
                   await uploadFiles(attachments, data.doctype, data.name);
@@ -711,7 +712,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           );
         } else {
           mutation.mutate(requestBody as Record<string, unknown>, {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSuccess: async (data: any) => {
               if (attachments?.length > 0) {
                 await uploadFiles(attachments, data.doctype, data.name);
@@ -884,13 +884,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           <h2 className="text-lg font-semibold text-gray-800">
             {forActionType === "edit" ? "Edit" : "Create"} Attendance Request
           </h2>
-          <button
+         {isDesktop && ( <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </button>)}
         </div>
 
         {/* Content Area */}
@@ -962,7 +962,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               const companyComponent = instance.getComponent("company");
               if (companyComponent) {
                 // Override the component's data source to prevent auto-fetching
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const comp = companyComponent as any;
                 if (comp.component) {
                   delete comp.component.dataSrc;
@@ -1017,22 +1016,34 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
-          <div className="max-w-4xl mx-auto flex justify-center md:justify-end">
-            <Button
-              onClick={() => formAddressInstance.current?.submit()}
-              size="lg"
-              variant="contain"
-              bgColor="primary"
-              className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
-            >
-              {mutation.isPending || uploadFileLoading ? (
-                <span className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
-              ) : (
-                "Submit Request"
-              )}
-            </Button>
-          </div>
-        </div>
+  <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+    
+   {!isDesktop && ( <Button
+      onClick={onClose}
+      size="md"
+      variant="outline"
+      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+    >
+      Cancel
+    </Button>)}
+
+    <Button
+      onClick={() => formAddressInstance.current?.submit()}
+      size="md"
+      variant="contain"
+      bgColor="primary"
+      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+    >
+      {mutation.isPending || uploadFileLoading ? (
+        <span className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+      ) : (
+        "Submit"
+      )}
+    </Button>
+
+  </div>
+</div>
+
       </div>
     </div>
   );

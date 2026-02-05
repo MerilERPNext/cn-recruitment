@@ -583,10 +583,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {isDesktop && (
+      
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
-          <button
+          {isDesktop && ( <button
             onClick={(e) => {
               e.stopPropagation();
               if (onCancel) {
@@ -598,8 +598,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           >
             <X className="h-5 w-5 text-gray-600" />
           </button>
+           )}
         </div>
-      )}
+     
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
           <strong>Applying for:</strong> {leaveDays}{" "}
@@ -694,30 +695,49 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           />
         )}
       </div>
-      <div className="border-gray-200 border-t py-4 px-6 flex justify-center md:justify-end">
-        {!defaults?.isEdit ? (
-          <Button
-            onClick={handleSubmit}
-            size="lg"
-            variant="contain"
-            bgColor="primary"
-            className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
-          >
-            {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
-          </Button>
-        ) : (
-          <Button
-            onClick={handleUpdate}
-            size="lg"
-            variant="contain"
-            bgColor="primary"
-            disabled={editLeaveMutation.isPending}
-            className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
-          >
-            {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
-          </Button>
-        )}
-      </div>
+      <div className="border-gray-200 border-t py-3 px-2 flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+  
+  {!isDesktop && (
+    <Button
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onCancel) {
+          onCancel();
+        }
+      }}
+      size="md"
+      variant="outline"
+      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 lg:px-7 rounded-md font-brand"
+    >
+      {createLeaveMutation.isPending ? "Processing..." : "Cancel"}
+    </Button>
+  )}
+
+  {!defaults?.isEdit ? (
+    <Button
+      onClick={handleSubmit}
+      size="md"
+      variant="contain"
+      bgColor="primary"
+      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+    >
+      {createLeaveMutation.isPending ? "Processing..." : "Submit"}
+    </Button>
+  ) : (
+    <Button
+      onClick={handleUpdate}
+      size="md"
+      variant="contain"
+      bgColor="primary"
+      disabled={editLeaveMutation.isPending}
+      className="w-full md:w-auto min-w-[201px] md:px-4 md:py-2.5 rounded-md font-brand"
+    >
+      {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
+    </Button>
+  )}
+
+</div>
+
 
       {isAttendanceModalOpen && (
         <AttendanceStatusModal
