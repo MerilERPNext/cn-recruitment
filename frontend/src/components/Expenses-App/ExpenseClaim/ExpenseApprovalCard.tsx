@@ -261,24 +261,18 @@ const ExpenseApprovalCard = ({
               <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs uppercase text-gray-500 font-medium">
+                    <Typography variant="mobileCardLabel" className="block">
                       Category
-                    </p>
-                    <Typography
-                      variant="body"
-                      className="leading-5 font-semibold text-base"
-                    >
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {data?.reference_document?.custom_expense_category}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
-                    <p className="text-xs uppercase text-gray-500 font-medium">
+                    <Typography variant="mobileCardLabel" className="block">
                       Claimed Amount
-                    </p>
-                    <Typography
-                      variant="body"
-                      className="leading-5 font-semibold text-base"
-                    >
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {totalClaimedAmount}
                     </Typography>
                   </div>
@@ -286,26 +280,20 @@ const ExpenseApprovalCard = ({
 
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs uppercase text-gray-500 font-medium">
+                    <Typography variant="mobileCardLabel" className="block">
                       Claim Date
-                    </p>
-                    <Typography
-                      variant="body"
-                      className="leading-5 font-semibold text-base"
-                    >
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {formatToIndianDate(
                         data?.reference_document?.expenses[0]?.expense_date,
                       )}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
-                    <p className="text-xs uppercase text-gray-500 font-medium">
+                    <Typography variant="mobileCardLabel" className="block">
                       Due Date
-                    </p>
-                    <Typography
-                      variant="body"
-                      className="leading-5 font-semibold text-base"
-                    >
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {formatToIndianDate(data?.due_date)}
                     </Typography>
                   </div>
@@ -336,7 +324,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

@@ -134,58 +134,46 @@ const MyAdvanceExpenseList = () => {
               target="_blank"
             >
               <div className="flex flex-col gap-2">
-                <span className="text-xs uppercase text-gray-500 font-medium">
+                <Typography variant="mobileCardLabel" className="block">
                   Employee
-                </span>
-                <Typography
-                  variant="body"
-                  className="leading-5 font-semibold text-base"
-                >
+                </Typography>
+                <Typography variant="mobileCardValue">
                   {doc.employee_name}
                 </Typography>
               </div>
             </Link>
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase text-gray-500 font-medium text-right">
+              <Typography variant="mobileCardLabel" className="block text-right">
                 Date
-              </span>
-              <Typography
-                variant="body"
-                className="leading-5 font-semibold text-base"
-              >
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {formatToIndianDate(doc.posting_date)}
               </Typography>
             </div>
           </div>
           <div className="flex justify-between">
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase text-gray-500 font-medium">
+              <Typography variant="mobileCardLabel" className="block">
                 Company
-              </span>
-              <Typography
-                variant="body"
-                className="leading-5 font-semibold text-base"
-              >
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {doc.company}
               </Typography>
             </div>
 
             <div className="flex flex-col gap-2">
-              <span className="text-xs uppercase text-gray-500 font-medium">
+              <Typography variant="mobileCardLabel" className="block">
                 Department
-              </span>
-              <Typography
-                variant="body"
-                className="leading-5 font-semibold text-base"
-              >
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {doc.department}
               </Typography>
             </div>
           </div>
           <div>
             <div className="h-[1px] w-full bg-gray-100 my-4" />
-            <Typography className="text-gray-400 text-sm">
+            <Typography variant="mobileCardFooter">
               Last Updated on{" "}
               {formatToIndianDate(item?.reference_document?.modified)}
             </Typography>

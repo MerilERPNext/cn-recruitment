@@ -189,9 +189,9 @@ const AdvanceApprovalCard = ({
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <p className="text-base font-bold">
+                    <Typography variant="mobileCardTitle">
                       {data?.reference_document?.employee_name}
-                    </p>
+                    </Typography>
                   </Link>
                 </div>
 
@@ -203,35 +203,26 @@ const AdvanceApprovalCard = ({
               </div>
               <div className="flex flex-col items-start justify-between gap-3 mt-2 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
                     Category
-                  </p>
-                  <Typography
-                    variant="body"
-                    className="leading-5 font-semibold text-base"
-                  >
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {data?.reference_document?.custom_expense_category || "-"}
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
                     Advance Amount
-                  </p>
-                  <Typography
-                    variant="body"
-                    className="leading-5 font-semibold text-base"
-                  >
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {totalClaimedAmount}
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
                     Due Date
-                  </p>
-                  <Typography
-                    variant="body"
-                    className="leading-5 font-semibold text-base"
-                  >
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {formatToIndianDate(data?.due_date)}
                   </Typography>
                 </div>
@@ -261,7 +252,7 @@ const AdvanceApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

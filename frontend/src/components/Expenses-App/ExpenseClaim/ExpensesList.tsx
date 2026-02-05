@@ -47,14 +47,11 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5">
       <div className="flex justify-between items-start mb-1">
         <div className="flex flex-col gap-2">
-          <span className="text-xs uppercase text-gray-500 font-medium">
+          <Typography variant="mobileCardLabel" className="block">
             Expense category
-          </span>
+          </Typography>
           {item?.reference_document?.custom_expense_category && (
-            <Typography
-              variant="body"
-              className="leading-5 font-semibold text-base"
-            >
+            <Typography variant="mobileCardValue">
               {item?.reference_document?.custom_expense_category}
             </Typography>
           )}
@@ -73,25 +70,19 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
       <div className="flex justify-between">
         <div className="flex flex-col gap-2">
-          <span className="text-xs uppercase text-gray-500 font-medium">
+          <Typography variant="mobileCardLabel" className="block">
             Claimed Date
-          </span>
-          <Typography
-            variant="body"
-            className="leading-5 font-semibold text-base"
-          >
+          </Typography>
+          <Typography variant="mobileCardValue">
             {formatToIndianDate(item?.reference_document?.creation)}
           </Typography>
         </div>
 
         <div className="flex flex-col gap-2 text-right">
-          <span className="text-xs uppercase text-gray-500 font-medium">
+          <Typography variant="mobileCardLabel" className="block">
             Claimed Amount
-          </span>
-          <Typography
-            variant="body"
-            className="leading-5 font-semibold text-base"
-          >
+          </Typography>
+          <Typography variant="mobileCardValue">
             {formattedAmount}
           </Typography>
         </div>
@@ -99,7 +90,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
       <div>
         <div className="h-[1px] w-full bg-gray-100 mb-4" />
-        <Typography className="text-gray-400 text-sm">
+        <Typography variant="mobileCardFooter">
           Last Updated on{" "}
           {formatToIndianDate(item?.reference_document?.modified)}
         </Typography>
