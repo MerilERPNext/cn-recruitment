@@ -214,16 +214,14 @@ const Requests = () => {
           }}
         />
 
-        <div className="bg-red-900">
-          <ExpenseFormModal
-            forMbileScreen={true}
-            isOpen={showShiftRequestModal}
-            onClose={handleCloseShiftModal}
-            title="Request Shift Change"
-          >
-            <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
-          </ExpenseFormModal>
-        </div>
+        <ExpenseFormModal
+          forMbileScreen={true}
+          isOpen={showShiftRequestModal}
+          onClose={handleCloseShiftModal}
+          title="Request Shift Change"
+        >
+          <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
+        </ExpenseFormModal>
         {showInitiateModel && (
           createPortal(
             <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
