@@ -26,6 +26,7 @@ import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import RequestLeave from "./Leaves/RequestLeave";
 import HeaderBar from "./HeaderBar";
+import { createPortal } from "react-dom";
 
 const Requests = () => {
   const { data: userId } = useLoggedInUser();
@@ -212,15 +213,21 @@ const Requests = () => {
             }
           }}
         />
-        <ExpenseFormModal
-          isOpen={showShiftRequestModal}
-          onClose={handleCloseShiftModal}
-          title="Request Shift Change"
-        >
-          <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-        </ExpenseFormModal>
+
+        <div className="bg-red-900">
+          <ExpenseFormModal
+            forMbileScreen={true}
+            isOpen={showShiftRequestModal}
+            onClose={handleCloseShiftModal}
+            title="Request Shift Change"
+          >
+            <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
+          </ExpenseFormModal>
+        </div>
         {showInitiateModel && (
-          <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
+          createPortal(
+            <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
+            , document.body)
         )}
         {showAdvanceForm && (
           <Modal onClose={handleCloseAdvanceModal}>
