@@ -6,6 +6,8 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { FileText } from "lucide-react";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -47,7 +49,7 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -55,19 +57,72 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
+  const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
+          title: "No Pending Requests",
+          description: "You have no pending team expense claim requests to review."
+        },
+        Approved: {
+          title: "No Approved Claims",
+          description: "There are no approved expense claims at this time."
+        },
+        Rejected: {
+          title: "No Rejected Claims",
+          description: "There are no rejected expense claims."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your current filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
   return (
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
           <div className="px-6 py-4">
-            <Typography variant="h4">Team Expense Claims</Typography>
+            {isDesktop ? (
+              <Typography variant="h4">Team Expense Claims</Typography>
+            ) : null}
             <Typography variant="bodySmall" color="body2">
               Track and manage team expense claim requests
             </Typography>
@@ -100,6 +155,7 @@ const TeamExpense = () => {
                     ],
                   },
                 ]}
+                noRecordsScreen={noRecordsScreen}
                 defaultFilters={{ status: "Draft" }}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard

@@ -26,6 +26,8 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Link } from "react-router-dom";
+import { getCurrentPeriod } from "../shared/logic";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -64,10 +66,8 @@ const MyRequests: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState("");
 
   useEffect(() => {
-    if (optionYears.length > 0 && !selectedYear) {
-      setSelectedYear(optionYears[0].value);
-    }
-  }, [optionYears, selectedYear]);
+    setSelectedYear(() => getCurrentPeriod(optionYears));
+  }, [optionYears]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -98,117 +98,121 @@ const MyRequests: React.FC = () => {
   }, [data, isLoading]);
 
   return (
-    <div>
-      <div className="flex flex-row items-center flex-wrap justify-between md:justify-end gap-4 mb-2">
-        <div className="flex md:flex-row flex-col w-full gap-2 justify-between border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
-            <Typography variant="h4">
-              My Benefits Requests for FY {selectedYear}
-            </Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your benefits requests
-            </Typography>
-          </div>
-
-          <div className="flex items-center gap-2 justify-between mb-2">
-            <button
-              onClick={() => setMaskAmounts(!maskAmounts)}
-              className="my-btn-secondary"
-              title={maskAmounts ? "Show amounts" : "Hide amounts"}
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Show Amounts
-                  </span>
-                  <BsToggleOff className="w-5 h-5 text-gray-400" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Hide Amounts
-                  </span>
-                  <BsToggleOn className="w-5 h-5 text-primary" />
-                </>
-              )}
-            </button>
-            <CustomDropdown
-              position="bottom-left"
-              value={selectedYear}
-              onChange={(event) => setSelectedYear(event?.target.value)}
-              options={optionYears}
-            />
+    <div className="max-h-screen flex flex-col">
+      <div className="max-h-screen flex flex-col">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between">
+            <div>
+              <Typography variant="h4">
+                My Benefits Requests for FY {selectedYear}
+              </Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your benefits requests
+              </Typography>
+            </div>
+            <div className="flex items-center gap-2 justify-between mb-2">
+              <button
+                onClick={() => setMaskAmounts(!maskAmounts)}
+                className="my-btn-secondary"
+                title={maskAmounts ? "Show amounts" : "Hide amounts"}
+              >
+                {maskAmounts ? (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Show Amounts
+                    </span>
+                    <BsToggleOff className="w-5 h-5 text-gray-400" />
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium text-gray-700">
+                      Hide Amounts
+                    </span>
+                    <BsToggleOn className="w-5 h-5 text-primary" />
+                  </>
+                )}
+              </button>
+              <CustomDropdown
+                position="bottom-left"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(event?.target.value)}
+                options={optionYears}
+              />
+            </div>
           </div>
         </div>
-
-        {showBenefitRequestButton && (
-          <Button
-            bgColor="blue-600"
-            size="md"
-            className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4 text-white"
-            onClick={handleRequestBenefit}
-          >
-            Request Benefit
-          </Button>
-        )}
       </div>
-      {LockRequestMessage}
-      <CardTable
-        titles={[
-          "Employee Name",
-          "Company",
-          "Claim Benefit For",
-          "Claim Date",
-          "Claimed Amount",
-          "Taxable Amount",
-          "Non Taxable Amount",
-          "Status",
-        ]}
-      >
-        <DataListView
-          queryKey={[
-            "mybenefit-request",
-            employeeIdCard?.id || "",
-            employeeIdCard?.company || "",
-            selectedYear || "",
-          ]}
-          customAPI={{
-            method:
-              "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
-            params: {
-              employee: employeeIdCard?.id || "",
-              company: employeeIdCard?.company || "",
-              payroll_period: selectedYear,
-            },
-          }}
-          ItemComponent={(props: { item: BenefitPayslip }) => {
-            return (
-              <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
-            );
-          }}
-          SkeletonComponent={() => (
-            <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-              <div className="px-4 py-2 flex justify-between">
-                <div>
-                  <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                  <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                </div>
-                <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-              </div>
-            </div>
+      <div className="px-4">
+        <div className="text-right">
+          {showBenefitRequestButton && (
+            <Button
+              bgColor="blue-600"
+              size="md"
+              className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4 text-white"
+              onClick={handleRequestBenefit}
+            >
+              Request Benefit
+            </Button>
           )}
-          // refetchTrigger={refetchAttendance}
-          isSearch={false}
-          isFilter={false}
-          showRefreshButton={false}
-          // orderBy="creation desc"
-          pageSize={10}
-          infiniteScroll={true}
-          showPagination={true}
-          // loadMorePagination={false}
-          getItemKey={(item) => item.name}
-        />
-      </CardTable>
+        </div>
+        {LockRequestMessage}
+        <CardTable
+          titles={[
+            "Employee Name",
+            "Company",
+            "Claim Benefit For",
+            "Claim Date",
+            "Claimed Amount",
+            "Taxable Amount",
+            "Non Taxable Amount",
+            "Status",
+          ]}
+        >
+          <DataListView
+            queryKey={[
+              "mybenefit-request",
+              employeeIdCard?.id || "",
+              employeeIdCard?.company || "",
+              selectedYear || "",
+            ]}
+            customAPI={{
+              method:
+                "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_data_list_view",
+              params: {
+                employee: employeeIdCard?.id || "",
+                company: employeeIdCard?.company || "",
+                payroll_period: selectedYear,
+              },
+            }}
+            ItemComponent={(props: { item: BenefitPayslip }) => {
+              return (
+                <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
+              );
+            }}
+            SkeletonComponent={() => (
+              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                <div className="px-4 py-2 flex justify-between">
+                  <div>
+                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                  </div>
+                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+                </div>
+              </div>
+            )}
+            // refetchTrigger={refetchAttendance}
+            isSearch={false}
+            isFilter={false}
+            showRefreshButton={false}
+            // orderBy="creation desc"
+            pageSize={10}
+            infiniteScroll={true}
+            showPagination={true}
+            // loadMorePagination={false}
+            getItemKey={(item) => item.name}
+          />
+        </CardTable>
+      </div>
       {showBenefitForm &&
         createPortal(
           <Modal onClose={handleCloseModal}>
@@ -236,49 +240,52 @@ const BenefitSlipItem = ({
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="max-w-screen px-6 grid grid-cols-8 items-center gap-4 border-b hover:bg-blue-50 border-gray-200 py-4 cursor-pointer relative ">
-      <span className="text-sm font-medium text-gray-700 text-start truncate">
-        <Link
-          to={`/webapp/employee-profile?target_user=${item?.employee}`}
-          target="_blank"
+    <div className="grid grid-cols-8 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+      <Link
+        to={`/webapp/employee-profile?target_user=${item?.employee}`}
+        target="_blank"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
         >
           <WrapperHoverCard employeeId={item?.employee}>
             {item?.employee_name}
           </WrapperHoverCard>
-        </Link>
-      </span>
-      <span className="text-sm font-medium text-gray-700 text-start truncate">
+        </Typography>
+      </Link>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
         {item?.company}
-      </span>
-      <span>{item?.earning_component}</span>
-      <span className="text-sm font-medium text-gray-700 text-start truncate">
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item?.earning_component}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item?.claim_date || "")}
-      </span>
-      <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${
-          maskAmounts ? "blur-[3px]" : ""
-        }`}
-      >
-        ₹{maskAmounts ? "#####" : item?.claimed_amount}
-      </span>
-      <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${
-          maskAmounts ? "blur-[3px]" : ""
-        }`}
-      >
-        ₹{maskAmounts ? "#####" : item?.custom_taxable_amount}
-      </span>
-      <span
-        className={`text-sm font-medium text-gray-700 text-start truncate ${
-          maskAmounts ? "blur-[3px]" : ""
-        }`}
-      >
-        ₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}
-      </span>
-      <span>
-        {" "}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
+          ₹{maskAmounts ? "#####" : item?.claimed_amount}
+        </span>
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        <span className={` ${maskAmounts ? "blur-[3px]" : ""}`}>
+          ₹{maskAmounts ? "#####" : item?.custom_taxable_amount}
+        </span>
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
+          ₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}
+        </span>
+      </Typography>
+
+      <div className="flex items-center justify-center">
         <StatusBadge status={item?.custom_status} />
-      </span>
+      </div>
     </div>
   ) : (
     <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
@@ -328,44 +335,6 @@ const BenefitSlipItem = ({
         </div>
       </div>
     </div>
-  );
-};
-
-const StatusBadge = ({ status }: { status: string }) => {
-  const statusConfig: Record<
-    string,
-    { bg: string; text: string; borderColor: string }
-  > = {
-    Pending: {
-      bg: "bg-yellow-100",
-      text: "text-yellow-800",
-      borderColor: "border-yellow-300",
-    },
-    Cancelled: {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      borderColor: "border-gray-300",
-    },
-    Rejected: {
-      bg: "bg-red-100",
-      text: "text-red-800",
-      borderColor: "border-red-300",
-    },
-    Approved: {
-      bg: "bg-green-100",
-      text: "text-green-800",
-      borderColor: "border-green-300",
-    },
-  };
-
-  const config = statusConfig[status] || statusConfig.Pending;
-
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-xl text-xs font-medium border ${config.bg} ${config.text} ${config.borderColor}`}
-    >
-      {status}
-    </span>
   );
 };
 

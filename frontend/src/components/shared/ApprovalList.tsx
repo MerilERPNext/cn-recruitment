@@ -40,6 +40,7 @@ type ApprovalListProps = {
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
   defaultFilters?: Record<string, any>;
   columnWidths?: string[];
+  noRecordsScreen?: React.ReactNode | ((filters: Record<string, any>) => React.ReactNode);
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -77,6 +78,7 @@ const ApprovalList = ({
   onBulkSelectVisibilityChange,
   defaultFilters,
   columnWidths,
+  noRecordsScreen,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -149,8 +151,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-              )
+              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+            )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -213,7 +215,15 @@ const ApprovalList = ({
               triggerRefetch();
             }
           } else {
-            toast.success("Approved Request Successfully!");
+            // toast.success(`Request ${action} Successfully!`);
+            const actionMap: Record<string, string> = {
+              Approve: "Approved",
+              Reject: "Rejected",
+            };
+
+            const finalAction = actionMap[action] ?? `${action}ed`;
+
+            toast.success(`Request ${finalAction} Successfully!`);
             triggerRefetch();
           }
         } catch (error: any) {
@@ -246,10 +256,9 @@ const ApprovalList = ({
             {
               onSuccess: () => {
                 toast.success(
-                  `Requests ${
-                    action === "Reject"
-                      ? "rejected"
-                      : `${action.toLowerCase()}d`
+                  `Requests ${action === "Reject"
+                    ? "rejected"
+                    : `${action.toLowerCase()}d`
                   } successfully!`,
                 );
                 triggerRefetch();
@@ -289,6 +298,10 @@ const ApprovalList = ({
         // onFiltersChange={(filters) => {
         //   setActiveFilters(filters);
         // }}
+        noRecordsScreen={typeof noRecordsScreen === 'function'
+          ? (filters: Record<string, any>) => noRecordsScreen({ ...filters, ...activeFilters })
+          : noRecordsScreen
+        }
         onFiltersChange={handleFiltersChange}
         isSearch={isSearch}
         isFilter={isFilter}
@@ -308,7 +321,7 @@ const ApprovalList = ({
                 onSelectAll={handleSelectAll}
                 onBulkAction={handleBulkAction}
                 loadingAction={bulkLoading}
-                 columnWidths={columnWidths}
+                columnWidths={columnWidths}
               />
             )}
           </div>

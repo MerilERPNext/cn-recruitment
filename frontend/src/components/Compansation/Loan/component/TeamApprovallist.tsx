@@ -21,6 +21,7 @@ export type ApprovalRejectionLoanProps = {
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
+  isBulkSelectEnabled: boolean;
 };
 
 const ApprovalRejectionLoanList = ({
@@ -31,6 +32,7 @@ const ApprovalRejectionLoanList = ({
   onAction,
   onClick,
   loadingAction,
+  isBulkSelectEnabled,
 }: ApprovalRejectionLoanProps) => {
   const { isMobile } = useScreenSize();
   const { data: user } = useCurrentUser();
@@ -98,7 +100,9 @@ const ApprovalRejectionLoanList = ({
     }
   };
 
-  const gridTemplateColumns = "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = isBulkSelectEnabled
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   /* ===================== MOBILE UI ===================== */
   if (isMobile) {
@@ -125,18 +129,20 @@ const ApprovalRejectionLoanList = ({
               </p>
             </div>
 
-            <input
-              type="checkbox"
-              className="accent-primary mt-1"
-              checked={isSelected}
-              onClick={(e) => e.stopPropagation()}
-              onChange={() => onToggleSelect?.(data?.todo_id)}
-              disabled={
-                isDisabled ||
-                actionsWithForm?.includes("Approve") ||
-                actionsWithForm?.includes("Reject")
-              }
-            />
+            {isBulkSelectEnabled && (
+              <input
+                type="checkbox"
+                className="accent-primary mt-1"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            )}
           </div>
 
           {/* Details */}
@@ -240,24 +246,26 @@ const ApprovalRejectionLoanList = ({
   return (
     <>
       <div
-        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
         style={{ gridTemplateColumns }}
         onClick={() => onClick?.(data)}
       >
-        <div className="flex items-center justify-center">
-          <input
-            type="checkbox"
-            className="accent-blue-500"
-            checked={isSelected}
-            onClick={(e) => e.stopPropagation()}
-            onChange={() => onToggleSelect?.(data?.todo_id)}
-            disabled={
-              isDisabled ||
-              actionsWithForm?.includes("Approve") ||
-              actionsWithForm?.includes("Reject")
-            }
-          />
-        </div>
+        {isBulkSelectEnabled && (
+          <div className="flex items-center justify-center">
+            <input
+              type="checkbox"
+              className="accent-blue-500"
+              checked={isSelected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={() => onToggleSelect?.(data?.todo_id)}
+              disabled={
+                isDisabled ||
+                actionsWithForm?.includes("Approve") ||
+                actionsWithForm?.includes("Reject")
+              }
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-center">
           <Link

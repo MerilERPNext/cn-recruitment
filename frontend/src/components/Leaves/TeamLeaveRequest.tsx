@@ -44,6 +44,7 @@ const TeamLeaveRequest = () => {
     ? [
         "Select",
         "Employee",
+        "Leave Type",
         "From Date",
         "To Date",
         "Due Date",
@@ -53,6 +54,7 @@ const TeamLeaveRequest = () => {
       ]
     : [
         "Employee",
+        "Leave Type",
         "From Date",
         "To Date",
         "Due Date",
@@ -62,8 +64,8 @@ const TeamLeaveRequest = () => {
       ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="max-h-screen flex flex-col">

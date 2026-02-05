@@ -11,6 +11,8 @@ import ExtraPaymentForm from "./ExtraPaymentForm";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import CardTable from "../../shared/CardTable";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -133,25 +135,38 @@ export default function ExtraPayment() {
     }
   };
 
+  const titles = [
+    "Recipient",
+    "Document ID",
+    "Salary Component",
+    "Date",
+    "Amount",
+    "Status",
+  ];
+
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
   return (
-    <div className="min-h-screen ">
-      <div className="w-full mx-auto px-2">
-        <div className="flex items-center justify-between mb-2 border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
-            <Typography variant="h4">Extra Payment History</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your extra payments
-            </Typography>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className=" border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">Extra Payment History</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your extra payments
+              </Typography>
+            </div>
+            {/* <button
+              onClick={() => setShowExtraPaymentForm(true)}
+              className="px-4 py-1 rounded-lg bg-blue-600 text-white flex items-center gap-2"
+            >
+              Create Request +
+            </button> */}
           </div>
-          {/* <button
-            onClick={() => setShowExtraPaymentForm(true)}
-            className="px-4 py-1 rounded-lg bg-blue-600 text-white flex items-center gap-2"
-          >
-            Create Request +
-          </button> */}
         </div>
 
-        <div className="flex items-center justify-between  mb-1 md:mb-2">
+        <div className="px-4 pb-2 flex items-center justify-between">
           <div className="relative w-full ">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -182,57 +197,55 @@ export default function ExtraPayment() {
 
         {/* ---------------------- WEB ---------------------- */}
         {!isMobile && (
-          <div className="border border-gray-100 rounded overflow-hidden">
-            <div className="grid grid-cols-6 bg-gray-50 py-2 border-b border-gray-100">
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Recipient
-              </div>
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Document ID
-              </div>
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Salary Component
-              </div>
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Date
-              </div>
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Amount
-              </div>
-              <div className="px-6 py-2 text-left text-xs font-semibold">
-                Status
-              </div>
-            </div>
-
-            <div className="divide-y divide-gray-200">
+          <div className="px-4">
+            <CardTable titles={titles} columnWidths={columnWidths}>
               {filteredPayments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="grid grid-cols-6 py-2 hover:bg-primary/10"
+                  className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{
+                    gridTemplateColumns: columnWidths.join(" "),
+                    alignItems: "center",
+                  }}
                 >
-                  <div className="px-6 py-2 text-xs font-medium">
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
                     {payment.recipient}
-                  </div>
-                  <div className="px-6 py-2 text-xs">{payment.invoiceId}</div>
-                  <div className="px-6 py-2 text-xs">
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.invoiceId}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
                     {payment.salary_component}
-                  </div>
-                  <div className="px-6 py-2 text-xs">{payment.date}</div>
-                  <div className="px-6 py-2 text-xs font-medium">
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
                     {payment.amount}
-                  </div>
-                  <div className="px-6 py-2 text-xs">
-                    <span
-                      className={`px-2 py-1 rounded-lg text-sm ${getStatusColor(
-                        payment.status,
-                      )}`}
-                    >
-                      {payment.status}
-                    </span>
+                  </Typography>
+                  <div className="flex items-center justify-center">
+                    <StatusBadge status={payment.status} />
                   </div>
                 </div>
               ))}
-            </div>
+            </CardTable>
           </div>
         )}
 

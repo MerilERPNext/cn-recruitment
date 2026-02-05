@@ -61,9 +61,13 @@ const AllShiftChangeRequestsList: React.FC = () => {
     "1fr",
   ];
   return (
-    <div className="w-full mx-auto pt-2 px-6">
+    <div className="w-full mx-auto py-4 px-4">
       <div>
-        <HeaderBar title="Team Shift Requests" onBack={() => navigate(-1)} />
+        <HeaderBar
+          title="Team Shift Requests"
+          className="mb-3"
+          onBack={() => navigate(-1)}
+        />
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
             status="Draft"

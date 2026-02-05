@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { useUpdateRejectionReason } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
@@ -33,6 +36,55 @@ const LeaveApprovalCard = ({
   isBulkSelectEnabled,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
+  const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [rejectionComment, setRejectionComment] = useState("");
+  const [pendingActionData, setPendingActionData] = useState<{
+    action: string;
+    data: any;
+  } | null>(null);
+
+  const handleActionClick = (action: string, actionData: any) => {
+    if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
+      setPendingActionData({ action, data: actionData });
+      setShowCommentModal(true);
+    } else {
+      onAction(action, actionData);
+      if (action.toLowerCase() === "reject") {
+        setRejectionComment("");
+      }
+    }
+  };
+
+  const handleSaveComment = async () => {
+    if (!rejectionComment.trim()) {
+      toast.error("Please enter a comment");
+      return;
+    }
+
+    try {
+      await updateRejectionReasonMutation.mutateAsync({
+        id: data?.reference_document?.name || "",
+        reason: rejectionComment,
+      });
+
+      setShowCommentModal(false);
+
+      if (pendingActionData) {
+        onAction(pendingActionData.action, pendingActionData.data);
+        setPendingActionData(null);
+        setRejectionComment("");
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingActionData(null);
+  };
+
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -64,8 +116,8 @@ const LeaveApprovalCard = ({
   };
   const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -105,6 +157,10 @@ const LeaveApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
+          {/* Leave Type */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.leave_type}
+          </Typography>
           {/* Date */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
@@ -130,11 +186,6 @@ const LeaveApprovalCard = ({
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>
@@ -144,7 +195,7 @@ const LeaveApprovalCard = ({
               status={data?.reference_document?.status}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
+              onAction={(action) => handleActionClick(action, data)}
             />
           </div>
         </div>
@@ -215,6 +266,7 @@ const LeaveApprovalCard = ({
                       </span>
                     </p>
                   )}
+
                   {data?.due_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>
@@ -239,7 +291,7 @@ const LeaveApprovalCard = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          onAction(action, data);
+                          handleActionClick(action, data);
                         }}
                         bgColor={actionStyle.bgColor}
                         variant={actionStyle.variant}
@@ -249,7 +301,7 @@ const LeaveApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action
@@ -258,6 +310,64 @@ const LeaveApprovalCard = ({
                     );
                   })}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCommentModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleCancelComment();
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Comment Required
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please add a comment before rejecting this leave request.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase mb-1 block">
+                REJECTION REASON *
+              </label>
+              <textarea
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+                placeholder="Enter rejection reason..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={4}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={handleCancelComment}
+                size="sm"
+                bgColor="disabled"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveComment}
+                size="sm"
+                bgColor="primary"
+                disabled={
+                  !rejectionComment.trim() ||
+                  updateRejectionReasonMutation.isPending
+                }
+              >
+                {updateRejectionReasonMutation.isPending ? (
+                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Save & Continue"
+                )}
+              </Button>
             </div>
           </div>
         </div>

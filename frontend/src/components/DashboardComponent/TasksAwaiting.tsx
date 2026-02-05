@@ -7,6 +7,9 @@ import useCurrentUser from "../../hooks/useCurrentUser";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { useNavigate } from "react-router-dom";
+import CustomDropdown from "../shared/CustomDropdown";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 
 interface ToDo {
   priority: string;
@@ -18,7 +21,6 @@ interface ToDo {
   reference_type?: string;
   reference_name?: string;
   date?: string;
-  subject?: string;
   due_date?: string;
   custom_redirect_url?: string;
 }
@@ -39,6 +41,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
     navigate("/webapp/todo-app");
   };
 
+  const cleanDescription = sanitizeToPlainText(item.description);
+
   return (
     <div
       onClick={handleClick}
@@ -54,7 +58,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
             variant="bodySmall"
             className="font-medium block line-clamp-1"
           >
-            {item.subject || item.description || "Task"}
+            {cleanDescription || "Task"}
           </Typography>
 
           <Typography variant="label" color="body2">
@@ -83,6 +87,7 @@ const TasksAwaiting: React.FC = () => {
   const currentEmployeeId = currentEmployee?.name;
 
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
 
   const handleTodoClick = () => navigate("/webapp/todo-app");
 
@@ -129,6 +134,17 @@ const TasksAwaiting: React.FC = () => {
 
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
+  const filterOptions = useMemo(
+    () => [
+      { label: `All (${totalCount})`, value: "All" },
+      ...Object.entries(categoryCounts).map(([cat, count]) => ({
+        label: `${cat} (${count})`,
+        value: cat,
+      })),
+    ],
+    [categoryCounts, totalCount],
+  );
+
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
       <div className="flex justify-between items-center mb-4">
@@ -138,42 +154,60 @@ const TasksAwaiting: React.FC = () => {
         <ViewAll title="View to-do" onClick={handleTodoClick} />
       </div>
 
-      <div className="flex gap-3 mb-4 p-2">
-        <button
-          onClick={() => setActiveCategory("All")}
-          className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${activeCategory === "All"
-              ? "bg-primary text-white scale-105"
-              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+      {/* Mobile Filter Dropdown */}
+      {!isDesktop && (
+        <div className="block mb-4 w-full">
+          <CustomDropdown
+            value={activeCategory}
+            options={filterOptions}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            label="All"
+            variant="soft"
+            className="w-full [&>button]:w-full [&>button]:justify-between"
+          />
+        </div>
+      )}
+
+      {isDesktop && (
+        <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
+          <button
+            onClick={() => setActiveCategory("All")}
+            className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
+              activeCategory === "All"
+                ? "bg-primary text-white scale-105"
+                : "bg-primary-100 text-primary-700 hover:bg-primary-300"
             } transition-all`}
-        >
-          All ({totalCount})
-        </button>
+          >
+            All ({totalCount})
+          </button>
 
-        {Object.entries(categoryCounts).map(([cat, count], idx) => {
-          const isActive = activeCategory === cat;
-          const colors = generatePastelColor(idx);
+          {Object.entries(categoryCounts).map(([cat, count], idx) => {
+            const isActive = activeCategory === cat;
+            const colors = generatePastelColor(idx);
 
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                  ? `scale-105 ring-2 ${colors}`
-                  : `${colors} opacity-70 hover:opacity-100`
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                  isActive
+                    ? `scale-105 ring-2 ${colors}`
+                    : `${colors} opacity-70 hover:opacity-100`
                 } `}
-            >
-              {cat} ({count})
-            </button>
-          );
-        })}
-      </div>
+              >
+                {cat} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {currentEmployeeId && fullData.length === 0 && (
         <FrappeListView
           doctype="ToDo"
           ItemComponent={() => null}
           isSearch={false}
-          pageSize={3}
+          pageSize={1000}
           orderBy="date desc"
           onDataLoad={handleDataLoad}
           defaultFilters={{
@@ -196,7 +230,7 @@ const TasksAwaiting: React.FC = () => {
         />
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">
         {filtered.map((item) => (
           <MyToDoItem key={item.name} item={item} />
         ))}

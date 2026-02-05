@@ -126,7 +126,7 @@ const FAQPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-4 md:px-8 py-4 overflow-y-auto">
+      <div className="flex-1 px-4 md:px-8 py-4 pb-24 overflow-y-auto">
         {categoriesLoading || articlesLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
@@ -162,8 +162,8 @@ const FAQPage: React.FC = () => {
         )}
       </div>
 
-      {/* Footer Buttons */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 py-4 px-4 md:px-8 flex justify-end gap-3">
+      {/* Footer Buttons - transparent background */}
+      <div className="fixed bottom-4 right-4 flex gap-3 z-50">
         <Button
           variant="outline"
           bgColor="primary"

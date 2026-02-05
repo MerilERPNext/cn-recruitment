@@ -15,6 +15,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { FileText } from "lucide-react";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -109,7 +110,7 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className=" rounded-lg shadow-sm p-4 border border-gray-200 mb-3">
+      <div className=" rounded-2xl shadow-sm p-4 border-t-4 border-primary mb-3">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
@@ -126,27 +127,64 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-        <Link
-          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
-          target="_blank"
-        >
-          <p className="text-sm text-gray-600">
-            <span className="font-medium">Employee:</span> {doc.employee_name}
-          </p>
-        </Link>
+        <div className="flex flex-col gap-2">
+          <div className="flex  justify-between ">
+            <Link
+              to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+              target="_blank"
+            >
+              <div className="flex flex-col">
+                <span className="card-subtitle-sm uppercase">Employee</span>
+                <Typography
+                  variant="body"
+                  className="leading-[13px]  font-semibold"
+                >
+                  {doc.employee_name}
+                </Typography>
+              </div>
+            </Link>
 
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Date:</span>{" "}
-          {formatToIndianDate(doc.posting_date)}
-        </p>
+            <div className="flex flex-col mt-2">
+              <span className="card-subtitle-sm uppercase text-right">
+                Date
+              </span>
+              <Typography
+                variant="body"
+                className="leading-[13px]  font-semibold"
+              >
+                {formatToIndianDate(doc.posting_date)}
+              </Typography>
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <div className="flex flex-col mt-2">
+              <span className="card-subtitle-sm uppercase">Company</span>
+              <Typography
+                variant="body"
+                className="leading-[13px]  font-semibold"
+              >
+                {doc.company}
+              </Typography>
+            </div>
 
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Company:</span> {doc.company}
-        </p>
-
-        <p className="text-sm text-gray-600">
-          <span className="font-medium">Department:</span> {doc.department}
-        </p>
+            <div className="flex flex-col mt-2">
+              <span className="card-subtitle-sm uppercase">Department</span>
+              <Typography
+                variant="body"
+                className="leading-[13px]  font-semibold"
+              >
+                {doc.department}
+              </Typography>
+            </div>
+          </div>
+          <div>
+            <div className="h-[1px] w-full bg-gray-100 my-3" />
+            <Typography className="text-gray-300 text-sm mb-3">
+              Last Updated on{" "}
+              {formatToIndianDate(item?.reference_document?.modified)}
+            </Typography>
+          </div>
+        </div>
       </div>
     );
   };
@@ -166,12 +204,65 @@ const MyAdvanceExpenseList = () => {
     );
   };
 
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Pending: {
+          title: "No Pending Advances",
+          description: "You have no pending advance expense requests."
+        },
+        Approved: {
+          title: "No Approved Advances",
+          description: "You have no approved advance requests."
+        },
+        Rejected: {
+          title: "No Rejected Advances",
+          description: "You have no rejected advance requests."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Advance Requests",
+        description: "No advance requests match your filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
           <div className="px-6 py-4">
-            <Typography variant="h4">My Advance Expenses</Typography>
+            {isDesktop ? (
+              <Typography variant="h4">My Advance Expenses</Typography>
+            ) : null}
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
@@ -224,6 +315,7 @@ const MyAdvanceExpenseList = () => {
                   options: ["Pending", "Approved", "Rejected"],
                 },
               ]}
+              noRecordsScreen={noRecordsScreen}
               refetchTrigger={refetchAttendance}
               onRefetchComplete={() => setRefetchAttendance(false)}
               showRefreshButton={false}

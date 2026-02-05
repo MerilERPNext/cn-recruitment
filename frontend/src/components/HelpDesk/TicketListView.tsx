@@ -15,6 +15,7 @@ import {
   useRequestClosure,
   useCategories,
   useUserLookup,
+  useEmployeesByEmails,
   HDTicket,
   TicketFilters,
   HDCategory,
@@ -27,9 +28,10 @@ interface TicketListViewProps {
   currentUserEmail: string;
   isAdmin: boolean;
   viewMode?: "user" | "admin";
+  onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user" }) => {
+const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user", onDrawerStateChange }) => {
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<TicketFilters>({});
@@ -84,6 +86,26 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
     [statsData]
   );
 
+  // Extract unique assigned emails for employee hover card lookup
+  const assignedEmails = useMemo(() => {
+    const emailSet = new Set<string>();
+    tickets.forEach((t) => {
+      if (t._assign) {
+        try {
+          const parsed = JSON.parse(t._assign);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((email: string) => emailSet.add(email));
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    });
+    return Array.from(emailSet);
+  }, [tickets]);
+
+  const { data: employeeByEmail } = useEmployeesByEmails(assignedEmails);
+
   // Create category lookup map (ID -> Name) including subcategories
   const categoryMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -133,7 +155,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
     // Open ticket in drawer
     setSelectedTicketId(ticket.name);
     setIsDrawerOpen(true);
-  }, []);
+    onDrawerStateChange?.(true);
+  }, [onDrawerStateChange]);
 
   const handleClose = useCallback((ticket: HDTicket) => {
     const isRaiserOrAdmin =
@@ -199,14 +222,20 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
       {/* Stats Cards */}
       <TicketStatsCards stats={stats} isLoading={statsLoading} />
 
+      {/* Page Heading */}
+      <div>
+        <Typography variant="h4" color="primary">
+          All Issues Raised
+        </Typography>
+        <Typography variant="bodySmall" color="body2">
+          Track and manage your support tickets
+        </Typography>
+      </div>
+
       {/* Table Section */}
       <div className="bg-white rounded-lg border border-gray-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-b border-gray-200">
-          <Typography variant="body" color="primary" className="font-medium">
-            All Issues raised
-          </Typography>
-
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative">
@@ -246,6 +275,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
             onSort={handleSort}
             categoryMap={categoryMap}
             userLookup={userLookup || new Map()}
+            employeeByEmail={employeeByEmail}
           />
         </div>
 
@@ -326,6 +356,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
         onClose={() => {
           setIsDrawerOpen(false);
           setSelectedTicketId(null);
+          onDrawerStateChange?.(false);
         }}
         ticketId={selectedTicketId}
         currentUserEmail={currentUserEmail}

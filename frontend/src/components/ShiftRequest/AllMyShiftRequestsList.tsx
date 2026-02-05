@@ -13,7 +13,7 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name ?? ""
+    currentUser?.name ?? "",
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
@@ -36,8 +36,12 @@ const AllMyShiftRequestsList = () => {
   );
 
   return (
-    <div className="w-full mx-auto pt-2 px-6">
-      <HeaderBar title="My Shift Requests" onBack={() => navigate(-1)} />
+    <div className="w-full mx-auto py-4 px-4">
+      <HeaderBar
+        title="My Shift Requests"
+        className="mb-3"
+        onBack={() => navigate(-1)}
+      />
       <CardTable
         titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
       >
