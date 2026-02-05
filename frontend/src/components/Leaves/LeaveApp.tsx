@@ -211,17 +211,12 @@ const LeaveAppInner: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Leaves & Holidays" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto relative">
-          <Outlet />
-        </div>
-
-        <RequestLeaveModal
-          isOpen={showModal}
-          onClose={closeModal}
-          onSuccess={closeModal}
-        />
-      </div>
+      <Outlet />
+      <RequestLeaveModal
+        isOpen={showModal}
+        onClose={closeModal}
+        onSuccess={closeModal}
+      />
     </DesktopLayoutWrapper>
   );
 
