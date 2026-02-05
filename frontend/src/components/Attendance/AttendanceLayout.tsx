@@ -27,7 +27,7 @@ const AttendanceLayoutContent: React.FC = () => {
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    effectiveEmployeeId || ""
+    effectiveEmployeeId || "",
   );
 
   const { isDesktop } = useScreenSize();
@@ -39,7 +39,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance Summary"
+    "Attendance Summary",
   );
 
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
@@ -74,12 +74,12 @@ const AttendanceLayoutContent: React.FC = () => {
       { label: "My Overtime Requests", key: "my-overtime-requests" },
       { label: "Team Overtime Requests", key: "team-overtime-requests" },
     ],
-    []
+    [],
   );
 
   const calendarSubTabs = useMemo(
     () => [{ label: "My Attendance Details", key: "emp-attendance" }],
-    []
+    [],
   );
 
   const location = useLocation();
@@ -94,7 +94,7 @@ const AttendanceLayoutContent: React.FC = () => {
     const lastSegment = pathSegments[pathSegments.length - 1];
     const isValidMainTab = tabs.some((tab) => tab.key === lastSegment);
     const isCalendarSubTab = calendarSubTabs.some(
-      (subTab) => subTab.key === lastSegment
+      (subTab) => subTab.key === lastSegment,
     );
 
     if (isCalendarSubTab) {
@@ -141,11 +141,7 @@ const AttendanceLayoutContent: React.FC = () => {
         </div>
       )}
       {/* Page Content (with top padding to avoid overlap) */}
-      <div className="">
-        {/*
-          The main outlet needs both providers to function correctly,
-          so they wrap the entire content.
-        */}
+      <div className="p-2">
         <LeaveRequestRefreshProvider>
           <RequestLeaveModalProvider>
             <Outlet />
@@ -172,32 +168,38 @@ const AttendanceLayoutContent: React.FC = () => {
       )}
     </div>
   );
-  const currentPathSegment = location.pathname.split("/")[location.pathname.split("/").length - 1];
-  const isOvertimePage = currentPathSegment === "my-overtime-requests" || currentPathSegment === "team-overtime-requests";
+  const currentPathSegment =
+    location.pathname.split("/")[location.pathname.split("/").length - 1];
+  const isOvertimePage =
+    currentPathSegment === "my-overtime-requests" ||
+    currentPathSegment === "team-overtime-requests";
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (
       <div className="relative" ref={actionsDropdownRef}>
-        {canRequestAttendance && <Button
-          // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
-          variant="contain"
-          onClick={() => {
-            if (isOvertimePage && plannedOvertimAllowed) {
-              setShowOvertimeRequest(true);
-            } else {
-              setShowAttendanceRequest(true);
-            }
-          }}
-          size="lg"
-        >
-          {isOvertimePage && plannedOvertimAllowed ? "+ Overtime" : "+ Attendance Request"}
-          {/* <ChevronDown
+        {canRequestAttendance && (
+          <Button
+            // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
+            variant="contain"
+            onClick={() => {
+              if (isOvertimePage && plannedOvertimAllowed) {
+                setShowOvertimeRequest(true);
+              } else {
+                setShowAttendanceRequest(true);
+              }
+            }}
+            size="lg"
+          >
+            {isOvertimePage && plannedOvertimAllowed
+              ? "+ Overtime"
+              : "+ Attendance Request"}
+            {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
               showActionsDropdown ? "rotate-180" : ""
             }`}
           /> */}
-        </Button>
-        }
+          </Button>
+        )}
         {/* Actions Dropdown - Positioned to the top of the button */}
         {/* {showActionsDropdown && (
           <div className="absolute right-0 bottom-full mb-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-3 z-50 backdrop-blur-sm">
@@ -257,7 +259,6 @@ const AttendanceLayoutContent: React.FC = () => {
             </div>
           </div>
         )} */}
-
       </div>
     );
   };
@@ -268,53 +269,44 @@ const AttendanceLayoutContent: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Outlet content and its components need to be within the providers */}
-          <LeaveRequestRefreshProvider>
-            <RequestLeaveModalProvider>
-              <Outlet />
-            </RequestLeaveModalProvider>
-          </LeaveRequestRefreshProvider>
+      <LeaveRequestRefreshProvider>
+        <RequestLeaveModalProvider>
+          <Outlet />
+        </RequestLeaveModalProvider>
+      </LeaveRequestRefreshProvider>
+      {showLeaveRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Ensure LeaveRequest is inside its providers */}
+            <LeaveRequestRefreshProvider>
+              <RequestLeaveModalProvider>
+                <LeaveRequest
+                  onCancel={() => setShowLeaveRequest(false)}
+                  onSuccess={() => setShowLeaveRequest(false)}
+                />
+              </RequestLeaveModalProvider>
+            </LeaveRequestRefreshProvider>
+          </div>
         </div>
-
-        {/* Desktop Modals - Fixed positioning outside main content */}
-        {/* The LeaveRequest component is now wrapped by its provider */}
-        {showLeaveRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              {/* Ensure LeaveRequest is inside its providers */}
-              <LeaveRequestRefreshProvider>
-                <RequestLeaveModalProvider>
-                  <LeaveRequest
-                    onCancel={() => setShowLeaveRequest(false)}
-                    onSuccess={() => setShowLeaveRequest(false)}
-                  />
-                </RequestLeaveModalProvider>
-              </LeaveRequestRefreshProvider>
-            </div>
+      )}
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestFormV2
+              onClose={() => setShowAttendanceRequest(false)}
+            />
           </div>
-        )}
-        {showAttendanceRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <AttendanceRequestFormV2
-                onClose={() => setShowAttendanceRequest(false)}
-              />
-            </div>
+        </div>
+      )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
           </div>
-        )}
-        {showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <CreateOvertimeRequest
-                onCancel={() => setShowOvertimeRequest(false)}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </DesktopLayoutWrapper>
   );
 

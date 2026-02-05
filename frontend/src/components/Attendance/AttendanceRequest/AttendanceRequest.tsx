@@ -60,119 +60,118 @@ const AttendanceRequest = ({
           }}
         />
       ) : (
-        <div className="max-h-screen flex flex-col">
-          <div className="flex-1 overflow-y-auto">
-            <div className="border-gray-100">
-              <div className="px-6 py-4">
+        <div className="flex flex-col h-full">
+          {isDesktop && (
+            <div className="flex-shrink-0">
+              <div className="px-6 py-1 md:py-4">
                 <Typography variant="h4">My Attendance Requests</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage your attendance requests
                 </Typography>
               </div>
             </div>
-            <div className="px-4">
-              <CardTable
-                columnWidths={[
-                  "1.5fr",
-                  "1fr",
-                  "1fr",
-                  "1fr",
-                  "1fr",
-                  "1fr",
-                  "1fr",
-                  "1fr",
-                ]}
-                titles={[
-                  "Request Type",
-                  "From Date",
-                  "To Date",
-                  "Due Date",
-                  "Duration",
-                  "Allocated To",
-                  "Status",
-                  "ACTIONS",
-                ]}
-              >
-                {effectiveEmployeeId ? (
-                  <DataListView
-                    queryKey={["attendance-requests", effectiveEmployeeId]}
-                    customAPI={{
-                      method:
-                        "cn_leave_shift_managment.api.get_open_approval_todos",
-                      params: {
-                        doctype: "Attendance Request",
-                        employee: effectiveEmployeeId,
-                      },
-                    }}
-                    ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                      return (
-                        <EmpAttendanceRequestCard
-                          type="pending"
-                          data={{
-                            ...props?.item,
-                          }}
-                        />
-                      );
-                    }}
-                    SkeletonComponent={CardSkeleton}
-                    onItemClick={(data) => {
-                      console.log(data);
-                    }}
-                    onRefetchComplete={handleRefetchComplete}
-                    refetchTrigger={refetchAttendance}
-                    pageSize={pageSize}
-                    showRefreshButton={false}
-                    orderBy="modified desc"
-                    showPagination={showPagination}
-                    infiniteScroll={true}
-                    loadMorePagination={false}
-                    isSearch={true}
-                    isFilter={true}
-                    filterFields={[
-                      {
-                        fieldname: "status",
-                        label: "Status",
-                        fieldtype: "Select",
-                        options: ["Pending", "Approved", "Rejected"],
-                      },
-                      {
-                        fieldname: "custom_request_type",
-                        label: "Request Type",
-                        fieldtype: "Select",
-                        options: [
-                          "Attendance Adjustment",
-                          "Short Attendance Request",
-                          "Out Duty",
-                          "Clockin",
-                        ],
-                      },
-                    ]}
-                    defaultFilters={{
-                      status: "Pending",
-                    }}
-                  />
-                ) : (
-                  <></>
-                )}
-              </CardTable>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Add Attendance Request button - Only show for mobile since desktop has Actions button */}
-      {!isDesktop && showAttendanceRequest && (
-        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
-          <div className="max-w-7xl mx-auto px-4">
-            <Button
-              size="lg"
-              fullWidth
-              className="hover:bg-blue-700"
-              onClick={() => setShowForm(!showForm)}
+          <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+            <CardTable
+              columnWidths={[
+                "1.5fr",
+                "1fr",
+                "1fr",
+                "1fr",
+                "1fr",
+                "1fr",
+                "1fr",
+                "1fr",
+              ]}
+              titles={[
+                "Request Type",
+                "From Date",
+                "To Date",
+                "Due Date",
+                "Duration",
+                "Allocated To",
+                "Status",
+                "ACTIONS",
+              ]}
             >
-              <Plus /> <span>Add Attendance Request</span>
-            </Button>
+              {effectiveEmployeeId ? (
+                <DataListView
+                  queryKey={["attendance-requests", effectiveEmployeeId]}
+                  customAPI={{
+                    method:
+                      "cn_leave_shift_managment.api.get_open_approval_todos",
+                    params: {
+                      doctype: "Attendance Request",
+                      employee: effectiveEmployeeId,
+                    },
+                  }}
+                  ItemComponent={(props: { item: MyAttendanceRequest }) => {
+                    return (
+                      <EmpAttendanceRequestCard
+                        type="pending"
+                        data={{
+                          ...props?.item,
+                        }}
+                      />
+                    );
+                  }}
+                  SkeletonComponent={CardSkeleton}
+                  onItemClick={(data) => {
+                    console.log(data);
+                  }}
+                  onRefetchComplete={handleRefetchComplete}
+                  refetchTrigger={refetchAttendance}
+                  pageSize={pageSize}
+                  showRefreshButton={false}
+                  orderBy="modified desc"
+                  showPagination={showPagination}
+                  infiniteScroll={true}
+                  loadMorePagination={false}
+                  isSearch={true}
+                  isFilter={true}
+                  filterFields={[
+                    {
+                      fieldname: "status",
+                      label: "Status",
+                      fieldtype: "Select",
+                      options: ["Pending", "Approved", "Rejected"],
+                    },
+                    {
+                      fieldname: "custom_request_type",
+                      label: "Request Type",
+                      fieldtype: "Select",
+                      options: [
+                        "Attendance Adjustment",
+                        "Short Attendance Request",
+                        "Out Duty",
+                        "Clockin",
+                      ],
+                    },
+                  ]}
+                  defaultFilters={{
+                    status: "Pending",
+                  }}
+                />
+              ) : (
+                <></>
+              )}
+            </CardTable>
           </div>
+          {!isDesktop && showAttendanceRequest && (
+            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-300 py-2">
+              <div className="max-w-7xl mx-auto px-4">
+                <Button
+                  size="lg"
+                  fullWidth
+                  className="hover:bg-blue-700"
+                  onClick={() => setShowForm(!showForm)}
+                >
+                  <Plus /> <span>Add Attendance Request</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
