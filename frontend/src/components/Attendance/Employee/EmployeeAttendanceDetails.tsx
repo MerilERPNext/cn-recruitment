@@ -84,9 +84,9 @@ const EmployeeAttendanceDetails = ({
   }, [events]);
 
   const isLeaveRecord =
-    data?.custom_auto_created === 1 || status === "on leave" || !!leaveEvent;
+    data?.custom_auto_created === 1 || status === "on leave" || status === "half day" || !!leaveEvent;
 
-  const leaveApplicationName = data?.leave_application_name || leaveEvent?.name;
+  const leaveApplicationName = status === "half day" ? data?.leave_application : data?.leave_application_name || leaveEvent?.name;
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(

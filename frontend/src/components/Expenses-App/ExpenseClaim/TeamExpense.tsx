@@ -43,22 +43,22 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled

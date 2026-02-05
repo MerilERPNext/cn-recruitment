@@ -511,13 +511,12 @@ const AllEmpAttendance = () => {
                             const eventType = event.doctype === "Attendance Request" && event.request_type === "Out Duty"
                               ? event.request_type
                               : event.doctype;
-                            const title = event.request_type === "Out Duty" ? event.request_type : event.title || eventType;
                             return (
                               <span
                                 key={i}
                                 className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType)}`}
                               >
-                                {title}
+                                {event?.custom_status}
                               </span>
                             );
                           })}

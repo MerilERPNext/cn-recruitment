@@ -160,70 +160,70 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const loading = useLoadingOverlay();
   const handleSubmit = async () => {
-  await loading?.wrap(async () => {
-    try {
-      const submission = await formInstance.current?.submit();
-      const data = submission?.data;
+    await loading?.wrap(async () => {
+      try {
+        const submission = await formInstance.current?.submit();
+        const data = submission?.data;
 
-      const formattedOvertimeDetails = data?.overtime_details?.map(
-        (entry: any) => ({
-          shift_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          start_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          end_date: isValidDate(entry.end_date)
-            ? formatDate(entry.end_date)
-            : entry.end_date,
-          start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
-          end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
-          message: entry?.message,
-        })
-      );
-
-      await new Promise<void>((resolve, reject) => {
-        mutation.mutate(
-          {
-            employee: currentEmployee?.employee || "",
-            overtime_details: formattedOvertimeDetails || [],
-          },
-          {
-            onSuccess: async (data: any) => {
-              if (attachments?.length > 0) {
-                await uploadFiles(
-                  attachments,
-                  data.doctype,
-                  data.name,
-                  () => {
-                    setAttachments([]);
-                    onCancel?.();
-                    setTimeout(() => setRefetchAttendance(true), 1000);
-                  }
-                );
-              }
-              resolve();
-                toast.success("Overtime Requests SuccessFully");
-            },
-            onError: (e: CustomError) => {
-              const formattedError = errorResponseFormater(
-                e,
-                "Request Failed"
-              );
-              toast.error(formattedError);
-              console.error(e);
-              reject(e);
-            },
-          }
+        const formattedOvertimeDetails = data?.overtime_details?.map(
+          (entry: any) => ({
+            shift_date: isValidDate(entry.start_date)
+              ? formatDate(entry.start_date)
+              : entry.start_date,
+            start_date: isValidDate(entry.start_date)
+              ? formatDate(entry.start_date)
+              : entry.start_date,
+            end_date: isValidDate(entry.end_date)
+              ? formatDate(entry.end_date)
+              : entry.end_date,
+            start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
+            end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
+            message: entry?.message,
+          })
         );
-      });
-    } catch (err) {
-      toast.error("Please fill in all required fields.");
-      console.warn("Form submission error -", err);
-      throw err;
-    }
-  }, "Submitting overtime request…");
-};
+
+        await new Promise<void>((resolve, reject) => {
+          mutation.mutate(
+            {
+              employee: currentEmployee?.employee || "",
+              overtime_details: formattedOvertimeDetails || [],
+            },
+            {
+              onSuccess: async (data: any) => {
+                if (attachments?.length > 0) {
+                  await uploadFiles(
+                    attachments,
+                    data.doctype,
+                    data.name,
+                    () => {
+                      setAttachments([]);
+                      onCancel?.();
+                      setTimeout(() => setRefetchAttendance(true), 1000);
+                    }
+                  );
+                }
+                resolve();
+                toast.success("Overtime Requests SuccessFully");
+              },
+              onError: (e: CustomError) => {
+                const formattedError = errorResponseFormater(
+                  e,
+                  "Request Failed"
+                );
+                toast.error(formattedError);
+                console.error(e);
+                reject(e);
+              },
+            }
+          );
+        });
+      } catch (err) {
+        toast.error("Please fill in all required fields.");
+        console.warn("Form submission error -", err);
+        throw err;
+      }
+    }, "Submitting overtime request…");
+  };
 
 
   return (

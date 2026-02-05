@@ -22,7 +22,6 @@ import { useMemo, useState } from "react";
 
 import {
   useGetEmployeeShift,
-  useGetEmployeeWorkingHours,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
   useGetTeamCheckinSummary,
@@ -43,8 +42,9 @@ import { Card } from "../shared/atoms/Card";
 import Button from "../shared/atoms/Button";
 import { useFrappeDocumentList } from "../../hooks/useFrappeQuery";
 import { Attendance } from "../../types/attendance";
-import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
-import AttendanceSummaryCards from "./AttendanceSummaryCards";
+// import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
+// import AttendanceSummaryCards from "./AttendanceSummaryCards";
+import AttendanceChart from "../AttendanceChart";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -73,11 +73,12 @@ const AttendanceSummary = () => {
   const { data: teamCheckInSummary } = useGetTeamCheckinSummary(
     currentEmployee?.user_id || ""
   );
-  const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
-    currentEmployee?.user_id || "",
-    format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
-    format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
-  );
+  // TODO: Add working hours bar chart
+  // const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
+  //   currentEmployee?.user_id || "",
+  //   format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  //   format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  // );
 
   const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
     currentEmployee?.employee || ""
@@ -399,24 +400,18 @@ const AttendanceSummary = () => {
           <ChevronRight className="h-5 w-5 text-slate-600" />
         </Button>
       </Card>
-      <div className={`w-full flex gap-4 ${isDesktop ? "flex-row" : "flex-col"}`}>
+      <AttendanceChart
+        present={employeeAttendanceSummary?.present || 0}
+        absent={employeeAttendanceSummary?.absent || 0}
+        leaves={employeeAttendanceSummary?.leaves || 0}
+        week_offs={employeeAttendanceSummary?.week_offs || 0}
+        avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+        avg_working_hours={
+          Number(employeeAttendanceSummary?.avg_working_hours) || 0
+        }
+        avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
 
-        <EmployeeWorkingHoursBarChart
-          isLoading={isEmployeeWorkingHoursLoading}
-          data={employeeWorkingHours}
-        />
-        <AttendanceSummaryCards
-          present={employeeAttendanceSummary?.present || 0}
-          absent={employeeAttendanceSummary?.absent || 0}
-          leaves={employeeAttendanceSummary?.leaves || 0}
-          week_offs={employeeAttendanceSummary?.week_offs || 0}
-          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
-          avg_working_hours={
-            Number(employeeAttendanceSummary?.avg_working_hours) || 0
-          }
-          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
-        />
-      </div>
+      />
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}
