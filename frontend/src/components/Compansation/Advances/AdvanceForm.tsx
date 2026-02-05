@@ -208,7 +208,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="advance-form-container flex flex-col h-full bg-white">
+    <div className="flex w-full flex-col h-full bg-white">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4">
@@ -257,13 +257,13 @@ Advance Request
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3">
-        <div className="max-w-3xl mx-auto flex space-x-3 md:justify-end">
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-2.5">
+        <div className=" flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
         {!isDesktop && ( <Button
             onClick={handleCancel}
             size="md"
             variant="outline"
-            className="flex-1 border text-gray-700 py-3"
+            className="w-full md:w-auto min-w-[150px]"
           >
             Cancel
           </Button>)}
