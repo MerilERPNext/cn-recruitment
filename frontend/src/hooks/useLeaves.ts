@@ -21,6 +21,7 @@ import type {
   AttendanceStatusResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export type LeaveType = {
   allocated_leaves: number;
@@ -463,7 +464,7 @@ export function useUpdateRejectionReason() {
     },
     onError: (err: unknown) => {
       console.error("Failed to update rejection reason:", err);
-      toast.error("Failed to save rejection reason");
+      toast.error(errorResponseFormater(err));
     },
   });
 }
