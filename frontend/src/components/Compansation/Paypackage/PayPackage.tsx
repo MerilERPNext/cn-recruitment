@@ -12,6 +12,7 @@ import { MdErrorOutline } from "react-icons/md";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import SalaryAssignmentHeader from "./PayPackageHeader";
 import HeaderBar from "../../HeaderBar";
+import { Banknote, CalendarDays } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
 
 type SalaryItem = any;
@@ -214,7 +215,73 @@ export default function SalaryAssignmentList() {
               </CardTable>
             </div>
           </>
-        )}
+      )}
+  {/* ================= MOBILE PAY PACKAGE LIST ================= */}
+{!isLoading && !isError && !isDesktop && (
+  <div className="space-y-1 mt-2">
+    {list.map((item) => (
+      <div
+        key={item.name}
+        onClick={() => setSelected(item)}
+        className="border border-indigo-200 rounded-xl p-3 bg-white
+                   flex flex-col items-start justify-between gap-3
+                   active:bg-indigo-50 cursor-pointer"
+      >
+        {/* LEFT */}
+        <div className="flex w-full items-start justify-between gap-3">
+          {/* Icon */}
+
+          {/* Text */}
+          <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+            <span className="text-success text-lg font-semibold">    <Banknote />
+            </span>
+          </div>
+
+            <p className="font-semibold text-sm text-gray-900">
+              Pay Package
+            </p>
+
+          </div>
+          <span className="text-gray-400 text-lg leading-none">›</span>
+        </div>
+
+        {/* RIGHT */}
+<div className="flex items-center justify-between w-full">
+<div className="flex flex-col gap-1">
+<p className="text-[11px] text-gray-400 uppercase">
+              Fixed Gross (Annual)
+            </p>
+
+            <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              {renderAmount(item.fixed_gross_annual)}
+              <span className="text-gray-400 text-xs">👁</span>
+            </div>
+</div>
+        <div className="text-right flex flex-col items-end gap-1">
+          <p className="text-[11px] text-gray-400 uppercase">
+            Effective From
+          </p>
+          <p className="text-xs font-medium text-gray-700">
+            {item.from_date}
+          </p>
+
+          
+        </div>
+</div>
+        <div>
+
+        </div>
+      </div>
+    ))}
+
+    {!list.length && (
+      <p className="text-center text-gray-500 py-10">
+        No records found
+      </p>
+    )}
+  </div>
+  )}
 
         {/* ================= CTC MODAL ================= */}
         {selected && (
@@ -243,11 +310,11 @@ export default function SalaryAssignmentList() {
                 />
               )}
 
-              <div className="p-4 space-y-6 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-semibold">Effective From</span>
-                  <span className="font-semibold">{selected.from_date}</span>
-                </div>
+            <div className="p-4 space-y-6 text-sm">
+              <div className="flex justify-between">
+                <span className="font-semibold">Effective From</span>
+               <div className="bg-success-100 rounded px-2 py-0.5 max-w-full flex items-center gap-1">  <CalendarDays className="w-4 h-4"/><span className="font-semibold">{selected.from_date}</span></div>
+              </div>
 
                 <Card className="grid gap-3 border border-gray-200 p-4 rounded">
                   <div className="flex justify-between">
@@ -337,19 +404,19 @@ export default function SalaryAssignmentList() {
           </div>
         )}
 
-        {/* ================= VERSION MODAL ================= */}
-        {selectedVersionItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white w-full max-w-[900px] shadow-lg rounded-lg overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <Typography variant="subheading">Version History</Typography>
-                <button
-                  onClick={() => setSelectedVersionItem(null)}
-                  className="text-gray-500 hover:text-black"
-                >
-                  ✕
-                </button>
-              </div>
+      {/* ================= VERSION MODAL ================= */}
+      {selectedVersionItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white w-full max-w-[900px] shadow-lg rounded-lg overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <Typography variant="subheading">Version History</Typography>
+              <button
+                onClick={() => setSelectedVersionItem(null)}
+                className="text-gray-500 hover:text-black"
+              >
+                ✕
+              </button>
+            </div>
 
               <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
                 {!selectedVersionItem.version?.length && (

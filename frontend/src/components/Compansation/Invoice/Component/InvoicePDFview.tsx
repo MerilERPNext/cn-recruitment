@@ -5,6 +5,7 @@ import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import Button from "../../../shared/atoms/Button";
 import { useInvoiceSheetViewPDF } from "../../../../hooks/payroll/usePerquisite";
 import { FiEye } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 type Props = {
   invoiceID: string;
@@ -34,7 +35,7 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
 
     mutate(invoiceID, {
       onError: () => {
-        alert("Failed to load Invoice PDF");
+        toast.error("Failed to load Invoice PDF");
       },
     });
   };
