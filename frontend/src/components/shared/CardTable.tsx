@@ -1,3 +1,5 @@
+"use client";
+
 import { ReactNode } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "./atoms/Typography";
@@ -18,11 +20,13 @@ const CardTable = ({
     : `repeat(${titles.length}, 1fr)`;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm md:border border-gray-100 flex flex-col h-full">
+    <div className="bg-white rounded-lg shadow-sm md:border border-gray-100 flex flex-col max-h-full">
       {/* Desktop horizontal scroll container */}
       <div
         className={
-          isDesktop ? "overflow-x-auto rounded-lg bg-white shadow-sm flex flex-col h-full" : "flex flex-col h-full"
+          isDesktop
+            ? "overflow-x-auto rounded-lg bg-white shadow-sm flex flex-col h-full"
+            : "flex flex-col h-full"
         }
       >
         {/* Width holder ONLY on desktop */}
@@ -30,7 +34,7 @@ const CardTable = ({
           {/* Fixed Header - only on desktop */}
           {isDesktop && (
             <div
-              className="grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0"
+              className="grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0 sticky top-0 z-10"
               style={{ gridTemplateColumns }}
             >
               {titles.map((title, index) => (
