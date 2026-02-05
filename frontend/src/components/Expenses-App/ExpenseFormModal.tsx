@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface ExpenseFormModalProps {
+  forMbileScreen?: boolean;
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
@@ -10,6 +11,7 @@ interface ExpenseFormModalProps {
 }
 
 const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
+  forMbileScreen = false,
   isOpen,
   onClose,
   children,
@@ -20,7 +22,7 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
   if (!isOpen) return null;
 
   // For mobile, return children without modal wrapper
-  if (!isDesktop) {
+  if (!isDesktop && !forMbileScreen) {
     return <>{children}</>;
   }
 
@@ -34,7 +36,8 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
       />
 
       {/* Modal content */}
-      <div className="relative bg-white rounded-lg shadow-xl w-[70%] max-w-6xl max-h-[90vh] flex flex-col z-10 border-white border-[5px]">
+
+      <div className={`relative bg-white rounded-lg shadow-xl ${forMbileScreen ? "w-screen max-md:h-screen md:w-[70%] md:max-w-6xl md:max-h-[90vh] " : " w-[70%] max-w-6xl max-h-[90vh] "} flex flex-col z-10 border-white border-[5px]`}>
         {/* Modal header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
