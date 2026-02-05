@@ -43,11 +43,11 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   const location = useLocation();
 
   const handlGoBack = () => {
-    if (location.key === 'default') {
-      navigate('/webapp/flow-app/flow-requests');
-      return;
+    if (location.pathname === '/webapp/flow-app/initiate-flow') {
+      navigate(-1);
+    } else {
+      handleCloseModel();
     }
-    navigate(-1);
   };
 
   const { data: triggerList, isLoading } =
@@ -78,8 +78,8 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   }, [triggerList, filteredTriggerList]);
 
   return (
-    <div onClick={handleCloseModel} className={isDesktop ? ` flex bg-black/20 items-center justify-center fixed w-screen h-screen top-0 left-0 z-40` : ""}>
-      <div onClick={e => e.stopPropagation()} className={`bg-white rounded-lg w-full ${isDesktop ? "max-w-xl" : ""}  pb-5`}>
+    <div onClick={handleCloseModel} className="flex bg-black/20 items-center justify-center fixed w-screen h-screen top-0 left-0 z-40">
+      <div onClick={e => e.stopPropagation()} className={`bg-white rounded-lg w-full ${isDesktop ? "max-w-xl" : "h-screen"}  pb-5`}>
         {isDesktop ? (
           <>
             <div className="flex items-center sm:px-8 px-4 pt-4">
