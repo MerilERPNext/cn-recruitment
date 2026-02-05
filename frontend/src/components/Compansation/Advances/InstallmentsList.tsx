@@ -5,13 +5,15 @@ import type React from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { StatusBadge } from "./StatusBadge";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import Tooltip from "../../shared/Tooltip";
+import { Typography } from "../../shared/atoms/Typography";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -29,157 +31,146 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   const { isDesktop } = useScreenSize();
 
   const DesktopLayout = () => (
-    <div className="min-h-screen max-w-[100vw] overflow-x-hidden">
-      <div className="flex items-center rounded-lg justify-between mb-2">
-        <HeaderBar
-          title={`Installments - ${advance.name}`}
-          showBackButton={true}
-          onBack={onBack}
-          rightSlot={
-            // CHANGED: Using .btn-secondary for consistent button styling.
-            <Button
-   bgColor="none" 
-onClick={onToggleMask}
-              className="whitespace-nowrap border border-gray-300"
-              data-tooltip={maskAmounts ? "Show amounts" : "Hide amounts"}
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Show Amounts
-                  </span>
-                  <BsToggleOff className="w-6 h-6 text-gray-400" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-medium text-gray-700">
-                    Hide Amounts
-                  </span>
-                  {/* CHANGED: Using brand 'primary' color from config */}
-                  <BsToggleOn className="w-6 h-6 text-primary" />
-                </>
-              )}
-            </Button>
-          }
-        />
-      </div>
-      <div className="w-full max-w-[100vw] mx-auto py-0">
-        <div className="mb-2 ">
-          {/* CHANGED: Using new reusable .my-info-card class */}
-          <Card>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center">
-              <div>
-                <span className="text-gray-600">Total Amount:</span>
-                <div className="font-semibold">
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none">₹XX,XXX</span>
-                  ) : (
-                    formatCurrency(advance.amount)
-                  )}
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-600">Period:</span>
-                <div className="font-semibold">
-                  {formatToIndianDate(advance.startDate)} to{" "}
-                  {formatToIndianDate(advance.endDate)}
-                </div>
-              </div>
-              <div>
-                <span className="text-gray-600">Status:</span>
-                <div className=" text-start relative group inline-block overflow-visible">
-                  <StatusBadge status={advance.advanceStatus} />
-
-                  {/* Tooltip */}
-                  <div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-                               opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                               transition-all duration-150 ease-out pointer-events-none
-                               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-                               shadow-lg z-50"
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-4 py-4">
+            <div className="border-b border-gray-10">
+              <HeaderBar
+                title={`Installments - ${advance.name}`}
+                showBackButton={true}
+                onBack={onBack}
+                rightSlot={
+                  // CHANGED: Using .btn-secondary for consistent button styling.
+                  <Button
+                    bgColor="none"
+                    onClick={onToggleMask}
+                    className="whitespace-nowrap border border-gray-300"
+                    data-tooltip={maskAmounts ? "Show amounts" : "Hide amounts"}
                   >
-                    {advance.employee_name}
+                    {maskAmounts ? (
+                      <>
+                        <span className="text-sm font-medium text-gray-700">
+                          Show Amounts
+                        </span>
+                        <BsToggleOff className="w-6 h-6 text-gray-400" />
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-sm font-medium text-gray-700">
+                          Hide Amounts
+                        </span>
+                        {/* CHANGED: Using brand 'primary' color from config */}
+                        <BsToggleOn className="w-6 h-6 text-primary" />
+                      </>
+                    )}
+                  </Button>
+                }
+              />
+            </div>
+            <Card>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-center">
+                <div>
+                  <span className="text-gray-600">Total Amount:</span>
+                  <div className="font-semibold">
+                    {maskAmounts ? (
+                      <span className="blur-sm select-none">₹XX,XXX</span>
+                    ) : (
+                      formatCurrency(advance.amount)
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Period:</span>
+                  <div className="font-semibold">
+                    {formatToIndianDate(advance.startDate)} to{" "}
+                    {formatToIndianDate(advance.endDate)}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-gray-600">Status:</span>
+                  <br />
+                  <Tooltip content={`Allocated to : ${advance.employee_name}`}>
+                    <StatusBadge status={advance.advanceStatus} />
+                  </Tooltip>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total Installments:</span>
+                  <div className="font-semibold">
+                    {advance.installments.length}
                   </div>
                 </div>
               </div>
-              <div>
-                <span className="text-gray-600">Total Installments:</span>
-                <div className="font-semibold">
-                  {advance.installments.length}
-                </div>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
         </div>
 
-        <div className=" overflow-hidden">
-        <CardTable
-      titles={[
-        "Installment No.",
-        "Date",
-        "Opening Balance",
-        "Installment Amount",
-        "Principal Balance",
-      ]}
-      columnWidths={[
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-      ]}
-    >
-      <div className="divide-y divide-gray-200">
-        {advance.installments.map((installment: any, index: number) => (
-          <div
-            key={`${installment.installmentNo}-${index}`}
-            className="hover:bg-primary/20 grid grid-cols-5 gap-4 py-4 px-4 border"
+        <div className="px-4">
+          <CardTable
+            titles={[
+              "Installment No.",
+              "Date",
+              "Opening Balance",
+              "Installment Amount",
+              "Principal Balance",
+            ]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
           >
-            <div className="  text-start font-medium">
-              #{installment.installmentNo}
-            </div>
-
-            <div className="  text-start">
-              {formatToIndianDate(installment.installmentDate)}
-            </div>
-
-            <div className="  text-start">
-              {maskAmounts ? (
-                <span className="blur-sm select-none">₹XX,XXX</span>
-              ) : (
-                <span className="font-medium">
-                  {formatCurrency(installment.openingBalance)}
-                </span>
-              )}
-            </div>
-
-            <div className="  text-start">
-              {maskAmounts ? (
-                <span className="blur-sm select-none">₹XX,XXX</span>
-              ) : (
-                <span className="font-medium text-primary">
-                  {formatCurrency(installment.installmentAmount)}
-                </span>
-              )}
-            </div>
-
-            <div className="  text-start">
-              {maskAmounts ? (
-                <span className="blur-sm select-none">₹XX,XXX</span>
-              ) : (
-                <span
-                  className={`font-medium ${
-                    installment.principalBalance === 0 ? "text-green-600" : ""
-                  }`}
+            {advance.installments.map((installment: any, index: number) => (
+              <div
+                key={`${installment.installmentNo}-${index}`}
+                className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
+              >
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
                 >
-                  {formatCurrency(installment.principalBalance)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </CardTable>
+                  #{installment.installmentNo}
+                </Typography>
+
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {formatToIndianDate(installment.installmentDate)}
+                </Typography>
+
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">₹XX,XXX</span>
+                  ) : (
+                    <span>{formatCurrency(installment.openingBalance)}</span>
+                  )}
+                </Typography>
+
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">₹XX,XXX</span>
+                  ) : (
+                    <span>{formatCurrency(installment.installmentAmount)}</span>
+                  )}
+                </Typography>
+
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">₹XX,XXX</span>
+                  ) : (
+                    <span>{formatCurrency(installment.principalBalance)}</span>
+                  )}
+                </Typography>
+              </div>
+            ))}
+          </CardTable>
         </div>
       </div>
     </div>
@@ -241,19 +232,19 @@ onClick={onToggleMask}
             <div>
               <span className="text-gray-600">Status:</span>
               <div className=" text-start relative group inline-block overflow-visible">
-                  <StatusBadge status={advance.advanceStatus} />
+                <StatusBadge status={advance.advanceStatus} />
 
-                  {/* Tooltip */}
-                  <div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
+                {/* Tooltip */}
+                <div
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
                                opacity-0 invisible group-hover:opacity-100 group-hover:visible
                                transition-all duration-150 ease-out pointer-events-none
                                bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
                                shadow-lg z-50"
-                  >
-                    {advance.employee_name}
-                  </div>
-                  </div>
+                >
+                  {advance.employee_name}
+                </div>
+              </div>
             </div>
           </div>
         </div>

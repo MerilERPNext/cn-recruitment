@@ -10,7 +10,7 @@ import DataListView from "../../DataListView";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { ApprovalStage } from "../../../types/expenseAdvance";
-import { SquarePen, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import Button from "../../shared/atoms/Button";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
@@ -21,6 +21,8 @@ import { MoreVertical, FileText } from "lucide-react";
 import DropdownMenu from "../../shared/DropDownMenu";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -41,19 +43,18 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
-  // const formattedDate = item?.reference_document?.creation
-  //   ? format(new Date(item.reference_document.creation), "dd/MM/yyyy")
-  //   : " - ";
-
   return (
-    <div className="rounded-xl my-1 border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
-      <div className="flex justify-between items-start">
+    <div className="rounded-2xl  my-1 border-t-4 border-primary p-5  transition-shadow duration-200 flex flex-col gap-4">
+      <div className="flex justify-between items-start mb-2">
         <div className="flex flex-col gap-1">
-          <span className="card-title">Expense category</span>
+          <span className="card-subtitle-sm uppercase">Expense category</span>
           {item?.reference_document?.custom_expense_category && (
-            <span className="card-subtitle">
+            <Typography
+              variant="body"
+              className="leading-[13px]  font-semibold"
+            >
               {item?.reference_document?.custom_expense_category}
-            </span>
+            </Typography>
           )}
         </div>
 
@@ -70,16 +71,26 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
       <div className="flex justify-between">
         <div className="flex flex-col gap-1">
-          <span className="card-title">Claimed Date</span>
-          <span className="card-subtitle">
+          <span className="card-subtitle-sm uppercase">Claimed Date</span>
+          <Typography variant="body" className="leading-[13px]  font-semibold">
             {formatToIndianDate(item?.reference_document?.creation)}
-          </span>
+          </Typography>
         </div>
 
         <div className="flex flex-col gap-1 text-right">
-          <span className="card-title">Claimed Amount</span>
-          <span className="card-subtitle">{formattedAmount}</span>
+          <span className="card-subtitle-sm uppercase">Claimed Amount</span>
+          <Typography variant="body" className="leading-[13px] font-semibold">
+            {formattedAmount}
+          </Typography>
         </div>
+      </div>
+
+      <div>
+        <div className="h-[1px] w-full bg-gray-100 mb-3" />
+        <Typography className="text-gray-300 text-sm mb-3">
+          Last Updated on{" "}
+          {formatToIndianDate(item?.reference_document?.modified)}
+        </Typography>
       </div>
     </div>
   );
@@ -107,8 +118,8 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent row click from opening modal
+
+  const handleEditClick = () => {
     if (!expenseClaim?.name || !expenseItem?.name) return;
 
     const navigationState = buildExpenseNavigationState(
@@ -120,47 +131,52 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="max-w-screen grid gap-4 px-6 py-5 hover:bg-primary/10 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 0.5fr" }}
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
-      <span>{expenseClaim?.custom_expense_category || " - "}</span>
-      <span>{formattedAmount}</span>
-      <span>{formattedSanctionedAmount || " - "}</span>
-      <span>
+      <Typography
+        variant="bodySmall"
+        className="font-medium text-center truncate"
+      >
+        {expenseClaim?.custom_expense_category}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedAmount}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedSanctionedAmount}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(
           item?.reference_document?.expenses[0]?.expense_date,
         )}
-      </span>
-      <span>{formatToIndianDate(item?.reference_document?.creation)}</span>
-      <div>
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(item?.reference_document?.creation)}
+      </Typography>
+      <div className="flex items-center justify-center">
         <Tooltip
           content={
             item?.status === "Draft"
-              ? item?.reference_document?.custom_assigned_user ||
-                item?.allocated_to
+              ? `Allocated to : ${item?.reference_document?.custom_assigned_user}` ||
+              `Allocated to : ${item?.allocated_to}`
               : ""
           }
         >
-          <span
-            className={`px-2 py-1 rounded-2xl text-xs font-medium text-center ${getStatusBadgeClasses(
-              item?.status,
-            )}`}
-          >
-            {item?.status === "Draft" ? "Pending" : item?.status}
-          </span>
+          <StatusBadge status={item?.status} />
         </Tooltip>
       </div>
 
-      {currentUser?.name?.toLowerCase() ===
-        item?.send_back_user?.toLowerCase() &&
-        canEditExpense && (
-          <button
-            onClick={handleEditClick}
-            className="text-gray-500 hover:text-blue-600"
-          >
-            <SquarePen size={18} />
-          </button>
-        )}
+      <div className="flex items-center justify-center">
+        <MyApprovalActionPill
+          isPending={item?.status === "Draft"}
+          canEdit={
+            currentUser?.name?.toLowerCase() ===
+            item?.send_back_user?.toLowerCase() && canEditExpense
+          }
+          onEdit={handleEditClick}
+        />
+      </div>
     </div>
   );
 };
@@ -255,6 +271,57 @@ const ExpensesList: React.FC = () => {
     </div>
   );
 
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
+          title: "No Pending Claims",
+          description: "You have no pending expense claim requests."
+        },
+        Approved: {
+          title: "All Claims Approved",
+          description: "You have no approved expense claims to review."
+        },
+        Rejected: {
+          title: "No Rejected Claims",
+          description: "You have no rejected expense claims."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const mobileMenuItems = [
     {
       label: "Policy",
@@ -269,54 +336,54 @@ const ExpensesList: React.FC = () => {
   ];
 
   return (
-    <div
-      className="min-h-screen"
-      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
-    >
-      <div className="px-4">
-        <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-          <div className="flex flex-col mb-2">
-            <Typography variant="h4">My Expense Claims</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage your expense claim requests
-            </Typography>
-          </div>
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              {isDesktop ? (
+                <Typography variant="h4">My Expense Claims</Typography>
+              ) : null}
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your expense claim requests
+              </Typography>
+            </div>
+            <div className="flex items-center space-x-3 pb-1">
+              {isDesktop ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="md"
+                    className="rounded-xl hover:bg-blue-100 py-1"
+                    onClick={() => setIsPolicyDrawerOpen(true)}
+                  >
+                    Policy
+                  </Button>
 
-          <div className="flex items-center space-x-3 pb-1">
-            {isDesktop ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="md"
-                  className="rounded-xl hover:bg-blue-100 py-1"
-                  onClick={() => setIsPolicyDrawerOpen(true)}
-                >
-                  Policy
-                </Button>
-
-                <Button
-                  onClick={() =>
-                    navigate("/webapp/expenses-app/shared-expenses")
-                  }
-                  icon={<Users size={16} />}
-                  size="md"
-                  variant="outline"
-                  className="hover:bg-blue-100 rounded-xl py-1"
-                >
-                  Shared
-                </Button>
-              </>
-            ) : (
-              <DropdownMenu items={mobileMenuItems} placement="bottom-left">
-                <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                  <MoreVertical size={18} />
-                </button>
-              </DropdownMenu>
-            )}
+                  <Button
+                    onClick={() =>
+                      navigate("/webapp/expenses-app/shared-expenses")
+                    }
+                    icon={<Users size={16} />}
+                    size="md"
+                    variant="outline"
+                    className="hover:bg-blue-100 rounded-xl py-1"
+                  >
+                    Shared
+                  </Button>
+                </>
+              ) : (
+                <DropdownMenu items={mobileMenuItems} placement="bottom-left">
+                  <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
+                    <MoreVertical size={18} />
+                  </button>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="h-full px-0  pt-0">
+        <div className="px-4">
           {currentEmployee?.name && (
             <CardTable
               titles={[
@@ -326,9 +393,9 @@ const ExpensesList: React.FC = () => {
                 "Expense Date",
                 "Claimed Date",
                 "Status",
-                "Actions",
+                "ACTIONS",
               ]}
-              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "0.5fr"]}
+              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
             >
               <DataListView
                 queryKey={["expense-claims-all"]}
@@ -338,7 +405,6 @@ const ExpensesList: React.FC = () => {
                   params: {
                     doctype: "Expense Claim",
                     employee: currentEmployee?.name,
-                    status: "Draft",
                   },
                 }}
                 ItemComponent={(props: { item: any }) =>
@@ -362,6 +428,9 @@ const ExpensesList: React.FC = () => {
                     ],
                   },
                 ]}
+                defaultFilters={{
+                  status: "Draft",
+                }}
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}
@@ -371,6 +440,7 @@ const ExpensesList: React.FC = () => {
                 infiniteScroll={true}
                 showPagination={true}
                 loadMorePagination={false}
+                noRecordsScreen={noRecordsScreen}
               />
             </CardTable>
           )}

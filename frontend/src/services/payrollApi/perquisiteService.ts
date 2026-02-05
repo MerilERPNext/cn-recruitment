@@ -2,7 +2,7 @@ import axios from "axios";
 import FrappeAPI from "../../utils/frappeAPI";
 
 type FetchHTMLArgs = {
-  slip_id: string;
+  salary_slip: string;
 };
 
 export const getPerquisite = async (
@@ -43,9 +43,9 @@ const fetchHTML = async (method: string, args: FetchHTMLArgs) => {
 
 export const getInvoiceHTMLSheet = async (invoiceID: string) => {
   return fetchHTML(
-    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.get_consultant_payslip_pdf",
+    "cn_indian_payroll.cn_indian_payroll.overrides.leegality.view_signed_payslip",
     {
-      slip_id: invoiceID, 
+      salary_slip: invoiceID, 
     }
   );
 };

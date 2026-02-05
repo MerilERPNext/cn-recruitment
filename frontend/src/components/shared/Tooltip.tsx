@@ -1,4 +1,5 @@
-import React, { useState, ReactNode } from "react";
+import React, { useState, ReactNode, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface TooltipProps {
   content: string | ReactNode;
@@ -16,9 +17,70 @@ const Tooltip: React.FC<TooltipProps> = ({
   delay = 200,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [timeoutId, setTimeoutId] = useState<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const calculatePosition = () => {
+    if (!triggerRef.current || !tooltipRef.current) return;
+
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+
+    let top = 0;
+    let left = 0;
+
+    switch (position) {
+      case "top":
+        top = triggerRect.top + scrollY - tooltipRect.height - 8;
+        left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
+        break;
+      case "bottom":
+        top = triggerRect.bottom + scrollY + 8;
+        left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
+        break;
+      case "left":
+        top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
+        left = triggerRect.left + scrollX - tooltipRect.width - 8;
+        break;
+      case "right":
+        top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
+        left = triggerRect.right + scrollX + 8;
+        break;
+      case "tl":
+        top = triggerRect.top + scrollY - tooltipRect.height - 8;
+        left = triggerRect.left + scrollX;
+        break;
+      case "tr":
+        top = triggerRect.top + scrollY - tooltipRect.height - 8;
+        left = triggerRect.right + scrollX - tooltipRect.width;
+        break;
+      default:
+        top = triggerRect.top + scrollY - tooltipRect.height - 8;
+        left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
+    }
+
+    setTooltipPosition({ top, left });
+  };
+
+  useEffect(() => {
+    if (isVisible) {
+      calculatePosition();
+      // Recalculate on scroll and resize
+      window.addEventListener("scroll", calculatePosition, true);
+      window.addEventListener("resize", calculatePosition);
+
+      return () => {
+        window.removeEventListener("scroll", calculatePosition, true);
+        window.removeEventListener("resize", calculatePosition);
+      };
+    }
+  }, [isVisible, position]);
 
   const showTooltip = () => {
     if (timeoutId) clearTimeout(timeoutId);
@@ -29,25 +91,6 @@ const Tooltip: React.FC<TooltipProps> = ({
   const hideTooltip = () => {
     if (timeoutId) clearTimeout(timeoutId);
     setIsVisible(false);
-  };
-
-  const getPositionClasses = () => {
-    switch (position) {
-      case "top":
-        return "bottom-full left-1/2 transform -translate-x-1/2 mb-2";
-      case "bottom":
-        return "top-full left-1/2 transform -translate-x-1/2 mt-2";
-      case "left":
-        return "right-full top-1/2 transform -translate-y-1/2 mr-2";
-      case "right":
-        return "left-full top-1/2 transform -translate-y-1/2 ml-2";
-      case "tl":
-        return "bottom-full mb-2";
-      case "tr":
-        return "bottom-full mb-2 right-1";
-      default:
-        return "bottom-full left-1/2 transform -translate-x-1/2 mb-2";
-    }
   };
 
   const getArrowClasses = () => {
@@ -69,28 +112,38 @@ const Tooltip: React.FC<TooltipProps> = ({
     }
   };
 
-  return (
+  const tooltipContent = isVisible && content && (
     <div
-      className="relative inline-block"
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
-      onFocus={showTooltip}
-      onBlur={hideTooltip}
+      ref={tooltipRef}
+      className={`fixed z-[9999] px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
+      role="tooltip"
+      style={{
+        top: `${tooltipPosition.top}px`,
+        left: `${tooltipPosition.left}px`,
+      }}
     >
-      {children}
-      {isVisible && content && (
-        <div
-          className={`absolute z-100 px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap ${getPositionClasses()} ${className}`}
-          role="tooltip"
-        >
-          {content}
-          <div
-            className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`}
-            style={{ borderWidth: "4px" }}
-          />
-        </div>
-      )}
+      {content}
+      <div
+        className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`}
+        style={{ borderWidth: "4px" }}
+      />
     </div>
+  );
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        className="inline-block"
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+        onFocus={showTooltip}
+        onBlur={hideTooltip}
+      >
+        {children}
+      </div>
+      {isVisible && content && createPortal(tooltipContent, document.body)}
+    </>
   );
 };
 

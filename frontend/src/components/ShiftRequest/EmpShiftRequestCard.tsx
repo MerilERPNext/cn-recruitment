@@ -13,6 +13,9 @@ import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import { useNavigate } from "react-router-dom";
 import { useShiftTypes } from "../../hooks/useShift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { Typography } from "../shared/atoms/Typography";
+import StatusBadge from "../shared/atoms/statusBadge";
+import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 
 const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const { isDesktop } = useScreenSize();
@@ -95,69 +98,60 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
     return "";
   };
 
+  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
+  const isDraft = data?.reference_document?.status === "Draft";
+
+  const canEdit = Boolean(data?.can_edit && isDraft);
+  const canRevoke = Boolean(data?.custom_allow_revoke && isDraft);
+
   return (
     <>
       {isDesktop ? (
         <div
-          className={`max-w-screen grid grid-cols-5 items-center gap-4 px-6 h-14 border-b border-gray-200 hover:bg-primary/20 transition-colors cursor-pointer`}
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+          style={{ gridTemplateColumns }}
         >
           {/* Request Type */}
-          <div className="text-sm font-medium text-gray-700 text-start truncate flex flex-col">
-            <div>{data?.reference_document?.shift_type}</div>
-            <div className="text-xs">
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.shift_type}
+            <Typography variant="bodySmall" className="font-medium text-center">
               {getShiftTimeline(data?.reference_document?.shift_type || "")}
-            </div>
-          </div>
+            </Typography>
+          </Typography>
 
           {/* From Date */}
-          <div className="text-sm text-gray-900 text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date || "")}
-          </div>
+          </Typography>
 
           {/* To Date */}
-          <div className="text-sm text-gray-900 text-start">
+          <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.to_date || "")}
-          </div>
+          </Typography>
 
           {/* Status */}
-          <div className="flex justify-start">
+
+          <div className="flex items-center justify-center">
             <Tooltip
-              content={status?.label === "Draft" ? data?.allocated_to : ""}
+              content={
+                data.reference_document.status === "Draft"
+                  ? `Allocated to : ${data?.allocated_to}`
+                  : ""
+              }
             >
-              <Badge
-                size="sm"
-                backgroundColor={status?.statusColor}
-                label={status?.label || ""}
-              />
+              <StatusBadge status={data?.reference_document?.status} />
             </Tooltip>
           </div>
-          {data?.custom_allow_revoke &&
-          data?.can_edit &&
-          data?.reference_document?.status === "Draft" ? (
-            <div className="text-sm text-gray-900 text-start flex gap-5 items-center">
-              {/* ✨ ADD THE EDIT BUTTON HERE */}
-              <Button
-                icon={<Pencil className="h-3 w-3" />}
-                variant="outline"
-                size="sm"
-                onClick={() => setEdit(true)}
-              >
-                Edit
-              </Button>
-              {/* REVOKE BUTTON */}
-              <Button
-                icon={<RotateCcw className="h-3 w-3" />}
-                variant="contain"
-                size="sm"
-                onClick={handleRevokeClick}
-                disabled={revokeEventMutation.isPending}
-              >
-                {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-              </Button>
-            </div>
-          ) : (
-            <></>
-          )}
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              canEdit={canEdit}
+              canRevoke={canRevoke}
+              isPending={false}
+              revokeLoading={revokeEventMutation.isPending}
+              onEdit={handleEditClick}
+              onRevoke={handleRevokeClick}
+            />
+          </div>
         </div>
       ) : (
         <div className="w-full bg-app rounded-xl shadow-sm border border-gray-200 p-4 mb-4 hover:shadow-md transition cursor-pointer">

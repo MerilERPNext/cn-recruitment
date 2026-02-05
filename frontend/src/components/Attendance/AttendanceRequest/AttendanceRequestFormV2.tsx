@@ -17,7 +17,6 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { MyAttendanceRequest } from "../../../types/attendance";
-import { useScreenSize } from "../../../hooks/useScreenSize";
 // Import the JSON schema
 import defaultFormSchema from "./attendanceRequestFormSchema.json";
 import Button from "../../shared/atoms/Button";
@@ -161,7 +160,6 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
-  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
@@ -179,7 +177,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useAttendanceRequestAttachments(
       activeEmployeeId,
       fromDateChanged ||
-      formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+        formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -371,18 +369,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         custom_from_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document.custom_from_time,
-            )}`,
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document.custom_from_time,
+              )}`,
+            )
           : shiftData?.start_time || "",
         custom_to_time: defaultAttendanceData?.reference_document
           ?.custom_to_time
           ? new Date(
-            `1970-01-01T${normalizeTime(
-              defaultAttendanceData?.reference_document?.custom_to_time,
-            )}`,
-          )
+              `1970-01-01T${normalizeTime(
+                defaultAttendanceData?.reference_document?.custom_to_time,
+              )}`,
+            )
           : shiftData?.end_time || "",
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -398,13 +396,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
-            defaultAttendanceData?.attachments?.length > 0
+          defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-              return {
-                name: item?.file_url?.split("/").pop(),
-                url: item?.file_url,
-              };
-            })
+                return {
+                  name: item?.file_url?.split("/").pop(),
+                  url: item?.file_url,
+                };
+              })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -566,154 +564,165 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const loading = useLoadingOverlay();
 
   const handleSubmit = async (submission: { data: AttendanceFormData }) => {
-     await loading?.wrap(() => {
-    return new Promise<void>((resolve, reject) => {
-    // Logic to determine employee: Use selected from form (if any) or fallback to current
-    const selectedEmpId =
-      submission.data.employee?.name || currentEmployee?.employee;
+    await loading?.wrap(() => {
+      return new Promise<void>((resolve, reject) => {
+        // Logic to determine employee: Use selected from form (if any) or fallback to current
+        const selectedEmpId =
+          submission.data.employee?.name || currentEmployee?.employee;
 
-    const baseBody = {
-      custom_request_type: submission.data.request_type,
-      // If employee is selected (i.e. for others), use form company? Or always use current employee company?
-      // Usually if applying for someone else, might want their company.
-      // But let's stick to safe defaults or existing logic.
-      // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
-      // Let's keep existing logic for company or maybe infer from employee if we had that data.
-      company: isForOthers ? submission.data.company : currentEmployee?.company,
-      employee: selectedEmpId,
-      explanation: submission.data.explanation,
-      ...(submission.data.from_date && {
-        from_date: formatDateToYYYYMMDD(new Date(submission.data.from_date)),
-      }),
-      ...((submission.data.to_date ||
-        (submission.data.request_type === "Out Duty" &&
-          submission.data.from_date)) && {
-        to_date:
-          submission.data.request_type === "Out Duty" &&
-            submission.data.from_date
-            ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
-            : formatDateToYYYYMMDD(new Date(submission.data.to_date as string)),
-      }),
-    };
-
-    let requestBody: Record<string, unknown> = { ...baseBody };
-
-    switch (submission.data.request_type) {
-      case "Clockin":
-        requestBody = {
-          ...baseBody,
-          to_date: baseBody.from_date,
-          custom_from_time: submission.data.checkin_time,
-          custom__request_reason: submission.data.custom__request_reason,
-          custom_location: submission?.data?.custom_location,
+        const baseBody = {
+          custom_request_type: submission.data.request_type,
+          // If employee is selected (i.e. for others), use form company? Or always use current employee company?
+          // Usually if applying for someone else, might want their company.
+          // But let's stick to safe defaults or existing logic.
+          // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
+          // Let's keep existing logic for company or maybe infer from employee if we had that data.
+          company: isForOthers
+            ? submission.data.company
+            : currentEmployee?.company,
+          employee: selectedEmpId,
+          explanation: submission.data.explanation,
+          ...(submission.data.from_date && {
+            from_date: formatDateToYYYYMMDD(
+              new Date(submission.data.from_date),
+            ),
+          }),
+          ...((submission.data.to_date ||
+            (submission.data.request_type === "Out Duty" &&
+              submission.data.from_date)) && {
+            to_date:
+              submission.data.request_type === "Out Duty" &&
+              submission.data.from_date
+                ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
+                : formatDateToYYYYMMDD(
+                    new Date(submission.data.to_date as string),
+                  ),
+          }),
         };
-        break;
-      case "Out Duty":
-        requestBody = {
-          ...baseBody,
-          to_date: baseBody.to_date,
-          custom_from_time: submission.data.checkin_time,
-          custom_to_time: submission.data.checkout_time,
-          custom__request_reason: submission.data.custom__request_reason,
-          overnight_out_duty: submission.data.overnight_out_duty || false,
+
+        let requestBody: Record<string, unknown> = { ...baseBody };
+
+        switch (submission.data.request_type) {
+          case "Clockin":
+            requestBody = {
+              ...baseBody,
+              to_date: baseBody.from_date,
+              custom_from_time: submission.data.checkin_time,
+              custom__request_reason: submission.data.custom__request_reason,
+              custom_location: submission?.data?.custom_location,
+            };
+            break;
+          case "Out Duty":
+            requestBody = {
+              ...baseBody,
+              to_date: baseBody.to_date,
+              custom_from_time: submission.data.checkin_time,
+              custom_to_time: submission.data.checkout_time,
+              custom__request_reason: submission.data.custom__request_reason,
+              overnight_out_duty: submission.data.overnight_out_duty || false,
+            };
+            break;
+
+          case "Short Attendance Request":
+            requestBody = {
+              ...baseBody,
+              from_date: formatDateToYYYYMMDD(
+                new Date(submission.data.from_date || ""),
+              ),
+              to_date: formatDateToYYYYMMDD(
+                new Date(submission.data.to_date || ""),
+              ),
+              custom_from_time: submission.data.checkin_time,
+              custom_to_time: submission.data.checkout_time,
+              custom__request_reason: submission.data.custom__request_reason,
+            };
+            break;
+
+          case "Attendance Adjustment":
+            requestBody = {
+              ...baseBody,
+              from_date: formatDateToYYYYMMDD(
+                new Date(submission.data.from_date || new Date()),
+              ),
+              to_date: formatDateToYYYYMMDD(
+                new Date(submission.data.to_date || new Date()),
+              ),
+              custom_from_time: submission.data.checkin_time,
+              custom_to_time: submission.data.checkout_time,
+              custom__request_reason: submission.data.custom__request_reason,
+              custom_location: submission?.data?.custom_location,
+            };
+            break;
+
+          case "Shift Change":
+            requestBody = {
+              ...baseBody,
+              select_shift: submission.data.select_shift,
+            };
+            break;
+        }
+
+        if (
+          submission.data.attachments?.[0] &&
+          submission?.data?.attachments?.length > 0
+        ) {
+          requestBody.custom_attachment =
+            submission.data?.attachments?.[0]?.url;
+        }
+
+        const handleSuccess = (message: string) => {
+          resolve();
+          onClose();
+          setTimeout(() => setRefetchAttendance(true), 2000);
+          toast.success(message);
         };
-        break;
 
-      case "Short Attendance Request":
-        requestBody = {
-          ...baseBody,
-          from_date: formatDateToYYYYMMDD(
-            new Date(submission.data.from_date || ""),
-          ),
-          to_date: formatDateToYYYYMMDD(
-            new Date(submission.data.to_date || ""),
-          ),
-          custom_from_time: submission.data.checkin_time,
-          custom_to_time: submission.data.checkout_time,
-          custom__request_reason: submission.data.custom__request_reason,
+        const handleError = (error: CustomError) => {
+          const formatedError = errorResponseFormater(
+            error,
+            "Submission failed. Please try again.",
+          );
+          reject(error);
+          toast.error(formatedError);
+          console.error(error);
         };
-        break;
 
-      case "Attendance Adjustment":
-        requestBody = {
-          ...baseBody,
-          from_date: formatDateToYYYYMMDD(
-            new Date(submission.data.from_date || new Date()),
-          ),
-          to_date: formatDateToYYYYMMDD(
-            new Date(submission.data.to_date || new Date()),
-          ),
-          custom_from_time: submission.data.checkin_time,
-          custom_to_time: submission.data.checkout_time,
-          custom__request_reason: submission.data.custom__request_reason,
-          custom_location: submission?.data?.custom_location,
-        };
-        break;
-
-      case "Shift Change":
-        requestBody = {
-          ...baseBody,
-          select_shift: submission.data.select_shift,
-        };
-        break;
-    }
-
-    if (
-      submission.data.attachments?.[0] &&
-      submission?.data?.attachments?.length > 0
-    ) {
-      requestBody.custom_attachment = submission.data?.attachments?.[0]?.url;
-    }
-
-    const handleSuccess = (message: string) => {
-      resolve();
-      onClose();
-      setTimeout(() => setRefetchAttendance(true), 2000);
-      toast.success(message);
-    };
-
-    const handleError = (error: CustomError) => {
-      const formatedError = errorResponseFormater(
-        error,
-        "Submission failed. Please try again.",
-      );
-       reject(error);
-      toast.error(formatedError);
-      console.error(error);
-    };
-
-    if (forActionType && forActionType === "edit" && defaultAttendanceData) {
-      updateAttendanceRequest(
-        {
-          doctype: "Attendance Request",
-          name: defaultAttendanceData?.reference_document.name,
-          data: requestBody as Record<string, unknown>,
-        },
-        {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onSuccess: async (data: any) => {
-            if (attachments?.length > 0) {
-              await uploadFiles(attachments, data.doctype, data.name);
-            }
-            handleSuccess("Updated Attendance Request successfully!");
-          },
-          onError: handleError,
-        },
-      );
-    } else {
-      mutation.mutate(requestBody as Record<string, unknown>, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onSuccess: async (data: any) => {
-          if (attachments?.length > 0) {
-            await uploadFiles(attachments, data.doctype, data.name);
-          }
-          handleSuccess("Added Attendance Request successfully!");
-        },
-        onError: handleError,
+        if (
+          forActionType &&
+          forActionType === "edit" &&
+          defaultAttendanceData
+        ) {
+          updateAttendanceRequest(
+            {
+              doctype: "Attendance Request",
+              name: defaultAttendanceData?.reference_document.name,
+              data: requestBody as Record<string, unknown>,
+            },
+            {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onSuccess: async (data: any) => {
+                if (attachments?.length > 0) {
+                  await uploadFiles(attachments, data.doctype, data.name);
+                }
+                handleSuccess("Updated Attendance Request successfully!");
+              },
+              onError: handleError,
+            },
+          );
+        } else {
+          mutation.mutate(requestBody as Record<string, unknown>, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onSuccess: async (data: any) => {
+              if (attachments?.length > 0) {
+                await uploadFiles(attachments, data.doctype, data.name);
+              }
+              handleSuccess("Added Attendance Request successfully!");
+            },
+            onError: handleError,
+          });
+        }
       });
-    }
-       });  
-  }, "Submitting Attendance Request…");
+    }, "Submitting Attendance Request…");
   };
 
   // Handle form change
@@ -839,7 +848,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     if (checkoutComp && finalCheckout) {
       // Convert time string to Date object for Form.io time picker
       const checkoutDate = new Date(`1970-01-01T${finalCheckout}`);
-      checkoutComp.setValue(checkoutDate.toISOString(), { noUpdateEvent: true });
+      checkoutComp.setValue(checkoutDate.toISOString(), {
+        noUpdateEvent: true,
+      });
       changed = true;
     }
 
@@ -859,7 +870,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   }
   return (
     <div
-      className="fixed inset-0 top-[-30px] z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0  z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -970,11 +981,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input",
-                  )
+                      "input.flatpickr-input",
+                    )
                   : document.querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input",
-                  );
+                      "input.flatpickr-input",
+                    );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {
@@ -1005,20 +1016,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         </div>
 
         {/* Submit Bar */}
-        <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-          <div className="max-w-4xl mx-auto">
+        <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
+          <div className="max-w-4xl mx-auto flex justify-center md:justify-end">
             <Button
               onClick={() => formAddressInstance.current?.submit()}
-              fullWidth
               size="lg"
               variant="contain"
-              className={`flex-1 ${isDesktop ? "hover:bg-blue-700" : "hover:bg-gray-800"
-                } font-medium`}
+              bgColor="primary"
+              className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
             >
               {mutation.isPending || uploadFileLoading ? (
-                <div className="w-5 h-5 my-0 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                <span className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
               ) : (
-                "Submit"
+                "Submit Request"
               )}
             </Button>
           </div>

@@ -1,5 +1,4 @@
 import React from "react";
-import { StatusBadge } from "./AllShiftsDashboard";
 import { Link, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
@@ -8,6 +7,9 @@ import formatToIndianDate, {
 } from "../../utils/formatToIndianDate";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import CardTable from "../shared/CardTable";
+import { Typography } from "../shared/atoms/Typography";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 const MyShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -38,31 +40,43 @@ const MyShiftRowItem: React.FC<{
   };
 
   const shiftStatus = getShiftStatus(item.start_date, item.end_date);
+  const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
 
   return (
     <div
       key={`${item.name}-${index}`}
-      className="my-data-row grid grid-cols-5 gap-4 items-center hover:bg-primary/20 text-center"
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      style={{ gridTemplateColumns }}
     >
       <Link
         to={`/webapp/employee-profile?target_user=${item?.employee}`}
         target="_blank"
       >
-        <div className="my-data-cell font-medium truncate">
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
           <WrapperHoverCard employeeId={item.employee}>
             {item.employee_name}
           </WrapperHoverCard>
-        </div>
+        </Typography>
       </Link>
-      <div
-        className="my-data-cell truncate"
+      <Typography
+        variant="bodySmall"
+        className="font-medium text-center"
         title={`Shift Time: ${item.start_time} - ${item.end_time}`}
       >
         {item.shift_type}
-      </div>
-      <div className="my-data-cell">{formatToIndianDate(item.start_date)}</div>
-      <div className="my-data-cell">{formatEndDate(item.end_date)}</div>
-      <div className="my-data-cell flex justify-center">
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(item.start_date)}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatEndDate(item.end_date)}
+      </Typography>
+
+      <div className="flex items-center justify-center">
         <StatusBadge status={shiftStatus} />
       </div>
     </div>
@@ -73,42 +87,33 @@ const AllMyShiftsList: React.FC = () => {
   const navigate = useNavigate();
   const { data } = useShiftAssignments();
 
-  // ✅ Filter only self shifts
+  // ✅ Only self shifts
   const myShifts = data?.filter((shift) => shift.is_self === 1) ?? [];
 
   return (
-    <div className="w-full mx-auto pb-20">
-      <HeaderBar title="All My Shifts" onBack={() => navigate(-1)} />
-      <div className="overflow-x-auto mt-6 mx-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="my-table-header grid grid-cols-5 gap-4">
-          <span className="my-table-header-text flex items-center justify-center">
-            EMPLOYEE
-          </span>
-          <span className="my-table-header-text flex items-center justify-center">
-            SHIFT TYPE
-          </span>
-          <span className="my-table-header-text flex items-center justify-center">
-            START DATE
-          </span>
-          <span className="my-table-header-text flex items-center justify-center">
-            END DATE
-          </span>
-          <span className="my-table-header-text flex items-center justify-center">
-            STATUS
-          </span>
-        </div>
-        <div>
-          {myShifts.length > 0 ? (
-            myShifts.map((shift, index) => (
-              <MyShiftRowItem key={shift.name} item={shift} index={index} />
-            ))
-          ) : (
-            <div className="p-4 text-center text-gray-500">
-              No shifts found for you.
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="w-full mx-auto py-4 px-4">
+      <HeaderBar
+        title="All My Shifts"
+        className="mb-3"
+        onBack={() => navigate(-1)}
+      />
+
+      <CardTable
+        /* ✅ Unified headers */
+        titles={["Employee", "Shift Type", "Start Date", "End Date", "Status"]}
+        /* ✅ Column widths synced with row */
+        columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+      >
+        {myShifts.length > 0 ? (
+          myShifts.map((shift, index) => (
+            <MyShiftRowItem key={shift.name} item={shift} index={index} />
+          ))
+        ) : (
+          <div className="p-4 text-center text-gray-500">
+            No shifts found for you.
+          </div>
+        )}
+      </CardTable>
     </div>
   );
 };

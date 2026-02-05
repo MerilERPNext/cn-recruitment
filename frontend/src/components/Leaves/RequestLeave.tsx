@@ -30,6 +30,7 @@ import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
 import AttendanceStatusModal from "./AttendanceStatusModal";
 import { X } from "lucide-react";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -63,6 +64,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const { defaults } = useRequestLeaveModal();
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
+  const { isDesktop } = useScreenSize();
 
   const [dailyConfig, setDailyConfig] = useState<
     Record<string, "Full Day" | "First Half" | "Second Half">
@@ -276,9 +278,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
   }, [formData.fromDate, formData.toDate]);
 
-   const loading = useLoadingOverlay();
+  const loading = useLoadingOverlay();
   const handleSubmit = useCallback(async () => {
-
     if (!currentEmployee?.name || !formInstance.current) return;
 
     try {
@@ -296,10 +297,10 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         dailyConfig:
           submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
       });
-      
+
       await loading?.wrap(async () => {
-      await createLeaveMutation.mutateAsync(payload);
-          }, "Submitting  Leave Request...");
+        await createLeaveMutation.mutateAsync(payload);
+      }, "Submitting  Leave Request...");
       toast.success("Leave request submitted successfully!");
       triggerRefetch();
       onSuccess?.();
@@ -311,7 +312,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       );
       toast.error(formatted);
     }
-    
   }, [
     currentEmployee,
     dailyConfig,
@@ -583,21 +583,23 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-        <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onCancel) {
-              onCancel();
-            }
-          }}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          aria-label="Close"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
-      </div>
+      {isDesktop && (
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onCancel) {
+                onCancel();
+              }
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+      )}
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
           <strong>Applying for:</strong> {leaveDays}{" "}
@@ -622,7 +624,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pb-20">
+      <div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0">
         <Form
           form={leaveForm}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -692,30 +694,31 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           />
         )}
       </div>
-      <div className="border-t border-gray-200 py-4 px-4">
+      <div className="border-gray-200 border-t py-4 px-6 flex justify-center md:justify-end">
         {!defaults?.isEdit ? (
           <Button
             onClick={handleSubmit}
-            fullWidth
             size="lg"
             variant="contain"
             bgColor="primary"
+            className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
           >
             {createLeaveMutation.isPending ? "Processing..." : "Submit Request"}
           </Button>
         ) : (
           <Button
             onClick={handleUpdate}
-            fullWidth
             size="lg"
             variant="contain"
             bgColor="primary"
             disabled={editLeaveMutation.isPending}
+            className=" md:w-auto w-full min-w-[201px] md:px-7 md:py-3.5 rounded-md font-brand"
           >
             {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
           </Button>
         )}
       </div>
+
       {isAttendanceModalOpen && (
         <AttendanceStatusModal
           isOpen={isAttendanceModalOpen}

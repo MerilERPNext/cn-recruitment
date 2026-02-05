@@ -44,7 +44,7 @@ const EmployeeAttendance = () => {
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance Summary"
+    "Attendance Summary",
   );
 
   const [showDetailsFor, setShowDetailsFor] = useState<{
@@ -62,7 +62,7 @@ const EmployeeAttendance = () => {
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
   const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
@@ -74,7 +74,7 @@ const EmployeeAttendance = () => {
   } = useGetAllEventsAndAttendance({ start: start, end: end });
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    currentEmployee?.employee || ""
+    currentEmployee?.employee || "",
   );
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState<boolean>(false);
@@ -112,7 +112,7 @@ const EmployeeAttendance = () => {
   const formatDateKey = (date: Date): string => format(date, "yyyy-MM-dd");
 
   const createAttendanceStatusGetter = (
-    attendances: AttendanceRecord[] = []
+    attendances: AttendanceRecord[] = [],
   ) => {
     const statusMap: Record<string, AttendanceStatusInfo> = {};
     const groupedByDate: Record<string, AttendanceRecord[]> = {};
@@ -134,7 +134,7 @@ const EmployeeAttendance = () => {
     // First pass → group attendance + range events by date
     attendances.forEach((record) => {
       const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
-        record.doctype
+        record.doctype,
       );
 
       const hasRange = record.start && record.end;
@@ -167,7 +167,7 @@ const EmployeeAttendance = () => {
 
       records.forEach((record) => {
         const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
-          record.doctype
+          record.doctype,
         );
 
         if (isAttendanceType) {
@@ -302,14 +302,16 @@ const EmployeeAttendance = () => {
             />
           </div>
           <CardTable
+            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
             titles={[
               "Request Type",
               "From Date",
               "To Date",
               "Due Date",
+              "Duration",
               "Allocated To",
               "Status",
-              "Actions",
+              "ACTIONS",
             ]}
           >
             <Cardtable

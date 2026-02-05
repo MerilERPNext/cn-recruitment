@@ -13,6 +13,7 @@ import type {
   EmployeeRegularize,
   EmployeeShift,
   EmployeeShiftSummary,
+  EmployeeTeamCheckIns,
   IOvertimeLog,
   IPRestrictionsT,
   Policy,
@@ -21,6 +22,7 @@ import type {
   ShiftLocationT,
   UserRoles,
   WeeklyOff,
+  WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
 
@@ -150,6 +152,46 @@ export const attendanceService = {
         }
       );
       return response as EmployeeShift;
+    } catch (error) {
+      console.error("📡 Error in fetching employee shift:", error);
+      throw error;
+    }
+  },
+  getTeamCheckinSummary: async (
+    userId: string,
+    filters?: object
+  ): Promise<EmployeeTeamCheckIns> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.attendance_api.get_team_checkin_summary",
+        {
+          user: userId,
+          filters: filters,
+        }
+      );
+      return response as EmployeeTeamCheckIns;
+    } catch (error) {
+      console.error("📡 Error in fetching employee shift:", error);
+      throw error;
+    }
+  },
+  getEmployeeWorkingHours: async (
+    userId: string,
+    from_date: string,
+    to_date: string,
+    filters?: object
+  ): Promise<WorkingHoursResponse> => {
+    try {
+      const response = await FrappeAPI.getMethod(
+        "cn_leave_shift_managment.attendance_api.get_employee_working_hours",
+        {
+          user: userId,
+          from_date: from_date,
+          to_date: to_date,
+          filters: filters,
+        }
+      );
+      return response as WorkingHoursResponse;
     } catch (error) {
       console.error("📡 Error in fetching employee shift:", error);
       throw error;

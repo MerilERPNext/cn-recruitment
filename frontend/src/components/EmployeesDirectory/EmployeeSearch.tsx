@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import useDebounce from "../../hooks/useDebounce";
 import { useGetAllEmployees } from "../../hooks/useEmployee";
 import MultiSelect from "../shared/molecules/MultiSelect";
 import { Employee } from "../../types/employee";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Check, RefreshCw } from "lucide-react";
 import Button from "../shared/atoms/Button";
 import SideDrawer from "../shared/SideDrawer";
 import EmployeeDirectoryFilters from "./EmployeeDirectoryFilters";
 
 import { FilterCondition } from "../../types/frappe";
+import { Typography } from "../shared/atoms/Typography";
 
 export interface EmployeeDirectoryFilterData {
   employee_status?: string;
@@ -45,10 +47,14 @@ const EmployeeSearch = ({
 }: {
   setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
 }) => {
+  const { isDesktop } = useScreenSize();
+  const [pendingEmployees, setPendingEmployees] = useState<Employee[]>([]);
   const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] =
+    useState<EmployeeDirectoryFilterData>({ status: "Active" });
+  const [pendingFilters, setPendingFilters] =
     useState<EmployeeDirectoryFilterData>({ status: "Active" });
   const debouncedQuery = useDebounce(searchQuery, 350);
 
@@ -77,6 +83,7 @@ const EmployeeSearch = ({
 
   const handleFilterUpdate = (data: EmployeeDirectoryFilterData) => {
     setActiveFilters(data);
+    setPendingFilters(data);
     setIsFilterOpen(false);
   };
 
@@ -84,11 +91,24 @@ const EmployeeSearch = ({
     const newFilters = { ...activeFilters };
     delete newFilters[key];
     setActiveFilters(newFilters);
+    setPendingFilters(newFilters);
   };
 
   const clearAllFilters = () => {
     setActiveFilters({});
+    setPendingFilters({});
   };
+
+  const handleApplyEmployeeSelection = () => {
+    setSelectedEmployees(pendingEmployees);
+    setEmployees(pendingEmployees);
+  };
+
+  const handleSyncEmployeeSelection = () => {
+    setPendingEmployees(selectedEmployees);
+  };
+
+  const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(selectedEmployees.map(e => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
     (key) => activeFilters[key],
@@ -96,39 +116,64 @@ const EmployeeSearch = ({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
-        <MultiSelect
-          options={employeeOptions}
-          selected={selectedEmployees}
-          onChange={(selected) => {
-            setSelectedEmployees(selected);
-            setEmployees(selected);
-          }}
-          labelKey="name"
-          valueKey="name"
-          className="h-full"
-          placeholder="Search employees"
-          searchValue={searchQuery}
-          isLoading={isLoading}
-          onSearchChange={setSearchQuery}
-          renderOption={(emp) => <EmployeeOption employee={emp} />}
-        />
-        <div className="relative">
-          <Button
-            variant="soft"
-            size="sm"
-            onClick={() => {
-              setIsFilterOpen(true);
+      {/* Search and buttons row */}
+      <div className={`flex gap-2 items-start ${!isDesktop ? 'flex-wrap' : ''}`}>
+        {/* MultiSelect */}
+        <div className={isDesktop ? 'flex-1' : 'w-full'}>
+          <MultiSelect
+            options={employeeOptions}
+            selected={pendingEmployees}
+            onChange={(selected) => {
+              setPendingEmployees(selected);
             }}
-            className="h-full"
-          >
-            <Filter size={16} />
-            {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
+            labelKey="name"
+            valueKey="name"
+            placeholder="Search employees"
+            searchValue={searchQuery}
+            isLoading={isLoading}
+            onSearchChange={setSearchQuery}
+            renderOption={(emp) => <EmployeeOption employee={emp} />}
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className={`flex gap-2 items-start ${!isDesktop ? 'w-full' : ''}`}>
+          {hasPendingChanges && (
+            <>
+              <Button
+                variant="contain"
+                size="sm"
+                onClick={handleApplyEmployeeSelection}
+              >
+                <Check size={12} />
+                {isDesktop && <Typography variant="bodySmall">Apply</Typography>}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncEmployeeSelection}
+              >
+                <RefreshCw size={12} />
+                {isDesktop && <Typography variant="bodySmall">Sync</Typography>}
+              </Button>
+            </>
+          )}
+          <div className="relative">
+            <Button
+              variant="soft"
+              size="sm"
+              onClick={() => {
+                setIsFilterOpen(true);
+              }}
+            >
+              <Filter size={16} />
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -169,13 +214,14 @@ const EmployeeSearch = ({
         open={isFilterOpen}
         onClose={() => {
           setIsFilterOpen(false);
+          setPendingFilters(activeFilters); // Reset pending filters to active filters when closing without applying
         }}
         title="Filter"
         size="xl"
       >
         <EmployeeDirectoryFilters
           onUpdate={handleFilterUpdate}
-          data={activeFilters}
+          data={pendingFilters}
         />
       </SideDrawer>
     </div>

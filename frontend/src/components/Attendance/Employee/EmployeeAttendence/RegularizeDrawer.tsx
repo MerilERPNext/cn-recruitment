@@ -115,7 +115,7 @@ const RegularizeDrawer = () => {
 
   return (
     <>
-      <Button size="sm" onClick={() => setOpen(true)}>
+      <Button className="whitespace-nowrap" size="sm" onClick={() => setOpen(true)}>
         Attendance Update
       </Button>
 

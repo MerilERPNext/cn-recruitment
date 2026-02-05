@@ -15,90 +15,102 @@ import { Holiday, HolidayGroup } from "../../types/leaves";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
-import { Card } from "../shared/atoms/Card";
 import CustomDropdown from "../shared/CustomDropdown";
 import DataNotFoundPng from "../../assets/data-not-found.png";
+import Button from "../shared/atoms/Button";
 
 interface HolidayCardProps {
   holiday: Holiday;
-  showApply?: boolean;
-  disabledApply?: boolean;
   statusLabel?: string | null;
+  showOptionalLabel?: boolean;
+  canRequest?: boolean;
 }
 
 export const HolidayCard: React.FC<HolidayCardProps> = ({
   holiday,
-  showApply,
   statusLabel,
+  showOptionalLabel,
+  canRequest,
 }) => {
   const dateObj = new Date(holiday.date);
-  const month = format(dateObj, "MMM").toUpperCase();
+  const month = format(dateObj, "MMM");
   const day = format(dateObj, "dd");
   const weekday = format(dateObj, "EEEE");
 
   const { openModal } = useRequestLeaveModal();
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
 
-  const canRequestLeave = isActionEnabled(
+  const canApplyPermission = isActionEnabled(
     userUiPermission,
     "optional_holiday_apply",
     "Holidays",
   );
 
+  const showRequestButton =
+    canRequest &&
+    !statusLabel &&
+    canApplyPermission &&
+    holiday.leave_type?.toLowerCase() === "optional holiday";
+
   return (
-    <Card
-      padding="sm"
-      radius="xl"
-      shadow="sm"
-      className="w-full mb-2 flex justify-between items-center hover:shadow-md"
+    <div
+      className={`flex items-center justify-between px-3 py-3 sm:px-4 sm:py-4 border-b last:border-b-0`}
     >
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary font-semibold text-xs">
-          <span className="uppercase leading-none">{month}</span>
-          <span className="text-base">{day}</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
+          <span className="text-base leading-none">{day}</span>
+          <span className="mt-0.5">{month}</span>
         </div>
 
-        <div className="flex flex-col">
-          <Typography variant="subheading">{holiday.holiday_name}</Typography>
-          <Typography variant="bodySmall" className="text-primary">
+        <div className="flex flex-col min-w-0">
+          <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
+            {holiday.holiday_name}
+          </p>
+          <p className="text-xs sm:text-sm text-gray-500 truncate">
             {weekday}
-          </Typography>
+            {showOptionalLabel &&
+            holiday?.leave_type.toLowerCase() === "optional holiday"
+              ? " | Optional Holiday"
+              : ""}
+          </p>
         </div>
       </div>
 
-      {showApply && !statusLabel && canRequestLeave && (
-        <button
-          type="button"
-          onClick={() =>
-            openModal({
-              fromDate: holiday.date,
-              toDate: holiday.date,
-              leaveType: holiday.leave_type,
-              source: "holiday",
-              hideHalfDayToggle: true,
-            })
-          }
-          className="text-sm font-medium border px-4 py-2 rounded-lg text-primary border-gray-300 hover:bg-primary/5"
-        >
-          Apply
-        </button>
-      )}
+      <div className="flex-shrink-0 pl-2">
+        {showRequestButton && (
+          <Button
+            bgColor="gray-500"
+            onClick={() =>
+              openModal({
+                fromDate: holiday.date,
+                toDate: holiday.date,
+                leaveType: holiday.leave_type,
+                source: "holiday",
+                hideHalfDayToggle: true,
+              })
+            }
+            className="text-xs sm:text-sm font-medium rounded-full border border-gray-300 px-3 py-1 text-gray-700 bg-white hover:bg-gray-50"
+          >
+            Request
+          </Button>
+        )}
 
-      {statusLabel && (
-        <span
-          className={`text-sm px-4 py-1 rounded-2xl border
-            ${
-              statusLabel === "Taken"
-                ? "text-green-600 bg-green-100 border-green-200"
-                : statusLabel === "Rejected"
-                  ? "text-red-600 bg-red-100 border-red-200"
-                  : "text-yellow-600 bg-yellow-100 border-yellow-200"
-            }`}
-        >
-          {statusLabel}
-        </span>
-      )}
-    </Card>
+        {statusLabel && (
+          <span
+            className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium
+              ${
+                statusLabel === "Taken" || statusLabel === "Applied"
+                  ? "bg-primary/10 text-primary"
+                  : statusLabel === "Rejected"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-yellow-100 text-yellow-700"
+              }`}
+          >
+            {statusLabel === "Taken" ? "Applied" : statusLabel}
+          </span>
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -111,11 +123,15 @@ const Holidays: React.FC = () => {
 
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(String(currentYear));
+  const [showOptionalOnly, setShowOptionalOnly] = useState(false);
 
   const yearOptions = useMemo(() => {
     return Array.from({ length: 6 }).map((_, i) => {
       const y = currentYear - 2 + i;
-      return { value: String(y), label: String(y) };
+      return {
+        value: String(y),
+        label: `Year ${y} - ${(y + 1).toString().slice(-2)}`,
+      };
     });
   }, [currentYear]);
 
@@ -137,9 +153,7 @@ const Holidays: React.FC = () => {
   }, [refetch, setRefetch]);
 
   const today = new Date().toISOString().split("T")[0];
-  const selectedYearDate = useMemo(() => {
-    return `${year}-01-01`;
-  }, [year]);
+  const selectedYearDate = useMemo(() => `${year}-01-01`, [year]);
 
   const { data: attendancePolicy } = useGetAttendancePolicyForDate(
     employee?.name,
@@ -166,6 +180,14 @@ const Holidays: React.FC = () => {
     );
   }, [holidaysData]);
 
+  const allHolidays: Holiday[] = useMemo(
+    () =>
+      [...regularHolidays, ...optionalHolidays].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      ),
+    [regularHolidays, optionalHolidays],
+  );
+
   const optionalBalance = leaveBalance?.leave_balance?.find((b) =>
     b.type.toLowerCase().includes("optional"),
   );
@@ -181,6 +203,10 @@ const Holidays: React.FC = () => {
     return null;
   };
 
+  const listToShow: Holiday[] = showOptionalOnly
+    ? optionalHolidays
+    : allHolidays;
+
   if (
     isUserLoading ||
     isEmployeeLoading ||
@@ -189,7 +215,7 @@ const Holidays: React.FC = () => {
     isBalanceLoading
   ) {
     return (
-      <div className="p-4">
+      <div className="p-4 sm:p-6">
         <HolidayCardSkeletonList count={6} />
       </div>
     );
@@ -197,52 +223,40 @@ const Holidays: React.FC = () => {
 
   if (isHolidayError) {
     return (
-      <div className="p-4 text-center text-red-500">
+      <div className="p-4 sm:p-6 text-center text-red-500">
         Failed to load holidays
       </div>
     );
   }
 
   return (
-    <div className="p-4 min-h-full pb-24">
-      <div className="flex justify-between items-end mb-4">
-        <Typography variant="subheading">Regular Holidays</Typography>
-        <CustomDropdown
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          options={yearOptions}
-        />
-      </div>
+    <div className="px-3 py-4 sm:p-6 min-h-full pb-24 flex bg-none">
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <CustomDropdown
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            options={yearOptions}
+            variant="outline"
+          />
+          <button
+            type="button"
+            onClick={() => setShowOptionalOnly((prev) => !prev)}
+            className="text-xs sm:text-sm text-primary font-semibold"
+          >
+            {showOptionalOnly ? "Show All Holidays" : "Show Optional Holidays"}
+          </button>
+        </div>
 
-      <section className="mb-8">
-        {regularHolidays.length === 0 ? (
-          <div className=" flex flex-col items-center">
-            <img src={DataNotFoundPng} alt="" className="size-60 mt-4" />
-            <Typography variant="h3" className="mt-4" color="disabled">
-              No regular holidays found
-            </Typography>
-          </div>
-        ) : (
-          <div className="mt-3 max-h-[320px] overflow-y-auto pr-1">
-            {regularHolidays.map((h) => (
-              <HolidayCard key={h.name} holiday={h} showApply={false} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <Typography variant="subheading">Optional Holidays</Typography>
-
-        {attendancePolicy && (
-          <div className="flex justify-between text-center py-2 rounded-lg bg-primary/10 my-3 divide-x-1 divide-primary">
+        {showOptionalOnly && attendancePolicy && (
+          <div className="flex justify-between text-center py-2 rounded-lg bg-primary/10 mb-3 text-xs sm:text-sm">
             <p className="w-full">
               Entitled:{" "}
               <span className="font-semibold">
                 {optionalBalance?.entitled ?? 0}
               </span>
             </p>
-            <p className="w-full border-x">
+            <p className="w-full border-x border-blue-100">
               Availed:{" "}
               <span className="font-semibold">
                 {optionalBalance?.availed ?? 0}
@@ -257,30 +271,39 @@ const Holidays: React.FC = () => {
           </div>
         )}
 
-        {!attendancePolicy ? (
-          <p className="text-center text-red-500 mt-4">
+        {!attendancePolicy && showOptionalOnly && (
+          <p className="text-center text-red-500 mt-2 text-sm">
             ! Please contact HR to assign an attendance policy
           </p>
-        ) : optionalHolidays.length === 0 ? (
-          <div className=" flex flex-col items-center">
-            <img src={DataNotFoundPng} alt="" className="size-60 mt-4" />
-            <Typography variant="h3" className="mt-4" color="disabled">
-              No optional holidays found
+        )}
+
+        {listToShow.length === 0 ? (
+          <div className="flex flex-col items-center text-center  mt-6">
+            <img
+              src={DataNotFoundPng}
+              alt="No holidays found"
+              className="w-36 h-36 sm:size-60 mt-4"
+            />
+            <Typography variant="h4" className="mt-4" color="disabled">
+              No holidays found
             </Typography>
           </div>
         ) : (
-          <div className="mt-3 max-h-[320px] overflow-y-auto pr-1">
-            {optionalHolidays.map((h) => (
+          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+            {listToShow.map((h) => (
               <HolidayCard
                 key={h.name}
                 holiday={h}
-                showApply
                 statusLabel={getHolidayStatus(h.date)}
+                showOptionalLabel={
+                  h?.leave_type?.toLowerCase() === "optional holiday"
+                }
+                canRequest={h?.leave_type?.toLowerCase() === "optional holiday"}
               />
             ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 };

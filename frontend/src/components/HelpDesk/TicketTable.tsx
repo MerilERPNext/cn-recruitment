@@ -1,6 +1,8 @@
 import React from "react";
 import { ExternalLink, X, ChevronUp, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
+import Badge from "../shared/Badge";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 
@@ -17,17 +19,19 @@ interface TicketTableProps {
   sortDirection: "asc" | "desc";
   onSort: (field: string) => void;
   categoryMap?: Record<string, string>;
+  userLookup?: Map<string, string>;
+  employeeByEmail?: Map<string, string>;
 }
 
 
-const getAssignedName = (assignStr: string | null): string => {
+const getAssignedName = (assignStr: string | null, userLookup?: Map<string, string>): string => {
   if (!assignStr) return "-";
   try {
     const parsed = JSON.parse(assignStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      // Extract name from email
       const email = parsed[0];
-      return email.split("@")[0].replace(/[._]/g, " ");
+      // Use full name from lookup if available, otherwise extract from email
+      return userLookup?.get(email) || email.split("@")[0].replace(/[._]/g, " ");
     }
   } catch {
     return "-";
@@ -35,22 +39,35 @@ const getAssignedName = (assignStr: string | null): string => {
   return "-";
 };
 
-// Status badge styles - rectangular badges (rounded-lg, not rounded-full)
-const getStatusBadgeStyle = (status: string) => {
+// Status badge config for Badge component
+const getStatusBadgeConfig = (status: string): { label: string; backgroundColor: string; textColor: string } => {
   switch (status) {
     case "Open":
-      return "bg-blue-100 text-blue-800";
+      return { label: "Open", backgroundColor: "bg-blue-100", textColor: "text-blue-600" };
     case "Replied":
-      return "bg-purple-100 text-purple-800";
+      return { label: "Replied", backgroundColor: "bg-purple-100", textColor: "text-purple-600" };
     case "Resolved":
-      return "bg-green-100 text-green-800";
+      return { label: "Resolved", backgroundColor: "bg-green-100", textColor: "text-green-600" };
     case "Closed":
-      return "bg-gray-100 text-gray-700";
+      return { label: "Closed", backgroundColor: "bg-gray-100", textColor: "text-gray-600" };
     case "Reopened":
-      return "bg-yellow-100 text-yellow-800";
+      return { label: "Reopened", backgroundColor: "bg-yellow-100", textColor: "text-yellow-600" };
     default:
-      return "bg-gray-100 text-gray-800";
+      return { label: status, backgroundColor: "bg-gray-100", textColor: "text-gray-600" };
   }
+};
+
+const getAssignedEmail = (assignStr: string | null): string | null => {
+  if (!assignStr) return null;
+  try {
+    const parsed = JSON.parse(assignStr);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed[0];
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 const columns = [
@@ -76,6 +93,8 @@ const TicketTable: React.FC<TicketTableProps> = ({
   sortDirection,
   onSort,
   categoryMap = {},
+  userLookup,
+  employeeByEmail,
 }) => {
   // Helper to get category name from ID
   const getCategoryName = (categoryId: string | undefined): string => {
@@ -155,9 +174,9 @@ const TicketTable: React.FC<TicketTableProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden overflow-x-auto">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
       <table className="helpdesk-table w-full min-w-[900px] border-collapse">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-gray-50/80 border-b border-gray-100">
           <tr>
             <th className="px-4 py-3 w-12">
               <input
@@ -192,7 +211,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
           {tickets.map((ticket) => (
             <tr
               key={ticket.name}
-              className={`border-t border-gray-200 hover:bg-gray-50 transition-colors ${
+              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${
                 onRowClick ? "cursor-pointer" : ""
               }`}
               onClick={() => onRowClick?.(ticket)}
@@ -206,39 +225,49 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 />
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary" className="text-blue-600 hover:underline">
+                <Typography variant="bodySmall" color="body1">
                   {ticket.name}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="body1">
                   {getCategoryName(ticket.custom_category)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="body1">
                   {getCategoryName(ticket.custom_sub_category)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
-                  {getAssignedName(ticket._assign)}
-                </Typography>
+                <WrapperHoverCard employeeId={employeeByEmail?.get(getAssignedEmail(ticket._assign) || "")} placement="bottom-left">
+                  <Typography variant="bodySmall" color="body1">
+                    {getAssignedName(ticket._assign, userLookup)}
+                  </Typography>
+                </WrapperHoverCard>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="body1" className="font-semibold tracking-tight">
                   {formatToIndianDate(ticket.creation)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="primary">
+                <Typography variant="bodySmall" color="body1" className="font-semibold tracking-tight">
                   {formatToIndianDate(ticket.modified)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusBadgeStyle(ticket.status)}`}>
-                  {ticket.status}
-                </span>
+                {(() => {
+                  const badgeConfig = getStatusBadgeConfig(ticket.status);
+                  return (
+                    <Badge
+                      size="sm"
+                      label={badgeConfig.label}
+                      backgroundColor={badgeConfig.backgroundColor}
+                      textColor={badgeConfig.textColor}
+                    />
+                  );
+                })()}
               </td>
               <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">

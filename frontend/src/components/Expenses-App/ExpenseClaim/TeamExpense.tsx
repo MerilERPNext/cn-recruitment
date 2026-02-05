@@ -6,6 +6,8 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { FileText } from "lucide-react";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -27,7 +29,7 @@ const TeamExpense = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -47,7 +49,7 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -55,30 +57,82 @@ const TeamExpense = () => {
         "Claimed Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
+  const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
-    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  return (
-    <>
-      <div className=" min-h-screen">
-        <div className=" px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Expense Claims</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team expense claim requests
-              </Typography>
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Draft: {
+          title: "No Pending Requests",
+          description: "You have no pending team expense claim requests to review."
+        },
+        Approved: {
+          title: "No Approved Claims",
+          description: "There are no approved expense claims at this time."
+        },
+        Rejected: {
+          title: "No Rejected Claims",
+          description: "There are no rejected expense claims."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Expense Claims",
+        description: "No expense claims match your current filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            {isDesktop ? (
+              <Typography variant="h4">Team Expense Claims</Typography>
+            ) : null}
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team expense claim requests
+            </Typography>
+          </div>
+        </div>
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList
                 doctype={"Expense Claim"}
-                status={"Draft"}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
@@ -87,15 +141,22 @@ const TeamExpense = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
                     fieldname: "status",
                     label: "Status",
                     fieldtype: "Select",
-                    options: ["Draft", "Approved", "Rejected"],
+                    options: [
+                      { label: "Pending", value: "Draft" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
                   },
                 ]}
+                noRecordsScreen={noRecordsScreen}
+                defaultFilters={{ status: "Draft" }}
                 renderCardContent={(item) => (
                   <ExpenseApprovalCard
                     isSelected={item?.isSelected}
@@ -104,7 +165,7 @@ const TeamExpense = () => {
                     onAction={item?.onAction}
                     onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
-                    showCheckbox={isBulkSelectEnabled}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
                   />
                 )}
               />
@@ -112,7 +173,6 @@ const TeamExpense = () => {
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <TeamExpenseDetailView
           documentName={requestId}
@@ -121,7 +181,7 @@ const TeamExpense = () => {
           onAction={handleActionComplete}
         />
       )}
-    </>
+    </div>
   );
 };
 

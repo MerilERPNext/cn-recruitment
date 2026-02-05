@@ -1,4 +1,5 @@
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
 import { Installment } from "../Type/loan";
 
@@ -22,7 +23,7 @@ export default function LoanInstallments({
     return new Intl.NumberFormat("en-IN").format(num);
   };
   const titles = [
-    "",
+    "#",
     "Loan Name",
     "Loan Type",
     "Loan Amount",
@@ -37,7 +38,7 @@ export default function LoanInstallments({
 
   const columnWidths = [
     "3rem",
-    "1.5fr",
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
@@ -51,53 +52,104 @@ export default function LoanInstallments({
 
   return (
     <div>
-      <h3 className=" card-title  mb-4">Loans Breakup Details</h3>
-      <CardTable titles={titles} columnWidths={columnWidths}>
-        <div className="card-subtitle  divide-y divide-gray-200">
-          {installments.length > 0 ? (
-            installments.map((installment, index) => (
-              <div
-                key={installment.id || index}
-                className="hover:bg-primary/10 grid gap-4 px-6 py-2"
-                style={{ gridTemplateColumns: columnWidths.join(" ") }}
-              >
-                <div className=" ">{index + 1}</div>
-                <div className=" ">
-                  {formatToIndianDate(installment.payment_date)}
-                </div>
+      <Typography variant="h4" className="mb-2">
+        Loans Breakup Details
+      </Typography>
 
-                <div className=" ">
-                  {formatCurrency(
-                    installment.balance_loan_amount +
-                      installment.principal_amount,
-                  )}
-                </div>
-                <div className=" ">
-                  {formatCurrency(installment.total_payment)}
-                </div>
-                <div className=" ">
-                  {formatNumber(installment.interest_amount)}
-                </div>
-                <div className=" ">
-                  {formatCurrency(installment.total_payment)}
-                </div>
-                <div className=" ">
-                  {formatNumber(installment.interest_amount)}
-                </div>
-                <div className=" ">
-                  {formatCurrency(installment.principal_amount)}
-                </div>
-                <div className=" ">0</div>
-                <div className=" ">0</div>
-                <div className=" ">0</div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center text-gray-500 py-4">
-              No installments available.
+      <CardTable titles={titles} columnWidths={columnWidths}>
+        {installments.length > 0 ? (
+          installments.map((installment, index) => (
+            <div
+              key={installment.id || index}
+              className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+              style={{ gridTemplateColumns: columnWidths.join(" ") }}
+            >
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {index + 1}{" "}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatToIndianDate(installment.payment_date)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatCurrency(
+                  installment.balance_loan_amount +
+                    installment.principal_amount,
+                )}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatCurrency(installment.total_payment)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatNumber(installment.interest_amount)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatCurrency(installment.total_payment)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatNumber(installment.interest_amount)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                {formatCurrency(installment.principal_amount)}
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                0
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                0
+              </Typography>
+
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center"
+              >
+                0
+              </Typography>
             </div>
-          )}
-        </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500 py-4">
+            No installments available.
+          </div>
+        )}
       </CardTable>
     </div>
   );

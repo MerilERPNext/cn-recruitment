@@ -17,6 +17,7 @@ interface CustomDropdownProps {
   position?: Position;
   label?: string;
   contentAlign?: ButtonContentAlign;
+  variant?: "contain" | "outline" | "subtle" | "soft";
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -27,6 +28,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   position = "bottom-left",
   label = "Select",
   contentAlign = "center",
+  variant,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -70,16 +72,17 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       className={`relative inline-block ${className || ""}`}
     >
       <Button
-        variant="contain"
-        bgColor="primary"
+        variant={variant || "contain"}
+        bgColor="primary/10"
         size="md"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2  focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center gap-2 border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >
         <span>{selectedLabel}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -91,12 +94,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
             d="M19 9l-7 7-7-7"
           />
         </svg>
-        {/* <Funnel size={18} /> */}
       </Button>
 
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]}`}
+          className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]} max-h-60 overflow-y-auto`}
         >
           {options.map((option) => (
             <Button

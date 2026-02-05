@@ -3,7 +3,6 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import InstallmentsList from "./InstallmentsList";
-import { StatusBadge } from "./StatusBadge";
 import AdvanceForm from "./AdvanceForm";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -17,11 +16,13 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import Tooltip from "../../shared/Tooltip";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(
-    null
+    null,
   );
   const [showInstallments, setShowInstallments] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
@@ -100,21 +101,19 @@ const AdvancesList: React.FC = () => {
     "Status",
   ];
 
-  const columnWidths = ["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const DesktopLayout = () => (
-    <div className="min-h-screen max-w-screen overflow-x-hidden">
-      <div className="w-full max-w-[100vw] mx-auto py-0 px-2">
-        {/* Header Actions */}
-        <div className="mb-2 w-full px-2">
-          <div className="flex items-center justify-between gap-4 border-b border-gray-200">
-            <div className="flex flex-col mb-2">
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex justify-between">
+            <div>
               <Typography variant="h4"> My Advance Request</Typography>
               <Typography variant="bodySmall" color="body2">
                 Track and manage your advance requests
               </Typography>
             </div>
-
             <div className="flex items-center gap-5">
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
@@ -139,12 +138,6 @@ const AdvancesList: React.FC = () => {
               </button>
 
               {/* Create Advance Button */}
-              {/* <button
-              onClick={handleCreateAdvance}
-              className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
-            >
-              Create Advance
-            </button> */}
               <Button
                 bgColor="primary"
                 size="md"
@@ -158,69 +151,72 @@ const AdvancesList: React.FC = () => {
         </div>
 
         {/* Table Wrapper */}
-        <CardTable titles={titles} columnWidths={columnWidths}>
-          <div className=" text-sm bg-white">
+        <div className="px-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
             {formattedData.map((advance, index) => (
               <div
                 key={`${advance.name}-${index}`}
-                className="hover:bg-primary/20 grid gap-4 px-6 py-3 border cursor-pointer"
-                style={{
-                  gridTemplateColumns: columnWidths.join(" "),
-                  alignItems: "center",
-                }}
+                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
                 onClick={() => handleViewInstallments(advance)}
               >
                 {/* Advance Name */}
-                <div className="  font-medium">{advance.name}</div>
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {advance.name}
+                </Typography>
 
                 {/* Amount */}
-                <div className="  text-start">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
                   {maskAmounts ? (
                     <span className="blur-sm select-none text-gray-400">
                       ₹XX,XXX
                     </span>
                   ) : (
-                    <span className="font-medium">
-                      {formatCurrency(advance.amount)}
-                    </span>
+                    <span>{formatCurrency(advance.amount)}</span>
                   )}
-                </div>
+                </Typography>
 
                 {/* Deductions */}
-                <div className="  text-start">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
                   {maskAmounts ? (
                     <span className="blur-sm select-none text-gray-400">
                       ₹XX,XXX
                     </span>
                   ) : (
-                    <span className="font-medium">
-                      {advance.numberOfDeductions}
-                    </span>
+                    <span>{advance.numberOfDeductions}</span>
                   )}
-                </div>
+                </Typography>
 
                 {/* Start Date */}
-                <div className="  text-start">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
                   {formatToIndianDate(advance.startDate)}
-                </div>
+                </Typography>
 
                 {/* End Date */}
-                <div className="  text-start">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
                   {formatToIndianDate(advance.endDate)}
-                </div>
+                </Typography>
 
                 {/* Status with Tooltip */}
-                <div className="  text-start relative group inline-block overflow-visible">
-                  <StatusBadge status={advance.advanceStatus} />
-                  <div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-                   opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                   transition-all duration-150 ease-out pointer-events-none
-                   bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-                   shadow-lg z-50"
-                  >
-                    {advance.employee_name}
-                  </div>
+                <div className="flex items-center justify-center">
+                  <Tooltip content={advance.employee_name}>
+                    <StatusBadge status={advance.advanceStatus} />
+                  </Tooltip>
                 </div>
               </div>
             ))}
@@ -231,8 +227,8 @@ const AdvancesList: React.FC = () => {
                 No advances found.
               </div>
             )}
-          </div>
-        </CardTable>
+          </CardTable>
+        </div>
       </div>
     </div>
   );

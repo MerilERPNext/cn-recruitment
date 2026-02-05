@@ -15,7 +15,8 @@ interface SalarySlipPDFModalProps {
   salarySlipName: string
   salarySlipDate?: string
   htmlContent?: string
-  type?: string // ✅ only string, optional
+  type?: string
+  pdfUrl?: string;  // ✅ only string, optional
 }
 
 const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
@@ -25,6 +26,7 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
   salarySlipDate,
   htmlContent,
   type,
+  pdfUrl,
 }) => {
   const [isMasked, setIsMasked] = useState(true)
   console.log("html console log gornskdnfksdnfkas fkasd aksd aksnksdnfaksda =======", type, { htmlContent })
@@ -78,11 +80,14 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
 
         {/* PDF Content */}
         <div className={`flex-1 overflow-auto bg-app ${isMasked ? "filter blur-xl" : ""}`}>
-          <iframe
-            srcDoc={htmlContent || ""}
-            className="w-full h-full border-0"
-            sandbox="allow-same-origin allow-scripts"
-          />
+        <iframe
+    className="w-full h-full border-0"
+    sandbox="allow-same-origin allow-scripts"
+    {...(pdfUrl
+      ? { src: pdfUrl }              // ✅ PDF case
+      : { srcDoc: htmlContent || "" } // ✅ HTML case
+    )}
+  />
         </div>
       </div>
     </div>

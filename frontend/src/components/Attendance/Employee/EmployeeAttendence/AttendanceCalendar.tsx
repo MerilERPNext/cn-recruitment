@@ -197,16 +197,17 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                   <div className="flex gap-1">
                     {Array.from(
                       new Set(
-                        (attendance?.events ?? [])
-                          .filter(
-                            (event) =>
-                              !(
-                                event.doctype === "Attendance Request" &&
-                                event.status === "Approved"
-                              )
-                          )
-                          // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
-                          .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
+                        attendance?.events?.map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
+                        // (attendance?.events ?? [])
+                        //   .filter(
+                        //     (event) =>
+                        //       !(
+                        //         event.doctype === "Attendance Request" &&
+                        //         event.status === "Approved"
+                        //       )
+                        //   )
+                        //   // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
+                        //   .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
                       )
                     ).map((doctype, index) => (
                       <div

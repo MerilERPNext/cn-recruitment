@@ -26,171 +26,165 @@ import Invoice from "./components/Compansation/Invoice/Invoice";
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
   () => import("./components/Expenses"),
-  "Expenses"
+  "Expenses",
 );
 const RecruitmentApp = lazyWithRetry(
   () => import("./components/RecruitmentApp"),
-  "RecruitmentApp"
+  "RecruitmentApp",
 );
 const InterviewPage = lazyWithRetry(
   () => import("./components/InterviewDetails"),
-  "InterviewPage"
+  "InterviewPage",
 );
 const InterviewList = lazyWithRetry(
   () => import("./components/interview"),
-  "InterviewList"
+  "InterviewList",
 );
 const AddNewReferral = lazyWithRetry(
   () => import("./components/AddNewReferral"),
-  "AddNewReferral"
+  "AddNewReferral",
 );
 const ReferralDetails = lazyWithRetry(
   () => import("./components/ReferralDetails"),
-  "ReferralDetails"
+  "ReferralDetails",
 );
 const InterviewFeedbackForm = lazyWithRetry(
   () => import("./components/Feedback"),
-  "InterviewFeedbackForm"
+  "InterviewFeedbackForm",
 );
 const AddRequisition = lazyWithRetry(
   () => import("./components/AddRequisition"),
-  "AddRequisition"
+  "AddRequisition",
 );
 const JobRequisition = lazyWithRetry(
   () => import("./components/JobRequisition"),
-  "JobRequisition"
+  "JobRequisition",
 );
 const RequisitionDetails = lazyWithRetry(
   () => import("./components/RequisitionDetails"),
-  "RequisitionDetails"
+  "RequisitionDetails",
 );
 const ReferralList = lazyWithRetry(
   () => import("./components/ReferralList"),
-  "ReferralList"
+  "ReferralList",
 );
 const JobOpeningsUI = lazyWithRetry(
   () => import("./components/JobOpening/JobOpening"),
-  "JobOpeningsUI"
+  "JobOpeningsUI",
 );
 const JobApplicantList = lazyWithRetry(
   () => import("./components/JobApplicantList"),
-  "JobApplicantList"
+  "JobApplicantList",
 );
 const JobApplicantDetails = lazyWithRetry(
   () => import("./components/JobApplicantDetail"),
-  "JobApplicantDetails"
+  "JobApplicantDetails",
 );
 const NoticesLayout = lazyWithRetry(
   () => import("./components/Notices/NoticesLayout"),
-  "NoticesLayout"
+  "NoticesLayout",
 );
 const NoticesTab = lazyWithRetry(
   () => import("./components/Notices/NoticesTab"),
-  "NoticesTab"
+  "NoticesTab",
 );
 const NoticeDetails = lazyWithRetry(
   () => import("./components/Notices/NoticeDetails"),
-  "NoticeDetails"
+  "NoticeDetails",
 );
 const ExpensesApp = lazyWithRetry(
   () => import("./components/Expenses-App/ExpensesApp"),
-  "ExpensesApp"
+  "ExpensesApp",
 );
 const ExpensesList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/ExpensesList"),
-  "ExpensesList"
+  "ExpensesList",
 );
 const TeamExpense = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseClaim/TeamExpense"),
-  "TeamExpense"
+  "TeamExpense",
 );
 const MyAdvanceExpenseList = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/MyAdvanceExpenseList"),
-  "MyAdvanceExpenseList"
+  "MyAdvanceExpenseList",
 );
 const TeamAdvanceExpenseList = lazyWithRetry(
   () =>
     import("./components/Expenses-App/ExpenseAdvance/TeamAdvanceExpenseList"),
-  "TeamAdvanceExpenseList"
+  "TeamAdvanceExpenseList",
 );
 const ExpenseAdvanceForm = lazyWithRetry(
   () => import("./components/Expenses-App/ExpenseAdvance/ExpenseAdvanceForm"),
-  "ExpenseAdvanceForm"
+  "ExpenseAdvanceForm",
 );
 const Holidays = lazyWithRetry(
   () => import("./components/Leaves/Holidays"),
-  "Holidays"
-);
-const HolidaysFull = lazyWithRetry(
-  () => import("./components/Leaves/HolidaysFull"),
-  "HolidaysFull"
+  "Holidays",
 );
 const LeaveApp = lazyWithRetry(
   () => import("./components/Leaves/LeaveApp"),
-  "LeaveApp"
+  "LeaveApp",
 );
 const LeaveBalance = lazyWithRetry(
   () => import("./components/Leaves/LeaveBalance"),
-  "LeaveBalance"
+  "LeaveBalance",
 );
 const LeaveRequestApp = lazyWithRetry(
   () => import("./components/Leaves/LeaveRequestApp"),
-  "LeaveRequestApp"
+  "LeaveRequestApp",
 );
 const MyLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/MyLeaveRequest"),
-  "MyLeaveRequest"
+  "MyLeaveRequest",
 );
 const TeamLeaveRequest = lazyWithRetry(
   () => import("./components/Leaves/TeamLeaveRequest"),
-  "TeamLeaveRequest"
+  "TeamLeaveRequest",
 );
 const AttendanceSummary = lazyWithRetry(
   () => import("./components/Attendance/AttendanceSummary"),
-  "AttendanceSummary"
+  "AttendanceSummary",
 );
 const AllEmpAttendance = lazyWithRetry(
   () => import("./components/Attendance/AllEmpAttendance/AllEmpAttendance"),
-  "AllEmpAttendance"
+  "AllEmpAttendance",
 );
 const AttendanceLayout = lazyWithRetry(
   () => import("./components/Attendance/AttendanceLayout"),
-  "AttendanceLayout"
+  "AttendanceLayout",
 );
 const AttendanceRequest = lazyWithRetry(
   () => import("./components/Attendance/AttendanceRequest/AttendanceRequest"),
-  "AttendanceRequest"
+  "AttendanceRequest",
 );
 const EmployeeAttendance = lazyWithRetry(
   () => import("./components/Attendance/Employee/EmployeeAttendance"),
-  "EmployeeAttendance"
+  "EmployeeAttendance",
 );
 const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
-  "TeamAttendance"
+  "TeamAttendance",
 );
 const TeamAttendanceDetails = lazyWithRetry(
   () =>
-    import(
-      "./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails"
-    ),
-  "TeamAttendanceDetails"
+    import("./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails"),
+  "TeamAttendanceDetails",
 );
 const SalarySlipApp = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipApp"),
-  "SalarySlipApp"
+  "SalarySlipApp",
 );
 const SalarySlipsList = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipList"),
-  "SalarySlipsList"
+  "SalarySlipsList",
 );
 const ShiftChangeForm = lazyWithRetry(
   () => import("./components/ShiftRequest/AddRequestForm"),
-  "ShiftChangeForm"
+  "ShiftChangeForm",
 );
 const ShiftReqeustEditForm = lazyWithRetry(
   () => import("./components/ShiftRequest/EditRequestForm"),
-  "ShiftReqeustEditForm"
+  "ShiftReqeustEditForm",
 );
 // const ShiftRequestList = lazyWithRetry(
 //   () => import("./components/ShiftRequest/MyShiftList"),
@@ -198,267 +192,267 @@ const ShiftReqeustEditForm = lazyWithRetry(
 // );
 const ShiftRequestApp = lazyWithRetry(
   () => import("./components/ShiftRequest/ShiftRequestApp"),
-  "ShiftRequestApp"
+  "ShiftRequestApp",
 );
 const Policies = lazyWithRetry(
   () => import("./components/Policies"),
-  "Policies"
+  "Policies",
 );
 const PoliciesEnforced = lazyWithRetry(
   () => import("./components/PoliciesEnforced"),
-  "PoliciesEnforced"
+  "PoliciesEnforced",
 );
 const PolicySignOff = lazyWithRetry(
   () => import("./components/PolicySignOff"),
-  "PolicySignOff"
+  "PolicySignOff",
 );
 const CTCSalaryUI = lazyWithRetry(
   () => import("./components/Compansation/CTCSalaryBreakdown"),
-  "CTCSalaryUI"
+  "CTCSalaryUI",
 );
 const PoliciesApp = lazyWithRetry(
   () => import("./components/Policies/PoliciesApp"),
-  "PoliciesApp"
+  "PoliciesApp",
 );
 const PoliciesCategory = lazyWithRetry(
   () => import("./components/Policies/PoliciesCategory"),
-  "PoliciesCategory"
+  "PoliciesCategory",
 );
 const PoliciesList = lazyWithRetry(
   () => import("./components/Policies/PoliciesList"),
-  "PoliciesList"
+  "PoliciesList",
 );
 const ViewPolicy = lazyWithRetry(
   () => import("./components/Policies/ViewPolicy"),
-  "ViewPolicy"
+  "ViewPolicy",
 );
 const ViewSalarySlipModal = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipPDF"),
-  "ViewSalarySlipModal"
+  "ViewSalarySlipModal",
 );
 
 const HRPayroll = lazyWithRetry(
   () => import("./components/Compansation/HR-Payroll"),
-  "HRPayroll"
+  "HRPayroll",
 );
 const AttendancePolicies = lazyWithRetry(
   () => import("./components/Attendance/AttendancePolicies/AttendancePolicies"),
-  "AttendancePolicies"
+  "AttendancePolicies",
 );
 const EmployeesDirectory = lazyWithRetry(
   () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
-  "EmployeesDirectory"
+  "EmployeesDirectory",
 );
 const TrackerApp = lazyWithRetry(
   () => import("./components/ApprovalTracker/TrackerApp"),
-  "TrackerApp"
+  "TrackerApp",
 );
 const FlowRequests = lazyWithRetry(
   () => import("./components/ApprovalTracker/FlowRequests"),
-  "FlowRequests"
+  "FlowRequests",
 );
 const InitiateFlow = lazyWithRetry(
   () => import("./components/ApprovalTracker/InitiateFlow"),
-  "InitiateFlow"
+  "InitiateFlow",
 );
 const InitiateForm = lazyWithRetry(
   () => import("./components/ApprovalTracker/InitiateForm"),
-  "InitiateForm"
+  "InitiateForm",
 );
 const FlowRequestDetails = lazyWithRetry(
   () => import("./components/ApprovalTracker/FlowRequestDetails"),
-  "FlowRequestDetails"
+  "FlowRequestDetails",
 );
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
       default: module.AllShiftsDashboardRoute,
     })),
-  "AllShiftsDashboardRoute"
+  "AllShiftsDashboardRoute",
 );
 const MyShiftsListRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
       default: module.MyShiftsListRoute,
     })),
-  "MyShiftsListRoute"
+  "MyShiftsListRoute",
 );
 const TeamShiftsListRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
       default: module.TeamShiftsListRoute,
     })),
-  "TeamShiftsListRoute"
+  "TeamShiftsListRoute",
 );
 const ShiftChangeRequestsRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
       default: module.ShiftChangeRequestsRoute,
     })),
-  "ShiftChangeRequestsRoute"
+  "ShiftChangeRequestsRoute",
 );
 const MyShiftRequestsRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
       default: module.MyShiftRequestsRoute,
     })),
-  "MyShiftRequestsRoute"
+  "MyShiftRequestsRoute",
 );
 const LoansPage = lazyWithRetry(
   () => import("./components/Compansation/Loan/LoanMain"),
-  "LoansPage"
+  "LoansPage",
 );
 const MyOvertimeRequests = lazyWithRetry(
   () => import("./components/Attendance/OvertimeRequests/MyOvertimeRequests"),
-  "OvertimeRequests"
+  "OvertimeRequests",
 );
 const TeamOvertimeRequests = lazyWithRetry(
   () => import("./components/Attendance/OvertimeRequests/TeamOvertimeRequests"),
-  "OvertimeRequests"
+  "OvertimeRequests",
 );
 const LoanMainComponent = lazyWithRetry(
   () => import("./components/Compansation/Loan/component/DetailsPageForMobile"),
-  "LoanMainComponent"
+  "LoanMainComponent",
 );
 const OrganizationChart = lazyWithRetry(
   () => import("./components/ORGChart/OrganizationChart"),
-  "OrganizationChart"
+  "OrganizationChart",
 );
 const OrganizationCharttooo = lazyWithRetry(
   () => import("./components/ORGChart/OrgnazationChartForTwoLavel"),
-  "OrganizationCharttooo"
+  "OrganizationCharttooo",
 );
 const AdvancesList = lazyWithRetry(
   () => import("./components/Compansation/Advances/AdvancesList"),
-  "AdvancesList"
+  "AdvancesList",
 );
 
 const PayPackage = lazyWithRetry(
   () => import("./components/Compansation/Paypackage/PayPackage"),
-  "PayPackage"
+  "PayPackage",
 );
 
 const CompensatoryRequest = lazyWithRetry(
   () => import("./components/Leaves/compensatory/CompensatoryRequest"),
-  "CompensatoryRequest"
+  "CompensatoryRequest",
 );
 
 const FlowApp = lazyWithRetry(
   () => import("./components/Flows/FlowApp"),
-  "FlowApp"
+  "FlowApp",
 );
 
 const FlowRequests2 = lazyWithRetry(
   () => import("./components/Flows/FlowRequests/FlowRequests"),
-  "FlowRequests2"
+  "FlowRequests2",
 );
 
 const Separation = lazyWithRetry(
   () => import("./components/Flows/Separation/Separation"),
-  "Separation"
+  "Separation",
 );
 
 const SeparationWorkflow = lazyWithRetry(
   () => import("./components/Flows/SeparationWorkflow/SeparationWorkflow"),
-  "SeparationWorkflow"
+  "SeparationWorkflow",
 );
 
 const Confirmation = lazyWithRetry(
   () => import("./components/Flows/Confirmation/Confirmation"),
-  "Confirmation"
+  "Confirmation",
 );
 
 const InitiateFlow2 = lazyWithRetry(
   () => import("./components/Flows/Initiate/InitiateFlow"),
-  "InitiateFlow2"
+  "InitiateFlow2",
 );
 
 const RequestDetails = lazyWithRetry(
   () => import("./components/Flows/RequestDetails/RequestDetails"),
-  "RequestDetails"
+  "RequestDetails",
 );
 
 const PerformanceApp = lazyWithRetry(
   () => import("./components/Performance/PerformanceApp"),
-  "PerFormanceApp"
+  "PerFormanceApp",
 );
 
 const Overview = lazyWithRetry(
   () => import("./components/Performance/Overview/Overview"),
-  "Overview"
+  "Overview",
 );
 
 const NewGoalPlan = lazyWithRetry(
   () => import("./components/Performance/NewGoalPlan/NewGoalPlan"),
-  "NewGoalPlan"
+  "NewGoalPlan",
 );
 
 const PerformanceReviewApp = lazyWithRetry(
   () =>
     import("./components/Performance/PerformanceReview/PerformanceReviewApp"),
-  "PerformanceReviewApp"
+  "PerformanceReviewApp",
 );
 
 const BenefitsApp = lazyWithRetry(
   () => import("./components/Benefits/BenefitsApp"),
-  "BenefitsApp"
+  "BenefitsApp",
 );
 
 const MyBenefits = lazyWithRetry(
   () => import("./components/Benefits/MyBenefits/MyBenefits"),
-  "MyBenefits"
+  "MyBenefits",
 );
 
 const MyBenefitRequests = lazyWithRetry(
   () => import("./components/Benefits/MyRequests/MyRequests"),
-  "MyBenefitRequests"
+  "MyBenefitRequests",
 );
 
 const BenefitsSlips = lazyWithRetry(
   () => import("./components/Benefits/BenefitsSlips/BenefitsSlips"),
-  "BenefitsSlips"
+  "BenefitsSlips",
 );
 
 const MyTeamBenefitsRequests = lazyWithRetry(
   () => import("./components/Benefits/MyTeamRequest/MyTeamRequest"),
-  "MyTeamBenefitsRequests"
+  "MyTeamBenefitsRequests",
 );
 
 const HelpDeskApp = lazyWithRetry(
   () => import("./components/HelpDesk/HelpDeskApp"),
-  "HelpDeskApp"
+  "HelpDeskApp",
 );
 
 const FAQPage = lazyWithRetry(
   () => import("./components/HelpDesk/FAQPage"),
-  "FAQPage"
+  "FAQPage",
 );
 
 const TicketDetailView = lazyWithRetry(
   () => import("./components/HelpDesk/TicketDetailView"),
-  "TicketDetailView"
+  "TicketDetailView",
 );
 
 const TodoPage = lazyWithRetry(
   () => import("./components/Todo/TodoPage"),
-  "TodoPage"
+  "TodoPage",
 );
 
 const Recruitment = lazyWithRetry(
   () => import("./components/Recruitment/RecruitmentApp"),
-  "Recruitment"
+  "Recruitment",
 );
 const RecruitmentOverview = lazyWithRetry(
   () => import("./components/Recruitment/Overview"),
-  "RecruitmentOverview"
+  "RecruitmentOverview",
 );
 const Requisition = lazyWithRetry(
   () => import("./components/Recruitment/Requisition"),
-  "Requisition"
+  "Requisition",
 );
 const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
-  "RequisitionForm"
+  "RequisitionForm",
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -490,7 +484,7 @@ const LoadingSpinner = () => (
 // HOC to wrap components with Suspense and Error Boundary
 const withLazyLoading = (
   Component: React.ComponentType,
-  fallback = <LoadingSpinner />
+  fallback = <LoadingSpinner />,
 ) => {
   return (props: any) => (
     <EmployeeErrorBoundary>
@@ -571,7 +565,7 @@ export const routesConfig: AppRoute[] = [
       { path: "pay-package", element: <PayPackage /> },
       { path: "extra-payment", element: <ExtraPayment /> },
       { path: "perquisite-list", element: <Perquisite /> },
-      {path: "invoice-page", element: <Invoice/> },
+      { path: "invoice-page", element: <Invoice /> },
     ],
   },
   {
@@ -724,7 +718,6 @@ export const routesConfig: AppRoute[] = [
         ],
       },
       { path: "leaves/holidays", element: <Holidays /> },
-      { path: "leaves/holidays/all", element: <HolidaysFull /> },
       {
         path: "compensatory-request",
         element: <CompensatoryRequest />,

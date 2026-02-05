@@ -26,7 +26,7 @@ const ListView = () => {
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
   return (
-    <div className="w-full flex justify-end md:justify-between  items-center border-b-1 border-gray-200 pb-2">
+    <div className="w-full flex justify-end md:justify-between items-center border-b border-gray-100 pb-2">
       {/* Desktop: Show legend beside List View, Mobile: Show only List View */}
       {isDesktop && (
         <div className="flex flex-col gap-2 mt-4 mx-5">

@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from "react-router";
 import LayoutHeader from "../../shared/LayoutHeader";
-import { ChevronLeft, ChevronRight, ClipboardPlus, LogIn, LogOut, MoreVertical, Shield } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, ClipboardPlus, Edit, LogIn, MoreVertical, Shield } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   startOfMonth,
   endOfMonth,
@@ -13,7 +13,7 @@ import {
   subMonths,
 } from "date-fns";
 import { useGetAllEventsAndAttendance } from "../../../hooks/useAttendance";
-import { getStatusGradient } from "../../../utils/helperUtils";
+
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Modal from "../../shared/Modal";
 import EmployeeAttendanceDetails from "../Employee/EmployeeAttendanceDetails";
@@ -31,9 +31,10 @@ import AuditReport from "../Employee/EmployeeAttendence/AuditReport";
 import OvertimeLog from "../Employee/EmployeeAttendence/OvertimeLog";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import { EditAttendance } from "../Team/EditAttendance";
+import Tooltip from "../../shared/Tooltip";
 
 /* -------------------- Helpers -------------------- */
-
 const formatTimeSafe = (timeStr?: string) => {
   if (!timeStr) return "--:--";
   try {
@@ -45,29 +46,6 @@ const formatTimeSafe = (timeStr?: string) => {
   }
 };
 
-const getStatusColor = (status: string, isUnpaid: boolean) => {
-  if (isUnpaid) return "bg-orange-100 text-orange-600";
-
-  switch (status) {
-    case "present":
-      return "bg-green-100 text-green-700";
-    case "absent":
-      return "bg-red-100 text-red-700";
-    case "on leave":
-      return "bg-yellow-100 text-yellow-600";
-    case "work from home":
-      return "bg-purple-100 text-purple-700";
-    case "holiday":
-      return "bg-blue-100 text-blue-700";
-    case "weekly off":
-      return "bg-gray-200 text-gray-700";
-    case "not marked":
-      return "bg-gray-100 text-gray-500";
-    default:
-      return "bg-gray-50 text-gray-700";
-  }
-};
-
 /* -------------------- Component -------------------- */
 
 const AllEmpAttendance = () => {
@@ -76,9 +54,9 @@ const AllEmpAttendance = () => {
   const queryClient = useQueryClient();
   const [openSidebarFor, setOpenSidebarFor] = useState<{ isOpen: boolean, for: string | null, label: string, sideBarSize: DrawerSize }>({ isOpen: false, for: null, label: "", sideBarSize: "xl" });
 
-  /* 🔑 Single month state */
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
-
+  const [editAttendance, setEditAttendance] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [showDetailsFor, setShowDetailsFor] = useState<{
     date: Date;
     status: string;
@@ -86,13 +64,17 @@ const AllEmpAttendance = () => {
     events?: AttendanceRecord[];
   } | null>(null);
 
-  /* Auto refresh */
-  useEffect(() => {
+  const onRefetchData = useCallback(() => {
     queryClient.invalidateQueries({
       queryKey: ["get-All-Events-And-Attendance"],
       exact: false,
     });
   }, [queryClient]);
+
+  /* Auto refresh */
+  useEffect(() => {
+    onRefetchData();
+  }, [onRefetchData]);
 
   /* API range */
   const start = format(startOfMonth(currentMonth), "yyyy-MM-dd");
@@ -124,66 +106,193 @@ const AllEmpAttendance = () => {
       );
     }
   }, [currentMonth, setSearchParams, searchParams]);
-  /* 🔥 Generate full month data (NO FEATURE LOSS) */
-  const completeMonthData = useMemo(() => {
-    if (!allEventsAndAttendance) return [];
 
+  /* 🔥 Types and helper functions from EmployeeAttendance */
+  type Status =
+    | "present"
+    | "absent"
+    | "on-leave"
+    | "half-day"
+    | "half-day-first-half"
+    | "half-day-second-half"
+    | "work-from-home"
+    | "default"
+    | "holiday"
+    | "unpaid"
+    | "week-off";
+
+  type AttendanceStatusInfo = {
+    status: Status;
+    firstHalf?: string;
+    secondHalf?: string;
+    events: AttendanceRecord[]; // all non-attendance-type records on the same day
+    record?: AttendanceRecord; // the attendance record whose status is being used
+  };
+
+  const parseLocalDate = (dateStr: string): Date =>
+    parse(dateStr, "yyyy-MM-dd", new Date());
+
+  const formatDateKey = (date: Date): string => format(date, "yyyy-MM-dd");
+
+  const createAttendanceStatusGetter = (
+    attendances: AttendanceRecord[] = [],
+  ) => {
+    const statusMap: Record<string, AttendanceStatusInfo> = {};
+    const groupedByDate: Record<string, AttendanceRecord[]> = {};
+
+    // Helper: expand a start-end date range into all dates
+    const expandDateRange = (start: string, end: string): string[] => {
+      const days: string[] = [];
+      const current = new Date(start);
+      const last = new Date(end);
+
+      while (current <= last) {
+        days.push(formatDateKey(current));
+        current.setDate(current.getDate() + 1);
+      }
+
+      return days;
+    };
+
+    // First pass → group attendance + range events by date
+    attendances.forEach((record) => {
+      const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+        record.doctype,
+      );
+
+      const hasRange = record.start && record.end;
+
+      // --- If it's an EVENT (not attendance) and has range, expand ---
+      if (!isAttendanceType && hasRange) {
+        const rangeKeys = expandDateRange(record.start, record.end);
+
+        rangeKeys.forEach((dateKey) => {
+          if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+          groupedByDate[dateKey].push(record);
+        });
+
+        return;
+      }
+
+      // --- Default: single-day add ---
+      const dateKey = formatDateKey(parseLocalDate(record.start));
+      if (!groupedByDate[dateKey]) groupedByDate[dateKey] = [];
+      groupedByDate[dateKey].push(record);
+    });
+
+    // Second pass → build final statusMap
+    Object.entries(groupedByDate).forEach(([dateKey, records]) => {
+      let status: Status = "default";
+      let firstHalf = "";
+      let secondHalf = "";
+      const events: AttendanceRecord[] = [];
+      let attendanceRecord: AttendanceRecord | undefined = undefined;
+
+      records.forEach((record) => {
+        const isAttendanceType = ["Attendance", "Holiday", "Holidays"].includes(
+          record.doctype,
+        );
+
+        if (isAttendanceType) {
+          attendanceRecord = record;
+          const rawStatus = record.status?.toLowerCase().trim();
+
+          switch (rawStatus) {
+            case "present":
+              status = "present";
+              break;
+            case "absent":
+              status = "absent";
+              break;
+            case "on leave":
+            case "leave":
+              status = "on-leave";
+              break;
+            case "holiday":
+              status = "holiday";
+              break;
+            case "weekly off":
+              status = "week-off";
+              break;
+            case "work from home":
+              status = "work-from-home";
+              break;
+            case "half day":
+              status = "half-day";
+              firstHalf = record.half_day_status_first_half || "";
+              secondHalf = record.half_day_status_second_half || "";
+              break;
+            default:
+              status = "default";
+          }
+          // if custom_auto_created is 1 that means its a Unpaid Leave and we treat it like a leave on UI in yellow color
+          if (record?.custom_auto_created === 1) {
+            status = "unpaid";
+          }
+        } else {
+          // Range-expanded events land here automatically
+          events.push(record);
+        }
+      });
+
+      // Build final object
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (status === "half-day") {
+        statusMap[dateKey] = {
+          status,
+          firstHalf,
+          secondHalf,
+          events,
+          record: attendanceRecord,
+        };
+      } else {
+        statusMap[dateKey] = { status, events, record: attendanceRecord };
+      }
+    });
+
+    // Getter
+    return (date: Date): AttendanceStatusInfo => {
+      const key = formatDateKey(date);
+      return statusMap[key] || { status: "default", events: [] };
+    };
+  };
+
+  const getAttendanceStatus = useMemo(() => {
+    return createAttendanceStatusGetter(allEventsAndAttendance ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allEventsAndAttendance]);
+
+  /* 🔥 Generate complete month data for list view */
+  const completeMonthData = useMemo(() => {
     const allDates = eachDayOfInterval({
       start: startOfMonth(currentMonth),
       end: endOfMonth(currentMonth),
     });
 
-    const dataByDate = new Map<string, AttendanceRecord[]>();
-
-    allEventsAndAttendance.forEach((item) => {
-      const key = format(new Date(item.start), "yyyy-MM-dd");
-      if (!dataByDate.has(key)) dataByDate.set(key, []);
-      dataByDate.get(key)?.push(item);
-    });
-
-    const priority: Record<string, number> = {
-      Holiday: 1,
-      "Attendance Request": 2,
-      Attendance: 3,
-    };
-
-    const result: AttendanceRecord[] = [];
+    // Build list of dates with their attendance and events
+    const items: Array<{
+      date: Date;
+      statusInfo: AttendanceStatusInfo;
+    }> = [];
 
     allDates.forEach((date) => {
-      const key = format(date, "yyyy-MM-dd");
-      const items = dataByDate.get(key);
+      const statusInfo = getAttendanceStatus(date);
 
-      if (items?.length) {
-        const sorted = [...items].sort(
-          (a, b) => (priority[a.doctype] || 99) - (priority[b.doctype] || 99),
-        );
-        result.push(...sorted);
-      } else {
-        result.push({
-          name: `placeholder-${key}`,
-          doctype: "Attendance",
-          start: key,
-          end: key,
-          title: "No Data",
-          status: "Not Marked",
-          docstatus: "",
-          employee: "",
-          half_day_status_first_half: undefined,
-          half_day_status_second_half: undefined,
-          in_time: undefined,
-          out_time: undefined,
-          shift: undefined,
-        } as AttendanceRecord);
-      }
+      // Always add an item for each date (even if no data)
+      items.push({
+        date,
+        statusInfo,
+      });
     });
 
-    return result;
-  }, [allEventsAndAttendance, currentMonth]);
+    return items;
+  }, [getAttendanceStatus, currentMonth]);
 
   /* Error state */
   if (isError) {
     return (
-      <>
+      <div className="bg-white">
         <LayoutHeader tab="All Attendance" onBack={() => navigate(-1)} />
         <div className="h-screen flex flex-col items-center justify-center gap-3">
           <Typography color="error">
@@ -193,12 +302,12 @@ const AllEmpAttendance = () => {
             Retry
           </Button>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="bg-white">
       {/* Header */}
       <LayoutHeader tab="All Attendance" onBack={() => navigate(-1)} />
 
@@ -257,7 +366,7 @@ const AllEmpAttendance = () => {
                 { label: "Overtime Log", icon: <ClipboardPlus className="h-4 w-4" />, onClick: () => { setOpenSidebarFor({ isOpen: true, for: "overtimeLog", label: "Overtime Log", sideBarSize: "xxl" }) } },
               ]}
             >
-              <button className="p-1  border-1 rounded-lg hover:bg-gray-200">
+              <button className="p-1 border-1 rounded-lg hover:bg-gray-200">
                 <MoreVertical className="h-5 w-5" />
               </button>
             </DropdownMenu>
@@ -282,108 +391,204 @@ const AllEmpAttendance = () => {
       </div>
 
       {/* Attendance List */}
-      <div className="px-4 pb-4 flex flex-col gap-2">
-        {completeMonthData.map((item, index) => {
-          const dateObj = new Date(item.start);
-          const date = dateObj.getDate();
-          const day = dateObj.toLocaleString("default", {
-            weekday: "short",
-          });
+      <div className="px-4 pb-4">
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Date
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Requests
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Shift
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Check In
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Check Out
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {completeMonthData.map((item, index) => {
+                const { date, statusInfo } = item;
+                const record = statusInfo.record;
 
-          if (item.doctype === "Attendance Request") return null;
+                // Map status to display string
+                const getStatusDisplay = (status: Status): string => {
+                  switch (status) {
+                    case "present":
+                      return "Present";
+                    case "absent":
+                      return "Absent";
+                    case "on-leave":
+                      return "On Leave";
+                    case "half-day":
+                      return "Half Day";
+                    case "work-from-home":
+                      return "Work From Home";
+                    case "holiday":
+                      return "Holiday";
+                    case "week-off":
+                      return "Weekly Off";
+                    case "unpaid":
+                      return "On Leave";
+                    case "default":
+                      return "Not Marked";
+                    default:
+                      return status;
+                  }
+                };
 
-          return (
-            <div
-              key={index}
-              onClick={() => {
-                if (item.status?.toLowerCase() !== "weekly off") {
-                  const dayEvents = allEventsAndAttendance?.filter(e =>
-                    format(new Date(e.start), "yyyy-MM-dd") === format(dateObj, "yyyy-MM-dd")
-                    && e.doctype !== "Attendance"
-                  );
-                  setShowDetailsFor({
-                    date: dateObj,
-                    data: item,
-                    status: item.status?.toLowerCase(),
-                    events: dayEvents
-                  });
-                }
-              }}
-              className="flex items-center p-4 border border-gray-100 bg-white shadow-sm rounded-xl hover:shadow-md transition cursor-pointer"
-            >
-              {/* Date Box */}
-              <div
-                className={`flex flex-col items-center justify-center rounded-md p-4 w-14 ${getStatusColor(
-                  item.status?.toLowerCase(),
-                  item.custom_auto_created === 1,
-                )}`}
-                style={
-                  item.status?.toLowerCase() === "half day"
-                    ? getStatusGradient(
-                      item.half_day_status_first_half || "",
-                      item.half_day_status_second_half || "",
-                    )
-                    : {}
-                }
-              >
-                <div className="text-lg font-bold">{date}</div>
-                <div className="text-sm capitalize">{day}</div>
-              </div>
+                // Get event badge color
+                const getEventColor = (doctype: string): string => {
+                  switch (doctype) {
+                    case "Attendance Request":
+                      return "bg-blue-50 text-blue-700 border border-blue-200";
+                    case "Leave Request":
+                      return "bg-pink-50 text-pink-700 border border-pink-200";
+                    case "Overtime Request":
+                      return "bg-orange-50 text-orange-700 border border-orange-200";
+                    case "Out Duty":
+                      return "bg-purple-50 text-purple-700 border border-purple-200";
+                    default:
+                      return "bg-gray-50 text-gray-700 border border-gray-200";
+                  }
+                };
 
-              {/* Details */}
-              <div className="flex flex-1 flex-col gap-1 ml-4">
-                <div className="flex justify-between items-center">
-                  <Typography className="font-semibold">
-                    {item.status}
-                  </Typography>
-                  {item.shift && (
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                      Shift {item.shift}
-                    </span>
-                  )}
-                </div>
+                // // Filter out approved attendance requests (they're already reflected in attendance)
+                // const displayEvents = statusInfo.events.filter(
+                //   (event) => !(event.doctype === "Attendance Request" && event.status === "Approved")
+                // );
 
-                {item.doctype === "Attendance" && (
-                  <div className="flex justify-between mt-1">
-                    <div className="flex items-center gap-2">
-                      <LogIn
-                        className={`h-4 w-4 ${item.in_time ? "text-green-600" : "text-gray-600"
-                          }`}
-                      />
-                      {formatTimeSafe(item.in_time)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <LogOut
-                        className={`h-4 w-4 ${item.out_time ? "text-red-600" : "text-gray-600"
-                          }`}
-                      />
-                      {formatTimeSafe(item.out_time)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                // Skip weekly offs for modal
+                const shouldOpenModal = statusInfo.status !== "week-off";
 
-      {/* Details Modal */}
-      {showDetailsFor && (
-        <Modal
-          isOpen
-          onClose={() => setShowDetailsFor(null)}
-          size={isDesktop ? "sm" : "full"}
-        >
-          <EmployeeAttendanceDetails
-            data={showDetailsFor.data}
-            events={showDetailsFor.events}
-            date={showDetailsFor.date}
-            status={showDetailsFor.status}
+                return (
+                  <tr
+                    key={`${format(date, "yyyy-MM-dd")}-${index}`}
+                    onClick={() => {
+                      if (shouldOpenModal) {
+                        setShowDetailsFor({
+                          date: date,
+                          data: record || ({
+                            name: `placeholder-${format(date, "yyyy-MM-dd")}`,
+                            doctype: "Attendance",
+                            start: format(date, "yyyy-MM-dd"),
+                            end: format(date, "yyyy-MM-dd"),
+                            title: "No Data",
+                            status: getStatusDisplay(statusInfo.status),
+                            docstatus: "",
+                            employee: "",
+                          } as AttendanceRecord),
+                          status: statusInfo.status.replace(/-/g, " "),
+                          events: statusInfo.events
+                        });
+                      }
+                    }}
+                    className={`hover:bg-primary-50 transition-colors cursor-pointer ${!shouldOpenModal ? "cursor-default" : ""}`}
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {format(date, "dd MMM yyyy, EEE")}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {getStatusDisplay(statusInfo.status)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-normal text-sm text-gray-700">
+                      {statusInfo.events.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {statusInfo.events.map((event, i) => {
+                            const eventType = event.doctype === "Attendance Request" && event.request_type === "Out Duty"
+                              ? event.request_type
+                              : event.doctype;
+                            return (
+                              <span
+                                key={i}
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getEventColor(eventType)}`}
+                              >
+                                {event?.custom_status}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {record?.shift ? `${record.shift}` : "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {record?.doctype === "Attendance" ? formatTimeSafe(record.in_time) : "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {record?.doctype === "Attendance" ? formatTimeSafe(record.out_time) : "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                      <Button
+                        variant="subtle"
+                        size="sm"
+                        contentAlign="start"
+                        disabled={record?.doctype !== "Attendance"}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          if (record && record.doctype === "Attendance") {
+                            setSelectedRecord(record);
+                            setEditAttendance(true);
+                          }
+                        }}
+                      >
+                        <Tooltip content="Edit">
+                          <Edit size={16} />
+                        </Tooltip>
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <EditAttendance
+          employeeId={selectedRecord?.employee || ""}
+          employeeName={selectedRecord?.employee_name || ""}
+          onClose={() => {
+            setEditAttendance(false);
+            setSelectedRecord(null);
+          }}
+          open={editAttendance}
+          requestId={selectedRecord?.name}
+          onRefetchData={onRefetchData}
+        />
+        {/* Details Modal */}
+        {showDetailsFor && (
+          <Modal
+            isOpen
             onClose={() => setShowDetailsFor(null)}
-          />
-        </Modal>
-      )}
-    </>
+            size={isDesktop ? "sm" : "full"}
+          >
+            <EmployeeAttendanceDetails
+              data={showDetailsFor.data}
+              events={showDetailsFor.events}
+              date={showDetailsFor.date}
+              status={showDetailsFor.status}
+              onClose={() => setShowDetailsFor(null)}
+            />
+          </Modal>
+        )}
+      </div>
+    </div>
   );
 };
 

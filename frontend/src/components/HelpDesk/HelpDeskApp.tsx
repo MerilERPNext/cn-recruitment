@@ -42,6 +42,7 @@ const HelpDeskApp: React.FC = () => {
 
   // Modal state
   const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const hasTickets = stats && stats.total > 0;
 
@@ -66,6 +67,7 @@ const HelpDeskApp: React.FC = () => {
             currentUserEmail={currentUserEmail}
             isAdmin={isAdmin}
             viewMode={viewMode}
+            onDrawerStateChange={setIsDrawerOpen}
           />
         </div>
       );
@@ -85,16 +87,17 @@ const HelpDeskApp: React.FC = () => {
         </Typography>
       </div>
 
-      <main className="flex-1 overflow-y-auto bg-app">
+      <main className="flex-1 overflow-y-auto bg-app pb-24">
         {renderContent()}
+      </main>
 
-        {/* Bottom buttons - inside scroll area */}
-        <div className="bg-white border-t border-gray-200 py-4 px-4 flex gap-3 mt-4">
+      {/* Fixed bottom buttons - hidden when drawer is open */}
+      {!isDrawerOpen && (
+        <div className="fixed bottom-4 right-4 flex gap-3 z-50">
           <Button
             variant="outline"
             bgColor="primary"
             size="lg"
-            fullWidth
             onClick={handleExploreFAQs}
           >
             Explore FAQ's
@@ -103,14 +106,13 @@ const HelpDeskApp: React.FC = () => {
             variant="contain"
             bgColor="primary"
             size="lg"
-            fullWidth
             onClick={handleRequestIssue}
           >
             <Plus className="w-4 h-4" />
             Request Issue
           </Button>
         </div>
-      </main>
+      )}
     </div>
   );
 
@@ -125,11 +127,13 @@ const HelpDeskApp: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto bg-app">
+        <div className="flex-1 overflow-y-auto bg-app pb-24">
           {renderContent()}
+        </div>
 
-          {/* Bottom Action Buttons - Below content */}
-          <div className="flex justify-end gap-3 px-6 py-4">
+        {/* Fixed bottom buttons - hidden when drawer is open */}
+        {!isDrawerOpen && (
+          <div className="fixed bottom-4 right-4 flex gap-3 z-50">
             <Button
               variant="outline"
               bgColor="primary"
@@ -148,7 +152,7 @@ const HelpDeskApp: React.FC = () => {
               Request Issue
             </Button>
           </div>
-        </div>
+        )}
       </div>
     </DesktopLayoutWrapper>
   );

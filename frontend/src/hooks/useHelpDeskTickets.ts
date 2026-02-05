@@ -287,6 +287,9 @@ export interface HDCategory {
   category_name: string;
   category_code?: string;
   description?: string;
+  make_attachment_mandatory?: boolean;
+  same_attachment_setting_as_category?: boolean;
+  hide_attachment_field?: boolean;
   subcategories?: HDCategory[];
 }
 
@@ -499,6 +502,68 @@ export const useMentionUsers = () => {
   });
 };
 
+/**
+ * Fetch user lookup map (email -> full_name)
+ * Used for displaying assignee names in ticket list instead of emails
+ */
+export const useUserLookup = () => {
+  return useQuery<Map<string, string>>({
+    queryKey: ["user-lookup"],
+    queryFn: async () => {
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "User",
+          fields: ["name", "full_name"],
+          filters: { enabled: 1 },
+          limit_page_length: 500,
+        });
+        const map = new Map<string, string>();
+        ((result as Array<{ name: string; full_name: string }>) || []).forEach((u) => {
+          map.set(u.name, u.full_name || u.name.split("@")[0]);
+        });
+        return map;
+      } catch {
+        return new Map<string, string>();
+      }
+    },
+    retry: false,
+    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
+/**
+ * Fetch Employee ID from user email
+ * Used for WrapperHoverCard to show employee profile on hover
+ */
+export const useEmployeeByUserEmail = (email: string | null) => {
+  return useQuery<{ name: string } | null>({
+    queryKey: ["employee-by-email", email],
+    queryFn: async () => {
+      if (!email) return null;
+      try {
+        const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+          doctype: "Employee",
+          fields: ["name"],
+          filters: { user_id: email },
+          limit_page_length: 1,
+        });
+        const employees = result as Array<{ name: string }>;
+        if (employees && employees.length > 0) {
+          return employees[0];
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!email,
+    retry: false,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
 // ============== Ticket Detail View Hooks ==============
 
 export interface TicketContact {
@@ -643,6 +708,53 @@ export const useSendEmailReply = () => {
         queryKey: ["hd-ticket-detail", variables.ticketId],
       });
     },
+  });
+};
+
+/**
+ * Reject resolution on a ticket (for ticket raiser)
+ * Calls the backend reject_resolution API which sets status back to "Replied"
+ */
+export const useRejectResolution = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ticketId, rejectionReason }: { ticketId: string; rejectionReason: string }) => {
+      return await FrappeAPI.callMethod(
+        "helpdesk.helpdesk.doctype.hd_ticket.ticket_closure_workflow.reject_resolution",
+        { ticket_id: ticketId, rejection_reason: rejectionReason }
+      );
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+    },
+  });
+};
+
+/**
+ * Fetch employees by their user emails (bulk lookup)
+ * Returns a Map of email -> employee ID for WrapperHoverCard
+ */
+export const useEmployeesByEmails = (emails: string[]) => {
+  return useQuery<Map<string, string>>({
+    queryKey: ["employees-by-emails", emails],
+    queryFn: async () => {
+      if (emails.length === 0) return new Map();
+      const result = await FrappeAPI.callMethod("frappe.client.get_list", {
+        doctype: "Employee",
+        fields: ["name", "user_id"],
+        filters: { user_id: ["in", emails] },
+        limit_page_length: 100,
+      });
+      const map = new Map<string, string>();
+      ((result as Array<{ name: string; user_id: string }>) || []).forEach(emp => {
+        map.set(emp.user_id, emp.name);
+      });
+      return map;
+    },
+    enabled: emails.length > 0,
+    staleTime: 1000 * 60 * 10,
   });
 };
 

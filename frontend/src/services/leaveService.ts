@@ -368,4 +368,16 @@ export const leaveService = {
 
     return response as AttendanceStatusResponse;
   },
+
+  updateRejectionReason: async (
+    leaveApplicationId: string,
+    reason: string
+  ) => {
+    if (!leaveApplicationId) {
+      throw new Error("Leave Application ID is required");
+    }
+    return FrappeAPI.updateDocument("Leave Application", leaveApplicationId, {
+      custom_rejection_reason: reason,
+    });
+  },
 };

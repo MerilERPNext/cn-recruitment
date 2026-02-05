@@ -1,50 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import { useState } from "react";
 import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
+import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
 
 const formatINR = (num: number) => `₹ ${num.toLocaleString("en-IN")}`;
 
 export default function Invoice() {
-  const [hideAmount, setHideAmount] = useState(false);
+  const [hideAmount, setHideAmount] = useState(true);
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const { data: invoiceData } = useInvoiceSalarySlip(
     user?.employee || "",
-    user?.company || ""
+    user?.company || "",
   );
 
   const invoices = Array.isArray(invoiceData) ? invoiceData : [];
 
-  // ✅ parent click handler
   const handleInvoiceClick = (invoiceID: string) => {
     console.log("Clicked invoiceID:", invoiceID);
   };
 
-  return (
-    <div className="py-4 min-h-screen">
-      <div className="w-full ">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Invoices</h2>
-            <p className="text-sm text-gray-500">
-              Track and manage your invoices
-            </p>
-          </div>
+  const amountClass = hideAmount
+    ? "blur-sm select-none pointer-events-none"
+    : "";
 
-          <div className="flex items-center gap-3">
+  const titles = [
+    "Invoice No",
+    "Invoice Date",
+    "Due Date",
+    "Customer",
+    "Sub Total",
+    "Total Amount",
+    "Action",
+  ];
+
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
+  return (
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">Invoices</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your invoices
+              </Typography>
+            </div>
             {/* Hide Amount Toggle */}
             <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
-              <span className="text-sm text-gray-600">Hide Amounts</span>
+              <span className="text-sm text-gray-600">
+                {hideAmount ? "Show Amount" : "Hide Amount"}
+              </span>
               <button
-                onClick={() => setHideAmount(!hideAmount)}
+                onClick={() => setHideAmount((prev) => !prev)}
                 className={`w-8 h-5 rounded-xl relative transition ${
-                  hideAmount ? "bg-blue-600" : "bg-gray-300"
+                  hideAmount ? "bg-primary-500" : "bg-gray-300"
                 }`}
               >
                 <span
@@ -57,65 +76,76 @@ export default function Invoice() {
           </div>
         </div>
 
-        {/* Table Wrapper */}
-        <div className="bg-white rounded-xl shadow border overflow-hidden">
-          {/* Header Row */}
-          <div className="grid grid-cols-7 bg-gray-100 text-gray-700 font-medium text-sm px-4 py-3">
-            <div>Invoice No</div>
-            <div>Invoice Date</div>
-            <div>Due Date</div>
-            <div>Customer</div>
-            <div>Sub Total</div>
-            <div>Total Amount</div>
-            <div>Action</div>
-          </div>
+        <div className="px-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            {invoices.map((inv: any, idx: number) => {
+              const invoiceNo = inv.name;
 
-          {invoices.length === 0 && (
-            <div className="px-4 py-6 text-center text-gray-500">
-              No invoices found
-            </div>
-          )}
-
-          {invoices.map((inv: any, idx: number) => {
-            const invoiceNo = inv.name;
-            const invoiceDate = inv.start_date;
-            const dueDate = inv.end_date;
-            const customerName = inv.employee_name;
-            const subTotal = inv.gross_pay;
-            const totalAmount = inv.net_pay;
-
-            return (
-              <div
-                key={invoiceNo || idx}
-                className="grid grid-cols-7 items-center px-4 py-4 border-t text-sm"
-              >
-                <div className="font-medium">{invoiceNo}</div>
-                <div>{invoiceDate}</div>
-                <div>{dueDate}</div>
-                <div>{customerName}</div>
-
-                <div className="font-medium">
-                  {hideAmount ? "•••••" : formatINR(subTotal || 0)}
-                </div>
-
+              return (
                 <div
-                  className={`font-medium ${
-                    !hideAmount ? "blur-sm select-none" : ""
-                  }`}
+                  key={invoiceNo || idx}
+                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
                 >
-                  {hideAmount ? "•••••" : formatINR(totalAmount || 0)}
-                </div>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {invoiceNo}
+                  </Typography>
 
-                <div className="flex items-center justify-start">
-                  <InvoicePDFview
-                    invoiceID={invoiceNo}
-                    disabled={false}
-                    onClick={handleInvoiceClick} // ✅ pass callback
-                  />
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.start_date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.end_date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.employee_name}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.gross_pay || 0)}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.net_pay || 0)}
+                  </Typography>
+
+                  <div className="flex items-center justify-center">
+                    <InvoicePDFview
+                      invoiceID={invoiceNo}
+                      disabled={false}
+                      onClick={handleInvoiceClick}
+                    />
+                  </div>
                 </div>
+              );
+            })}
+
+            {invoices.length === 0 && (
+              <div className="py-10 text-center text-gray-500">
+                No invoices found
               </div>
-            );
-          })}
+            )}
+          </CardTable>
         </div>
       </div>
     </div>

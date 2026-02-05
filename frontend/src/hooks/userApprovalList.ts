@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { approvalListServices } from "../services/approvalListService";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
+import toast from "react-hot-toast";
 
 export function useApprovalListActions() {
   const queryClient = useQueryClient();
@@ -31,12 +33,13 @@ export function useRevokeEvent() {
       doctype: string;
     }) => approvalListServices.revokeEvent(docname, todo, doctype),
     onSuccess: () => {
-      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
     },
-    onError: (e) => {
-      console.log(e);
+    onError: (err) => {
+      const formatedError = errorResponseFormater(err);
+      toast.error(formatedError);
+      console.log("Errorr Replacing Leave", err);
     },
   });
 }

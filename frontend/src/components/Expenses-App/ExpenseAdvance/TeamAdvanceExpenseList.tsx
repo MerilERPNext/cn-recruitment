@@ -6,6 +6,8 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
 import AdvanceApprovalCard from "./AdvanceApprovalCard";
 import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { FileText } from "lucide-react";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
@@ -26,7 +28,7 @@ const TeamAdvanceExpenseList = () => {
         setSearchParams({ requestId: request.todo_id });
       }
     },
-    [setSearchParams]
+    [setSearchParams],
   );
 
   const handleCloseModal = useCallback(() => {
@@ -38,6 +40,7 @@ const TeamAdvanceExpenseList = () => {
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
+  const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -46,7 +49,7 @@ const TeamAdvanceExpenseList = () => {
         "Advance Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ]
     : [
         "Employee",
@@ -54,31 +57,82 @@ const TeamAdvanceExpenseList = () => {
         "Advance Amount",
         "Due Date",
         "Status",
-        "Actions",
+        "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"]
-    : ["1.25fr", "1.25fr", "1.25fr", "1.25fr", "1.25fr", "2fr"];
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  return (
-    <>
-      <div className=" min-h-screen">
-        <div className="px-4">
-          <div className="flex justify-between items-center pt-4 mb-2 border-b border-gray-200 px-2">
-            <div className="flex flex-col mb-2">
-              <Typography variant="h4">Team Advance Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage team advance expense requests
-              </Typography>
+  const noRecordsScreen = (filters: Record<string, any>) => {
+    if (isDesktop) return null;
+
+    const getEmptyStateMessage = () => {
+      const status = filters.status;
+      const messages: Record<string, { title: string; description: string }> = {
+        Pending: {
+          title: "No Pending Requests",
+          description: "You have no team advance requests to review."
+        },
+        Approved: {
+          title: "No Approved Advances",
+          description: "There are no approved advance requests."
+        },
+        Rejected: {
+          title: "No Rejected Advances",
+          description: "There are no rejected advance requests."
+        }
+      };
+
+      return messages[status] || {
+        title: "No Advance Requests",
+        description: "No advance requests match your filters."
+      };
+    };
+
+    const message = getEmptyStateMessage();
+
+    return (
+      <div className="flex items-center justify-center px-4 py-16">
+        <div className="max-w-sm w-full mx-auto text-center p-6">
+          <div className="space-y-5">
+            <div className="flex items-center justify-center">
+              <div className="p-4 bg-blue-50 rounded-full">
+                <FileText className="h-10 w-10 text-blue-500" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-gray-900">
+                {message.title}
+              </h3>
+              <p className="text-sm text-gray-500 leading-relaxed">
+                {message.description}
+              </p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
 
+  return (
+    <div className="max-h-screen flex flex-col">
+      <div className="flex-1 overflow-y-auto">
+        <div className="border-gray-100">
+          <div className="px-6 py-4">
+            {isDesktop ? (
+              <Typography variant="h4">Team Advance Requests</Typography>
+            ) : null}
+            <Typography variant="bodySmall" color="body2">
+              Track and manage team advance expense requests
+            </Typography>
+          </div>
+        </div>
+        <div className="px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name && (
               <ApprovalList
                 doctype={"Employee Advance"}
-                status={"Pending"}
                 refetch={refetchApprovalList}
                 onApprovalRefetchComplete={handleApprovalRefetchComplete}
                 pageSize={10}
@@ -87,6 +141,7 @@ const TeamAdvanceExpenseList = () => {
                 loadMorePagination={false}
                 isSearch={true}
                 isFilter={true}
+                columnWidths={tableColumnWidths}
                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                 filterFields={[
                   {
@@ -96,13 +151,15 @@ const TeamAdvanceExpenseList = () => {
                     options: ["Pending", "Approved", "Rejected"],
                   },
                 ]}
+                defaultFilters={{ status: "Pending" }}
+                noRecordsScreen={noRecordsScreen}
                 renderCardContent={(item) => (
                   <AdvanceApprovalCard
                     data={item?.data}
                     isSelected={item?.isSelected}
                     onToggleSelect={item?.onToggleSelect}
                     loadingAction={item?.loadingAction}
-                    showCheckbox={isBulkSelectEnabled}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
                     onClick={(request: any) => handleRequestClick(request)}
                     onAction={item?.onAction}
                   />
@@ -112,7 +169,6 @@ const TeamAdvanceExpenseList = () => {
           </CardTable>
         </div>
       </div>
-
       {requestId && (
         <TeamAdvanceDetailView
           documentName={requestId}
@@ -121,7 +177,7 @@ const TeamAdvanceExpenseList = () => {
           onAction={handleActionComplete}
         />
       )}
-    </>
+    </div>
   );
 };
 

@@ -35,8 +35,8 @@ export const usePolicyCountsByCategory = (employeeId?: string) => {
             // ✅ Always store category
             categoriesSet.add(category);
 
-            // ✅ Count ONLY non-archived policies
-            if (item.status !== "Archived") {
+            // ✅ Count ONLY Acknowledged policies
+            if (item.status === "Acknowledged") {
               counts[category] = (counts[category] || 0) + 1;
             }
           }
