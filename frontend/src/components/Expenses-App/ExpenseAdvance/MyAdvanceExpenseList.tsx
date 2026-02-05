@@ -212,22 +212,24 @@ const MyAdvanceExpenseList = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Advances",
-          description: "You have no pending advance expense requests."
+          description: "You have no pending advance expense requests.",
         },
         Approved: {
           title: "No Approved Advances",
-          description: "You have no approved advance requests."
+          description: "You have no approved advance requests.",
         },
         Rejected: {
           title: "No Rejected Advances",
-          description: "You have no rejected advance requests."
-        }
+          description: "You have no rejected advance requests.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Advance Requests",
-        description: "No advance requests match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Advance Requests",
+          description: "No advance requests match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -256,77 +258,75 @@ const MyAdvanceExpenseList = () => {
   };
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
-            {isDesktop ? (
-              <Typography variant="h4">My Advance Expenses</Typography>
-            ) : null}
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
+            <Typography variant="h4">My Advance Expenses</Typography>{" "}
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
           </div>
         </div>
-        <div className="px-4">
-          <CardTable
-            titles={[
-              "Employee",
-              "Posting Date",
-              "Company",
-              "Department",
-              "Advance Amount",
-              "Status",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
-            <DataListView
-              queryKey={["employee-advance"]}
-              customAPI={{
-                method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: {
-                  doctype: "Employee Advance",
-                  employee: currentEmployee?.name,
-                },
-              }}
-              defaultFilters={{
-                custom_type: "Reimbursement / Expense Advance",
-                status: "Pending",
-              }}
-              ItemComponent={RowWrapper}
-              SkeletonComponent={() => (
-                <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                  <div className="px-4 py-2 flex justify-between">
-                    <div>
-                      <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                      <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                    </div>
-                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+      )}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable
+          titles={[
+            "Employee",
+            "Posting Date",
+            "Company",
+            "Department",
+            "Advance Amount",
+            "Status",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <DataListView
+            queryKey={["employee-advance"]}
+            customAPI={{
+              method: "cn_leave_shift_managment.api.get_open_approval_todos",
+              params: {
+                doctype: "Employee Advance",
+                employee: currentEmployee?.name,
+              },
+            }}
+            defaultFilters={{
+              custom_type: "Reimbursement / Expense Advance",
+              status: "Pending",
+            }}
+            ItemComponent={RowWrapper}
+            SkeletonComponent={() => (
+              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                <div className="px-4 py-2 flex justify-between">
+                  <div>
+                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
                   </div>
+                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
                 </div>
-              )}
-              isSearch={true}
-              isFilter={true}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
-                },
-              ]}
-              noRecordsScreen={noRecordsScreen}
-              refetchTrigger={refetchAttendance}
-              onRefetchComplete={() => setRefetchAttendance(false)}
-              showRefreshButton={false}
-              orderBy="creation desc"
-              pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
-        </div>
+              </div>
+            )}
+            isSearch={true}
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: ["Pending", "Approved", "Rejected"],
+              },
+            ]}
+            noRecordsScreen={noRecordsScreen}
+            refetchTrigger={refetchAttendance}
+            onRefetchComplete={() => setRefetchAttendance(false)}
+            showRefreshButton={false}
+            orderBy="creation desc"
+            pageSize={10}
+            infiniteScroll={true}
+            showPagination={true}
+            loadMorePagination={false}
+          />
+        </CardTable>
       </div>
 
       {selectedAdvanceId && (

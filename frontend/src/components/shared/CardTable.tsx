@@ -1,5 +1,3 @@
-"use client";
-
 import { ReactNode } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "./atoms/Typography";
