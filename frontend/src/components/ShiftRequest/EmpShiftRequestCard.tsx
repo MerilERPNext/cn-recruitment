@@ -1,6 +1,5 @@
 import Button from "../shared/atoms/Button";
 import { RotateCcw, Pencil } from "lucide-react";
-import Badge from "../shared/Badge";
 import Tooltip from "../shared/Tooltip";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
@@ -54,33 +53,6 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
       );
     }
   };
-
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-
-    if (status === "draft") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-800",
-      };
-    } else if (status === "approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-success-200 text-success",
-      };
-    } else if (status === "rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-error-50 text-error",
-      };
-    } else {
-      return {
-        label: rawStatus || "Unknown",
-        statusColor: "bg-gray-100 text-gray-800",
-      };
-    }
-  };
-  const status = getStatus(data?.reference_document?.status);
 
   const getShiftTimeline = (shiftTypeName: string) => {
     if (shiftTypes && !shiftTypesLoading && !shiftTypesError) {
@@ -160,11 +132,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
             <h3 className="base-title truncate">
               {data?.reference_document?.shift_type || "--"}
             </h3>
-            <Badge
-              size="sm"
-              backgroundColor={status?.statusColor}
-              label={status?.label || ""}
-            />
+            <StatusBadge status={data.reference_document.status} />
           </div>
 
           {/* Two-column Info Layout */}

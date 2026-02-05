@@ -277,9 +277,9 @@ export default function AllShiftsDashboard() {
   ];
 
   return (
-    <div className=" min-h-screen font-sans text-sm">
-      <main className="p-2 sm:p-2 lg:p-2">
-        <div className="grid grid-cols-1 gap-6">
+    <div className="h-screen pb-22 overflow-hidden font-sans text-sm">
+      <main className="p-2 sm:p-2 lg:p-2 h-full overflow-y-auto">
+        <div className="grid grid-cols-1 gap-6 min-h-0">
           <div>
             <Card>
               <CardHeader
@@ -326,7 +326,7 @@ export default function AllShiftsDashboard() {
 
             <AllMyShiftRequestsList />
           </div>
-          <div className="grid grid-cols-2 gap-6 mb-14">
+          <div className="grid grid-cols-2 gap-6 mb-14 min-h-0">
             <MyShifts />
             <TeamShiftList />
           </div>
