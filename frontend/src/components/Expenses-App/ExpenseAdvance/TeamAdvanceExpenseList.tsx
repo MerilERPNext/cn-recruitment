@@ -72,22 +72,24 @@ const TeamAdvanceExpenseList = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Requests",
-          description: "You have no team advance requests to review."
+          description: "You have no team advance requests to review.",
         },
         Approved: {
           title: "No Approved Advances",
-          description: "There are no approved advance requests."
+          description: "There are no approved advance requests.",
         },
         Rejected: {
           title: "No Rejected Advances",
-          description: "There are no rejected advance requests."
-        }
+          description: "There are no rejected advance requests.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Advance Requests",
-        description: "No advance requests match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Advance Requests",
+          description: "No advance requests match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -116,58 +118,57 @@ const TeamAdvanceExpenseList = () => {
   };
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="md:px-6 px-2 py-4">
-            {isDesktop ? (
-              <Typography variant="h4">Team Advance Requests</Typography>
-            ) : null}
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
+            <Typography variant="h4">Team Advance Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage team advance expense requests
             </Typography>
           </div>
         </div>
-        <div className="md:px-4 ">
-          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-            {currentUser?.name && (
-              <ApprovalList
-                doctype={"Employee Advance"}
-                refetch={refetchApprovalList}
-                onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                pageSize={10}
-                infiniteScroll={true}
-                showPagination={true}
-                loadMorePagination={false}
-                isSearch={true}
-                isFilter={true}
-                columnWidths={tableColumnWidths}
-                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-                filterFields={[
-                  {
-                    fieldname: "status",
-                    label: "Status",
-                    fieldtype: "Select",
-                    options: ["Pending", "Approved", "Rejected"],
-                  },
-                ]}
-                defaultFilters={{ status: "Pending" }}
-                noRecordsScreen={noRecordsScreen}
-                renderCardContent={(item) => (
-                  <AdvanceApprovalCard
-                    data={item?.data}
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    loadingAction={item?.loadingAction}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                    onClick={(request: any) => handleRequestClick(request)}
-                    onAction={item?.onAction}
-                  />
-                )}
-              />
-            )}
-          </CardTable>
-        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+          {currentUser?.name && (
+            <ApprovalList
+              doctype={"Employee Advance"}
+              refetch={refetchApprovalList}
+              onApprovalRefetchComplete={handleApprovalRefetchComplete}
+              pageSize={10}
+              infiniteScroll={true}
+              showPagination={true}
+              loadMorePagination={false}
+              isSearch={true}
+              isFilter={true}
+              columnWidths={tableColumnWidths}
+              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Approved", "Rejected"],
+                },
+              ]}
+              defaultFilters={{ status: "Pending" }}
+              noRecordsScreen={noRecordsScreen}
+              renderCardContent={(item) => (
+                <AdvanceApprovalCard
+                  data={item?.data}
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                  onClick={(request: any) => handleRequestClick(request)}
+                  onAction={item?.onAction}
+                />
+              )}
+            />
+          )}
+        </CardTable>
       </div>
       {requestId && (
         <TeamAdvanceDetailView

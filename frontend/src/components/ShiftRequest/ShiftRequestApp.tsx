@@ -38,7 +38,7 @@ const ShiftRequestApp: React.FC = () => {
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -54,7 +54,7 @@ const ShiftRequestApp: React.FC = () => {
       if (requestId) {
         navigate(
           `/webapp/shift-request/shift-change-request?requestId=${requestId}`,
-          { replace: true }
+          { replace: true },
         );
       }
     }
@@ -129,30 +129,21 @@ const ShiftRequestApp: React.FC = () => {
 
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
   const actionButton = (
-    <Button
-      size="lg"
-      onClick={handleShiftForm}
-    >
+    <Button size="lg" onClick={handleShiftForm}>
       + Request Shift Change
     </Button>
   );
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto">
-          <Outlet />
-        </div>
-        {/* Shift Request Modal for Desktop */}
-        <ExpenseFormModal
-          isOpen={showShiftRequestModal}
-          onClose={handleCloseShiftModal}
-          title="Request Shift Change"
-        >
-          <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-        </ExpenseFormModal>
-      </div>
+      <Outlet />
+      <ExpenseFormModal
+        isOpen={showShiftRequestModal}
+        onClose={handleCloseShiftModal}
+        title="Request Shift Change"
+      >
+        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
+      </ExpenseFormModal>
     </DesktopLayoutWrapper>
   );
 

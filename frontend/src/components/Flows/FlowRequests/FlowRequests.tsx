@@ -26,6 +26,8 @@ const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
 
 const FlowRequests: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployee();
+  const { isDesktop } = useScreenSize();
+
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
@@ -46,57 +48,57 @@ const FlowRequests: React.FC = () => {
     );
   }
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">Flow Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Manage your Flows
             </Typography>
           </div>
         </div>
+      )}
 
-        {/*Flows List*/}
-        <div className="px-4">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            <DataListView
-              queryKey={["employee-flows", activeEmployee?.name || ""]}
-              customAPI={{
-                method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: {
-                  doctype: "employee",
-                },
-              }}
-              ItemComponent={(props: { item: TodoItem }) => {
-                return (
-                  <MyFlowRequestCard
-                    handleShowDetails={handleShowDetails}
-                    request={props?.item}
-                  />
-                );
-              }}
-              // onRefetchComplete={handleMyRequestsRefetchComplete}
-              // refetchTrigger={refetchMyRequestsList || refetchAttendance}
-              isSearch={true}
-              isFilter={true}
-              // filterFields={[
-              //   {
-              //     fieldname: "status",
-              //     label: "Status",
-              //     fieldtype: "Select",
-              //     options: ["Open", "Approved", "Rejected"],
-              //   },
-              // ]}
-              pageSize={10}
-              showRefreshButton={false}
-              orderBy="modified desc"
-              showPagination={true}
-              infiniteScroll={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
-        </div>
+      {/*Flows List*/}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable titles={titles} columnWidths={columnWidths}>
+          <DataListView
+            queryKey={["employee-flows", activeEmployee?.name || ""]}
+            customAPI={{
+              method: "cn_leave_shift_managment.api.get_open_approval_todos",
+              params: {
+                doctype: "employee",
+              },
+            }}
+            ItemComponent={(props: { item: TodoItem }) => {
+              return (
+                <MyFlowRequestCard
+                  handleShowDetails={handleShowDetails}
+                  request={props?.item}
+                />
+              );
+            }}
+            // onRefetchComplete={handleMyRequestsRefetchComplete}
+            // refetchTrigger={refetchMyRequestsList || refetchAttendance}
+            isSearch={true}
+            isFilter={true}
+            // filterFields={[
+            //   {
+            //     fieldname: "status",
+            //     label: "Status",
+            //     fieldtype: "Select",
+            //     options: ["Open", "Approved", "Rejected"],
+            //   },
+            // ]}
+            pageSize={10}
+            showRefreshButton={false}
+            orderBy="modified desc"
+            showPagination={true}
+            infiniteScroll={true}
+            loadMorePagination={false}
+          />
+        </CardTable>
       </div>
     </div>
   );

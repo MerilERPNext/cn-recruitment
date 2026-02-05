@@ -24,7 +24,7 @@ const ExpensesApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentExpenseForm, setCurrentExpenseForm] = useState<string | null>(
-    null
+    null,
   );
 
   const { data: userUiPermission } = useGetUiPermission("Expenses");
@@ -32,7 +32,7 @@ const ExpensesApp: React.FC = () => {
   const canAddExpense = isActionEnabled(
     userUiPermission,
     "expense_claim_request",
-    "Expense Claims"
+    "Expense Claims",
   );
 
   const [activeTab, setActiveTab] = useState<TabName>("Expenses");
@@ -43,7 +43,7 @@ const ExpensesApp: React.FC = () => {
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -126,7 +126,7 @@ const ExpensesApp: React.FC = () => {
         />
       </div>
 
-      <main className="p-4 z-100 flex-grow overflow-y-auto">
+      <main className="p-2 z-100 flex-grow overflow-y-auto">
         <Outlet />
       </main>
       {shouldShowActionButton() && (
@@ -155,12 +155,8 @@ const ExpensesApp: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Expenses" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto">
-          <Outlet />
-          {renderExpenseFormModal()}
-        </div>
-      </div>
+      <Outlet />
+      {renderExpenseFormModal()}
     </DesktopLayoutWrapper>
   );
 
