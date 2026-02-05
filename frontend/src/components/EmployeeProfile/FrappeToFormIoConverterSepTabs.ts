@@ -127,17 +127,19 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
     Array.isArray(fieldValue)
   ) {
     schema.defaultValue = fieldValue.map((row: any) => {
-      // 1. Try common link fields in child tables (e.g. for IP Restriction field, look for ip_restriction field)
-      const linkFieldName = field.child_fields?.find((cf: any) => cf.fieldtype === 'Link')?.fieldname;
+      // For Table MultiSelect, the value is typically in a Link field in the child table.
+      // We try to find that link field to know how to extract/re-wrap it.
+      const linkField = field.child_fields?.find((cf: any) => cf.fieldtype === 'Link');
+      const linkFieldName = linkField?.fieldname;
+
       if (linkFieldName && row[linkFieldName]) return row[linkFieldName];
 
-      // 2. Try the label/fieldname as the key for extraction (User requested fallback)
+      // fallback
       return (
         row[field.fieldname] ||
         row[field.label] ||
         row.label ||
         row.name ||
-        // 3. Last resort: first property that is a string and not a standard ERPNext field
         Object.keys(row).find(k => !['name', 'owner', 'parent', 'parentfield', 'parenttype', 'idx', 'docstatus', 'creation', 'modified', 'modified_by'].includes(k) && typeof row[k] === 'string')
       );
     });
@@ -183,9 +185,12 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
       schema.dataSrc = "url";
       schema.searchEnabled = true;
       schema.multiple = true
+      const linkField = field.child_fields?.find((cf: any) => cf.fieldtype === 'Link');
       schema.data = {
         url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=["*"]&doctype=${field.link_options || field.options || ""}&limit=20`,
       };
+      schema.isTableMultiSelect = true;
+      schema.linkFieldName = linkField?.fieldname || "";
 
       schema.lazyLoad = true;
       schema.dataType = "string";
@@ -510,6 +515,71 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   }
 
   return schema;
+}
+
+/**
+ * Formats a raw backend value into a Form.io compatible structure based on component type.
+ */
+export function formatValueForFormio(value: any, component: any): any {
+  if (value === null || value === undefined) {
+    return component?.multiple || component?.type === 'file' || component?.type === 'datagrid' ? [] : "";
+  }
+
+  // Handle File fields
+  if (component?.type === 'file' || component?.storage === 'customBase64' || component?.storage === 'url') {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return [
+        {
+          storage: "url",
+          url: value,
+          name: value.split("/").pop(),
+          originalName: value.split("/").pop(),
+          size: 0,
+          type: "file",
+        },
+      ];
+    }
+    if (Array.isArray(value)) {
+      if (value.length === 0) return [];
+      // If it's already in Form.io format, keep it
+      if (value[0] && typeof value[0] === 'object' && value[0].url) return value;
+      // If it's an array of strings (URLs)?
+      return value.map(v => typeof v === 'string' ? {
+        storage: "url",
+        url: v,
+        name: v.split("/").pop(),
+        originalName: v.split("/").pop(),
+        size: 0,
+        type: "file",
+      } : v).filter(v => v.url);
+    }
+    return [];
+  }
+
+  // Handle Tables (DataGrid)
+  if (component?.type === 'datagrid') {
+    if (Array.isArray(value)) {
+      return value.map(row => {
+        const newRow = { ...row };
+        if (component.components) {
+          component.components.forEach((childComp: any) => {
+            newRow[childComp.key] = formatValueForFormio(newRow[childComp.key], childComp);
+          });
+        }
+        return newRow;
+      });
+    }
+    return [{}];
+  }
+
+  // Handle Multiple Select (including Table MultiSelect)
+  if (component?.multiple) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim() !== '') return [value];
+    return [];
+  }
+
+  return value;
 }
 
 export interface TabWithSchema {

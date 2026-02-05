@@ -8,6 +8,7 @@ import { useGetEmployeeDetailsByEmpIdForProfile } from "../../hooks/useEmployee"
 import Button from "../shared/atoms/Button";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { formatValueForFormio } from "./FrappeToFormIoConverterSepTabs";
 
 interface EditableField {
     key: string;
@@ -89,29 +90,23 @@ const EmployeeSidebarForm = ({
     const recursiveFixFileData = useCallback((data: any, components: any[]): any => {
         if (!components || !data) return data;
 
-        // Clone to avoid side effects
         const fixed = Array.isArray(data) ? [...data] : { ...data };
 
         components.forEach((comp: any) => {
             const key = comp.key;
             if (!key) return;
 
-            const isFile = comp.type === 'file' || comp.storage === 'customBase64' || comp.storage === 'url';
-
-            if (isFile) {
-                if (fixed[key] === null || fixed[key] === undefined || fixed[key] === "") {
-                    fixed[key] = [];
-                }
-            } else if (comp.type === 'datagrid' && Array.isArray(fixed[key])) {
+            if (comp.type === 'datagrid' && Array.isArray(fixed[key])) {
                 fixed[key] = fixed[key].map((row: any) => recursiveFixFileData(row, comp.components));
             } else if (comp.components) {
-                // For containers like panels, rows, columns that don't change the data context (usually)
-                // We need to pass the same fixed object or its relevant parts
                 Object.assign(fixed, recursiveFixFileData(fixed, comp.components));
             } else if (comp.columns && Array.isArray(comp.columns)) {
                 comp.columns.forEach((col: any) => {
                     Object.assign(fixed, recursiveFixFileData(fixed, col.components));
                 });
+            } else {
+                // Use the shared formatter for all fields
+                fixed[key] = formatValueForFormio(fixed[key], comp);
             }
         });
 
@@ -123,16 +118,13 @@ const EmployeeSidebarForm = ({
 
         let data: any = {};
         if (edit.fieldname) {
+            const component = findComponentByKey(sectionSchema.components, edit.fieldname);
             if (edit.rowIndex !== undefined && (employee as any)[edit.fieldname]) {
-                data = (employee as any)[edit.fieldname][edit.rowIndex];
-                const component = findComponentByKey(sectionSchema.components, edit.fieldname);
-                data = recursiveFixFileData(data, component?.components || []);
+                const row = (employee as any)[edit.fieldname][edit.rowIndex];
+                data = recursiveFixFileData(row, component?.components || []);
             } else {
                 const val = (employee as any)[edit.fieldname];
-                const component = findComponentByKey(sectionSchema.components, edit.fieldname);
-                const isFile = component?.type === 'file' || component?.storage === 'customBase64' || component?.storage === 'url';
-                const fixedVal = (isFile && (val === null || val === undefined || val === "")) ? [] : val;
-                data = { [edit.fieldname]: fixedVal };
+                data = { [edit.fieldname]: formatValueForFormio(val, component) };
             }
         } else {
             data = recursiveFixFileData(employee, schema.components || []);
@@ -179,22 +171,33 @@ const EmployeeSidebarForm = ({
                 }
             }
 
-            const sanitizeData = (data: any): any => {
+            const sanitizeData = (data: any, components: any[] = []): any => {
                 if (data === null || data === undefined) return "";
 
                 if (Array.isArray(data)) {
                     if (data.length === 0) return "";
+                    // File check
                     if (data[0] && (data[0].storage === "customBase64" || data[0].storage === "url")) {
                         return data[0].url || "";
                     }
-                    return data.map(item => sanitizeData(item));
+                    return data.map(item => sanitizeData(item, components));
                 }
 
                 if (data !== null && typeof data === 'object') {
                     const cleansed: Record<string, any> = {};
                     for (const [key, value] of Object.entries(data)) {
                         if (key === "branch") continue;
-                        cleansed[key] = sanitizeData(value);
+
+                        const comp = findComponentByKey(components, key);
+
+                        // Handle Table MultiSelect wrapping
+                        if (comp?.isTableMultiSelect && comp.linkFieldName && Array.isArray(value)) {
+                            cleansed[key] = value.map(v => ({ [comp.linkFieldName]: v }));
+                        } else if (comp?.type === 'datagrid' && Array.isArray(value)) {
+                            cleansed[key] = value.map(row => sanitizeData(row, comp.components));
+                        } else {
+                            cleansed[key] = sanitizeData(value, components);
+                        }
                     }
                     return cleansed;
                 }
@@ -202,7 +205,7 @@ const EmployeeSidebarForm = ({
                 return data;
             };
 
-            const formattedData = sanitizeData(allData);
+            const formattedData = sanitizeData(allData, formioTabs.map(t => t.schema.components).flat());
 
             if (employeeId) {
                 mutation.mutate(
