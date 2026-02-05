@@ -18,19 +18,19 @@ const CardTable = ({
     : `repeat(${titles.length}, 1fr)`;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-100">
-      {/* Desktop horizontal scroll only */}
+    <div className="bg-white rounded-lg shadow-sm md:border border-gray-100 flex flex-col h-full">
+      {/* Desktop horizontal scroll container */}
       <div
         className={
-          isDesktop ? "overflow-x-auto rounded-lg bg-white shadow-sm" : ""
+          isDesktop ? "overflow-x-auto rounded-lg bg-white shadow-sm flex flex-col h-full" : "flex flex-col h-full"
         }
       >
         {/* Width holder ONLY on desktop */}
-        <div className={isDesktop ? "min-w-max" : ""}>
-          {/* Header only on desktop */}
+        <div className={`${isDesktop ? "min-w-max" : ""} flex flex-col h-full`}>
+          {/* Fixed Header - only on desktop */}
           {isDesktop && (
             <div
-              className="grid gap-4 px-6 py-4 bg-gray-50 border-b"
+              className="grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0"
               style={{ gridTemplateColumns }}
             >
               {titles.map((title, index) => (
@@ -45,8 +45,8 @@ const CardTable = ({
             </div>
           )}
 
-          {/* Scroll body */}
-          <div className="overflow-y-auto max-h-[75vh]">{children}</div>
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>
