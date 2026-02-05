@@ -23,9 +23,8 @@ export const gradientClassMap: Record<string, string> = {
 };
 
 export const getStatusGradient = (firstHalf: string, secondHalf: string) => {
-  const gradient = `linear-gradient(to bottom right, ${
-    gradientClassMap[firstHalf?.toLowerCase()]
-  } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
+  const gradient = `linear-gradient(to bottom right, ${gradientClassMap[firstHalf?.toLowerCase()]
+    } 50%, ${gradientClassMap[secondHalf?.toLowerCase()]} 50%)`;
   return { background: gradient };
 };
 
@@ -54,6 +53,30 @@ export function formatDateToYYYYMMDD(date: Date): string {
 
   return `${year}-${month}-${day}`;
 }
+
+
+export function formatDateToDDMMYYYY(
+  value: string | number | Date
+): string {
+  if (value === null || value === undefined) return "";
+
+  let date: Date | null = null;
+
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === "string") {
+    date = parseISO(value);
+  } else if (typeof value === "number") {
+    date = new Date(value);
+  }
+
+  if (!date || !isValid(date)) {
+    return String(value);
+  }
+
+  return format(date, "dd-MM-yyyy");
+}
+
 
 export function formatTo24HourTime(isoString: string): string {
   const date = parseISO(isoString.replace(" ", "T"));
