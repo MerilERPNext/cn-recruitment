@@ -213,14 +213,14 @@ const ExpenseApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-primary bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
             }
           }}
         >
-          <div className="p-4 flex items-start gap-3 w-full">
+          <div className="p-6 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
@@ -243,7 +243,10 @@ const ExpenseApprovalCard = ({
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <Typography variant="body" className="font-semibold">
+                    <Typography
+                      variant="body"
+                      className="font-semibold text-base"
+                    >
                       {data?.reference_document?.employee_name}
                     </Typography>
                   </Link>
@@ -255,53 +258,49 @@ const ExpenseApprovalCard = ({
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="flex flex-col items-start justify-between mt-1 rounded-md p-1 gap-4">
-                <div className="flex justify-between  w-full">
-                  <div className="flex flex-col gap-1">
-                    <p className="card-subtitle-sm uppercase">Category</p>
-                    <Typography
-                      variant="body"
-                      className="leading-[13px]  font-semibold"
-                    >
+              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Category
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {data?.reference_document?.custom_expense_category}
                     </Typography>
                   </div>
-                  <div className="flex flex-col gap-1 text-right">
-                    <p className="card-subtitle-sm uppercase">Claimed Amount</p>
-                    <Typography
-                      variant="body"
-                      className="leading-[13px]  font-semibold"
-                    >
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Claimed Amount
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {totalClaimedAmount}
                     </Typography>
                   </div>
                 </div>
 
-                <div className="flex justify-between w-full mt-2">
-                  <div className="flex flex-col gap-1">
-                    <p className="card-subtitle-sm uppercase">Claim Date</p>
-                    <Typography
-                      variant="body"
-                      className="leading-[13px]  font-semibold"
-                    >
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Claim Date
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {formatToIndianDate(
                         data?.reference_document?.expenses[0]?.expense_date,
                       )}
                     </Typography>
                   </div>
-                  <div className="flex flex-col gap-1 text-right">
-                    <p className="card-subtitle-sm uppercase">Due Date</p>
-                    <Typography
-                      variant="body"
-                      className="leading-[13px]  font-semibold"
-                    >
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Due Date
+                    </Typography>
+                    <Typography variant="mobileCardValue">
                       {formatToIndianDate(data?.due_date)}
                     </Typography>
                   </div>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3 mb-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-4 mb-3">
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&
@@ -325,7 +324,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
+                          loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

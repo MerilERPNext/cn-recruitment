@@ -159,14 +159,14 @@ const AdvanceApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-primary bg-white rounded-2xl"
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary bg-white rounded-2xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
             }
           }}
         >
-          <div className="p-4 flex items-start gap-3 w-full">
+          <div className="p-6 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
@@ -189,9 +189,9 @@ const AdvanceApprovalCard = ({
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <p className="text-md font-bold">
+                    <Typography variant="mobileCardTitle">
                       {data?.reference_document?.employee_name}
-                    </p>
+                    </Typography>
                   </Link>
                 </div>
 
@@ -201,41 +201,34 @@ const AdvanceApprovalCard = ({
                   backgroundColor={status?.statusColor}
                 />
               </div>
-              <div className="flex flex-col items-start justify-between  gap-2 mt-1 rounded-md p-1">
+              <div className="flex flex-col items-start justify-between gap-3 mt-2 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">Category</p>
-                  <Typography
-                    variant="body"
-                    className="leading-[13px]  font-semibold"
-                  >
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
+                    Category
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {data?.reference_document?.custom_expense_category || "-"}
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
                     Advance Amount
-                  </p>
-                  <Typography
-                    variant="body"
-                    className="leading-[13px]  font-semibold"
-                  >
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {totalClaimedAmount}
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <p className="w-1/2 truncate font-semibold text-gray-600">
+                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
                     Due Date
-                  </p>
-                  <Typography
-                    variant="body"
-                    className="leading-[13px]  font-semibold"
-                  >
+                  </Typography>
+                  <Typography variant="mobileCardValue">
                     {formatToIndianDate(data?.due_date)}
                   </Typography>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3 mb-3">
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-4 mb-3">
                 {actions?.length > 0 &&
                   data?.status !== "Approved" &&
                   data?.status !== "Rejected" &&

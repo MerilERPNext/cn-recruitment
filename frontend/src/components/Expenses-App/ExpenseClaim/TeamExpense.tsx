@@ -43,22 +43,22 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
@@ -119,7 +119,7 @@ const TeamExpense = () => {
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
-          <div className="px-6 py-4">
+          <div className="md:px-6 px-2 py-4">
             {isDesktop ? (
               <Typography variant="h4">Team Expense Claims</Typography>
             ) : null}
@@ -128,7 +128,7 @@ const TeamExpense = () => {
             </Typography>
           </div>
         </div>
-        <div className="px-4">
+        <div className="md:px-4">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name ? (
               <ApprovalList

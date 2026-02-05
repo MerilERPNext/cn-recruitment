@@ -43,22 +43,22 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -119,7 +119,7 @@ const TeamAdvanceExpenseList = () => {
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
-          <div className="px-6 py-4">
+          <div className="md:px-6 px-2 py-4">
             {isDesktop ? (
               <Typography variant="h4">Team Advance Requests</Typography>
             ) : null}
@@ -128,7 +128,7 @@ const TeamAdvanceExpenseList = () => {
             </Typography>
           </div>
         </div>
-        <div className="px-4">
+        <div className="md:px-4 ">
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             {currentUser?.name && (
               <ApprovalList
