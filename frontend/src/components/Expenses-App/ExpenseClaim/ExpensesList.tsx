@@ -44,14 +44,16 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
   return (
-    <div className="rounded-2xl  my-1 border-t-4 border-primary p-5  transition-shadow duration-200 flex flex-col gap-4">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex flex-col gap-1">
-          <span className="card-subtitle-sm uppercase">Expense category</span>
+    <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5">
+      <div className="flex justify-between items-start mb-1">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs uppercase text-gray-500 font-medium">
+            Expense category
+          </span>
           {item?.reference_document?.custom_expense_category && (
             <Typography
               variant="body"
-              className="leading-[13px]  font-semibold"
+              className="leading-5 font-semibold text-base"
             >
               {item?.reference_document?.custom_expense_category}
             </Typography>
@@ -70,24 +72,34 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       </div>
 
       <div className="flex justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="card-subtitle-sm uppercase">Claimed Date</span>
-          <Typography variant="body" className="leading-[13px]  font-semibold">
+        <div className="flex flex-col gap-2">
+          <span className="text-xs uppercase text-gray-500 font-medium">
+            Claimed Date
+          </span>
+          <Typography
+            variant="body"
+            className="leading-5 font-semibold text-base"
+          >
             {formatToIndianDate(item?.reference_document?.creation)}
           </Typography>
         </div>
 
-        <div className="flex flex-col gap-1 text-right">
-          <span className="card-subtitle-sm uppercase">Claimed Amount</span>
-          <Typography variant="body" className="leading-[13px] font-semibold">
+        <div className="flex flex-col gap-2 text-right">
+          <span className="text-xs uppercase text-gray-500 font-medium">
+            Claimed Amount
+          </span>
+          <Typography
+            variant="body"
+            className="leading-5 font-semibold text-base"
+          >
             {formattedAmount}
           </Typography>
         </div>
       </div>
 
       <div>
-        <div className="h-[1px] w-full bg-gray-100 mb-3" />
-        <Typography className="text-gray-300 text-sm mb-3">
+        <div className="h-[1px] w-full bg-gray-100 mb-4" />
+        <Typography className="text-gray-400 text-sm">
           Last Updated on{" "}
           {formatToIndianDate(item?.reference_document?.modified)}
         </Typography>
@@ -279,22 +291,24 @@ const ExpensesList: React.FC = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Draft: {
           title: "No Pending Claims",
-          description: "You have no pending expense claim requests."
+          description: "You have no pending expense claim requests.",
         },
         Approved: {
           title: "All Claims Approved",
-          description: "You have no approved expense claims to review."
+          description: "You have no approved expense claims to review.",
         },
         Rejected: {
           title: "No Rejected Claims",
-          description: "You have no rejected expense claims."
-        }
+          description: "You have no rejected expense claims.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Expense Claims",
-        description: "No expense claims match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Expense Claims",
+          description: "No expense claims match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -339,7 +353,7 @@ const ExpensesList: React.FC = () => {
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
-          <div className="px-6 py-4 flex items-center justify-between">
+          <div className="md:px-6 px-2 py-2 md:py-4 flex items-center justify-between">
             <div>
               {isDesktop ? (
                 <Typography variant="h4">My Expense Claims</Typography>
@@ -383,7 +397,7 @@ const ExpensesList: React.FC = () => {
           </div>
         </div>
 
-        <div className="px-4">
+        <div className="md:px-4">
           {currentEmployee?.name && (
             <CardTable
               titles={[

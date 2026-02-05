@@ -110,9 +110,9 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className=" rounded-2xl shadow-sm p-4 border-t-4 border-primary mb-3">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
           </h3>
           <div className="flex justify-start">
@@ -127,59 +127,65 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex  justify-between ">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between">
             <Link
               to={`/webapp/employee-profile?target_user=${doc?.employee}`}
               target="_blank"
             >
-              <div className="flex flex-col">
-                <span className="card-subtitle-sm uppercase">Employee</span>
+              <div className="flex flex-col gap-2">
+                <span className="text-xs uppercase text-gray-500 font-medium">
+                  Employee
+                </span>
                 <Typography
                   variant="body"
-                  className="leading-[13px]  font-semibold"
+                  className="leading-5 font-semibold text-base"
                 >
                   {doc.employee_name}
                 </Typography>
               </div>
             </Link>
 
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase text-right">
+            <div className="flex flex-col gap-2">
+              <span className="text-xs uppercase text-gray-500 font-medium text-right">
                 Date
               </span>
               <Typography
                 variant="body"
-                className="leading-[13px]  font-semibold"
+                className="leading-5 font-semibold text-base"
               >
                 {formatToIndianDate(doc.posting_date)}
               </Typography>
             </div>
           </div>
           <div className="flex justify-between">
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase">Company</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs uppercase text-gray-500 font-medium">
+                Company
+              </span>
               <Typography
                 variant="body"
-                className="leading-[13px]  font-semibold"
+                className="leading-5 font-semibold text-base"
               >
                 {doc.company}
               </Typography>
             </div>
 
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase">Department</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs uppercase text-gray-500 font-medium">
+                Department
+              </span>
               <Typography
                 variant="body"
-                className="leading-[13px]  font-semibold"
+                className="leading-5 font-semibold text-base"
               >
                 {doc.department}
               </Typography>
             </div>
           </div>
           <div>
-            <div className="h-[1px] w-full bg-gray-100 my-3" />
-            <Typography className="text-gray-300 text-sm mb-3">
+            <div className="h-[1px] w-full bg-gray-100 my-4" />
+            <Typography className="text-gray-400 text-sm">
               Last Updated on{" "}
               {formatToIndianDate(item?.reference_document?.modified)}
             </Typography>
@@ -212,22 +218,24 @@ const MyAdvanceExpenseList = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Advances",
-          description: "You have no pending advance expense requests."
+          description: "You have no pending advance expense requests.",
         },
         Approved: {
           title: "No Approved Advances",
-          description: "You have no approved advance requests."
+          description: "You have no approved advance requests.",
         },
         Rejected: {
           title: "No Rejected Advances",
-          description: "You have no rejected advance requests."
-        }
+          description: "You have no rejected advance requests.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Advance Requests",
-        description: "No advance requests match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Advance Requests",
+          description: "No advance requests match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -259,7 +267,7 @@ const MyAdvanceExpenseList = () => {
     <div className="max-h-screen flex flex-col">
       <div className="flex-1 overflow-y-auto">
         <div className="border-gray-100">
-          <div className="px-6 py-4">
+          <div className="md:px-6 px-2 py-4">
             {isDesktop ? (
               <Typography variant="h4">My Advance Expenses</Typography>
             ) : null}
@@ -268,7 +276,7 @@ const MyAdvanceExpenseList = () => {
             </Typography>
           </div>
         </div>
-        <div className="px-4">
+        <div className=" md:px-4">
           <CardTable
             titles={[
               "Employee",
