@@ -41,58 +41,123 @@ const countTotalDescendants = (node: any): number => {
   return count;
 };
 
+const findNode = (
+  hierarchy: any[] | any,
+  id: string
+): any | null => {
+  const list = Array.isArray(hierarchy) ? hierarchy : [hierarchy];
+  for (const node of list) {
+    if (node.id === id) return node;
+    if (node.children?.length) {
+      const found = findNode(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+const findParent = (
+  root: any,
+  employeeId: string
+): any | null => {
+  if (!employeeId) return null;
+  for (const child of root.children || []) {
+    if (child.id === employeeId) return root;
+    const found = findParent(child, employeeId);
+    if (found) return found;
+  }
+  return null;
+};
+
 /**
- * Recursively build nodes and edges from employeeHierarchy
+ * Build a 3-level hierarchy: Parent -> User -> Children
  */
-const buildHierarchy = (
-  employee: any,
-  parentId: string | null = null,
-  level = 0,
-  xOffset = 600
+const buildThreeLevelHierarchy = (
+  user: any,
+  parent: any | null,
 ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
   const nodes: Node<NodeData>[] = [];
   const edges: Edge[] = [];
 
-  const nodeId = employee.id;
-  const hasChildren = employee.children && employee.children.length > 0;
-  const direct = employee.children?.length || 0;
-  const total = countTotalDescendants(employee);
+  // 1. Parent (top level if exists)
+  if (parent) {
+    const direct = parent.children?.length || 0;
+    const total = countTotalDescendants(parent);
+    nodes.push({
+      id: parent.id,
+      type: "person",
+      position: { x: 0, y: 0 },
+      data: {
+        id: parent.id,
+        name: parent.name,
+        title: parent.title || "",
+        hasChildren: true,
+        isExpanded: true,
+        onToggleExpand: () => { },
+        totalChildren: total,
+        directChildren: direct,
+        indirectChildren: total - direct,
+      },
+    });
 
-  nodes.push({
-    id: nodeId,
-    type: "person",
-    position: { x: xOffset, y: 100 + level * 150 },
-    data: {
-      id: nodeId,
-      name: employee.name,
-      title: employee.title || "",
-      childrens: employee?.children,
-      hasChildren,
-      isExpanded: true,
-      totalChildren: total,
-      directChildren: direct,
-      indirectChildren: total - direct,
-      onToggleExpand: () => { },
-    },
-  });
-
-  if (parentId) {
     edges.push({
-      id: `e${parentId}-${nodeId}`,
-      source: parentId,
-      target: nodeId,
+      id: `e${parent.id}-${user.id}`,
+      source: parent.id,
+      target: user.id,
       type: "step",
       style: { stroke: "#d1d5db", strokeWidth: 2 },
     });
   }
 
-  if (hasChildren) {
-    employee.children.forEach((child: any, index: number) => {
-      const childX =
-        xOffset - (employee.children.length - 1) * 200 + index * 400;
-      const childHierarchy = buildHierarchy(child, nodeId, level + 1, childX);
-      nodes.push(...childHierarchy.nodes);
-      edges.push(...childHierarchy.edges);
+  // 2. Main User (middle level)
+  const directUser = user.children?.length || 0;
+  const totalUser = countTotalDescendants(user);
+  nodes.push({
+    id: user.id,
+    type: "person",
+    position: { x: 0, y: 300 }, // Initial position, dagre will re-layout
+    data: {
+      id: user.id,
+      name: user.name,
+      title: user.title || "",
+      hasChildren: directUser > 0,
+      isExpanded: true,
+      onToggleExpand: () => { },
+      totalChildren: totalUser,
+      directChildren: directUser,
+      indirectChildren: totalUser - directUser,
+    },
+  });
+
+  // 3. Children (bottom level)
+  if (user.children && user.children.length > 0) {
+    user.children.forEach((child: any) => {
+      const childDirect = child.children?.length || 0;
+      const childTotal = countTotalDescendants(child);
+      nodes.push({
+        id: child.id,
+        type: "person",
+        position: { x: 0, y: 600 },
+        data: {
+          id: child.id,
+          name: child.name,
+          title: child.title || "",
+          hasChildren: childDirect > 0,
+          isExpanded: false, // Don't show grandchildren
+          onToggleExpand: () => { },
+          totalChildren: childTotal,
+          directChildren: childDirect,
+          indirectChildren: childTotal - childDirect,
+        },
+      });
+
+      edges.push({
+        id: `e${user.id}-${child.id}`,
+        source: user.id,
+        target: child.id,
+        type: "step",
+        style: { stroke: "#d1d5db", strokeWidth: 2 },
+      });
     });
   }
 
@@ -108,9 +173,12 @@ export default function OrganizationChart() {
 
   const { search } = useLocation();
   const query = new URLSearchParams(search);
-  const employeeId = query.get("employee");
+  const employeeIdFromQuery = query.get("employee");
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+
+  const employeeId = employeeIdFromQuery || user?.employee || "";
+
   const { data: employeeHierarchy } = useGetEmployeeHierarchy(
     user?.company ?? "",
     employeeId || ""
@@ -119,7 +187,7 @@ export default function OrganizationChart() {
   const {
     data: employeeSubordinateHierarchy,
     isLoading: employeeSubordinateHierarchyIsLoading,
-  } = useGetEmployeeSubordinateHierarchy(employeeId ?? "");
+  } = useGetEmployeeSubordinateHierarchy(employeeId);
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
@@ -173,64 +241,45 @@ export default function OrganizationChart() {
 
   // Build nodes/edges when data comes
   useEffect(() => {
+    const activeHierarchy = employeeIdFromQuery ? employeeSubordinateHierarchy : employeeHierarchy;
+
     if (
       employeeId &&
-      employeeSubordinateHierarchy &&
+      activeHierarchy &&
       !employeeSubordinateHierarchyIsLoading
     ) {
-      const hierarchyArray = Array.isArray(employeeSubordinateHierarchy)
-        ? employeeSubordinateHierarchy
-        : [employeeSubordinateHierarchy];
+      const hierarchyArray = Array.isArray(activeHierarchy)
+        ? activeHierarchy
+        : [activeHierarchy];
 
-      let allNodes: Node<NodeData>[] = [];
-      let allEdges: Edge[] = [];
+      let currentUserNode: any | null = null;
+      let parentNode: any | null = null;
 
-      hierarchyArray.forEach((hierarchyData, index) => {
-        const { nodes, edges } = buildHierarchy(
-          hierarchyData,
-          null,
-          0,
-          600 + index * 800
+      for (const hierarchyData of hierarchyArray) {
+        currentUserNode = findNode(hierarchyData, employeeId);
+        if (currentUserNode) {
+          parentNode = findParent(hierarchyData, employeeId);
+          break;
+        }
+      }
+
+      if (currentUserNode) {
+        const { nodes: initialNodes, edges: initialEdges } = buildThreeLevelHierarchy(
+          currentUserNode,
+          parentNode
         );
-        allNodes = [...allNodes, ...nodes];
-        allEdges = [...allEdges, ...edges];
-      });
 
-      const { nodes: layoutedNodes, edges: layoutedEdges } =
-        getLayoutedElements(allNodes, allEdges);
+        const { nodes: layoutedNodes, edges: layoutedEdges } =
+          getLayoutedElements(initialNodes, initialEdges);
 
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      setLayoutReady(true); // 👈 signal
-
-      return;
-    }
-
-    // Otherwise, use the full company hierarchy
-    if (employeeHierarchy) {
-      const hierarchyArray = Array.isArray(employeeHierarchy)
-        ? employeeHierarchy
-        : [employeeHierarchy];
-
-      let allNodes: Node<NodeData>[] = [];
-      let allEdges: Edge[] = [];
-
-      hierarchyArray.forEach((hierarchyData, index) => {
-        const { nodes, edges } = buildHierarchy(
-          hierarchyData,
-          null,
-          0,
-          600 + index * 800
-        );
-        allNodes = [...allNodes, ...nodes];
-        allEdges = [...allEdges, ...edges];
-      });
-
-      setNodes(allNodes);
-      setEdges(allEdges);
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+        setLayoutReady(true);
+      }
     }
   }, [
     employeeId,
+    employeeIdFromQuery,
     employeeSubordinateHierarchy,
     employeeHierarchy,
     setNodes,

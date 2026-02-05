@@ -58,6 +58,8 @@ import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import Requests from "./Requests";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
+import SideDrawer from "./shared/SideDrawer";
+import MobileProfileDrawer from "./EmployeeProfile/MobileProfileDrawer";
 
 const statusStyles = {
   unpaid: {
@@ -200,7 +202,7 @@ const MobileDashboard: React.FC = () => {
   );
   const checkIns = homeSummary?.filter((log) => log.log_type === "IN") ?? [];
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
-
+  const [profileDrawer, setProfileDrawer] = useState(false);
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
       compareAsc(
@@ -457,7 +459,8 @@ const MobileDashboard: React.FC = () => {
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
               onClick={() => {
-                navigate(`/webapp/employee-profile`);
+                setProfileDrawer(true)
+                // navigate(`/webapp/employee-profile`);
               }}
             >
               <img
@@ -890,6 +893,15 @@ const MobileDashboard: React.FC = () => {
           <MicroAppInDashboard />
         </div>
       </div>
+      <SideDrawer
+        open={profileDrawer}
+        onClose={() => setProfileDrawer(false)}
+        title="My Profile"
+        showBackButton
+        className="px-0"
+      >
+        <MobileProfileDrawer />
+      </SideDrawer>
     </div>
   );
 };

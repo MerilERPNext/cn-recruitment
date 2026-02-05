@@ -61,7 +61,7 @@ const BenefitsApp: React.FC = () => {
           onTabChange={(tab) => handleTabChange(tab as TabName)}
         />
       </header>
-      <main className="z-10 p-4 flex-grow">
+      <main className="z-10 p-2 flex-grow">
         <Outlet />
       </main>
     </div>

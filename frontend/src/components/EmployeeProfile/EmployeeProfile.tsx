@@ -332,7 +332,10 @@ const EmployeeProfile: React.FC = () => {
                     className="font-medium truncate mt-1 flex gap-1.5 items-center"
                   >
                     <MapPin size={14} className="text-primary-500" />
-                    <span>{user?.branch_display}</span>
+                    <Tooltip content={user?.branch_display}>
+                      <span className="line-clamp-1">{user?.branch_display}</span>
+                    </Tooltip>
+
                   </Typography>
                 )}
                 {user?.employee && (
@@ -544,15 +547,18 @@ const EmployeeProfile: React.FC = () => {
                             </Typography>
                           </Tooltip>
                         )}
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-start items-start">
                           {user?.branch_display && (
                             <Typography
                               variant="bodySmall"
                               color="disabled"
-                              className="text-primary-500 flex items-center gap-2"
+                              className="text-primary-500 flex items-center gap-2 line-clamp-1"
                             >
                               <MapPin size={16} />
-                              <span>{user?.branch_display}</span>
+                              <Tooltip content={user?.branch_display}>
+                                <span className="line-clamp-1">{user?.branch_display}</span>
+                              </Tooltip>
+
                             </Typography>
                           )}
 
@@ -591,7 +597,9 @@ const EmployeeProfile: React.FC = () => {
                     </div>
                   </div>
                 </Card>
-                <AwardsSection isDesktop={true} />
+                <Card className="flex items-center gap-8 flex-1" shadow="none">
+                  <AwardsSection isDesktop={true} />
+                </Card>
               </div>
             </div>
           )}

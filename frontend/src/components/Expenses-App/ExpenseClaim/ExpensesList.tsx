@@ -44,15 +44,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   }).format(item?.reference_document?.total_claimed_amount ?? 0);
 
   return (
-    <div className="rounded-2xl  my-1 border-t-4 border-primary p-5  transition-shadow duration-200 flex flex-col gap-4">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex flex-col gap-1">
-          <span className="card-subtitle-sm uppercase">Expense category</span>
+    <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5">
+      <div className="flex justify-between items-start mb-1">
+        <div className="flex flex-col gap-2">
+          <Typography variant="mobileCardLabel" className="block">
+            Expense category
+          </Typography>
           {item?.reference_document?.custom_expense_category && (
-            <Typography
-              variant="body"
-              className="leading-[13px]  font-semibold"
-            >
+            <Typography variant="mobileCardValue">
               {item?.reference_document?.custom_expense_category}
             </Typography>
           )}
@@ -70,24 +69,28 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
       </div>
 
       <div className="flex justify-between">
-        <div className="flex flex-col gap-1">
-          <span className="card-subtitle-sm uppercase">Claimed Date</span>
-          <Typography variant="body" className="leading-[13px]  font-semibold">
+        <div className="flex flex-col gap-2">
+          <Typography variant="mobileCardLabel" className="block">
+            Claimed Date
+          </Typography>
+          <Typography variant="mobileCardValue">
             {formatToIndianDate(item?.reference_document?.creation)}
           </Typography>
         </div>
 
-        <div className="flex flex-col gap-1 text-right">
-          <span className="card-subtitle-sm uppercase">Claimed Amount</span>
-          <Typography variant="body" className="leading-[13px] font-semibold">
+        <div className="flex flex-col gap-2 text-right">
+          <Typography variant="mobileCardLabel" className="block">
+            Claimed Amount
+          </Typography>
+          <Typography variant="mobileCardValue">
             {formattedAmount}
           </Typography>
         </div>
       </div>
 
       <div>
-        <div className="h-[1px] w-full bg-gray-100 mb-3" />
-        <Typography className="text-gray-300 text-sm mb-3">
+        <div className="h-[1px] w-full bg-gray-100 mb-4" />
+        <Typography variant="mobileCardFooter">
           Last Updated on{" "}
           {formatToIndianDate(item?.reference_document?.modified)}
         </Typography>
@@ -159,7 +162,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           content={
             item?.status === "Draft"
               ? `Allocated to : ${item?.reference_document?.custom_assigned_user}` ||
-              `Allocated to : ${item?.allocated_to}`
+                `Allocated to : ${item?.allocated_to}`
               : ""
           }
         >
@@ -172,7 +175,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() && canEditExpense
+              item?.send_back_user?.toLowerCase() && canEditExpense
           }
           onEdit={handleEditClick}
         />
@@ -279,22 +282,24 @@ const ExpensesList: React.FC = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Draft: {
           title: "No Pending Claims",
-          description: "You have no pending expense claim requests."
+          description: "You have no pending expense claim requests.",
         },
         Approved: {
           title: "All Claims Approved",
-          description: "You have no approved expense claims to review."
+          description: "You have no approved expense claims to review.",
         },
         Rejected: {
           title: "No Rejected Claims",
-          description: "You have no rejected expense claims."
-        }
+          description: "You have no rejected expense claims.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Expense Claims",
-        description: "No expense claims match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Expense Claims",
+          description: "No expense claims match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -336,22 +341,27 @@ const ExpensesList: React.FC = () => {
   ];
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              {isDesktop ? (
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop ? (
+              <div>
                 <Typography variant="h4">My Expense Claims</Typography>
-              ) : null}
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your expense claim requests
-              </Typography>
-            </div>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your expense claim requests
+                </Typography>
+              </div>
+            ) : (
+              <div>
+                <Typography variant="h4">My Expense Claims</Typography>
+              </div>
+            )}
             <div className="flex items-center space-x-3 pb-1">
               {isDesktop ? (
                 <>
                   <Button
+                    icon={<FileText size={16} />}
                     variant="outline"
                     size="md"
                     className="rounded-xl hover:bg-blue-100 py-1"
@@ -382,69 +392,68 @@ const ExpensesList: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="px-4">
-          {currentEmployee?.name && (
-            <CardTable
-              titles={[
-                "Expense Category",
-                "Claimed Amount",
-                "Sanctioned Amount",
-                "Expense Date",
-                "Claimed Date",
-                "Status",
-                "ACTIONS",
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        {currentEmployee?.name && (
+          <CardTable
+            titles={[
+              "Expense Category",
+              "Claimed Amount",
+              "Sanctioned Amount",
+              "Expense Date",
+              "Claimed Date",
+              "Status",
+              "ACTIONS",
+            ]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          >
+            <DataListView
+              queryKey={["expense-claims-all"]}
+              customAPI={{
+                method: "cn_leave_shift_managment.api.get_open_approval_todos",
+                params: {
+                  doctype: "Expense Claim",
+                  employee: currentEmployee?.name,
+                },
+              }}
+              ItemComponent={(props: { item: any }) =>
+                isDesktop ? (
+                  <RowWrapper item={props.item} />
+                ) : (
+                  <ItemWrapper item={props.item} />
+                )
+              }
+              isSearch={true}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    { label: "Pending", value: "Draft" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
+                },
               ]}
-              columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-            >
-              <DataListView
-                queryKey={["expense-claims-all"]}
-                customAPI={{
-                  method:
-                    "cn_leave_shift_managment.api.get_open_approval_todos",
-                  params: {
-                    doctype: "Expense Claim",
-                    employee: currentEmployee?.name,
-                  },
-                }}
-                ItemComponent={(props: { item: any }) =>
-                  isDesktop ? (
-                    <RowWrapper item={props.item} />
-                  ) : (
-                    <ItemWrapper item={props.item} />
-                  )
-                }
-                isSearch={true}
-                isFilter={true}
-                filterFields={[
-                  {
-                    fieldname: "status",
-                    label: "Status",
-                    fieldtype: "Select",
-                    options: [
-                      { label: "Pending", value: "Draft" },
-                      { label: "Approved", value: "Approved" },
-                      { label: "Rejected", value: "Rejected" },
-                    ],
-                  },
-                ]}
-                defaultFilters={{
-                  status: "Draft",
-                }}
-                SkeletonComponent={CardSkeleton}
-                onRefetchComplete={() => setRefetchAttendance(false)}
-                refetchTrigger={refetchAttendance}
-                showRefreshButton={false}
-                orderBy="modified desc"
-                pageSize={10}
-                infiniteScroll={true}
-                showPagination={true}
-                loadMorePagination={false}
-                noRecordsScreen={noRecordsScreen}
-              />
-            </CardTable>
-          )}
-        </div>
+              defaultFilters={{
+                status: "Draft",
+              }}
+              SkeletonComponent={CardSkeleton}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              refetchTrigger={refetchAttendance}
+              showRefreshButton={false}
+              orderBy="modified desc"
+              pageSize={10}
+              infiniteScroll={true}
+              showPagination={true}
+              loadMorePagination={false}
+              noRecordsScreen={noRecordsScreen}
+            />
+          </CardTable>
+        )}
       </div>
 
       {selectedId && (

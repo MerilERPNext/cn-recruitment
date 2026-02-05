@@ -73,14 +73,14 @@ export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-  | "Select"
-  | "Link"
-  | "Data"
-  | "Int"
-  | "Float"
-  | "Check"
-  | "Date"
-  | "Datetime";
+    | "Select"
+    | "Link"
+    | "Data"
+    | "Int"
+    | "Float"
+    | "Check"
+    | "Date"
+    | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
 }
@@ -117,7 +117,9 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
-  noRecordsScreen?: React.ReactNode | ((filters: Record<string, any>) => React.ReactNode);
+  noRecordsScreen?:
+    | React.ReactNode
+    | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -663,10 +665,11 @@ const DataListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
               >
                 {pageNum}
               </button>
@@ -802,14 +805,17 @@ const DataListView = <T extends BaseItem>({
   };
 
   const emptyStateContent = useMemo(() => {
-    const customScreen = typeof noRecordsScreen === 'function'
-      ? noRecordsScreen(debouncedFilters)
-      : noRecordsScreen;
+    const customScreen =
+      typeof noRecordsScreen === "function"
+        ? noRecordsScreen(debouncedFilters)
+        : noRecordsScreen;
 
-    return customScreen ?? (
-      <div className="flex items-center justify-center py-12">
-        <span className="text-gray-500">No records found</span>
-      </div>
+    return (
+      customScreen ?? (
+        <div className="flex items-center justify-center py-12">
+          <span className="text-gray-500">No records found</span>
+        </div>
+      )
     );
   }, [noRecordsScreen, debouncedFilters]);
 
@@ -818,7 +824,7 @@ const DataListView = <T extends BaseItem>({
       {/* Header */}
       <div className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full md:border-b">
+          <div className="flex items-center w-full border border-gray-300 rounded-md bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -829,15 +835,14 @@ const DataListView = <T extends BaseItem>({
                   value={searchTerm}
                   onChange={handleSearch}
                   placeholder="Search..."
-                  className="rounded-tl-md rounded-tr-md block w-full pl-10 pr-3 h-12 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full h-12 pl-10 pr-3 text-sm bg-transparent placeholder-gray-400 outline-none border-none focus:outline-none"
                 />
               </div>
             )}
             {isFilter && filterFields.length > 0 && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`rounded-tr-md rounded-br-md flex min-h-full h-12 items-center px-3 py-2 shadow-sm text-sm leading-4 font-medium  text-gray-700 bg-white hover:bg-gray-50 focus:outline-none ${showFilters ? "bg-gray-100" : ""
-                  }`}
+                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""}`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -956,8 +961,9 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                    }`}
+                  className={`mb-2 md:mb-0 ${
+                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                  }`}
                 >
                   <ItemComponent item={item} index={index} />
                 </div>

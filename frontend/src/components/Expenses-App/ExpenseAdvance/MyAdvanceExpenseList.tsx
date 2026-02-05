@@ -110,9 +110,9 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className=" rounded-2xl shadow-sm p-4 border-t-4 border-primary mb-3">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-sm font-semibold text-gray-900">
+      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3">
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-base font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
           </h3>
           <div className="flex justify-start">
@@ -127,59 +127,53 @@ const MyAdvanceExpenseList = () => {
             </Tooltip>
           </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <div className="flex  justify-between ">
+        <div className="flex flex-col gap-3">
+          <div className="flex justify-between">
             <Link
               to={`/webapp/employee-profile?target_user=${doc?.employee}`}
               target="_blank"
             >
-              <div className="flex flex-col">
-                <span className="card-subtitle-sm uppercase">Employee</span>
-                <Typography
-                  variant="body"
-                  className="leading-[13px]  font-semibold"
-                >
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Employee
+                </Typography>
+                <Typography variant="mobileCardValue">
                   {doc.employee_name}
                 </Typography>
               </div>
             </Link>
 
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase text-right">
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel" className="block text-right">
                 Date
-              </span>
-              <Typography
-                variant="body"
-                className="leading-[13px]  font-semibold"
-              >
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {formatToIndianDate(doc.posting_date)}
               </Typography>
             </div>
           </div>
           <div className="flex justify-between">
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase">Company</span>
-              <Typography
-                variant="body"
-                className="leading-[13px]  font-semibold"
-              >
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel" className="block">
+                Company
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {doc.company}
               </Typography>
             </div>
 
-            <div className="flex flex-col mt-2">
-              <span className="card-subtitle-sm uppercase">Department</span>
-              <Typography
-                variant="body"
-                className="leading-[13px]  font-semibold"
-              >
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel" className="block">
+                Department
+              </Typography>
+              <Typography variant="mobileCardValue">
                 {doc.department}
               </Typography>
             </div>
           </div>
           <div>
-            <div className="h-[1px] w-full bg-gray-100 my-3" />
-            <Typography className="text-gray-300 text-sm mb-3">
+            <div className="h-[1px] w-full bg-gray-100 my-4" />
+            <Typography variant="mobileCardFooter">
               Last Updated on{" "}
               {formatToIndianDate(item?.reference_document?.modified)}
             </Typography>
@@ -212,22 +206,24 @@ const MyAdvanceExpenseList = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Pending: {
           title: "No Pending Advances",
-          description: "You have no pending advance expense requests."
+          description: "You have no pending advance expense requests.",
         },
         Approved: {
           title: "No Approved Advances",
-          description: "You have no approved advance requests."
+          description: "You have no approved advance requests.",
         },
         Rejected: {
           title: "No Rejected Advances",
-          description: "You have no rejected advance requests."
-        }
+          description: "You have no rejected advance requests.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Advance Requests",
-        description: "No advance requests match your filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Advance Requests",
+          description: "No advance requests match your filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -256,77 +252,75 @@ const MyAdvanceExpenseList = () => {
   };
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
-            {isDesktop ? (
-              <Typography variant="h4">My Advance Expenses</Typography>
-            ) : null}
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
+            <Typography variant="h4">My Advance Expenses</Typography>{" "}
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
           </div>
         </div>
-        <div className="px-4">
-          <CardTable
-            titles={[
-              "Employee",
-              "Posting Date",
-              "Company",
-              "Department",
-              "Advance Amount",
-              "Status",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
-            <DataListView
-              queryKey={["employee-advance"]}
-              customAPI={{
-                method: "cn_leave_shift_managment.api.get_open_approval_todos",
-                params: {
-                  doctype: "Employee Advance",
-                  employee: currentEmployee?.name,
-                },
-              }}
-              defaultFilters={{
-                custom_type: "Reimbursement / Expense Advance",
-                status: "Pending",
-              }}
-              ItemComponent={RowWrapper}
-              SkeletonComponent={() => (
-                <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                  <div className="px-4 py-2 flex justify-between">
-                    <div>
-                      <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                      <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                    </div>
-                    <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
+      )}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable
+          titles={[
+            "Employee",
+            "Posting Date",
+            "Company",
+            "Department",
+            "Advance Amount",
+            "Status",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <DataListView
+            queryKey={["employee-advance"]}
+            customAPI={{
+              method: "cn_leave_shift_managment.api.get_open_approval_todos",
+              params: {
+                doctype: "Employee Advance",
+                employee: currentEmployee?.name,
+              },
+            }}
+            defaultFilters={{
+              custom_type: "Reimbursement / Expense Advance",
+              status: "Pending",
+            }}
+            ItemComponent={RowWrapper}
+            SkeletonComponent={() => (
+              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
+                <div className="px-4 py-2 flex justify-between">
+                  <div>
+                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
                   </div>
+                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
                 </div>
-              )}
-              isSearch={true}
-              isFilter={true}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
-                },
-              ]}
-              noRecordsScreen={noRecordsScreen}
-              refetchTrigger={refetchAttendance}
-              onRefetchComplete={() => setRefetchAttendance(false)}
-              showRefreshButton={false}
-              orderBy="creation desc"
-              pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
-        </div>
+              </div>
+            )}
+            isSearch={true}
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: ["Pending", "Approved", "Rejected"],
+              },
+            ]}
+            noRecordsScreen={noRecordsScreen}
+            refetchTrigger={refetchAttendance}
+            onRefetchComplete={() => setRefetchAttendance(false)}
+            showRefreshButton={false}
+            orderBy="creation desc"
+            pageSize={10}
+            infiniteScroll={true}
+            showPagination={true}
+            loadMorePagination={false}
+          />
+        </CardTable>
       </div>
 
       {selectedAdvanceId && (

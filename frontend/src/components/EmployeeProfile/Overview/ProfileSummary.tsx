@@ -1,6 +1,7 @@
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeAllDetails, useGetEmployeeProfileOverview } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { formatDateToDDMMYYYY } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import ProfileSkeleton from "../../shared/molecules/Skeletons/ProfileSkeleton";
 
@@ -47,7 +48,7 @@ const ProfileSummary = () => {
                                 {field.field_label || "-"}
                             </Typography>
                             <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                {field?.display || "—"}
+                                {formatDateToDDMMYYYY(field?.display as string) || "—"}
                             </Typography>
 
                         </div>
