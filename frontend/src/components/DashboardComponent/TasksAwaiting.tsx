@@ -169,7 +169,7 @@ const TasksAwaiting: React.FC = () => {
       )}
 
       {isDesktop && (
-        <div className="flex gap-3 mb-4 p-2 max-w-full">
+        <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
             className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
