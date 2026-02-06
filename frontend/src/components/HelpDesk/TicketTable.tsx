@@ -10,9 +10,6 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 interface TicketTableProps {
   tickets: HDTicket[];
   isLoading?: boolean;
-  selectedTickets: Set<string>;
-  onSelectTicket: (ticketId: string) => void;
-  onSelectAll: () => void;
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
@@ -80,8 +77,6 @@ interface TicketCardProps {
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
-  isSelected: boolean;
-  onSelectTicket: (ticketId: string) => void;
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({
@@ -92,8 +87,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onReply,
   onClose,
   onRowClick,
-  isSelected,
-  onSelectTicket,
 }) => {
   const getCategoryName = (categoryId: string | undefined): string => {
     if (!categoryId) return "-";
@@ -108,21 +101,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
       onClick={() => onRowClick?.(ticket)}
     >
       <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-3">
-          <div onClick={(e) => e.stopPropagation()}>
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onSelectTicket(ticket.name)}
-              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Typography variant="mobileCardLabel" className="block">
-              Issue ID
-            </Typography>
-            <Typography variant="mobileCardValue">{ticket.name}</Typography>
-          </div>
+        <div className="flex flex-col gap-2">
+          <Typography variant="mobileCardLabel" className="block">
+            Issue ID
+          </Typography>
+          <Typography variant="mobileCardValue">{ticket.name}</Typography>
         </div>
 
         <Badge
@@ -225,9 +208,6 @@ const columns = [
 const TicketTable: React.FC<TicketTableProps> = ({
   tickets,
   isLoading,
-  selectedTickets,
-  onSelectTicket,
-  onSelectAll,
   onReply,
   onClose,
   onRowClick,
@@ -245,7 +225,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
     if (!categoryId) return "-";
     return categoryMap[categoryId] || categoryId;
   };
-  const allSelected = tickets.length > 0 && selectedTickets.size === tickets.length;
+
 
   // Since we only show user's own tickets, always show "Close" button
   const getCloseButtonLabel = () => {
@@ -270,14 +250,11 @@ const TicketTable: React.FC<TicketTableProps> = ({
         <div className="space-y-4 px-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="rounded-2xl bg-white border border-gray-100 p-6 animate-pulse">
-              {/* Header with checkbox and badge */}
+              {/* Header with badge */}
               <div className="flex justify-between items-start mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 bg-gray-200 rounded" />
-                  <div className="space-y-2">
-                    <div className="h-3 w-16 bg-gray-200 rounded" />
-                    <div className="h-4 w-24 bg-gray-200 rounded" />
-                  </div>
+                <div className="space-y-2">
+                  <div className="h-3 w-16 bg-gray-200 rounded" />
+                  <div className="h-4 w-24 bg-gray-200 rounded" />
                 </div>
                 <div className="h-6 w-16 bg-gray-200 rounded-3xl" />
               </div>
@@ -325,9 +302,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
         <table className="helpdesk-table w-full border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 w-12">
-                <div className="w-4 h-4 bg-gray-200 rounded animate-pulse" />
-              </th>
               {columns.map((col) => (
                 <th key={col.key} className={`px-4 py-3 text-left ${col.width}`}>
                   <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
@@ -341,9 +315,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
           <tbody>
             {[1, 2, 3, 4, 5].map((i) => (
               <tr key={i} className="border-t border-gray-200">
-                <td className="px-4 py-3">
-                  <div className="w-4 h-4 bg-gray-100 rounded animate-pulse" />
-                </td>
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
                     <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
@@ -376,37 +347,19 @@ const TicketTable: React.FC<TicketTableProps> = ({
   // Mobile Card View
   if (!isDesktop) {
     return (
-      <div className="space-y-2">
-        {/* Select All Checkbox */}
-        <div className="sticky top-0 z-10 bg-white px-4 py-3 border-b border-gray-200 flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={allSelected}
-            onChange={onSelectAll}
-            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+      <div className="space-y-2 px-2">
+        {tickets.map((ticket) => (
+          <TicketCard
+            key={ticket.name}
+            ticket={ticket}
+            categoryMap={categoryMap}
+            userLookup={userLookup}
+            employeeByEmail={employeeByEmail}
+            onReply={onReply}
+            onClose={onClose}
+            onRowClick={onRowClick}
           />
-          <Typography variant="bodySmall" color="body2" className="font-medium">
-            Select All ({selectedTickets.size} of {tickets.length})
-          </Typography>
-        </div>
-
-        {/* Ticket Cards */}
-        <div className="px-2">
-          {tickets.map((ticket) => (
-            <TicketCard
-              key={ticket.name}
-              ticket={ticket}
-              categoryMap={categoryMap}
-              userLookup={userLookup}
-              employeeByEmail={employeeByEmail}
-              onReply={onReply}
-              onClose={onClose}
-              onRowClick={onRowClick}
-              isSelected={selectedTickets.has(ticket.name)}
-              onSelectTicket={onSelectTicket}
-            />
-          ))}
-        </div>
+        ))}
       </div>
     );
   }
@@ -417,18 +370,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
       <table className="helpdesk-table w-full min-w-[900px] border-collapse">
         <thead className="bg-gray-50/80 border-b border-gray-100">
           <tr>
-            <th className="px-4 py-3 w-12">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={onSelectAll}
-                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-            </th>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""}`}
+                className={`py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === 'name' ? 'pl-6 pr-4' : 'px-4'}`}
                 onClick={() => col.sortable && onSort(col.key)}
               >
                 <div className="flex items-center gap-1">
@@ -439,7 +384,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 </div>
               </th>
             ))}
-            <th className="px-4 py-3 w-28 text-left">
+            <th className="pl-4 pr-6 py-3 w-28 text-left">
               <Typography variant="bodySmall" color="body2" className="font-medium">
                 ACTIONS
               </Typography>
@@ -454,15 +399,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 }`}
               onClick={() => onRowClick?.(ticket)}
             >
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={selectedTickets.has(ticket.name)}
-                  onChange={() => onSelectTicket(ticket.name)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-              </td>
-              <td className="px-4 py-3">
+              <td className="pl-6 pr-4 py-3">
                 <Typography variant="bodySmall" color="body1">
                   {ticket.name}
                 </Typography>
@@ -507,7 +444,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   );
                 })()}
               </td>
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+              <td className="pl-4 pr-6 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {/* Reply Button */}
                   <button
