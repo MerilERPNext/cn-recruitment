@@ -8,11 +8,15 @@ import toast from "react-hot-toast";
 import {
   useAttendanceById,
   useEditAttendance,
+  useGetEmployeeShift,
 } from "../../../hooks/useAttendance";
 import CircularLoader from "../../shared/atoms/CircularLoader";
 import { format } from "date-fns";
 import Button from "../../shared/atoms/Button";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
+import { useMemo } from "react";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 interface EditAttendanceProps {
   onClose: () => void;
@@ -31,14 +35,70 @@ export const EditAttendance = ({
   onRefetchData,
 }: EditAttendanceProps) => {
   const formInstance = useRef<any>(null);
-  const { data, isLoading } = useAttendanceById(open, [
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+    currentUser?.name as string,
+  );
+  const { data, isLoading: isDataLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
     // ["employee", "=", effectiveEmployeeId],
   ]);
+  const attendanceDate = data?.[0]?.attendance_date;
+  const { data: shiftData, isLoading: isShiftLoading } = useGetEmployeeShift(
+    currentEmployee?.user_id || "",
+    {
+      date: attendanceDate,
+    },
+  );
   const mutation = useEditAttendance();
+
+  const isActuallyLoading =
+    isDataLoading || (open && !!employeeId && (isShiftLoading));
+
+  const initialSubmission = useMemo(() => {
+    if (!data?.[0] || isActuallyLoading) return undefined;
+
+    const normalizeTimeValue = (val?: string | null) => {
+      if (!val) return undefined;
+      // If it's already a full datetime string, parse it
+      if (val.includes(" ") || val.includes("T")) {
+        const d = new Date(val.replace(" ", "T"));
+        return isNaN(d.getTime()) ? undefined : d;
+      }
+      // If it's just a time string (HH:mm or HH:mm:ss), prefix it
+      if (val.includes(":")) {
+        const d = new Date(`1970-01-01T${val}`);
+        return isNaN(d.getTime()) ? undefined : d;
+      }
+      return val;
+    };
+
+    return {
+      data: {
+        employee: employeeName || employeeId || "",
+        attendance_date: data[0].attendance_date,
+        shift: data[0].shift || shiftData?.shift || "",
+        in_time: normalizeTimeValue(data[0].in_time || shiftData?.start_time),
+        out_time: normalizeTimeValue(data[0].out_time || shiftData?.end_time),
+        status: data[0].status || "",
+        working_hours: data[0].working_hours || 0,
+        department: data[0].department || "",
+        company: data[0].company || "",
+      },
+    };
+  }, [
+    data,
+    employeeName,
+    employeeId,
+    shiftData,
+    isActuallyLoading,
+  ]);
+
   // Only build form after data is available
-  const attendanceForm = data?.[0]
-    ? {
+  const attendanceForm = useMemo(() => {
+    if (!data?.[0] || isActuallyLoading) return null;
+
+    return {
       display: "form",
       components: [
         {
@@ -55,7 +115,6 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: employeeName || employeeId || "",
             },
             {
               label: "Attendance Date",
@@ -65,7 +124,6 @@ export const EditAttendance = ({
               disabled: true,
               widget: { type: "calendar" },
               format: "dd-MM-yyyy",
-              defaultValue: data[0].attendance_date,
               placeholder: "dd-mm-yyyy",
               customClass: "mb-4",
               enableTime: false,
@@ -77,7 +135,6 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: data[0].shift || "",
             },
             {
               type: "columns",
@@ -95,7 +152,6 @@ export const EditAttendance = ({
                       enableTime: true,
                       format: "HH:mm:ss",
                       placeholder: "hh:mm",
-                      defaultValue: data[0].in_time,
                       widget: {
                         type: "calendar",
                         time_24hr: true,
@@ -124,13 +180,11 @@ export const EditAttendance = ({
                         enableTime: true,
                         dateFormat: "H:i",
                       },
-                      defaultValue: data[0].out_time,
                     },
                   ],
                 },
               ],
             },
-
             {
               label: "Status",
               key: "status",
@@ -138,34 +192,17 @@ export const EditAttendance = ({
               input: true,
               placeholder: "Select Status",
               customClass: "mb-4",
-              defaultValue: data[0].status || "",
               validate: { required: true },
               data: {
                 values: [
-                  {
-                    label: "Present",
-                    value: "Present",
-                  },
-                  {
-                    label: "Absent",
-                    value: "Absent",
-                  },
-                  {
-                    label: "On Leave",
-                    value: "On Leave",
-                  },
-                  {
-                    label: "Half Day",
-                    value: "Half Day",
-                  },
-                  {
-                    label: "Work From Home",
-                    value: "Work From Home",
-                  },
+                  { label: "Present", value: "Present" },
+                  { label: "Absent", value: "Absent" },
+                  { label: "On Leave", value: "On Leave" },
+                  { label: "Half Day", value: "Half Day" },
+                  { label: "Work From Home", value: "Work From Home" },
                 ],
               },
             },
-
             {
               label: "Working Hours",
               key: "working_hours",
@@ -173,7 +210,6 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: data[0].working_hours || 0,
               step: "0.01",
             },
             {
@@ -183,7 +219,6 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: data[0].department || "",
             },
             {
               label: "Company",
@@ -192,13 +227,12 @@ export const EditAttendance = ({
               input: true,
               disabled: true,
               customClass: "mb-4",
-              defaultValue: data[0].company || "",
             },
           ],
         },
       ],
-    }
-    : null;
+    };
+  }, [data, isActuallyLoading]);
 
   const formatTime = (date: Date | string | undefined): string | undefined => {
     if (!date) return undefined;
@@ -272,13 +306,14 @@ export const EditAttendance = ({
 
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-          {!attendanceForm && isLoading ? (
+          {isActuallyLoading ? (
             <div className="h-full w-full flex justify-center items-center">
               <CircularLoader size="lg" />
             </div>
           ) : (
             <Form
               form={attendanceForm}
+              submission={initialSubmission}
               onFormReady={(instance: any) => {
                 formInstance.current = instance;
               }}
