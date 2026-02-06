@@ -245,10 +245,11 @@ const EmployeeAttendance = () => {
   }
 
   return (
-    <div className={`flex`}>
+    <div className={`flex h-full overflow-y-auto min-h-0`}>
       <div
-        className={`flex p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -302,7 +303,16 @@ const EmployeeAttendance = () => {
             />
           </div>
           <CardTable
-            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+            columnWidths={[
+              "1.5fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+            ]}
             titles={[
               "Request Type",
               "From Date",
