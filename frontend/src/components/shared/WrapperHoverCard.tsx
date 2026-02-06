@@ -9,12 +9,12 @@ type WrapperHoverCardProps = {
   cardClassName?: string;
   employeeId?: string;
   placement?:
-    | "bottom-right"
-    | "bottom-left"
-    | "top-right"
-    | "top-left"
-    | "center-left"
-    | "center-right";
+  | "bottom-right"
+  | "bottom-left"
+  | "top-right"
+  | "top-left"
+  | "center-left"
+  | "center-right";
 };
 
 const mapEmployeeData = (data: any[]) => {
@@ -80,15 +80,23 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const [show, setShow] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const hideTimer = useRef<any>(null);
+  const animationTimer = useRef<any>(null);
 
   const handleEnter = () => {
     clearTimeout(hideTimer.current);
+    clearTimeout(animationTimer.current);
     setShow(true);
+    // Start animation after render
+    animationTimer.current = setTimeout(() => setIsAnimating(true), 10);
   };
 
   const handleLeave = () => {
-    hideTimer.current = setTimeout(() => setShow(false), 120);
+    // Start exit animation
+    setIsAnimating(false);
+    // Hide card after animation completes (faster exit)
+    hideTimer.current = setTimeout(() => setShow(false), 150);
   };
 
   const updatePosition = () => {
@@ -146,6 +154,13 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
     };
   }, [show, placement]);
 
+  useEffect(() => {
+    return () => {
+      clearTimeout(hideTimer.current);
+      clearTimeout(animationTimer.current);
+    };
+  }, []);
+
   return (
     <>
       <div
@@ -165,7 +180,17 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
           <div
             ref={cardRef}
             className="absolute z-[999]"
-            style={{ top: pos.top, left: pos.left }}
+            style={{
+              top: pos.top,
+              left: pos.left,
+              opacity: isAnimating ? 1 : 0,
+              transform: isAnimating
+                ? "scale(1) translateY(0)"
+                : "scale(0.98) translateY(0)",
+              transition: isAnimating
+                ? "opacity 200ms ease-out, transform 200ms ease-out"
+                : "opacity 150ms ease-in, transform 150ms ease-in",
+            }}
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
           >
@@ -259,12 +284,12 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           <p className="font-medium text-gray-900">
                             {emp["Date of Joining"]
                               ? new Date(
-                                  emp["Date of Joining"],
-                                ).toLocaleDateString("en-IN", {
-                                  day: "2-digit",
-                                  month: "long",
-                                  year: "numeric",
-                                })
+                                emp["Date of Joining"],
+                              ).toLocaleDateString("en-IN", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              })
                               : "—"}
                           </p>
                         </div>
