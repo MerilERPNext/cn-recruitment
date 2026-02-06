@@ -1001,7 +1001,7 @@ export default function DesktopDashboard() {
       <ExpenseFormModal
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
-        title="Request Shift Change"
+        title="R"
       >
         <ShiftRequestFormModal onClose={handleCloseShiftModal} />
       </ExpenseFormModal>

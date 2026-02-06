@@ -181,7 +181,18 @@ const Requests = () => {
         )}
         {showLeaveRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div
+  className="
+    bg-white
+    rounded-lg
+    w-full
+    mx-0 sm:mx-4
+    h-full sm:h-auto
+    max-h-screen sm:max-h-[90vh]
+    overflow-y-auto
+    sm:max-w-2xl
+  "
+>
               {/* Ensure LeaveRequest is inside its providers */}
               <LeaveRequestRefreshProvider>
                 <RequestLeaveModalProvider>

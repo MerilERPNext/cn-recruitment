@@ -41,13 +41,13 @@ const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({
         {/* Modal header */}
         <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
           <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-          <button
+          {isDesktop && ( <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
             aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </button>)}
         </div>
 
         {/* Modal body - scrollable */}
