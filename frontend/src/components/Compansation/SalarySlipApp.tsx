@@ -109,7 +109,7 @@ const SalarySlipApp: React.FC = () => {
           />
         </header>
 
-        <main className="p-4 z-100 flex-grow overflow-y-auto">
+        <main className="p-2 z-100 flex-grow overflow-y-auto">
           <Outlet />
         </main>
 

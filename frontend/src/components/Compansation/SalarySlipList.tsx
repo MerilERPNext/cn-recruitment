@@ -192,17 +192,19 @@ const SalarySlipsList = () => {
   }, [targetEmployeeId, selectedPeriod]);
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              <Typography variant="h4">Salary Slip</Typography>
-              <Typography variant="bodySmall" color="body2">
-                View and download your salary slips here.
-              </Typography>
-            </div>
-            <div className="flex flex-row md:flex-row md:items-center md:gap-4">
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop && (
+              <div>
+                <Typography variant="h4">Salary Slip</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  View and download your salary slips here.
+                </Typography>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
               <button
                 onClick={() => setMaskSalary((prev) => !prev)}
                 className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm"
@@ -224,70 +226,69 @@ const SalarySlipsList = () => {
                   </>
                 )}
               </button>
-              <div className="">
-                <CustomDropdown
-                  value={selectedPeriod}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setSelectedPeriod(e.target.value)
-                  }
-                  options={
-                    payrollPeriods?.map((p) => ({
-                      value: p.name,
-                      label: p.name,
-                    })) || []
-                  }
-                />
-              </div>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
             </div>
           </div>
         </div>
-        <div className="px-4">
-          <CardTable
-            titles={[
-              "Employee",
-              "Start Date",
-              "End Date",
-              "Gross Pay",
-              "Net Pay",
-              "Actions",
+      </div>
+
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable
+          titles={[
+            "Employee",
+            "Start Date",
+            "End Date",
+            "Gross Pay",
+            "Net Pay",
+            "Actions",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <FrappeListView
+            key={filtersKey}
+            doctype="Salary Slip"
+            ItemComponent={(props) => (
+              <SalarySlipItem
+                {...props}
+                maskSalary={maskSalary}
+                onDownloadType1={handleDownloadType1}
+                onDownloadType2={handleDownloadType2}
+                onDownloadType3={handleDownloadType3}
+                onDownloadType4={handleDownloadType4}
+                onViewPDF={handleGoToSalarySlip}
+                isDownloading={isDownloading}
+              />
+            )}
+            isSearch={false}
+            pageSize={10}
+            defaultFields={[
+              "name",
+              "employee",
+              "employee_name",
+              "start_date",
+              "end_date",
+              "gross_pay",
+              "net_pay",
+              "status",
+              "posting_date",
             ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
-            <FrappeListView
-              key={filtersKey}
-              doctype="Salary Slip"
-              ItemComponent={(props) => (
-                <SalarySlipItem
-                  {...props}
-                  maskSalary={maskSalary}
-                  onDownloadType1={handleDownloadType1}
-                  onDownloadType2={handleDownloadType2}
-                  onDownloadType3={handleDownloadType3}
-                  onDownloadType4={handleDownloadType4}
-                  onViewPDF={handleGoToSalarySlip}
-                  isDownloading={isDownloading}
-                />
-              )}
-              isSearch={false}
-              pageSize={10}
-              defaultFields={[
-                "name",
-                "employee",
-                "employee_name",
-                "start_date",
-                "end_date",
-                "gross_pay",
-                "net_pay",
-                "status",
-                "posting_date",
-              ]}
-              searchFields={["employee", "status", "posting_date"]}
-              infiniteScroll={true}
-              isFilter={false}
-              defaultFilters={filter as any}
-            />
-          </CardTable>
-        </div>
+            searchFields={["employee", "status", "posting_date"]}
+            infiniteScroll={true}
+            isFilter={false}
+            defaultFilters={filter as any}
+          />
+        </CardTable>
       </div>
 
       {/* PDF Modal */}
