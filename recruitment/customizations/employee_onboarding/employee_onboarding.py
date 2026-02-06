@@ -1,7 +1,20 @@
 import requests
 import frappe
 from frappe.model.mapper import get_mapped_doc
+from frappe import _
 import json
+
+
+def validate_employee_onboarding(doc, method):
+	"""
+	Validate Employee Onboarding document.
+	- custom_previously_employed is mandatory only for Professional form
+	"""
+	# Check if form type is Professional
+	if doc.get("custom_form_type") == "Professional":
+		# Make custom_previously_employed mandatory
+		if not doc.get("custom_previously_employed"):
+			frappe.throw(_("Previously Employed is mandatory for Professional form"))
 
 @frappe.whitelist()
 def make_employee(source_name, target_doc=None):

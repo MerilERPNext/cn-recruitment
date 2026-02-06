@@ -86,6 +86,11 @@ frappe.ready(function () {
                     if (d.department) {
                         frappe.web_form.doc.department = d.department;
                     }
+
+                    // ITS ID from Initiate Onboarding → set_value for editable field
+                    if (d.its_id) {
+                        frappe.web_form.set_value("custom_its_id", d.its_id);
+                    }
                 }, 500);
             }
         });
@@ -100,6 +105,28 @@ frappe.ready(function () {
             "reqd",
             v === "Experienced" ? 1 : 0
         );
+    });
+
+    /**********************************************************
+     * CURRENT ADDRESS = PERMANENT ADDRESS (CHECKBOX)
+     **********************************************************/
+    frappe.web_form.on("custom_current_permanent_address_same", (f, v) => {
+        if (v === 1 || v === "1" || v === true) {
+            // Copy current address fields to permanent address fields
+            const flat_no = frappe.web_form.get_value("custom_res_flat_no");
+            const building = frappe.web_form.get_value("custom_building_name");
+            const street = frappe.web_form.get_value("custom_res_street");
+            const area = frappe.web_form.get_value("custom_current_area");
+            const pincode = frappe.web_form.get_value("custom_current_pincode");
+            const city = frappe.web_form.get_value("custom_res_city");
+
+            frappe.web_form.set_value("custom_permanant_flat_no", flat_no);
+            frappe.web_form.set_value("custom_permanant_building_name", building);
+            frappe.web_form.set_value("custom_perm_street", street);
+            frappe.web_form.set_value("custom_perm_area", area);
+            frappe.web_form.set_value("custom_permanent_pincoad", pincode);
+            frappe.web_form.set_value("custom_perm_city", city);
+        }
     });
 
     /**********************************************************
@@ -188,6 +215,75 @@ frappe.ready(function () {
     });
 
     /**********************************************************
+     * BANK ACCOUNT CONFIRMATION VALIDATION
+     **********************************************************/
+    // Disable paste on confirm bank account field
+    (function() {
+        function disablePasteOnConfirmField() {
+            const confirmField = document.querySelector('[data-fieldname="custom_confirm_bank_account_no"] input');
+            if (confirmField) {
+                confirmField.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    frappe.msgprint({
+                        title: __('Paste Disabled'),
+                        indicator: 'orange',
+                        message: __('Please type the bank account number manually for confirmation.')
+                    });
+                    return false;
+                });
+                return true;
+            }
+            return false;
+        }
+
+        // Try multiple times as field may load late
+        let attempts = 0;
+        const interval = setInterval(() => {
+            if (disablePasteOnConfirmField() || attempts > 20) {
+                clearInterval(interval);
+            }
+            attempts++;
+        }, 300);
+    })();
+
+    // Show red message when bank account is entered
+    frappe.web_form.on("custom_bank_account_no", () => {
+        const bankAccount = frappe.web_form.get_value("custom_bank_account_no");
+        const $confirmWrapper = $('[data-fieldname="custom_confirm_bank_account_no"]');
+
+        // Remove existing message
+        $confirmWrapper.find('.confirm-account-message').remove();
+
+        if (bankAccount && bankAccount.length > 0) {
+            // Add red message below the confirm field
+            const $message = $('<div class="confirm-account-message" style="color: red; font-size: 12px; margin-top: 5px; font-weight: bold;">Please confirm the account number by typing it again</div>');
+            $confirmWrapper.append($message);
+        }
+    });
+
+    // Validate confirm account number matches
+    frappe.web_form.on("custom_confirm_bank_account_no", () => {
+        const bankAccount = frappe.web_form.get_value("custom_bank_account_no");
+        const confirmAccount = frappe.web_form.get_value("custom_confirm_bank_account_no");
+        const $confirmWrapper = $('[data-fieldname="custom_confirm_bank_account_no"]');
+
+        // Remove existing validation message
+        $confirmWrapper.find('.account-match-message').remove();
+
+        if (bankAccount && confirmAccount) {
+            if (bankAccount === confirmAccount) {
+                // Show green success message
+                const $message = $('<div class="account-match-message" style="color: green; font-size: 12px; margin-top: 5px; font-weight: bold;">✓ Account numbers match</div>');
+                $confirmWrapper.append($message);
+            } else {
+                // Show red error message
+                const $message = $('<div class="account-match-message" style="color: red; font-size: 12px; margin-top: 5px; font-weight: bold;">✗ Account numbers do not match</div>');
+                $confirmWrapper.append($message);
+            }
+        }
+    });
+
+    /**********************************************************
      * EXTRA VALIDATIONS (RUNS ON SUBMIT)
      **********************************************************/
     frappe.web_form.validate = function () {
@@ -199,6 +295,14 @@ frappe.ready(function () {
             !/^[0-9]{9,18}$/.test(v.custom_bank_account_no)) {
             frappe.msgprint("Bank account must be 9–18 digits");
             return false;
+        }
+
+        // Bank Account Confirmation Match
+        if (v.custom_bank_account_no && v.custom_confirm_bank_account_no) {
+            if (v.custom_bank_account_no !== v.custom_confirm_bank_account_no) {
+                frappe.msgprint("Bank account number and confirm bank account number do not match");
+                return false;
+            }
         }
 
         // IFSC
