@@ -11,12 +11,11 @@ type TabName = "Flow Requests" | "Confirmation" | "Separation";
 const tabRoutes: Record<TabName, string> = {
   "Flow Requests": "/webapp/flow-app/flow-requests",
   Confirmation: "/webapp/flow-app/confirmation",
-  Separation: "/webapp/flow-app/separation"
+  Separation: "/webapp/flow-app/separation",
 };
 
 type SeprateRouteName = "Initiate Flow" | "Flow Request" | "SeparationWorkflow";
 const NoDesktopLayoutRoute: string[] = [];
-
 
 const FlowApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -28,7 +27,7 @@ const FlowApp: React.FC = () => {
   }));
   const location = useLocation();
   const [seprateRoute, setSeprateRoute] = useState<SeprateRouteName | null>(
-    null
+    null,
   );
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
@@ -44,14 +43,13 @@ const FlowApp: React.FC = () => {
     navigate("/webapp/flow-app/initiate-flow");
   };
 
-
   const handleInitiateModel = () => {
     setShowInitiateModel(true);
   };
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
-      location.pathname.startsWith(tabRoutes[tab])
+      location.pathname.startsWith(tabRoutes[tab]),
     );
 
     if (matchedTab) {
@@ -60,7 +58,9 @@ const FlowApp: React.FC = () => {
 
     if (location.pathname === "/webapp/flow-app/initiate-flow") {
       setSeprateRoute("Initiate Flow");
-    } else if (location.pathname.startsWith("/webapp/flow-app/separation-workflow/")) {
+    } else if (
+      location.pathname.startsWith("/webapp/flow-app/separation-workflow/")
+    ) {
       setSeprateRoute("SeparationWorkflow");
     } else if (location.pathname.startsWith("/webapp/flow-app/flow-request/")) {
       setSeprateRoute("Flow Request");
@@ -91,7 +91,7 @@ const FlowApp: React.FC = () => {
           </>
         )}
       </header>
-      <main className="z-10 flex-grow">
+      <main className="z-10 flex-grow p-2">
         <Outlet />
       </main>
 
@@ -125,16 +125,10 @@ const FlowApp: React.FC = () => {
 
   const desktopLayout = !NoDesktopLayoutRoute.includes(seprateRoute || "") ? (
     <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
-      <div className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto relative">
-          <Outlet />
-        </div>
-        {showInitiateModel && (
-          <InitiateFlow
-            handleCloseModel={() => setShowInitiateModel(false)}
-          />
-        )}
-      </div>
+      <Outlet />
+      {showInitiateModel && (
+        <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
+      )}
     </DesktopLayoutWrapper>
   ) : (
     <Outlet />

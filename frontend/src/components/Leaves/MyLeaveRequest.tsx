@@ -12,6 +12,7 @@ import {
 } from "../../hooks/useLeaves";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
 import { Typography } from "../shared/atoms/Typography";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const MyLeaveRequests = ({
   pageSize = 10,
@@ -22,6 +23,7 @@ const MyLeaveRequests = ({
   showLeaveRequest?: boolean;
 }) => {
   const replaceLeave = useReplaceLeave();
+  const { isDesktop } = useScreenSize();
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
@@ -104,88 +106,88 @@ const MyLeaveRequests = ({
   );
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">My Leave Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your leave requests
             </Typography>
           </div>
         </div>
+      )}
 
-        <div className="px-4">
-          {isEmployeeLoading ? (
-            <CardSkeleton />
-          ) : (
-            <CardTable
-              titles={[
-                "Leave Type",
-                "From Date",
-                "To Date",
-                "Description",
-                "Leave Days",
-                "Status",
-                "ACTIONS",
-              ]}
-              columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 1fr"]}
-            >
-              {currentEmployee?.name && (
-                <DataListView
-                  queryKey="leave-requests"
-                  customAPI={{
-                    method:
-                      "cn_leave_shift_managment.api.get_open_approval_todos",
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        {isEmployeeLoading ? (
+          <CardSkeleton />
+        ) : (
+          <CardTable
+            titles={[
+              "Leave Type",
+              "From Date",
+              "To Date",
+              "Description",
+              "Leave Days",
+              "Status",
+              "ACTIONS",
+            ]}
+            columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 1fr"]}
+          >
+            {currentEmployee?.name && (
+              <DataListView
+                queryKey="leave-requests"
+                customAPI={{
+                  method:
+                    "cn_leave_shift_managment.api.get_open_approval_todos",
 
-                    params: {
-                      doctype: "Leave Application",
-                      employee: currentEmployee?.name,
-                    },
-                  }}
-                  ItemComponent={(props: { item: MyLeaveRequestType }) => (
-                    <EmpLeaveRequestCard
-                      data={props.item}
-                      buttonStatus={buttonStatus}
-                      onOpenReplaceModal={() =>
-                        handleOpenReplaceModal(props.item)
-                      }
-                      onRevokeApproved={() =>
-                        revokeLeave(props.item.reference_document?.name ?? "")
-                      }
-                    />
-                  )}
-                  isSearch={true}
-                  isFilter={true}
-                  filterFields={[
-                    {
-                      fieldname: "status",
-                      label: "Status",
-                      fieldtype: "Select",
-                      options: [
-                        { label: "Pending", value: "Open" },
-                        { label: "Approved", value: "Approved" },
-                        { label: "Rejected", value: "Rejected" },
-                      ],
-                    },
-                  ]}
-                  defaultFilters={{
-                    status: "Open",
-                  }}
-                  SkeletonComponent={CardSkeleton}
-                  onRefetchComplete={() => setRefetchAttendance(false)}
-                  refetchTrigger={refetchAttendance}
-                  pageSize={pageSize}
-                  showRefreshButton={false}
-                  orderBy="modified desc"
-                  showPagination={showPagination}
-                  infiniteScroll={true}
-                  loadMorePagination={false}
-                />
-              )}
-            </CardTable>
-          )}
-        </div>
+                  params: {
+                    doctype: "Leave Application",
+                    employee: currentEmployee?.name,
+                  },
+                }}
+                ItemComponent={(props: { item: MyLeaveRequestType }) => (
+                  <EmpLeaveRequestCard
+                    data={props.item}
+                    buttonStatus={buttonStatus}
+                    onOpenReplaceModal={() =>
+                      handleOpenReplaceModal(props.item)
+                    }
+                    onRevokeApproved={() =>
+                      revokeLeave(props.item.reference_document?.name ?? "")
+                    }
+                  />
+                )}
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      { label: "Pending", value: "Open" },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                    ],
+                  },
+                ]}
+                defaultFilters={{
+                  status: "Open",
+                }}
+                SkeletonComponent={CardSkeleton}
+                onRefetchComplete={() => setRefetchAttendance(false)}
+                refetchTrigger={refetchAttendance}
+                pageSize={pageSize}
+                showRefreshButton={false}
+                orderBy="modified desc"
+                showPagination={showPagination}
+                infiniteScroll={true}
+                loadMorePagination={false}
+              />
+            )}
+          </CardTable>
+        )}
       </div>
       {replaceModalData.isOpen && (
         <ReplaceLeaveModal
