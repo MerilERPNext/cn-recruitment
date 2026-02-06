@@ -139,9 +139,9 @@ export default function SalaryAssignmentList() {
 
       {!isLoading && !isError && (
         <div className="flex-1 overflow-y-auto md:px-4 md:pb-20">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            {list.map((item) =>
-              isDesktop ? (
+          {isDesktop ? (
+            <CardTable titles={titles} columnWidths={columnWidths}>
+              {list.map((item) => (
                 <div
                   key={item.name}
                   className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -202,75 +202,77 @@ export default function SalaryAssignmentList() {
                     </button>
                   </div>
                 </div>
-              ) : null,
-            )}
+              ))}
 
-            {!list.length && (
-              <div className="my-empty-state-card py-10 text-center text-gray-500">
-                No records found.
-              </div>
-            )}
-          </CardTable>
-        </div>
-      )}
-      {/* ================= MOBILE PAY PACKAGE LIST ================= */}
-      {!isLoading && !isError && !isDesktop && (
-        <div className="space-y-1 mt-2">
-          {list.map((item) => (
-            <div
-              key={item.name}
-              onClick={() => setSelected(item)}
-              className="border border-indigo-200 rounded-xl p-3 bg-white
-                   flex flex-col items-start justify-between gap-3
-                   active:bg-indigo-50 cursor-pointer"
-            >
-              {/* LEFT */}
-              <div className="flex w-full items-start justify-between gap-3">
-                {/* Icon */}
+              {!list.length && (
+                <div className="my-empty-state-card py-10 text-center text-gray-500">
+                  No records found.
+                </div>
+              )}
+            </CardTable>
+          ) : (
+            <div className="space-y-1 mt-2">
+              {list.map((item) => (
+                <div
+                  key={item.name}
+                  onClick={() => setSelected(item)}
+                  className="border border-indigo-200 rounded-xl p-3 bg-white
+                               flex flex-col items-start justify-between gap-3
+                               active:bg-indigo-50 cursor-pointer"
+                >
+                  {/* LEFT */}
+                  <div className="flex w-full items-start justify-between gap-3">
+                    {/* Icon */}
 
-                {/* Text */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <span className="text-success text-lg font-semibold">
-                      {" "}
-                      <Banknote />
+                    {/* Text */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <span className="text-success text-lg font-semibold">
+                          {" "}
+                          <Banknote />
+                        </span>
+                      </div>
+
+                      <p className="font-semibold text-sm text-gray-900">
+                        Pay Package
+                      </p>
+                    </div>
+                    <span className="text-gray-400 text-lg leading-none">
+                      ›
                     </span>
                   </div>
 
-                  <p className="font-semibold text-sm text-gray-900">
-                    Pay Package
-                  </p>
-                </div>
-                <span className="text-gray-400 text-lg leading-none">›</span>
-              </div>
+                  {/* RIGHT */}
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-gray-400 uppercase">
+                        Fixed Gross (Annual)
+                      </p>
 
-              {/* RIGHT */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[11px] text-gray-400 uppercase">
-                    Fixed Gross (Annual)
-                  </p>
-
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    {renderAmount(item.fixed_gross_annual)}
-                    <span className="text-gray-400 text-xs">👁</span>
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        {renderAmount(item.fixed_gross_annual)}
+                        <span className="text-gray-400 text-xs">👁</span>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <p className="text-[11px] text-gray-400 uppercase">
+                        Effective From
+                      </p>
+                      <p className="text-xs font-medium text-gray-700">
+                        {item.from_date}
+                      </p>
+                    </div>
                   </div>
+                  <div></div>
                 </div>
-                <div className="text-right flex flex-col items-end gap-1">
-                  <p className="text-[11px] text-gray-400 uppercase">
-                    Effective From
-                  </p>
-                  <p className="text-xs font-medium text-gray-700">
-                    {item.from_date}
-                  </p>
-                </div>
-              </div>
-              <div></div>
-            </div>
-          ))}
+              ))}
 
-          {!list.length && (
-            <p className="text-center text-gray-500 py-10">No records found</p>
+              {!list.length && (
+                <p className="text-center text-gray-500 py-10">
+                  No records found
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

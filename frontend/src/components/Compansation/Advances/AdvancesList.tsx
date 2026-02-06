@@ -34,6 +34,29 @@ const AdvancesList: React.FC = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: advancesData, refetch } = useEmployeeAdvances(employeeId || "");
 
+  type AmountRowProps = {
+    label: string;
+    value: number;
+    maskAmounts: boolean;
+  };
+
+  const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
+    return (
+      <div className="mt-0 pt-3">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span className="text-gray-600 text-xs uppercase tracking-wide">
+            {label}
+          </span>
+          {maskAmounts ? (
+            <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+          ) : (
+            <span className="font-medium">{formatCurrency(value)}</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (refetchAttendance) {
       refetch(); // trigger a fresh fetch
@@ -171,53 +194,20 @@ const AdvancesList: React.FC = () => {
                 {advance.name}
               </h3>
             </div>
-            <div className=" text-start relative group inline-block overflow-visible">
-              <StatusBadge status={advance.advanceStatus} />
+            <StatusBadge status={advance.advanceStatus} />
+          </div>
+          <AmountRow
+            label="Total Amount"
+            value={advance.amount}
+            maskAmounts={maskAmounts}
+          />
 
-              {/* Tooltip */}
-              <div
-                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-               opacity-0 invisible group-hover:opacity-100 group-hover:visible
-               transition-all duration-150 ease-out pointer-events-none
-               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-               shadow-lg z-50"
-              >
-                {advance.employee_name}
-              </div>
-            </div>
-          </div>
-          <div className="mt-0 pt-3">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span className="text-gray-600 text-xs uppercase tracking-wide">
-                Total Amount
-              </span>
-              {maskAmounts ? (
-                <span className="blur-sm select-none text-gray-400">
-                  ₹XX,XXX
-                </span>
-              ) : (
-                <span className="font-medium">
-                  {formatCurrency(advance.amount)}
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="mt-0 pt-3">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span className="text-gray-600 text-xs uppercase tracking-wide">
-                Deduction Amount
-              </span>
-              {maskAmounts ? (
-                <span className="blur-sm select-none text-gray-400">
-                  ₹XX,XXX
-                </span>
-              ) : (
-                <span className="font-medium">
-                  {formatCurrency(advance.numberOfDeductions)}
-                </span>
-              )}
-            </div>
-          </div>
+          <AmountRow
+            label="Deduction Amount"
+            value={advance.numberOfDeductions}
+            maskAmounts={maskAmounts}
+          />
+
           <div className="mt-0 pt-3">
             <div className="flex justify-between text-sm text-gray-600">
               <span>

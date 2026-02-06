@@ -125,19 +125,6 @@ export default function ExtraPayment() {
     return true;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Paid":
-        return "bg-success/20 text-success";
-      case "Pending":
-        return "bg-amber-100 text-amber-700";
-      case "Overdue":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
   const titles = [
     "Recipient",
     "Document ID",
@@ -271,13 +258,7 @@ export default function ExtraPayment() {
             >
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold">{payment.recipient}</h3>
-                <span
-                  className={`px-3 py-1 text-xs rounded-lg ${getStatusColor(
-                    payment.status,
-                  )}`}
-                >
-                  {payment.status}
-                </span>
+                <StatusBadge status={payment.status} />
               </div>
               <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
               <p className="text-sm mb-1">Date: {payment.date}</p>
