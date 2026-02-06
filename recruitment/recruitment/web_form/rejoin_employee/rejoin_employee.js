@@ -16,6 +16,7 @@ frappe.ready(function () {
 	// Get employee_id from URL
 	var params = new URLSearchParams(window.location.search);
 	var employee_id = params.get("employee_id");
+	
 
 	if (employee_id) {
 		frappe.call({

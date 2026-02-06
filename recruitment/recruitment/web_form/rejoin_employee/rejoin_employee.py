@@ -36,6 +36,8 @@ def get_employee_data(employee_id):
 
 @frappe.whitelist(allow_guest=True)
 def update_employee_data(employee_id, form_data):
+
+	
 	"""Update employee record from the rejoinee web form submission."""
 	import json
 
