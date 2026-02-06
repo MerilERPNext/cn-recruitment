@@ -93,12 +93,13 @@ const HelpDeskApp: React.FC = () => {
 
       {/* Fixed bottom buttons - hidden when drawer is open */}
       {!isDrawerOpen && (
-        <div className="fixed bottom-4 right-4 flex gap-3 z-50">
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-end gap-3 p-4 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
           <Button
             variant="outline"
             bgColor="primary"
             size="lg"
             onClick={handleExploreFAQs}
+            className="pointer-events-auto"
           >
             Explore FAQ's
           </Button>
@@ -107,6 +108,7 @@ const HelpDeskApp: React.FC = () => {
             bgColor="primary"
             size="lg"
             onClick={handleRequestIssue}
+            className="pointer-events-auto"
           >
             <Plus className="w-4 h-4" />
             Request Issue
@@ -133,12 +135,13 @@ const HelpDeskApp: React.FC = () => {
 
         {/* Fixed bottom buttons - hidden when drawer is open */}
         {!isDrawerOpen && (
-          <div className="fixed bottom-4 right-4 flex gap-3 z-50">
+          <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-end gap-3 p-4 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
             <Button
               variant="outline"
               bgColor="primary"
               size="lg"
               onClick={handleExploreFAQs}
+              className="pointer-events-auto"
             >
               Explore FAQ's
             </Button>
@@ -147,6 +150,7 @@ const HelpDeskApp: React.FC = () => {
               bgColor="primary"
               size="lg"
               onClick={handleRequestIssue}
+              className="pointer-events-auto"
             >
               <Plus className="w-4 h-4" />
               Request Issue
