@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import {
-  Bell,
   CheckCircle,
   AlertCircle,
   XCircle,
@@ -9,7 +8,7 @@ import {
   BanknoteX,
   RotateCcw,
 } from "lucide-react";
-import { useGetUserNotices, useUnreadNoticesCount } from "../hooks/useNotices";
+import { useGetUserNotices } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useCompanyLogo } from "../hooks/useCompanyLogo";
 import {
@@ -60,6 +59,7 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
 import SideDrawer from "./shared/SideDrawer";
 import MobileProfileDrawer from "./EmployeeProfile/MobileProfileDrawer";
+import NotificationBell from "./Notification/NotificationBell";
 
 const statusStyles = {
   unpaid: {
@@ -149,7 +149,6 @@ const MobileDashboard: React.FC = () => {
 
     return () => clearInterval(timer);
   }, []);
-  const { data: unreadCount = 0 } = useUnreadNoticesCount();
   const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
 
   const { data: currentUser } = useCurrentUser();
@@ -328,9 +327,6 @@ const MobileDashboard: React.FC = () => {
     }
   };
 
-  const handleNotificationClick = () => {
-    navigate("/webapp/notification-log");
-  };
 
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
@@ -443,18 +439,12 @@ const MobileDashboard: React.FC = () => {
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button
-              variant="subtle"
-              onClick={handleNotificationClick}
-              className="relative p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+          <button
+              onClick={() => navigate("/webapp/notification-log")}
+              className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
             >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </div>
-              )}
-            </Button>
+              <NotificationBell />
+            </button>
 
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
