@@ -4,6 +4,7 @@ import {
   TicketDetail,
   useSendEmailReply,
   useCloseTicket,
+  useCloseResolvedTicket,
   useRejectResolution,
   useUserLookup,
   useEmployeeByUserEmail,
@@ -91,6 +92,7 @@ interface ResolutionModalProps {
   isLoading: boolean;
   isRaiser: boolean;
   isEditing?: boolean;
+  isResolving?: boolean;
   existingResolution?: string;
 }
 
@@ -100,6 +102,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
   onSubmit,
   isLoading,
   isEditing,
+  isResolving,
   existingResolution,
 }) => {
   const [resolution, setResolution] = useState(existingResolution || "");
@@ -125,7 +128,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            {isEditing ? "Edit Resolution" : "Close Ticket"}
+            {isResolving ? "Resolve Ticket" : isEditing ? "Edit Resolution" : "Close Ticket"}
           </h3>
           <button
             onClick={onClose}
@@ -147,7 +150,9 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
           />
           <p className="text-xs text-gray-500 mt-2">
-            {isEditing
+            {isResolving
+              ? "This will save the resolution and set the ticket status to Resolved."
+              : isEditing
               ? "This will save the resolution and set status to Resolved."
               : "This will close the ticket and save the resolution details."}
           </p>
@@ -170,6 +175,11 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Processing...
+              </>
+            ) : isResolving ? (
+              <>
+                <CheckCircle className="w-4 h-4" />
+                Resolve Ticket
               </>
             ) : isEditing ? (
               <>
@@ -290,18 +300,20 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
   const [isEditingResolution, setIsEditingResolution] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
 
   // Mutations
   const sendEmailMutation = useSendEmailReply();
   const closeTicketMutation = useCloseTicket();
+  const closeResolvedMutation = useCloseResolvedTicket();
   const rejectResolutionMutation = useRejectResolution();
 
   // User lookup for displaying names instead of emails
   const { data: userLookup } = useUserLookup();
 
-  // Check ticket status
-  const isTicketClosed = ticket.status === "Closed" || ticket.status === "Resolved";
+  // Check ticket status - only "Closed" is truly closed; "Resolved" requires user action
+  const isTicketClosed = ticket.status === "Closed";
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -454,6 +466,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         return "bg-green-100 text-green-700";
       case "Closed":
         return "bg-app text-gray-700";
+      case "Reopened":
+        return "bg-yellow-100 text-yellow-700";
       default:
         return "bg-app text-gray-700";
     }
@@ -549,6 +563,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
+  // Handle resolve ticket button click
+  const handleResolveButtonClick = () => {
+    setIsResolvingTicket(true);
+    setIsResolutionModalOpen(true);
+  };
+
   // Handle close ticket with resolution from modal
   const handleCloseTicket = async (resolution: string) => {
     try {
@@ -576,6 +596,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
       toast.success("Resolution saved successfully");
       setIsResolutionModalOpen(false);
       setIsEditingResolution(false);
+      setIsResolvingTicket(false);
     } catch {
       toast.error("Failed to save resolution");
     }
@@ -595,8 +616,18 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
   };
 
+  // Handle accept closure (for Resolved tickets)
+  const handleAcceptClosure = async () => {
+    try {
+      await closeResolvedMutation.mutateAsync({ ticketId: ticket.name });
+      toast.success("Ticket closed successfully");
+    } catch {
+      toast.error("Failed to close ticket");
+    }
+  };
+
   const isSending = sendEmailMutation.isPending;
-  const isClosing = closeTicketMutation.isPending;
+  const isClosing = closeTicketMutation.isPending || closeResolvedMutation.isPending;
 
   // Simple Avatar component - avatars should remain circular
   const Avatar = ({ sender, isCurrentUser }: { sender: SimpleChatMessage["sender"]; isCurrentUser: boolean }) => (
@@ -786,16 +817,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 <p className="text-sm text-gray-500">No resolution details provided</p>
               </div>
             </div>
-            <button
-              onClick={() => {
-                setIsEditingResolution(true);
-                setIsResolutionModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <Edit3 className="w-4 h-4" />
-              Add Resolution Details
-            </button>
           </div>
         </div>
       );
@@ -825,16 +846,18 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setIsEditingResolution(true);
-                  setIsResolutionModalOpen(true);
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              >
-                <Edit3 className="w-4 h-4" />
-                Edit
-              </button>
+              {ticket.status !== "Closed" && (
+                <button
+                  onClick={() => {
+                    setIsEditingResolution(true);
+                    setIsResolutionModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  Edit
+                </button>
+              )}
               {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail && (
                 <button
                   onClick={() => setIsRejectModalOpen(true)}
@@ -891,20 +914,58 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Close Ticket Button - only for user's own tickets */}
-          {!isTicketClosed && (
-            <button
-              onClick={handleCloseButtonClick}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {isClosing ? "Closing..." : "Close Ticket"}
-            </button>
-          )}
-
+          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
+            <>
+              {/* Accept Closure - closes the ticket */}
+              <button
+                onClick={handleAcceptClosure}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isClosing ? "Closing..." : "Accept Closure"}
+              </button>
+              {/* Reject Resolution - reopens for more work */}
+              <button
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+            </>
+          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
+            <>
+              <button
+                onClick={handleResolveButtonClick}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Resolve
+              </button>
+              <button
+                onClick={handleCloseButtonClick}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isClosing ? "Closing..." : "Close Ticket"}
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
+
+      {/* Info banner when agent has requested closure */}
+      {ticket.status === "Resolved" && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center gap-2">
+          <span className="text-amber-600 text-sm font-medium">
+            The agent has requested closure for this ticket. Please review and accept or reject.
+          </span>
+        </div>
+      )}
 
       {/* Tabs - Chat and Resolution */}
       <div className="bg-white border-b border-gray-200 px-6">
@@ -1010,11 +1071,13 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         onClose={() => {
           setIsResolutionModalOpen(false);
           setIsEditingResolution(false);
+          setIsResolvingTicket(false);
         }}
-        onSubmit={isEditingResolution ? handleSaveResolution : handleCloseTicket}
+        onSubmit={isEditingResolution || isResolvingTicket ? handleSaveResolution : handleCloseTicket}
         isLoading={isClosing}
         isRaiser={true}
         isEditing={isEditingResolution}
+        isResolving={isResolvingTicket}
         existingResolution={isEditingResolution ? ticket.resolution_details : undefined}
       />
 

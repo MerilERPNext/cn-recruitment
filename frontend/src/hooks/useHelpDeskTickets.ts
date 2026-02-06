@@ -707,21 +707,45 @@ export const useSendEmailReply = () => {
       await queryClient.refetchQueries({
         queryKey: ["hd-ticket-detail", variables.ticketId],
       });
+      // Invalidate list and stats so status is fresh when navigating back
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
     },
   });
 };
 
 /**
  * Reject resolution on a ticket (for ticket raiser)
- * Calls the backend reject_resolution API which sets status back to "Replied"
+ * Calls the backend reject_resolution API which sets status back to "Reopened"
  */
 export const useRejectResolution = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ ticketId, rejectionReason }: { ticketId: string; rejectionReason: string }) => {
       return await FrappeAPI.callMethod(
-        "helpdesk.helpdesk.doctype.hd_ticket.ticket_closure_workflow.reject_resolution",
+        "pw_helpdesk.customizations.ticket_closure_workflow.reject_resolution",
         { ticket_id: ticketId, rejection_reason: rejectionReason }
+      );
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+    },
+  });
+};
+
+/**
+ * Accept closure on a resolved ticket (for ticket raiser)
+ * Calls the backend close_resolved_ticket API which sets status to "Closed"
+ */
+export const useCloseResolvedTicket = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ticketId }: { ticketId: string }) => {
+      return await FrappeAPI.callMethod(
+        "pw_helpdesk.customizations.ticket_closure_workflow.close_resolved_ticket",
+        { ticket_id: ticketId }
       );
     },
     onSuccess: async (_data, variables) => {

@@ -37,7 +37,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
   const [filters, setFilters] = useState<TicketFilters>({});
   const [sortField, setSortField] = useState("modified");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [selectedTickets, setSelectedTickets] = useState<Set<string>>(new Set());
   const [pageLength, setPageLength] = useState(20);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
 
@@ -130,26 +129,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
       setSortDirection("desc");
     }
   }, [sortField]);
-
-  const handleSelectTicket = useCallback((ticketId: string) => {
-    setSelectedTickets((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(ticketId)) {
-        newSet.delete(ticketId);
-      } else {
-        newSet.add(ticketId);
-      }
-      return newSet;
-    });
-  }, []);
-
-  const handleSelectAll = useCallback(() => {
-    if (selectedTickets.size === tickets.length) {
-      setSelectedTickets(new Set());
-    } else {
-      setSelectedTickets(new Set(tickets.map((t) => t.name)));
-    }
-  }, [selectedTickets.size, tickets]);
 
   const handleReply = useCallback((ticket: HDTicket) => {
     // Open ticket in drawer
@@ -264,9 +243,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
           <TicketTable
             tickets={tickets}
             isLoading={ticketsLoading}
-            selectedTickets={selectedTickets}
-            onSelectTicket={handleSelectTicket}
-            onSelectAll={handleSelectAll}
             onReply={handleReply}
             onClose={handleClose}
             onRowClick={handleReply}
