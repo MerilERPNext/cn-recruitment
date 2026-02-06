@@ -22,11 +22,13 @@ const CategorySection = ({
     const medicalClaim = sectionCategories.some(
         (cat) => Boolean(cat.custom_select_type)
       );
+      console.log("Rendering CategorySection with categories:",  activeSection,);
   return (
     <>
       {sectionCategories.map((cat: any) => (
         <div key={cat.category_name} className="mt-6">
           <CategoryDeclarationSelectable
+          activeSection={activeSection}
             categoryName={cat.category_name}
             max_amount={cat.max_amount}
             lockingDate={lockingDate}

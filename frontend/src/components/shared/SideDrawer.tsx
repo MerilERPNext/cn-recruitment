@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import HeaderBar from "../HeaderBar";
 
 export type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
 
@@ -9,6 +10,8 @@ interface SideDrawerProps {
     size?: DrawerSize;
     title?: string;
     children: React.ReactNode;
+    showBackButton?: boolean;
+    className?: string;
 }
 
 const sizeClasses: Record<DrawerSize, string> = {
@@ -27,6 +30,8 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
     size = "md",
     title,
     children,
+    className,
+    showBackButton = false,
 }) => {
     const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -83,21 +88,23 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
           ${sizeClasses[size]}
         `}
             >
-                {/* Header */}
-                {(title || onClose) && (
+                {showBackButton ? <HeaderBar title={title} onBack={onClose} /> :
                     <div className="flex items-center justify-between px-4 py-3 border-b">
-                        <h2 className="text-sm font-semibold">{title}</h2>
-                        <button
+                        <div className="flex items-center justify-center gap-2">
+                            <h2 className="text-sm font-semibold">{title}</h2>
+                        </div>
+                        {!showBackButton && <button
                             onClick={onClose}
                             className="rounded-md p-1 hover:bg-gray-100"
                         >
                             ✕
-                        </button>
+                        </button>}
                     </div>
-                )}
+                }
+
 
                 {/* Content */}
-                <div className="p-4 overflow-y-auto h-full">
+                <div className={"p-4 overflow-y-auto h-full " + className}>
                     {children}
                 </div>
             </div>

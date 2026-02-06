@@ -43,22 +43,22 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
@@ -73,22 +73,25 @@ const TeamExpense = () => {
       const messages: Record<string, { title: string; description: string }> = {
         Draft: {
           title: "No Pending Requests",
-          description: "You have no pending team expense claim requests to review."
+          description:
+            "You have no pending team expense claim requests to review.",
         },
         Approved: {
           title: "No Approved Claims",
-          description: "There are no approved expense claims at this time."
+          description: "There are no approved expense claims at this time.",
         },
         Rejected: {
           title: "No Rejected Claims",
-          description: "There are no rejected expense claims."
-        }
+          description: "There are no rejected expense claims.",
+        },
       };
 
-      return messages[status] || {
-        title: "No Expense Claims",
-        description: "No expense claims match your current filters."
-      };
+      return (
+        messages[status] || {
+          title: "No Expense Claims",
+          description: "No expense claims match your current filters.",
+        }
+      );
     };
 
     const message = getEmptyStateMessage();
@@ -116,62 +119,60 @@ const TeamExpense = () => {
     );
   };
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
-            {isDesktop ? (
-              <Typography variant="h4">Team Expense Claims</Typography>
-            ) : null}
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
+            <Typography variant="h4">Team Expense Claims</Typography>
             <Typography variant="bodySmall" color="body2">
-              Track and manage team expense claim requests
+              Track and manage team expense claim requests{" "}
             </Typography>
           </div>
         </div>
-        <div className="px-4">
-          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-            {currentUser?.name ? (
-              <ApprovalList
-                doctype={"Expense Claim"}
-                refetch={refetchApprovalList}
-                onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                pageSize={10}
-                showPagination={true}
-                infiniteScroll={true}
-                loadMorePagination={false}
-                isSearch={true}
-                isFilter={true}
-                columnWidths={tableColumnWidths}
-                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-                filterFields={[
-                  {
-                    fieldname: "status",
-                    label: "Status",
-                    fieldtype: "Select",
-                    options: [
-                      { label: "Pending", value: "Draft" },
-                      { label: "Approved", value: "Approved" },
-                      { label: "Rejected", value: "Rejected" },
-                    ],
-                  },
-                ]}
-                noRecordsScreen={noRecordsScreen}
-                defaultFilters={{ status: "Draft" }}
-                renderCardContent={(item) => (
-                  <ExpenseApprovalCard
-                    isSelected={item?.isSelected}
-                    onToggleSelect={item?.onToggleSelect}
-                    data={item?.data}
-                    onAction={item?.onAction}
-                    onClick={(request: any) => handleRequestClick(request)}
-                    loadingAction={item?.loadingAction}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                  />
-                )}
-              />
-            ) : null}
-          </CardTable>
-        </div>
+      )}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+          {currentUser?.name ? (
+            <ApprovalList
+              doctype={"Expense Claim"}
+              refetch={refetchApprovalList}
+              onApprovalRefetchComplete={handleApprovalRefetchComplete}
+              pageSize={10}
+              showPagination={true}
+              infiniteScroll={true}
+              loadMorePagination={false}
+              isSearch={true}
+              isFilter={true}
+              columnWidths={tableColumnWidths}
+              onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+              filterFields={[
+                {
+                  fieldname: "status",
+                  label: "Status",
+                  fieldtype: "Select",
+                  options: [
+                    { label: "Pending", value: "Draft" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
+                },
+              ]}
+              noRecordsScreen={noRecordsScreen}
+              defaultFilters={{ status: "Draft" }}
+              renderCardContent={(item) => (
+                <ExpenseApprovalCard
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  onClick={(request: any) => handleRequestClick(request)}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              )}
+            />
+          ) : null}
+        </CardTable>
       </div>
       {requestId && (
         <TeamExpenseDetailView

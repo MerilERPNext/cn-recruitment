@@ -140,7 +140,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
                         Appreciations
                     </h2>
 
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 mb-4">
                         <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                             <span className="text-2xl opacity-40">🏆</span>
                         </div>

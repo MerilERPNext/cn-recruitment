@@ -6,9 +6,12 @@ import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { useCallback, useState } from "react";
 import CardTable from "../shared/CardTable";
 import { ShiftDetailView } from "./ShiftDetailView";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
 
@@ -61,21 +64,47 @@ const AllShiftChangeRequestsList: React.FC = () => {
     "1fr",
   ];
   return (
-    <div className="w-full mx-auto py-4 px-4">
-      <div>
-        <HeaderBar
-          title="Team Shift Requests"
-          className="mb-3"
-          onBack={() => navigate(-1)}
-        />
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-4 py-1 md:py-4">
+            <HeaderBar
+              title="Team Shift Requests"
+              onBack={() => navigate(-1)}
+              className="shadow"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
-            status="Draft"
             doctype={"Shift Request"}
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
+            pageSize={10}
+            showPagination={true}
+            infiniteScroll={true}
+            loadMorePagination={false}
+            isSearch={true}
+            isFilter={true}
             columnWidths={tableColumnWidths}
+            onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: [
+                  { label: "Pending", value: "Draft" },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                ],
+              },
+            ]}
+            defaultFilters={{ status: "Draft" }}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue
                 isSelected={item?.isSelected}
@@ -85,6 +114,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onClick={(request: any) => handleRequestClick(request)}
                 loadingAction={item?.loadingAction}
+                isBulkSelectEnabled={isBulkSelectEnabled}
               />
             )}
           />

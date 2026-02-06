@@ -4,11 +4,7 @@ import AllShiftsDashboard from "./AllShiftsDashboard";
 import AllTeamShiftsList from "./AllTeamShiftsList";
 import AllShiftChangeRequestsList from "./AllShiftChangeRequestsList";
 import { Navigate } from "react-router-dom";
-import ShiftChangeRequest from "./ShiftChangeRequest";
-import TeamShift from "./TeamShift";
-import MyShiftAssignment from "./MyShiftAssignment";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
-import ShiftRequestList from "./MyShiftList";
 import AllMyShiftRequestsList from "./AllMyShiftRequestsList";
 
 export const AllShiftsDashboardRoute = () => {
@@ -23,24 +19,20 @@ export const AllShiftsDashboardRoute = () => {
 
 export const MyShiftsListRoute = () => {
   useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
-  return isDesktop ? <AllMyShiftsList /> : <MyShiftAssignment />;
+  return <AllMyShiftsList />;
 };
 
 export const TeamShiftsListRoute = () => {
   useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
-  return isDesktop ? <AllTeamShiftsList /> : <TeamShift />;
+  return <AllTeamShiftsList />;
 };
 
 export const ShiftChangeRequestsRoute = () => {
   useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
-  return isDesktop ? <AllShiftChangeRequestsList /> : <ShiftChangeRequest />;
+  return <AllShiftChangeRequestsList />;
 };
 
 export const MyShiftRequestsRoute = () => {
   useShiftRouting(); // Add the routing hook
-  const { isDesktop } = useScreenSize();
-  return isDesktop ? <AllMyShiftRequestsList /> : <ShiftRequestList />;
+  return <AllMyShiftRequestsList />;
 };

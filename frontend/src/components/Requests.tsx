@@ -26,6 +26,7 @@ import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import RequestLeave from "./Leaves/RequestLeave";
 import HeaderBar from "./HeaderBar";
+import { createPortal } from "react-dom";
 
 const Requests = () => {
   const { data: userId } = useLoggedInUser();
@@ -180,7 +181,18 @@ const Requests = () => {
         )}
         {showLeaveRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div
+  className="
+    bg-white
+    rounded-lg
+    w-full
+    mx-0 sm:mx-4
+    h-full sm:h-auto
+    max-h-screen sm:max-h-[90vh]
+    overflow-y-auto
+    sm:max-w-2xl
+  "
+>
               {/* Ensure LeaveRequest is inside its providers */}
               <LeaveRequestRefreshProvider>
                 <RequestLeaveModalProvider>
@@ -212,15 +224,19 @@ const Requests = () => {
             }
           }}
         />
+
         <ExpenseFormModal
+          forMbileScreen={true}
           isOpen={showShiftRequestModal}
           onClose={handleCloseShiftModal}
           title="Request Shift Change"
         >
-          <ShiftRequestFormModal onClose={handleCloseShiftModal} />
+          <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
         </ExpenseFormModal>
         {showInitiateModel && (
-          <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
+          createPortal(
+            <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
+            , document.body)
         )}
         {showAdvanceForm && (
           <Modal onClose={handleCloseAdvanceModal}>

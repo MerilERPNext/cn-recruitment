@@ -11,10 +11,14 @@ export const useMarkAsRead = () => {
 
   return useMutation({
     mutationFn: (id: string) => NotificationService.markAsRead(id),
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["documents-infinite", "Notification Log"] });
+      // 🔥 This must match useNotifications queryKey
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+
       toast.success("Marked as read");
     },
+
     onError: () => {
       toast.error("Failed to update notification");
     },
@@ -23,10 +27,11 @@ export const useMarkAsRead = () => {
 
 
 
+
 export const useNotifications = () => {
   return useQuery<NotificationLog[]>({
     queryKey: ["notifications"],
     queryFn: NotificationAlertService.getNotifications,
-    refetchInterval: 10000, // हर 10 सेकंड में refresh (optional)
+    refetchInterval: 10000,
   });
 };

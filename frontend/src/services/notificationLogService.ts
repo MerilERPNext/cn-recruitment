@@ -19,7 +19,7 @@ export const NotificationAlertService = {
       const response = await FrappeAPI.getDocumentList("Notification Log", {
         fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation"],
         orderBy: "creation desc",
-        limit: 20,
+        limit: 1000000,
       });
       return response.data as NotificationLog[];
     },

@@ -22,7 +22,6 @@ import { useMemo, useState } from "react";
 
 import {
   useGetEmployeeShift,
-  useGetEmployeeWorkingHours,
   useGetPolicyForDate,
   useGetQuickAttendanceSummary,
   useGetTeamCheckinSummary,
@@ -43,8 +42,9 @@ import { Card } from "../shared/atoms/Card";
 import Button from "../shared/atoms/Button";
 import { useFrappeDocumentList } from "../../hooks/useFrappeQuery";
 import { Attendance } from "../../types/attendance";
-import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
-import AttendanceSummaryCards from "./AttendanceSummaryCards";
+// import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
+// import AttendanceSummaryCards from "./AttendanceSummaryCards";
+import AttendanceChart from "../AttendanceChart";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -64,46 +64,50 @@ const AttendanceSummary = () => {
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
 
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id || ""
+    currentEmployee?.user_id || "",
   );
   const { data: teamCheckInSummary } = useGetTeamCheckinSummary(
-    currentEmployee?.user_id || ""
-  );
-  const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
     currentEmployee?.user_id || "",
-    format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
-    format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
   );
+  // TODO: Add working hours bar chart
+  // const { data: employeeWorkingHours, isLoading: isEmployeeWorkingHoursLoading } = useGetEmployeeWorkingHours(
+  //   currentEmployee?.user_id || "",
+  //   format(startOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  //   format(endOfMonth(currentDate), "yyyy-MM-dd").toString() || "",
+  // );
 
   const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
-    currentEmployee?.employee || ""
+    currentEmployee?.employee || "",
   );
 
   const { data: employeeAttendanceSummary } = useGetQuickAttendanceSummary(
     currentEmployee?.employee as string,
     format(startOfMonth(currentDate), "yyyy-MM-dd"),
-    format(endOfMonth(currentDate), "yyyy-MM-dd")
+    format(endOfMonth(currentDate), "yyyy-MM-dd"),
   );
   const { data: attendancePolicy } = useGetPolicyForDate(
     {
       employee: currentEmployee?.employee,
       as_of: format(new Date(), "yyyy-MM-dd"),
     },
-    !!currentEmployee?.employee
+    !!currentEmployee?.employee,
   );
 
-  const { data: attendanceData } = useFrappeDocumentList(
-    "Attendance", {
+  const { data: attendanceData } = useFrappeDocumentList("Attendance", {
     fields: ["*"],
     filters: [
       ["status", "=", "On Leave"],
-      ["attendance_date", "between", [startOfDay(currentDate), endOfDay(currentDate)]],
-    ]
-  })
+      [
+        "attendance_date",
+        "between",
+        [startOfDay(currentDate), endOfDay(currentDate)],
+      ],
+    ],
+  });
 
   function useUniqueAttendanceLeaveCount(records: Attendance[]) {
     return useMemo(() => {
@@ -128,7 +132,6 @@ const AttendanceSummary = () => {
   };
   const goToNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
 
-
   const teamSummaryData = [
     {
       icon: CheckCircle,
@@ -146,7 +149,9 @@ const AttendanceSummary = () => {
       icon: Calendar,
       color: "orange",
       label: "On Leave",
-      value: useUniqueAttendanceLeaveCount(attendanceData as Attendance[] || []) || 0,
+      value:
+        useUniqueAttendanceLeaveCount((attendanceData as Attendance[]) || []) ||
+        0,
     },
   ];
 
@@ -253,7 +258,7 @@ const AttendanceSummary = () => {
         },
       ],
     }),
-    [employeeAttendanceSummary]
+    [employeeAttendanceSummary],
   );
 
   const getAttendanceMethod = () => {
@@ -371,9 +376,14 @@ const AttendanceSummary = () => {
   };
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="h-full overflow-y-auto p-4 space-y-4 min-h-0">
       {/* Date Navigation */}
-      <Card padding="sm" radius="xl" shadow="none" className="flex items-center justify-between mb-4  px-4 py-3">
+      <Card
+        padding="sm"
+        radius="xl"
+        shadow="none"
+        className="flex items-center justify-between mb-4  px-4 py-3"
+      >
         <Button
           variant="subtle"
           size="sm"
@@ -383,10 +393,17 @@ const AttendanceSummary = () => {
           <ChevronLeft className="h-5 w-5 text-slate-600" />
         </Button>
         <div className="text-center">
-          <Typography variant="h3" className="font-bold text-slate-900 tracking-tight">
+          <Typography
+            variant="h3"
+            className="font-bold text-slate-900 tracking-tight"
+          >
             {format(currentDate, "MMMM yyyy")}
           </Typography>
-          <Typography variant="label" color="secondary" className="font-medium mt-0.5 uppercase tracking-widest text-[10px]">
+          <Typography
+            variant="label"
+            color="secondary"
+            className="font-medium mt-0.5 uppercase tracking-widest text-[10px]"
+          >
             Attendance Overview
           </Typography>
         </div>
@@ -399,30 +416,23 @@ const AttendanceSummary = () => {
           <ChevronRight className="h-5 w-5 text-slate-600" />
         </Button>
       </Card>
-      <div className={`w-full flex gap-4 ${isDesktop ? "flex-row" : "flex-col"}`}>
-
-        <EmployeeWorkingHoursBarChart
-          isLoading={isEmployeeWorkingHoursLoading}
-          data={employeeWorkingHours}
-        />
-        <AttendanceSummaryCards
-          present={employeeAttendanceSummary?.present || 0}
-          absent={employeeAttendanceSummary?.absent || 0}
-          leaves={employeeAttendanceSummary?.leaves || 0}
-          week_offs={employeeAttendanceSummary?.week_offs || 0}
-          avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
-          avg_working_hours={
-            Number(employeeAttendanceSummary?.avg_working_hours) || 0
-          }
-          avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
-        />
-      </div>
+      <AttendanceChart
+        present={employeeAttendanceSummary?.present || 0}
+        absent={employeeAttendanceSummary?.absent || 0}
+        leaves={employeeAttendanceSummary?.leaves || 0}
+        week_offs={employeeAttendanceSummary?.week_offs || 0}
+        avg_late_by={Number(employeeAttendanceSummary?.avg_late_by) || 0}
+        avg_working_hours={
+          Number(employeeAttendanceSummary?.avg_working_hours) || 0
+        }
+        avg_overtime={Number(employeeAttendanceSummary?.avg_overtime) || 0}
+      />
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}
           <Card radius="xl" className="space-y-4">
             <div className="flex items-center justify-between px-1">
-              <Typography variant="subheading" >Today's Team Summary</Typography>
+              <Typography variant="subheading">Today's Team Summary</Typography>
               <ViewAll
                 className="text-sm"
                 title="View Calendar"
@@ -430,7 +440,9 @@ const AttendanceSummary = () => {
               />
             </div>
             {/* Using same grid as Summary Cards in Chart */}
-            <div className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}>
+            <div
+              className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}
+            >
               {teamSummaryData.map((data, index) => (
                 <SummaryCard
                   key={index}
@@ -450,7 +462,9 @@ const AttendanceSummary = () => {
           {/* Quick Actions */}
           <Card radius="xl" className="space-y-4">
             <div className="px-1">
-              <Typography variant="subheading" className="mb-4">Quick Actions</Typography>
+              <Typography variant="subheading" className="mb-4">
+                Quick Actions
+              </Typography>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -462,7 +476,9 @@ const AttendanceSummary = () => {
         </div>
         {/* Right Column: Settings - 30% */}
         <Card radius="xl" className="w-full lg:w-[30%] h-fit">
-          <Typography variant="subheading" className="mb-4">Settings & Policies</Typography>
+          <Typography variant="subheading" className="mb-4">
+            Settings & Policies
+          </Typography>
           <div className="space-y-3">
             {settingsData.map((setting, index) => {
               const Icon = setting.icon;
@@ -471,11 +487,16 @@ const AttendanceSummary = () => {
                   key={index}
                   className="group flex items-start gap-4 p-4  shadow-sm hover-lift transition-all duration-300"
                 >
-                  <div className={`flex-shrink-0 p-2.5 rounded-xl shadow-sm group-hover:scale-105 transition-transform ${setting.background}`}>
+                  <div
+                    className={`flex-shrink-0 p-2.5 rounded-xl shadow-sm group-hover:scale-105 transition-transform ${setting.background}`}
+                  >
                     <Icon className={`h-5 w-5 ${setting.color}`} />
                   </div>
                   <div className="flex-1 min-w-0 pt-0.5">
-                    <Typography variant="bodyMedium" className="font-semibold text-gray-900 mb-1">
+                    <Typography
+                      variant="bodyMedium"
+                      className="font-semibold text-gray-900 mb-1"
+                    >
                       {setting.title}
                     </Typography>
 
@@ -485,7 +506,7 @@ const AttendanceSummary = () => {
                           (detail, detailIndex) =>
                             getNavigatableSettingsButton(
                               setting.title,
-                              detail
+                              detail,
                             ) ?? (
                               <Typography
                                 key={detailIndex}
@@ -494,11 +515,14 @@ const AttendanceSummary = () => {
                               >
                                 {detail}
                               </Typography>
-                            )
+                            ),
                         )}
                       </div>
                     ) : (
-                      <Typography variant="bodySmall" className="text-gray-400 italic">
+                      <Typography
+                        variant="bodySmall"
+                        className="text-gray-400 italic"
+                      >
                         Not configured
                       </Typography>
                     )}
@@ -509,36 +533,30 @@ const AttendanceSummary = () => {
           </div>
         </Card>
       </div>
-      {
-        showAttendanceRequestModal && (
-          <AttendanceRequestFormV2
-            onClose={() => setShowAttendanceRequestModal(false)}
-          />
-        )
-      }
-      {
-        showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <CreateOvertimeRequest
-                onCancel={() => setShowOvertimeRequest(false)}
-              />
-            </div>
+      {showAttendanceRequestModal && (
+        <AttendanceRequestFormV2
+          onClose={() => setShowAttendanceRequestModal(false)}
+        />
+      )}
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {
-        openPolicyDrawer && policyDrawerConfig && (
-          <PolicyDrawer
-            isOpen={openPolicyDrawer}
-            onClose={() => setOpenPolicyDrawer(false)}
-            title={policyDrawerConfig.title}
-            doctypeName={policyDrawerConfig.doctypeName}
-            targetDoctype={policyDrawerConfig.targetDoctype}
-          />
-        )
-      }
+      {openPolicyDrawer && policyDrawerConfig && (
+        <PolicyDrawer
+          isOpen={openPolicyDrawer}
+          onClose={() => setOpenPolicyDrawer(false)}
+          title={policyDrawerConfig.title}
+          doctypeName={policyDrawerConfig.doctypeName}
+          targetDoctype={policyDrawerConfig.targetDoctype}
+        />
+      )}
     </div>
   );
 };

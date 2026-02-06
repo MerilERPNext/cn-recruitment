@@ -1,6 +1,7 @@
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeAllDetails, useGetEmployeeProfileOverview } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { formatDateToDDMMYYYY } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import ProfileSkeleton from "../../shared/molecules/Skeletons/ProfileSkeleton";
 
@@ -29,7 +30,7 @@ const ProfileSummary = () => {
     }
 
     return (
-        <div className="px-6">
+        <div className="px-0 md:px-6">
             <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 border border-gray-100/50">
                 <Typography variant="subheading" className="font-bold text-gray-800">
                     Profile Summary
@@ -37,7 +38,7 @@ const ProfileSummary = () => {
 
 
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-4">
                 {employee?.map(field => {
                     return (
                         <div
@@ -47,7 +48,7 @@ const ProfileSummary = () => {
                                 {field.field_label || "-"}
                             </Typography>
                             <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                {field?.display || "—"}
+                                {formatDateToDDMMYYYY(field?.display as string) || "—"}
                             </Typography>
 
                         </div>

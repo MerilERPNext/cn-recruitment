@@ -22,17 +22,20 @@ import type {
 } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
   schema?: FormSchema;
   defaultShiftRequestData?: ShiftRequest;
   forActionType?: "create" | "edit";
+  className?: string;
 }
 
 type FormSchema = typeof defaultFormSchema;
 
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
+  className = "",
   onClose,
   defaultShiftRequestData,
   schema: propSchema,
@@ -43,6 +46,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
   );
+    const { isDesktop } = useScreenSize();
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
@@ -66,92 +70,92 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   };
 
   // ✅ handleSubmit wrapped in LoadingOverlay
-const handleSubmit = async () => {
-  if (!formRef.current) {
-    toast.error("Form not ready yet.");
-    return;
-  }
+  const handleSubmit = async () => {
+    if (!formRef.current) {
+      toast.error("Form not ready yet.");
+      return;
+    }
 
-  // 1️⃣ Submit the form normally
-  let submission: FormioSubmission<ShiftRequestFormData>;
-  try {
-    submission = await formRef.current.submit();
-  } catch (formError) {
-    console.error("Form submission error:", formError);
-    toast.error("Please check your form inputs and try again.");
-    return;
-  }
+    // 1️⃣ Submit the form normally
+    let submission: FormioSubmission<ShiftRequestFormData>;
+    try {
+      submission = await formRef.current.submit();
+    } catch (formError) {
+      console.error("Form submission error:", formError);
+      toast.error("Please check your form inputs and try again.");
+      return;
+    }
 
-  const { shiftType, fromDate, toDate, reason } = submission.data;
+    const { shiftType, fromDate, toDate, reason } = submission.data;
 
-  if (!employeeDetails) {
-    toast.error("Employee details not loaded. Try again.");
-    console.log(employeeError, "Employee details not fetched.");
-    return;
-  }
+    if (!employeeDetails) {
+      toast.error("Employee details not loaded. Try again.");
+      console.log(employeeError, "Employee details not fetched.");
+      return;
+    }
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
 
-  const payload = {
-    shift_type: shiftType,
-    from_date: formatDate(fromDate),
-    to_date: formatDate(toDate),
-    reason,
-    status: "Draft",
-    employee: employeeDetails.name,
-    shift_request_approver: employeeDetails.shift_request_approver,
-  };
+    const payload = {
+      shift_type: shiftType,
+      from_date: formatDate(fromDate),
+      to_date: formatDate(toDate),
+      reason,
+      status: "Draft",
+      employee: employeeDetails.name,
+      shift_request_approver: employeeDetails.shift_request_approver,
+    };
 
-  // 2️⃣ Wrap only the network mutation inside the overlay
-  await loading?.wrap(async () => {
-    if (forActionType === "edit" && defaultShiftRequestData?.name) {
-      await new Promise<void>((resolve, reject) =>
-        updateShiftRequest(
-          {
-            doctype: defaultShiftRequestData.doctype,
-            name: defaultShiftRequestData.name,
-            data: payload,
-          },
-          {
+    // 2️⃣ Wrap only the network mutation inside the overlay
+    await loading?.wrap(async () => {
+      if (forActionType === "edit" && defaultShiftRequestData?.name) {
+        await new Promise<void>((resolve, reject) =>
+          updateShiftRequest(
+            {
+              doctype: defaultShiftRequestData.doctype,
+              name: defaultShiftRequestData.name,
+              data: payload,
+            },
+            {
+              onSuccess: () => {
+                handleSubmitonSuccess();
+                resolve();
+              },
+              onError: (error: any) => {
+                handleSubmitionError("Error updating shift request:", error);
+                toast.error(
+                  errorResponseFormater(error, "Error updating shift request")
+                );
+                reject(error);
+              },
+            }
+          )
+        );
+      } else {
+        await new Promise<void>((resolve, reject) =>
+          createShiftRequest(payload, {
             onSuccess: () => {
               handleSubmitonSuccess();
               resolve();
             },
             onError: (error: any) => {
-              handleSubmitionError("Error updating shift request:", error);
+              handleSubmitionError("Error creating shift request:", error);
               toast.error(
-                errorResponseFormater(error, "Error updating shift request")
+                errorResponseFormater(error, "Error creating shift request")
               );
               reject(error);
             },
-          }
-        )
-      );
-    } else {
-      await new Promise<void>((resolve, reject) =>
-        createShiftRequest(payload, {
-          onSuccess: () => {
-            handleSubmitonSuccess();
-            resolve();
-          },
-          onError: (error: any) => {
-            handleSubmitionError("Error creating shift request:", error);
-            toast.error(
-              errorResponseFormater(error, "Error creating shift request")
-            );
-            reject(error);
-          },
-        })
-      );
-    }
-  }, "Submitting shift request…"); // overlay message
-};
+          })
+        );
+      }
+    }, "Submitting shift request…"); // overlay message
+  };
 
 
 
@@ -250,9 +254,8 @@ const handleSubmit = async () => {
   }
 
   return (
-    <div className="bg-app flex flex-col font-sans">
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-        <div className="rounded-lg shadow-sm border p-6">
+    <div className={`bg-white flex flex-col font-sans  ${className}`}>
+      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6  flex-grow w-full">
           <Form
             form={validatedSchema}
             onFormReady={(instance: Formio) => {
@@ -282,26 +285,24 @@ const handleSubmit = async () => {
             }}
             className="space-y-6"
           />
-        </div>
       </div>
 
-      <div className="sticky bottom-0 bg-primary/20 border-t shadow-lg py-4 px-4 w-full">
-        <div className="max-w-4xl mx-auto flex space-x-4">
-          <Button
+      <div className="sticky bottom-0  border-t shadow-lg py-4 px-4 w-full">
+        <div className="max-w-4xl mx-auto flex space-x-4 md:justify-end">
+         {!isDesktop && ( <Button
             onClick={onClose}
             size="md"
             variant="outline"
-            bgColor="gray-300"
-            className="flex-1 border text-gray-700 hover:bg-gray-50 font-medium py-3"
+            className="w-full md:w-auto min-w-[150px]"
           >
             Cancel
-          </Button>
+          </Button>)}
           <Button
             onClick={handleSubmit}
             size="md"
-            className="flex-1 font-medium"
+            className="w-full md:w-auto min-w-[150px]"
           >
-            Submit Request
+            Submit 
           </Button>
         </div>
       </div>

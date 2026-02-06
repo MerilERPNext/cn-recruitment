@@ -19,6 +19,7 @@ import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -59,6 +60,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const initialSubmissionSet = useRef(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const { setRefetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -160,70 +162,70 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const loading = useLoadingOverlay();
   const handleSubmit = async () => {
-  await loading?.wrap(async () => {
-    try {
-      const submission = await formInstance.current?.submit();
-      const data = submission?.data;
+    await loading?.wrap(async () => {
+      try {
+        const submission = await formInstance.current?.submit();
+        const data = submission?.data;
 
-      const formattedOvertimeDetails = data?.overtime_details?.map(
-        (entry: any) => ({
-          shift_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          start_date: isValidDate(entry.start_date)
-            ? formatDate(entry.start_date)
-            : entry.start_date,
-          end_date: isValidDate(entry.end_date)
-            ? formatDate(entry.end_date)
-            : entry.end_date,
-          start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
-          end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
-          message: entry?.message,
-        })
-      );
-
-      await new Promise<void>((resolve, reject) => {
-        mutation.mutate(
-          {
-            employee: currentEmployee?.employee || "",
-            overtime_details: formattedOvertimeDetails || [],
-          },
-          {
-            onSuccess: async (data: any) => {
-              if (attachments?.length > 0) {
-                await uploadFiles(
-                  attachments,
-                  data.doctype,
-                  data.name,
-                  () => {
-                    setAttachments([]);
-                    onCancel?.();
-                    setTimeout(() => setRefetchAttendance(true), 1000);
-                  }
-                );
-              }
-              resolve();
-                toast.success("Overtime Requests SuccessFully");
-            },
-            onError: (e: CustomError) => {
-              const formattedError = errorResponseFormater(
-                e,
-                "Request Failed"
-              );
-              toast.error(formattedError);
-              console.error(e);
-              reject(e);
-            },
-          }
+        const formattedOvertimeDetails = data?.overtime_details?.map(
+          (entry: any) => ({
+            shift_date: isValidDate(entry.start_date)
+              ? formatDate(entry.start_date)
+              : entry.start_date,
+            start_date: isValidDate(entry.start_date)
+              ? formatDate(entry.start_date)
+              : entry.start_date,
+            end_date: isValidDate(entry.end_date)
+              ? formatDate(entry.end_date)
+              : entry.end_date,
+            start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
+            end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
+            message: entry?.message,
+          })
         );
-      });
-    } catch (err) {
-      toast.error("Please fill in all required fields.");
-      console.warn("Form submission error -", err);
-      throw err;
-    }
-  }, "Submitting overtime request…");
-};
+
+        await new Promise<void>((resolve, reject) => {
+          mutation.mutate(
+            {
+              employee: currentEmployee?.employee || "",
+              overtime_details: formattedOvertimeDetails || [],
+            },
+            {
+              onSuccess: async (data: any) => {
+                if (attachments?.length > 0) {
+                  await uploadFiles(
+                    attachments,
+                    data.doctype,
+                    data.name,
+                    () => {
+                      setAttachments([]);
+                      onCancel?.();
+                      setTimeout(() => setRefetchAttendance(true), 1000);
+                    }
+                  );
+                }
+                resolve();
+                toast.success("Overtime Requests SuccessFully");
+              },
+              onError: (e: CustomError) => {
+                const formattedError = errorResponseFormater(
+                  e,
+                  "Request Failed"
+                );
+                toast.error(formattedError);
+                console.error(e);
+                reject(e);
+              },
+            }
+          );
+        });
+      } catch (err) {
+        toast.error("Please fill in all required fields.");
+        console.warn("Form submission error -", err);
+        throw err;
+      }
+    }, "Submitting overtime request…");
+  };
 
 
   return (
@@ -242,7 +244,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           <h2 className="text-lg font-semibold text-gray-800">
             Planned Overtime Request
           </h2>
-          <button
+          {isDesktop &&  (  <button
             onClick={(e) => {
               e.stopPropagation();
               onCancel?.();
@@ -252,11 +254,11 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             aria-label="Close"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </button>)}
         </div>
 
         {/* Form.io Form */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+        <div className="flex-1 min-h-0 px-6 py-4">
           <Form
             form={transformSchemaWithRequired(
               overtimeRequestSchema,
@@ -294,21 +296,40 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <Button
-            onClick={handleSubmit}
-            disabled={mutation?.isPending}
-            fullWidth
-            size="lg"
-            variant="contain"
-            bgColor="primary"
-          >
-            {mutation?.isPending || uploadFileLoading ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              "Submit Request"
-            )}
-          </Button>
-        </div>
+  <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+    
+  {!isDesktop &&  ( <Button
+      onClick={(e) => {
+        e.stopPropagation();
+        onCancel?.();
+        setAttachments([]);
+      }}
+      size="md"
+      variant="outline"
+      bgColor="primary"
+      className="w-full md:w-auto min-w-[150px]"
+    >
+      Cancel
+    </Button>)}
+
+    <Button
+      onClick={handleSubmit}
+      disabled={mutation?.isPending}
+      size="md"
+      variant="contain"
+      bgColor="primary"
+      className="w-full md:w-auto min-w-[150px]"
+    >
+      {mutation?.isPending || uploadFileLoading ? (
+        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+      ) : (
+        "Submit"
+      )}
+    </Button>
+
+  </div>
+</div>
+
       </div>
     </div>
   );

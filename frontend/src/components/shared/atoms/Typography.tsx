@@ -15,7 +15,13 @@ type TypographyVariant =
     | "body"
     | "bodyMedium"
     | "bodySmall"
-    | "label";
+    | "label"
+    | "caption"
+    | "mobileCardLabel"
+    | "mobileCardValue"
+    | "mobileCardTitle"
+    | "mobileCardSubtitle"
+    | "mobileCardFooter";
 
 type TypographyFont =
     | "brand"
@@ -78,6 +84,12 @@ const VARIANT_ELEMENT_MAP: Record<
     bodyMedium: "p",
     bodySmall: "p",
     label: "span",
+    caption: "span",
+    mobileCardLabel: "span",
+    mobileCardValue: "p",
+    mobileCardTitle: "h3",
+    mobileCardSubtitle: "span",
+    mobileCardFooter: "span",
 };
 
 const VARIANT_CLASSES: Record<TypographyVariant, string> = {
@@ -101,6 +113,16 @@ const VARIANT_CLASSES: Record<TypographyVariant, string> = {
 
     /* Label */
     label: "text-label font-brand tracking-wider",
+
+    /* Caption */
+    caption: "text-xs font-brand text-slate-500",
+
+    /* Mobile Card Variants */
+    mobileCardLabel: "text-[11px] font-brand font-medium text-slate-500 uppercase tracking-wider",
+    mobileCardValue: "font-brand font-normal text-gray-900",
+    mobileCardTitle: "text-body font-brand font-bold text-gray-900 leading-snug",
+    mobileCardSubtitle: "text-xs font-brand text-gray-500",
+    mobileCardFooter: "text-sm font-brand text-slate-500",
 };
 
 const FONT_CLASSES: Record<TypographyFont, string> = {

@@ -16,14 +16,14 @@ const DocumentLibrary = () => {
   const { data: userId } = useLoggedInUser();
   const { targetEmployeeId } = useTargetUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const TargetEmployeeID = useMemo(() => {
-    const f: Record<string, string> = {};
-    if (targetEmployeeId) f.employee = targetEmployeeId;
-    return f;
-  }, [targetEmployeeId]);
-  const { data } = useEmployeeDocument(
-    (TargetEmployeeID as unknown as string) || user?.employee || ""
-  );
+  const employeeId = useMemo(() => {
+    if (targetEmployeeId && targetEmployeeId.trim() !== "") {
+      return targetEmployeeId;
+    }
+    return user?.employee || "";
+  }, [targetEmployeeId, user?.employee]);
+  
+  const { data } = useEmployeeDocument(employeeId);
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
@@ -94,7 +94,7 @@ const DocumentLibrary = () => {
 
 
   return (
-    <div className="bg-white p-4 ">
+    <div className="bg-white px-0 md:p-6 ">
       <div className="flex items-start justify-between">
         <div className="border-gray-200 my-2 pb-2">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -169,11 +169,11 @@ const DocumentLibrary = () => {
             >
               Documents Approved{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-              {documents.filter(
-  (doc) =>
-    doc.type?.trim().toLowerCase() !== "personal" &&
-    doc.status === "Approved"
-).length}
+                {documents.filter(
+                  (doc) =>
+                    doc.type?.trim().toLowerCase() !== "personal" &&
+                    doc.status === "Approved"
+                ).length}
               </span>
             </Button>
           </div>

@@ -8,6 +8,7 @@ import CreateLoanDialog from "./Loan/component/CreateLoanDailog";
 import Button from "../shared/atoms/Button";
 
 type TabName =
+  | "Pay Package"
   | "Annual CTC"
   | "Invoice Slip"
   | "Salary Slip"
@@ -17,13 +18,13 @@ type TabName =
   | "Team Loan Requests"
   | "My Advances"
   | "Team Advances"
-  | "Pay Package"
   | "Extra Payments"
   | "Payroll Documents";
 
 type ViewMode = "annual"; // ❌ removed monthly
 
 const tabRoutes: Record<TabName, string> = {
+  "Pay Package": "/webapp/salary-slip-app/pay-package",
   "Annual CTC": "/webapp/salary-slip-app/ctc-salary-breakdown",
   "Invoice Slip": "/webapp/salary-slip-app/invoice-page",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
@@ -33,7 +34,6 @@ const tabRoutes: Record<TabName, string> = {
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",
   "Team Advances": "/webapp/salary-slip-app/team-advances-list",
-  "Pay Package": "/webapp/salary-slip-app/benefits-list",
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
 };
@@ -109,7 +109,7 @@ const SalarySlipApp: React.FC = () => {
           />
         </header>
 
-        <main className="p-4 z-100 flex-grow overflow-y-auto">
+        <main className="p-2 z-100 flex-grow overflow-y-auto">
           <Outlet />
         </main>
 

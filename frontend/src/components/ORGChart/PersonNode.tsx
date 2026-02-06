@@ -50,46 +50,55 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
       />
 
       <div
-        className="relative min-w-[320px] px-5 py-4 bg-white border-t-4 border-primary shadow-md hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer"
+        className="relative min-w-[320px] px-5 py-4 bg-white border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary shadow-md hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer"
         onClick={handleClick}
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Avatar
-            name={name}
-            src={data?.image || ""}
-          />
+          <Avatar name={name} src={data?.image || ""} />
         </div>
         <div className="flex flex-col gap-2 text-center mt-2">
-
           <h3 className="font-semibold text-gray-900 font-medium text-base text-center truncate">
             {name}
           </h3>
           <div className="flex gap-2 items-center text-center justify-center">
             {title && (
               <Tooltip content={title}>
-                <p className="text-gray-500 text-sm font-medium truncate line-clamp-1 mb-1">{title}</p>
+                <p className="text-gray-500 text-sm font-medium truncate line-clamp-1 mb-1">
+                  {title}
+                </p>
               </Tooltip>
             )}
-
           </div>
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-4 p-1">
             {totalChildren > 0 && (
               <div className="flex gap-1.5 items-center">
-                <Tooltip content={`Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`}>
+                <Tooltip
+                  content={`Direct: ${data.directChildren || 0}, Indirect: ${data.indirectChildren || 0}`}
+                >
                   <div className="flex items-center bg-blue-50 border border-blue-100 rounded-md overflow-hidden">
-                    <Typography variant="bodySmall" color="primary" className="text-blue-600 flex gap-2 px-1.5 py-0.5  text-nowrap">
+                    <Typography
+                      variant="bodySmall"
+                      color="primary"
+                      className="text-blue-600 flex gap-2 px-1.5 py-0.5  text-nowrap"
+                    >
                       Direct {data.directChildren || 0}
                     </Typography>
-                    <Typography variant="bodySmall" color="primary" className="text-blue-400 flex gap-2  px-1.5 py-0.5 border-x border-blue-100 text-nowrap">
+                    <Typography
+                      variant="bodySmall"
+                      color="primary"
+                      className="text-blue-400 flex gap-2  px-1.5 py-0.5 border-x border-blue-100 text-nowrap"
+                    >
                       Indirect {data.indirectChildren || 0}
                     </Typography>
-                    <Typography variant="bodySmall" color="primary" className="text-blue-400 flex gap-2 px-1.5 py-0.5 text-nowrap">
+                    <Typography
+                      variant="bodySmall"
+                      color="primary"
+                      className="text-blue-400 flex gap-2 px-1.5 py-0.5 text-nowrap"
+                    >
                       Total {totalChildren}
                     </Typography>
-
                   </div>
                 </Tooltip>
-
               </div>
             )}
           </div>

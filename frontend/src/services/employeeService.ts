@@ -98,7 +98,6 @@ export class EmployeeService {
   // Get a single employee by ID/name
   static async getEmployee(employeeId: string): Promise<Employee> {
     try {
-      console.log("Fetching employee details for ID:", employeeId);
 
       let result;
 
@@ -110,7 +109,6 @@ export class EmployeeService {
             employee_id: employeeId,
           }
         );
-        console.log("Primary API response for employee:", result);
       } catch (primaryError) {
         console.warn(
           "Primary API method failed, trying fallback:",
@@ -120,7 +118,6 @@ export class EmployeeService {
         // Fallback: Try to get employee directly from doctype
         try {
           result = await FrappeAPI.getDocument("Employee", employeeId);
-          console.log("Fallback API response for employee:", result);
         } catch (fallbackError) {
           console.error("Fallback API method also failed:", fallbackError);
           throw new Error(
@@ -149,7 +146,6 @@ export class EmployeeService {
         );
       }
 
-      console.log("Employee data validated successfully:", result);
       return result;
     } catch (error) {
       console.error("Error fetching employee:", error);
@@ -210,8 +206,6 @@ export class EmployeeService {
   // Get current user's employee record
   static async getCurrentEmployee(): Promise<Employee | null> {
     try {
-      console.log("Fetching current employee details...");
-
       let result;
 
       // Try the primary API method first
@@ -219,7 +213,6 @@ export class EmployeeService {
         result = await FrappeAPI.callMethod(
           "recruitment.api.get_current_employee"
         );
-        console.log("Primary API response for current employee:", result);
       } catch (primaryError) {
         console.warn(
           "Primary API method failed, trying fallback:",
@@ -232,10 +225,6 @@ export class EmployeeService {
             "frappe.auth.get_logged_user"
           );
           if (userResult && typeof userResult === "string") {
-            console.log(
-              "Got current user, fetching employee by user ID:",
-              userResult
-            );
             const employeeList = await FrappeAPI.getDocumentList("Employee", {
               fields: ["*"],
               filters: [["user_id", "=", userResult]],
@@ -244,12 +233,7 @@ export class EmployeeService {
 
             if (employeeList.data && employeeList.data.length > 0) {
               result = employeeList.data[0];
-              console.log(
-                "Fallback API response for current employee:",
-                result
-              );
             } else {
-              console.warn("No employee found for current user:", userResult);
               return null;
             }
           }
@@ -419,8 +403,6 @@ export class EmployeeService {
   // Transform Employee data to EmployeeIdCard format
   static transformToIdCard(employee: Employee): EmployeeIdCard {
     try {
-      console.log("Transforming employee data to ID card format:", employee);
-
       return {
         id: employee.name || "Unknown",
         name: employee.employee_name || employee.first_name || "Unknown",

@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import { Form } from "@tsed/react-formio";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import HeaderBar from "../../HeaderBar";
 import { X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -63,8 +62,6 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     });
     return map;
   }, [requiredFields]);
-
-  console.log("requiredFieldMap", requiredFieldMap);
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
@@ -211,7 +208,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   }, [onClose]);
 
   return (
-    <div className="advance-form-container flex flex-col h-full bg-app">
+    <div className="flex w-full flex-col h-full bg-white">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-3xl mx-auto px-4">
@@ -225,11 +222,12 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
               </Button>
             </div>
           ) : (
-            <HeaderBar
-              title="Advance Request"
-              showBackButton={true}
-              onBack={onClose}
-            />
+            <div className="flex items-center justify-between px-6 py-4   bg-white sticky top-0 z-20">
+<h2 className="text-lg font-semibold text-gray-800">
+Advance Request
+        </h2>
+</div>
+
           )}
         </div>
       </div>
@@ -259,21 +257,21 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
       </div>
 
       {/* Footer */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3">
-        <div className="max-w-3xl mx-auto flex space-x-3">
-          <Button
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-2.5">
+        <div className=" flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+        {!isDesktop && ( <Button
             onClick={handleCancel}
             size="md"
             variant="outline"
-            bgColor="gray-300"
-            className="flex-1 border text-gray-700 py-3"
+            className="w-full md:w-auto min-w-[150px]"
           >
             Cancel
-          </Button>
+          </Button>)}
           <Button
             onClick={handleSubmit}
-            size="md"
-            className={"flex-1 hover:bg-primary-600 py-3"}
+                          size="md"
+              variant="contain"
+              className="w-full md:w-auto min-w-[150px]"
           >
             Submit
           </Button>

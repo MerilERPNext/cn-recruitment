@@ -18,7 +18,7 @@ const Overview = () => {
     return (
         <div>
             {/* Header */}
-            <div className="px-6 py-6">
+            <div className="px-0 md:px-6 py-6">
                 <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                     Overview
                 </Typography>

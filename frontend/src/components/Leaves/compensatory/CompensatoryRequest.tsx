@@ -36,13 +36,13 @@ const CompensatoryRequest: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isDesktop } = useScreenSize();
   const { data, isLoading, isError, error } = useGetCompOffList(
-    currentEmployee?.name
+    currentEmployee?.name,
   );
 
   const filteredData = useMemo(() => {
     if (!data) return [];
     return data.filter(
-      (item: CompensatoryRequestItem) => item.custom_status === selectedStatus
+      (item: CompensatoryRequestItem) => item.custom_status === selectedStatus,
     );
   }, [data, selectedStatus]);
 
@@ -82,21 +82,32 @@ const CompensatoryRequest: React.FC = () => {
   if (isError) return <p>Error: {(error as Error).message}</p>;
 
   return (
-    <div className="px-4 md:py-2 pb-10 md:pb-20">
-      <div className="flex justify-between pt-4 mb-2 border-b border-gray-200">
-        <Typography variant="subheading">Compensatory Requests</Typography>
-        <div className="flex items-center pb-1">
-          <CustomDropdown
-            value={selectedStatus}
-            onChange={handleStatusChange}
-            options={STATUS_OPTIONS}
-          />
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop ? (
+              <div>
+                <Typography variant="h4">Compensatory Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your compensatory requests
+                </Typography>
+              </div>
+            ) : (
+              <div>
+                <Typography variant="h4">Compensatory Requests</Typography>
+              </div>
+            )}
+            <CustomDropdown
+              value={selectedStatus}
+              onChange={handleStatusChange}
+              options={STATUS_OPTIONS}
+            />
+          </div>
         </div>
       </div>
 
-      {filteredData.length === 0 ? (
-        <div className="p-4 text-center text-gray-600">No Comp Offs found</div>
-      ) : isDesktop ? (
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
             "Request Type",
@@ -106,8 +117,14 @@ const CompensatoryRequest: React.FC = () => {
             "Status",
             "Actions",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "2.5fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1.5fr", "1fr", "1fr"]}
         >
+          {filteredData.length === 0 ? (
+            <div className="p-4 text-center text-gray-600">
+              No Compensatory Offs found for the selected status.
+            </div>
+          ) : null}
+
           {filteredData.map((item) => (
             <CompensatoryRequestCard
               key={item.name}
@@ -116,17 +133,7 @@ const CompensatoryRequest: React.FC = () => {
             />
           ))}
         </CardTable>
-      ) : (
-        <div className="space-y-2">
-          {filteredData.map((item) => (
-            <CompensatoryRequestCard
-              key={item.name}
-              item={item}
-              onClick={() => handleCardClick(item)}
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {!isDesktop && isModalOpen && selectedRequest && (
         <CompOffDetailsModal

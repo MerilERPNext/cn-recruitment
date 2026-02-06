@@ -2,6 +2,7 @@
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { Typography } from "../../shared/atoms/Typography";
 import CustomDropdown from "../../shared/CustomDropdown";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 type PayrollPeriod = {
   name: string;
@@ -23,19 +24,21 @@ export default function SalaryAssignmentHeader({
   showAmount,
   onToggleAmount,
 }: Props) {
-  return (
-    <div className="border-gray-100">
-      <div className="px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <Typography variant="h4">Pay package</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage Pay Package
-            </Typography>
-          </div>
+  const { isDesktop } = useScreenSize();
 
-          <div className="flex items-center gap-3">
-            {/* 👁 Toggle */}
+  return (
+    <div className="flex-shrink-0">
+      <div className="px-1 md:px-6 py-1 md:py-4">
+        <div className="flex items-center justify-between">
+          {isDesktop && (
+            <div>
+              <Typography variant="h4">Pay package</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage Pay Package
+              </Typography>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-2 w-full md:w-auto">
             <button
               onClick={onToggleAmount}
               className="my-btn-secondary"
@@ -57,7 +60,6 @@ export default function SalaryAssignmentHeader({
                 </>
               )}
             </button>
-
             <CustomDropdown
               value={selectedPeriod}
               onChange={onPeriodChange}

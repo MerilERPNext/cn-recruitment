@@ -172,11 +172,10 @@ const TasksAwaiting: React.FC = () => {
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
-            className={`px-4 py-2 rounded-2xl whitespace-nowrap text-sm font-semibold shadow ${
-              activeCategory === "All"
-                ? "bg-primary text-white scale-105"
-                : "bg-primary-100 text-primary-700 hover:bg-primary-300"
-            } transition-all`}
+            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
+              ? "bg-primary text-white scale-105"
+              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+              } transition-all`}
           >
             All ({totalCount})
           </button>
@@ -189,11 +188,10 @@ const TasksAwaiting: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
-                  isActive
-                    ? `scale-105 ring-2 ${colors}`
-                    : `${colors} opacity-70 hover:opacity-100`
-                } `}
+                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
+                  ? `scale-105 ring-2 ${colors}`
+                  : `${colors} opacity-70 hover:opacity-100`
+                  } `}
               >
                 {cat} ({count})
               </button>

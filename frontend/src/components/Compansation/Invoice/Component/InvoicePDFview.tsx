@@ -5,6 +5,7 @@ import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import Button from "../../../shared/atoms/Button";
 import { useInvoiceSheetViewPDF } from "../../../../hooks/payroll/usePerquisite";
 import { FiEye } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 type Props = {
   invoiceID: string;
@@ -16,12 +17,23 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
 
+  function hexToBlob(hexString: string, mimeType = "application/pdf") {
+    const cleanHex = hexString.replace(/\s+/g, "");
+    const bytes = new Uint8Array(
+      cleanHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
+    );
+    return new Blob([bytes], { type: mimeType });
+  }
+
+
   const { mutate, isPending } = useInvoiceSheetViewPDF({
-    onSuccess: (data: Blob) => {
-        const url = URL.createObjectURL(data);
-        setPdfUrl(url);
-        setOpen(true);
-      },
+    onSuccess: (data: string) => {
+      const blob = hexToBlob(data);   // convert hex → blob
+      const url = URL.createObjectURL(blob);
+    
+      setPdfUrl(url);
+      setOpen(true);
+    },
   });
 
   const handleView = () => {
@@ -34,7 +46,7 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
 
     mutate(invoiceID, {
       onError: () => {
-        alert("Failed to load Invoice PDF");
+        toast.error("Failed to load Invoice PDF");
       },
     });
   };
