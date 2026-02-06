@@ -16,14 +16,14 @@ const DocumentLibrary = () => {
   const { data: userId } = useLoggedInUser();
   const { targetEmployeeId } = useTargetUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const TargetEmployeeID = useMemo(() => {
-    const f: Record<string, string> = {};
-    if (targetEmployeeId) f.employee = targetEmployeeId;
-    return f;
-  }, [targetEmployeeId]);
-  const { data } = useEmployeeDocument(
-    (TargetEmployeeID as unknown as string) || user?.employee || ""
-  );
+  const employeeId = useMemo(() => {
+    if (targetEmployeeId && targetEmployeeId.trim() !== "") {
+      return targetEmployeeId;
+    }
+    return user?.employee || "";
+  }, [targetEmployeeId, user?.employee]);
+  
+  const { data } = useEmployeeDocument(employeeId);
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
