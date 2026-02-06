@@ -2,7 +2,10 @@ import React, { useState, useRef, useEffect } from "react";
 import { Filter, Plus, X } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
-import { FilterableField, TicketFilters as TicketFiltersType } from "../../hooks/useHelpDeskTickets";
+import {
+  FilterableField,
+  TicketFilters as TicketFiltersType,
+} from "../../hooks/useHelpDeskTickets";
 
 interface FilterItem {
   id: string;
@@ -59,9 +62,7 @@ const getOperatorsForFieldType = (fieldType: string) => {
         { value: "<", label: "Less Than" },
       ];
     case "Check":
-      return [
-        { value: "=", label: "Equals" },
-      ];
+      return [{ value: "=", label: "Equals" }];
     default:
       return [
         { value: "=", label: "Equals" },
@@ -115,7 +116,10 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -143,8 +147,8 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   const updateFilter = (id: string, updates: Partial<FilterItem>) => {
     setFilterItems(
       filterItems.map((item) =>
-        item.id === id ? { ...item, ...updates } : item
-      )
+        item.id === id ? { ...item, ...updates } : item,
+      ),
     );
   };
 
@@ -198,10 +202,14 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
 
       {/* Filter Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg">
+        <div className="absolute right-0 z-[999] mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <Typography variant="body" color="primary" className="font-medium">
+              <Typography
+                variant="body"
+                color="primary"
+                className="font-medium"
+              >
                 Filters
               </Typography>
               <button
@@ -216,15 +224,25 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {filterItems.map((item) => {
                 const field = fields.find((f) => f.fieldname === item.field);
-                const operators = getOperatorsForFieldType(field?.fieldtype || "Data");
+                const operators = getOperatorsForFieldType(
+                  field?.fieldtype || "Data",
+                );
                 const selectOptions = field ? getSelectOptions(field) : [];
 
                 return (
-                  <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-2">
+                  <div
+                    key={item.id}
+                    className="flex flex-col md:flex-row md:items-center gap-2"
+                  >
                     {/* Field Select */}
                     <select
                       value={item.field}
-                      onChange={(e) => updateFilter(item.id, { field: e.target.value, value: "" })}
+                      onChange={(e) =>
+                        updateFilter(item.id, {
+                          field: e.target.value,
+                          value: "",
+                        })
+                      }
                       className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                     >
                       {fields.map((f) => (
@@ -237,7 +255,9 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
                     {/* Operator Select */}
                     <select
                       value={item.operator}
-                      onChange={(e) => updateFilter(item.id, { operator: e.target.value })}
+                      onChange={(e) =>
+                        updateFilter(item.id, { operator: e.target.value })
+                      }
                       className="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                     >
                       {operators.map((op) => (
@@ -251,7 +271,9 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
                     {selectOptions.length > 0 ? (
                       <select
                         value={item.value}
-                        onChange={(e) => updateFilter(item.id, { value: e.target.value })}
+                        onChange={(e) =>
+                          updateFilter(item.id, { value: e.target.value })
+                        }
                         className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                       >
                         <option value="">Select...</option>
@@ -261,18 +283,23 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
                           </option>
                         ))}
                       </select>
-                    ) : field?.fieldtype === "Date" || field?.fieldtype === "Datetime" ? (
+                    ) : field?.fieldtype === "Date" ||
+                      field?.fieldtype === "Datetime" ? (
                       <input
                         type="date"
                         value={item.value}
-                        onChange={(e) => updateFilter(item.id, { value: e.target.value })}
+                        onChange={(e) =>
+                          updateFilter(item.id, { value: e.target.value })
+                        }
                         className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                       />
                     ) : (
                       <input
                         type="text"
                         value={item.value}
-                        onChange={(e) => updateFilter(item.id, { value: e.target.value })}
+                        onChange={(e) =>
+                          updateFilter(item.id, { value: e.target.value })
+                        }
                         placeholder="Value"
                         className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                       />
