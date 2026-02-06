@@ -112,7 +112,7 @@ export default function EmployeeProfileSections() {
     return (
         <div>
             <div className="flex items-start justify-between">
-                <div className="px-6 py-6">
+                <div className="px-0 md:px-6 py-6">
                     <Typography variant="h3" className="font-bold text-gray-900 mb-1">
                         Personal Information
                     </Typography>
@@ -122,7 +122,7 @@ export default function EmployeeProfileSections() {
                 </div>
             </div>
             {tabs.length > 1 && (
-                <div className="px-6 sticky top-12 md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
+                <div className="px-0 md:px-6 sticky top-12 md:top-14 bg-white z-10 flex-shrink-0 w-full max-w-full pb-2">
                     <div className="flex bg-white overflow-x-scroll scrollbar-hide gap-1 w-full py-2">
                         {tabs.map(tab => (
                             <Button
@@ -153,7 +153,7 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-6 border border-gray-100/50">
+                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
                             <Typography variant="subheading" className="font-bold text-gray-800">
                                 {tab.label}
                             </Typography>
@@ -172,7 +172,7 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-0 md:px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
                                 .map(field => {

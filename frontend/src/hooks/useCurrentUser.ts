@@ -23,8 +23,6 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
     queryKey: ["currentUser"],
     queryFn: async () => {
       try {
-        console.log("Fetching current user data...");
-
         // First get the current user email/name
         const userEmail = await FrappeAPI.callMethod(
           "frappe.auth.get_logged_user"
@@ -35,7 +33,6 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
           return null;
         }
 
-        console.log("Current user email:", userEmail);
 
         // Then fetch the full user document
         const userData = await FrappeAPI.getDocument("User", userEmail, [
@@ -52,7 +49,6 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
           "enabled",
         ]);
 
-        console.log("Fetched user data:", userData);
 
         if (!userData) {
           console.error("Failed to fetch user document");
@@ -61,13 +57,12 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
 
         // Fetch user roles using safe API method that handles Administrator correctly
         const rolesData = await FrappeAPI.callMethod("recruitment.api.get_user_roles");
-        
+
         // Map roles to the expected format
         const roles = Array.isArray(rolesData)
           ? rolesData.map((r: { role: string }) => ({ role: r.role }))
           : [];
 
-        console.log("Fetched user roles:", roles);
 
         return { ...userData, roles } as CurrentUser;
       } catch (error) {

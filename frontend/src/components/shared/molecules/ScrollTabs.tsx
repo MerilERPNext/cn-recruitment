@@ -53,7 +53,7 @@ export const ScrollTabs = ({
         <>
             {/* Tabs */}
             {tabs.length > 1 && (
-                <div className="sticky top-12 md:top-14 bg-white z-10 px-6 pb-2">
+                <div className="sticky top-12 md:top-14 bg-white z-10 px-0 md:px-6 pb-2">
                     <div className="flex overflow-x-auto gap-1 py-2 scrollbar-hide">
                         {tabs.map(tab => (
                             <Button

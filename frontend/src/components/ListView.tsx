@@ -143,14 +143,6 @@ const FrappeListView = <T extends BaseItem>({
       setQueryParamsFilters({});
     }
   }, [filtersString]);
-  // Console log component props
-  console.log(`🎯 FrappeListView initialized for doctype: ${doctype}`, {
-    pageSize,
-    defaultFilters,
-    defaultFields,
-    searchFields,
-    infiniteScroll,
-  });
 
   useEffect(() => {
     setFilters(defaultFilters || {});
@@ -174,17 +166,6 @@ const FrappeListView = <T extends BaseItem>({
     useDoctypeSchema(doctype);
   const doctypeSchema = doctypeSchemaData?.data;
 
-  // Log schema data
-  useEffect(() => {
-    if (doctypeSchemaData) {
-      console.log(`📋 Schema loaded for ${doctype}:`, doctypeSchemaData);
-      console.log(
-        `🔍 Available fields for ${doctype}:`,
-        doctypeSchemaData.data?.fields?.map((f) => f.fieldname)
-      );
-    }
-  }, [doctypeSchemaData, doctype]);
-
   // Common query parameters
   const queryParams = {
     doctype,
@@ -195,8 +176,6 @@ const FrappeListView = <T extends BaseItem>({
     searchFields,
     orderBy,
   };
-
-  console.log(`🔧 Query params for ${doctype}:`, queryParams);
 
   // Infinite query for infinite scroll
   const infiniteQueryResult = useFrappeInfiniteQuery(queryParams, {
@@ -244,36 +223,6 @@ const FrappeListView = <T extends BaseItem>({
     }
   }, [refetchTrigger]);
 
-  // Log query results
-  useEffect(() => {
-    if (infiniteScroll && infiniteQueryResult.data) {
-      console.log(
-        `♾️ Infinite query data for ${doctype}:`,
-        infiniteQueryResult.data
-      );
-      console.log(
-        `📄 Total pages loaded for ${doctype}: ${infiniteQueryResult.data.pages.length}`
-      );
-      infiniteQueryResult.data.pages.forEach((page: number, index: number) => {
-        console.log(`📄 Page ${index + 1} data for ${doctype}:`, page);
-      });
-    }
-  }, [infiniteQueryResult.data, doctype, infiniteScroll]);
-
-  useEffect(() => {
-    if (!infiniteScroll && paginationQueryResult.data) {
-      console.log(
-        `📋 Pagination query data for ${doctype}:`,
-        paginationQueryResult.data
-      );
-    }
-  }, [paginationQueryResult.data, doctype, infiniteScroll]);
-
-  useEffect(() => {
-    if (countData) {
-      console.log(`🔢 Count data for ${doctype}:`, countData);
-    }
-  }, [countData, doctype]);
 
   // Determine which query result to use
   const queryResult = infiniteScroll
@@ -289,19 +238,8 @@ const FrappeListView = <T extends BaseItem>({
         | { data: T[] }[]
         | undefined;
       data = pages?.flatMap((page) => page.data) || [];
-      console.log(data, "gggggggggggggggg");
     } else {
       data = (paginationQueryResult.data?.data as unknown as T[]) || [];
-    }
-
-    console.log(`📦 Processed data for ${doctype}:`, data);
-    console.log(`📊 Total processed items for ${doctype}: ${data.length}`);
-
-    if (data.length > 0) {
-      console.log(`🔍 First item sample for ${doctype}:`, data[0]);
-      if (data.length > 1) {
-        console.log(`🔍 Second item sample for ${doctype}:`, data[1]);
-      }
     }
 
     return data;
@@ -327,22 +265,11 @@ const FrappeListView = <T extends BaseItem>({
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalCount);
 
-  console.log(`📊 Pagination info for ${doctype}:`, {
-    totalCount,
-    totalPages,
-    currentPage,
-    startIndex,
-    endIndex,
-    pageSize,
-  });
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(`🔍 Search term changed for ${doctype}:`, e.target.value);
     setSearchTerm(e.target.value);
   };
 
   const handleFilterChange = (fieldname: string, value: string) => {
-    console.log(`🔧 Filter changed for ${doctype}:`, { fieldname, value });
     setFilters((prev: Record<string, string>) => ({
       ...prev,
       [fieldname]: value,
@@ -350,7 +277,6 @@ const FrappeListView = <T extends BaseItem>({
   };
 
   const clearFilters = () => {
-    console.log(`🧹 Clearing filters for ${doctype}`);
     setFilters({});
     setSearchTerm("");
     setDebouncedSearchTerm("");
@@ -361,7 +287,6 @@ const FrappeListView = <T extends BaseItem>({
   };
 
   const refreshData = () => {
-    console.log(`🔄 Refreshing data for ${doctype}`);
     queryClient.invalidateQueries({ queryKey: ["documents", doctype] });
     queryClient.invalidateQueries({
       queryKey: ["documents-infinite", doctype],
@@ -374,7 +299,6 @@ const FrappeListView = <T extends BaseItem>({
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      console.log(`📄 Going to page ${page} for ${doctype}`);
       setCurrentPage(page);
     }
   };
@@ -384,7 +308,6 @@ const FrappeListView = <T extends BaseItem>({
       infiniteQueryResult.hasNextPage &&
       !infiniteQueryResult.isFetchingNextPage
     ) {
-      console.log(`⬇️ Loading more data for ${doctype}`);
       infiniteQueryResult.fetchNextPage();
     }
   };
@@ -573,21 +496,6 @@ const FrappeListView = <T extends BaseItem>({
   const isListLoading = queryResult.isLoading || schemaLoading || isLoading;
   const error = queryResult.error;
 
-  // Log loading and error states
-  useEffect(() => {
-    console.log(`⏳ Loading state for ${doctype}:`, {
-      isListLoading,
-      schemaLoading,
-      queryLoading: queryResult.isLoading,
-    });
-  }, [isListLoading, schemaLoading, queryResult.isLoading, doctype]);
-
-  useEffect(() => {
-    if (error) {
-      console.error(`❌ Error for ${doctype}:`, error);
-    }
-  }, [error, doctype]);
-
   return (
     <>
       {/* Header */}
@@ -742,17 +650,10 @@ const FrappeListView = <T extends BaseItem>({
               if (filter && !filter(item)) {
                 return null;
               }
-              if (index < 3) {
-                console.log(
-                  `🎨 Rendering item ${index + 1} for ${doctype}:`,
-                  item
-                );
-              }
               return (
                 <div
                   key={item.name || `${doctype}-${index}`}
                   onClick={() => {
-                    console.log(`👆 Item clicked for ${doctype}:`, item);
                     onItemClick?.(item); // Use optional chaining
                   }}
                   className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer" : ""

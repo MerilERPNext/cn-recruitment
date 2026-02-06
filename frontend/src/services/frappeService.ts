@@ -14,7 +14,6 @@ type FilterCondition = [string, FilterOperator, unknown];
 export const frappeService = {
   getDoctypeSchema: async (doctype: string): Promise<DoctypeSchema> => {
     try {
-      console.log(`🔍 Fetching schema for doctype: ${doctype}`);
       const result = await FrappeAPI.getDocMeta(doctype);
       return { data: result };
     } catch (error) {
@@ -29,10 +28,6 @@ export const frappeService = {
     fields?: string[]
   ): Promise<unknown> => {
     try {
-      console.log(`🔍 Fetching document for doctype: ${doctype}`, {
-        name,
-        fields,
-      });
       const response = await FrappeAPI.getDocument(doctype, name, fields);
       return response;
     } catch (error) {
@@ -45,9 +40,6 @@ export const frappeService = {
     options?: Record<string, unknown>
   ): Promise<unknown> => {
     try {
-      console.log(`🔍 Fetching document for doctype: ${doctype}`, {
-        options,
-      });
       const response = await FrappeAPI.getDocumentList(doctype, options);
       return response.data;
     } catch (error) {
@@ -67,14 +59,6 @@ export const frappeService = {
     orderBy,
   }: GetDocumentsParams): Promise<FrappePageResponse> => {
     try {
-      console.log(`📄 Fetching page data for doctype: ${doctype}`, {
-        pageParam,
-        pageSize,
-        searchTerm,
-        filters,
-        fields,
-        searchFields,
-      });
 
       const apiFilters: FilterCondition[] = [];
       const orFilters: FilterCondition[] = [];
@@ -104,7 +88,6 @@ export const frappeService = {
         apiFilters.push(...filterArray);
       }
 
-      console.log(`🔍 API Filters for ${doctype}:`, { apiFilters, orFilters });
 
       const result = (await FrappeAPI.getDocumentList(doctype, {
         fields,
@@ -138,10 +121,7 @@ export const frappeService = {
     filters,
   }: GetCountParams): Promise<number> => {
     try {
-      console.log(`🔢 Fetching count for doctype: ${doctype}`, {
-        searchTerm,
-        filters,
-      });
+
       const apiFilters: FilterCondition[] = filters || [];
 
       // Add search term as OR filters if provided
@@ -169,7 +149,6 @@ export const frappeService = {
     data: Record<string, unknown>
   ): Promise<DocumentItem> => {
     try {
-      console.log(`📝 Creating document in doctype: ${doctype}`, data);
       const result = await FrappeAPI.createDocument(doctype, data);
       return result as DocumentItem;
     } catch (error) {
@@ -184,7 +163,6 @@ export const frappeService = {
     data: Record<string, unknown>
   ): Promise<DocumentItem> => {
     try {
-      console.log(`✏️ Updating document ${name} in doctype: ${doctype}`, data);
       const result = await FrappeAPI.updateDocument(doctype, name, data);
       return result as DocumentItem;
     } catch (error) {
@@ -198,7 +176,6 @@ export const frappeService = {
 
   deleteDocument: async (doctype: string, name: string): Promise<void> => {
     try {
-      console.log(`🗑️ Deleting document ${name} from doctype: ${doctype}`);
       await FrappeAPI.deleteDocument(doctype, name);
     } catch (error) {
       console.error(
@@ -214,7 +191,6 @@ export const frappeService = {
     params: Record<string, unknown>
   ): Promise<unknown> => {
     try {
-      console.log(`🔍 Calling method: ${method}`, params);
       const result = await FrappeAPI.callMethod(method, params);
       return result;
     } catch (error) {

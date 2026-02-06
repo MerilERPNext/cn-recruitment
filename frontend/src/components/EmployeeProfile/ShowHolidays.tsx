@@ -37,7 +37,7 @@ const ShowHolidays = () => {
     );
 
   return (
-    <div className="w-full bg-white rounded-lg p-4">
+    <div className="w-full bg-white rounded-lg px-0 md:p-6">
       <div className="border-b border-gray-200 pb-4 mb-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">

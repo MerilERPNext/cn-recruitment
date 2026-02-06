@@ -64,7 +64,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   return (
     <div className="address-form-container bg-white rounded-md">
-      <div className="p-4 md:p-8">
+      <div className="px-0 md:px-6 py-2 md:p-8">
         <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
           <div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -74,7 +74,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               Your employment history and organizational information
             </p>
           </div>
-          <div className="flex gap-2 ">
+          <div className="flex">
             {canEditEmploymentHistory && (
               <Button
                 onClick={() => {
