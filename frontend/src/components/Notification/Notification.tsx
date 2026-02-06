@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
-  FaRegEnvelope,
-  FaRegFileAlt,
-  FaBriefcase,
+  // FaRegEnvelope,
+  // FaRegFileAlt,
+  // FaBriefcase,
   FaTimes,
 } from "react-icons/fa";
 import FrappeListView from "../ListView";
@@ -13,6 +13,11 @@ import HeaderBar from "../HeaderBar";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
 import { IMPERSONATION_TEXT } from "../../constants/Notification";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import { PiListChecksBold } from "react-icons/pi";
+import Button from "../shared/atoms/Button";
+
+
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -31,9 +36,15 @@ const NotificationList = () => {
   const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
   const navigate = useNavigate();
 
+  const filters = useMemo((): Record<string, string> => {
+    if (activeTab === "read") return { read: "1" };
+    if (activeTab === "unread") return { read: "0" };
+    return {};
+  }, [activeTab]);
+
   const layout = (
     <div className="flex flex-col h-full">
-      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} /> 
+      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
 
       {/* Tabs */}
       <div className="flex border-b">
@@ -41,11 +52,10 @@ const NotificationList = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2   text-sm font-medium capitalize ${
-              activeTab === tab
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-4 py-2   text-sm font-medium capitalize ${activeTab === tab
+              ? "border-b-2 border-blue-600 text-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             {tab}
           </button>
@@ -55,6 +65,10 @@ const NotificationList = () => {
       <div className="flex-1 p-4 overflow-y-auto">
         <FrappeListView
           doctype="Notification Log"
+          filter={(item: NotificationLog) =>
+            !item.subject?.includes(IMPERSONATION_TEXT)
+          }
+          defaultFilters={filters}
           ItemComponent={(props) => (
             <NotificationItem {...props} activeTab={activeTab} />
           )}
@@ -88,35 +102,27 @@ const NotificationItem: React.FC<{
   index?: number;
   doctype: string;
   activeTab: "all" | "read" | "unread";
-}> = ({ item, activeTab }) => {
+}> = ({ item }) => {
   const notification = item as NotificationLog;
 
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
   const markAsRead = useMarkAsRead();
 
-  if (notification.subject?.includes(IMPERSONATION_TEXT)) {
-    return null;
-  }
 
-  // Tab filter logic
-  if (!openDialog) {
-    if (activeTab === "read" && !isRead) return null;
-    if (activeTab === "unread" && isRead) return null;
-  }
 
-  const getIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case "alert":
-        return <FaRegEnvelope className="text-black w-5 h-5" />;
-      case "job":
-        return <FaBriefcase className="text-blue-500 w-5 h-5" />;
-      case "application":
-        return <FaRegFileAlt className="text-green-500 w-5 h-5" />;
-      default:
-        return <FaRegEnvelope className="text-gray-400 w-5 h-5" />;
-    }
-  };
+  // const getIcon = (type: string) => {
+  //   switch (type?.toLowerCase()) {
+  //     case "alert":
+  //       return <PiListChecksBold size={24} strokeWidth={2} className="text-[#AD2D6C] border-2 border-[#AD2D6C] rounded-md p-0.5" />;
+  //     case "job":
+  //       return <FaBriefcase className="text-blue-500 w-5 h-5" />;
+  //     case "application":
+  //       return <FaRegFileAlt className="text-green-500 w-5 h-5" />;
+  //     default:
+  //       return <FaRegEnvelope className="text-gray-400 w-5 h-5" />;
+  //   }
+  // };
 
   const handleClick = async () => {
     setOpenDialog(true);
@@ -143,31 +149,32 @@ const NotificationItem: React.FC<{
     if (diffHr < 24) return `${diffHr} hours ago`;
     return `${diffDay} days ago`;
   };
+
+  const cleanSubject = sanitizeToPlainText(notification.subject).replace(/\s+/g, " ").trim();
+
   return (
     <>
       {/* List item */}
       <div
         key={notification.name}
         onClick={handleClick}
-        className={`flex items-center justify-between p-4 mt-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-          isRead ? "opacity-70" : "bg-white"
-        }`}
+        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50 md:mb-3 my-1 ${isRead ? "bg-transparent" : "bg-white  shadow-sm"
+          }`}
       >
         <div className="flex items-start gap-4 w-0 flex-1">
           {/* Fixed Icon */}
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-            {getIcon(notification.type)}
+          <div className="flex-shrink-0 flex items-center justify-center p-2 rounded-md bg-[#AD2D6C]/10">
+            <PiListChecksBold size={28} strokeWidth={2} className="text-[#AD2D6C] border-2 border-[#AD2D6C] rounded-[5px] p-0.5" />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm truncate">
+            <p className="text-sm line-clamp-3">
               <span
-                className={`${
-                  isRead
-                    ? "font-normal text-gray-600"
-                    : "font-semibold text-gray-900"
-                }`}
+                className={`${isRead
+                  ? "font-normal text-gray-600"
+                  : "font-semibold text-gray-900"
+                  }`}
               >
                 {notification.type === "Alert"
                   ? "New Alert"
@@ -175,14 +182,13 @@ const NotificationItem: React.FC<{
               </span>
               :{" "}
               <span
-                className={`${
-                  isRead ? "text-gray-400" : "text-gray-600"
-                } break-words`}
-                dangerouslySetInnerHTML={{ __html: notification.subject }}
-              />
+                className={`${isRead ? "text-gray-400" : "text-gray-600"} break-words`}
+              >
+                {cleanSubject}
+              </span>
             </p>
 
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-xs text-gray-500 truncate mt-1.5">
               {formatTimeAgo(notification.creation)}
             </p>
           </div>
@@ -190,7 +196,7 @@ const NotificationItem: React.FC<{
 
         {/* Read dot */}
         {!isRead && (
-          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500"></span>
+          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-[#AD2D6C]"></span>
         )}
       </div>
 
@@ -207,10 +213,7 @@ const NotificationItem: React.FC<{
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3
-                className="text-lg font-semibold"
-                dangerouslySetInnerHTML={{ __html: notification.subject }}
-              />
+              <h3 className="font-medium truncate">{cleanSubject}</h3>
               <button
                 onClick={() => setOpenDialog(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -222,32 +225,30 @@ const NotificationItem: React.FC<{
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6">
               <div className="mb-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-800">
                   <strong>From:</strong> {notification.from_user}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-800">
                   <strong>To:</strong> {notification.for_user}
                 </p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-800">
                   <strong>Date:</strong>{" "}
                   {new Date(notification.creation).toLocaleString()}
                 </p>
               </div>
               <div className="text-gray-800 leading-relaxed">
-                <div
-                  dangerouslySetInnerHTML={{ __html: notification.subject }}
-                />
+                <div>{cleanSubject}</div>
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-end">
-              <button
+              <Button
                 onClick={() => setOpenDialog(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

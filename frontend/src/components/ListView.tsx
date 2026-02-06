@@ -85,6 +85,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   orderBy?: string;
   showPagination?: boolean;
   layout?: "row" | "column";
+  filter?: (item: T) => boolean;
 }
 
 const FrappeListView = <T extends BaseItem>({
@@ -111,6 +112,7 @@ const FrappeListView = <T extends BaseItem>({
   onRefetchComplete,
   orderBy = "modified desc",
   showPagination = true,
+  filter,
 }: FrappeListViewProps<T>) => {
   const { search } = useLocation();
   const queryParam = new URLSearchParams(search);
@@ -392,7 +394,7 @@ const FrappeListView = <T extends BaseItem>({
       return (
         <div>
           {infiniteQueryResult.hasNextPage ? (
-            <div className="flex items-center justify-center px-4 py-6 bg-white border-gray-200">
+            <div className="flex items-center justify-center px-4 py-6">
               <button
                 onClick={loadMore}
                 disabled={infiniteQueryResult.isFetchingNextPage}
@@ -737,6 +739,9 @@ const FrappeListView = <T extends BaseItem>({
             }
           >
             {processedData.map((item, index) => {
+              if (filter && !filter(item)) {
+                return null;
+              }
               if (index < 3) {
                 console.log(
                   `🎨 Rendering item ${index + 1} for ${doctype}:`,
