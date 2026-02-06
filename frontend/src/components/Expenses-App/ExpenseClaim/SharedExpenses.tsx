@@ -183,7 +183,7 @@ const SharedExpenses: React.FC = () => {
           <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">Shared Expense Claims</Typography>
             <Typography variant="bodySmall" color="body2">
-              Track and manage your leave requests
+              Track and manage your shared expense claims
             </Typography>
           </div>
         </div>
