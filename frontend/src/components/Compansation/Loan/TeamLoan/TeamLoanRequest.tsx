@@ -10,7 +10,7 @@ import LoanDetailsModal from "./LoanDetailsView";
 import { Typography } from "../../../shared/atoms/Typography";
 
 const TeamLoanRequest = () => {
-  const { isMobile } = useScreenSize();
+  const { isDesktop } = useScreenSize();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
@@ -56,84 +56,59 @@ const TeamLoanRequest = () => {
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4">
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">Team Loan Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage team loan requests
             </Typography>
           </div>
         </div>
+      )}
 
-        <div className="px-4">
-          {!isMobile && (
-            <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
-              <ApprovalList
-                doctype="Loan Application"
-                refetch={refetchApprovalList}
-                setRefetch={setRefetchApprovalList}
-                onApprovalRefetchComplete={handleApprovalRefetchComplete}
-                pageSize={10}
-                showPagination={true}
-                infiniteScroll={true}
-                loadMorePagination={false}
-                isSearch={true}
-                isFilter={true}
-                columnWidths={tableColumnWidths}
-                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-                filterFields={[
-                  {
-                    fieldname: "status",
-                    label: "Status",
-                    fieldtype: "Select",
-                    options: [
-                      { label: "Pending", value: "Open" },
-                      { label: "Approved", value: "Approved" },
-                      { label: "Rejected", value: "Rejected" },
-                    ],
-                  },
-                ]}
-                defaultFilters={{ status: "Open" }}
-                renderCardContent={(item: any) => (
-                  <ApprovalRejectionLoanList
-                    data={item.data}
-                    isSelected={item.isSelected}
-                    onToggleSelect={item.onToggleSelect}
-                    onAction={item.onAction}
-                    loadingAction={item.loadingAction}
-                    onClick={() => handleRequestClick(item)}
-                    isBulkSelectEnabled={isBulkSelectEnabled}
-                  />
-                )}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+          <ApprovalList
+            doctype="Loan Application"
+            refetch={refetchApprovalList}
+            setRefetch={setRefetchApprovalList}
+            onApprovalRefetchComplete={handleApprovalRefetchComplete}
+            pageSize={10}
+            showPagination={true}
+            infiniteScroll={true}
+            loadMorePagination={false}
+            isSearch={true}
+            isFilter={true}
+            columnWidths={tableColumnWidths}
+            onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+            filterFields={[
+              {
+                fieldname: "status",
+                label: "Status",
+                fieldtype: "Select",
+                options: [
+                  { label: "Pending", value: "Open" },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                ],
+              },
+            ]}
+            defaultFilters={{ status: "Open" }}
+            renderCardContent={(item: any) => (
+              <ApprovalRejectionLoanList
+                data={item.data}
+                isSelected={item.isSelected}
+                onToggleSelect={item.onToggleSelect}
+                onAction={item.onAction}
+                loadingAction={item.loadingAction}
+                onClick={() => handleRequestClick(item)}
+                isBulkSelectEnabled={isBulkSelectEnabled}
               />
-            </CardTable>
-          )}
-
-          {isMobile && (
-            <ApprovalList
-              status="Open"
-              doctype="Loan Application"
-              pageSize={4}
-              showPagination={false}
-              refetch={refetchApprovalList}
-              setRefetch={setRefetchApprovalList}
-              onApprovalRefetchComplete={handleApprovalRefetchComplete}
-              renderCardContent={(item: any) => (
-                <ApprovalRejectionLoanList
-                  data={item.data}
-                  isSelected={item.isSelected}
-                  onToggleSelect={item.onToggleSelect}
-                  onAction={item.onAction}
-                  loadingAction={item.loadingAction}
-                  onClick={() => handleRequestClick(item)}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                />
-              )}
-            />
-          )}
-        </div>
+            )}
+          />
+        </CardTable>
       </div>
 
       {/* MODAL */}
