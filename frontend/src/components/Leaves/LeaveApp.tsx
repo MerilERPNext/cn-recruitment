@@ -167,7 +167,7 @@ const LeaveAppInner: React.FC = () => {
         )}
       </header>
 
-      <main className="z-100 flex-grow overflow-y-auto">
+      <main className="z-100 flex-grow overflow-y-auto p-2">
         <Outlet />
       </main>
 

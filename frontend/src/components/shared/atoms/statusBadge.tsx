@@ -111,6 +111,30 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <Clock className="w-4 h-4" />,
       };
 
+    case "issued":
+      return {
+        label: "Issued",
+        bgClass: "bg-yellow-100",
+        textClass: "text-yellow-800",
+        icon: <Clock className="w-4 h-4" />,
+      };
+
+    case "allocated":
+      return {
+        label: "Allocated",
+        bgClass: "bg-emerald-100",
+        textClass: "text-emerald-700",
+        icon: <Check className="w-4 h-4" />,
+      };
+
+    case "expired":
+      return {
+        label: "Expired",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
+        icon: <X className="w-4 h-4" />,
+      };
+
     default:
       return {
         label: rawStatus || "Unknown",

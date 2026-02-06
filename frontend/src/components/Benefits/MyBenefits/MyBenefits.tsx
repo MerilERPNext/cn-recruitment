@@ -21,12 +21,15 @@ import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { getCurrentPeriod } from "../shared/logic";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 export const COLUMN_LAYOUT =
   "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const MyBenefits: React.FC = () => {
   const { data: employee } = useCurrentEmployeeIdCard();
+  const { isDesktop } = useScreenSize();
+
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
 
@@ -157,29 +160,37 @@ const MyBenefits: React.FC = () => {
   // At this point we have real data in allAccruedReimbursements.data
   const components = allAccruedReimbursements?.data ?? [];
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              <Typography variant="h4">
-                My Benefits for FY {selectedYear}
-              </Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your benefits
-              </Typography>
-            </div>
-            <div className="flex items-center space-x-3 pb-1">
-              <CustomDropdown
-                position="bottom-left"
-                value={selectedYear}
-                onChange={(event) => setSelectedYear(event?.target.value)}
-                options={optionYears}
-              />
-            </div>
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop ? (
+              <div>
+                <Typography variant="h4">
+                  My Benefits for FY {selectedYear}
+                </Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your benefits
+                </Typography>
+              </div>
+            ) : (
+              <div>
+                <Typography variant="h4">
+                  My Benefits for FY {selectedYear}
+                </Typography>
+              </div>
+            )}
+            <CustomDropdown
+              position="bottom-left"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event?.target.value)}
+              options={optionYears}
+            />
           </div>
         </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {!components || components.length === 0 ? (
           <div className="w-full">
             <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
@@ -187,7 +198,8 @@ const MyBenefits: React.FC = () => {
             </div>
           </div>
         ) : null}
-        <main className="w-full px-4 sm:px-6 lg:px-4 pb-8 space-y-6">
+
+        <main className="w-full pb-10 md:pb-20 space-y-4">
           {components?.map((component, compIdx) => {
             // compute summary stats based on the SalaryComponent fields
             const carryForward = component.carry_forward_amount ?? 0;
@@ -203,14 +215,14 @@ const MyBenefits: React.FC = () => {
             const fetchFunction = async (params: FetchParams) => {
               const details = component.details ?? [];
 
-            // basic searchTerm filter
-            const filtered = !params.searchTerm
-              ? details
-              : details.filter((r) =>
-                  r.month
-                    .toLowerCase()
-                    .includes(params.searchTerm!.toLowerCase()),
-                );
+              // basic searchTerm filter
+              const filtered = !params.searchTerm
+                ? details
+                : details.filter((r) =>
+                    r.month
+                      .toLowerCase()
+                      .includes(params.searchTerm!.toLowerCase()),
+                  );
 
               const response: FrappePageResponse = {
                 data: filtered,
