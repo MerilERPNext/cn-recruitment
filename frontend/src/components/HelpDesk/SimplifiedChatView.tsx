@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
   currentUserEmail: string;
+  isDrawer?: boolean;
 }
 
 interface SimpleChatMessage {
@@ -294,6 +295,7 @@ const RejectResolutionModal: React.FC<RejectResolutionModalProps> = ({
 const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ticket,
   currentUserEmail,
+  isDrawer = false,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "resolution">("chat");
@@ -937,14 +939,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </>
           ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
             <>
-              <button
-                onClick={handleResolveButtonClick}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Resolve
-              </button>
+              {!isDrawer && (
+                <button
+                  onClick={handleResolveButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Resolve
+                </button>
+              )}
               <button
                 onClick={handleCloseButtonClick}
                 disabled={isClosing}
