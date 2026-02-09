@@ -165,40 +165,6 @@ export function MyRequestCard({
             </div>
           </div>
         </div>
-        // <div
-        //   className="block cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl"
-        //   onClick={() => onClick?.(request)}
-        // >
-        //   <div className="p-4">
-        //     <div className="flex items-start gap-3 w-full">
-        //       <div className="w-full">
-        //         <div className="flex items-start justify-between">
-        //           <div className="flex flex-col gap-1">
-        //             <Link
-        //               to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
-        //               target="_blank"
-        //             >
-        //               <h3 className="card-title">{request?.username}</h3>
-        //             </Link>
-        //             <p className="card-subtitle">
-        //               {formatToIndianDate(request?.due_date)}
-        //             </p>
-        //           </div>
-        //           <Badge
-        //             size="sm"
-        //             label={status?.label as string}
-        //             backgroundColor={status?.statusColor}
-        //           />
-        //         </div>
-
-        //         <p className="card-subtitle mt-2 line-clamp-2">
-        //           <span className="card-title">Description:</span>{" "}
-        //           <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-        //         </p>
-        //       </div>
-        //     </div>
-        //   </div>
-        // </div>
       )}
     </>
   );

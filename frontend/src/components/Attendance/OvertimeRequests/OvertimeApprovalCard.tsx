@@ -152,7 +152,7 @@ const OvertimeApprovalCard = ({
           </Tooltip>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {(data?.due_date)}
+            {data?.due_date}
           </Typography>
 
           <div className="flex items-center justify-center">

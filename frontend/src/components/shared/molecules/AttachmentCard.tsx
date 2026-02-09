@@ -17,9 +17,7 @@ export function AttachmentCard({ fileUrl }: { fileUrl: string }) {
 
       {/* Info */}
       <div className="flex-1 overflow-hidden">
-        <p className="text-sm font-medium text-gray-900 truncate">
-          {fileName}
-        </p>
+        <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
         <p className="text-xs text-gray-500">Image</p>
       </div>
 
