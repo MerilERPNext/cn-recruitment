@@ -82,7 +82,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   const [show, setShow] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const hideTimer = useRef<any>(null);
-  const animationTimer = useRef<any>(null);
+  const animationTimer = useRef<number | null>(null);
 
   const handleEnter = () => {
     clearTimeout(hideTimer.current);
