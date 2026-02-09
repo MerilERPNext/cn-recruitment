@@ -21,6 +21,7 @@ import type {
   AttendanceStatusResponse,
 } from "../types/leaves";
 import toast from "react-hot-toast";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
 
 export type LeaveType = {
   allocated_leaves: number;
@@ -457,13 +458,20 @@ export function useUpdateRejectionReason() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       leaveService.updateRejectionReason(id, reason),
     onSuccess: () => {
-      // Invalidate relevant queries if needed, mainly specific document or list
       queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
       queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
     },
     onError: (err: unknown) => {
       console.error("Failed to update rejection reason:", err);
-      toast.error("Failed to save rejection reason");
+      toast.error(errorResponseFormater(err));
     },
   });
 }
+
+export const useIsRejectionReasonMandatory = () => {
+  return useQuery<{ message: boolean }>({
+    queryKey: ["isRejectionReasonMandatory"],
+    queryFn: leaveService.isRejectionReasonMandatory,
+    staleTime: Infinity,
+  });
+};

@@ -82,9 +82,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <Typography variant="mobileCardLabel" className="block">
             Claimed Amount
           </Typography>
-          <Typography variant="mobileCardValue">
-            {formattedAmount}
-          </Typography>
+          <Typography variant="mobileCardValue">{formattedAmount}</Typography>
         </div>
       </div>
 
@@ -161,8 +159,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         <Tooltip
           content={
             item?.status === "Draft"
-              ? `Allocated to : ${item?.reference_document?.custom_assigned_user}` ||
-                `Allocated to : ${item?.allocated_to}`
+              ? `Allocated to : ${item?.allocated_to}`
               : ""
           }
         >

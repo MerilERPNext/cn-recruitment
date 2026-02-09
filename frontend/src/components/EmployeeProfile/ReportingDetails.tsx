@@ -143,7 +143,7 @@ const ReportingDetails = () => {
   const hierarchySections = hierarchyData?.data || {};
   return (
     <div className="address-form-container bg-white rounded-lg gray-200">
-      <div className="p-4 md:p-8">
+      <div className="px-0 md:p-6">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8">
           <div className="">

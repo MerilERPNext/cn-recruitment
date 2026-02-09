@@ -101,11 +101,13 @@ const TicketCard: React.FC<TicketCardProps> = ({
       onClick={() => onRowClick?.(ticket)}
     >
       <div className="flex justify-between items-start mb-1">
-        <div className="flex flex-col gap-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Issue ID
-          </Typography>
-          <Typography variant="mobileCardValue">{ticket.name}</Typography>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel" className="block">
+              Issue ID
+            </Typography>
+            <Typography variant="mobileCardValue">{ticket.name}</Typography>
+          </div>
         </div>
 
         <Badge
@@ -226,7 +228,6 @@ const TicketTable: React.FC<TicketTableProps> = ({
     return categoryMap[categoryId] || categoryId;
   };
 
-
   // Since we only show user's own tickets, always show "Close" button
   const getCloseButtonLabel = () => {
     return "Close";
@@ -252,9 +253,11 @@ const TicketTable: React.FC<TicketTableProps> = ({
             <div key={i} className="rounded-2xl bg-white border border-gray-100 p-6 animate-pulse">
               {/* Header with badge */}
               <div className="flex justify-between items-start mb-5">
-                <div className="space-y-2">
-                  <div className="h-3 w-16 bg-gray-200 rounded" />
-                  <div className="h-4 w-24 bg-gray-200 rounded" />
+                <div className="flex items-center gap-3">
+                  <div className="space-y-2">
+                    <div className="h-3 w-16 bg-gray-200 rounded" />
+                    <div className="h-4 w-24 bg-gray-200 rounded" />
+                  </div>
                 </div>
                 <div className="h-6 w-16 bg-gray-200 rounded-3xl" />
               </div>
@@ -347,19 +350,22 @@ const TicketTable: React.FC<TicketTableProps> = ({
   // Mobile Card View
   if (!isDesktop) {
     return (
-      <div className="space-y-2 px-2">
-        {tickets.map((ticket) => (
-          <TicketCard
-            key={ticket.name}
-            ticket={ticket}
-            categoryMap={categoryMap}
-            userLookup={userLookup}
-            employeeByEmail={employeeByEmail}
-            onReply={onReply}
-            onClose={onClose}
-            onRowClick={onRowClick}
-          />
-        ))}
+      <div className="space-y-2">
+        {/* Ticket Cards */}
+        <div className="px-2">
+          {tickets.map((ticket) => (
+            <TicketCard
+              key={ticket.name}
+              ticket={ticket}
+              categoryMap={categoryMap}
+              userLookup={userLookup}
+              employeeByEmail={employeeByEmail}
+              onReply={onReply}
+              onClose={onClose}
+              onRowClick={onRowClick}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -399,7 +405,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 }`}
               onClick={() => onRowClick?.(ticket)}
             >
-              <td className="pl-6 pr-4 py-3">
+              <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
                   {ticket.name}
                 </Typography>

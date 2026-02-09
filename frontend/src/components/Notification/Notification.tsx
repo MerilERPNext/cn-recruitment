@@ -1,18 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
-import {
-  FaRegEnvelope,
-  FaRegFileAlt,
-  FaBriefcase,
-  FaTimes,
-} from "react-icons/fa";
-import FrappeListView from "../ListView";
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { FaTimes } from "react-icons/fa";
+import { PiListChecksBold } from "react-icons/pi";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import { useMarkAsRead } from "../../hooks/useNotificationLog";
 import HeaderBar from "../HeaderBar";
+import Button from "../shared/atoms/Button";
+import { useNotifications, useMarkAsRead } from "../../hooks/useNotificationLog";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
-import { IMPERSONATION_TEXT } from "../../constants/Notification";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -25,15 +23,37 @@ interface NotificationLog {
   creation: string;
 }
 
-// -------------------- MAIN LIST --------------------
+// ==================================================
+// MAIN LIST
+// ==================================================
 const NotificationList = () => {
   const { isDesktop } = useScreenSize();
-  const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
   const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] =
+    useState<"all" | "read" | "unread">("all");
+    const { data: apiNotifications = [] } = useNotifications();
+    const [notifications, setNotifications] =
+      useState<NotificationLog[]>(apiNotifications);
+
+      useEffect(() => {
+        setNotifications(apiNotifications);
+      }, [apiNotifications]);
+
+  // 🔥 Filter locally
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === "read") {
+      return notifications.filter((n: NotificationLog) => n.read === 1);
+    }
+    if (activeTab === "unread") {
+      return notifications.filter((n: NotificationLog) => n.read === 0);
+    }
+    return notifications;
+  }, [notifications, activeTab]);
 
   const layout = (
     <div className="flex flex-col h-full">
-      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} /> 
+      <HeaderBar title="Notification Log" onBack={() => navigate(-1)} />
 
       {/* Tabs */}
       <div className="flex border-b">
@@ -41,156 +61,150 @@ const NotificationList = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
-            className={`px-4 py-2   text-sm font-medium capitalize ${
-              activeTab === tab
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-4 py-2 text-sm font-medium capitalize
+              ${
+                activeTab === tab
+                  ? "border-b-2 border-blue-600 text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto">
-        <FrappeListView
-          doctype="Notification Log"
-          ItemComponent={(props) => (
-            <NotificationItem {...props} activeTab={activeTab} />
-          )}
-          isSearch={true}
-          defaultFields={[
-            "name",
-            "subject",
-            "for_user",
-            "type",
-            "read",
-            "from_user",
-            "creation",
-          ]}
-          searchFields={["subject", "for_user", "type"]}
-          infiniteScroll={true}
-        />
+      {/* List */}
+      <div className="flex-1 p-2 overflow-y-auto space-y-1">
+        {filteredNotifications.length === 0 ? (
+          <p className="text-center text-gray-500 text-sm">
+            No notifications found
+          </p>
+        ) : (
+          filteredNotifications.map((item: NotificationLog) => (
+            <NotificationItem
+  key={item.name}
+  item={item}
+  onMarkedRead={(id) => {
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.name === id ? { ...n, read: 1 } : n
+      )
+    );
+  }}
+/>
+          ))
+        )}
       </div>
     </div>
   );
 
   return isDesktop ? (
-    <DesktopLayoutWrapper title="Notifications">{layout}</DesktopLayoutWrapper>
+    <DesktopLayoutWrapper title="Notifications">
+      {layout}
+    </DesktopLayoutWrapper>
   ) : (
     layout
   );
 };
 
-// -------------------- ITEM COMPONENT --------------------
+export default NotificationList;
+
+// ==================================================
+// ITEM COMPONENT
+// ==================================================
 const NotificationItem: React.FC<{
-  item: any;
-  index?: number;
-  doctype: string;
-  activeTab: "all" | "read" | "unread";
-}> = ({ item, activeTab }) => {
-  const notification = item as NotificationLog;
+  item: NotificationLog;
+  onMarkedRead: (id: string) => void;
+}> = ({ item, onMarkedRead }) => {
+  const notification = item;
 
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
   const markAsRead = useMarkAsRead();
-
-  if (notification.subject?.includes(IMPERSONATION_TEXT)) {
-    return null;
-  }
-
-  // Tab filter logic
-  if (!openDialog) {
-    if (activeTab === "read" && !isRead) return null;
-    if (activeTab === "unread" && isRead) return null;
-  }
-
-  const getIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case "alert":
-        return <FaRegEnvelope className="text-black w-5 h-5" />;
-      case "job":
-        return <FaBriefcase className="text-blue-500 w-5 h-5" />;
-      case "application":
-        return <FaRegFileAlt className="text-green-500 w-5 h-5" />;
-      default:
-        return <FaRegEnvelope className="text-gray-400 w-5 h-5" />;
-    }
-  };
+  console.log("NotificationItem render",openDialog);
+useEffect(() => {
+  setIsRead(notification.read === 1);
+}, [notification.read]);
+  const cleanSubject = sanitizeToPlainText(
+    notification.subject
+  ).replace(/\s+/g, " ").trim();
 
   const handleClick = async () => {
-    setOpenDialog(true);
-    if (!isRead) {
-      setIsRead(true);
+    setOpenDialog(true);   // open always
+  
+    if (notification.read === 0) {
       try {
+        onMarkedRead(notification.name);
         await markAsRead.mutateAsync(notification.name);
       } catch (err) {
-        console.error("Error updating read state:", err);
+        console.error("Mark read failed", err);
       }
     }
   };
+  
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
+
     const diffMs = now.getTime() - date.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
+    const diffMin = Math.floor(diffMs / 60000);
     const diffHr = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHr / 24);
 
-    if (diffHr < 1) return `${diffMin} minutes ago`;
+    if (diffMin < 60) return `${diffMin} minutes ago`;
     if (diffHr < 24) return `${diffHr} hours ago`;
     return `${diffDay} days ago`;
   };
+
   return (
     <>
       {/* List item */}
       <div
-        key={notification.name}
         onClick={handleClick}
-        className={`flex items-center justify-between p-4 mt-3 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-          isRead ? "opacity-70" : "bg-white"
-        }`}
+        className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50
+        ${isRead ? "bg-white" : "bg-white shadow-sm"}`}
       >
-        <div className="flex items-start gap-4 w-0 flex-1">
-          {/* Fixed Icon */}
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-gray-100">
-            {getIcon(notification.type)}
+        <div className="flex items-start gap-4 flex-1">
+          {/* Icon */}
+          <div className="flex-shrink-0 flex items-center justify-center p-2 rounded-md bg-[#AD2D6C]/10">
+            <PiListChecksBold
+              size={28}
+              className="text-[#AD2D6C] border-2 border-[#AD2D6C] rounded-[5px] p-0.5"
+            />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm truncate">
+            <p className="text-sm line-clamp-3">
               <span
-                className={`${
+                className={
                   isRead
                     ? "font-normal text-gray-600"
                     : "font-semibold text-gray-900"
-                }`}
+                }
               >
-                {notification.type === "Alert"
-                  ? "New Alert"
-                  : notification.type}
+                {notification.type}
               </span>
               :{" "}
               <span
-                className={`${
+                className={
                   isRead ? "text-gray-400" : "text-gray-600"
-                } break-words`}
-                dangerouslySetInnerHTML={{ __html: notification.subject }}
-              />
+                }
+              >
+                {cleanSubject}
+              </span>
             </p>
 
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-xs text-gray-500 mt-1.5">
               {formatTimeAgo(notification.creation)}
             </p>
           </div>
         </div>
 
-        {/* Read dot */}
+        {/* Unread dot */}
         {!isRead && (
-          <span className="flex-shrink-0 w-2 h-2 rounded-full bg-blue-500"></span>
+          <span className="w-2 h-2 rounded-full bg-[#AD2D6C]" />
         )}
       </div>
 
@@ -201,16 +215,16 @@ const NotificationItem: React.FC<{
           <div
             className="flex-1 bg-black/40"
             onClick={() => setOpenDialog(false)}
-          ></div>
+          />
 
-          {/* Right panel */}
+          {/* Panel */}
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3
-                className="text-lg font-semibold"
-                dangerouslySetInnerHTML={{ __html: notification.subject }}
-              />
+              <h3 className="font-medium truncate">
+                {cleanSubject}
+              </h3>
+
               <button
                 onClick={() => setOpenDialog(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -220,34 +234,28 @@ const NotificationItem: React.FC<{
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="mb-4">
-                <p className="text-sm text-gray-600">
-                  <strong>From:</strong> {notification.from_user}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <strong>To:</strong> {notification.for_user}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <strong>Date:</strong>{" "}
-                  {new Date(notification.creation).toLocaleString()}
-                </p>
-              </div>
-              <div className="text-gray-800 leading-relaxed">
-                <div
-                  dangerouslySetInnerHTML={{ __html: notification.subject }}
-                />
+            <div className="flex-1 overflow-y-auto p-6 space-y-2">
+              <p className="text-sm">
+                <strong>From:</strong> {notification.from_user}
+              </p>
+              <p className="text-sm">
+                <strong>To:</strong> {notification.for_user}
+              </p>
+              <p className="text-sm">
+                <strong>Date:</strong>{" "}
+                {new Date(notification.creation).toLocaleString()}
+              </p>
+
+              <div className="pt-4 text-gray-800">
+                {cleanSubject}
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-end">
-              <button
-                onClick={() => setOpenDialog(false)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              >
+              <Button onClick={() => setOpenDialog(false)}>
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -255,5 +263,3 @@ const NotificationItem: React.FC<{
     </>
   );
 };
-
-export default NotificationList;

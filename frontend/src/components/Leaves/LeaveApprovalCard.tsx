@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useUpdateRejectionReason } from "../../hooks/useLeaves";
+import { useUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
@@ -37,6 +37,7 @@ const LeaveApprovalCard = ({
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
   const [pendingActionData, setPendingActionData] = useState<{
@@ -45,14 +46,18 @@ const LeaveApprovalCard = ({
   } | null>(null);
 
   const handleActionClick = (action: string, actionData: any) => {
-    if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
-      setPendingActionData({ action, data: actionData });
-      setShowCommentModal(true);
-    } else {
-      onAction(action, actionData);
-      if (action.toLowerCase() === "reject") {
-        setRejectionComment("");
+    if (action.toLowerCase() === "reject") {
+      const isMandatory = rejectionMandatoryData ?? true;
+      if (isMandatory && !rejectionComment.trim()) {
+        setPendingActionData({ action, data: actionData });
+        setShowCommentModal(true);
+        return;
       }
+    }
+
+    onAction(action, actionData);
+    if (action.toLowerCase() === "reject") {
+      setRejectionComment("");
     }
   };
 
@@ -126,7 +131,7 @@ const LeaveApprovalCard = ({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-          {/* Checkbox */}
+
           {isBulkSelectEnabled && (
             <div className="flex items-center justify-center">
               <input
@@ -147,21 +152,21 @@ const LeaveApprovalCard = ({
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+            className="text-center">
+            <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+              <Typography
+                variant="bodySmall"
+                className="font-medium text-center truncate"
+              >
                 {data?.reference_document?.employee_name}
-              </WrapperHoverCard>
-            </Typography>
+              </Typography>
+            </WrapperHoverCard>
           </Link>
-          {/* Leave Type */}
+
           <Typography variant="bodySmall" className="font-medium text-center">
             {data?.reference_document?.leave_type}
           </Typography>
-          {/* Date */}
+
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
           </Typography>
@@ -177,7 +182,7 @@ const LeaveApprovalCard = ({
               : data?.reference_document?.total_leave_days + " Day"}
           </Typography>
 
-          {/* Status + Actions */}
+
           <div className="flex items-center justify-center">
             <Tooltip
               content={
@@ -235,7 +240,7 @@ const LeaveApprovalCard = ({
                       {data?.reference_document?.employee_name}
                     </p>
                   </Link>
-                  {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
+
                 </div>
                 <Badge
                   size="sm"
@@ -245,7 +250,7 @@ const LeaveApprovalCard = ({
               </div>
               <div className="my-2 py-2">
                 <div className="flex justify-between w-full ">
-                  {/* Display From Date */}
+
                   {data?.reference_document?.from_date && (
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span className="card-title mb-1">From</span>
@@ -256,8 +261,6 @@ const LeaveApprovalCard = ({
                       </span>
                     </p>
                   )}
-
-                  {/* Display To Date */}
                   {data?.reference_document?.to_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-center">
                       <span className="card-title mb-1">To</span>

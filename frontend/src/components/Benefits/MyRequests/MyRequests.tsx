@@ -32,6 +32,8 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [showBenefitForm, setShowBenefitForm] = useState(false);
+  const { isDesktop } = useScreenSize();
+
   // const [refetch, setRefetch] = useState(false);
   const handleRequestBenefit = () => {
     setShowBenefitForm(true);
@@ -98,19 +100,21 @@ const MyRequests: React.FC = () => {
   }, [data, isLoading]);
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="max-h-screen flex flex-col">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between">
-            <div>
-              <Typography variant="h4">
-                My Benefits Requests for FY {selectedYear}
-              </Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your benefits requests
-              </Typography>
-            </div>
-            <div className="flex items-center gap-2 justify-between mb-2">
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop && (
+              <div>
+                <Typography variant="h4">
+                  My Benefits Requests for FY {selectedYear}
+                </Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your benefits requests
+                </Typography>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
                 className="my-btn-secondary"
@@ -138,23 +142,22 @@ const MyRequests: React.FC = () => {
                 onChange={(event) => setSelectedYear(event?.target.value)}
                 options={optionYears}
               />
+              {showBenefitRequestButton && (
+                <Button
+                  bgColor="blue-600"
+                  size="md"
+                  className="hover:bg-blue-700 py-[0.55rem] font-semibold px-4 text-white"
+                  onClick={handleRequestBenefit}
+                >
+                  Request Benefit
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </div>
-      <div className="px-4">
-        <div className="text-right">
-          {showBenefitRequestButton && (
-            <Button
-              bgColor="blue-600"
-              size="md"
-              className="hover:bg-blue-700 py-[0.65rem] font-semibold px-4 text-white"
-              onClick={handleRequestBenefit}
-            >
-              Request Benefit
-            </Button>
-          )}
-        </div>
+
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {LockRequestMessage}
         <CardTable
           titles={[

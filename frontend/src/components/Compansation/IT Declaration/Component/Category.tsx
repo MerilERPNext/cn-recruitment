@@ -28,10 +28,12 @@ type Props = {
   onChange: (updatedItems: Item[]) => void;
   showProofFields?: boolean;
   selectable?: string;
+  activeSection?: string;
 };
 
 const CategoryDeclarationSelectable = ({
   categoryName,
+  activeSection,
   max_amount,
   lockingDate,
   items,
@@ -55,15 +57,49 @@ const CategoryDeclarationSelectable = ({
   
     const hasAnySelected = normalized.some(i => i.is_effectively_selected);
   
+    // ✅ CHECK if any item is selected in this category
+    const hasSelectedInThisCategory = normalized.some(
+      i => i.is_effectively_selected
+    );
+  
+    // ✅ Special Disable Logic only for Mediclaim (U/S 80D)
+    const isDisableA =
+      activeSection === "Mediclaim (U/S 80D)" &&
+      (
+        // 3rd category disabled when 1st has selection
+        (categoryName === "Section 80D - Medical Insurance for Self, Spouse and Dependent children" &&
+          activeSection === "Mediclaim (U/S 80D)" &&
+          window.__first80DSelected === true) ||
+  
+        // 4th category disabled when 2nd has selection
+        (categoryName === "Section 80D - Medical Insurance for Parent(s) if Senior Citizen(s)" &&
+          activeSection === "Mediclaim (U/S 80D)" &&
+          window.__second80DSelected === true)
+      );
+  
+    // ✅ Store global flags
+    if (activeSection === "Mediclaim (U/S 80D)") {
+      if (categoryName === "Section 80D - Medical Insurance for Parents") {
+        window.__first80DSelected = hasSelectedInThisCategory;
+      }
+  
+      if (categoryName === "Section 80D - Health Insurance for Self, Spouse and Children if Senior Citizen") {
+        window.__second80DSelected = hasSelectedInThisCategory;
+      }
+    }
+  
     return normalized.map(item => ({
       label: item.exemption_sub_category,
       value: item.exemption_sub_category,
   
-      disabled: isMultipleSelect
-        ? item.is_effectively_selected
-        : hasAnySelected,
+      disabled:
+        isDisableA ||
+        (isMultipleSelect
+          ? item.is_effectively_selected
+          : hasAnySelected),
     }));
-  }, [items, isMultipleSelect]);
+  }, [items, isMultipleSelect, activeSection, categoryName]);
+  
   
   
 

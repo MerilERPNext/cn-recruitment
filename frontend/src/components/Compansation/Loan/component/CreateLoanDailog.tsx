@@ -12,8 +12,10 @@ import createLoanFormSchema from "./createLoanSchema.json";
 import Button from "../../../shared/atoms/Button";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../../../hooks/useRequiredFields";
-import { FormSchema, SchemaComponent } from "../../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
-import HeaderBar from "../../../HeaderBar";
+import {
+  FormSchema,
+  SchemaComponent,
+} from "../../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useLoadingOverlay } from "../../../../context/OverlayContext";
 
@@ -47,7 +49,6 @@ export default function CreateLoanDialog({
     return map;
   }, [requiredFields]);
 
-
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
     requiredMap: Record<string, boolean>
@@ -68,7 +69,8 @@ export default function CreateLoanDialog({
 
           // Append red asterisk to label (avoid duplicating)
           if (typeof comp.label === "string") {
-            const asteriskHtml = "<span style='color:red;margin-left:3px;'> *</span>";
+            const asteriskHtml =
+              "<span style='color:red;margin-left:3px;'> *</span>";
             if (!comp.label.includes(asteriskHtml)) {
               // Some labels may include HTML already; we append the asterisk HTML
               comp.label = `${comp.label} ${asteriskHtml}`;
@@ -95,48 +97,50 @@ export default function CreateLoanDialog({
     return cloned;
   };
 
- const transformedSchema = useMemo(() => {
-    return transformSchemaWithRequired(createLoanFormSchema as FormSchema, requiredFieldMap);
+  const transformedSchema = useMemo(() => {
+    return transformSchemaWithRequired(
+      createLoanFormSchema as FormSchema,
+      requiredFieldMap
+    );
   }, [requiredFieldMap]);
 
-const loading = useLoadingOverlay();
-const handleSubmit = async () => {
-  try {
-     const submission = await formRef.current?.submit();
-    const formData = submission?.data;
-    await loading?.wrap(async () => {
-     
-      const submissionData = {
-        ...formData,
-        company: currentEmployee?.company,
-        applicant_type: "Employee",
-        applicant: currentEmployee?.employee,
-      };
+  const loading = useLoadingOverlay();
+  const handleSubmit = async () => {
+    try {
+      const submission = await formRef.current?.submit();
+      const formData = submission?.data;
+      await loading?.wrap(async () => {
+        const submissionData = {
+          ...formData,
+          company: currentEmployee?.company,
+          applicant_type: "Employee",
+          applicant: currentEmployee?.employee,
+        };
 
-      await new Promise<void>((resolve, reject) => {
-        mutation.mutate(submissionData as Record<string, unknown>, {
-          onSuccess: () => {
-            onClose();
-            setTimeout(() => setRefetchAttendance(true), 2000);
-            toast.success("Added Loan Request successfully!");
-            resolve();
-          },
-          onError: (error: CustomError) => {
-            const formatedError = errorResponseFormater(
-              error,
-              "Submission failed. Please try again."
-            );
-            toast.error(formatedError);
-            console.error(error);
-            reject(error);
-          },
+        await new Promise<void>((resolve, reject) => {
+          mutation.mutate(submissionData as Record<string, unknown>, {
+            onSuccess: () => {
+              onClose();
+              setTimeout(() => setRefetchAttendance(true), 2000);
+              toast.success("Added Loan Request successfully!");
+              resolve();
+            },
+            onError: (error: CustomError) => {
+              const formatedError = errorResponseFormater(
+                error,
+                "Submission failed. Please try again."
+              );
+              toast.error(formatedError);
+              console.error(error);
+              reject(error);
+            },
+          });
         });
-      });
-    }, "Submitting loan request…"); // optional message
-  } catch (error) {
-    console.error("Error submitting loan:", error);
-  }
-};
+      }, "Submitting loan request…"); // optional message
+    } catch (error) {
+      console.error("Error submitting loan:", error);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -153,15 +157,12 @@ const handleSubmit = async () => {
         className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
-
         {/* Dialog Header */}
-        {isDesktop ?
-          < div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-            <h2 className=" base-title text-gray-900">
-              Create New Loan
-            </h2>
+        {isDesktop ? (
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <h2 className=" base-title text-gray-900">Create New Loan</h2>
             <Button
-            variant="soft"
+              variant="soft"
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
@@ -169,9 +170,14 @@ const handleSubmit = async () => {
               <X />
             </Button>
           </div>
-          :
-          <HeaderBar title="Create New Loan" onBack={onClose} />
-        }
+        ) : (
+          
+<div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+<h2 className="text-lg font-semibold text-gray-800">
+          Create New Loan
+        </h2>
+</div>
+        )}
 
         {/* Dialog Content */}
         <div className="flex-1 min-h-0 bg-white overflow-y-auto pb-20">
@@ -180,31 +186,38 @@ const handleSubmit = async () => {
               form={transformedSchema}
               options={{
                 submitButton: false,
-                redrawOn: ["company"]
+                redrawOn: ["company"],
               }}
               submission={{
                 data: {
-                  company: currentEmployee?.company
-                }
+                  company: currentEmployee?.company,
+                },
               }}
               onFormReady={(instance: any) => {
                 formRef.current = instance;
               }}
-            />)}
+            />
+          )}
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <Button
-            onClick={() => {
-              handleSubmit();
-            }}
-            fullWidth
-            size="lg"
-            variant="contain"
-          >
-            Submit Request
-          </Button>
+          <div className=" mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+            {!isDesktop && (<Button onClick={onClose} fullWidth size="md" variant="outline">
+              Cancel
+            </Button>)}
+            <Button
+              onClick={() => {
+                handleSubmit();
+              }}
+              fullWidth
+              size="md"
+              variant="contain"
+              className="w-full md:w-auto min-w-[150px]"
+            >
+              Submit
+            </Button>
+          </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

@@ -47,7 +47,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
                     },
                     "valueProperty": "name",
                     "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
@@ -67,7 +67,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
                     },
                     "valueProperty": "name",
                     "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
@@ -87,7 +87,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
                     },
                     "valueProperty": "name",
                     "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
@@ -107,7 +107,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
                     },
                     "valueProperty": "name",
                     "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",
@@ -127,7 +127,7 @@
                     "customClass": "mb-4",
                     "dataSrc": "url",
                     "data": {
-                        "url": "/api/method/cn_leave_shift_managment.api.get_reportees"
+                        "url": "/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?fields=[%22*%22]&doctype=Employee"
                     },
                     "valueProperty": "name",
                     "template": "<span>{{ item.employee_name }} ({{ item.name }})</span>",

@@ -22,6 +22,7 @@ import type {
 } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface ShiftRequestFormModalProps {
   onClose?: () => void;
@@ -45,6 +46,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const [formSchema, setFormSchema] = useState<FormSchema>(
     (propSchema || defaultFormSchema) as FormSchema
   );
+    const { isDesktop } = useScreenSize();
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
@@ -252,9 +254,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   }
 
   return (
-    <div className={`bg-app flex flex-col font-sans  ${className}`}>
+    <div className={`bg-white flex flex-col font-sans  ${className}`}>
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6  flex-grow w-full">
-        <div className="rounded-lg shadow-sm border p-6">
           <Form
             form={validatedSchema}
             onFormReady={(instance: Formio) => {
@@ -284,26 +285,24 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             }}
             className="space-y-6"
           />
-        </div>
       </div>
 
-      <div className="sticky bottom-0 bg-primary/20 border-t shadow-lg py-4 px-4 w-full">
-        <div className="max-w-4xl mx-auto flex space-x-4">
-          <Button
+      <div className="sticky bottom-0  border-t shadow-lg py-4 px-4 w-full">
+        <div className="max-w-4xl mx-auto flex space-x-4 md:justify-end">
+         {!isDesktop && ( <Button
             onClick={onClose}
             size="md"
             variant="outline"
-            bgColor="gray-300"
-            className="flex-1 border text-gray-700 hover:bg-gray-50 font-medium py-3"
+            className="w-full md:w-auto min-w-[150px]"
           >
             Cancel
-          </Button>
+          </Button>)}
           <Button
             onClick={handleSubmit}
             size="md"
-            className="flex-1 font-medium"
+            className="w-full md:w-auto min-w-[150px]"
           >
-            Submit Request
+            Submit 
           </Button>
         </div>
       </div>

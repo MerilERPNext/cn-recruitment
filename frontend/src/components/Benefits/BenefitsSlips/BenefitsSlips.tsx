@@ -71,7 +71,6 @@ const BenefitsSlips = () => {
             {isDesktop ? (
               <div>
                 <Typography variant="h4">
-                  {" "}
                   My Benefit Slips for FY {selectedYear}
                 </Typography>
                 <Typography variant="bodySmall" color="body2">

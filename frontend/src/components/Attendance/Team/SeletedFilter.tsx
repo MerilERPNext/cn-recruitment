@@ -89,9 +89,8 @@ const CustomFilter: React.FC<CustomDropdownProps> = ({
         <span className="truncate">{selectedLabel}</span>
 
         <svg
-          className={`w-4 h-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -108,7 +107,7 @@ const CustomFilter: React.FC<CustomDropdownProps> = ({
       {/* Dropdown */}
       {isOpen && (
         <div
-          className={`absolute mt-1 w-full h-[200px] overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]}`}
+          className={`absolute mt-1 w-full h-fit max-h-[200px] overflow-y-auto bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]}`}
         >
           {options?.map((option) => (
             <Button

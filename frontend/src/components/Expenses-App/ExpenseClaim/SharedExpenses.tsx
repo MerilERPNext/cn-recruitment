@@ -4,9 +4,11 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import DataListView from "../../DataListView";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
+import HeaderBar from "../../HeaderBar";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -59,7 +61,7 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
             <span className="card-title pr-2">Status:</span>
             <span
               className={`px-2 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-                item.status
+                item.status,
               )}`}
             >
               {item.status === "Draft" ? "Pending" : item.status}
@@ -107,34 +109,50 @@ const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
 
   return (
     <div
-      className="max-w-screen grid gap-4 px-6 py-3 border-b border-gray-100 text-sm text-gray-700 items-center"
-      style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 0.7fr 0.7fr" }}
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
-      <span>{item.employee_name || "-"}</span>
-      <span>{postingDate}</span>
-      <span>{expenseDate}</span>
-
-      <span
-        className={`px-2 py-1 rounded-2xl w-fit text-xs font-medium text-center ${getStatusBadgeClasses(
-          item.status
-        )}`}
+      <Link
+        to={`/webapp/employee-profile?target_user=${item.employee}`}
+        target="_blank"
       >
-        {item.status === "Draft" ? "Pending" : item.status}
-      </span>
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          <WrapperHoverCard employeeId={item.employee}>
+            {item.employee_name}
+          </WrapperHoverCard>
+        </Typography>
+      </Link>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {postingDate}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {expenseDate}
+      </Typography>
 
-      <span>
+      <div className="flex items-center justify-center">
+        <StatusBadge status={item.status} />
+      </div>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
         {new Intl.NumberFormat("en-IN", {
           style: "currency",
           currency: "INR",
         }).format(item.total_sanctioned_amount ?? 0)}
-      </span>
-      <span>{item.participant_info?.percentage ?? "-"}%</span>
-      <span>
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item.participant_info?.percentage ?? "-"}%
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
         {new Intl.NumberFormat("en-IN", {
           style: "currency",
           currency: "INR",
         }).format(item.participant_info?.allocated_amount ?? 0)}
-      </span>
+      </Typography>
     </div>
   );
 };
@@ -159,31 +177,31 @@ const SharedExpenses: React.FC = () => {
   );
 
   return (
-    <div
-      className="relative flex size-full flex-col group/design-root md:p-6 md:px-4 md:py-4"
-      style={{ fontFamily: "Inter, Noto Sans, sans-serif" }}
-    >
-      <div className="flex justify-between items-center mb-2 border-b border-gray-200">
-        {!isDesktop ? (
-          <div className="flex w-full pb-2 justify-between items-center">
-            <button onClick={() => navigate(-1)}>
-              <ChevronLeft className="text-gray-500" />
-            </button>
-
-            <h2 className="base-title pb-1">Shared Expense Claims</h2>
-            <div className="min-w-8"></div>
-          </div>
-        ) : (
-          <div className="flex flex-col mb-2 px-2">
+    <div className="flex flex-col h-full">
+      {isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">Shared Expense Claims</Typography>
             <Typography variant="bodySmall" color="body2">
-              Track and manage shared expense claims
+              Track and manage your shared expense claims
             </Typography>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="bg-white h-full px-0 md:pt-2 pt-0 mb-20">
+      {!isDesktop && (
+        <div className="flex-shrink-0">
+          <div className="py-1">
+            <HeaderBar
+              title="Shared Expense Claims"
+              onBack={() => navigate(-1)}
+              className="shadow"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {currentEmployee?.name && (
           <CardTable
             titles={[
@@ -195,15 +213,7 @@ const SharedExpenses: React.FC = () => {
               "% Share",
               "Allocated Amount",
             ]}
-            columnWidths={[
-              "1.5fr",
-              "1fr",
-              "1fr",
-              "1fr",
-              "1fr",
-              "0.7fr",
-              "0.7fr",
-            ]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name]}

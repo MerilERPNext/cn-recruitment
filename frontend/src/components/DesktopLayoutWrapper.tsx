@@ -223,9 +223,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${
-                      showProfileDropdown ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee?.employee ? (
@@ -264,9 +263,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       />
                     </div>
                     <ChevronDown
-                      className={`w-4 h-4 text-white transition-transform ${
-                        showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                      className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                 </>
@@ -383,7 +381,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
         <ViewingAsBanner />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-hidden relative bg-app">
+        <div className="flex-1 overflow-x-hidden relative bg-app">
           {children}
 
           {/* Action Button positioned in bottom right */}

@@ -15,7 +15,6 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
 
 const TeamAttendance = () => {
-
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
@@ -34,8 +33,17 @@ const TeamAttendance = () => {
     isLoading: isReportiesAttendanceLoading,
     isError: isReportiesAttendanceError,
     refetch: refetchReportiesAttendance, // ✅ added
-  } = useDataOfAttendanceDetails(selectedReporties, selectedDate?.toISOString().split("T")[0] || "");
-  console.log("TeamAttendance attendanceData", attendanceData, isReportiesAttendanceError, isEmployeeAttendanceError, isEmployeeAttendanceLoading);
+  } = useDataOfAttendanceDetails(
+    selectedReporties,
+    selectedDate?.toISOString().split("T")[0] || "",
+  );
+  console.log(
+    "TeamAttendance attendanceData",
+    attendanceData,
+    isReportiesAttendanceError,
+    isEmployeeAttendanceError,
+    isEmployeeAttendanceLoading,
+  );
 
   // ✅ refetch when reportee or date changes
   useEffect(() => {
@@ -46,15 +54,11 @@ const TeamAttendance = () => {
 
   const filteredAttendanceData = attendanceData?.filter(
     (item: EmployeeStatusItem) =>
-      item.employee_name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      item.employee?.toLowerCase().includes(searchTerm.toLowerCase())
+      item.employee_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.employee?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const handleReportiesChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleReportiesChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedReporties(e.target.value);
   };
 
@@ -84,7 +88,7 @@ const TeamAttendance = () => {
   const hasFilters = searchParams.has("filters");
 
   return (
-    <div>
+    <div className="h-full overflow-y-auto min-h-0">
       <div className="flex flex-col gap-4 p-4">
         {/* ---------------- Calendar ---------------- */}
         <div className="w-full border-gray-200">
@@ -140,7 +144,7 @@ const TeamAttendance = () => {
 
                 navigate(
                   "/webapp/attendance/team-attendance?filters=" +
-                  encodeURIComponent(JSON.stringify(filters))
+                    encodeURIComponent(JSON.stringify(filters)),
                 );
               }}
               renderDayContents={(day, date) => {
@@ -160,7 +164,8 @@ const TeamAttendance = () => {
                     }}
                   >
                     {day}
-                  </div>)
+                  </div>
+                );
               }}
             />
 
@@ -178,10 +183,7 @@ const TeamAttendance = () => {
         </div>
 
         {/* ---------------- List ---------------- */}
-        <Card
-          radius="xl"
-          className="bg-white pt-4 border-gray-200 p-4 mb-10"
-        >
+        <Card radius="xl" className="bg-white pt-4 border-gray-200 p-4 mb-10">
           {/* Search + Filter */}
           <div className="flex items-center gap-3 w-full mb-4">
             <div className="relative flex-1">
@@ -216,7 +218,7 @@ const TeamAttendance = () => {
                   (p: { name: string; employee_name: string }) => ({
                     value: p.name,
                     label: `${p.employee_name} (${p.name})`,
-                  })
+                  }),
                 ) || []
               }
             />
@@ -228,25 +230,22 @@ const TeamAttendance = () => {
             </div>
           )}
 
-<div className="border border-gray-200 rounded-lg">
-{!isReportiesAttendanceLoading &&
-            filteredAttendanceData?.map(
-              (item: EmployeeStatusItem) => (
+          <div className="border border-gray-200 rounded-lg">
+            {!isReportiesAttendanceLoading &&
+              filteredAttendanceData?.map((item: EmployeeStatusItem) => (
                 <EmployeeStatusCard
                   key={item.employee}
                   data={item}
                   onRefetchData={refetchReportiesAttendance}
                 />
-              )
-            )}
-</div>
+              ))}
+          </div>
 
-          {!isReportiesAttendanceLoading &&
-            attendanceData?.length === 0 && (
-              <div className="text-center py-4 text-gray-400">
-                No attendance data found
-              </div>
-            )}
+          {!isReportiesAttendanceLoading && attendanceData?.length === 0 && (
+            <div className="text-center py-4 text-gray-400">
+              No attendance data found
+            </div>
+          )}
         </Card>
       </div>
     </div>
