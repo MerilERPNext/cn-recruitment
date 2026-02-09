@@ -73,9 +73,9 @@ const MyOvertimeRequests = () => {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">Planned Overtime Requests</Typography>
+            <Typography variant="h4">My Overtime Requests</Typography>
             <Typography variant="bodySmall" color="body2">
-              Track and manage your planned overtime requests
+              Track and manage your overtime requests
             </Typography>
           </div>
         </div>
