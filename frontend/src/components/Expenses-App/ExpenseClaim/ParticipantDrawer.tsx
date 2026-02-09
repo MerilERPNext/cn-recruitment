@@ -685,21 +685,21 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
               <button
                 onClick={addRow}
                 type="button"
-                className="px-3 py-1 border rounded"
+                className="px-3 py-1 border rounded-md"
               >
                 Add Participant
               </button>
               <button
                 onClick={resetParticipants}
                 type="button"
-                className="px-3 py-1 border rounded"
+                className="px-3 py-1 border rounded-md"
               >
                 RESET
               </button>
               <button
                 onClick={saveParticipants}
                 type="button"
-                className="px-3 py-1 rounded bg-red-600 text-white"
+                className="px-3 py-1 rounded-md bg-primary text-white"
               >
                 SAVE
               </button>
