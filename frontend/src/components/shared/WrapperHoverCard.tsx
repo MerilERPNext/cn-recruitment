@@ -9,12 +9,12 @@ type WrapperHoverCardProps = {
   cardClassName?: string;
   employeeId?: string;
   placement?:
-  | "bottom-right"
-  | "bottom-left"
-  | "top-right"
-  | "top-left"
-  | "center-left"
-  | "center-right";
+    | "bottom-right"
+    | "bottom-left"
+    | "top-right"
+    | "top-left"
+    | "center-left"
+    | "center-right";
 };
 
 const mapEmployeeData = (data: any[]) => {
@@ -86,7 +86,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
 
   const handleEnter = () => {
     clearTimeout(hideTimer.current);
-    clearTimeout(animationTimer.current);
+    clearTimeout(animationTimer?.current ?? undefined);
     setShow(true);
     // Start animation after render
     animationTimer.current = setTimeout(() => setIsAnimating(true), 10);
@@ -157,7 +157,7 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
   useEffect(() => {
     return () => {
       clearTimeout(hideTimer.current);
-      clearTimeout(animationTimer.current);
+      clearTimeout(animationTimer.current ?? undefined);
     };
   }, []);
 
@@ -284,12 +284,12 @@ const WrapperHoverCard: React.FC<WrapperHoverCardProps> = ({
                           <p className="font-medium text-gray-900">
                             {emp["Date of Joining"]
                               ? new Date(
-                                emp["Date of Joining"],
-                              ).toLocaleDateString("en-IN", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })
+                                  emp["Date of Joining"],
+                                ).toLocaleDateString("en-IN", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  year: "numeric",
+                                })
                               : "—"}
                           </p>
                         </div>
