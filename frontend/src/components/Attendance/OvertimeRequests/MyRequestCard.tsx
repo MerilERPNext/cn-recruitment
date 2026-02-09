@@ -1,5 +1,4 @@
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
-import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Tooltip from "../../shared/Tooltip";
@@ -100,48 +99,68 @@ export function MyRequestCard({
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={request?.status} />
-
             </Tooltip>
           </div>
         </div>
       ) : (
         <div
-          className="block cursor-pointer border border-gray-200 gap-3 bg-white shadow-sm transition-shadow rounded-xl"
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+               border-x-primary/20 border-b-primary/20 
+               shadow-sm border-primary bg-white rounded-xl"
           onClick={() => onClick?.(request)}
         >
-          <div className="p-4">
-            <div className="flex items-start gap-3 w-full">
-              <div className="w-full">
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <Link
-                      to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
-                      target="_blank"
-                    >
-                      <h3 className="card-title">{request?.username}</h3>
-                    </Link>
-                    {/* <p className="text-sm text-gray-500">{request?.todo_id}</p> */}
-                    <p className="card-subtitle">
-                      {formatToIndianDate(request?.due_date)}
-                    </p>
-                  </div>
-                  <Badge
-                    size="sm"
-                    label={status?.label as string}
-                    backgroundColor={status?.statusColor}
-                  />
+          <div className="p-4 flex items-start gap-3 w-full">
+            <div className="w-full">
+              {/* Header */}
+              <div className="flex items-start justify-between p-1">
+                <div className="flex flex-col gap-1">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="text-gray-500"
+                  >
+                    Allocated To
+                  </Typography>
+
+                  <Typography
+                    variant="mobileCardValue"
+                    className="font-semibold text-gray-900"
+                  >
+                    {request?.username}
+                  </Typography>
                 </div>
 
-                <p className="card-subtitle mt-2 line-clamp-2">
-                  <span className="card-title">Description:</span>{" "}
-                  <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-                </p>
+                <StatusBadge status={request?.status} />
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel">
+                      Created On
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(
+                        request?.reference_document?.creation,
+                      )}
+                    </Typography>
+                  </div>
+
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel">Due Date</Typography>
+                    <Typography variant="mobileCardValue">
+                      {request?.due_date as String}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Typography variant="mobileCardLabel">Description</Typography>
+                  <Typography variant="mobileCardValue">
+                    {truncateByChars(cleanDescription, 40)}
+                  </Typography>
+                </div>
               </div>
             </div>
           </div>
