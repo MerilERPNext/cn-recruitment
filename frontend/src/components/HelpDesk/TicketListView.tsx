@@ -21,6 +21,7 @@ import {
   HDCategory,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -32,6 +33,8 @@ interface TicketListViewProps {
 }
 
 const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user", onDrawerStateChange }) => {
+  const { isDesktop } = useScreenSize();
+
   // State
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<TicketFilters>({});
@@ -212,19 +215,19 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className={`${isDesktop ? "rounded-lg border border-gray-200" : ""} bg-white `}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-6 py-4 border-b border-gray-200">
+        <div className={isDesktop ? "flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-6 py-4 border-b border-gray-200" : "flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-2 py-4"}>
           <div className="flex items-center gap-3">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                className="md:w-64 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
               />
             </div>
 
@@ -239,7 +242,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
         </div>
 
         {/* Table */}
-        <div className="p-4">
+        <div className={isDesktop ? "p-4" : "p-0"}>
           <TicketTable
             tickets={tickets}
             isLoading={ticketsLoading}
@@ -285,9 +288,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
                             setPageLength(size);
                             setIsPageSizeOpen(false);
                           }}
-                          className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${
-                            size === pageLength ? "bg-primary-50 text-primary-600" : ""
-                          }`}
+                          className={`block w-full px-4 py-2 text-sm text-left hover:bg-gray-100 ${size === pageLength ? "bg-primary-50 text-primary-600" : ""
+                            }`}
                         >
                           {size}
                         </button>
