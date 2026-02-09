@@ -69,7 +69,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             ...prev,
             {
               file_url: result.file_url,
-              file_name: result.name || file.name,
+              file_name: result.file_name || file.name,
             },
           ]);
         }

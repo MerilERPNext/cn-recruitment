@@ -26,7 +26,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import ReplaceLeaveModal from "../../Leaves/ReplaceLeaveModal";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import CircularLoader from "../../shared/atoms/CircularLoader";
-import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
+import { RequestLeaveModalProvider, useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import Badge from "../../shared/Badge";
@@ -35,6 +35,8 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { LeaveRequestRefreshProvider } from "../../Leaves/LeaveRequestRefreshContext";
+import RequestLeave from "../../Leaves/RequestLeave";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -58,6 +60,8 @@ const EmployeeAttendanceDetails = ({
 
   const status = propStatus?.toLowerCase().replace(/-/g, " ") || query.get("status")?.toLowerCase().replace(/-/g, " ");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
+    useState(false);
+  const [showReqLeaveCorrection, setShowReqLeaveCorrection] =
     useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -347,6 +351,21 @@ const EmployeeAttendanceDetails = ({
     </>
   );
 
+  const renderWeekOffMessage = () => {
+    return (
+      <div>
+        <div className="my-4 p-4 bg-gray-50/30 rounded-lg text-center">
+          <Typography
+            variant="bodySmall"
+            className="font-semibold text-gray-800"
+          >
+            Week off
+          </Typography>
+        </div>
+      </div>
+    );
+  };
+
   const renderMainContent = () => {
     if (data?.status.toLowerCase() === "holiday" && data?.title) {
       return (
@@ -362,10 +381,10 @@ const EmployeeAttendanceDetails = ({
         </div>
       );
     }
-
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
 
+        {status === "week off" && renderWeekOffMessage()}
         {isLoading ? (
           renderLoadingState()
         ) : (
@@ -394,7 +413,7 @@ const EmployeeAttendanceDetails = ({
   };
 
   const renderFooterButton = () => {
-    if (isLeaveRecord) return null;
+    if (data?.custom_auto_created === 1 || status === "on leave" || !!leaveEvent) return null;
     if (!canRequestAttendance) return null;
     const isButtonDisabled =
       status !== "absent" && status !== "half day";
@@ -410,17 +429,31 @@ const EmployeeAttendanceDetails = ({
     }
 
     return (
-      <Button
-        variant="contain"
-        fullWidth
-        size="md"
-        disabled={isButtonDisabled}
-        bgColor="primary"
-        onClick={() => setShowReqAttendanceCorrection(true)}
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Attendance Request
-      </Button>
+      <div className="flex items-center justify-center gap-2">
+        {
+          status === "absent" || status === "half day" && <Button
+            variant="soft"
+            fullWidth
+            size="md"
+            bgColor="primary"
+            onClick={() => setShowReqLeaveCorrection(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Leave Request
+          </Button>
+        }
+        <Button
+          variant="soft"
+          fullWidth
+          size="md"
+          disabled={isButtonDisabled}
+          bgColor="primary"
+          onClick={() => setShowReqAttendanceCorrection(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Attendance Request
+        </Button>
+      </div>
     );
   };
 
@@ -433,7 +466,34 @@ const EmployeeAttendanceDetails = ({
       <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
         {renderFooterButton()}
       </div>
-
+      {showReqLeaveCorrection && (
+        createPortal(
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div
+              className="
+    bg-white
+    rounded-lg
+    w-full
+    mx-0 sm:mx-4
+    h-full sm:h-auto
+    max-h-screen sm:max-h-[90vh]
+    overflow-y-auto
+    sm:max-w-2xl
+  "
+            >
+              {/* Ensure LeaveRequest is inside its providers */}
+              <LeaveRequestRefreshProvider>
+                <RequestLeaveModalProvider>
+                  <RequestLeave
+                    onCancel={() => setShowReqLeaveCorrection(false)}
+                    onSuccess={() => setShowReqLeaveCorrection(false)}
+                  />
+                </RequestLeaveModalProvider>
+              </LeaveRequestRefreshProvider>
+            </div>
+          </div>,
+          document.body,)
+      )}
       {showReqAttendanceCorrection &&
         createPortal(
           <AttendanceRequestFormV2
@@ -463,6 +523,7 @@ const EmployeeAttendanceDetails = ({
         createPortal(
           <AttendanceRequestFormV2
             onClose={() => setShowEditModal(false)}
+            selectedDate={validDate || new Date()}
           />,
           document.body,
         )}

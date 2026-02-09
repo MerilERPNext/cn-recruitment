@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import "../../../formio.custom.css";
 import {
   useCreatePlannedOvertimeRequest,
@@ -76,7 +76,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const initialSubmissionData = useMemo(
     () => ({
       data: {
-        show_attachment: !plannedOvertimeRequestAttachments,
+        show_attachment: !!plannedOvertimeRequestAttachments,
       },
     }),
     [plannedOvertimeRequestAttachments]
@@ -103,17 +103,30 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   );
 
   const requiredFieldMap = useMemo(() => {
-    if (!requiredFieldsChild?.fields) return {};
     const map: Record<string, boolean> = {};
-    requiredFieldsChild.fields.forEach((f) => {
-      if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-    });
-    requiredFieldsParent?.fields.forEach((f) => {
-      if (f.fieldname && f.fieldname != "overtime_details")
-        map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
-    });
+    if (requiredFieldsChild?.fields) {
+      requiredFieldsChild.fields.forEach((f) => {
+        if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+      });
+    }
+    if (requiredFieldsParent?.fields) {
+      requiredFieldsParent.fields.forEach((f) => {
+        if (f.fieldname && f.fieldname != "overtime_details")
+          map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
+      });
+    }
+
+    // Attachment is mandatory if plannedOvertimeRequestAttachments is true
+    if (plannedOvertimeRequestAttachments) {
+      map["attachment"] = true;
+    }
+
     return map;
-  }, [requiredFieldsChild, requiredFieldsParent]);
+  }, [
+    requiredFieldsChild,
+    requiredFieldsParent,
+    plannedOvertimeRequestAttachments,
+  ]);
 
   console.log("requiredFieldMap", requiredFieldMap);
 
@@ -227,6 +240,18 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
     }, "Submitting overtime request…");
   };
 
+  // Sync show_attachment if it changes after initial load
+  useEffect(() => {
+    if (formInstance.current && plannedOvertimeRequestAttachments !== undefined) {
+      const showAttachmentComp =
+        formInstance.current.getComponent("show_attachment");
+      if (showAttachmentComp) {
+        showAttachmentComp.setValue(!!plannedOvertimeRequestAttachments, {
+          noUpdateEvent: true,
+        });
+      }
+    }
+  }, [plannedOvertimeRequestAttachments]);
 
   return (
     <div
@@ -244,7 +269,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           <h2 className="text-lg font-semibold text-gray-800">
             Planned Overtime Request
           </h2>
-          {isDesktop &&  (  <button
+          {isDesktop && (<button
             onClick={(e) => {
               e.stopPropagation();
               onCancel?.();
@@ -296,39 +321,39 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-  <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-    
-  {!isDesktop &&  ( <Button
-      onClick={(e) => {
-        e.stopPropagation();
-        onCancel?.();
-        setAttachments([]);
-      }}
-      size="md"
-      variant="outline"
-      bgColor="primary"
-      className="w-full md:w-auto min-w-[150px]"
-    >
-      Cancel
-    </Button>)}
+          <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
 
-    <Button
-      onClick={handleSubmit}
-      disabled={mutation?.isPending}
-      size="md"
-      variant="contain"
-      bgColor="primary"
-      className="w-full md:w-auto min-w-[150px]"
-    >
-      {mutation?.isPending || uploadFileLoading ? (
-        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-      ) : (
-        "Submit"
-      )}
-    </Button>
+            {!isDesktop && (<Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancel?.();
+                setAttachments([]);
+              }}
+              size="md"
+              variant="outline"
+              bgColor="primary"
+              className="w-full md:w-auto min-w-[150px]"
+            >
+              Cancel
+            </Button>)}
 
-  </div>
-</div>
+            <Button
+              onClick={handleSubmit}
+              disabled={mutation?.isPending}
+              size="md"
+              variant="contain"
+              bgColor="primary"
+              className="w-full md:w-auto min-w-[150px]"
+            >
+              {mutation?.isPending || uploadFileLoading ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Submit"
+              )}
+            </Button>
+
+          </div>
+        </div>
 
       </div>
     </div>

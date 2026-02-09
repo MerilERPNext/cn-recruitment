@@ -698,8 +698,7 @@ const ExpenseAdvanceForm: React.FC<{
           size="lg"
           onClick={handleSubmit}
           disabled={submitting}
-          bgColor="blue-600"
-          className="hover:bg-blue-700"
+          bgColor="primary"
         >
           {submitting ? "Submitting..." : "Submit"}
         </Button>

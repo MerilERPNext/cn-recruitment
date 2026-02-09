@@ -29,7 +29,7 @@ const TicketDrawer: React.FC<TicketDrawerProps> = ({
       size="xxl"
       title={ticketId ? `Ticket #${ticketId}` : "Ticket Details"}
     >
-      <div className="h-[calc(100vh-60px)] flex flex-col -m-4 -mt-2">
+      <div className="h-[calc(100%+1.5rem)] flex flex-col -m-4 -mt-2">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
@@ -47,6 +47,7 @@ const TicketDrawer: React.FC<TicketDrawerProps> = ({
           <SimplifiedChatView
             ticket={ticket}
             currentUserEmail={currentUserEmail}
+            isDrawer={true}
           />
         )}
       </div>

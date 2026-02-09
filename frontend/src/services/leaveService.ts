@@ -380,4 +380,11 @@ export const leaveService = {
       custom_rejection_reason: reason,
     });
   },
+
+  isRejectionReasonMandatory: async (): Promise<{ message: boolean }> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.is_rejection_reason_mandatory"
+    );
+    return response as { message: boolean };
+  },
 };

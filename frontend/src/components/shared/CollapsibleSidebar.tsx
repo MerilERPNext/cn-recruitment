@@ -193,7 +193,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/attendance/team-attendance-requests",
         },
         {
-          name: "My Overtime",
+          name: "Planned Overtime",
           icon: TimerIcon,
           href: "/webapp/attendance/my-overtime-requests",
         },
@@ -235,7 +235,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           icon: Wallet,
           href: "/webapp/salary-slip-app/income-tax-sheet",
         },
-        
+
         {
           name: "Annual CTC",
           icon: Calculator,

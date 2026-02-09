@@ -85,20 +85,26 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
           setSelectedDate(date);
           const attendance = getAttendanceStatus(date as Date);
 
-          if (
-            // attendance?.status !== "default" &&
-            // attendance?.events?.length > 0 &&
-            attendance?.status !== "week-off"
-          ) {
-            setShowDetailsFor({
-              date: date as Date,
-              status: attendance?.status,
-              data: attendance?.record as AttendanceRecord,
-              events: attendance?.events as AttendanceRecord[],
-            });
-          } else {
-            setShowDetailsFor(null);
-          }
+          setShowDetailsFor({
+            date: date as Date,
+            status: attendance?.status,
+            data: attendance?.record as AttendanceRecord,
+            events: attendance?.events as AttendanceRecord[],
+          });
+          // if (
+          //   // attendance?.status !== "default" &&
+          //   // attendance?.events?.length > 0 &&
+          //   attendance?.status !== "week-off"
+          // ) {
+          //   setShowDetailsFor({
+          //     date: date as Date,
+          //     status: attendance?.status,
+          //     data: attendance?.record as AttendanceRecord,
+          //     events: attendance?.events as AttendanceRecord[],
+          //   });
+          // } else {
+          //   setShowDetailsFor(null);
+          // }
         }}
         onMonthChange={(date) => {
           setSelectedDate(date);

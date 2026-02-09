@@ -458,7 +458,6 @@ export function useUpdateRejectionReason() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       leaveService.updateRejectionReason(id, reason),
     onSuccess: () => {
-      // Invalidate relevant queries if needed, mainly specific document or list
       queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
       queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
     },
@@ -468,3 +467,11 @@ export function useUpdateRejectionReason() {
     },
   });
 }
+
+export const useIsRejectionReasonMandatory = () => {
+  return useQuery<{ message: boolean }>({
+    queryKey: ["isRejectionReasonMandatory"],
+    queryFn: leaveService.isRejectionReasonMandatory,
+    staleTime: Infinity,
+  });
+};

@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
-import { useUpdateRejectionReason } from "../../hooks/useLeaves";
+import { useUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
 import Button from "../shared/atoms/Button";
 import DOMPurify from "dompurify";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -34,6 +34,7 @@ export function LeaveDetailView({
 }) {
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
+  const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const { setRefetchAttendance } = useGlobalStore();
 
   const {
@@ -77,10 +78,13 @@ export function LeaveDetailView({
 
   const handleAction = useCallback(
     async (action: string) => {
-      if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
-        setPendingAction(action);
-        setShowCommentModal(true);
-        return;
+      if (action.toLowerCase() === "reject") {
+        const isMandatory = rejectionMandatoryData ?? true;
+        if (isMandatory && !rejectionComment.trim()) {
+          setPendingAction(action);
+          setShowCommentModal(true);
+          return;
+        }
       }
       setCurrentAction(action);
 
@@ -90,7 +94,6 @@ export function LeaveDetailView({
           action,
           name: data?.todo_id || "",
         });
-        // toast.success(`Request ${action}ed Successfully!`);
         const actionMap: Record<string, string> = {
           Approve: "Approved",
           Reject: "Rejected",
@@ -133,7 +136,7 @@ export function LeaveDetailView({
       }
     },
 
-    [data, mutation, onAction, setRefetchAttendance, rejectionComment],
+    [data, mutation, onAction, setRefetchAttendance, rejectionComment, rejectionMandatoryData],
   );
 
   const handleSaveComment = async () => {
@@ -168,12 +171,9 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
   }
-
-  // Error state
   if (error && documentName) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
@@ -187,9 +187,7 @@ export function LeaveDetailView({
         className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Header */}
 
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
             <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
@@ -203,50 +201,43 @@ export function LeaveDetailView({
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
-          {/* Employee Info */}
           <div className="flex items-center justify-between">
-            <p className=" flex flex-col gap-1">
+            <div className=" flex flex-col gap-1">
               <Typography variant="bodyMedium">Leave Type</Typography>
               <Typography
                 variant="bodySmall"
-                // className="text-gray-500/80 font-medium"
                 color="body2"
               >
                 {data?.reference_document?.leave_type}
               </Typography>
-            </p>
+            </div>
             <StatusBadge status={data?.reference_document?.status} />
           </div>
           <div className="py-2">
             <div className="flex gap-2 justify-between">
-              {/* Display From Date */}
               {data?.reference_document?.from_date && (
-                <p className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                   <Typography variant="bodyMedium">From Date</Typography>
                   <Typography
                     variant="bodySmall"
-                    // className="text-gray-500/50 font-medium"
                     color="body2"
                   >
                     {formatToIndianDate(data?.reference_document?.from_date)}
                   </Typography>
-                </p>
+                </div>
               )}
 
-              {/* Display To Date */}
               {data?.reference_document?.to_date && (
-                <p className=" flex flex-col gap-1">
+                <div className="flex flex-col gap-1">
                   <Typography variant="bodyMedium">To Date</Typography>
                   <Typography
                     variant="bodySmall"
-                    // className="text-gray-500/80 font-medium"
                     color="body2"
                   >
                     {formatToIndianDate(data?.reference_document?.to_date)}
                   </Typography>
-                </p>
+                </div>
               )}
             </div>
           </div>
@@ -256,27 +247,24 @@ export function LeaveDetailView({
 
               <Typography
                 variant="bodySmall"
-                // className="text-gray-500/80 font-medium"
                 color="body2"
               >
                 {data?.reference_document?.custom_reason}
               </Typography>
             </div>
             {data?.date && (
-              <p className=" flex flex-col gap-1">
+              <div className=" flex flex-col gap-1">
                 <Typography variant="bodyMedium">Due Date</Typography>
                 <Typography
                   variant="bodySmall"
-                  // className="text-gray-500/80 font-medium"
                   color="body2"
                 >
                   {formatToIndianDate(data?.date)}
                 </Typography>
-              </p>
+              </div>
             )}
           </div>
 
-          {/* explanation */}
           <div className="py-2">
             <Typography variant="bodyMedium">Description</Typography>
             <div className="text-sm text-gray-700 bg-primary/10 p-3 rounded-lg">
@@ -293,40 +281,12 @@ export function LeaveDetailView({
           ) : null}
         </div>
 
-        {/* Actions */}
         {actions?.length > 0 && status?.label === "Pending" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            {/* <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-              {actions?.length &&
-                actions?.map((action: string) => {
-                  const actionStyle = getActionStyles(action);
 
-                  const isLoading =
-                    currentAction === action && mutation.isPending;
-                  return (
-                    <Button
-                      key={action}
-                      fullWidth
-                      disabled={isLoading}
-                      onClick={() => {
-                        handleAction(action);
-                      }}
-                      size="md"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
-            </div> */}
             <TeamApprovalActionPill
               actions={actions}
-              status={status.label} // or data?.status if you want raw
+              status={status.label}
               recordId={data.todo_id}
               loadingAction={
                 currentAction
@@ -343,9 +303,7 @@ export function LeaveDetailView({
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
           onMouseDown={(e) => {
-            // e.preventDefault(); // Do not prevent default, otherwise input focus might break
             e.stopPropagation();
-            // If we want clicking outside to close, we can check e.target
           }}
           onClick={(e) => {
             e.stopPropagation();
