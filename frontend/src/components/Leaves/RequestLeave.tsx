@@ -85,7 +85,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-          submission.data.toDate.split("T")[0];
+        submission.data.toDate.split("T")[0];
 
       await editLeaveMutation.mutateAsync({
         leave_application: defaults?.leave_application || "",
@@ -289,7 +289,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-          submission.data.toDate.split("T")[0];
+        submission.data.toDate.split("T")[0];
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
@@ -341,55 +341,55 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const halfDayComponents = show.half_day
       ? [
-          {
-            type: "columns",
-            key: "halfDayColumns",
-            customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "checkbox",
-                    key: "halfDay",
-                    label: mandatory.half_day
-                      ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
-                      : "Half-Day Leave",
-                    input: true,
-                    labelPosition: "bottom",
-                    defaultValue: defaults?.halfDay,
-                    validate: { required: !!mandatory.half_day },
-                    customClass:
-                      "custom-halfday-toggle border rounded-lg shadow-sm p-2",
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [],
-              },
-            ],
-          },
-          ...(show.show_half_day_options
-            ? [
+        {
+          type: "columns",
+          key: "halfDayColumns",
+          customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
+          columns: [
+            {
+              width: 6,
+              components: [
                 {
-                  type: "radio",
-                  key: "halfDayOption",
-                  label: "Select Half-Day Option",
+                  type: "checkbox",
+                  key: "halfDay",
+                  label: mandatory.half_day
+                    ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
+                    : "Half-Day Leave",
                   input: true,
-                  validate: { required: !!mandatory.show_half_day_options },
-                  values: [
-                    { label: "First Half", value: "First Half" },
-                    { label: "Second Half", value: "Second Half" },
-                  ],
-
-                  customConditional: `
-  show = data.halfDay === true && data.fromDate === data.toDate;`,
-                  customClass: "px-2 mb-4 ml-4 mt-2",
+                  labelPosition: "bottom",
+                  defaultValue: defaults?.halfDay,
+                  validate: { required: !!mandatory.half_day },
+                  customClass:
+                    "custom-halfday-toggle border rounded-lg shadow-sm p-2",
                 },
-              ]
-            : []),
-        ]
+              ],
+            },
+            {
+              width: 6,
+              components: [],
+            },
+          ],
+        },
+        ...(show.show_half_day_options
+          ? [
+            {
+              type: "radio",
+              key: "halfDayOption",
+              label: "Select Half-Day Option",
+              input: true,
+              validate: { required: !!mandatory.show_half_day_options },
+              values: [
+                { label: "First Half", value: "First Half" },
+                { label: "Second Half", value: "Second Half" },
+              ],
+
+              customConditional: `
+  show = data.halfDay === true && data.fromDate === data.toDate;`,
+              customClass: "px-2 mb-4 ml-4 mt-2",
+            },
+          ]
+          : []),
+      ]
       : [];
 
     const panelComponents = [
@@ -428,65 +428,65 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       ...(defaults?.source !== "holiday"
         ? [
-            {
-              type: "select",
-              key: "custom_reason",
-              label:
-                mandatory?.custom_reason || requiredFieldMap["custom_reason"]
-                  ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-                  : "Reason",
-              errorLabel: "Reason",
-              placeholder: "Select a reason",
-              defaultValue: defaults?.custom_reason ?? "",
-              input: true,
-              validate: {
-                required:
-                  !!mandatory.custom_reason ||
-                  requiredFieldMap["custom_reason"],
-              },
-              data: {
-                values:
-                  reasons?.map((r) => ({
-                    label: r.reason,
-                    value: r.name,
-                  })) ?? [],
-              },
-              customClass: "px-2 mb-4",
-              disabled: isReasonLoading || isReasonError,
+          {
+            type: "select",
+            key: "custom_reason",
+            label:
+              mandatory?.custom_reason || requiredFieldMap["custom_reason"]
+                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+                : "Reason",
+            errorLabel: "Reason",
+            placeholder: "Select a reason",
+            defaultValue: defaults?.custom_reason ?? "",
+            input: true,
+            validate: {
+              required:
+                !!mandatory.custom_reason ||
+                requiredFieldMap["custom_reason"],
             },
-          ]
+            data: {
+              values:
+                reasons?.map((r) => ({
+                  label: r.reason,
+                  value: r.name,
+                })) ?? [],
+            },
+            customClass: "px-2 mb-4",
+            disabled: isReasonLoading || isReasonError,
+          },
+        ]
         : []),
 
       ...(defaults?.source !== "holiday"
         ? [
-            {
-              type: "file",
-              key: "custom_attachment",
-              defaultValue: defaults?.custom_attachment
-                ? [
-                    {
-                      name: defaults.custom_attachment,
-                      url: defaults.custom_attachment,
-                      storage: "url",
-                      size: 0,
-                    },
-                  ]
-                : [],
-              label: fields?.mandatory?.custom_attachment
-                ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
-                : "Attachment",
-              errorLabel: "Attachment",
-              input: true,
-              storage: "customBase64",
-              validate: {
-                required:
-                  !!mandatory.custom_attachment ||
-                  requiredFieldMap["custom_attachment"],
-              },
-              filePattern: "*/*",
-              customClass: "px-2 mb-6",
+          {
+            type: "file",
+            key: "custom_attachment",
+            defaultValue: defaults?.custom_attachment
+              ? [
+                {
+                  name: defaults.custom_attachment,
+                  url: defaults.custom_attachment,
+                  storage: "url",
+                  size: 0,
+                },
+              ]
+              : [],
+            label: fields?.mandatory?.custom_attachment
+              ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+              : "Attachment",
+            errorLabel: "Attachment",
+            input: true,
+            storage: "customBase64",
+            validate: {
+              required:
+                !!mandatory.custom_attachment ||
+                requiredFieldMap["custom_attachment"],
             },
-          ]
+            filePattern: "*/*",
+            customClass: "px-2 mb-6",
+          },
+        ]
         : []),
 
       {
@@ -517,9 +517,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
-                disabled: defaults?.isEdit
-                  ? false
-                  : Boolean(defaults?.fromDate),
+                // disabled: defaults?.isEdit
+                //   ? false
+                //   : Boolean(defaults?.fromDate),
+                disabled:
+                  !defaults?.isEdit &&
+                  defaults?.source !== "other" &&
+                  Boolean(defaults?.fromDate),
+
               },
             ],
           },
@@ -543,7 +548,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 input: true,
                 customClass: "mb-4",
                 format: "dd-MM-yyyy",
-                disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
+                // disabled: defaults?.isEdit ? false : Boolean(defaults?.toDate),
+                disabled:
+                  !defaults?.isEdit &&
+                  defaults?.source !== "other" &&
+                  Boolean(defaults?.toDate),
+
               },
             ],
           },
@@ -583,24 +593,24 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
-          {isDesktop && ( <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onCancel) {
-                onCancel();
-              }
-            }}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
-           )}
-        </div>
-     
+
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+        <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
+        {isDesktop && (<button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onCancel) {
+              onCancel();
+            }
+          }}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5 text-gray-600" />
+        </button>
+        )}
+      </div>
+
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
           <strong>Applying for:</strong> {leaveDays}{" "}
@@ -696,47 +706,47 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         )}
       </div>
       <div className="border-gray-200 border-t py-3 px-2 flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-  
-  {!isDesktop && (
-    <Button
-      onClick={(e) => {
-        e.stopPropagation();
-        if (onCancel) {
-          onCancel();
-        }
-      }}
-      size="md"
-      variant="outline"
-      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 lg:px-7 rounded-md font-brand"
-    >
-      {createLeaveMutation.isPending ? "Processing..." : "Cancel"}
-    </Button>
-  )}
 
-  {!defaults?.isEdit ? (
-    <Button
-      onClick={handleSubmit}
-      size="md"
-      variant="contain"
-      bgColor="primary"
-      className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
-    >
-      {createLeaveMutation.isPending ? "Processing..." : "Submit"}
-    </Button>
-  ) : (
-    <Button
-      onClick={handleUpdate}
-      size="md"
-      variant="contain"
-      bgColor="primary"
-      disabled={editLeaveMutation.isPending}
-      className="w-full md:w-auto min-w-[201px] md:px-4 md:py-2.5 rounded-md font-brand"
-    >
-      {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
-    </Button>
-  )}
+        {!isDesktop && (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onCancel) {
+                onCancel();
+              }
+            }}
+            size="md"
+            variant="outline"
+            className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 lg:px-7 rounded-md font-brand"
+          >
+            {createLeaveMutation.isPending ? "Processing..." : "Cancel"}
+          </Button>
+        )}
 
-</div>
+        {!defaults?.isEdit ? (
+          <Button
+            onClick={handleSubmit}
+            size="md"
+            variant="contain"
+            bgColor="primary"
+            className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+          >
+            {createLeaveMutation.isPending ? "Processing..." : "Submit"}
+          </Button>
+        ) : (
+          <Button
+            onClick={handleUpdate}
+            size="md"
+            variant="contain"
+            bgColor="primary"
+            disabled={editLeaveMutation.isPending}
+            className="w-full md:w-auto min-w-[201px] md:px-4 md:py-2.5 rounded-md font-brand"
+          >
+            {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
+          </Button>
+        )}
+
+      </div>
 
 
       {isAttendanceModalOpen && (
