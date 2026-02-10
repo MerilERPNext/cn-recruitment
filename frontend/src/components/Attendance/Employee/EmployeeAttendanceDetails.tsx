@@ -26,7 +26,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import ReplaceLeaveModal from "../../Leaves/ReplaceLeaveModal";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import CircularLoader from "../../shared/atoms/CircularLoader";
-import { RequestLeaveModalProvider, useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
+import { useRequestLeaveModal } from "../../Leaves/RequestLeaveModalContext";
 import { LeaveDetailsCard } from "./LeaveDetailsCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import Badge from "../../shared/Badge";
@@ -35,8 +35,6 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { LeaveRequestRefreshProvider } from "../../Leaves/LeaveRequestRefreshContext";
-import RequestLeave from "../../Leaves/RequestLeave";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -60,8 +58,6 @@ const EmployeeAttendanceDetails = ({
 
   const status = propStatus?.toLowerCase().replace(/-/g, " ") || query.get("status")?.toLowerCase().replace(/-/g, " ");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
-    useState(false);
-  const [showReqLeaveCorrection, setShowReqLeaveCorrection] =
     useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -140,7 +136,12 @@ const EmployeeAttendanceDetails = ({
       : [],
     { enabled: !!validDate && !!effectiveEmployeeId && (hasAttendanceRequestEvent || status === "absent" || status === "half day") }
   );
-
+  const { data: leaveUserUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const canRequestLeave = isActionEnabled(
+    leaveUserUiPermission,
+    "request_leave",
+    "My Requests",
+  );
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
@@ -213,31 +214,38 @@ const EmployeeAttendanceDetails = ({
     );
   };
 
-  // Handler for editing leave
+  // Handler for editing / creating leave
   const handleEdit = () => {
-    if (!leaveDetails) return;
-
-    openLeaveModal({
-      leaveType: leaveDetails.leave_type,
-      fromDate: leaveDetails.from_date,
-      toDate: leaveDetails.to_date,
-      halfDay: leaveDetails.half_day === 1,
-      halfDayOption: leaveDetails.custom_half_day_type as
-        | "First Half"
-        | "Second Half"
-        | undefined,
-      half_day_date: leaveDetails.half_day_date || "",
-      custom_second_half_day_date:
-        leaveDetails.custom_second_half_day_date || "",
-      description: leaveDetails.description,
-      custom_reason: leaveDetails.custom_reason || "",
-      custom_attachment: leaveDetails.custom_attachment
-        ? [{ url: leaveDetails.custom_attachment }]
-        : undefined,
-      isEdit: true,
-      leave_application: leaveDetails.name,
-    });
-    setShowEditModal(true);
+    if (leaveDetails) {
+      openLeaveModal({
+        leaveType: leaveDetails.leave_type,
+        fromDate: leaveDetails.from_date,
+        toDate: leaveDetails.to_date,
+        halfDay: leaveDetails.half_day === 1,
+        halfDayOption: leaveDetails.custom_half_day_type as
+          | "First Half"
+          | "Second Half"
+          | undefined,
+        half_day_date: leaveDetails.half_day_date || "",
+        custom_second_half_day_date:
+          leaveDetails.custom_second_half_day_date || "",
+        description: leaveDetails.description,
+        custom_reason: leaveDetails.custom_reason || "",
+        custom_attachment: leaveDetails.custom_attachment
+          ? [{ url: leaveDetails.custom_attachment }]
+          : undefined,
+        isEdit: true,
+        leave_application: leaveDetails.name,
+        source: "other"
+      });
+    } else {
+      const dateStr = validDate ? format(validDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+      openLeaveModal({
+        fromDate: dateStr,
+        toDate: dateStr,
+        source: "other"
+      });
+    }
   };
 
   const renderHeader = () => {
@@ -411,10 +419,8 @@ const EmployeeAttendanceDetails = ({
       </div>
     );
   };
-
   const renderFooterButton = () => {
     if (data?.custom_auto_created === 1 || status === "on leave" || !!leaveEvent) return null;
-    if (!canRequestAttendance) return null;
     const isButtonDisabled =
       status !== "absent" && status !== "half day";
 
@@ -430,18 +436,18 @@ const EmployeeAttendanceDetails = ({
     return (
       <div className="flex items-center justify-center gap-2">
         {
-          (status === "absent" || status === "half day") && <Button
+          ((status === "absent" || status === "half day") && canRequestLeave) && <Button
             variant="soft"
             fullWidth
             size="md"
             bgColor="primary"
-            onClick={() => setShowReqLeaveCorrection(true)}
+            onClick={handleEdit}
           >
             <Plus className="w-4 h-4 mr-2" />
             Leave Request
           </Button>
         }
-        <Button
+        {canRequestAttendance && <Button
           variant="soft"
           fullWidth
           size="md"
@@ -451,11 +457,10 @@ const EmployeeAttendanceDetails = ({
         >
           <Plus className="w-4 h-4 mr-2" />
           Attendance Request
-        </Button>
+        </Button>}
       </div>
     );
   };
-
   return (
     <div className="bg-white flex flex-col h-full rounded-lg">
       {renderHeader()}
@@ -465,39 +470,17 @@ const EmployeeAttendanceDetails = ({
       <div className="p-3 border-t bg-white sticky bottom-0 w-full z-40 mt-auto rounded-bl-lg rounded-br-lg">
         {renderFooterButton()}
       </div>
-      {showReqLeaveCorrection && (
-        createPortal(
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div
-              className="
-    bg-white
-    rounded-lg
-    w-full
-    mx-0 sm:mx-4
-    h-full sm:h-auto
-    max-h-screen sm:max-h-[90vh]
-    overflow-y-auto
-    sm:max-w-2xl
-  "
-            >
-              {/* Ensure LeaveRequest is inside its providers */}
-              <LeaveRequestRefreshProvider>
-                <RequestLeaveModalProvider>
-                  <RequestLeave
-                    onCancel={() => setShowReqLeaveCorrection(false)}
-                    onSuccess={() => setShowReqLeaveCorrection(false)}
-                  />
-                </RequestLeaveModalProvider>
-              </LeaveRequestRefreshProvider>
-            </div>
-          </div>,
-          document.body,)
-      )}
       {showReqAttendanceCorrection &&
         createPortal(
           <AttendanceRequestFormV2
             onClose={() => setShowReqAttendanceCorrection(false)}
             selectedDate={validDate || new Date()}
+            latestInAndOutTime={empCheckIns && empCheckIns?.length > 0 ?
+              {
+                in_time: empCheckIns?.[0].time as string,
+                out_time: empCheckIns?.[empCheckIns.length - 1].time as string,
+              } : undefined
+            }
           />,
           document.body,
         )}

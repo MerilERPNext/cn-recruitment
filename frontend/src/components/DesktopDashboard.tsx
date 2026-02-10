@@ -64,7 +64,6 @@ import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
 import CircularLoader from "./shared/atoms/CircularLoader";
 
-
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -74,7 +73,6 @@ export default function DesktopDashboard() {
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
-
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const { clearTargetEmployee } = useTargetUser();
@@ -974,7 +972,6 @@ export default function DesktopDashboard() {
           </div>
         </div>
       )}
-
       {showOvertimeRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
