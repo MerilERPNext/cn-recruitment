@@ -14,6 +14,7 @@ import SalaryAssignmentHeader from "./PayPackageHeader";
 import HeaderBar from "../../HeaderBar";
 import { Banknote, CalendarDays } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 type SalaryItem = any;
 
@@ -108,10 +109,14 @@ export default function SalaryAssignmentList() {
 
   const renderAmount = (value?: number | string) => {
     if (showAmount) {
-      return <span className="blur-sm select-none">₹ XXXXX</span>;
+      return (
+        <span className="blur-sm select-none">
+          {RupeeSymbolPerfix("XXXXX")}
+        </span>
+      );
     }
     if (value === undefined || value === null) return "—";
-    return `₹ ${Number(value).toLocaleString("en-IN")}`;
+    return `${RupeeSymbolPerfix(Number(value).toLocaleString("en-IN"))}`;
   };
 
   return (

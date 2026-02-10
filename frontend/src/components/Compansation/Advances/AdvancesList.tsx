@@ -18,6 +18,7 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -48,7 +49,9 @@ const AdvancesList: React.FC = () => {
             {label}
           </span>
           {maskAmounts ? (
-            <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+            <span className="blur-sm select-none text-gray-400">
+              {RupeeSymbolPerfix("XX,XXX")}
+            </span>
           ) : (
             <span className="font-medium">{formatCurrency(value)}</span>
           )}
@@ -143,7 +146,9 @@ const AdvancesList: React.FC = () => {
           {/* Amount */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
-              <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm select-none text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
             ) : (
               <span>{formatCurrency(advance.amount)}</span>
             )}
@@ -152,7 +157,9 @@ const AdvancesList: React.FC = () => {
           {/* Deductions */}
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
-              <span className="blur-sm select-none text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm select-none text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
             ) : (
               <span>{advance.numberOfDeductions}</span>
             )}

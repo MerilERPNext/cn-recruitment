@@ -3,6 +3,7 @@ import MobileDataCard from "./MobileDataCard";
 import { COLUMN_LAYOUT } from "./MyBenefits";
 import { SalaryComponentDetail } from "../../../hooks/useBenefit";
 import { Typography } from "../../shared/atoms/Typography";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 // Desktop / row item
 export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
@@ -41,26 +42,26 @@ export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
 
       {/* Periodic Original Amount */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        ₹{(item.periodic_original_amount ?? 0).toLocaleString()}
+        {RupeeSymbolPerfix(item.periodic_original_amount ?? 0).toLocaleString()}
       </Typography>
 
       {/* Periodic Accrued */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        ₹{(item.amount ?? 0).toLocaleString()}
+        {RupeeSymbolPerfix(item.amount ?? 0).toLocaleString()}
       </Typography>
 
       {/* Claimed Amount */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        ₹{(item.claimed_amount ?? 0).toLocaleString()}
+        {RupeeSymbolPerfix(item.claimed_amount ?? 0).toLocaleString()}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        ₹{(item.paid_amount ?? 0).toLocaleString()}
+        {RupeeSymbolPerfix(item.paid_amount ?? 0).toLocaleString()}
       </Typography>
 
       {/* Closing Balance */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        ₹{(item.closing_balance ?? 0).toLocaleString()}
+        {RupeeSymbolPerfix(item.closing_balance ?? 0).toLocaleString()}
       </Typography>
     </div>
   );
@@ -96,7 +97,7 @@ export const StatItem = ({
           highlighted ? "text-blue-700" : "text-slate-800"
         }`}
       >
-        {subLabel == "Amount" && "₹"}
+        {subLabel == "Amount" && RupeeSymbolPerfix("")}
         {isNumber ? value : value.toLocaleString()}
       </span>
 

@@ -28,6 +28,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { RupeeSymbolPerfix } from "../../utils/currency";
 
 type PayrollPeriod = {
   name: string;
@@ -442,7 +443,9 @@ const SalarySlipItemDesktop = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">₹XX,XXX</span>
+          <span className="blur-sm text-gray-400">
+            {RupeeSymbolPerfix("XX,XXX")}
+          </span>
         ) : (
           formatCurrency(item.gross_pay)
         )}
@@ -450,7 +453,9 @@ const SalarySlipItemDesktop = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">₹XX,XXX</span>
+          <span className="blur-sm text-gray-400">
+            {RupeeSymbolPerfix("XX,XXX")}
+          </span>
         ) : (
           formatCurrency(item.net_pay)
         )}
@@ -530,7 +535,9 @@ const SalarySlipItemMobile = ({
           <span className="font-medium text-gray-700">Gross Pay</span>
           <span className="font-semibold">
             {maskSalary ? (
-              <span className="blur-sm text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
             ) : (
               formatCurrency(item.gross_pay)
             )}
@@ -541,7 +548,9 @@ const SalarySlipItemMobile = ({
           <span className="font-medium text-gray-700">Net Pay</span>
           <span className="text-blue-600 font-semibold">
             {maskSalary ? (
-              <span className="blur-sm text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
             ) : (
               formatCurrency(item.net_pay)
             )}

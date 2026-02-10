@@ -15,6 +15,7 @@ import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -262,7 +263,10 @@ export default function ExtraPayment() {
               </div>
               <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
               <p className="text-sm mb-1">Date: {payment.date}</p>
-              <p className="font-semibold text-lg mt-2">₹ {payment.amount}</p>
+              <p className="font-semibold text-lg mt-2">
+                {" "}
+                {RupeeSymbolPerfix(payment.amount)}
+              </p>
             </div>
           ))}
         </div>
