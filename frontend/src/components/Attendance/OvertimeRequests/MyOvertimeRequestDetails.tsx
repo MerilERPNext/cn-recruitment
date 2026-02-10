@@ -121,7 +121,7 @@ export function MyOvertimeDetails({
 
   return data?.allocated_to ? (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
     >
       <div
@@ -150,7 +150,7 @@ export function MyOvertimeDetails({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Allocated To + Status */}
-          <div className="flex gap-2 justify-between">
+          <div className="flex gap-2 justify-between p-1">
             <div className="flex flex-col gap-1">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel" className="text-gray-500">
@@ -208,9 +208,7 @@ export function MyOvertimeDetails({
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
-                Description
-              </Typography>
+              <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
                 {data?.description}
               </Typography>

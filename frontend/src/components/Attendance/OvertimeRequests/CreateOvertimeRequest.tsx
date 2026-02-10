@@ -64,7 +64,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
@@ -79,7 +79,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         show_attachment: !!plannedOvertimeRequestAttachments,
       },
     }),
-    [plannedOvertimeRequestAttachments]
+    [plannedOvertimeRequestAttachments],
   );
 
   const isValidDate = (dateString: string) => {
@@ -96,10 +96,10 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   };
 
   const { data: requiredFieldsChild } = useRequiredFields(
-    "Overtime Child table"
+    "Overtime Child table",
   );
   const { data: requiredFieldsParent } = useRequiredFields(
-    "Planned Overtime Request"
+    "Planned Overtime Request",
   );
 
   const requiredFieldMap = useMemo(() => {
@@ -132,7 +132,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
+    requiredMap: Record<string, boolean>,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
     const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
@@ -153,6 +153,11 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             }
           }
         }
+
+        if (key === "start_date" || key === "end_date") {
+          if (!comp.datePicker) comp.datePicker = {};
+          comp.datePicker.minDate = format(new Date(), "yyyy-MM-dd");
+        }
         // recurse into nested components (like panels, columns, containers)
         if (comp.components && Array.isArray(comp.components)) {
           applyToComponents(comp.components);
@@ -163,7 +168,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         }
         if (comp.rows && Array.isArray(comp.rows)) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+            row.forEach((cell: any) => applyToComponents(cell.components)),
           );
         }
       });
@@ -194,7 +199,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             start_time: format(new Date(entry?.start_time), "HH:mm:ss"),
             end_time: format(new Date(entry?.end_time), "HH:mm:ss"),
             message: entry?.message,
-          })
+          }),
         );
 
         await new Promise<void>((resolve, reject) => {
@@ -205,31 +210,36 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             },
             {
               onSuccess: async (data: any) => {
+                const onFinish = () => {
+                  setAttachments([]);
+                  onCancel?.();
+                  setTimeout(() => setRefetchAttendance(true), 1000);
+                };
+
                 if (attachments?.length > 0) {
                   await uploadFiles(
                     attachments,
                     data.doctype,
                     data.name,
-                    () => {
-                      setAttachments([]);
-                      onCancel?.();
-                      setTimeout(() => setRefetchAttendance(true), 1000);
-                    }
+                    onFinish,
                   );
+                } else {
+                  onFinish();
                 }
+
                 resolve();
                 toast.success("Overtime Requests SuccessFully");
               },
               onError: (e: CustomError) => {
                 const formattedError = errorResponseFormater(
                   e,
-                  "Request Failed"
+                  "Request Failed",
                 );
                 toast.error(formattedError);
                 console.error(e);
                 reject(e);
               },
-            }
+            },
           );
         });
       } catch (err) {
@@ -242,7 +252,10 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   // Sync show_attachment if it changes after initial load
   useEffect(() => {
-    if (formInstance.current && plannedOvertimeRequestAttachments !== undefined) {
+    if (
+      formInstance.current &&
+      plannedOvertimeRequestAttachments !== undefined
+    ) {
       const showAttachmentComp =
         formInstance.current.getComponent("show_attachment");
       if (showAttachmentComp) {
@@ -269,29 +282,52 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
           <h2 className="text-lg font-semibold text-gray-800">
             Planned Overtime Request
           </h2>
-          {isDesktop && (<button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCancel?.();
-              setAttachments([]);
-            }}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>)}
+          {isDesktop && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onCancel?.();
+                setAttachments([]);
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Form.io Form */}
-        <div className="flex-1 min-h-0 px-6 py-4">
+        <div className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
           <Form
             form={transformSchemaWithRequired(
               overtimeRequestSchema,
-              requiredFieldMap
+              requiredFieldMap,
             )}
             onChange={(submission: any) => {
-              if (submission?.changed?.component?.key === "attachment")
+              const changed = submission?.changed;
+              if (changed?.component?.key === "attachment") {
                 setAttachments(submission?.data?.attachment || []);
+              }
+
+              // Auto-populate end_date from start_date
+              if (
+                changed?.component?.key === "start_date" &&
+                changed?.value &&
+                changed?.instance?.rowIndex !== undefined
+              ) {
+                const rowIndex = changed.instance.rowIndex;
+                // Get the grid component
+                const grid =
+                  formInstance.current?.getComponent("overtime_details");
+
+                // Check if grid and row exist, then set value
+                if (grid?.rows?.[rowIndex]?.end_date) {
+                  // Use setValue with noUpdateEvent to avoid triggering another change loop if possible
+                  // or just setValue. Formio usually handles this well.
+                  grid.rows[rowIndex].end_date.setValue(changed.value);
+                }
+              }
             }}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {
@@ -322,20 +358,21 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Footer */}
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-
-            {!isDesktop && (<Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCancel?.();
-                setAttachments([]);
-              }}
-              size="md"
-              variant="outline"
-              bgColor="primary"
-              className="w-full md:w-auto min-w-[150px]"
-            >
-              Cancel
-            </Button>)}
+            {!isDesktop && (
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCancel?.();
+                  setAttachments([]);
+                }}
+                size="md"
+                variant="outline"
+                bgColor="primary"
+                className="w-full md:w-auto min-w-[150px]"
+              >
+                Cancel
+              </Button>
+            )}
 
             <Button
               onClick={handleSubmit}
@@ -351,10 +388,8 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
                 "Submit"
               )}
             </Button>
-
           </div>
         </div>
-
       </div>
     </div>
   );

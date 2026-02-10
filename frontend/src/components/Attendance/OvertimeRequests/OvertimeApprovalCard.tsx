@@ -11,6 +11,7 @@ import {
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -80,29 +81,6 @@ const OvertimeApprovalCard = ({
     ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr"
     : "1fr 1.5fr 1fr 1fr 1fr";
 
-  const getStatus = (status: string) => {
-    if (status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-  const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
@@ -152,13 +130,13 @@ const OvertimeApprovalCard = ({
           </Tooltip>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.due_date}
+            {formatToIndianDate(data?.due_date)}
           </Typography>
 
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.status === "Open"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
@@ -235,7 +213,7 @@ const OvertimeApprovalCard = ({
                       Allocated To
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.username}
+                      {data?.username || data?.allocated_to}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
@@ -243,7 +221,7 @@ const OvertimeApprovalCard = ({
                       Due Date
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.due_date}
+                      {formatToIndianDate(data?.due_date)}
                     </Typography>
                   </div>
                 </div>

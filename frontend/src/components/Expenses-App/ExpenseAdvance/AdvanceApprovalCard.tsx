@@ -4,12 +4,12 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -203,7 +203,10 @@ const AdvanceApprovalCard = ({
               </div>
               <div className="flex flex-col items-start justify-between gap-3 mt-2 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">
-                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="w-1/2 truncate"
+                  >
                     Category
                   </Typography>
                   <Typography variant="mobileCardValue">
@@ -211,7 +214,10 @@ const AdvanceApprovalCard = ({
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="w-1/2 truncate"
+                  >
                     Advance Amount
                   </Typography>
                   <Typography variant="mobileCardValue">
@@ -219,7 +225,10 @@ const AdvanceApprovalCard = ({
                   </Typography>
                 </div>
                 <div className="flex justify-between items-center w-full">
-                  <Typography variant="mobileCardLabel" className="w-1/2 truncate">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="w-1/2 truncate"
+                  >
                     Due Date
                   </Typography>
                   <Typography variant="mobileCardValue">
@@ -252,7 +261,7 @@ const AdvanceApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action
