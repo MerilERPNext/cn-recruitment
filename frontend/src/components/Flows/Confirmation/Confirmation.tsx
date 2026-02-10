@@ -32,8 +32,11 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import StageCard from "./StageCard";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
+import ConfimationStateCard from "./components/ConfimationStateCard";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const ConfirmationWorkflow = () => {
+  const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee, isLoading: loadingCurrentEmployee } =
@@ -228,20 +231,13 @@ const ConfirmationWorkflow = () => {
             },
           ]
         : []),
-      ...(item?.reference_document?.creation
-        ? [
-            {
-              label: "Status",
-              value:
-                item?.reference_document?.status === "Draft"
-                  ? "Review Pending"
-                  : item?.reference_document?.status,
-              Icon: FileText,
-              bg: "bg-purple-50",
-              text: "text-purple-600",
-            },
-          ]
-        : []),
+      {
+        label: "Status",
+        value: activeEmployee?.custom_employment_status,
+        Icon: FileText,
+        bg: "bg-purple-50",
+        text: "text-purple-600",
+      },
     ],
     [activeEmployee, item],
   );
@@ -263,6 +259,10 @@ const ConfirmationWorkflow = () => {
         ? "action_required"
         : "pending",
       show_confirmation_button: canInitiateConfirmation,
+      self_confimation_btn_name:
+        activeEmployee?.custom_employment_status == "On Probation"
+          ? "Initiate Confirmation"
+          : "Initiate confirmation Again",
     },
   ];
 
@@ -280,35 +280,19 @@ const ConfirmationWorkflow = () => {
   /* ---------------------------------------------------------- */
 
   return (
-    <div className=" bg-blue-50  min-h-screen  p-4  text-gray-800  font-sans">
-      <div className="flex flex-col mb-4 ">
-        <Typography variant="h4">Confirmation</Typography>
+    <div className=" md:bg-blue-50  min-h-screen sm:p-4  text-gray-800  font-sans">
+      <div className="flex flex-col md:mb-4 p-2">
+        {isDesktop && <Typography variant="h4">Confirmation</Typography>}
         <Typography variant="bodySmall" color="body2">
           View Your Confirmation Process
         </Typography>
       </div>
 
       <Card>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-md:bg-blue-50 rounded-lg p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Confirmation Cards Section */}
-          {confirmationCards.map(({ label, value, Icon, bg, text }, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-4 px-4 py-8 bg-white border border-slate-200 hover:border-primary rounded-xl shadow-sm"
-            >
-              <div
-                className={`w-10 h-10 flex items-center justify-center rounded-lg ${bg} ${text}`}
-              >
-                <Icon size={20} strokeWidth={1.75} />
-              </div>
-
-              <div className="space-y-0.5">
-                <Typography variant="bodyMedium" className="font-semibold">
-                  {value || "-"}
-                </Typography>
-                <Typography variant="bodySmall">{label}</Typography>
-              </div>
-            </div>
+          {confirmationCards.map((data, index) => (
+            <ConfimationStateCard key={index} data={data} />
           ))}
         </div>
       </Card>
@@ -325,7 +309,7 @@ const ConfirmationWorkflow = () => {
           const status = postStagesStarted ? "completed" : item.status;
           return (
             <div
-              className="grid grid-cols-[80px_1fr] hover:bg-primary-10"
+              className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10"
               key={item.id}
             >
               <StatusTimelineItem
@@ -335,20 +319,20 @@ const ConfirmationWorkflow = () => {
 
               <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
                 <div className="ml-4 flex flex-col">
-                  <Typography variant="subheading">{item.title}</Typography>
+                  <Typography variant="bodyMedium">{item.title}</Typography>
                   <Typography variant="bodySmall">
                     {item.description}
                   </Typography>
                 </div>
 
-                <div className="flex justify-between items-start px-4 pt-1 pb-3">
+                <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
                   {item.show_confirmation_button ? (
                     <Button
                       variant="contain"
                       size="md"
                       onClick={handleInitiateConfirmation}
                     >
-                      Act
+                      {item.self_confimation_btn_name}
                     </Button>
                   ) : (
                     <div></div>
@@ -362,7 +346,7 @@ const ConfirmationWorkflow = () => {
         })}
         {/* Approval Stages Timeline  */}
         {stages?.map((_, idx) => (
-          <div className="grid grid-cols-[80px_1fr] hover:bg-primary-10">
+          <div className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10">
             <StageCard
               handleAct={handleAct}
               canPerformAction={canPerformAction}

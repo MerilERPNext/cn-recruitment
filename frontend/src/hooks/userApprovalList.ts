@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { approvalListServices } from "../services/approvalListService";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../context/OverlayContext";
+import { useCallback } from "react";
 
 export function useApprovalListActions() {
   const queryClient = useQueryClient();
@@ -42,4 +44,91 @@ export function useRevokeEvent() {
       console.log("Errorr Replacing Leave", err);
     },
   });
+}
+
+export function useApprovalAction(triggerRefetch? : ()=> void ){
+
+  const loading = useLoadingOverlay();
+  const mutation = useApprovalListActions();
+   const handleAction = useCallback(
+      async (
+        action: string,
+        data: {
+          todo_id: string;
+          custom_open_chatnext_assistant_on_action: boolean;
+          custom_approval_type: "Approval Matrix" | "Multi Actions";
+        },
+      ) => {
+        if (mutation?.isPending) return;
+  
+        const actionLoadingShow = ["approve", "reject"].includes(
+          action.toLocaleLowerCase(),
+        )
+          ? action
+          : `Performing Action: ${action}`;
+        await loading?.wrap(async () => {
+          try {
+  
+            const response = await mutation.mutateAsync({
+              action,
+              name: data?.todo_id || "",
+            });
+  
+            console.log("Action response:", response);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reason for using any
+            const responseWithSession = response as unknown as { session?: any };
+            console.log("Session data:", responseWithSession?.session);
+            console.log(
+              "Assistant trigger enabled:",
+              data?.custom_open_chatnext_assistant_on_action,
+            );
+  
+            if (
+              (data?.custom_approval_type === "Approval Matrix" &&
+                responseWithSession?.session) ||
+              (data?.custom_approval_type === "Multi Actions" &&
+                data?.custom_open_chatnext_assistant_on_action)
+            ) {
+              console.log(
+                "Opening assistant with session:",
+                responseWithSession?.session,
+              );
+  
+              if (window.trigger_chatnext_assistant) {
+                window.trigger_chatnext_assistant(
+                  true,
+                  responseWithSession?.session,
+                );
+              }
+  
+              if (action.toLowerCase() !== "approve") {
+                triggerRefetch?.();
+              }
+            } else {
+              // toast.success(`Request ${action} Successfully!`);
+              const actionMap: Record<string, string> = {
+                Approve: "Approved",
+                Reject: "Rejected",
+              };
+  
+              const finalAction = actionMap[action] ?? `${action}ed`;
+  
+              toast.success(`Request ${finalAction} Successfully!`);
+              triggerRefetch?.();
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any 
+          } catch (error: any) {
+            const formatedError = errorResponseFormater(
+              error,
+              "Something went wrong",
+            );
+            toast.error(formatedError);
+            console.error("Action Falied:", error);
+          } 
+        }, actionLoadingShow);
+      },
+      [mutation, loading, triggerRefetch],
+    );
+  
+    return { handleAction };
 }

@@ -1,13 +1,14 @@
-import { useState } from 'react'
-import { useScreenSize } from '../../../hooks/useScreenSize';
-import CommonSearchAndActions from '../CommonSearchAndActions';
-import HeaderBar from '../../HeaderBar';
-import { useNavigate, useParams } from 'react-router-dom';
-import Badge from '../../shared/Badge';
-import RequestTimeline from './RequestDetailsCard';
-import CardTable from '../../shared/CardTable';
+import { useState } from "react";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import CommonSearchAndActions from "../CommonSearchAndActions";
+import HeaderBar from "../../HeaderBar";
+import { useNavigate, useParams } from "react-router-dom";
+import Badge from "../../shared/Badge";
+import RequestTimeline from "./RequestDetailsCard";
+import CardTable from "../../shared/CardTable";
 
-const titles = ["Stage Number",
+const titles = [
+  "Stage Number",
   "Stage Name",
   "Assigned To",
   "Action Taken By",
@@ -15,8 +16,8 @@ const titles = ["Stage Number",
   "Trigger Date",
   "Due Date",
   "Completed Date",
-  "Actions"
-]
+  "Actions",
+];
 
 const stages = [
   {
@@ -73,21 +74,22 @@ const stages = [
     dueDate: "2025-10-11",
     completedDate: "2025-10-10",
     actions: "View Record",
-  }
+  },
 ];
 
-
-type FlowStatusType = 'Approval Flow Status' | 'Workflow Status';
+type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 
 const RequestDetails: React.FC = () => {
-  const [FlowStatusType, setFlowStatusType] = useState<FlowStatusType>('Approval Flow Status');
+  const [FlowStatusType, setFlowStatusType] = useState<FlowStatusType>(
+    "Approval Flow Status",
+  );
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { id } = useParams();
 
   const handleNavigateBack = () => {
     navigate(-1);
-  }
+  };
 
   const getBadgeColor = (status: string) => {
     if (!status) return "text-gray-600 bg-gray-100";
@@ -104,12 +106,15 @@ const RequestDetails: React.FC = () => {
       default:
         return "text-gray-600 bg-gray-100";
     }
-  }
+  };
   return (
     <div className="min-h-screen bg-white">
       <div className="top-0 sticky z-10 bg-white">
         <div className="sm:px-4">
-          <HeaderBar title={'Flow Request Details : ' + id} onBack={handleNavigateBack} />
+          <HeaderBar
+            title={"Flow Request Details : " + id}
+            onBack={handleNavigateBack}
+          />
         </div>
         <div className="px-8  flex items-center justify-between mb-4 flex-wrap gap-4">
           <div className="flex w-full sm:w-fit border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
@@ -124,9 +129,11 @@ const RequestDetails: React.FC = () => {
                   onClick={() => setFlowStatusType(btn.value as FlowStatusType)}
                   disabled={isActive}
                   className={`flex-1 sm:flex-none px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 
-          ${isActive
-                      ? "bg-blue-600 text-white font-semibold shadow-inner"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"}
+          ${
+            isActive
+              ? "bg-blue-600 text-white font-semibold shadow-inner"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
+          }
           ${index === 0 ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                 >
                   {btn.label}
@@ -136,58 +143,90 @@ const RequestDetails: React.FC = () => {
           </div>
 
           <div className="text-sm flex sm:flex-col justify-between sm:w-fit w-full">
-            <div ><span className="font-medium text-gray-500 ">Initiated By :</span> <span className="text-gray-900">Yojesh Jain </span></div>
-            <div> <span className="font-medium text-gray-500 ">Initiated On :</span> <span className="text-gray-900">17-10-2025</span> </div>
+            <div>
+              <span className="font-medium text-gray-500 ">Initiated By :</span>{" "}
+              <span className="text-gray-900">Yojesh Jain </span>
+            </div>
+            <div>
+              {" "}
+              <span className="font-medium text-gray-500 ">
+                Initiated On :
+              </span>{" "}
+              <span className="text-gray-900">17-10-2025</span>{" "}
+            </div>
           </div>
         </div>
-        <div className="px-8 "><CommonSearchAndActions hideEyeIcon={true} /></div>
+        <div className="px-8 ">
+          <CommonSearchAndActions hideEyeIcon={true} />
+        </div>
       </div>
 
       <div className="sm:px-8 px-4">
         <CardTable titles={titles}>
-          {isDesktop ?
-            (<div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
+          {isDesktop ? (
+            <div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
               <div className="w-full">
-                {stages.length > 0 ?
+                {stages.length > 0 ? (
                   stages.map((stage) => (
-                    <div key={stage.triggerDate} className="hover:bg-gray-100 grid grid-cols-9 cursor-pointer text-xs w-full border-b">
-                      <span className="px-4 py-4 inline-block text-sm">{stage.stageNumber}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.stageName}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.assignedTo}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.actionTakenBy}</span>
-                      <span className="px-4 py-4 inline-block text-sm "><Badge label={stage.status} textColor={getBadgeColor(stage.status)} size="sm" /></span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.triggerDate}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.dueDate}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.completedDate}</span>
-                      <span className="px-4 py-4 inline-block text-sm ">{stage.actions}</span>
+                    <div
+                      key={stage.triggerDate}
+                      className="hover:bg-gray-100 grid grid-cols-9 cursor-pointer text-xs w-full border-b"
+                    >
+                      <span className="px-4 py-4 inline-block text-sm">
+                        {stage.stageNumber}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.stageName}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.assignedTo}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.actionTakenBy}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        <Badge
+                          label={stage.status}
+                          textColor={getBadgeColor(stage.status)}
+                          size="sm"
+                        />
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.triggerDate}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.dueDate}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.completedDate}
+                      </span>
+                      <span className="px-4 py-4 inline-block text-sm ">
+                        {stage.actions}
+                      </span>
                     </div>
-                  )) : <EmptyState />
-                }
+                  ))
+                ) : (
+                  <EmptyState />
+                )}
               </div>
-            </div>)
-            :
-            (<div>
-              {true ?
-                <RequestTimeline stages={stages} /> : <EmptyState />
-              }
-            </div>)
-          }
-
+            </div>
+          ) : (
+            <div>
+              {true ? <RequestTimeline stages={stages} /> : <EmptyState />}
+            </div>
+          )}
         </CardTable>
-
-
       </div>
     </div>
-  )
-}
-
+  );
+};
 
 const EmptyState = () => {
   return (
     <div className="py-14 text-center text-sm font-medium text-gray-500">
       No Records Found
     </div>
-  )
-}
+  );
+};
 
-export default RequestDetails
+export default RequestDetails;

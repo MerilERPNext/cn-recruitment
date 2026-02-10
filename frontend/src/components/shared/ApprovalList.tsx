@@ -40,7 +40,9 @@ type ApprovalListProps = {
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
   defaultFilters?: Record<string, any>;
   columnWidths?: string[];
-  noRecordsScreen?: React.ReactNode | ((filters: Record<string, any>) => React.ReactNode);
+  noRecordsScreen?:
+    | React.ReactNode
+    | ((filters: Record<string, any>) => React.ReactNode);
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -151,8 +153,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-            )
+                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+              )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -168,7 +170,14 @@ const ApprovalList = ({
   };
 
   const handleAction = useCallback(
-    async (action: string, data: any) => {
+    async (
+      action: string,
+      data: {
+        todo_id: string;
+        custom_open_chatnext_assistant_on_action: boolean;
+        custom_approval_type: "Approval Matrix" | "Multi Actions";
+      },
+    ) => {
       if (mutation?.isPending) return;
 
       const actionLoadingShow = ["approve", "reject"].includes(
@@ -256,9 +265,10 @@ const ApprovalList = ({
             {
               onSuccess: () => {
                 toast.success(
-                  `Requests ${action === "Reject"
-                    ? "rejected"
-                    : `${action.toLowerCase()}d`
+                  `Requests ${
+                    action === "Reject"
+                      ? "rejected"
+                      : `${action.toLowerCase()}d`
                   } successfully!`,
                 );
                 triggerRefetch();
@@ -298,9 +308,11 @@ const ApprovalList = ({
         // onFiltersChange={(filters) => {
         //   setActiveFilters(filters);
         // }}
-        noRecordsScreen={typeof noRecordsScreen === 'function'
-          ? (filters: Record<string, any>) => noRecordsScreen({ ...filters, ...activeFilters })
-          : noRecordsScreen
+        noRecordsScreen={
+          typeof noRecordsScreen === "function"
+            ? (filters: Record<string, any>) =>
+                noRecordsScreen({ ...filters, ...activeFilters })
+            : noRecordsScreen
         }
         onFiltersChange={handleFiltersChange}
         isSearch={isSearch}
