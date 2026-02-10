@@ -7,6 +7,7 @@ import LTACards from "./LtaBreakUp";
 import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { useFileUpload } from "../../../../hooks/useEmployee";
+import { RupeeSymbolPerfix } from "../../../../utils/currency";
 
 export interface LTAItem {
   exemption_sub_category: string;
@@ -57,8 +58,7 @@ const HRAForm: React.FC<HRAFormProps> = ({
 }) => {
   const [showLTAModal, setShowLTAModal] = useState(false);
   const uploadMutation = useFileUpload();
-const { mutateAsync: deleteDoc } = useDeleteDocument();
-
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
 
   const LTAData = (hraData as unknown as any[])?.[1];
 
@@ -75,19 +75,20 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
   const handleLTAFileUpload = (
     catIdx: number,
     itemIdx: number,
-    file: File | null
+    file: File | null,
   ) => {
     if (!file) return;
-  
+
     uploadMutation.mutate(file, {
       onSuccess(data) {
         const updatedItems = [...LTAData.items];
-  
+
         updatedItems[catIdx].items[itemIdx] = {
           ...updatedItems[catIdx].items[itemIdx],
-          proof_file: data?.file_url,file_id: data.name,
+          proof_file: data?.file_url,
+          file_id: data.name,
         };
-  
+
         onChange("lta", { items: updatedItems });
       },
       onError(err) {
@@ -99,7 +100,7 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
   const handleLTARemoveProof = async (
     catIdx: number,
     itemIdx: number,
-    fileId?: string
+    fileId?: string,
   ) => {
     if (!fileId) {
       alert("File id missing");
@@ -127,7 +128,6 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
       alert("Delete failed");
     }
   };
-    
 
   return (
     <div className="mt-4">
@@ -141,7 +141,8 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
         {/* ✅ Show warning only when rent > 8333 */}
         {isPanMandatory && (
           <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
-            If rent is more than ₹8,333/month or ₹1,00,000/year, PAN is mandatory.
+            If rent is more than {RupeeSymbolPerfix("8,333")}/month or{" "}
+            {RupeeSymbolPerfix("1,00,000")}/year, PAN is mandatory.
           </div>
         )}
 
@@ -195,9 +196,7 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
             <input
               type="number"
               value={hraData.monthly_hra}
-              onChange={(e) =>
-                onChange("monthly_hra", Number(e.target.value))
-              }
+              onChange={(e) => onChange("monthly_hra", Number(e.target.value))}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -220,17 +219,14 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
               value={hraData.pan}
               onChange={(e) => onChange("pan", e.target.value)}
               className={`w-full border rounded px-3 py-2 text-sm ${
-                isPanMandatory && !hraData.pan
-                  ? "border-red-500"
-                  : ""
+                isPanMandatory && !hraData.pan ? "border-red-500" : ""
               }`}
-              placeholder={
-                isPanMandatory ? "PAN is mandatory" : "Enter PAN"
-              }
+              placeholder={isPanMandatory ? "PAN is mandatory" : "Enter PAN"}
             />
             {isPanMandatory && !hraData.pan && (
               <p className="text-xs text-red-500 mt-1">
-                PAN is required when rent exceeds ₹8,333/month.
+                PAN is required when rent exceeds
+                {RupeeSymbolPerfix("8,333")}/month.
               </p>
             )}
           </div>
@@ -318,73 +314,75 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
                     </Typography>
                   </div>
 
-              <div className="flex gap-4 w-full justify-between">
+                  <div className="flex gap-4 w-full justify-between">
+                    <div className=" w-full flex flex-col gap-2">
+                      <label className="text-sm text-gray-500">Amount</label>
+                      <input
+                        type="text"
+                        value={item.amount ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const numericValue =
+                            value === "" ? null : Number(value);
 
+                          const updatedItems = [...LTAData.items];
+                          updatedItems[catIdx].items[idx].amount = numericValue;
 
-              <div className=" w-full flex flex-col gap-2">
-                    <label className="text-sm text-gray-500">Amount</label>
-                    <input
-                      type="text"
-                      value={item.amount ?? ""}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numericValue =
-                          value === "" ? null : Number(value);
+                          onChange("lta", { items: updatedItems });
+                        }}
+                        className={`max-w-[500px] border rounded px-3 py-1 ${
+                          item.editable === 0
+                            ? "bg-gray-200 cursor-not-allowed w-full"
+                            : ""
+                        }`}
+                      />
+                    </div>
+                    <div className=" flex flex-col gap-2 ">
+                      <label className="text-xs text-gray-600">
+                        Attachment
+                      </label>
 
-                        const updatedItems = [...LTAData.items];
-                        updatedItems[catIdx].items[idx].amount =
-                          numericValue;
-
-                        onChange("lta", { items: updatedItems });
-                      }}
-                      className={`max-w-[500px] border rounded px-3 py-1 ${
-                        item.editable === 0
-                          ? "bg-gray-200 cursor-not-allowed w-full"
-                          : ""
-                      }`}
-                    />
-                  </div>
-                  <div className=" flex flex-col gap-2 ">
-  <label className="text-xs text-gray-600">Attachment</label>
-
-<div className="flex flex-row items-center gap-2">
-<input
-    type="file"
-    onChange={(e) =>
-      handleLTAFileUpload(
-        catIdx,
-        idx,
-        e.target.files?.[0] || null
-      )
-    }
-    className="border rounded pr-3 text-xs
+                      <div className="flex flex-row items-center gap-2">
+                        <input
+                          type="file"
+                          onChange={(e) =>
+                            handleLTAFileUpload(
+                              catIdx,
+                              idx,
+                              e.target.files?.[0] || null,
+                            )
+                          }
+                          className="border rounded pr-3 text-xs
       file:text-xs file:border-0
       file:bg-primary file:text-white
       file:px-3 file:py-1"
-  />
+                        />
 
-  {item.proof_file && (
-    <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-      <span className="text-xs text-gray-700 truncate">
-        {item.proof_file}
-      </span>
+                        {item.proof_file && (
+                          <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+                            <span className="text-xs text-gray-700 truncate">
+                              {item.proof_file}
+                            </span>
 
-      <button
-        type="button"
-        onClick={() =>
-          handleLTARemoveProof(catIdx, idx, item.proof_file)
-        }
-        className="text-gray-500 hover:text-red-600"
-        title="Remove file"
-      >
-        <FiX size={14} />
-      </button>
-    </div>
-  )}
-</div>
-</div>
-
-              </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleLTARemoveProof(
+                                  catIdx,
+                                  idx,
+                                  item.proof_file,
+                                )
+                              }
+                              className="text-gray-500 hover:text-red-600"
+                              title="Remove file"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

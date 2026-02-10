@@ -28,6 +28,7 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Link } from "react-router-dom";
 import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -270,19 +271,25 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          ₹{maskAmounts ? "#####" : item?.claimed_amount}
+          {RupeeSymbolPerfix(
+            maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
+          )}
         </span>
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={` ${maskAmounts ? "blur-[3px]" : ""}`}>
-          ₹{maskAmounts ? "#####" : item?.custom_taxable_amount}
+          {RupeeSymbolPerfix(
+            maskAmounts ? "#####" : item?.custom_taxable_amount,
+          )}
         </span>
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          ₹{maskAmounts ? "#####" : item?.custom_non_taxable_amount}
+          {RupeeSymbolPerfix(
+            maskAmounts ? "#####" : item?.custom_non_taxable_amount,
+          )}
         </span>
       </Typography>
 
@@ -333,7 +340,9 @@ const BenefitSlipItem = ({
               maskAmounts ? "blur-[3px]" : ""
             }`}
           >
-            ₹{maskAmounts ? "#####" : item?.claimed_amount}
+            {RupeeSymbolPerfix(
+              maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
+            )}
           </span>
         </div>
       </div>

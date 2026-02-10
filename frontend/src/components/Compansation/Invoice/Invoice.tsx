@@ -9,8 +9,10 @@ import InvoicePDFview from "./Component/InvoicePDFview";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
-const formatINR = (num: number) => `₹ ${num.toLocaleString("en-IN")}`;
+const formatINR = (num: number) =>
+  `${RupeeSymbolPerfix(num.toLocaleString("en-IN"))}`;
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);

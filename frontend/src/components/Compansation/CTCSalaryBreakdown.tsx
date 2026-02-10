@@ -5,6 +5,7 @@ import { useGenerateSalarySlip } from "../../hooks/useCTC";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
+import { RupeeSymbolPerfix } from "../../utils/currency";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -32,8 +33,9 @@ const CTCSalaryUI = () => {
     }).format(amount);
 
     if (isMoneyMasked) {
-      const maskedText =
-        "₹ " + "•".repeat(Math.max(4, formattedAmount.length - 2));
+      const maskedText = RupeeSymbolPerfix(
+        "•".repeat(Math.max(4, formattedAmount.length - 2)),
+      );
       return (
         <span className="font-mono text-gray-400 tracking-wider">
           {maskedText}
