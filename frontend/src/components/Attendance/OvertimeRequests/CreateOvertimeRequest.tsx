@@ -153,6 +153,11 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
             }
           }
         }
+
+        if (key === "start_date" || key === "end_date") {
+          if (!comp.datePicker) comp.datePicker = {};
+          comp.datePicker.minDate = format(new Date(), "yyyy-MM-dd");
+        }
         // recurse into nested components (like panels, columns, containers)
         if (comp.components && Array.isArray(comp.components)) {
           applyToComponents(comp.components);
