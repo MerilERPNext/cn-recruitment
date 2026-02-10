@@ -17,6 +17,7 @@ import {
   useEditApprovedLeave,
   useGetLeaveReason,
   useGetLeaveRequestFields,
+  useCheckAttachmentMandatory,
 } from "../../hooks/useLeaves";
 import { LeaveFieldFlags } from "../../types/leaves";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
@@ -236,6 +237,13 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     isError: isReasonError,
   } = useGetLeaveReason();
 
+  const { data: attachmentMandatoryData } = useCheckAttachmentMandatory(
+    formData.leaveType,
+  );
+
+  const isAttachmentMandatory =
+    attachmentMandatoryData?.is_mandatory === 1;
+
   useEffect(() => {
     if (defaults) {
       const initial: FormSubmissionData = {
@@ -319,6 +327,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     onCancel,
     onSuccess,
     triggerRefetch,
+    loading,
   ]);
 
   const leaveForm = useMemo(() => {
@@ -472,16 +481,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                 },
               ]
               : [],
-            label: fields?.mandatory?.custom_attachment
-              ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
-              : "Attachment",
+            label:
+              fields?.mandatory?.custom_attachment || isAttachmentMandatory
+                ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+                : "Attachment",
             errorLabel: "Attachment",
             input: true,
             storage: "customBase64",
             validate: {
               required:
                 !!mandatory.custom_attachment ||
-                requiredFieldMap["custom_attachment"],
+                requiredFieldMap["custom_attachment"] ||
+                isAttachmentMandatory,
             },
             filePattern: "*/*",
             customClass: "px-2 mb-6",
@@ -582,9 +593,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     isReasonError,
     leaveTypeOptions,
     defaults,
-    formData.fromDate,
-    formData.toDate,
     requiredFieldMap,
+    isAttachmentMandatory,
+    today,
   ]);
 
   const handleAttendanceClick = useCallback(() => {
@@ -594,14 +605,13 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   return (
     <div className="flex flex-col h-full bg-white">
 
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+      {isDesktop && <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
         <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
         {isDesktop && (<button
           onClick={(e) => {
             e.stopPropagation();
-            if (onCancel) {
-              onCancel();
-            }
+            onCancel?.();
+            onSuccess?.();
           }}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
           aria-label="Close"
@@ -609,7 +619,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           <X className="h-5 w-5 text-gray-600" />
         </button>
         )}
-      </div>
+      </div>}
 
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
