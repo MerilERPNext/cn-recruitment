@@ -293,7 +293,6 @@ export const expenseService = {
     return Array.isArray(response) ? response : [];
   },
 
-  //get expense policy questions
   getExpensePolicyQuestions: async (
     categoryName?: string
   ): Promise<ExpensePolicyQuestionsResponse> => {
@@ -303,5 +302,12 @@ export const expenseService = {
     );
 
     return response as ExpensePolicyQuestionsResponse;
+  },
+
+  validateExpenseClaim: async (expenses_data: string) => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.validate_expense_claims_by_category",
+      { expenses_data }
+    );
   },
 };

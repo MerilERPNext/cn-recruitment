@@ -172,7 +172,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() && canEditExpense
+            item?.send_back_user?.toLowerCase() && canEditExpense
           }
           onEdit={handleEditClick}
         />
