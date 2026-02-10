@@ -1239,7 +1239,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   };
 
                   await validateExpense(JSON.stringify(validationPayload));
-                } catch {
+                } catch (error) {
+                  console.error("Expense validation failed:", error);
                   return;
                 }
 
