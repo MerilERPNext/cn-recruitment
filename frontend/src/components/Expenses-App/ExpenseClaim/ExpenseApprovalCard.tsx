@@ -181,7 +181,7 @@ const ExpenseApprovalCard = ({
           </Typography>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(data?.due_date)}
+            {data?.due_date}
           </Typography>
 
           <div className="flex items-center justify-center">
@@ -294,7 +294,7 @@ const ExpenseApprovalCard = ({
                       Due Date
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {formatToIndianDate(data?.due_date)}
+                      {data?.due_date}
                     </Typography>
                   </div>
                 </div>
@@ -324,7 +324,7 @@ const ExpenseApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

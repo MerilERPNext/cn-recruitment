@@ -150,7 +150,7 @@ export function MyOvertimeDetails({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Allocated To + Status */}
-          <div className="flex gap-2 justify-between">
+          <div className="flex gap-2 justify-between p-1">
             <div className="flex flex-col gap-1">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel" className="text-gray-500">

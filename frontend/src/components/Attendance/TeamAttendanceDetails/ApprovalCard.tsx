@@ -144,7 +144,8 @@ const ApprovalCard = ({
             >
               {" "}
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-                {data?.reference_document?.employee_name}
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
               </WrapperHoverCard>
             </Typography>
           </Link>
@@ -165,7 +166,7 @@ const ApprovalCard = ({
             {formatToIndianDate(data?.reference_document?.to_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(data?.due_date)}
+            {data?.due_date}
           </Typography>
 
           {/* Status + Actions */}
@@ -266,9 +267,7 @@ const ApprovalCard = ({
                   {data?.due_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.due_date)}
-                      </span>
+                      <span className="card-subtitle">{data?.due_date}</span>
                     </p>
                   )}
                 </div>

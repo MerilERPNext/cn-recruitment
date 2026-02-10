@@ -102,7 +102,7 @@ const ApprovalRejectionQueue = ({
             {formatToIndianDate(data.reference_document.to_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(data?.due_date)}
+            {data?.due_date}
           </Typography>
 
           <div className="flex items-center justify-center">

@@ -248,7 +248,7 @@ export function AttendanceDetailView({
             <div className=" flex flex-col gap-1">
               <Typography variant="label" color="body2" className="card-title">Due Date</Typography>
               <Typography variant="bodySmall" className="card-subtitle">
-                {formatToIndianDate(data?.due_date)}
+                {(data?.due_date)}
               </Typography>
             </div>
           )}

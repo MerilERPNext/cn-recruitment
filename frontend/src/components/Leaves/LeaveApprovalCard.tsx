@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useUpdateRejectionReason, useIsRejectionReasonMandatory } from "../../hooks/useLeaves";
+import {
+  useUpdateRejectionReason,
+  useIsRejectionReasonMandatory,
+} from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
@@ -131,7 +134,6 @@ const LeaveApprovalCard = ({
           style={{ gridTemplateColumns }}
           onClick={() => onClick?.(data)}
         >
-
           {isBulkSelectEnabled && (
             <div className="flex items-center justify-center">
               <input
@@ -152,7 +154,8 @@ const LeaveApprovalCard = ({
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
-            className="text-center">
+            className="text-center"
+          >
             <WrapperHoverCard employeeId={data?.reference_document?.employee}>
               <Typography
                 variant="bodySmall"
@@ -174,14 +177,13 @@ const LeaveApprovalCard = ({
             {formatToIndianDate(data?.reference_document?.to_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(data?.due_date)}
+            {data?.due_date}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {data?.reference_document?.total_leave_days > 1
               ? data?.reference_document?.total_leave_days + " Days"
               : data?.reference_document?.total_leave_days + " Day"}
           </Typography>
-
 
           <div className="flex items-center justify-center">
             <Tooltip
@@ -240,7 +242,6 @@ const LeaveApprovalCard = ({
                       {data?.reference_document?.employee_name}
                     </p>
                   </Link>
-
                 </div>
                 <Badge
                   size="sm"
@@ -250,7 +251,6 @@ const LeaveApprovalCard = ({
               </div>
               <div className="my-2 py-2">
                 <div className="flex justify-between w-full ">
-
                   {data?.reference_document?.from_date && (
                     <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
                       <span className="card-title mb-1">From</span>
@@ -273,9 +273,7 @@ const LeaveApprovalCard = ({
                   {data?.due_date && (
                     <p className="text-sm text-gray-500 flex flex-col items-end">
                       <span className="card-title mb-1">Due</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.due_date)}
-                      </span>
+                      <span className="card-subtitle">{data?.due_date}</span>
                     </p>
                   )}
                 </div>
@@ -304,7 +302,7 @@ const LeaveApprovalCard = ({
                         }
                       >
                         {loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action ? (
+                        loadingAction?.action === action ? (
                           <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                         ) : (
                           action

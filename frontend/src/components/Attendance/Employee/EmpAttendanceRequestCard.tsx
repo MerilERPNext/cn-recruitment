@@ -104,7 +104,7 @@ const EmpAttendanceRequestCard = ({
     data?.reference_document?.from_date,
   );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
-  const formattedDueDate = formatToIndianDate(data?.due_date);
+  const formattedDueDate = (data?.due_date);
   const duration = getDays(formattedToDate, formattedFromDate);
   const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
