@@ -39,8 +39,7 @@ import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
 import EmployeeFallback from "./EmployeeFallback";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import { toast } from "react-hot-toast";
-import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
-import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
+import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
@@ -64,7 +63,7 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
 import CircularLoader from "./shared/atoms/CircularLoader";
-import RequestLeave from "./Leaves/RequestLeave";
+
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -75,10 +74,11 @@ export default function DesktopDashboard() {
   const employeeState = useEmployeeWithFallback();
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
-  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
+
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const { clearTargetEmployee } = useTargetUser();
+  const { openModal } = useRequestLeaveModal();
 
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
@@ -915,7 +915,7 @@ export default function DesktopDashboard() {
                       label: "Apply Leave",
                       icon: Calendar,
                       color: "primary",
-                      onClick: () => setShowLeaveRequest(true),
+                      onClick: () => openModal(),
                     },
                     {
                       label: "Attendance Request",
@@ -974,21 +974,7 @@ export default function DesktopDashboard() {
           </div>
         </div>
       )}
-      {showLeaveRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Ensure LeaveRequest is inside its providers */}
-            <LeaveRequestRefreshProvider>
-              <RequestLeaveModalProvider>
-                <RequestLeave
-                  onCancel={() => setShowLeaveRequest(false)}
-                  onSuccess={() => setShowLeaveRequest(false)}
-                />
-              </RequestLeaveModalProvider>
-            </LeaveRequestRefreshProvider>
-          </div>
-        </div>
-      )}
+
       {showOvertimeRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">

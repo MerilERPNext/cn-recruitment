@@ -424,12 +424,14 @@ export function useCreateLeaveApplication() {
       leaveService.createLeaveApplication(leaveData),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["custom-api"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["custom-api-infinite"],
-      });
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+      }, 1500);
     },
   });
 }
