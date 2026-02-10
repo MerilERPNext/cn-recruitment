@@ -915,14 +915,7 @@ export default function DesktopDashboard() {
                       label: "Apply Leave",
                       icon: Calendar,
                       color: "primary",
-                      onClick: () => openModal({
-                        fromDate: "2026-02-10",
-                        toDate: "2026-02-10",
-                        // leaveType: "",
-                        source: "other",
-                        hideHalfDayToggle: true,
-                      }),
-
+                      onClick: () => openModal(),
                     },
                     {
                       label: "Attendance Request",
