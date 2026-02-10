@@ -85,13 +85,6 @@ export function MyRequestCard({
               {/* Header */}
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="text-gray-500"
-                  >
-                    Allocated To
-                  </Typography>
-
                   <Typography variant="mobileCardLabel" className="block">
                     Allocated To
                   </Typography>

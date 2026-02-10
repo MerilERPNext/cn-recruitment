@@ -11,6 +11,7 @@ import {
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -129,7 +130,7 @@ const OvertimeApprovalCard = ({
           </Tooltip>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.due_date}
+            {formatToIndianDate(data?.due_date)}
           </Typography>
 
           <div className="flex items-center justify-center">
@@ -220,7 +221,7 @@ const OvertimeApprovalCard = ({
                       Due Date
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.due_date}
+                      {formatToIndianDate(data?.due_date)}
                     </Typography>
                   </div>
                 </div>

@@ -154,7 +154,7 @@ const LeaveApprovalCard = ({
             {formatToIndianDate(data?.reference_document?.to_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.due_date}
+            {formatToIndianDate(data?.due_date)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {data?.reference_document?.total_leave_days > 1
@@ -185,7 +185,7 @@ const LeaveApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+          className="cursor-pointer border-t-4 border-x border-b 
              border-x-primary/20 border-b-primary/20 
              shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {

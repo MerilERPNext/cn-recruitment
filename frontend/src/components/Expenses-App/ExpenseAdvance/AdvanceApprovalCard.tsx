@@ -9,6 +9,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -131,7 +132,7 @@ const AdvanceApprovalCard = ({
             {totalClaimedAmount}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.due_date}
+            {formatToIndianDate(data?.due_date)}
           </Typography>
 
           {/* Status + Actions */}
@@ -231,7 +232,7 @@ const AdvanceApprovalCard = ({
                     Due Date
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.due_date}
+                    {formatToIndianDate(data?.due_date)}
                   </Typography>
                 </div>
               </div>

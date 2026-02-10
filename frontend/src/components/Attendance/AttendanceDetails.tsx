@@ -49,7 +49,7 @@ export function AttendanceDetailView({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const cleanExplaination = DOMPurify.sanitize(
-    data?.reference_document?.explanation || ""
+    data?.reference_document?.explanation || "",
   );
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open") {
@@ -78,74 +78,82 @@ export function AttendanceDetailView({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
- const handleAction = useCallback(
-  async (action: string) => {
-    await loading?.wrap(async () => {
+  const handleAction = useCallback(
+    async (action: string) => {
+      await loading?.wrap(async () => {
+        // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
 
-      // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
+        setCurrentAction(action);
 
-      setCurrentAction(action);
+        try {
+          if (mutation?.isPending) return;
+          const response = await mutation?.mutateAsync({
+            action,
+            name: data?.todo_id || "",
+          });
 
-      try {
-        if (mutation?.isPending) return;
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.todo_id || "",
-        });
-
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
-
-        if (
-          (data?.custom_approval_type === "Approval Matrix" &&
-            responseWithSession?.session) ||
-          (data?.custom_approval_type === "Multi Actions" &&
-            data?.custom_open_chatnext_assistant_on_action)
-        ) {
+          console.log("Action response:", response);
+          const responseWithSession = response as unknown as { session?: any };
+          console.log("Session data:", responseWithSession?.session);
           console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
+            "Assistant trigger enabled:",
+            data?.custom_open_chatnext_assistant_on_action,
           );
-          if (window.trigger_chatnext_assistant) {
-            window.trigger_chatnext_assistant(
-              true,
-              responseWithSession?.session
+
+          if (
+            (data?.custom_approval_type === "Approval Matrix" &&
+              responseWithSession?.session) ||
+            (data?.custom_approval_type === "Multi Actions" &&
+              data?.custom_open_chatnext_assistant_on_action)
+          ) {
+            console.log(
+              "Opening assistant with session:",
+              responseWithSession?.session,
             );
+            if (window.trigger_chatnext_assistant) {
+              window.trigger_chatnext_assistant(
+                true,
+                responseWithSession?.session,
+              );
+            }
+          } else {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
           }
-        } else {
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 2000);
+          if (onAction) {
+            onAction();
+          }
+          setCurrentAction(null);
+        } catch (error) {
+          setCurrentAction(null);
+          const formattedError = errorResponseFormater(error);
+          toast.error(formattedError);
+          console.error("Action failed", error);
         }
-        if (onAction) {
-          onAction();
-        }
-        setCurrentAction(null);
-      } catch (error) {
-        setCurrentAction(null);
-        const formattedError = errorResponseFormater(error);
-        toast.error(formattedError);
-        console.error("Action failed", error);
-      }
 
-      // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
+        // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
+      }, "Processing action...");
+    },
 
-    }, "Processing action...");
-  },
-  
-  [data?.custom_approval_type, data?.custom_open_chatnext_assistant_on_action, data?.todo_id, onAction, loading, mutation, setRefetchAttendance]
-);
+    [
+      data?.custom_approval_type,
+      data?.custom_open_chatnext_assistant_on_action,
+      data?.todo_id,
+      onAction,
+      loading,
+      mutation,
+      setRefetchAttendance,
+    ],
+  );
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
+  const getActionStyles = (
+    action: string,
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
       bg: "disabled" as ButtonColor,
@@ -200,7 +208,9 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <Typography variant="h4" className="font-semibold text-gray-800">{label}</Typography>
+            <Typography variant="h4" className="font-semibold text-gray-800">
+              {label}
+            </Typography>
           </div>
           <Button
             variant="subtle"
@@ -226,7 +236,13 @@ export function AttendanceDetailView({
               {/* Display From Date */}
               {data?.reference_document?.from_date && (
                 <div className="flex flex-col gap-1">
-                  <Typography variant="label" color="body2" className="card-title">From Date</Typography>
+                  <Typography
+                    variant="label"
+                    color="body2"
+                    className="card-title"
+                  >
+                    From Date
+                  </Typography>
                   <Typography variant="bodySmall" className="card-subtitle">
                     {formatToIndianDate(data?.reference_document?.from_date)}
                   </Typography>
@@ -236,7 +252,13 @@ export function AttendanceDetailView({
               {/* Display To Date */}
               {data?.reference_document?.to_date && (
                 <div className=" flex flex-col gap-1">
-                  <Typography variant="label" color="body2" className="card-title">To Date</Typography>
+                  <Typography
+                    variant="label"
+                    color="body2"
+                    className="card-title"
+                  >
+                    To Date
+                  </Typography>
                   <Typography variant="bodySmall" className="card-subtitle">
                     {formatToIndianDate(data?.reference_document?.to_date)}
                   </Typography>
@@ -246,14 +268,18 @@ export function AttendanceDetailView({
           </div>
           {data?.due_date && (
             <div className=" flex flex-col gap-1">
-              <Typography variant="label" color="body2" className="card-title">Due Date</Typography>
+              <Typography variant="label" color="body2" className="card-title">
+                Due Date
+              </Typography>
               <Typography variant="bodySmall" className="card-subtitle">
-                {(data?.due_date)}
+                {formatToIndianDate(data?.due_date)}
               </Typography>
             </div>
           )}
           <div className="py-2 flex flex-col gap-1">
-            <Typography variant="label" color="body2" className="card-title">Reason</Typography>
+            <Typography variant="label" color="body2" className="card-title">
+              Reason
+            </Typography>
             <Typography variant="bodySmall" className="card-subtitle">
               {label === "Leave Application"
                 ? data?.reference_document?.custom_reason
@@ -262,21 +288,39 @@ export function AttendanceDetailView({
           </div>
           {/* description */}
           <div className="py-2">
-            <Typography variant="label" color="body2" className="card-title mb-2 block">Description</Typography>
+            <Typography
+              variant="label"
+              color="body2"
+              className="card-title mb-2 block"
+            >
+              Description
+            </Typography>
             <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
             </div>
           </div>
           {/* explanation */}
           <div className="py-2">
-            <Typography variant="label" color="body2" className="card-title mb-2 block">Explanation</Typography>
+            <Typography
+              variant="label"
+              color="body2"
+              className="card-title mb-2 block"
+            >
+              Explanation
+            </Typography>
             <div className="text-sm bg-gray-100 p-3 rounded-lg">
               <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
             </div>
           </div>
           {data?.attachments && data?.attachments?.length > 0 ? (
             <div className="py-2">
-              <Typography variant="label" color="body2" className="card-title mb-2 block">Attachment</Typography>
+              <Typography
+                variant="label"
+                color="body2"
+                className="card-title mb-2 block"
+              >
+                Attachment
+              </Typography>
               {data?.attachments?.map((item: { file_url: string }) => (
                 <FileRenderer filePath={item?.file_url || ""} />
               ))}

@@ -181,7 +181,7 @@ const ExpenseApprovalCard = ({
           </Typography>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.due_date}
+            {formatToIndianDate(data?.due_date)}
           </Typography>
 
           <div className="flex items-center justify-center">
@@ -294,7 +294,7 @@ const ExpenseApprovalCard = ({
                       Due Date
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.due_date}
+                      {formatToIndianDate(data?.due_date)}
                     </Typography>
                   </div>
                 </div>

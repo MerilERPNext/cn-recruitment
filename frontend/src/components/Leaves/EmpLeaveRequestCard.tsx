@@ -192,7 +192,7 @@ const EmpLeaveRequestCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+          className="cursor-pointer border-t-4 border-x border-b 
       border-x-primary/20 border-b-primary/20 
       shadow-sm border-primary bg-white rounded-xl"
         >
