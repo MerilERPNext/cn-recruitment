@@ -10,6 +10,7 @@ import {
   useGetUnitPrice,
   useUpdateExpense,
   useGetExpenseCategoryTypes,
+  useValidateExpense,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -121,6 +122,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { mutate: submitExpenseClaim, isPending } = usePostExpenseClaim();
 
   const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
+
+  const { mutateAsync: validateExpense, isPending: isValidating } =
+    useValidateExpense();
 
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
@@ -879,13 +883,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     clearFailedStatus(expense.uid);
   };
 
+
   const submitButtonLabel = isCalculating
     ? "Calculating..."
-    : isUpdating
-      ? "Updating..."
-      : isEditingFromDetailsPage || editingExpenseId
-        ? "Update"
-        : "Save";
+    : isValidating
+      ? "Validating..."
+      : isUpdating
+        ? "Updating..."
+        : isEditingFromDetailsPage || editingExpenseId
+          ? "Update"
+          : "Save";
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
@@ -1190,6 +1197,51 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     ...submission.data,
                   }));
                   amountFromApi = combinedData.amount ?? undefined;
+                }
+
+                try {
+                  const validationPayload = {
+                    employee: currentEmployee?.name,
+                    employee_name: currentEmployee?.employee_name,
+                    company: currentEmployee?.company,
+                    posting_date: format(new Date(), "yyyy-MM-dd"),
+                    expenses: [
+                      {
+                        ...combinedData,
+                        attach_receipt: combinedData.attach_receipt?.[0]?.url || null,
+                        expense_date: combinedData.expense_date
+                          ? format(
+                            new Date(combinedData.expense_date),
+                            "yyyy-MM-dd",
+                          )
+                          : undefined,
+                        start_datetime: combinedData.start_datetime
+                          ? format(
+                            new Date(combinedData.start_datetime),
+                            "yyyy-MM-dd HH:mm:ss",
+                          )
+                          : undefined,
+                        end_datetime: combinedData.end_datetime
+                          ? format(
+                            new Date(combinedData.end_datetime),
+                            "yyyy-MM-dd HH:mm:ss",
+                          )
+                          : undefined,
+                        expense_type: combinedData.expenseType,
+                        reimbursement_category: combinedData.expenseCategory,
+                        amount: amountFromApi ?? combinedData.amount,
+                      },
+                    ],
+                    participants:
+                      combinedData.participants ||
+                      dynamicFormData.participants ||
+                      [],
+                  };
+
+                  await validateExpense(JSON.stringify(validationPayload));
+                } catch (error) {
+                  console.error("Expense validation failed:", error);
+                  return;
                 }
 
                 const attachment =

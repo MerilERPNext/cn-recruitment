@@ -107,6 +107,17 @@ export function usePostExpenseClaim() {
     },
     onError: handleError,
   });
+
+}
+
+export function useValidateExpense() {
+  return useMutation({
+    mutationFn: (expenses_data: string) =>
+      expenseService.validateExpenseClaim(expenses_data),
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Validation failed."));
+    },
+  });
 }
 
 export const useGetExpenseTypeFields = (expenseType?: string) => {

@@ -469,7 +469,7 @@ export function TeamExpenseDetailView({
                   Due in{" "}
                   {Math.ceil(
                     (new Date(data.due_date).getTime() - Date.now()) /
-                      (1000 * 60 * 60 * 24),
+                    (1000 * 60 * 60 * 24),
                   )}{" "}
                   days
                 </span>
@@ -526,11 +526,11 @@ export function TeamExpenseDetailView({
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
                             item.custom_approval_staus === "Rejected") && (
-                            <Badge
-                              label={itemStatus?.label as string}
-                              backgroundColor={itemStatus?.statusColor}
-                            />
-                          )}
+                              <Badge
+                                label={itemStatus?.label as string}
+                                backgroundColor={itemStatus?.statusColor}
+                              />
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -752,10 +752,10 @@ export function TeamExpenseDetailView({
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t">
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-lg text-gray-900">
                   Total Amount
                 </span>
-                <span className="font-bold text-gray-900">
+                <span className="font-bold text-lg text-gray-900">
                   {RupeeSymbolPerfix(totalAmount)}
                 </span>
               </div>
@@ -917,36 +917,36 @@ export function TeamExpenseDetailView({
                 {currentDocumentUrl.match(
                   /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
                 ) && (
-                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
-                    <button
-                      onClick={handleZoomOut}
-                      disabled={imageZoom <= 50}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
-                      {imageZoom}%
-                    </span>
-                    <button
-                      onClick={handleZoomIn}
-                      disabled={imageZoom >= 200}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
-                    <button
-                      onClick={handleResetZoom}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                      title="Reset Zoom"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                  </div>
-                )}
+                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
+                      <button
+                        onClick={handleZoomOut}
+                        disabled={imageZoom <= 50}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Zoom Out"
+                      >
+                        <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
+                      </button>
+                      <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
+                        {imageZoom}%
+                      </span>
+                      <button
+                        onClick={handleZoomIn}
+                        disabled={imageZoom >= 200}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Zoom In"
+                      >
+                        <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
+                      </button>
+                      <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
+                      <button
+                        onClick={handleResetZoom}
+                        className="p-1 rounded hover:bg-gray-100 transition-colors"
+                        title="Reset Zoom"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
+                      </button>
+                    </div>
+                  )}
 
                 <a
                   href={currentDocumentUrl}
@@ -987,8 +987,8 @@ export function TeamExpenseDetailView({
                       title="Document Viewer"
                     />
                   ) : currentDocumentUrl.match(
-                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                    ) ? (
+                    /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
+                  ) ? (
                     <div className="w-full h-full flex items-center justify-center p-6 overflow-auto">
                       <div
                         className="transition-transform duration-200 ease-out"
