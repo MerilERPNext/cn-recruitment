@@ -427,11 +427,10 @@ const EmployeeAttendanceDetails = ({
         </div>
       );
     }
-
     return (
       <div className="flex items-center justify-center gap-2">
         {
-          status === "absent" || status === "half day" && <Button
+          (status === "absent" || status === "half day") && <Button
             variant="soft"
             fullWidth
             size="md"
