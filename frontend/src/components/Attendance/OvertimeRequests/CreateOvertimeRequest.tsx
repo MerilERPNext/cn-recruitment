@@ -298,7 +298,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         </div>
 
         {/* Form.io Form */}
-        <div className="flex-1 min-h-0 px-6 py-4">
+        <div className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
           <Form
             form={transformSchemaWithRequired(
               overtimeRequestSchema,
