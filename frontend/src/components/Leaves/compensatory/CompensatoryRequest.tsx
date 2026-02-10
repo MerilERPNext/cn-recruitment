@@ -120,8 +120,8 @@ const CompensatoryRequest: React.FC = () => {
           columnWidths={["1fr", "1fr", "1fr", "1.5fr", "1fr", "1fr"]}
         >
           {filteredData.length === 0 ? (
-            <div className="p-4 text-center text-gray-600">
-              No Compensatory Offs found for the selected status.
+            <div className="py-12 text-center text-gray-600">
+              No records found{" "}
             </div>
           ) : null}
 
