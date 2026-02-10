@@ -4,7 +4,7 @@ import FrappeAPI from "../utils/frappeAPI";
 export const ConfirmationService = async (doctype: string) => {
     const response = await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_open_approval_todos",
-      { doctype: doctype }
+      { doctype: doctype , order_by : "modified desc", todo_status: "Open"}
     ) as { status: string; data: any[] };
   
     return response?.data ?? []; // always return array

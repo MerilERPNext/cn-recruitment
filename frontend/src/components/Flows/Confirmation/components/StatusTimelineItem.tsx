@@ -7,8 +7,11 @@ const StatusTimelineItem = ({
   isLast: boolean;
   status: keyof typeof statusConfig;
 }) => {
-  const { icon: Icon, bg, line } = statusConfig[status]??statusConfig["default"] ;
-
+  const {
+    icon: Icon,
+    bg,
+    line,
+  } = statusConfig[status] ?? statusConfig["default"];
   return (
     <div className="flex flex-shrink-0 items-center translate-y-6 flex-col">
       <div
@@ -17,9 +20,15 @@ const StatusTimelineItem = ({
         <Icon size={14} className="text-white" />
       </div>
 
-      {!isLast && (
-        <div className={`flex-1 w-[3px] ${line}`} />
-      )}
+      {!isLast &&
+        (status == "action_required" ? (
+          <div className={`flex-1 w-[3px] bg-gray-400`}>
+            {" "}
+            <div className={`w-full h-4 ${line}`} />
+          </div>
+        ) : (
+          <div className={`flex-1 w-[3px] ${line}`} />
+        ))}
     </div>
   );
 };
