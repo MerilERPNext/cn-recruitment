@@ -683,7 +683,7 @@ export function TeamExpenseDetailView({
 
                         <div className="mb-3">
                           <label className="text-xs text-gray-500 uppercase mb-1 block">
-                            SANCTIONED AMOUNT (RupeeSymbolPerfix()) *
+                            SANCTIONED AMOUNT (RupeeSymbolPerfix("")) *
                           </label>
 
                           <input

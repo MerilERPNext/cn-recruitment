@@ -271,7 +271,9 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(maskAmounts ? "#####" : item?.claimed_amount)}
+          {RupeeSymbolPerfix(
+            maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
+          )}
         </span>
       </Typography>
 
@@ -338,7 +340,9 @@ const BenefitSlipItem = ({
               maskAmounts ? "blur-[3px]" : ""
             }`}
           >
-            {RupeeSymbolPerfix(maskAmounts ? "#####" : item?.claimed_amount)}
+            {RupeeSymbolPerfix(
+              maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
+            )}
           </span>
         </div>
       </div>

@@ -193,7 +193,7 @@ const MyFlowRequestCard = ({
   ) : (
     <div
       onClick={() => handleShowDetails(request)}
-      className="rounded-2xl shadow-sm  border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3"
+      className="rounded-2xl  border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3"
     >
       <div className="p-4">
         {/* Header with Title and Status Badge */}
