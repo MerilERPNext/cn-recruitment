@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface FlowDetailsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,13 +136,14 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
         {idx + 1}
       </Typography>
       <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.stage_name || "stage name"}</div>
+        <div>{stage?.stage_name || "-"}</div>
       </Typography>
       <Typography variant="bodyMedium" className="card-subtitle">
         <div>{stage?.user || "assigned to user"}</div>
       </Typography>
       <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.stage_name || "stage name"}</div>
+        {/* stage?.action_taken_by to be used */}
+        <div>{"-"}</div>
       </Typography>
       <Badge
         label={stage?.status}
@@ -149,10 +151,11 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
         textColor="mx-auto"
       />
       <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.stage_name || "stage name"}</div>
+        <div>{formatToIndianDate(stage?.approval_time) || "-"}</div>
       </Typography>
       <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.stage_name || "stage name"}</div>
+        {/* stage?.due_date to be used below*/}
+        <div>{"-"}</div>
       </Typography>
       <Typography variant="bodyMedium" className="card-subtitle">
         <div className="flex sm:flex-row sm:justify-start gap-2 items-center">

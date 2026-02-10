@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
-import ReivewForm from "./ReivewForm";
+import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -241,7 +241,7 @@ const CardStages = ({
       {formSchema &&
         show &&
         createPortal(
-          <ReivewForm onClose={() => setShow(false)}>
+          <ReviewForm onClose={() => setShow(false)}>
             <Form
               form={formSchema}
               options={{
@@ -250,7 +250,7 @@ const CardStages = ({
               }}
               submit={false}
             />
-          </ReivewForm>,
+          </ReviewForm>,
           document.body,
         )}
     </div>

@@ -32,7 +32,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import StageCard from "./StageCard";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
-import ConfimationStateCard from "./components/ConfimationStateCard";
+import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const ConfirmationWorkflow = () => {
@@ -259,7 +259,7 @@ const ConfirmationWorkflow = () => {
         ? "action_required"
         : "pending",
       show_confirmation_button: canInitiateConfirmation,
-      self_confimation_btn_name:
+      self_confirmation_btn_name:
         activeEmployee?.custom_employment_status == "On Probation"
           ? "Initiate Confirmation"
           : "Initiate confirmation Again",
@@ -292,7 +292,7 @@ const ConfirmationWorkflow = () => {
         <div className="max-md:bg-blue-50 rounded-lg p-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Confirmation Cards Section */}
           {confirmationCards.map((data, index) => (
-            <ConfimationStateCard key={index} data={data} />
+            <ConfirmationStateCard key={index} data={data} />
           ))}
         </div>
       </Card>
@@ -332,7 +332,7 @@ const ConfirmationWorkflow = () => {
                       size="md"
                       onClick={handleInitiateConfirmation}
                     >
-                      {item.self_confimation_btn_name}
+                      {item.self_confirmation_btn_name}
                     </Button>
                   ) : (
                     <div></div>

@@ -11,11 +11,11 @@ type dataType = {
   text: string;
 };
 
-interface ConfimationStateCardProps {
+interface ConfirmationStateCardProps {
   data: dataType;
 }
 
-const ConfimationStateCard: React.FC<ConfimationStateCardProps> = ({
+const ConfirmationStateCard: React.FC<ConfirmationStateCardProps> = ({
   data,
 }) => {
   const { isDesktop } = useScreenSize();
@@ -49,4 +49,4 @@ const ConfimationStateCard: React.FC<ConfimationStateCardProps> = ({
   );
 };
 
-export default ConfimationStateCard;
+export default ConfirmationStateCard;

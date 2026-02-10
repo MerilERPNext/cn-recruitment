@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FormIOComponent } from "../../../types/formio";
-import ReivewForm from "../Separation/components/ReivewForm";
+import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import { Form } from "@tsed/react-formio";
 import Button from "../../shared/atoms/Button";
@@ -144,7 +144,7 @@ const StageCard: React.FC<StageCardProps> = ({
       {formSchema &&
         show &&
         createPortal(
-          <ReivewForm onClose={() => setShow(false)}>
+          <ReviewForm onClose={() => setShow(false)}>
             <Form
               form={formSchema}
               options={{
@@ -153,7 +153,7 @@ const StageCard: React.FC<StageCardProps> = ({
               }}
               submit={false}
             />
-          </ReivewForm>,
+          </ReviewForm>,
           document.body,
         )}
     </>
