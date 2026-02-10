@@ -1,11 +1,9 @@
-import { MoreVertical, Repeat1, RotateCcw, SquarePen } from "lucide-react";
+import { Repeat1, RotateCcw, SquarePen } from "lucide-react";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import Tooltip from "../shared/Tooltip";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Badge from "../shared/Badge";
 import { LeaveCardProps } from "../../types/leaves";
-import { useState, useRef, useEffect } from "react";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -19,6 +17,8 @@ import {
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
 import toast from "react-hot-toast";
+import Button from "../shared/atoms/Button";
+import { useState } from "react";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -30,15 +30,13 @@ const EmpLeaveRequestCard = ({
   data,
   buttonStatus,
   onOpenReplaceModal,
-  onRevokeApproved,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
 
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const { openModal } = useRequestLeaveModal();
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
@@ -54,7 +52,6 @@ const EmpLeaveRequestCard = ({
   );
 
   const allowEdit = leaveButtonConfig?.show_edit_button;
-  const allowRevoke = leaveButtonConfig?.show_revoke_button;
   const allowReplace = leaveButtonConfig?.show_replace_button;
 
   const handleRevokeClick = () => {
@@ -69,7 +66,6 @@ const EmpLeaveRequestCard = ({
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
             setRefetchAttendance(true);
-            setMenuOpen(false);
             toast.success("Leave revoked successfully");
           },
         },
@@ -78,14 +74,12 @@ const EmpLeaveRequestCard = ({
   };
 
   const handleReplaceClick = () => {
-    setMenuOpen(false);
     if (onOpenReplaceModal) {
       onOpenReplaceModal();
     }
   };
 
   const handleEditClick = () => {
-    setMenuOpen(false);
     openModal({
       fromDate: data?.reference_document?.from_date,
       toDate: data?.reference_document?.to_date,
@@ -103,16 +97,6 @@ const EmpLeaveRequestCard = ({
       leave_application: data?.reference_document?.name,
     });
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const getStatus = (rawStatus: string) => {
     const status = rawStatus?.toLowerCase().trim();
@@ -142,54 +126,9 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
-  const ActionMenu = () => (
-    <div
-      ref={menuRef}
-      className={`absolute right-0  ${
-        !allowRevoke && !allowEdit && allowReplace ? "md:-top-10" : "md:-top-15"
-      }  w-32 bg-white border border-gray-200 rounded-md shadow-md z-50`}
-    >
-      {data?.custom_allow_revoke &&
-        data?.reference_document?.status === "Open" && (
-          <button
-            className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
-            onClick={handleRevokeClick}
-            disabled={revokeEventMutation.isPending}
-          >
-            <RotateCcw className="w-3 h-3" />
-            {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-          </button>
-        )}
-      {allowRevoke && (
-        <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
-          onClick={onRevokeApproved}
-        >
-          <RotateCcw className="w-3 h-3" />
-          Revoke
-        </button>
-      )}
-
-      {allowEdit && (
-        <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
-          onClick={handleEditClick}
-        >
-          <SquarePen className="w-3 h-3" />
-          Edit
-        </button>
-      )}
-      {allowReplace && (
-        <button
-          className="w-full text-left px-4 py-2 text-sm hover:bg-primary/10 flex items-center gap-2"
-          onClick={handleReplaceClick}
-        >
-          <Repeat1 className="w-3 h-3" />
-          Replace
-        </button>
-      )}
-    </div>
-  );
+  const showEdit = allowEdit && isPending;
+  const showRevoke = isPending && data?.custom_allow_revoke && canRequestLeave;
+  const showReplace = allowReplace && (isPending || isApproved);
 
   return (
     <>
@@ -252,45 +191,139 @@ const EmpLeaveRequestCard = ({
           </div>
         </div>
       ) : (
-        <div className="w-full px-2 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow relative">
-          <div className="p-2 w-full flex justify-between">
-            <div className="flex gap-1 flex-col">
-              <div className="flex gap-2 items-center mb-1">
-                <span className="card-title">
-                  {data?.reference_document?.leave_type}
-                </span>
-
-                <span className="text-sm font-medium text-gray-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                  {data?.reference_document?.total_leave_days}
-                </span>
+        <div
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+        >
+          <div className="p-4 flex flex-col gap-3 w-full">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Allocated To</Typography>
+                <Typography variant="mobileCardValue" className="font-semibold">
+                  {data?.username || data?.allocated_to}
+                </Typography>
               </div>
 
-              <div className="card-subtitle">
-                {formatToIndianDate(data?.reference_document.from_date)} -{" "}
-                {formatToIndianDate(data?.reference_document.to_date)}
+              <StatusBadge status={data?.reference_document?.status} />
+            </div>
+
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Leave Type</Typography>
+                <Typography variant="mobileCardValue" className="font-semibold">
+                  {data?.reference_document?.leave_type}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Leave Days</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.total_leave_days > 1
+                    ? data?.reference_document?.total_leave_days + " Days"
+                    : data?.reference_document?.total_leave_days + " Day"}
+                </Typography>
               </div>
             </div>
 
-            <div className="text-sm text-gray-900 text-start flex gap-2 items-center relative">
-              <Badge
-                size="sm"
-                backgroundColor={status?.statusColor}
-                label={status?.label || ""}
-              />
+            {/* Dates + Days */}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Duration</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document.from_date)} to{" "}
+                  {formatToIndianDate(data?.reference_document.to_date)}
+                </Typography>
+              </div>
 
-              {canRequestLeave && (
-                <div className="relative ml-2">
-                  <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="p-1 border border-gray-300 rounded-md hover:bg-gray-100 flex items-center justify-center"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                  {menuOpen && <ActionMenu />}
-                </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Posting Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document.posting_date)}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="relative">
+              <Typography variant="mobileCardLabel">Description</Typography>
+
+              <Typography
+                variant="mobileCardValue"
+                className="text-gray-700 line-clamp-1 pr-16"
+              >
+                {cleanDescription}
+              </Typography>
+
+              {cleanDescription.length > 120 && (
+                <button
+                  onClick={() => setShowDescriptionModal(true)}
+                  className="absolute bottom-0 right-0 text-primary text-sm bg-white pl-1"
+                >
+                  Read more
+                </button>
               )}
             </div>
+
+            {/* Bottom Actions */}
+            {(showEdit || showRevoke || showReplace) && (
+              <div className="flex gap-2 mt-3">
+                {showEdit && (
+                  <Button
+                    fullWidth
+                    variant="contain"
+                    onClick={handleEditClick}
+                    icon={<SquarePen className="w-4 h-4" />}
+                  >
+                    Edit
+                  </Button>
+                )}
+
+                {showReplace && (
+                  <Button
+                    fullWidth
+                    variant="contain"
+                    onClick={handleReplaceClick}
+                    icon={<Repeat1 className="w-4 h-4" />}
+                  >
+                    Replace
+                  </Button>
+                )}
+
+                {showRevoke && (
+                  <Button
+                    fullWidth
+                    variant="contain"
+                    onClick={handleRevokeClick}
+                    disabled={revokeEventMutation.isPending}
+                    icon={<RotateCcw className="w-4 h-4" />}
+                  >
+                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
+          {showDescriptionModal && (
+            <div className="fixed inset-0 z-[60] bg-black/50 flex items-end">
+              <div className="bg-white w-full rounded-t-xl p-4 max-h-[80vh] overflow-y-auto">
+                <Typography variant="h4" className="mb-2">
+                  Description
+                </Typography>
+
+                <Typography variant="bodySmall" className="whitespace-pre-wrap">
+                  {cleanDescription}
+                </Typography>
+
+                <Button
+                  className="mt-4"
+                  fullWidth
+                  onClick={() => setShowDescriptionModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>

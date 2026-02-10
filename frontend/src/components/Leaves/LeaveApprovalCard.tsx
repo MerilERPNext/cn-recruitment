@@ -6,7 +6,6 @@ import {
   useIsRejectionReasonMandatory,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { getActionStyles } from "../../utils/actionButtonStyles";
@@ -100,29 +99,6 @@ const LeaveApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getStatus = (status: string) => {
-    if (status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-  const status = getStatus(data?.reference_document?.status);
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
     : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
@@ -161,7 +137,8 @@ const LeaveApprovalCard = ({
                 variant="bodySmall"
                 className="font-medium text-center truncate"
               >
-                {data?.reference_document?.employee_name}
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
               </Typography>
             </WrapperHoverCard>
           </Link>
@@ -188,7 +165,7 @@ const LeaveApprovalCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.reference_document?.status === "Open"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
@@ -208,7 +185,9 @@ const LeaveApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+             border-x-primary/20 border-b-primary/20 
+             shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
@@ -232,54 +211,72 @@ const LeaveApprovalCard = ({
             )}
 
             <div className="w-full">
-              <div className="flex items-start justify-between">
-                <div className="w-full">
-                  <Link
-                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-                    target="_blank"
+              <div className="flex items-start justify-between p-1">
+                <div className="flex flex-col gap-1">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="text-gray-500"
                   >
-                    <p className="card-title">
-                      {data?.reference_document?.employee_name}
-                    </p>
-                  </Link>
-                </div>
-                <Badge
-                  size="sm"
-                  label={status?.label as string}
-                  backgroundColor={status?.statusColor}
-                />
-              </div>
-              <div className="my-2 py-2">
-                <div className="flex justify-between w-full ">
-                  {data?.reference_document?.from_date && (
-                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span className="card-title mb-1">From</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(
-                          data?.reference_document?.from_date,
-                        )}
-                      </span>
-                    </p>
-                  )}
-                  {data?.reference_document?.to_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span className="card-title mb-1">To</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.reference_document?.to_date)}
-                      </span>
-                    </p>
-                  )}
+                    {data?.reference_document?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>
 
-                  {data?.due_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span className="card-title mb-1">Due</span>
-                      <span className="card-subtitle">{data?.due_date}</span>
-                    </p>
-                  )}
+                  <Typography
+                    variant="mobileCardValue"
+                    className="font-semibold text-gray-900"
+                  >
+                    {data?.reference_document?.employee_name ||
+                      data?.reference_document?.employee}
+                  </Typography>
                 </div>
+
+                <StatusBadge status={data?.reference_document?.status} />
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2">
+              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel">
+                      Leave Type
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {data?.reference_document?.leave_type}
+                    </Typography>
+                  </div>
+
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Allocated To
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {data?.username || data?.allocated_to}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel">Duration</Typography>
+                    <Typography variant="mobileCardValue">
+                      {`${formatToIndianDate(data?.reference_document?.from_date)} to ${formatToIndianDate(data?.reference_document?.to_date)}`}
+                    </Typography>
+                  </div>
+
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel">
+                      Leave Days
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {data?.reference_document?.total_leave_days > 1
+                        ? data?.reference_document?.total_leave_days + " Days"
+                        : data?.reference_document?.total_leave_days + " Day"}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
                 {actions?.length > 0 &&
                   data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => {
