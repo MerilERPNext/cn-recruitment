@@ -295,8 +295,29 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               requiredFieldMap
             )}
             onChange={(submission: any) => {
-              if (submission?.changed?.component?.key === "attachment")
+              const changed = submission?.changed;
+              if (changed?.component?.key === "attachment") {
                 setAttachments(submission?.data?.attachment || []);
+              }
+
+              // Auto-populate end_date from start_date
+              if (
+                changed?.component?.key === "start_date" &&
+                changed?.value &&
+                changed?.instance?.rowIndex !== undefined
+              ) {
+                const rowIndex = changed.instance.rowIndex;
+                // Get the grid component
+                const grid =
+                  formInstance.current?.getComponent("overtime_details");
+
+                // Check if grid and row exist, then set value
+                if (grid?.rows?.[rowIndex]?.end_date) {
+                  // Use setValue with noUpdateEvent to avoid triggering another change loop if possible
+                  // or just setValue. Formio usually handles this well.
+                  grid.rows[rowIndex].end_date.setValue(changed.value);
+                }
+              }
             }}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {
