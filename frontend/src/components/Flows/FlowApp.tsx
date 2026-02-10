@@ -124,7 +124,7 @@ const FlowApp: React.FC = () => {
   ) : null;
 
   const desktopLayout = !NoDesktopLayoutRoute.includes(seprateRoute || "") ? (
-    <DesktopLayoutWrapper title="Flows" actionButton={actionButton}>
+    <DesktopLayoutWrapper title="HR Process" actionButton={actionButton}>
       <Outlet />
       {showInitiateModel && (
         <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />

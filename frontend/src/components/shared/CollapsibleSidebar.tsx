@@ -347,9 +347,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     },
     {
       icon: Workflow,
-      label: "HR Processes",
+      label: "HR Process",
       path: "/webapp/flow-app",
-      permissionKey: "HR Processes",
+      permissionKey: "HR Process",
       subItems: [
         {
           name: "Flow Requests",
