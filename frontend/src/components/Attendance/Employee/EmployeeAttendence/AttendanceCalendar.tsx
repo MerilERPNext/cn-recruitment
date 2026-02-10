@@ -66,13 +66,13 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
   useEffect(() => {
     if (!selectedDate && !searchParams.get("date")) return;
 
-    setSearchParams(
-      {
-        date: selectedDate?.toISOString() || "",
-      },
-      { replace: true }
-    );
-  }, [selectedDate, setSearchParams]);
+    const newParams = new URLSearchParams(searchParams);
+    const dateStr = selectedDate?.toISOString() || "";
+    if (newParams.get("date") === dateStr) return;
+
+    newParams.set("date", dateStr);
+    setSearchParams(newParams, { replace: true });
+  }, [selectedDate, setSearchParams, searchParams]);
 
   return (
     <div className="p-1 employee-datepicker-lg">

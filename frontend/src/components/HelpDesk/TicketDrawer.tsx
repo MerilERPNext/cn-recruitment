@@ -28,8 +28,9 @@ const TicketDrawer: React.FC<TicketDrawerProps> = ({
       side="right"
       size="xxl"
       title={ticketId ? `Ticket #${ticketId}` : "Ticket Details"}
+      className="flex flex-col"
     >
-      <div className="h-[calc(100%+1.5rem)] flex flex-col -m-4 -mt-2">
+      <div className="flex-1 flex flex-col min-h-0">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="w-6 h-6 animate-spin text-blue-500" />

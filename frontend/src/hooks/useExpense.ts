@@ -94,10 +94,16 @@ export function usePostExpenseClaim() {
       navigate("/webapp/expenses-app/expenses-list", {
         state: { refresh: true },
       });
+      
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+      }, 1500);
 
-      queryClient.invalidateQueries({
-        queryKey: ["expense-claims"],
-      });
     },
     onError: handleError,
   });

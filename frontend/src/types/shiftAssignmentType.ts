@@ -10,7 +10,8 @@ export interface ApiShiftAssignment {
   end_date: string;
   start_time: string;
   end_time: string;
-  is_self: number; 
+  is_self: number;
   docstatus: number;
   creation: string;
+  shift_status: string;
 }

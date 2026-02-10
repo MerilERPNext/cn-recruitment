@@ -881,7 +881,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   return (
-    <div className="h-screen flex flex-col bg-app">
+    <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">

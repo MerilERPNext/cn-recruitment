@@ -133,6 +133,10 @@ interface AttendanceRequestFormV2Props {
   schemaUrl?: string;
   defaultAttendanceData?: MyAttendanceRequest | null;
   forActionType?: "create" | "edit";
+  latestInAndOutTime?: {
+    in_time: string;
+    out_time: string;
+  };
 }
 
 const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
@@ -142,6 +146,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   schemaUrl,
   defaultAttendanceData,
   forActionType = "create",
+  latestInAndOutTime,
 }) => {
   const { setRefetchAttendance } = useGlobalStore();
   const [shiftCheckins, setShiftCheckins] = useState<any[]>([]);
@@ -855,8 +860,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     const shiftEnd = (shiftData as any)?.end_time;
 
     // Prioritize latest times over shift times, and normalize datetime to time-only
-    const normalizedCheckin = normalizeTime(latestCheckin);
-    const normalizedCheckout = normalizeTime(latestCheckout);
+    const normalizedCheckin = normalizeTime(latestInAndOutTime?.in_time || latestCheckin);
+    const normalizedCheckout = normalizeTime(latestInAndOutTime?.out_time || latestCheckout);
 
     const finalCheckin = normalizedCheckin || shiftStart;
     const finalCheckout = normalizedCheckout || shiftEnd;
