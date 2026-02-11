@@ -12,6 +12,7 @@ import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { User } from "lucide-react";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -110,7 +111,7 @@ const AllTeamShiftsList: React.FC = () => {
   const { isDesktop } = useScreenSize();
 
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
 
   // ✅ Only take team shifts (is_self = 0)
   const teamShifts = data?.filter((shift) => shift.is_self === 0) ?? [];
@@ -141,7 +142,9 @@ const AllTeamShiftsList: React.FC = () => {
               ]}
               columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
             >
-              {teamShifts.length > 0 ? (
+              {isLoading ? (
+                <CardSkeleton />
+              ) : teamShifts.length > 0 ? (
                 teamShifts.map((shift, index) => (
                   <TeamShiftRowItem
                     key={shift.name}

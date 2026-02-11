@@ -8,6 +8,7 @@ import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -93,6 +94,7 @@ const TeamOvertimeRequests = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
+              SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <OvertimeApprovalCard
                   isSelected={item?.isSelected}

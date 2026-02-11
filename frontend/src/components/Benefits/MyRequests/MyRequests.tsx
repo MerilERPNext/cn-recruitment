@@ -29,6 +29,7 @@ import { Link } from "react-router-dom";
 import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -193,17 +194,7 @@ const MyRequests: React.FC = () => {
                 <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
               );
             }}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
+            SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             isSearch={false}
             isFilter={false}

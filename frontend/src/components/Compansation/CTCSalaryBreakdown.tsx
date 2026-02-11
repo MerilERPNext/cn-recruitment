@@ -6,6 +6,7 @@ import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
 import { RupeeSymbolPerfix } from "../../utils/currency";
+import { DashboardContentSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -50,11 +51,7 @@ const CTCSalaryUI = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64 text-gray-400 animate-pulse">
-        Loading salary details
-      </div>
-    );
+    return <DashboardContentSkeleton />;
   }
 
   if (isError || (!isLoading && !salarySlip)) {
