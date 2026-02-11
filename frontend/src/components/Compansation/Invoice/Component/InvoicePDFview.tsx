@@ -17,24 +17,17 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
 
-  function hexToBlob(hexString: string, mimeType = "application/pdf") {
-    const cleanHex = hexString.replace(/\s+/g, "");
-    const bytes = new Uint8Array(
-      cleanHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
-    );
-    return new Blob([bytes], { type: mimeType });
-  }
-
 
   const { mutate, isPending } = useInvoiceSheetViewPDF({
-    onSuccess: (data: string) => {
-      const blob = hexToBlob(data);   // convert hex → blob
+    onSuccess: (data: ArrayBuffer) => {
+      const blob = new Blob([data], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-    
+  
       setPdfUrl(url);
       setOpen(true);
     },
   });
+  
 
   const handleView = () => {
     if (!invoiceID) {

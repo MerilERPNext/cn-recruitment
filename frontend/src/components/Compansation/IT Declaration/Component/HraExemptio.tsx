@@ -42,6 +42,8 @@ export interface HRAData {
   address_line1: string;
   address_line2: string;
   lta?: LTAData;
+  proof_file?: string;
+  file_id?: string;
 }
 
 interface HRAFormProps {
@@ -96,37 +98,65 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
       },
     });
   };
+  const handleHRAFileUpload = (file: File | null) => {
+    if (!file) return;
+
+    uploadMutation.mutate(file, {
+      onSuccess(data) {
+        onChange("proof_file", data?.file_url);
+        onChange("file_id", data?.name);
+      },
+      onError(err) {
+        console.error(err);
+        alert("File upload failed");
+      },
+    });
+  };
+
+  const handleHRARemoveProof = async () => {
+    if (!hraData.file_id) return;
+
+    if (!window.confirm("Delete this file?")) return;
+
+    await deleteDoc({
+      doctype: "File",
+      name: hraData.file_id,
+    });
+
+    onChange("proof_file", undefined);
+    onChange("file_id", undefined);
+  };
+
   const handleLTARemoveProof = async (
     catIdx: number,
     itemIdx: number,
     fileId?: string
   ) => {
-    if (!fileId) {
-      alert("File id missing");
-      return;
-    }
-
+    if (!fileId) return;
+  
     if (!window.confirm("Delete this file?")) return;
-
+  
     try {
       await deleteDoc({
         doctype: "File",
-        name: fileId, // ✅ ONLY THIS WORKS
+        name: fileId,
       });
-
+  
       const updated = [...LTAData.items];
+  
       updated[catIdx].items[itemIdx] = {
         ...updated[catIdx].items[itemIdx],
         proof_file: undefined,
         file_id: undefined,
       };
-
+  
       onChange("lta", { items: updated });
     } catch (err) {
       console.error(err);
       alert("Delete failed");
     }
   };
+  
     
 
   return (
@@ -237,17 +267,44 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
 
           {/* ✅ Attachment */}
           {hraData.attach_reqd !== 0 && (
-            <div className="col-span-2 flex items-end">
-              <label
-                className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-md 
-               text-sm text-gray-700 cursor-pointer hover:bg-gray-50 transition"
-              >
-                📎
-                <span>Attach file</span>
-                <input type="file" className="hidden" />
-              </label>
-            </div>
-          )}
+            <div className="col-span-2 flex flex-col gap-2">
+
+              <label className="text-xs text-gray-600">Attachment</label>
+
+              <div className="flex items-center gap-2">
+
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    handleHRAFileUpload(
+                      e.target.files?.[0] || null
+                    )
+                  }
+                  className="border rounded pr-3 text-xs
+                    file:text-xs file:border-0
+                    file:bg-primary file:text-white
+                    file:px-3 file:py-1"
+                />
+
+                {hraData.proof_file && (
+                  <div className="flex items-center gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+                    <span className="text-xs truncate">
+                      {hraData.proof_file}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleHRARemoveProof}
+                      className="text-gray-500 hover:text-red-600"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                )}
+                              </div>
+
+</div>
+)}
         </div>
       </div>
 
@@ -363,10 +420,10 @@ const { mutateAsync: deleteDoc } = useDeleteDocument();
       file:px-3 file:py-1"
   />
 
-  {item.proof_file && (
+  {item?.proof_file && (
     <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
       <span className="text-xs text-gray-700 truncate">
-        {item.proof_file}
+        {item?.proof_file}
       </span>
 
       <button

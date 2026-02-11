@@ -28,7 +28,7 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   position = "bottom-left",
   label = "Select",
   contentAlign = "center",
-  variant,
+ 
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,11 +72,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       className={`relative inline-block ${className || ""}`}
     >
       <Button
-        variant={variant || "contain"}
-        bgColor="primary/10"
+        variant="outline"
+        bgColor="white"
         size="md"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center gap-2  border border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
       >
         <span>{selectedLabel}</span>
         <svg

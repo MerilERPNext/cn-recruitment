@@ -28,23 +28,26 @@ type Props = {
   onChange: (updatedItems: Item[]) => void;
   showProofFields?: boolean;
   selectable?: string;
-  activeSection?: string;
+  custom_80d_variable?: string | null;
+  locked80DVariable?: string | null;
+  setLocked80DVariable?: (v: string | null) => void ;
 };
 
 const CategoryDeclarationSelectable = ({
   categoryName,
-  activeSection,
   max_amount,
   lockingDate,
   items,
   onChange,
   showProofFields,
   selectable,
+  custom_80d_variable,
+  locked80DVariable,
+  setLocked80DVariable,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
-
   const { mutateAsync: deleteDoc,} = useDeleteDocument();
 
   /* ---------------- Dropdown Options ---------------- */
@@ -57,51 +60,26 @@ const CategoryDeclarationSelectable = ({
   
     const hasAnySelected = normalized.some(i => i.is_effectively_selected);
   
-    // ✅ CHECK if any item is selected in this category
-    const hasSelectedInThisCategory = normalized.some(
-      i => i.is_effectively_selected
-    );
-  
-    // ✅ Special Disable Logic only for Mediclaim (U/S 80D)
-    const isDisableA =
-      activeSection === "Mediclaim (U/S 80D)" &&
-      (
-        // 3rd category disabled when 1st has selection
-        (categoryName === "Section 80D - Medical Insurance for Self, Spouse and Dependent children" &&
-          activeSection === "Mediclaim (U/S 80D)" &&
-          window.__first80DSelected === true) ||
-  
-        // 4th category disabled when 2nd has selection
-        (categoryName === "Section 80D - Medical Insurance for Parent(s) if Senior Citizen(s)" &&
-          activeSection === "Mediclaim (U/S 80D)" &&
-          window.__second80DSelected === true)
-      );
-  
-    // ✅ Store global flags
-    if (activeSection === "Mediclaim (U/S 80D)") {
-      if (categoryName === "Section 80D - Medical Insurance for Parents") {
-        window.__first80DSelected = hasSelectedInThisCategory;
-      }
-  
-      if (categoryName === "Section 80D - Health Insurance for Self, Spouse and Children if Senior Citizen") {
-        window.__second80DSelected = hasSelectedInThisCategory;
-      }
-    }
-  
     return normalized.map(item => ({
       label: item.exemption_sub_category,
       value: item.exemption_sub_category,
   
-      disabled:
-        isDisableA ||
-        (isMultipleSelect
-          ? item.is_effectively_selected
-          : hasAnySelected),
+      disabled: isMultipleSelect
+        ? item.is_effectively_selected
+        : hasAnySelected,
     }));
-  }, [items, isMultipleSelect, activeSection, categoryName]);
+  }, [items, isMultipleSelect]);
+
+  const normalizedLocked = locked80DVariable || null;
+  const normalizedCustom = custom_80d_variable || null;
   
+  const isDisabled =
+    Boolean(normalizedLocked) &&
+    Boolean(normalizedCustom) &&
+    normalizedLocked !== normalizedCustom;
   
-  
+
+
 
   const handleProofChange = (
     key: string,
@@ -190,6 +168,7 @@ const CategoryDeclarationSelectable = ({
           ...item,
           is_selected: true,
           amount: item.amount ?? 0,
+          
         };
       }
 
@@ -204,6 +183,10 @@ const CategoryDeclarationSelectable = ({
       return item;
     });
 
+
+    if (custom_80d_variable) {
+      setLocked80DVariable?.(custom_80d_variable);
+    }
     onChange(updated);
   };
 
@@ -215,7 +198,7 @@ const CategoryDeclarationSelectable = ({
 
       return {
         ...item,
-        amount: Math.min(value, item.max_amount),
+        amount: Math.min(value),
       };
     });
 
@@ -233,7 +216,13 @@ const CategoryDeclarationSelectable = ({
           }
         : item
     );
-
+    const stillSelected = updated.some(
+      (i) => i.is_selected || Number(i.amount) > 0
+    );
+  
+    if (!stillSelected && custom_80d_variable) {
+      setLocked80DVariable?.(null);
+    }
     onChange(updated);
   };
 
@@ -246,6 +235,7 @@ const CategoryDeclarationSelectable = ({
     
   );
 
+console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_variable);
   return (
     <div className="bg-white px-6 py-4 rounded border space-y-4">
       <Typography variant="bodySmall" color="body2" className="semibold">
@@ -297,11 +287,11 @@ const CategoryDeclarationSelectable = ({
                       file:px-3 file:py-1"
                   />
 
-                  {item.proof_file && (
+                  {item?.attach_proof && (
                     <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
                       <span className="text-sm text-gray-700 truncate">
-                        {typeof item.proof_file === "string"
-                          ? item.proof_file
+                        {typeof item.attach_proof === "string"
+                          ? item.attach_proof
                           : ""}
                       </span>
 
@@ -320,7 +310,7 @@ const CategoryDeclarationSelectable = ({
                   )}
                 </div>
 
-{  item.idx === "we" &&          <div className="flex flex-col gap-1">
+                {  item.idx === "we" &&          <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">
                     Note / Comment
                   </label>
@@ -407,6 +397,7 @@ const CategoryDeclarationSelectable = ({
         <Button
           variant="soft"
           onClick={() => setIsOpen((prev) => !prev)}
+          disabled={isDisabled}
           className="w-full flex justify-between items-center border border-gray-200 rounded px-3 py-1 text-xs bg-white"
         >
           <span className="text-gray-400">
