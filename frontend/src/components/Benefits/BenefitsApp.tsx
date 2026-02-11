@@ -25,7 +25,7 @@ const BenefitsApp: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { data: userUiPermission, isLoading: isLoadingPermission } = useGetUiPermission("Benefits");
+  const { data: userUiPermission } = useGetUiPermission("Benefits");
 
   const tabs: Tab[] = useMemo(() => {
     const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
