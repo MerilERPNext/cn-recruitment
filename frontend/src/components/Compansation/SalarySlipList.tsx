@@ -29,6 +29,7 @@ import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { RupeeSymbolPerfix } from "../../utils/currency";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 type PayrollPeriod = {
   name: string;
@@ -286,6 +287,7 @@ const SalarySlipsList = () => {
             ]}
             searchFields={["employee", "status", "posting_date"]}
             infiniteScroll={true}
+            SkeletonComponent={CardSkeleton}
             isFilter={false}
             defaultFilters={filter as any}
           />

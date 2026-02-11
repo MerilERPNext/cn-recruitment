@@ -16,6 +16,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -86,7 +87,7 @@ export default function ExtraPayment() {
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: extraPayment } = useExtraPayment(
+  const { data: extraPayment, isLoading } = useExtraPayment(
     user?.company || null,
     user?.employee || null,
   );
@@ -199,52 +200,62 @@ export default function ExtraPayment() {
       {!isMobile && (
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths}>
-            {filteredPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                style={{
-                  gridTemplateColumns: columnWidths.join(" "),
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
+            {isLoading ? (
+              <CardSkeleton />
+            ) : filteredPayments.length > 0 ? (
+              filteredPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{
+                    gridTemplateColumns: columnWidths.join(" "),
+                  }}
                 >
-                  {payment.recipient}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.invoiceId}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.recipient}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.salary_component}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.date}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.invoiceId}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.amount}
-                </Typography>
-                <div className="flex items-center justify-center">
-                  <StatusBadge status={payment.status} />
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.salary_component}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {RupeeSymbolPerfix(payment.amount)}
+                  </Typography>
+
+                  <div className="flex items-center justify-center">
+                    <StatusBadge status={payment.status} />
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-gray-500">
+                No payments found.
               </div>
-            ))}
+            )}
           </CardTable>
         </div>
       )}

@@ -17,6 +17,7 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { Typography } from "../../shared/atoms/Typography";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -129,6 +130,7 @@ const MyOvertimeRequests = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
+              SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}
               orderBy="modified desc"

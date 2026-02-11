@@ -10,6 +10,7 @@ import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const formatINR = (num: number) =>
   `${RupeeSymbolPerfix(num.toLocaleString("en-IN"))}`;
@@ -21,7 +22,7 @@ export default function Invoice() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: invoiceData } = useInvoiceSalarySlip(
+  const { data: invoiceData, isLoading } = useInvoiceSalarySlip(
     user?.employee || "",
     user?.company || "",
   );
@@ -88,69 +89,71 @@ export default function Invoice() {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={titles} columnWidths={columnWidths}>
-          {invoices.map((inv: any, idx: number) => {
-            const invoiceNo = inv.name;
+          {isLoading ? (
+            <CardSkeleton />
+          ) : invoices.length > 0 ? (
+            invoices.map((inv: any, idx: number) => {
+              const invoiceNo = inv.name;
 
-            return (
-              <div
-                key={invoiceNo || idx}
-                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
-              >
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
+              return (
+                <div
+                  key={invoiceNo || idx}
+                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
-                  {invoiceNo}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {invoiceNo}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.start_date}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.start_date}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.end_date}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.end_date}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.employee_name}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {inv.employee_name}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className={`font-medium text-center ${amountClass}`}
-                >
-                  {formatINR(inv.gross_pay || 0)}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.gross_pay || 0)}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className={`font-medium text-center ${amountClass}`}
-                >
-                  {formatINR(inv.net_pay || 0)}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className={`font-medium text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.net_pay || 0)}
+                  </Typography>
 
-                <div className="flex items-center justify-center">
-                  <InvoicePDFview
-                    invoiceID={invoiceNo}
-                    disabled={false}
-                    onClick={handleInvoiceClick}
-                  />
+                  <div className="flex items-center justify-center">
+                    <InvoicePDFview
+                      invoiceID={invoiceNo}
+                      disabled={false}
+                      onClick={handleInvoiceClick}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-
-          {invoices.length === 0 && (
+              );
+            })
+          ) : (
             <div className="py-10 text-center text-gray-500">
               No invoices found
             </div>

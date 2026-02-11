@@ -8,6 +8,7 @@ import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -90,6 +91,7 @@ const TeamAdvanceRequest = () => {
               },
             ]}
             defaultFilters={{ status: "Pending" }}
+            SkeletonComponent={CardSkeleton}
             renderCardContent={(item: any) => (
               <ApprovalRejectionAdvanceList
                 isSelected={item?.isSelected}
