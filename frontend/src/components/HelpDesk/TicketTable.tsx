@@ -379,7 +379,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""}`}
+                className={`py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === 'name' ? 'pl-6 pr-4' : 'px-4'}`}
                 onClick={() => col.sortable && onSort(col.key)}
               >
                 <div className="flex items-center gap-1">
@@ -390,7 +390,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 </div>
               </th>
             ))}
-            <th className="px-4 py-3 w-28 text-left">
+            <th className="pl-4 pr-6 py-3 w-28 text-left">
               <Typography variant="bodySmall" color="body2" className="font-medium">
                 ACTIONS
               </Typography>
@@ -450,7 +450,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   );
                 })()}
               </td>
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+              <td className="pl-4 pr-6 py-3" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-2">
                   {/* Reply Button */}
                   <button

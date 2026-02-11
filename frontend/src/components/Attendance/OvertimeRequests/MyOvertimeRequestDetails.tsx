@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import Badge from "../../shared/Badge";
 import {
   MyPlannedAttendanceRequest,
   OvertimeDetail,
@@ -11,7 +10,6 @@ import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import FileRenderer from "../../shared/molecules/FileRenderer";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
@@ -19,6 +17,8 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function MyOvertimeDetails({
   documentName,
@@ -42,7 +42,7 @@ export function MyOvertimeDetails({
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string
+    currentUser?.name as string,
   );
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
@@ -67,7 +67,7 @@ export function MyOvertimeDetails({
         console.log("Session data:", responseWithSession?.session);
         console.log(
           "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
+          data?.custom_open_chatnext_assistant_on_action,
         );
 
         if (
@@ -78,12 +78,12 @@ export function MyOvertimeDetails({
         ) {
           console.log(
             "Opening assistant with session:",
-            responseWithSession?.session
+            responseWithSession?.session,
           );
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
-              responseWithSession?.session
+              responseWithSession?.session,
             );
           }
         } else {
@@ -100,37 +100,13 @@ export function MyOvertimeDetails({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getStatus = (status: string) => {
-    if (status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-
-  const status = getStatus(data?.reference_document?.status);
   const doc = data?.reference_document;
 
   // Loading state
@@ -145,7 +121,7 @@ export function MyOvertimeDetails({
 
   return data?.allocated_to ? (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
     >
       <div
@@ -154,9 +130,13 @@ export function MyOvertimeDetails({
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <Typography variant="h4" className="font-semibold text-gray-800">
+          <Typography
+            variant="h4"
+            className="font-semibold text-gray-900 leading-tight"
+          >
             {label}
           </Typography>
+
           <Button
             variant="subtle"
             onClick={onClose}
@@ -170,51 +150,69 @@ export function MyOvertimeDetails({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Allocated To + Status */}
-          <div className="flex gap-2 justify-between">
+          <div className="flex gap-2 justify-between p-1">
             <div className="flex flex-col gap-1">
-              <Typography
-                variant="bodySmall"
-                color="body2"
-                className="card-title"
-              >
-                Allocated To
-              </Typography>
-              <Typography variant="bodyMedium" className="card-subtitle">
-                {data?.username} ({data.allocated_to})
-              </Typography>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="text-gray-500">
+                  {data?.reference_document?.employee_name
+                    ? "Employee Name"
+                    : "Employee ID"}
+                </Typography>
+
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.employee_name ||
+                    data?.reference_document?.employee}
+                </Typography>
+              </div>
             </div>
             <div>
-              <Badge
-                label={status.label}
-                backgroundColor={status.statusColor}
-              />
+              <StatusBadge status={data?.reference_document?.status} />
             </div>
           </div>
 
-          {/* Created On */}
-          <div className="flex flex-col gap-1">
-            <Typography
-              variant="bodySmall"
-              color="body2"
-              className="card-title"
-            >
-              Created On
-            </Typography>
-            <Typography variant="bodyMedium" className="card-subtitle">
-{formatToIndianDate(doc?.creation)}
-            </Typography>
-          </div>
-          <div className="flex flex-col gap-1">
-            <Typography
-              variant="bodySmall"
-              color="body2"
-              className="card-title"
-            >
-              Due Date
-            </Typography>
-            <Typography variant="bodyMedium" className="card-subtitle">
-              {formatToIndianDate((data?.due_date || data?.date) as string)}
-            </Typography>
+          <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to_name}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To Email
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to}
+                </Typography>
+              </div>
+            </div>
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Created On
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(doc?.creation)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Due Date
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate((data?.due_date || data?.date) as string)}
+                </Typography>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Description</Typography>
+              <Typography variant="mobileCardValue">
+                {data?.description}
+              </Typography>
+            </div>
           </div>
 
           {/* Overtime Details */}
@@ -243,14 +241,14 @@ export function MyOvertimeDetails({
                         <div className="flex flex-col gap-1">
                           <Typography
                             variant="bodySmall"
-                            color="body2"
-                            className="card-title"
+                            className="card-subtitle"
                           >
                             Start Date
                           </Typography>
                           <Typography
                             variant="bodySmall"
-                            className="card-subtitle"
+                            color="body2"
+                            className="card-title"
                           >
                             {formatToIndianDate(item.start_date)}
                           </Typography>
@@ -258,14 +256,14 @@ export function MyOvertimeDetails({
                         <div className="flex flex-col gap-1">
                           <Typography
                             variant="bodySmall"
-                            color="body2"
-                            className="card-title"
+                            className="card-subtitle"
                           >
                             Start Time
                           </Typography>
                           <Typography
                             variant="bodySmall"
-                            className="card-subtitle"
+                            color="body2"
+                            className="card-title"
                           >
                             {item.start_time}
                           </Typography>
@@ -274,14 +272,14 @@ export function MyOvertimeDetails({
                         <div className="flex flex-col gap-1">
                           <Typography
                             variant="bodySmall"
-                            color="body2"
-                            className="card-title"
+                            className="card-subtitle"
                           >
                             End Date
                           </Typography>
                           <Typography
                             variant="bodySmall"
-                            className="card-subtitle"
+                            color="body2"
+                            className="card-title"
                           >
                             {formatToIndianDate(item.end_date)}
                           </Typography>
@@ -289,32 +287,16 @@ export function MyOvertimeDetails({
                         <div className="flex flex-col gap-1">
                           <Typography
                             variant="bodySmall"
-                            color="body2"
-                            className="card-title"
+                            className="card-subtitle"
                           >
                             End Time
                           </Typography>
                           <Typography
                             variant="bodySmall"
-                            className="card-subtitle"
-                          >
-                            {item.end_time}
-                          </Typography>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                          <Typography
-                            variant="bodySmall"
                             color="body2"
                             className="card-title"
                           >
-                            Shift Date
-                          </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
-                          >
-                            {formatToIndianDate(item.shift_date)}
+                            {item.end_time}
                           </Typography>
                         </div>
 
@@ -322,14 +304,14 @@ export function MyOvertimeDetails({
                           <div className="flex flex-col gap-1">
                             <Typography
                               variant="bodySmall"
-                              color="body2"
-                              className="card-title"
+                              className="card-subtitle"
                             >
                               Message
                             </Typography>
                             <Typography
                               variant="bodySmall"
-                              className="card-subtitle"
+                              color="body2"
+                              className="card-title"
                             >
                               {item.message}
                             </Typography>
@@ -337,7 +319,7 @@ export function MyOvertimeDetails({
                         )}
                       </div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
               {data?.attachments && data?.attachments?.length > 0 ? (
@@ -348,9 +330,15 @@ export function MyOvertimeDetails({
                   >
                     Attachment
                   </Typography>
-                  {data?.attachments?.map((item) => (
-                    <FileRenderer filePath={item?.file_url || ""} />
-                  ))}
+
+                  <div className="space-y-2">
+                    {data.attachments.map((item) => (
+                      <AttachmentCard
+                        key={item.file_url}
+                        fileUrl={item.file_url}
+                      />
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>

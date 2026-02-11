@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FormIOComponent } from "../../../types/formio";
-import ReivewForm from "./Component/ReivewForm";
+import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import { Form } from "@tsed/react-formio";
 import Button from "../../shared/atoms/Button";
@@ -13,6 +13,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 type handleActPropsType = {
   name: string;
   hasForm: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   todo: any;
 };
 
@@ -20,6 +21,7 @@ interface StageCardProps {
   stages: ApprovalStage[];
   idx: number;
   canPerformAction: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item: any;
   handleAct: (handleActPropsType: handleActPropsType) => void;
 }
@@ -55,7 +57,7 @@ const StageCard: React.FC<StageCardProps> = ({
     approval_response_data: string,
   ) => {
     const data = JSON.parse(approval_response_data);
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setFormSchema((prev: any) => {
       if (!schema) return prev;
 
@@ -93,7 +95,7 @@ const StageCard: React.FC<StageCardProps> = ({
 
       <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
         <div className="ml-4 flex flex-col">
-          <Typography variant="subheading">{stage?.stage_name}</Typography>
+          <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
           <Typography variant="bodySmall">
             {approverPerfix} {stage?.role || stage?.user}
           </Typography>
@@ -115,7 +117,7 @@ const StageCard: React.FC<StageCardProps> = ({
           )}
         </div>
 
-        <div className="flex justify-between items-start px-4 pt-1 pb-3">
+        <div className="flex max-lg:flex-row-reverse justify-between items-start px-4 pt-1 pb-3">
           {canPerformAction && status == "action_required" ? (
             <Button
               variant="contain"
@@ -142,7 +144,7 @@ const StageCard: React.FC<StageCardProps> = ({
       {formSchema &&
         show &&
         createPortal(
-          <ReivewForm onClose={() => setShow(false)}>
+          <ReviewForm onClose={() => setShow(false)}>
             <Form
               form={formSchema}
               options={{
@@ -151,7 +153,7 @@ const StageCard: React.FC<StageCardProps> = ({
               }}
               submit={false}
             />
-          </ReivewForm>,
+          </ReviewForm>,
           document.body,
         )}
     </>

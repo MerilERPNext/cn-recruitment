@@ -439,7 +439,7 @@ const MobileDashboard: React.FC = () => {
           </Button>
 
           <div className="flex items-center gap-3">
-          <button
+            <button
               onClick={() => navigate("/webapp/notification-log")}
               className="relative p-2 hover:bg-primary-400/20 rounded-lg transition-colors"
             >

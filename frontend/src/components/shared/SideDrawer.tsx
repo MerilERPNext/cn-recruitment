@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import HeaderBar from "../HeaderBar";
 
 export type DrawerSize = "sm" | "md" | "lg" | "xl" | "xxl" | "full";
@@ -64,7 +65,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
         return () => document.removeEventListener("mousedown", handler);
     }, [open, onClose]);
 
-    return (
+    return createPortal(
         <>
             {/* Backdrop */}
             {open && (
@@ -78,7 +79,7 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
             <div
                 ref={drawerRef}
                 className={`
-          fixed top-0 h-full bg-white z-50
+          fixed top-0 h-full bg-white z-50 flex flex-col
           shadow-xl ring-1 ring-black/5
           transition-[left,right] duration-300 ease-in-out
           ${side === "right"
@@ -104,11 +105,12 @@ const SideDrawer: React.FC<SideDrawerProps> = ({
 
 
                 {/* Content */}
-                <div className={"p-4 overflow-y-auto h-full " + className}>
+                <div className={`overflow-y-auto flex-1 min-h-0 ${className ?? "p-4"}`}>
                     {children}
                 </div>
             </div>
-        </>
+        </>,
+        document.body
     );
 };
 

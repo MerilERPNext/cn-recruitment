@@ -124,6 +124,7 @@ const SearchableSelect: React.FC<Props> = ({
           const res = await onSearch(q);
           setInternalOptions(res || []);
         } catch (err) {
+          console.error(err);
           setInternalOptions([]);
         } finally {
           setLoading(false);
@@ -150,9 +151,9 @@ const SearchableSelect: React.FC<Props> = ({
   const displayedValue = isOpen
     ? term
     : selectedLabel ??
-      internalOptions.find((o) => o.value === value)?.label ??
-      options.find((o) => o.value === value)?.label ??
-      "";
+    internalOptions.find((o) => o.value === value)?.label ??
+    options.find((o) => o.value === value)?.label ??
+    "";
 
   const dropdown = isOpen && !disabled && (
     <div

@@ -17,31 +17,7 @@ const MyShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item, index }) => {
-  const getShiftStatus = (startDate: string, endDate?: string): string => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    let end: Date | null = null;
-    if (endDate) {
-      end = new Date(endDate);
-      end.setHours(0, 0, 0, 0);
-    }
-
-    if (!end) {
-      // Missing end date → treat as ongoing
-      if (today >= start) return "Current";
-      return "Upcoming";
-    }
-
-    if (today < start) return "Upcoming";
-    if (today > end) return "Previous";
-    return "Current";
-  };
-
-  const shiftStatus = getShiftStatus(item.start_date, item.end_date);
   const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
 
   return (
@@ -79,7 +55,7 @@ const MyShiftRowItem: React.FC<{
       </Typography>
 
       <div className="flex items-center justify-center">
-        <StatusBadge status={shiftStatus} />
+        <StatusBadge status={item?.shift_status} />
       </div>
     </div>
   );

@@ -144,7 +144,8 @@ const ApprovalCard = ({
             >
               {" "}
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-                {data?.reference_document?.employee_name}
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
               </WrapperHoverCard>
             </Typography>
           </Link>

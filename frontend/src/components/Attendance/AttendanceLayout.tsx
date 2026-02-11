@@ -2,11 +2,8 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import HeaderBar from "../HeaderBar";
-import { LeaveRequestRefreshProvider } from "../Leaves/LeaveRequestRefreshContext";
-import { RequestLeaveModalProvider } from "../Leaves/RequestLeaveModalContext";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import LeaveRequest from "../Attendance/LeaveRequest";
 import CreateOvertimeRequest from "./OvertimeRequests/CreateOvertimeRequest";
 import { SidebarProvider, useSidebar } from "./SidebarContext";
 import AttendanceRequestFormV2 from "./AttendanceRequest/AttendanceRequestFormV2";
@@ -29,13 +26,21 @@ const AttendanceLayoutContent: React.FC = () => {
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     effectiveEmployeeId || "",
   );
-
   const { isDesktop } = useScreenSize();
   const [showActionsDropdown, setShowActionsDropdown] = useState(false);
-  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const permittedPages = useMemo(() => {
+    return (
+      userUiPermission?.flatMap(
+        (app) =>
+          app.pages
+            ?.filter((page) => page.enabled)
+            ?.map((page) => page.page_name) || [],
+      ) || []
+    );
+  }, [userUiPermission]);
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
@@ -65,16 +70,24 @@ const AttendanceLayoutContent: React.FC = () => {
   }, [showActionsDropdown]);
 
   const tabs: Tab[] = useMemo(
-    () => [
-      { label: "Attendance", key: "summary" },
-      { label: "My Attendance Details", key: "calendar-views" },
-      { label: "Team Attendance", key: "team-attendance" },
-      { label: "My Attendance Requests", key: "attendance-request" },
-      { label: "Team Attendance Requests", key: "team-attendance-requests" },
-      { label: "My Overtime Requests", key: "my-overtime-requests" },
-      { label: "Team Overtime Requests", key: "team-overtime-requests" },
-    ],
-    [],
+    () => {
+      if (permittedPages && permittedPages?.length > 0) {
+        const tabList = [
+          { label: "Attendance Summary", key: "summary", permissionKey: "Attendance Summary" },
+          { label: "My Attendance", key: "calendar-views", permissionKey: "My Attendance" },
+          { label: "Team Attendance", key: "team-attendance", permissionKey: "Team Attendance" },
+          { label: "My Requests", key: "attendance-request", permissionKey: "My Requests" },
+          { label: "Team Requests", key: "team-attendance-requests", permissionKey: "Team Requests" },
+          { label: "Planned Overtime", key: "my-overtime-requests", permissionKey: "My Overtime" },
+          { label: "Team Overtime", key: "team-overtime-requests", permissionKey: "Team Overtime" },
+        ]
+        // return tabList
+        return tabList.filter((tab) => permittedPages?.includes(tab?.permissionKey))
+      } else {
+        return []
+      }
+    },
+    [permittedPages],
   );
 
   const calendarSubTabs = useMemo(
@@ -86,7 +99,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const navigate = useNavigate();
 
   // Initialize state with default values
-  const [activeTab, setActiveTab] = useState<Tab>(tabs[0]);
+  const [activeTab, setActiveTab] = useState<Tab>(tabs[0] || { key: "", label: "" });
   const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
 
   useEffect(() => {
@@ -127,7 +140,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const mobileLayout = (
     <div className="min-h-screen">
       {/* Fixed Header */}
-      <HeaderBar title={activeTab.label} onBack={() => navigate("/webapp")} />
+      <HeaderBar title={activeTab?.label || "Attendance"} onBack={() => navigate("/webapp")} />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
         <div className="sticky top-[58px] z-40 border-t border-gray-200">
           <NavigationTabs
@@ -142,11 +155,7 @@ const AttendanceLayoutContent: React.FC = () => {
       )}
       {/* Page Content (with top padding to avoid overlap) */}
       <div className="p-2">
-        <LeaveRequestRefreshProvider>
-          <RequestLeaveModalProvider>
-            <Outlet />
-          </RequestLeaveModalProvider>
-        </LeaveRequestRefreshProvider>
+        <Outlet />
       </div>
       {showAttendanceRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -269,26 +278,7 @@ const AttendanceLayoutContent: React.FC = () => {
 
   const desktopLayout = (
     <DesktopLayoutWrapper title="Attendance" actionButton={actionButton}>
-      <LeaveRequestRefreshProvider>
-        <RequestLeaveModalProvider>
-          <Outlet />
-        </RequestLeaveModalProvider>
-      </LeaveRequestRefreshProvider>
-      {showLeaveRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            {/* Ensure LeaveRequest is inside its providers */}
-            <LeaveRequestRefreshProvider>
-              <RequestLeaveModalProvider>
-                <LeaveRequest
-                  onCancel={() => setShowLeaveRequest(false)}
-                  onSuccess={() => setShowLeaveRequest(false)}
-                />
-              </RequestLeaveModalProvider>
-            </LeaveRequestRefreshProvider>
-          </div>
-        </div>
-      )}
+      <Outlet />
       {showAttendanceRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">

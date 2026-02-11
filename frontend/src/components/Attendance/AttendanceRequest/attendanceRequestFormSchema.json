@@ -184,9 +184,6 @@
           "key": "checkin_time",
           "type": "time",
           "input": true,
-          "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.start_time;}",
-          "customOnChange": "if (value) { const d = moment(value, ['h:mm A','HH:mm']); value = d.format('HH:mm'); }",
-          "redrawOn": "options.shiftRedraw",
           "allowCalculateOverride": true,
           "validate": {
             "customMessage": "From Time is required",
@@ -195,14 +192,18 @@
           "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request', 'Clockin'].includes(data.request_type || '');",
           "enableDate": false,
           "enableTime": true,
-          "format": "hh:mm A",
-          "placeholder": "hh:mm AM",
+          "format": "HH:mm",
+          "placeholder": "HH:mm",
+          "hourStep": 1,
+          "minuteStep": 1,
           "widget": {
             "type": "calendar",
             "noCalendar": true,
             "enableTime": true,
-            "time_24hr": false,
-            "dateFormat": "h:i K"
+            "time_24hr": true,
+            "dateFormat": "H:i",
+            "minuteIncrement": 1,
+            "allowInput": true
           },
           "customClass": "mb-4"
         },
@@ -211,26 +212,28 @@
           "errorLabel": "To Time",
           "key": "checkout_time",
           "type": "time",
-          "calculateValue": "if(!value&&options?.shiftData?.start_time){value=options.shiftData.end_time;}",
-          "redrawOn": "options.shiftRedraw",
           "allowCalculateOverride": true,
           "input": true,
           "enableDate": false,
           "enableTime": true,
-          "format": "hh:mm A",
-          "placeholder": "hh:mm AM",
+          "format": "HH:mm",
+          "placeholder": "HH:mm",
+          "hourStep": 1,
+          "minuteStep": 1,
           "customClass": "mb-4",
           "validate": {
             "customMessage": "To Time is required",
             "custom": "valid = ['Short Attendance Request', 'On Duty', 'Attendance Adjustment'].includes(data.request_type) ? !!input : true;"
           },
-          "customConditional": "show = [ 'Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
+          "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
           "widget": {
             "type": "calendar",
             "noCalendar": true,
             "enableTime": true,
-            "time_24hr": false,
-            "dateFormat": "h:i K"
+            "time_24hr": true,
+            "dateFormat": "H:i",
+            "minuteIncrement": 1,
+            "allowInput": true
           }
         },
         {

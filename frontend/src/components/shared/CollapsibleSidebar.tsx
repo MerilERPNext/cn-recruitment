@@ -54,6 +54,7 @@ interface SubMenuItem {
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   subItems?: SubSubMenuItem[];
+  permissionKey: string
 }
 
 interface NavigationItem {
@@ -84,11 +85,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(companyLogo) &&
-      companyLogo.length > 0 &&
-      currentEmployeeCompany
+    companyLogo.length > 0 &&
+    currentEmployeeCompany
       ? companyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany,
-      )
+          (company) => company.company_name === currentEmployeeCompany,
+        )
       : companyLogo?.[0];
   const logoToShow = matchedCompany?.company_logo || "logo not found";
   const originalCompanyName =
@@ -138,26 +139,31 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Leave Balance",
           icon: Calculator,
           href: "/webapp/leave-app/leaves/leave-balance",
+          permissionKey: "Leave Balance",
         },
         {
           name: "My Requests",
           icon: User,
           href: "/webapp/leave-app/leaves/leave-requests/my",
+          permissionKey: "My Requests",
         },
         {
           name: "Team Requests",
           icon: Users,
           href: "/webapp/leave-app/leaves/leave-requests/team",
+          permissionKey: "Team Requests",
         },
         {
           name: "Holidays",
           icon: Calendar,
           href: "/webapp/leave-app/leaves/holidays",
+          permissionKey: "Holidays",
         },
         {
           name: "Compensatory",
           icon: User,
           href: "/webapp/leave-app/compensatory-request",
+          permissionKey: "Compensatory",
         },
       ],
     },
@@ -171,41 +177,49 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Attendance Summary",
           icon: CheckCircle,
           href: "/webapp/attendance/summary",
+          permissionKey: "Attendance Summary",
         },
         {
           name: "My Attendance",
           icon: Calendar,
           href: "/webapp/attendance/emp-attendance",
+          permissionKey: "My Attendance",
         },
         {
           name: "Team Attendance",
           icon: Users,
           href: "/webapp/attendance/team-attendance",
+          permissionKey: "Team Attendance",
         },
         {
           name: "My Requests",
           icon: Clock,
           href: "/webapp/attendance/attendance-request",
+          permissionKey: "My Requests",
         },
         {
           name: "Team Requests",
           icon: Users,
           href: "/webapp/attendance/team-attendance-requests",
+          permissionKey: "Team Requests",
         },
         {
-          name: "My Overtime",
+          name: "Planned Overtime",
           icon: TimerIcon,
           href: "/webapp/attendance/my-overtime-requests",
+          permissionKey: "My Overtime",
         },
         {
           name: "Team Overtime",
           icon: Users,
           href: "/webapp/attendance/team-overtime-requests",
+          permissionKey: "Team Overtime",
         },
         {
           name: "All Shifts",
           icon: ArrowUpDown,
           href: "/webapp/shift-request/all-shifts-dashboard",
+          permissionKey: "All Shifts",
         },
       ],
     },
@@ -219,72 +233,86 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Pay Package",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/pay-package",
+          permissionKey: "Pay Package",
         },
         {
           name: "IT Declaration",
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/it-declaration-form",
+          permissionKey: "IT Declaration",
         },
         {
           name: "Team IT Declaration",
           icon: Sheet,
           href: "/webapp/salary-slip-app/team-it-declaration-form",
+          permissionKey: "Team IT Declaration",
         },
         {
           name: "Tax Declaration Sheet",
           icon: Wallet,
           href: "/webapp/salary-slip-app/income-tax-sheet",
+          permissionKey: "Tax Declaration Sheet",
         },
-        
+
         {
           name: "Annual CTC",
           icon: Calculator,
           href: "/webapp/salary-slip-app/ctc-salary-breakdown?view=annual",
+          permissionKey: "Annual CTC",
         },
         {
           name: "Invoice",
           icon: FileSpreadsheet,
           href: "/webapp/salary-slip-app/invoice-page",
+          permissionKey: "Invoice",
         },
         {
           name: "Salary Slip",
           icon: CreditCard,
           href: "/webapp/salary-slip-app/salary-slip-list",
+          permissionKey: "Salary Slip",
         },
         {
           name: "Extra Payment",
           icon: HandCoins,
           href: "/webapp/salary-slip-app/extra-payment",
+          permissionKey: "Extra Payment",
         },
         {
           name: "My Loan Requests",
           icon: BadgeIndianRupee,
           href: "/webapp/salary-slip-app/my-loan-requests",
+          permissionKey: "My Loan Requests",
         },
         {
           name: "Team Loan Requests",
           icon: Users,
           href: "/webapp/salary-slip-app/team-loan-requests",
+          permissionKey: "Team Loan Requests",
         },
         {
           name: "My Advances",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/advances-list",
+          permissionKey: "My Advances",
         },
         {
           name: "Team Advances",
           icon: Coins,
           href: "/webapp/salary-slip-app/team-advances-list",
+          permissionKey: "Team Advances",
         },
         {
           name: "Perquisite",
           icon: IndianRupee,
           href: "/webapp/salary-slip-app/perquisite-list",
+          permissionKey: "Perquisite",
         },
         {
           name: "Payroll Documents",
           icon: FileText,
           href: "/webapp/salary-slip-app/hr-payroll",
+          permissionKey: "Payroll Documents",
         },
       ],
     },
@@ -298,21 +326,25 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "My Benefits",
           icon: Gift,
           href: "/webapp/benefits-app/my-benefits",
+          permissionKey: "My Benefits",
         },
         {
           name: "My Requests",
           icon: Users,
           href: "/webapp/benefits-app/my-requests",
+          permissionKey: "My Requests",
         },
         {
           name: "Team Requests",
           icon: Users,
           href: "/webapp/benefits-app/my-team-requests",
+          permissionKey: "Team Requests",
         },
         {
           name: "Benefit Slips",
           icon: Calculator,
           href: "/webapp/benefits-app/benefits-slips",
+          permissionKey: "Benefit Slips",
         },
       ],
     },
@@ -327,44 +359,51 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Expense Claims",
           icon: IndianRupee,
           href: "/webapp/expenses-app/expenses-list",
+          permissionKey: "Expense Claims",
         },
         {
           name: "Team Requests",
           icon: Users,
           href: "/webapp/expenses-app/team-requests",
+          permissionKey: "Team Requests",
         },
         {
           name: "My Advances",
           icon: ArrowUpDown,
           href: "/webapp/expenses-app/my-advance-expense",
+          permissionKey: "My Advances",
         },
         {
           name: "Team Advances",
           icon: ArrowUpDown,
           href: "/webapp/expenses-app/team-advance-expense",
+          permissionKey: "Team Advances",
         },
       ],
     },
     {
       icon: Workflow,
-      label: "Flows",
+      label: "HR Process",
       path: "/webapp/flow-app",
-      permissionKey: "Flows",
+      permissionKey: "HR Process",
       subItems: [
         {
           name: "Flow Requests",
           icon: ArrowDownUp,
           href: "/webapp/flow-app/flow-requests",
+          permissionKey: "Flow Requests",
         },
         {
           name: "Separation",
           icon: SeparatorHorizontal,
           href: "/webapp/flow-app/separation",
+          permissionKey: "Separation",
         },
         {
           name: "Confirmation",
           icon: CircleCheckBig,
           href: "/webapp/flow-app/confirmation",
+          permissionKey: "Confirmation",
         },
       ],
     },
@@ -378,16 +417,19 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Overview",
           icon: Telescope,
           href: "/webapp/performance-app/overview",
+          permissionKey: "Overview",
         },
         {
           name: "New Goal Plan",
           icon: Goal,
           href: "/webapp/performance-app/new-goal-plan",
+          permissionKey: "New Goal Plan",
         },
         {
           name: "Performance Review",
           icon: ChartNoAxesCombined,
           href: "/webapp/performance-app/performance-review",
+          permissionKey: "Performance Review",
         },
       ],
     },
@@ -407,11 +449,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Overview",
           icon: Telescope,
           href: "/webapp/recruitment/overview",
+          permissionKey: "Overview",
         },
         {
           name: "Requisitions",
           icon: FileText,
           href: "/webapp/recruitment/requisition",
+          permissionKey: "Requisitions",
         },
       ],
     },
@@ -456,7 +500,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
         const filteredSubItems = item.subItems.filter((subItem) => {
           const pagePermission = appPermission.pages?.find(
-            (page) => page.page_name === subItem.name,
+            (page) => page.page_name === subItem.permissionKey,
           );
           return pagePermission && pagePermission.enabled;
         });
@@ -604,8 +648,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         `}
       </style>
       <aside
-        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${isExpanded ? "w-64" : "w-20"
-          }`}
+        className={`fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-sm overflow-y-auto scrollbar-hide transition-all duration-300 ease-in-out z-20 ${
+          isExpanded ? "w-64" : "w-20"
+        }`}
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -626,8 +671,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   className="w-12 h-12 rounded-full  flex-shrink-0"
                 />
                 <div
-                  className={`transition-all duration-300 flex flex-col justify-center ${isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
-                    }`}
+                  className={`transition-all duration-300 flex flex-col justify-center ${
+                    isExpanded ? "opacity-100" : "opacity-0 -translate-x-2"
+                  }`}
                 >
                   <Typography
                     variant="subheading"
@@ -700,10 +746,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           )}
                         </div>
                         <span
-                          className={`transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           <Typography
                             variant="bodySmall"
@@ -721,30 +768,33 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                       </div>
                       {isExpanded && (
                         <ChevronRight
-                          className={`h-4 w-4 transition-transform duration-200  ${isDropdownOpen || isAnySubItemActive
-                            ? "rotate-90"
-                            : ""
-                            }`}
+                          className={`h-4 w-4 transition-transform duration-200  ${
+                            isDropdownOpen || isAnySubItemActive
+                              ? "rotate-90"
+                              : ""
+                          }`}
                         />
                       )}
                     </div>
                   ) : (
                     <Link
                       to={item.path}
-                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${isItemDirectlyActive
-                        ? "bg-primary-500 text-white hover:text-white"
-                        : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                        }`}
+                      className={`flex items-center justify-between w-full h-12 px-3 rounded-lg text-sm font-medium transition-all duration-200 no-underline ${
+                        isItemDirectlyActive
+                          ? "bg-primary-500 text-white hover:text-white"
+                          : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
+                      }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <Icon className="h-5 w-5" />
                         </div>
                         <span
-                          className={`transition-all duration-300 ${isExpanded
-                            ? "opacity-100"
-                            : "opacity-0 -translate-x-2"
-                            }`}
+                          className={`transition-all duration-300 ${
+                            isExpanded
+                              ? "opacity-100"
+                              : "opacity-0 -translate-x-2"
+                          }`}
                         >
                           <Typography
                             variant="bodySmall"
@@ -781,18 +831,20 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     onClick={() =>
                                       handleSubItemClick(subItem.name, true)
                                     }
-                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${isSubActive || isSubDropdownOpen
-                                      ? "bg-primary-50 text-primary-600"
-                                      : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                      }`}
+                                    className={`flex items-center justify-between w-full h-8 pl-12 pr-3 text-sm rounded-lg transition-colors duration-150 cursor-pointer whitespace-nowrap  ${
+                                      isSubActive || isSubDropdownOpen
+                                        ? "bg-primary-50 text-primary-600"
+                                        : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
+                                    }`}
                                   >
                                     <div className="flex items-center space-x-2">
                                       <SubIcon className="h-3.5 w-3.5 opacity-70" />
                                       <span
-                                        className={`transition-all duration-300 whitespace-nowrap  ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
+                                        className={`transition-all duration-300 whitespace-nowrap  ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                        }`}
                                       >
                                         <Typography
                                           variant="bodySmall"
@@ -804,11 +856,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       </span>
                                     </div>
                                     <ChevronRight
-                                      className={`h-3 w-3 transition-transform duration-200 ${isSubDropdownOpen ||
+                                      className={`h-3 w-3 transition-transform duration-200 ${
+                                        isSubDropdownOpen ||
                                         isAnySubSubItemActive
-                                        ? "rotate-90"
-                                        : ""
-                                        }`}
+                                          ? "rotate-90"
+                                          : ""
+                                      }`}
                                     />
                                   </div>
                                 ) : (
@@ -817,9 +870,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     className={`
                                               group flex items-center w-full h-8 p-4 text-sm no-underline whitespace-nowrap
                                               relative left-5 border-l border-gray-400 transition-colors duration-300
-                                              ${isSubActive
-                                        ? "text-primary"
-                                        : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"}
+                                              ${
+                                                isSubActive
+                                                  ? "text-primary"
+                                                  : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"
+                                              }
                                   `}
                                   >
                                     {/* dot */}
@@ -846,10 +901,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                     <div className="flex items-center justify-start space-x-2">
                                       {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
                                       <span
-                                        className={`transition-all duration-300 whitespace-nowrap ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
+                                        className={`transition-all duration-300 whitespace-nowrap ${
+                                          isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                        }`}
                                       >
                                         <Typography
                                           variant="bodySmall"
@@ -877,18 +933,20 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                             <Link
                                               key={subSubItem.name}
                                               to={subSubItem.href}
-                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${isSubSubActive
-                                                ? "bg-primary-500 text-white hover:text-white"
-                                                : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
-                                                }`}
+                                              className={`flex items-center w-full h-7 pl-14 pr-3 text-xs rounded-lg transition-colors duration-150 no-underline whitespace-nowrap ${
+                                                isSubSubActive
+                                                  ? "bg-primary-500 text-white hover:text-white"
+                                                  : "text-text-body1 hover:bg-primary-50 hover:text-primary-600"
+                                              }`}
                                             >
                                               <div className="flex items-center space-x-2">
                                                 <SubSubIcon className="h-3 w-3 opacity-70" />
                                                 <span
-                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${isExpanded
-                                                    ? "opacity-100 translate-x-0"
-                                                    : "opacity-0 -translate-x-2"
-                                                    }`}
+                                                  className={`font-medium transition-all duration-300 whitespace-nowrap ${
+                                                    isExpanded
+                                                      ? "opacity-100 translate-x-0"
+                                                      : "opacity-0 -translate-x-2"
+                                                  }`}
                                                 >
                                                   <Typography
                                                     variant="bodySmall"

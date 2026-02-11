@@ -119,6 +119,8 @@ export type PlannedOvertimeRequest = {
   reason: string | null;
   doctype: string;
   overtime_details: OvertimeDetail[];
+
+  employee_name?: string;
 };
 
 export interface MyPlannedAttendanceRequest {
@@ -138,6 +140,7 @@ export interface MyPlannedAttendanceRequest {
   status: string;
   date?: string;
   description?: string;
+  allocated_to_name?: string;
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;
@@ -203,8 +206,8 @@ export type EmployeeTeamCheckIns = {
     checked_in_count: number;
     not_checked_in_count: number;
     total_employees: number;
-  }
-}
+  };
+};
 
 export type EmployeeStatusType =
   | "present"
@@ -454,7 +457,6 @@ export interface IOvertimeLog {
   compoff_created: number;
   owner: string;
 }
-
 
 /* =======================
    Types

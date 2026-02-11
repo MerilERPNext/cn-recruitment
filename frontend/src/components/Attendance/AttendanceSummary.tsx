@@ -205,7 +205,7 @@ const AttendanceSummary = () => {
         },
         {
           id: "my_overtime",
-          title: "My Overtime",
+          title: "Planned Overtime",
           subtitle: "Pending Requests",
           value: employeeAttendanceSummary?.my_overtime_requests || 0,
           icon: "FileText",

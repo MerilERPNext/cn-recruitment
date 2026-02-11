@@ -436,3 +436,33 @@ code {
 
 /* Ensure the drawer itself allows content to overflow slightly for shadows/etc if needed */
 /* But since we use dropdown: body, the actual dropdown list is outside this hierarchy */
+
+/* Document Viewer Modal Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+

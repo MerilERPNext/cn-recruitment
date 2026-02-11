@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
-import { LeaveRequestRefreshProvider } from "./Leaves/LeaveRequestRefreshContext";
-import { RequestLeaveModalProvider } from "./Leaves/RequestLeaveModalContext";
+import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
@@ -24,7 +23,6 @@ import Modal from "./Compansation/Advances/commonModal";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import InitiateFlow from "./Flows/Initiate/InitiateFlow";
-import RequestLeave from "./Leaves/RequestLeave";
 import HeaderBar from "./HeaderBar";
 import { createPortal } from "react-dom";
 
@@ -34,7 +32,7 @@ const Requests = () => {
 
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
-  const [showLeaveRequest, setShowLeaveRequest] = useState(false);
+  const { openModal } = useRequestLeaveModal();
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
@@ -61,7 +59,7 @@ const Requests = () => {
           <div
             className="shadow-sm hover-lift rounded-lg cursor-pointer 
         h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowLeaveRequest(true)}
+            onClick={() => openModal()}
           >
             <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
               <Calendar className="w-5 h-5 text-blue-600" />
@@ -176,32 +174,6 @@ const Requests = () => {
               <AttendanceRequestFormV2
                 onClose={() => setShowAttendanceRequest(false)}
               />
-            </div>
-          </div>
-        )}
-        {showLeaveRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div
-  className="
-    bg-white
-    rounded-lg
-    w-full
-    mx-0 sm:mx-4
-    h-full sm:h-auto
-    max-h-screen sm:max-h-[90vh]
-    overflow-y-auto
-    sm:max-w-2xl
-  "
->
-              {/* Ensure LeaveRequest is inside its providers */}
-              <LeaveRequestRefreshProvider>
-                <RequestLeaveModalProvider>
-                  <RequestLeave
-                    onCancel={() => setShowLeaveRequest(false)}
-                    onSuccess={() => setShowLeaveRequest(false)}
-                  />
-                </RequestLeaveModalProvider>
-              </LeaveRequestRefreshProvider>
             </div>
           </div>
         )}

@@ -18,6 +18,7 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -33,6 +34,31 @@ const AdvancesList: React.FC = () => {
   const employeeId = user?.employee ?? "";
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: advancesData, refetch } = useEmployeeAdvances(employeeId || "");
+
+  type AmountRowProps = {
+    label: string;
+    value: number;
+    maskAmounts: boolean;
+  };
+
+  const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
+    return (
+      <div className="mt-0 pt-3">
+        <div className="flex justify-between text-sm text-gray-600">
+          <span className="text-gray-600 text-xs uppercase tracking-wide">
+            {label}
+          </span>
+          {maskAmounts ? (
+            <span className="blur-sm select-none text-gray-400">
+              {RupeeSymbolPerfix("XX,XXX")}
+            </span>
+          ) : (
+            <span className="font-medium">{formatCurrency(value)}</span>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   useEffect(() => {
     if (refetchAttendance) {
@@ -104,17 +130,119 @@ const AdvancesList: React.FC = () => {
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const DesktopLayout = () => (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex justify-between">
-            <div>
-              <Typography variant="h4"> My Advance Request</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your advance requests
-              </Typography>
+    <>
+      {formattedData.map((advance, index) => (
+        <div
+          key={`${advance.name}-${index}`}
+          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+          onClick={() => handleViewInstallments(advance)}
+        >
+          {/* Advance Name */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {advance.name}
+          </Typography>
+
+          {/* Amount */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {maskAmounts ? (
+              <span className="blur-sm select-none text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
+            ) : (
+              <span>{formatCurrency(advance.amount)}</span>
+            )}
+          </Typography>
+
+          {/* Deductions */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {maskAmounts ? (
+              <span className="blur-sm select-none text-gray-400">
+                {RupeeSymbolPerfix("XX,XXX")}
+              </span>
+            ) : (
+              <span>{advance.numberOfDeductions}</span>
+            )}
+          </Typography>
+
+          {/* Start Date */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(advance.startDate)}
+          </Typography>
+
+          {/* End Date */}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(advance.endDate)}
+          </Typography>
+
+          {/* Status with Tooltip */}
+          <div className="flex items-center justify-center">
+            <Tooltip content={advance.employee_name}>
+              <StatusBadge status={advance.advanceStatus} />
+            </Tooltip>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
+  const MobileLayout = () => (
+    <>
+      {formattedData.map((advance, index) => (
+        // CHANGED: Using .my-content-card for a consistent card style
+        <div
+          key={`${advance.name}-${index}`}
+          className="my-content-card cursor-pointer"
+          onClick={() => handleViewInstallments(advance)}
+        >
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                {advance.name}
+              </h3>
             </div>
-            <div className="flex items-center gap-5">
+            <StatusBadge status={advance.advanceStatus} />
+          </div>
+          <AmountRow
+            label="Total Amount"
+            value={advance.amount}
+            maskAmounts={maskAmounts}
+          />
+
+          <AmountRow
+            label="Deduction Amount"
+            value={advance.numberOfDeductions}
+            maskAmounts={maskAmounts}
+          />
+
+          <div className="mt-0 pt-3">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>
+                <strong>{formatToIndianDate(advance.startDate)}</strong> to{" "}
+                <strong>{formatToIndianDate(advance.endDate)}</strong>
+              </span>
+              <span>{advance.installments.length} installments</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop && (
+              <div>
+                <Typography variant="h4"> My Advance Request</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your advance requests
+                </Typography>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
                 className="my-btn-secondary flex items-center gap-2"
@@ -149,212 +277,22 @@ const AdvancesList: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Table Wrapper */}
-        <div className="px-4">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            {formattedData.map((advance, index) => (
-              <div
-                key={`${advance.name}-${index}`}
-                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
-                onClick={() => handleViewInstallments(advance)}
-              >
-                {/* Advance Name */}
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {advance.name}
-                </Typography>
-
-                {/* Amount */}
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none text-gray-400">
-                      ₹XX,XXX
-                    </span>
-                  ) : (
-                    <span>{formatCurrency(advance.amount)}</span>
-                  )}
-                </Typography>
-
-                {/* Deductions */}
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {maskAmounts ? (
-                    <span className="blur-sm select-none text-gray-400">
-                      ₹XX,XXX
-                    </span>
-                  ) : (
-                    <span>{advance.numberOfDeductions}</span>
-                  )}
-                </Typography>
-
-                {/* Start Date */}
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {formatToIndianDate(advance.startDate)}
-                </Typography>
-
-                {/* End Date */}
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {formatToIndianDate(advance.endDate)}
-                </Typography>
-
-                {/* Status with Tooltip */}
-                <div className="flex items-center justify-center">
-                  <Tooltip content={advance.employee_name}>
-                    <StatusBadge status={advance.advanceStatus} />
-                  </Tooltip>
-                </div>
-              </div>
-            ))}
-
-            {/* Empty State */}
-            {formattedData.length === 0 && (
-              <div className="text-center py-12 px-4 text-gray-500">
-                No advances found.
-              </div>
-            )}
-          </CardTable>
-        </div>
-      </div>
-    </div>
-  );
-
-  const MobileLayout = () => (
-    <div className="min-h-screen w-full bg-gray-50">
-      <div className="p-0 space-y-3">
-        <div className="flex items-center justify-between gap-4">
-          {/* CHANGED: Using .my-btn-secondary */}
-          <button
-            onClick={() => setMaskAmounts(!maskAmounts)}
-            className="my-btn-secondary"
-            title={maskAmounts ? "Show amounts" : "Hide amounts"}
-          >
-            {maskAmounts ? (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Show Amounts
-                </span>
-                <BsToggleOff className="w-6 h-6 text-gray-400" />
-              </>
-            ) : (
-              <>
-                <span className="text-sm font-medium text-gray-700">
-                  Hide Amounts
-                </span>
-                <BsToggleOn className="w-6 h-6 text-primary" />{" "}
-                {/* CHANGED: Using brand color */}
-              </>
-            )}
-          </button>
-          {/* CHANGED: Using .my-btn-primary */}
-          <button
-            onClick={handleCreateAdvance}
-            className="my-btn-primary flex items-center gap-2 whitespace-nowrap"
-          >
-            Create Advance
-          </button>
-        </div>
-
-        {formattedData.map((advance, index) => (
-          // CHANGED: Using .my-content-card for a consistent card style
-          <div
-            key={`${advance.name}-${index}`}
-            className="my-content-card cursor-pointer"
-            onClick={() => handleViewInstallments(advance)}
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                  {advance.name}
-                </h3>
-              </div>
-              <div className=" text-start relative group inline-block overflow-visible">
-                <StatusBadge status={advance.advanceStatus} />
-
-                {/* Tooltip */}
-                <div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-               opacity-0 invisible group-hover:opacity-100 group-hover:visible
-               transition-all duration-150 ease-out pointer-events-none
-               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-               shadow-lg z-50"
-                >
-                  {advance.employee_name}
-                </div>
-              </div>
-            </div>
-            <div className="mt-0 pt-3">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">
-                  Total Amount
-                </span>
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
-                ) : (
-                  <span className="font-medium">
-                    {formatCurrency(advance.amount)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="mt-0 pt-3">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span className="text-gray-600 text-xs uppercase tracking-wide">
-                  Deduction Amount
-                </span>
-                {maskAmounts ? (
-                  <span className="blur-sm select-none text-gray-400">
-                    ₹XX,XXX
-                  </span>
-                ) : (
-                  <span className="font-medium">
-                    {formatCurrency(advance.numberOfDeductions)}
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="mt-0 pt-3">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>
-                  <strong>{formatToIndianDate(advance.startDate)}</strong> to{" "}
-                  <strong>{formatToIndianDate(advance.endDate)}</strong>
-                </span>
-                <span>{advance.installments.length} installments</span>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
 
-      {formattedData.length === 0 && (
-        <div className="text-center py-12 px-4">
-          <p className="text-gray-500">No advances found.</p>
-        </div>
-      )}
-    </div>
-  );
+      {/* Table Wrapper */}
+      <div className="flex-1 overflow-y-auto md:px-4 pb-4">
+        <CardTable titles={titles} columnWidths={columnWidths}>
+          {isDesktop ? <DesktopLayout /> : <MobileLayout />}
 
-  return (
-    <div>
-      {isDesktop ? <DesktopLayout /> : <MobileLayout />}
+          {/* Empty State */}
+          {formattedData.length === 0 && (
+            <div className="text-center py-12 px-4 text-gray-500">
+              No advances found.
+            </div>
+          )}
+        </CardTable>
+      </div>
 
-      {/* Modal for Advance Form */}
       {showAdvanceForm && (
         <Modal onClose={handleCloseModal}>
           <AdvanceForm user={user} onClose={handleCloseModal} />

@@ -24,7 +24,6 @@
           "errorLabel": "Start Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
-         
           "input": true
         },
         {
@@ -35,8 +34,16 @@
           "enableDate": false,
           "enableTime": true,
           "input": true,
-          "widget": { "type": "calendar" },
-          "validate": { "required": true }
+          "widget": {
+            "type": "calendar",
+            "showMeridian": false
+          },
+          "timePicker": {
+            "showMeridian": false
+          },
+          "validate": {
+            "required": true
+          }
         },
         {
           "type": "datetime",
@@ -45,7 +52,6 @@
           "errorLabel": "End Date",
           "format": "dd-MM-yyyy",
           "enableTime": false,
-         
           "input": true
         },
         {
@@ -56,20 +62,26 @@
           "enableDate": false,
           "enableTime": true,
           "input": true,
-          "widget": { "type": "calendar" },
-          "validate": { "required": true }
+          "widget": {
+            "type": "calendar",
+            "showMeridian": false
+          },
+          "timePicker": {
+            "showMeridian": false
+          },
+          "validate": {
+            "required": true
+          }
         },
         {
           "type": "textfield",
           "key": "message",
           "label": "Message",
           "errorLabel": "Message",
-         
           "input": true
         }
       ]
     },
-
     {
       "type": "file",
       "key": "attachment",
@@ -79,6 +91,9 @@
       "storage": "customfiles",
       "fileReader": false,
       "privateDownload": false,
+      "validate": {
+        "required": false
+      },
       "conditional": {
         "show": true,
         "when": "show_attachment",

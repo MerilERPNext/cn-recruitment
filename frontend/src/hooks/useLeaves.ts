@@ -424,12 +424,14 @@ export function useCreateLeaveApplication() {
       leaveService.createLeaveApplication(leaveData),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["custom-api"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["custom-api-infinite"],
-      });
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+      }, 1500);
     },
   });
 }
@@ -458,7 +460,6 @@ export function useUpdateRejectionReason() {
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       leaveService.updateRejectionReason(id, reason),
     onSuccess: () => {
-      // Invalidate relevant queries if needed, mainly specific document or list
       queryClient.invalidateQueries({ queryKey: ["teamRequests"] });
       queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
     },
@@ -468,3 +469,23 @@ export function useUpdateRejectionReason() {
     },
   });
 }
+
+export const useIsRejectionReasonMandatory = () => {
+  return useQuery<{ message: boolean }>({
+    queryKey: ["isRejectionReasonMandatory"],
+    queryFn: leaveService.isRejectionReasonMandatory,
+    staleTime: Infinity,
+  });
+};
+
+export const useCheckAttachmentMandatory = (leaveType: string | undefined) => {
+  return useQuery({
+    queryKey: ["checkAttachmentMandatory", leaveType],
+    queryFn: () => {
+      if (!leaveType) throw new Error("Leave type is required");
+      return leaveService.checkAttachmentMandatory(leaveType);
+    },
+    enabled: !!leaveType,
+    staleTime: 5 * 60 * 1000,
+  });
+};

@@ -8,11 +8,15 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { RupeeSymbolPerfix } from "../../../utils/currency";
 
-const formatINR = (num: number) => `₹ ${num.toLocaleString("en-IN")}`;
+const formatINR = (num: number) =>
+  `${RupeeSymbolPerfix(num.toLocaleString("en-IN"))}`;
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
+  const { isDesktop } = useScreenSize();
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
@@ -45,17 +49,22 @@ export default function Invoice() {
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
-    <div className="max-h-screen flex flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="border-gray-100">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <div>
-              <Typography variant="h4">Invoices</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your invoices
-              </Typography>
-            </div>
-            {/* Hide Amount Toggle */}
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between">
+            {isDesktop ? (
+              <div>
+                <Typography variant="h4">Invoices</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your invoices
+                </Typography>
+              </div>
+            ) : (
+              <div>
+                <Typography variant="h4">My Invoices</Typography>
+              </div>
+            )}
             <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
               <span className="text-sm text-gray-600">
                 {hideAmount ? "Show Amount" : "Hide Amount"}
@@ -75,78 +84,78 @@ export default function Invoice() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="px-4">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            {invoices.map((inv: any, idx: number) => {
-              const invoiceNo = inv.name;
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+        <CardTable titles={titles} columnWidths={columnWidths}>
+          {invoices.map((inv: any, idx: number) => {
+            const invoiceNo = inv.name;
 
-              return (
-                <div
-                  key={invoiceNo || idx}
-                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                  style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+            return (
+              <div
+                key={invoiceNo || idx}
+                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+              >
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
                 >
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-center"
-                  >
-                    {invoiceNo}
-                  </Typography>
+                  {invoiceNo}
+                </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-center"
-                  >
-                    {inv.start_date}
-                  </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {inv.start_date}
+                </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-center"
-                  >
-                    {inv.end_date}
-                  </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {inv.end_date}
+                </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className="font-medium text-center"
-                  >
-                    {inv.employee_name}
-                  </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center"
+                >
+                  {inv.employee_name}
+                </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className={`font-medium text-center ${amountClass}`}
-                  >
-                    {formatINR(inv.gross_pay || 0)}
-                  </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className={`font-medium text-center ${amountClass}`}
+                >
+                  {formatINR(inv.gross_pay || 0)}
+                </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className={`font-medium text-center ${amountClass}`}
-                  >
-                    {formatINR(inv.net_pay || 0)}
-                  </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className={`font-medium text-center ${amountClass}`}
+                >
+                  {formatINR(inv.net_pay || 0)}
+                </Typography>
 
-                  <div className="flex items-center justify-center">
-                    <InvoicePDFview
-                      invoiceID={invoiceNo}
-                      disabled={false}
-                      onClick={handleInvoiceClick}
-                    />
-                  </div>
+                <div className="flex items-center justify-center">
+                  <InvoicePDFview
+                    invoiceID={invoiceNo}
+                    disabled={false}
+                    onClick={handleInvoiceClick}
+                  />
                 </div>
-              );
-            })}
-
-            {invoices.length === 0 && (
-              <div className="py-10 text-center text-gray-500">
-                No invoices found
               </div>
-            )}
-          </CardTable>
-        </div>
+            );
+          })}
+
+          {invoices.length === 0 && (
+            <div className="py-10 text-center text-gray-500">
+              No invoices found
+            </div>
+          )}
+        </CardTable>
       </div>
     </div>
   );

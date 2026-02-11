@@ -16,7 +16,6 @@ import CardTable from "../shared/CardTable";
 import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
-import getShiftStatus from "../../utils/getShiftStatus";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import StatusBadge from "../shared/atoms/statusBadge";
 
@@ -45,7 +44,6 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-  const shiftStatus = getShiftStatus(item.start_date, item.end_date);
 
   return (
     <li className="my-list-item-card">
@@ -62,7 +60,7 @@ const MyShiftItem: React.FC<{
           {formatToIndianDate(item.start_date)} - {formatEndDate(item.end_date)}
         </p>
       </div>
-      <StatusBadge status={shiftStatus} />
+      <StatusBadge status={item?.shift_status} />
     </li>
   );
 };
@@ -75,7 +73,7 @@ const MyShifts: React.FC = () => {
   return (
     <Card>
       <CardHeader
-        title="My Shifts"
+        title="My Shift"
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">

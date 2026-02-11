@@ -209,7 +209,39 @@ export const useFilterableFields = () => {
 };
 
 /**
+ * Fetch resolution history for a ticket
+ */
+export const useResolutionHistory = (ticketId: string) => {
+  return useQuery({
+    queryKey: ["resolution-history", ticketId],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod(
+        "helpdesk.api.resolution.get_resolution_history",
+        { ticket_id: ticketId }
+      );
+      return result as Array<{
+        name: string;
+        version_number: number;
+        resolution_content: string;
+        submitted_by: string;
+        submitted_by_name?: string;
+        submitted_on: string;
+        satisfaction_status: string;
+        satisfaction_by?: string;
+        satisfaction_by_name?: string;
+        satisfaction_on?: string;
+        rejection_reason?: string;
+        is_current_version: number;
+      }>;
+    },
+    enabled: !!ticketId,
+    ...defaultQueryOptions,
+  });
+};
+
+/**
  * Close ticket with resolution (for raiser/admin)
+ * Uses history-aware API to preserve resolution history
  */
 export const useCloseTicket = () => {
   const queryClient = useQueryClient();
@@ -224,26 +256,32 @@ export const useCloseTicket = () => {
       resolutionDetails?: string;
       status?: string;
     }) => {
-      const updateData: Record<string, unknown> = {
-        status,
-      };
+      // Save resolution with history tracking if provided
       if (resolutionDetails) {
-        updateData.resolution_details = resolutionDetails;
+        await FrappeAPI.callMethod(
+          "helpdesk.api.resolution.save_resolution_with_history",
+          {
+            ticket_id: ticketId,
+            resolution_content: resolutionDetails,
+          }
+        );
       }
 
+      // Then update the status
       const result = await FrappeAPI.updateDocument(
         "HD Ticket",
         ticketId,
-        updateData
+        { status }
       );
       return result;
     },
     onSuccess: async (_data, variables) => {
       // Refetch ticket detail immediately to update UI without refresh
       await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
-      // Invalidate list and stats to refresh on next view
+      // Invalidate list, stats, and resolution history to refresh on next view
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["resolution-history", variables.ticketId] });
     },
   });
 };

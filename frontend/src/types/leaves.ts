@@ -13,6 +13,7 @@ export interface LeaveRequest {
   half_day_date?: string;
   custom_second_half_day_date?: string;
   total_leave_days: number;
+  posting_date: string;
 }
 
 export interface TeamLeaveRequest {

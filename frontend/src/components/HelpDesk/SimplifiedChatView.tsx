@@ -1,11 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle } from "lucide-react";
+import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import {
   TicketDetail,
   useSendEmailReply,
   useCloseTicket,
   useCloseResolvedTicket,
   useRejectResolution,
+  useResolutionHistory,
   useUserLookup,
   useEmployeeByUserEmail,
 } from "../../hooks/useHelpDeskTickets";
@@ -16,6 +17,7 @@ import toast from "react-hot-toast";
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
   currentUserEmail: string;
+  isDrawer?: boolean;
 }
 
 interface SimpleChatMessage {
@@ -294,6 +296,7 @@ const RejectResolutionModal: React.FC<RejectResolutionModalProps> = ({
 const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   ticket,
   currentUserEmail,
+  isDrawer = false,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<"chat" | "resolution">("chat");
@@ -311,6 +314,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
   // User lookup for displaying names instead of emails
   const { data: userLookup } = useUserLookup();
+
+  // Resolution history
+  const { data: resolutionHistory } = useResolutionHistory(ticket.name);
+  const [expandedHistoryEntries, setExpandedHistoryEntries] = useState<Record<string, boolean>>({});
 
   // Check ticket status - only "Closed" is truly closed; "Resolved" requires user action
   const isTicketClosed = ticket.status === "Closed";
@@ -823,8 +830,11 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
 
     // Show resolution details
+    const historyEntries = resolutionHistory || [];
+    const pastEntries = historyEntries.filter((e) => !e.is_current_version);
+
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
@@ -874,12 +884,94 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             dangerouslySetInnerHTML={{ __html: ticket.resolution_details || "" }}
           />
         </div>
+
+        {/* Previous Resolutions */}
+        {pastEntries.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-4 h-4 text-gray-500" />
+              <h4 className="font-medium text-gray-700 text-sm">Previous Resolutions</h4>
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {pastEntries.length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {pastEntries.map((entry) => {
+                const isExpanded = expandedHistoryEntries[entry.name] || false;
+                return (
+                  <div
+                    key={entry.name}
+                    className="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+                          v{entry.version_number}
+                        </span>
+                        {entry.satisfaction_status && entry.satisfaction_status !== "Pending" && (
+                          <span
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                              entry.satisfaction_status === "Satisfied"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {entry.satisfaction_status}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {entry.submitted_by_name || entry.submitted_by} &middot;{" "}
+                        {entry.submitted_on
+                          ? new Date(entry.submitted_on).toLocaleDateString()
+                          : ""}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setExpandedHistoryEntries((prev) => ({
+                          ...prev,
+                          [entry.name]: !isExpanded,
+                        }))
+                      }
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mb-1"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <ChevronUp className="w-3 h-3" /> Hide details
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3 h-3" /> Show details
+                        </>
+                      )}
+                    </button>
+                    {isExpanded && (
+                      <div
+                        className="text-sm text-gray-600 prose prose-sm max-w-none mt-2"
+                        dangerouslySetInnerHTML={{
+                          __html: entry.resolution_content || "",
+                        }}
+                      />
+                    )}
+                    {entry.rejection_reason && (
+                      <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded p-2">
+                        <span className="font-medium">Rejection reason:</span>{" "}
+                        {entry.rejection_reason}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="h-screen flex flex-col bg-app">
+    <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
@@ -937,14 +1029,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             </>
           ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
             <>
-              <button
-                onClick={handleResolveButtonClick}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Resolve
-              </button>
+              {!isDrawer && (
+                <button
+                  onClick={handleResolveButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Resolve
+                </button>
+              )}
               <button
                 onClick={handleCloseButtonClick}
                 disabled={isClosing}

@@ -16,31 +16,31 @@ import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
+
 type TabName =
   | "leave-balance"
-  | "requests-status"
   | "holidays"
+  | "my-requests"
+  | "team-requests"
   | "compensatory";
-type SubTabName = "My Requests" | "Team Requests";
+
+
 
 const tabRoutes: Record<TabName, string> = {
   "leave-balance": "/webapp/leave-app/leaves/leave-balance",
   holidays: "/webapp/leave-app/leaves/holidays",
-  "requests-status": "/webapp/leave-app/leaves/leave-requests",
+  "my-requests": "/webapp/leave-app/leaves/leave-requests/my",
+  "team-requests": "/webapp/leave-app/leaves/leave-requests/team",
   compensatory: "/webapp/leave-app/compensatory-request",
-};
-
-const subTabRoutes: Record<SubTabName, string> = {
-  "My Requests": "/webapp/leave-app/leaves/leave-requests/my",
-  "Team Requests": "/webapp/leave-app/leaves/leave-requests/team",
 };
 
 const LeaveAppInner: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: uiPermissions } = useGetUiPermission();
+  console.log("ui permission for leave", uiPermissions);
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
-  const [activeSubTab, setActiveSubTab] = useState<SubTabName>("My Requests");
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -49,22 +49,55 @@ const LeaveAppInner: React.FC = () => {
     "My Requests",
   );
 
-  const tabs: Tab[] = useMemo(
-    () => [
-      { key: "leave-balance", label: "Leave Balance" },
-      { key: "holidays", label: "Holidays" },
-      { key: "requests-status", label: "Request Status" },
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      {
+        key: "leave-balance",
+        label: "Leave Balance",
+        permissionKey: "Leave Balance",
+      },
+      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
+      {
+        key: "my-requests",
+        label: "My Requests",
+        permissionKey: "My Requests",
+      },
+      {
+        key: "team-requests",
+        label: "Team Requests",
+        permissionKey: "Team Requests",
+      },
       {
         key: "compensatory",
         label: "Compensatory",
+        permissionKey: "Compensatory",
       },
-    ],
-    [],
-  );
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const leaveAppPermission = userUiPermission.find(
+      (perm) => perm.app_name === "Leaves and Holidays",
+    );
+
+    if (!leaveAppPermission || !leaveAppPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = leaveAppPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
-  const isLeaveRequestsActive = activeTab === "requests-status";
   const isHolidaysActive = activeTab === "holidays";
 
   const isViewAllActive = location.pathname.includes("/actioned");
@@ -77,25 +110,22 @@ const LeaveAppInner: React.FC = () => {
     if (matchedTab) {
       setActiveTab(matchedTab);
     }
-
-    if (location.pathname.includes("/leave-requests/")) {
-      const matchedSubTab = (Object.keys(subTabRoutes) as SubTabName[]).find(
-        (subTab) => location.pathname.startsWith(subTabRoutes[subTab]),
-      );
-      if (matchedSubTab) {
-        setActiveSubTab(matchedSubTab);
-      }
-    }
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/leave-app") {
-      navigate(tabRoutes["leave-balance"], { replace: true });
+    if (location.pathname === "/webapp/leave-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      navigate(tabRoutes[firstTab], { replace: true });
     }
     if (location.pathname === "/webapp/leave-app/leaves/leave-requests") {
-      navigate(subTabRoutes["My Requests"], { replace: true });
+      const myRequestsTab = tabs.find((t) => t.key === "my-requests");
+      if (myRequestsTab) {
+        navigate(tabRoutes["my-requests"], { replace: true });
+      } else if (tabs.length > 0) {
+        navigate(tabRoutes[tabs[0].key as TabName], { replace: true });
+      }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
   useEffect(() => {
     if (showModal) {
@@ -111,16 +141,7 @@ const LeaveAppInner: React.FC = () => {
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
-    if (tab === "requests-status") {
-      navigate(subTabRoutes[activeSubTab]);
-    } else {
-      navigate(tabRoutes[tab]);
-    }
-  };
-
-  const handleSubTabChange = (subTab: SubTabName) => {
-    setActiveSubTab(subTab);
-    navigate(subTabRoutes[subTab]);
+    navigate(tabRoutes[tab]);
   };
 
   const mobileLayout = (
@@ -145,29 +166,9 @@ const LeaveAppInner: React.FC = () => {
           activeTab={activeTab}
           onTabChange={(tab) => handleTabChange(tab as TabName)}
         />
-
-        {isLeaveRequestsActive && (
-          <div className="px-4 py-2 border-b border-gray-200">
-            <div className="flex bg-white rounded-lg p-1 border border-gray-200">
-              {(Object.keys(subTabRoutes) as SubTabName[]).map((subTab) => (
-                <button
-                  key={subTab}
-                  onClick={() => handleSubTabChange(subTab)}
-                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
-                    activeSubTab === subTab
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {subTab}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </header>
 
-      <main className="z-100 flex-grow overflow-y-auto p-2">
+      <main className="z-100 flex-grow overflow-y-auto p-1">
         <Outlet />
       </main>
 
@@ -193,7 +194,7 @@ const LeaveAppInner: React.FC = () => {
         title="Request Leave"
         size="lg"
       >
-        <RequestLeave onSuccess={closeModal} />
+        <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
       </FormDialog>
     </div>
   );

@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -13,6 +11,7 @@ import {
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -82,29 +81,6 @@ const OvertimeApprovalCard = ({
     ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr"
     : "1fr 1.5fr 1fr 1fr 1fr";
 
-  const getStatus = (status: string) => {
-    if (status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-  const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
@@ -138,7 +114,8 @@ const OvertimeApprovalCard = ({
               className="font-medium text-center truncate"
             >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
-                {data?.username}
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
               </WrapperHoverCard>
             </Typography>
           </Link>
@@ -159,7 +136,7 @@ const OvertimeApprovalCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.status === "Open"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
@@ -179,7 +156,9 @@ const OvertimeApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 
+               border-x-primary/20 border-b-primary/20 
+               shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
@@ -203,33 +182,57 @@ const OvertimeApprovalCard = ({
             )}
 
             <div className="w-full">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <p className="card-title">
-                    {data?.reference_document?.employee}
-                  </p>
+                  <div className="flex flex-col gap-1">
+                    <Typography
+                      variant="mobileCardLabel"
+                      className="text-gray-500"
+                    >
+                      {data?.reference_document?.employee_name
+                        ? "Employee Name"
+                        : "Employee ID"}
+                    </Typography>
 
-                  <div className="flex gap-2">
-                    {data?.due_date && (
-                      <p className="card-subtitle">
-                        Due Date - {formatToIndianDate(data?.due_date)}
-                      </p>
-                    )}
+                    <Typography
+                      variant="mobileCardValue"
+                      className="font-semibold text-gray-900"
+                    >
+                      {data?.reference_document?.employee_name ||
+                        data?.reference_document?.employee}
+                    </Typography>
                   </div>
-                  <p className="card-subtitle mt-1 line-clamp-2">
-                    <span className="card-title">Description:</span>{" "}
-                    <div
-                      dangerouslySetInnerHTML={{ __html: cleanDescription }}
-                    />
-                  </p>
                 </div>
-                <Tooltip content={data?.allocated_to}>
-                  <Badge
-                    size="sm"
-                    label={status?.label as string}
-                    backgroundColor={status?.statusColor}
-                  />
-                </Tooltip>
+                <StatusBadge status={data?.status} />
+              </div>
+
+              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Allocated To
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {data?.username || data?.allocated_to}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Due Date
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.due_date)}
+                    </Typography>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Description
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {truncateByChars(cleanDescription, 40)}
+                  </Typography>
+                </div>
               </div>
 
               <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">

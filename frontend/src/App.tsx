@@ -29,6 +29,7 @@ import { setTargetEmployeeId } from "./utils/frappeAPI";
 import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
+import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
@@ -82,6 +83,7 @@ const App: React.FC = () => {
             <TargetUserSync />
             <LoadingOverlayProvider>
               <RequestLeaveModalProvider>
+                <GlobalLeaveRequestModal />
                 <Toaster position="top-center" containerClassName="z-50">
                   {(t) => (
                     <ToastBar

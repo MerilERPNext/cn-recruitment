@@ -490,7 +490,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           <div className="w-full overflow-x-auto">
             <div className="min-w-[640px]">
               {/* <div className="w-full"> */}
-              <div className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] text-xs font-medium text-gray-600 border-b pb-2 mb-2">
+              <div className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] text-xs font-medium text-gray-600 border-b pb-2 mb-2 text-center">
                 <div>#</div>
                 <div>Employee Type</div>
                 <div>Name</div>
@@ -563,10 +563,14 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                           />
                         ) : optionsSource && optionsSource.length > 0 ? (
                           <SearchableSelect
-                            options={optionsSource.map((opt) => ({
-                              value: opt.name,
-                              label: opt.employee_name ?? opt.name,
-                            }))}
+                            options={optionsSource
+                              .filter(
+                                (opt) => opt.name !== currentEmployee?.name
+                              )
+                              .map((opt) => ({
+                                value: opt.name,
+                                label: opt.employee_name ?? opt.name,
+                              }))}
                             value={row.name || ""}
                             onChange={(value, label) =>
                               updateRow(i, {
@@ -576,7 +580,12 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                             }
                             placeholder="Search employee..."
                             disabled={false}
-                            onSearch={searchEmployeesByQuery}
+                            onSearch={async (q) => {
+                              const res = await searchEmployeesByQuery(q);
+                              return res.filter(
+                                (op) => op.value !== currentEmployee?.name
+                              );
+                            }}
                           />
                         ) : (
                           <input
@@ -676,21 +685,21 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
               <button
                 onClick={addRow}
                 type="button"
-                className="px-3 py-1 border rounded"
+                className="px-3 py-1 border rounded-md"
               >
                 Add Participant
               </button>
               <button
                 onClick={resetParticipants}
                 type="button"
-                className="px-3 py-1 border rounded"
+                className="px-3 py-1 border rounded-md"
               >
                 RESET
               </button>
               <button
                 onClick={saveParticipants}
                 type="button"
-                className="px-3 py-1 rounded bg-red-600 text-white"
+                className="px-3 py-1 rounded-md bg-primary text-white"
               >
                 SAVE
               </button>

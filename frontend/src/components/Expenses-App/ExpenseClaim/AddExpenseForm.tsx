@@ -10,6 +10,7 @@ import {
   useGetUnitPrice,
   useUpdateExpense,
   useGetExpenseCategoryTypes,
+  useValidateExpense,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -24,6 +25,7 @@ import { Employee } from "../../../types/employee";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import Button from "../../shared/atoms/Button";
 
 export interface EmployeeOption {
   name: string;
@@ -46,12 +48,12 @@ interface Expense {
   merchant?: string;
   invoice_number?: string;
   attach_receipt?:
-    | {
-        name: string;
-        size: number;
-        url: string;
-      }[]
-    | string;
+  | {
+    name: string;
+    size: number;
+    url: string;
+  }[]
+  | string;
   [key: string]: any;
 }
 
@@ -103,6 +105,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   );
 
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+  const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
+  const [isAcknowledgementChecked, setIsAcknowledgementChecked] = useState(false);
 
   const { data: currentEmployee } = useCurrentEmployee();
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
@@ -118,6 +122,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { mutate: submitExpenseClaim, isPending } = usePostExpenseClaim();
 
   const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
+
+  const { mutateAsync: validateExpense, isPending: isValidating } =
+    useValidateExpense();
 
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
@@ -496,8 +503,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 mainFormData?.expenseType || mainFormData?.expense_type || "";
               const url = expenseClaimType
                 ? `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type?expense_claim_type=${encodeURIComponent(
-                    String(expenseClaimType),
-                  )}`
+                  String(expenseClaimType),
+                )}`
                 : `/api/method/chatnext_expense_trips.expense_claim.get_allowed_currencies_for_expense_claim_type`;
               return {
                 type: "select",
@@ -760,7 +767,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     await loading?.wrap(async () => {
       const participantsForClaim: any[] =
         (dynamicFormData?.participants &&
-        Array.isArray(dynamicFormData.participants)
+          Array.isArray(dynamicFormData.participants)
           ? dynamicFormData.participants
           : null) ||
         expenses.flatMap((e) =>
@@ -771,7 +778,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         employee: currentEmployee?.name,
         employee_name: currentEmployee?.employee_name,
         company: currentEmployee?.company,
-        posting_date: new Date().toISOString().split("T")[0],
+        posting_date: format(new Date(), "yyyy-MM-dd"),
         expenses: expenses.map(
           (
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -785,8 +792,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             );
 
             if (filteredRest.expense_date) {
+              let dateVal = filteredRest.expense_date;
+              // Treat plain IDO date string (YYYY-MM-DD) as local time to avoid timezone shifts
+              if (
+                typeof dateVal === "string" &&
+                /^\d{4}-\d{2}-\d{2}$/.test(dateVal)
+              ) {
+                dateVal += "T00:00:00";
+              }
               filteredRest.expense_date = format(
-                new Date(filteredRest.expense_date),
+                new Date(dateVal),
                 "yyyy-MM-dd",
               );
             }
@@ -827,6 +842,20 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }, "Submitting all expenses…");
   };
 
+  const handleInitialSubmit = () => {
+    setIsAcknowledgementChecked(false);
+    setIsAcknowledgementOpen(true);
+  };
+
+  const handleProceed = () => {
+    if (!isAcknowledgementChecked) {
+      toast.error("Please acknowledge the terms to proceed.");
+      return;
+    }
+    setIsAcknowledgementOpen(false);
+    submitAll();
+  };
+
   const handleEdit = (expense: Expense) => {
     setEditingExpenseId(expense.uid);
     const copy = { ...expense };
@@ -854,13 +883,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     clearFailedStatus(expense.uid);
   };
 
+
   const submitButtonLabel = isCalculating
     ? "Calculating..."
-    : isUpdating
-      ? "Updating..."
-      : isEditingFromDetailsPage || editingExpenseId
-        ? "Update"
-        : "Save";
+    : isValidating
+      ? "Validating..."
+      : isUpdating
+        ? "Updating..."
+        : isEditingFromDetailsPage || editingExpenseId
+          ? "Update"
+          : "Save";
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
@@ -990,16 +1022,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       ...dynamicFields.map((comp) => comp),
                       ...(isShareAllowed && !isEditingFromDetailsPage
                         ? [
-                            {
-                              type: "checkbox",
-                              key: "shareExpenseCheckbox",
-                              label: "Share Expense",
-                              customClass: "mt-4",
-                              disabled:
-                                isCalculating || !(dynamicFormData?.amount > 0),
-                              input: true,
-                            },
-                          ]
+                          {
+                            type: "checkbox",
+                            key: "shareExpenseCheckbox",
+                            label: "Share Expense",
+                            customClass: "mt-4",
+                            disabled:
+                              isCalculating || !(dynamicFormData?.amount > 0),
+                            input: true,
+                          },
+                        ]
                         : []),
                       {
                         type: "button",
@@ -1037,28 +1069,28 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       columns: [
                         ...(isShareAllowed && !isEditingFromDetailsPage
                           ? [
-                              {
-                                width: 6,
-                                components: [
-                                  {
-                                    type: "checkbox",
-                                    key: "shareExpenseCheckbox",
-                                    label: "Share Expense",
-                                    disabled:
-                                      isCalculating ||
-                                      !(
-                                        (editingExpenseId
-                                          ? (expenses.find(
-                                              (x) => x.uid === editingExpenseId,
-                                            )?.amount ??
-                                            dynamicFormData?.amount)
-                                          : dynamicFormData?.amount) > 0
-                                      ),
-                                    input: true,
-                                  },
-                                ],
-                              },
-                            ]
+                            {
+                              width: 6,
+                              components: [
+                                {
+                                  type: "checkbox",
+                                  key: "shareExpenseCheckbox",
+                                  label: "Share Expense",
+                                  disabled:
+                                    isCalculating ||
+                                    !(
+                                      (editingExpenseId
+                                        ? (expenses.find(
+                                          (x) => x.uid === editingExpenseId,
+                                        )?.amount ??
+                                          dynamicFormData?.amount)
+                                        : dynamicFormData?.amount) > 0
+                                    ),
+                                  input: true,
+                                },
+                              ],
+                            },
+                          ]
                           : []),
                         {
                           width: isShareAllowed ? 6 : 12,
@@ -1121,7 +1153,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     calcParams.expense_type === currentParams.expense_type &&
                     String(calcParams.units) === String(currentParams.units) &&
                     (calcParams.vehicle_type ?? "") ===
-                      (currentParams.vehicle_type ?? "");
+                    (currentParams.vehicle_type ?? "");
 
                   if (!calcMatches) {
                     setCalcParams(currentParams);
@@ -1167,6 +1199,51 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   amountFromApi = combinedData.amount ?? undefined;
                 }
 
+                try {
+                  const validationPayload = {
+                    employee: currentEmployee?.name,
+                    employee_name: currentEmployee?.employee_name,
+                    company: currentEmployee?.company,
+                    posting_date: format(new Date(), "yyyy-MM-dd"),
+                    expenses: [
+                      {
+                        ...combinedData,
+                        attach_receipt: combinedData.attach_receipt?.[0]?.url || null,
+                        expense_date: combinedData.expense_date
+                          ? format(
+                            new Date(combinedData.expense_date),
+                            "yyyy-MM-dd",
+                          )
+                          : undefined,
+                        start_datetime: combinedData.start_datetime
+                          ? format(
+                            new Date(combinedData.start_datetime),
+                            "yyyy-MM-dd HH:mm:ss",
+                          )
+                          : undefined,
+                        end_datetime: combinedData.end_datetime
+                          ? format(
+                            new Date(combinedData.end_datetime),
+                            "yyyy-MM-dd HH:mm:ss",
+                          )
+                          : undefined,
+                        expense_type: combinedData.expenseType,
+                        reimbursement_category: combinedData.expenseCategory,
+                        amount: amountFromApi ?? combinedData.amount,
+                      },
+                    ],
+                    participants:
+                      combinedData.participants ||
+                      dynamicFormData.participants ||
+                      [],
+                  };
+
+                  await validateExpense(JSON.stringify(validationPayload));
+                } catch (error) {
+                  console.error("Expense validation failed:", error);
+                  return;
+                }
+
                 const attachment =
                   combinedData.attach_receipt?.[0]?.url || null;
 
@@ -1180,14 +1257,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 if (isEditingFromDetailsPage) {
                   const participants = dynamicFormData?.participants
                     ? dynamicFormData.participants.map((p: any) => ({
-                        name: p.name,
-                        employee_type: p.employee_type || p.employeetype,
-                        employee: p.employee,
-                        employee_name: p.employee_name || p.employeename,
-                        guest_name: p.guest_name || p.guestname,
-                        percentage: p.percentage,
-                        allocated_amount: p.allocated_amount || p.amount,
-                      }))
+                      name: p.name,
+                      employee_type: p.employee_type || p.employeetype,
+                      employee: p.employee,
+                      employee_name: p.employee_name || p.employeename,
+                      guest_name: p.guest_name || p.guestname,
+                      percentage: p.percentage,
+                      allocated_amount: p.allocated_amount || p.amount,
+                    }))
                     : [];
                   updateExpense(
                     {
@@ -1347,7 +1424,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
                             <td className="px-2 py-2 align-top">
                               {p.percentage !== undefined &&
-                              p.percentage !== null
+                                p.percentage !== null
                                 ? `${p.percentage}%`
                                 : "-"}
                             </td>
@@ -1400,11 +1477,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               <button
                 onClick={handleDeleteSelected}
                 disabled={selectedExpenses.length === 0}
-                className={`px-4 py-2 rounded ${
-                  selectedExpenses.length === 0
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                }`}
+                className={`px-4 py-2 rounded ${selectedExpenses.length === 0
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-red-500 text-white hover:bg-red-600"
+                  }`}
               >
                 Delete Selected
               </button>
@@ -1443,9 +1519,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     return (
                       <tr
                         key={expense.uid}
-                        className={`border-t border-gray-200 hover:bg-gray-50 ${
-                          isFailed ? "bg-red-50 border-red-200" : ""
-                        }`}
+                        className={`border-t border-gray-200 hover:bg-gray-50 ${isFailed ? "bg-red-50 border-red-200" : ""
+                          }`}
                       >
                         <td className="px-4 py-2">
                           <input
@@ -1508,43 +1583,82 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
             {/* FIX 5: Comprehensive state reset in "Add More" button */}
             <div className="flex justify-end mt-4 gap-3">
-              <button
-                className="bg-blue-500 text-white font-bold px-6 py-2 rounded hover:bg-blue-600"
-                onClick={() => {
-                  setShowCategoryAndType(true);
-                  setEditingExpenseId(null);
-                  setMainFormData({ categoryType: "General" });
-                  setDynamicFormData({});
-                  setDynamicFields([]);
-                  setCalcParams(undefined);
-                  setVehicleType(null);
-                  setPreviousCategory(null);
-                  setSelectedCategoryType("General");
-                  setFormKey((prev) => prev + 1);
+              <Button variant="outline" size="md" className="font-semibold" onClick={() => {
+                setShowCategoryAndType(true);
+                setEditingExpenseId(null);
+                setMainFormData({ categoryType: "General" });
+                setDynamicFormData({});
+                setDynamicFields([]);
+                setCalcParams(undefined);
+                setVehicleType(null);
+                setPreviousCategory(null);
+                setSelectedCategoryType("General");
+                setFormKey((prev) => prev + 1);
 
-                  setTimeout(() => {
-                    if (formRef.current?.reset) {
-                      formRef.current.reset();
-                    }
-                    if (dynamicFormRef.current?.reset) {
-                      dynamicFormRef.current.reset();
-                    }
-                  }, 0);
-                }}
+                setTimeout(() => {
+                  if (formRef.current?.reset) {
+                    formRef.current.reset();
+                  }
+                  if (dynamicFormRef.current?.reset) {
+                    dynamicFormRef.current.reset();
+                  }
+                }, 0);
+              }}
               >
                 Add More
-              </button>
-              <button
-                className="bg-green-600 text-white font-bold px-6 py-2 rounded hover:bg-green-700"
-                disabled={expenses.length === 0 || isPending}
-                onClick={submitAll}
+              </Button>
+              <Button size="md" className="font-semibold" disabled={expenses.length === 0 || isPending}
+                onClick={handleInitialSubmit}
               >
                 {isPending ? "Submitting..." : "Submit"}
-              </button>
+              </Button>
             </div>
           </div>
         )}
       </div>
+
+      {isAcknowledgementOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">Acknowledgement</h3>
+            <p className="mb-2 font-medium">I acknowledge that:</p>
+            <ul className="list-disc pl-5 mb-4 text-sm space-y-1 text-gray-700">
+              <li>
+                I have raised the expense as per the policy-defined limits
+              </li>
+              <li>I have attached payment proof for all bills</li>
+              <li>
+                I have uploaded the approval email screenshot for exceptional
+                expenses.
+              </li>
+            </ul>
+            <div className="flex items-start gap-2 mb-6">
+              <input
+                type="checkbox"
+                id="ack-checkbox"
+                checked={isAcknowledgementChecked}
+                onChange={(e) => setIsAcknowledgementChecked(e.target.checked)}
+                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label
+                htmlFor="ack-checkbox"
+                className="text-sm text-gray-800 cursor-pointer"
+              >
+                Otherwise I acknowledge that, the claim may be rejected on a
+                later stage.
+              </label>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" size="md" className="font-semibold" onClick={() => setIsAcknowledgementOpen(false)}>
+                Cancel
+              </Button>
+              <Button size="md" className="font-semibold" onClick={handleProceed}>
+                Proceed
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isSharePanelOpen && (
         <ParticipantsDrawer
@@ -1553,7 +1667,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           expenseAmount={Number(
             editingExpenseId
               ? (expenses.find((x) => x.uid === editingExpenseId)?.amount ??
-                  dynamicFormData?.amount)
+                dynamicFormData?.amount)
               : (dynamicFormData?.amount ?? 0),
           )}
           editingExpenseId={editingExpenseId}

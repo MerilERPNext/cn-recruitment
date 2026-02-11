@@ -59,7 +59,6 @@ export default function SalaryAssignmentHeader({
                 </>
               )}
             </button>
-
             <CustomDropdown
               value={selectedPeriod}
               onChange={onPeriodChange}
