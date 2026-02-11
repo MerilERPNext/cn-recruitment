@@ -22,20 +22,20 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
   return useQuery<CurrentUser | null, Error>({
     queryKey: ["currentUser"],
     queryFn: async () => {
+      // First check if the user is logged in — this is the auth gate
+      const userEmail = await FrappeAPI.callMethod(
+        "frappe.auth.get_logged_user"
+      );
+
+      if (!userEmail || typeof userEmail !== "string") {
+        return null;
+      }
+
+      // User is authenticated. Fetch supplementary data but don't fail
+      // the auth check if these calls lack permissions (e.g. Website Users).
+      let userData: Record<string, unknown> = { name: userEmail, email: userEmail };
       try {
-        // First get the current user email/name
-        const userEmail = await FrappeAPI.callMethod(
-          "frappe.auth.get_logged_user"
-        );
-
-        if (!userEmail || typeof userEmail !== "string") {
-          console.error("No user email found");
-          return null;
-        }
-
-
-        // Then fetch the full user document
-        const userData = await FrappeAPI.getDocument("User", userEmail, [
+        const doc = await FrappeAPI.getDocument("User", userEmail, [
           "name",
           "email",
           "first_name",
@@ -48,27 +48,24 @@ export const useCurrentUser = (): UseQueryResult<CurrentUser | null, Error> => {
           "user_type",
           "enabled",
         ]);
-
-
-        if (!userData) {
-          console.error("Failed to fetch user document");
-          return null;
+        if (doc) {
+          userData = doc as Record<string, unknown>;
         }
+      } catch (error) {
+        console.warn("Could not fetch user document, using basic user info:", error);
+      }
 
-        // Fetch user roles using safe API method that handles Administrator correctly
+      let roles: { role: string }[] = [];
+      try {
         const rolesData = await FrappeAPI.callMethod("recruitment.api.get_user_roles");
-
-        // Map roles to the expected format
-        const roles = Array.isArray(rolesData)
+        roles = Array.isArray(rolesData)
           ? rolesData.map((r: { role: string }) => ({ role: r.role }))
           : [];
-
-
-        return { ...userData, roles } as CurrentUser;
       } catch (error) {
-        console.error("Error fetching current user:", error);
-        throw error;
+        console.warn("Could not fetch user roles:", error);
       }
+
+      return { ...userData, roles } as CurrentUser;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
