@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
+import { useState } from "react";
 import CategoryDeclarationSelectable from "./Category";
-
 interface CategorySectionProps {
   sectionCategories: any[];
   activeSection: string;
@@ -22,39 +20,45 @@ const CategorySection = ({
     const medicalClaim = sectionCategories.some(
         (cat) => Boolean(cat.custom_select_type)
       );
-      console.log("Rendering CategorySection with categories:",  activeSection,);
+
+      const [global80DLock, setGlobal80DLock] = useState<string | null>(null);
+
   return (
     <>
       {sectionCategories.map((cat: any) => (
         <div key={cat.category_name} className="mt-6">
-          <CategoryDeclarationSelectable
-          activeSection={activeSection}
-            categoryName={cat.category_name}
-            max_amount={cat.max_amount}
-            lockingDate={lockingDate}
-            selectable={medicalClaim ? cat.custom_select_type : false}
-            showProofFields={
-              responseDoctype ===
-              "Employee Tax Exemption Proof Submission"
+<CategoryDeclarationSelectable
+  categoryName={cat.category_name}
+  max_amount={cat.max_amount}
+  lockingDate={lockingDate}
+  selectable={medicalClaim ? cat.custom_select_type : false}
+  custom_80d_variable={cat.custom_80d_variable}
+
+  locked80DVariable={global80DLock}
+  setLocked80DVariable={setGlobal80DLock}
+
+  showProofFields={
+    responseDoctype === "Employee Tax Exemption Proof Submission"
+  }
+  items={cat.items}
+  onChange={(updatedItems) => {
+    setGroupedCategories((prev) =>
+      prev.map((sec) =>
+        sec.section === activeSection
+          ? {
+              ...sec,
+              categories: sec.categories.map((c: any) =>
+                c.category_name === cat.category_name
+                  ? { ...c, items: updatedItems }
+                  : c
+              ),
             }
-            items={cat.items}
-            onChange={(updatedItems) => {
-              setGroupedCategories((prev) =>
-                prev.map((sec) =>
-                  sec.section === activeSection
-                    ? {
-                        ...sec,
-                        categories: sec.categories.map((c: any) =>
-                          c.category_name === cat.category_name
-                            ? { ...c, items: updatedItems }
-                            : c
-                        ),
-                      }
-                    : sec
-                )
-              );
-            }}
-          />
+          : sec
+      )
+    );
+  }}
+/>
+
         </div>
       ))}
     </>

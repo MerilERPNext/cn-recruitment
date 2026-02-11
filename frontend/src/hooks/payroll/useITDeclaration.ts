@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getCompareTaxSheetHTML, getITDecalarationData, getLTABrakup, getNewRegime, getProofDateForITDeclaration, upDateITDeclarationSheet } from "../../services/payrollApi/itDeclarationService";
+import { getCompareTaxSheetHTML, getForm12B, getITDecalarationData, getLTABrakup, getNewRegime, getProofDateForITDeclaration, upDateITDeclarationSheet } from "../../services/payrollApi/itDeclarationService";
 
 
 export function useNewRegime(employee: string | null, company: string | null, payroll_period: string | null) {
@@ -32,6 +32,18 @@ export function useITDeclarationTabData(goHeadValue: boolean, employee: string |
     return useMutation({
       mutationFn: async (declarationId: string) => {
         const html = await getCompareTaxSheetHTML(declarationId);
+        return { response: html };
+      },
+      onSuccess: options.onSuccess,
+    });
+  };
+
+  export const useForm12B = (
+    options: { onSuccess?: (data: any) => void } = {}
+  ) => {
+    return useMutation({
+      mutationFn: async ({ declarationId, docName }: { declarationId: string; docName: string }) => {
+        const html = await getForm12B(declarationId, docName);
         return { response: html };
       },
       onSuccess: options.onSuccess,
