@@ -14,7 +14,7 @@ import SalaryAssignmentHeader from "./PayPackageHeader";
 import HeaderBar from "../../HeaderBar";
 import { Banknote, CalendarDays } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 
 type SalaryItem = any;
 
@@ -111,12 +111,12 @@ export default function SalaryAssignmentList() {
     if (showAmount) {
       return (
         <span className="blur-sm select-none">
-          {RupeeSymbolPerfix("XXXXX")}
+          {formatCurrency("XXXXX")}
         </span>
       );
     }
     if (value === undefined || value === null) return "—";
-    return `${RupeeSymbolPerfix(Number(value).toLocaleString("en-IN"))}`;
+    return `${formatCurrency(Number(value).toLocaleString("en-IN"))}`;
   };
 
   return (
@@ -286,9 +286,8 @@ export default function SalaryAssignmentList() {
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-white w-full ${
-              isDesktop ? "max-w-[600px]" : ""
-            } shadow-lg relative h-screen overflow-y-auto`}
+            className={`bg-white w-full ${isDesktop ? "max-w-[600px]" : ""
+              } shadow-lg relative h-screen overflow-y-auto`}
           >
             {isDesktop ? (
               <div className="flex justify-between items-center p-4 border-b">

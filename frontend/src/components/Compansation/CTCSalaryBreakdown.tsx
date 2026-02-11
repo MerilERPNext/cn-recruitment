@@ -5,7 +5,6 @@ import { useGenerateSalarySlip } from "../../hooks/useCTC";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
-import { RupeeSymbolPerfix } from "../../utils/currency";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -26,16 +25,14 @@ const CTCSalaryUI = () => {
   const isLoading = isEmpLoading || isSalaryLoading;
 
   const formatCurrency = (amount: number | bigint) => {
-    const formattedAmount = new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
+    const formattedAmount = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
       maximumFractionDigits: 0,
     }).format(amount);
 
     if (isMoneyMasked) {
-      const maskedText = RupeeSymbolPerfix(
-        "•".repeat(Math.max(4, formattedAmount.length - 2)),
-      );
+      const maskedText = '₹ ' + '•'.repeat(Math.max(4, formattedAmount.length - 2));
       return (
         <span className="font-mono text-gray-400 tracking-wider">
           {maskedText}
@@ -205,13 +202,12 @@ const CTCSalaryUI = () => {
                             </td>
                             <td className="py-4 px-4 border-none">
                               <span
-                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                                  component.type === "Deduction"
-                                    ? "bg-red-50 text-red-700 border border-red-200"
-                                    : component.type === "Reimbursement"
-                                      ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                      : "bg-blue-50 text-blue-700 border border-blue-200"
-                                }`}
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : component.type === "Reimbursement"
+                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                                  }`}
                               >
                                 {component.type}
                               </span>
@@ -244,13 +240,12 @@ const CTCSalaryUI = () => {
                             </h4>
                           </div>
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              component.type === "Deduction"
-                                ? "bg-red-50 text-red-700 border border-red-200"
-                                : component.type === "Reimbursement"
-                                  ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                  : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
+                              ? "bg-red-50 text-red-700 border border-red-200"
+                              : component.type === "Reimbursement"
+                                ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                : "bg-blue-50 text-blue-700 border border-blue-200"
+                              }`}
                           >
                             {component.type}
                           </span>
@@ -281,10 +276,10 @@ const CTCSalaryUI = () => {
 
               {(!salarySlip?.component_part_of_ctc ||
                 salarySlip.component_part_of_ctc.length === 0) && (
-                <div className="text-center py-8 text-gray-400">
-                  <p>No component breakdown available</p>
-                </div>
-              )}
+                  <div className="text-center py-8 text-gray-400">
+                    <p>No component breakdown available</p>
+                  </div>
+                )}
             </div>
           </div>
         </div>

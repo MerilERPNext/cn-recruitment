@@ -9,10 +9,10 @@ import InvoicePDFview from "./Component/InvoicePDFview";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 
 const formatINR = (num: number) =>
-  `${RupeeSymbolPerfix(num.toLocaleString("en-IN"))}`;
+  `${formatCurrency(num.toLocaleString("en-IN"))}`;
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
@@ -71,14 +71,12 @@ export default function Invoice() {
               </span>
               <button
                 onClick={() => setHideAmount((prev) => !prev)}
-                className={`w-8 h-5 rounded-xl relative transition ${
-                  hideAmount ? "bg-primary-500" : "bg-gray-300"
-                }`}
+                className={`w-8 h-5 rounded-xl relative transition ${hideAmount ? "bg-primary-500" : "bg-gray-300"
+                  }`}
               >
                 <span
-                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${
-                    hideAmount ? "right-0.5" : "left-0.5"
-                  }`}
+                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${hideAmount ? "right-0.5" : "left-0.5"
+                    }`}
                 />
               </button>
             </div>

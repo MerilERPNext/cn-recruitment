@@ -5,7 +5,7 @@ import Button from "../../../shared/atoms/Button";
 import { useFileUpload } from "../../../../hooks/useEmployee";
 import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
-import { RupeeSymbolPerfix } from "../../../../utils/currency";
+import { formatCurrency } from "../../../../utils/currency";
 type Item = {
   idx: string;
   proof_file?: File | string;
@@ -220,10 +220,10 @@ const CategoryDeclarationSelectable = ({
     const updated = items.map((item) =>
       item.exemption_sub_category === key
         ? {
-            ...item,
-            is_selected: false,
-            amount: undefined,
-          }
+          ...item,
+          is_selected: false,
+          amount: undefined,
+        }
         : item,
     );
 
@@ -243,7 +243,7 @@ const CategoryDeclarationSelectable = ({
       <Typography variant="bodySmall" color="body2" className="semibold">
         {categoryName} | Max Amount:{" "}
         <span className="text-primary text-xs font-semibold">
-          {RupeeSymbolPerfix(max_amount)}
+          {formatCurrency(max_amount)}
         </span>
       </Typography>
 
@@ -330,7 +330,7 @@ const CategoryDeclarationSelectable = ({
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-[10px] font-semibold">
-                  Max {RupeeSymbolPerfix(item.max_amount)}
+                  Max {formatCurrency(item.max_amount)}
                 </p>
                 <input
                   type="number"

@@ -15,7 +15,7 @@ import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -56,10 +56,9 @@ function FilterDropdown({
             <button
               key={filter}
               className={`px-3 py-2 rounded-md text-sm text-left border
-                ${
-                  activeFilter === filter
-                    ? "border-primary-600 bg-primary/10 text-primary-700"
-                    : "border-primary-200 hover:bg-primary/10"
+                ${activeFilter === filter
+                  ? "border-primary-600 bg-primary/10 text-primary-700"
+                  : "border-primary-200 hover:bg-primary/10"
                 }
               `}
               onClick={() => {
@@ -265,7 +264,7 @@ export default function ExtraPayment() {
               <p className="text-sm mb-1">Date: {payment.date}</p>
               <p className="font-semibold text-lg mt-2">
                 {" "}
-                {RupeeSymbolPerfix(payment.amount)}
+                {formatCurrency(payment.amount)}
               </p>
             </div>
           ))}
