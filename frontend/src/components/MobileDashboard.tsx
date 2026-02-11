@@ -422,7 +422,7 @@ const MobileDashboard: React.FC = () => {
     return <MobileDashboardSkeleton />
   }
   return (
-    <div className="h-screen font-sans max-w-md mx-auto flex flex-col">
+    <div className="h-screen font-sans flex flex-col">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-white/20 px-2 py-3 shadow-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
