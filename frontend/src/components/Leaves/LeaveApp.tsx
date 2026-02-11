@@ -16,12 +16,15 @@ import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 
+
 type TabName =
   | "leave-balance"
   | "holidays"
   | "my-requests"
   | "team-requests"
   | "compensatory";
+
+
 
 const tabRoutes: Record<TabName, string> = {
   "leave-balance": "/webapp/leave-app/leaves/leave-balance",
@@ -35,6 +38,8 @@ const LeaveAppInner: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: uiPermissions } = useGetUiPermission();
+  console.log("ui permission for leave", uiPermissions);
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
@@ -44,19 +49,52 @@ const LeaveAppInner: React.FC = () => {
     "My Requests",
   );
 
-  const tabs: Tab[] = useMemo(
-    () => [
-      { key: "leave-balance", label: "Leave Balance" },
-      { key: "holidays", label: "Holidays" },
-      { key: "my-requests", label: "My Requests" },
-      { key: "team-requests", label: "Team Requests" },
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      {
+        key: "leave-balance",
+        label: "Leave Balance",
+        permissionKey: "Leave Balance",
+      },
+      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
+      {
+        key: "my-requests",
+        label: "My Requests",
+        permissionKey: "My Requests",
+      },
+      {
+        key: "team-requests",
+        label: "Team Requests",
+        permissionKey: "Team Requests",
+      },
       {
         key: "compensatory",
         label: "Compensatory",
+        permissionKey: "Compensatory",
       },
-    ],
-    [],
-  );
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const leaveAppPermission = userUiPermission.find(
+      (perm) => perm.app_name === "Leaves and Holidays",
+    );
+
+    if (!leaveAppPermission || !leaveAppPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = leaveAppPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
@@ -75,13 +113,19 @@ const LeaveAppInner: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/leave-app") {
-      navigate(tabRoutes["leave-balance"], { replace: true });
+    if (location.pathname === "/webapp/leave-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      navigate(tabRoutes[firstTab], { replace: true });
     }
     if (location.pathname === "/webapp/leave-app/leaves/leave-requests") {
-      navigate(tabRoutes["my-requests"], { replace: true });
+      const myRequestsTab = tabs.find((t) => t.key === "my-requests");
+      if (myRequestsTab) {
+        navigate(tabRoutes["my-requests"], { replace: true });
+      } else if (tabs.length > 0) {
+        navigate(tabRoutes[tabs[0].key as TabName], { replace: true });
+      }
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
   useEffect(() => {
     if (showModal) {
