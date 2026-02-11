@@ -1,3 +1,5 @@
+import React from "react";
+
 function TableSkeleton({ columns = 4, rows = 5 }) {
   return (
     <div className="overflow-x-auto animate-pulse">
@@ -53,8 +55,6 @@ export const CardSkeleton: React.FC<CardSkeletonProps> = ({ rows = 6 }) => {
     </>
   );
 };
-
-import React from "react";
 
 interface DashboardContentSkeletonProps {
   cardCount?: number;
