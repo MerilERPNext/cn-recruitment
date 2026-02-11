@@ -400,315 +400,285 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black bg-opacity-40 z-40"
+        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 transition-opacity"
         onClick={onClose}
       />
       <aside
-        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-1/2 transform transition-transform duration-300 ease-out bg-white border-l shadow-lg"
+        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-[650px] transform transition-transform duration-300 ease-out bg-white shadow-2xl overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">Participants</h3>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <h3 className="text-xl font-bold text-gray-800 tracking-tight">Participants</h3>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
           >
-            ✕
+            <span className="text-xl">✕</span>
           </button>
         </div>
 
-        <div className="p-4 overflow-y-auto h-full">
-          <div className="border rounded p-3 mb-3 bg-gray-50">
-            <div className="flex justify-between items-center mb-2">
-              <div>
-                <div className="text-xs text-gray-500">Total amount</div>
-                <div className="text-lg font-semibold">
-                  INR {Number(expenseAmount || 0).toFixed(2)}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Summary Card */}
+          <div className="bg-[#f8fafc] border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <div className="grid grid-cols-3 gap-8">
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Total amount</div>
+                <div className="text-lg font-bold text-gray-900">
+                  INR {Number(expenseAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-gray-500 text-center">
-                  Allocated percentage
-                </div>
-                <div className="text-lg font-semibold text-center">
+              <div className="space-y-1 text-center">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Allocated percentage</div>
+                <div className="text-lg font-bold text-gray-900">
                   {computed.totals.totalPercent ?? 0}%
                 </div>
               </div>
-              <div>
-                <div className="text-xs text-gray-500 text-right">
-                  Allocated amount
-                </div>
-                <div className="text-lg font-semibold text-right">
-                  INR {computed.totals.totalAllocated?.toFixed(2) ?? "0.00"}
+              <div className="space-y-1 text-right">
+                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Allocated amount</div>
+                <div className="text-lg font-bold text-gray-900">
+                  INR {computed.totals.totalAllocated?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "0.00"}
                 </div>
               </div>
             </div>
-            <div className="text-xs text-orange-600 mt-2">
-              ⚠️ Select radio button to edit Percentage or Amount — you can edit
-              only one at a time.
+
+            {/* Alert */}
+            <div className="mt-6 flex items-start gap-3 p-4 bg-[#fffbeb] border border-[#fef3c7] rounded-xl">
+              <span className="text-amber-500 mt-0.5">⚠️</span>
+              <p className="text-xs font-semibold text-[#92400e] leading-relaxed">
+                Select radio button to edit Percentage or Amount — you can edit only one at a time.
+              </p>
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="inline-flex items-center mr-4">
-              <input
-                type="radio"
-                name="mode"
-                value="percentage"
-                checked={mode === "percentage"}
-                onChange={() => {
-                  setMode("percentage");
-                  setParticipants(
-                    (prev) =>
-                      computeAllocations(prev, "percentage").participants
-                  );
-                }}
-                className="mr-2"
-              />
-              Percentage
+          {/* Mode Selection */}
+          <div className="flex items-center gap-8 px-1">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="percentage"
+                  checked={mode === "percentage"}
+                  onChange={() => {
+                    setMode("percentage");
+                    setParticipants((prev) => computeAllocations(prev, "percentage").participants);
+                  }}
+                  className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-blue-600 transition-all cursor-pointer"
+                />
+                <div className="absolute w-2.5 h-2.5 bg-blue-600 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+              </div>
+              <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Percentage</span>
             </label>
-            <label className="inline-flex items-center">
-              <input
-                type="radio"
-                name="mode"
-                value="amount"
-                checked={mode === "amount"}
-                onChange={() => {
-                  setMode("amount");
-                  setParticipants(
-                    (prev) => computeAllocations(prev, "amount").participants
-                  );
-                }}
-                className="mr-2"
-              />
-              Amount
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="radio"
+                  name="mode"
+                  value="amount"
+                  checked={mode === "amount"}
+                  onChange={() => {
+                    setMode("amount");
+                    setParticipants((prev) => computeAllocations(prev, "amount").participants);
+                  }}
+                  className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-full checked:border-blue-600 transition-all cursor-pointer"
+                />
+                <div className="absolute w-2.5 h-2.5 bg-blue-600 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+              </div>
+              <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900">Amount</span>
             </label>
           </div>
 
+          {/* Participants Table Grid */}
           <div className="w-full overflow-x-auto">
-            <div className="min-w-[640px]">
-              {/* <div className="w-full"> */}
-              <div className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] text-xs font-medium text-gray-600 border-b pb-2 mb-2 text-center">
-                <div>#</div>
-                <div>Employee Type</div>
-                <div>Name</div>
-                <div>%</div>
-                <div>Amount (INR)</div>
-                <div className="text-center">Actions</div>
+            <div className="min-w-[580px]">
+              <div className="grid grid-cols-[30px_140px_1fr_80px_110px_60px] gap-4 mb-4 px-2">
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">#</div>
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Employee Type</div>
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Name</div>
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider text-center">%</div>
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider text-center">Amount (INR)</div>
+                <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider text-right pr-1">Actions</div>
               </div>
 
-              {participants.length > 0 ? (
-                participants.map((row, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-[40px_140px_1fr_80px_120px_80px] items-start gap-2 py-2 border-b"
-                  >
-                    <div className="text-sm pt-2">{i + 1}</div>
+              <div className="space-y-4">
+                {participants.length > 0 ? (
+                  participants.map((row, i) => (
+                    <div
+                      key={i}
+                      className="grid grid-cols-[30px_140px_1fr_80px_110px_60px] items-center gap-4 px-2 group"
+                    >
+                      <div className="text-xs text-gray-400 font-medium">{i + 1}</div>
 
-                    <div>
-                      {i === 0 ? (
-                        <input
-                          type="text"
-                          readOnly
-                          value="Self"
-                          className="w-full p-1 border bg-gray-100 rounded text-sm"
-                        />
-                      ) : (
-                        <select
-                          value={row.employee_type || "Employee"}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            updateRow(i, { employee_type: val, name: "" });
-                          }}
-                          className="w-full p-1 border rounded text-sm"
-                        >
-                          <option value="Employee">Employee</option>
-                          <option value="Guest">Guest</option>
-                        </select>
-                      )}
-                    </div>
-
-                    <div>
-                      {i === 0 ? (
-                        <input
-                          type="text"
-                          readOnly
-                          value={(() => {
-                            const id =
-                              row.name ||
-                              currentEmployee?.name ||
-                              currentEmployee?.employee_name ||
-                              "";
-                            const found = optionsSource.find(
-                              (o) => o.name === id
-                            );
-                            return (
-                              found?.employee_name ??
-                              currentEmployee?.employee_name ??
-                              id ??
-                              "Self"
-                            );
-                          })()}
-                          className="w-full p-1 border bg-gray-100 rounded text-sm"
-                        />
-                      ) : row.employee_type === "Employee" ? (
-                        employeeOptionsLoading ? (
-                          <input
-                            type="text"
-                            disabled
-                            value="Loading..."
-                            className="w-full p-1 border rounded text-sm bg-gray-100"
-                          />
-                        ) : optionsSource && optionsSource.length > 0 ? (
-                          <SearchableSelect
-                            options={optionsSource
-                              .filter(
-                                (opt) => opt.name !== currentEmployee?.name
-                              )
-                              .map((opt) => ({
-                                value: opt.name,
-                                label: opt.employee_name ?? opt.name,
-                              }))}
-                            value={row.name || ""}
-                            onChange={(value, label) =>
-                              updateRow(i, {
-                                name: value,
-                                employee_name: label,
-                              })
-                            }
-                            placeholder="Search employee..."
-                            disabled={false}
-                            onSearch={async (q) => {
-                              const res = await searchEmployeesByQuery(q);
-                              return res.filter(
-                                (op) => op.value !== currentEmployee?.name
-                              );
+                      <div>
+                        {i === 0 ? (
+                          <div className="w-full p-2.5 border border-gray-200 bg-[#f1f5f9] rounded-lg text-sm text-gray-700 font-medium">
+                            Self
+                          </div>
+                        ) : (
+                          <select
+                            value={row.employee_type || "Employee"}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              updateRow(i, { employee_type: val, name: "" });
                             }}
-                          />
+                            className="w-full p-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all cursor-pointer bg-white"
+                          >
+                            <option value="Employee">Employee</option>
+                            <option value="Guest">Guest</option>
+                          </select>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        {i === 0 ? (
+                          <div className="w-full p-2.5 border border-gray-200 bg-[#f1f5f9] rounded-lg text-sm text-gray-700 font-medium truncate">
+                            {(() => {
+                              const id = row.name || currentEmployee?.name || currentEmployee?.employee_name || "";
+                              const found = optionsSource.find((o) => o.name === id);
+                              return found?.employee_name ?? currentEmployee?.employee_name ?? id ?? "Self";
+                            })()}
+                          </div>
+                        ) : row.employee_type === "Employee" ? (
+                          employeeOptionsLoading ? (
+                            <div className="w-full p-2.5 border border-gray-200 rounded-lg text-sm text-gray-400 bg-gray-50 flex items-center">
+                              <span className="animate-pulse">Loading...</span>
+                            </div>
+                          ) : (
+                            <SearchableSelect
+                              options={optionsSource
+                                .filter((opt) => opt.name !== currentEmployee?.name)
+                                .map((opt) => ({
+                                  value: opt.name,
+                                  label: opt.employee_name ?? opt.name,
+                                }))}
+                              value={row.name || ""}
+                              onChange={(value, label) =>
+                                updateRow(i, {
+                                  name: value,
+                                  employee_name: label,
+                                })
+                              }
+                              placeholder="Search employee..."
+                              disabled={false}
+                              onSearch={async (q) => {
+                                const res = await searchEmployeesByQuery(q);
+                                return res.filter((op) => op.value !== currentEmployee?.name);
+                              }}
+                            />
+                          )
                         ) : (
                           <input
                             type="text"
                             value={row.name || ""}
-                            onChange={(e) =>
-                              updateRow(i, { name: e.target.value })
-                            }
-                            placeholder="Employee name"
-                            className="w-full p-1 border rounded text-sm"
+                            onChange={(e) => updateRow(i, { name: e.target.value })}
+                            placeholder="Guest name"
+                            className="w-full p-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                           />
-                        )
-                      ) : (
+                        )}
+                      </div>
+
+                      <div className="text-center">
                         <input
-                          type="text"
-                          value={row.name || ""}
-                          onChange={(e) =>
-                            updateRow(i, { name: e.target.value })
-                          }
-                          placeholder="Guest name"
-                          className="w-full p-1 border rounded text-sm"
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          max={100}
+                          value={row.percentage !== null && row.percentage !== undefined ? row.percentage : ""}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            const parsed = v === "" ? null : parseFloat(v);
+                            updateRow(i, { percentage: parsed });
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          disabled={mode !== "percentage"}
+                          placeholder="0"
+                          className={`w-full p-2.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${mode !== "percentage" ? "bg-gray-50 text-gray-400" : "bg-white text-gray-700 font-medium"}`}
                         />
-                      )}
-                    </div>
+                      </div>
 
-                    <div>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        max={100}
-                        value={
-                          row.percentage !== null &&
-                            row.percentage !== undefined
-                            ? row.percentage
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          const parsed = v === "" ? null : parseFloat(v);
-                          updateRow(i, { percentage: parsed });
-                        }}
-                        onFocus={(e) => e.target.select()} // Add this line
-                        disabled={mode !== "percentage"}
-                        placeholder="0.00"
-                        className={`w-full p-1 border rounded text-sm ${mode !== "percentage" ? "bg-gray-100" : ""
-                          }`}
-                      />
-                    </div>
+                      <div className="text-center">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          value={row.amount !== null && row.amount !== undefined ? row.amount : ""}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            const parsed = v === "" ? null : parseFloat(v);
+                            updateRow(i, { amount: parsed });
+                          }}
+                          disabled={mode !== "amount"}
+                          placeholder="0"
+                          className={`w-full p-2.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${mode !== "amount" ? "bg-gray-50 text-gray-400" : "bg-white text-gray-700 font-medium"}`}
+                        />
+                      </div>
 
-                    <div>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min={0}
-                        value={
-                          row.amount !== null && row.amount !== undefined
-                            ? row.amount
-                            : ""
-                        }
-                        onFocus={(e) => e.target.select()} // Add this line
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          const parsed = v === "" ? null : parseFloat(v);
-                          updateRow(i, { amount: parsed });
-                        }}
-                        disabled={mode !== "amount"}
-                        placeholder="0.00"
-                        className={`w-full p-1 border rounded text-sm ${mode !== "amount" ? "bg-gray-100" : ""
-                          }`}
-                      />
+                      <div className="flex justify-end pr-1">
+                        {i !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => removeRow(i)}
+                            className="p-2 rounded-lg text-red-100 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            title="Remove Participant"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeRow(i)}
-                        className="text-red-500"
-                      >
-                        <Trash2 />
-                      </button>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 px-4 border-2 border-dashed border-gray-100 rounded-2xl">
+                    <p className="text-gray-400 text-sm">No participants added yet.</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-500 py-4 text-sm">
-                  No participants. Click "Add Participant" to start.
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center justify-between gap-4 mt-4">
-            <div className="text-xs text-gray-500">
+
+          <div className="pt-2 px-1">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
               Max. Allowed Participant - {maxParticipants}
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={addRow}
-                type="button"
-                className="px-3 py-1 border rounded-md"
-              >
-                Add Participant
-              </button>
-              <button
-                onClick={resetParticipants}
-                type="button"
-                className="px-3 py-1 border rounded-md"
-              >
-                RESET
-              </button>
-              <button
-                onClick={saveParticipants}
-                type="button"
-                className="px-3 py-1 rounded-md bg-primary text-white"
-              >
-                SAVE
-              </button>
-            </div>
+            </span>
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-6 border-t border-gray-100 flex items-center justify-between bg-white shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">
+          <button
+            onClick={addRow}
+            type="button"
+            className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+          >
+            <span className="text-lg leading-none">+</span>
+            <span>Add Participant</span>
+          </button>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={resetParticipants}
+              type="button"
+              className="px-6 py-2.5 text-sm font-bold text-[#64748b] hover:text-gray-900 transition-colors uppercase tracking-wider"
+            >
+              RESET
+            </button>
+            <button
+              onClick={saveParticipants}
+              type="button"
+              className="px-8 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 uppercase tracking-widest"
+            >
+              SAVE
+            </button>
           </div>
         </div>
       </aside>
     </>
   );
 };
+
 
 export default ParticipantsDrawer;

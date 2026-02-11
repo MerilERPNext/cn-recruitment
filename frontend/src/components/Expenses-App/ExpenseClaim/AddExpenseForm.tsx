@@ -70,7 +70,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 }) => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
-  const [expenseTypeKey, setExpenseTypeKey] = useState(0);
   const [formKey, setFormKey] = useState<number>(0);
   const [vehicleType, setVehicleType] = useState<string | null>(null);
   const [previousCategory, setPreviousCategory] = useState<string | null>(null);
@@ -107,6 +106,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const [isAcknowledgementOpen, setIsAcknowledgementOpen] = useState(false);
   const [isAcknowledgementChecked, setIsAcknowledgementChecked] = useState(false);
+  const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = useState(false);
+  const [pendingSubmissionType, setPendingSubmissionType] = useState<"General" | "Relocation" | null>(null);
 
   const { data: currentEmployee } = useCurrentEmployee();
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
@@ -119,7 +120,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       employee_name: e.employee_name || e.name,
     }),
   );
-  const { mutate: submitExpenseClaim, isPending } = usePostExpenseClaim();
+  const { mutate: submitExpenseClaim } = usePostExpenseClaim();
 
   const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
 
@@ -168,7 +169,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       expenseType: initialExpense.expenseType,
     });
     setSelectedCategoryType(initialExpense.categoryType || "General");
-    setShowCategoryAndType(true);
+    setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
     clearFailedStatus(initialExpense.uid);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,14 +210,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       console.warn("Failed to persist expenses", e);
     }
   }, [expenses]);
-
-  const clearLocal = () => {
-    try {
-      localStorage.removeItem(LOCAL_KEYS.EXPENSES);
-    } catch (e) {
-      console.warn("Failed to clear local storage keys", e);
-    }
-  };
 
   const clearFailedStatus = (uids: string | string[]) => {
     const uidsArray = Array.isArray(uids) ? uids : [uids];
@@ -592,7 +585,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const expenseTypeValue = useMemo(
     () => mainFormData?.expenseType || undefined,
-    [mainFormData?.expenseType, expenseTypeKey],
+    [mainFormData?.expenseType],
   );
 
   const { data: expenseTypeData, isFetching: isFetchingFields } =
@@ -763,14 +756,25 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const loading = useLoadingOverlay();
 
-  const submitAll = async () => {
+  const submitAll = async (type: "General" | "Relocation") => {
     await loading?.wrap(async () => {
+      // Filter expenses for this category AND that are selected
+      const selectedForCategory = expenses.filter(e =>
+        (e.categoryType || "General") === type &&
+        selectedExpenses.includes(e.uid)
+      );
+
+      if (selectedForCategory.length === 0) {
+        toast.error(`No ${type} expenses selected for submission.`);
+        return;
+      }
+
       const participantsForClaim: any[] =
         (dynamicFormData?.participants &&
           Array.isArray(dynamicFormData.participants)
           ? dynamicFormData.participants
           : null) ||
-        expenses.flatMap((e) =>
+        selectedForCategory.flatMap((e) =>
           Array.isArray(e.participants) ? e.participants : [],
         );
 
@@ -779,7 +783,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         employee_name: currentEmployee?.employee_name,
         company: currentEmployee?.company,
         posting_date: format(new Date(), "yyyy-MM-dd"),
-        expenses: expenses.map(
+        expenses: selectedForCategory.map(
           (
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             { id, submitButton, expenseType, expenseCategory, ...rest },
@@ -831,7 +835,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       await new Promise<void>((resolve, reject) => {
         submitExpenseClaim(JSON.stringify(payload), {
           onSuccess: () => {
-            clearLocal();
+            // Remove submitted expenses from state
+            const submittedUids = selectedForCategory.map(e => e.uid);
+            setExpenses(prev => prev.filter(e => !submittedUids.includes(e.uid)));
+            setSelectedExpenses(prev => prev.filter(uid => !submittedUids.includes(uid)));
+
+            // If all matched expenses are gone, we clear local storage or partial clear?
+            // For now, let's rely on setExpenses side effect that writes to localStorage
             resolve();
           },
           onError: (err: any) => {
@@ -839,11 +849,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           },
         } as any);
       });
-    }, "Submitting all expenses…");
+    }, `Submitting selected ${type} expenses…`);
   };
 
-  const handleInitialSubmit = () => {
+  const handleInitialSubmit = (type: "General" | "Relocation") => {
+    setPendingSubmissionType(type);
     setIsAcknowledgementChecked(false);
+    setIsRelocationAcknowledgementChecked(false);
     setIsAcknowledgementOpen(true);
   };
 
@@ -852,8 +864,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       toast.error("Please acknowledge the terms to proceed.");
       return;
     }
+    if (pendingSubmissionType === "Relocation" && !isRelocationAcknowledgementChecked) {
+      toast.error("Please confirm that you have checked relocation expenses thoroughly.");
+      return;
+    }
+    if (!pendingSubmissionType) return;
     setIsAcknowledgementOpen(false);
-    submitAll();
+    submitAll(pendingSubmissionType);
   };
 
   const handleEdit = (expense: Expense) => {
@@ -878,7 +895,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     });
 
     setSelectedCategoryType(expense.categoryType || "General");
-    setShowCategoryAndType(true);
+    setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
     clearFailedStatus(expense.uid);
   };
@@ -950,9 +967,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setPreviousCategory(null);
                 setDynamicFormData({});
                 setDynamicFields([]);
-                setCalcParams(undefined);
                 setVehicleType(null);
-                setExpenseTypeKey((k) => k + 1);
                 setMainFormData({ ...change.data });
 
                 // Force form refresh to clear cache
@@ -965,10 +980,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 change.data.expenseType = null;
 
                 setDynamicFormData({});
-                setDynamicFields([]);
-                setCalcParams(undefined);
                 setVehicleType(null);
-                setExpenseTypeKey((k) => k + 1);
                 setPreviousCategory(newCategory);
                 setMainFormData({ ...change.data });
                 setFormKey((k) => k + 1);
@@ -982,10 +994,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 return;
               }
 
-              // NEW: Handle expense type changes to trigger field fetch
               if (newExpenseType !== mainFormData?.expenseType) {
                 setMainFormData(change.data);
-                setExpenseTypeKey((k) => k + 1);
                 return;
               }
 
@@ -1472,117 +1482,333 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               </div>
             )}
 
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Expense List</h2>
-              <button
-                onClick={handleDeleteSelected}
-                disabled={selectedExpenses.length === 0}
-                className={`px-4 py-2 rounded ${selectedExpenses.length === 0
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-red-500 text-white hover:bg-red-600"
-                  }`}
-              >
-                Delete Selected
-              </button>
-            </div>
+            {/* General Expense List */}
+            {expenses.filter(e => (e.categoryType || "General") === "General").length > 0 && (
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4 px-1 text-gray-800">
+                  <h2 className="text-lg font-bold">General Expense List</h2>
+                </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="w-12 px-4 py-2 text-left">
-                      <input
-                        type="checkbox"
-                        onChange={(e) =>
-                          setSelectedExpenses(
-                            e.target.checked ? expenses.map((e) => e.uid) : [],
-                          )
-                        }
-                        checked={
-                          selectedExpenses.length === expenses.length &&
-                          expenses.length > 0
-                        }
-                      />
-                    </th>
-                    <th className="px-4 py-2 text-left">Expense Category</th>
-                    <th className="px-4 py-2 text-left">Expense Type</th>
-                    <th className="px-4 py-2 text-left">Expense Date</th>
-                    <th className="px-4 py-2 text-left">Merchant</th>
-                    <th className="px-4 py-2 text-left">Invoice Number</th>
-                    <th className="px-4 py-2 text-left">Amount</th>
-                    <th className="px-4 py-2 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {expenses.map((expense) => {
-                    const isFailed = failedExpenseUids.has(expense.uid);
-                    return (
-                      <tr
-                        key={expense.uid}
-                        className={`border-t border-gray-200 hover:bg-gray-50 ${isFailed ? "bg-red-50 border-red-200" : ""
-                          }`}
-                      >
-                        <td className="px-4 py-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedExpenses.includes(expense.uid)}
-                            onChange={() => handleCheckboxChange(expense.uid)}
-                          />
-                        </td>
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-2">
-                            {expense.expenseCategory}
-                            {isFailed && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
-                                Failed
-                              </span>
-                            )}
+                <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                  <table className="min-w-full bg-white">
+                    <thead>
+                      <tr className="bg-[#f9fafb] border-b border-gray-200">
+                        <th className="w-14 px-4 py-4 text-center border-r border-gray-200">
+                          <div className="flex justify-center">
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 rounded-full border-2 border-gray-300 text-primary focus:ring-primary cursor-pointer appearance-none checked:bg-primary checked:border-primary relative transition-all before:content-[''] before:absolute before:w-2 before:h-1 before:border-b-2 before:border-l-2 before:border-white before:left-[5px] before:top-[6px] before:-rotate-45 before:opacity-0 checked:before:opacity-100"
+                              onChange={(e) => {
+                                const generalUids = expenses
+                                  .filter(ex => (ex.categoryType || "General") === "General")
+                                  .map(ex => ex.uid);
+                                setSelectedExpenses(prev =>
+                                  e.target.checked
+                                    ? Array.from(new Set([...prev, ...generalUids]))
+                                    : prev.filter(id => !generalUids.includes(id))
+                                );
+                              }}
+                              checked={
+                                expenses.filter(ex => (ex.categoryType || "General") === "General").length > 0 &&
+                                expenses.filter(ex => (ex.categoryType || "General") === "General").every(ex => selectedExpenses.includes(ex.uid))
+                              }
+                            />
                           </div>
-                        </td>
-                        <td className="px-4 py-2">{expense.expenseType}</td>
-                        <td className="px-4 py-2">
-                          {expense.expense_date
-                            ? formatToIndianDate(expense.expense_date)
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.merchant || "-"}</td>
-                        <td className="px-4 py-2">
-                          {expense.invoice_number || "-"}
-                        </td>
-                        <td className="px-4 py-2">{expense.amount ?? "-"}</td>
-                        <td className="px-4 py-2 flex items-center gap-2">
-                          <button
-                            onClick={() => handleEdit(expense)}
-                            className="text-blue-400 hover:text-green-800"
-                            title="Edit"
-                          >
-                            <SquarePen />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setExpenses((prev) =>
-                                prev.filter((e) => e.uid !== expense.uid),
-                              );
-                              setSelectedExpenses((prev) =>
-                                prev.filter((id) => id !== expense.uid),
-                              );
-                              clearFailedStatus(expense.uid);
-                            }}
-                            className="text-red-400 hover:text-blue-700"
-                            title="Delete"
-                          >
-                            <Trash2 />
-                          </button>
-                        </td>
+                        </th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Category</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Type</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Date</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Merchant</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Invoice Number</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Amount</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider whitespace-nowrap">Actions</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {expenses
+                        .filter(e => (e.categoryType || "General") === "General")
+                        .map((expense) => {
+                          const isFailed = failedExpenseUids.has(expense.uid);
+                          return (
+                            <tr
+                              key={expense.uid}
+                              className={`hover:bg-gray-50 transition-colors ${isFailed ? "bg-red-50" : ""
+                                }`}
+                            >
+                              <td className="px-4 py-4 text-center border-r border-gray-200">
+                                <div className="flex justify-center">
+                                  <input
+                                    type="checkbox"
+                                    className="w-5 h-5 rounded-full border-2 border-gray-300 text-primary focus:ring-primary cursor-pointer appearance-none checked:bg-primary checked:border-primary relative transition-all before:content-[''] before:absolute before:w-2 before:h-1 before:border-b-2 before:border-l-2 before:border-white before:left-[5px] before:top-[6px] before:-rotate-45 before:opacity-0 checked:before:opacity-100"
+                                    checked={selectedExpenses.includes(expense.uid)}
+                                    onChange={() => handleCheckboxChange(expense.uid)}
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <div className="flex items-center gap-2">
+                                  {expense.expenseCategory}
+                                  {isFailed && (
+                                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
+                                      FAILED
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                                {expense.expense_date
+                                  ? formatToIndianDate(expense.expense_date)
+                                  : "-"}
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.merchant || "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.invoice_number || "-"}</td>
+                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-200">{expense.amount ?? "-"}</td>
+                              <td className="px-5 py-4 text-sm whitespace-nowrap">
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => handleEdit(expense)}
+                                    className="p-1.5 rounded-md text-primary hover:bg-primary/10 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <SquarePen className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setExpenses((prev) =>
+                                        prev.filter((e) => e.uid !== expense.uid),
+                                      );
+                                      setSelectedExpenses((prev) =>
+                                        prev.filter((id) => id !== expense.uid),
+                                      );
+                                      clearFailedStatus(expense.uid);
+                                    }}
+                                    className="p-1.5 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end mt-4 gap-2">
+                  {expenses.filter(e => e.categoryType === "Relocation").length === 0 && <Button variant="outline" size="md" className="font-semibold" onClick={() => {
+                    setShowCategoryAndType(true);
+                    setEditingExpenseId(null);
+                    setMainFormData({ categoryType: "General" });
+                    setDynamicFormData({});
+                    setDynamicFields([]);
+                    setCalcParams(undefined);
+                    setVehicleType(null);
+                    setPreviousCategory(null);
+                    setSelectedCategoryType("General");
+                    setFormKey((prev) => prev + 1);
+
+                    setTimeout(() => {
+                      if (formRef.current?.reset) {
+                        formRef.current.reset();
+                      }
+                      if (dynamicFormRef.current?.reset) {
+                        dynamicFormRef.current.reset();
+                      }
+                    }, 0);
+                  }}
+                  >
+                    Add More
+                  </Button>}
+
+                  <Button
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => handleInitialSubmit("General")}
+                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                    className="font-semibold shadow-sm"
+                  >
+                    Submit Selected
+                  </Button>
+                  <Button
+                    bgColor="error"
+                    size="md"
+                    onClick={handleDeleteSelected}
+                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                    className="font-semibold shadow-sm"
+                  >
+                    Delete Selected
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Relocation Expense List */}
+            {expenses.filter(e => e.categoryType === "Relocation").length > 0 && (
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-4 px-1 text-gray-800">
+                  <h2 className="text-lg font-bold">Relocation Expense List</h2>
+                </div>
+
+                <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                  <table className="min-w-full bg-white">
+                    <thead>
+                      <tr className="bg-[#f9fafb] border-b border-gray-200">
+                        <th className="w-14 px-4 py-4 text-center border-r border-gray-200">
+                          <div className="flex justify-center">
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 rounded-full border-2 border-gray-300 text-primary focus:ring-primary cursor-pointer appearance-none checked:bg-primary checked:border-primary relative transition-all before:content-[''] before:absolute before:w-2 before:h-1 before:border-b-2 before:border-l-2 before:border-white before:left-[5px] before:top-[6px] before:-rotate-45 before:opacity-0 checked:before:opacity-100"
+                              onChange={(e) => {
+                                const relocationUids = expenses
+                                  .filter(ex => ex.categoryType === "Relocation")
+                                  .map(ex => ex.uid);
+                                setSelectedExpenses(prev =>
+                                  e.target.checked
+                                    ? Array.from(new Set([...prev, ...relocationUids]))
+                                    : prev.filter(id => !relocationUids.includes(id))
+                                );
+                              }}
+                              checked={
+                                expenses.filter(ex => ex.categoryType === "Relocation").length > 0 &&
+                                expenses.filter(ex => ex.categoryType === "Relocation").every(ex => selectedExpenses.includes(ex.uid))
+                              }
+                            />
+                          </div>
+                        </th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Category</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Type</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Expense Date</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Merchant</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Invoice Number</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider border-r border-gray-200 whitespace-nowrap">Amount</th>
+                        <th className="px-5 py-4 text-left text-[11px] font-bold text-[#64748b] uppercase tracking-wider whitespace-nowrap">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {expenses
+                        .filter(e => e.categoryType === "Relocation")
+                        .map((expense) => {
+                          const isFailed = failedExpenseUids.has(expense.uid);
+                          return (
+                            <tr
+                              key={expense.uid}
+                              className={`hover:bg-gray-50 transition-colors ${isFailed ? "bg-red-50" : ""
+                                }`}
+                            >
+                              <td className="px-4 py-4 text-center border-r border-gray-200">
+                                <div className="flex justify-center">
+                                  <input
+                                    type="checkbox"
+                                    className="w-5 h-5 rounded-full border-2 border-gray-300 text-primary-600 focus:ring-primary-600 cursor-pointer appearance-none checked:bg-primary checked:border-primary relative transition-all before:content-[''] before:absolute before:w-2 before:h-1 before:border-b-2 before:border-l-2 before:border-white before:left-[5px] before:top-[6px] before:-rotate-45 before:opacity-0 checked:before:opacity-100"
+                                    checked={selectedExpenses.includes(expense.uid)}
+                                    onChange={() => handleCheckboxChange(expense.uid)}
+                                  />
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                <div className="flex items-center gap-2">
+                                  {expense.expenseCategory}
+                                  {isFailed && (
+                                    <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
+                                      FAILED
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
+                                {expense.expense_date
+                                  ? formatToIndianDate(expense.expense_date)
+                                  : "-"}
+                              </td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.merchant || "-"}</td>
+                              <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200">{expense.invoice_number || "-"}</td>
+                              <td className="px-5 py-4 text-sm font-bold text-gray-900 border-r border-gray-200">{expense.amount ?? "-"}</td>
+                              <td className="px-5 py-4 text-sm whitespace-nowrap">
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => handleEdit(expense)}
+                                    className="p-1.5 rounded-md text-primary hover:bg-primary/10 transition-colors"
+                                    title="Edit"
+                                  >
+                                    <SquarePen className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setExpenses((prev) =>
+                                        prev.filter((e) => e.uid !== expense.uid),
+                                      );
+                                      setSelectedExpenses((prev) =>
+                                        prev.filter((id) => id !== expense.uid),
+                                      );
+                                      clearFailedStatus(expense.uid);
+                                    }}
+                                    className="p-1.5 rounded-md text-red-500 hover:bg-red-50 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end mt-4 gap-2">
+                  <Button variant="outline" size="md" className="font-semibold" onClick={() => {
+                    setShowCategoryAndType(true);
+                    setEditingExpenseId(null);
+                    setMainFormData({ categoryType: "General" });
+                    setDynamicFormData({});
+                    setDynamicFields([]);
+                    setCalcParams(undefined);
+                    setVehicleType(null);
+                    setPreviousCategory(null);
+                    setSelectedCategoryType("General");
+                    setFormKey((prev) => prev + 1);
+
+                    setTimeout(() => {
+                      if (formRef.current?.reset) {
+                        formRef.current.reset();
+                      }
+                      if (dynamicFormRef.current?.reset) {
+                        dynamicFormRef.current.reset();
+                      }
+                    }, 0);
+                  }}
+                  >
+                    Add More
+                  </Button>
+                  <Button
+                    bgColor="primary"
+                    size="md"
+                    onClick={() => handleInitialSubmit("Relocation")}
+                    disabled={!expenses.some(e => e.categoryType === "Relocation" && selectedExpenses.includes(e.uid))}
+                    className="font-semibold shadow-sm"
+                  >
+                    Submit Selected
+                  </Button>
+                  <Button
+                    bgColor="error"
+                    size="md"
+                    onClick={handleDeleteSelected}
+                    disabled={!expenses.some(e => e.categoryType === "Relocation" && selectedExpenses.includes(e.uid))}
+                    className="font-semibold shadow-sm"
+                  >
+                    Delete Selected
+                  </Button>
+                </div>
+              </div>
+            )}
+
+
 
             {/* FIX 5: Comprehensive state reset in "Add More" button */}
-            <div className="flex justify-end mt-4 gap-3">
+            {/* <div className="flex justify-end mt-4 gap-3">
               <Button variant="outline" size="md" className="font-semibold" onClick={() => {
                 setShowCategoryAndType(true);
                 setEditingExpenseId(null);
@@ -1607,95 +1833,112 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               >
                 Add More
               </Button>
-              <Button size="md" className="font-semibold" disabled={expenses.length === 0 || isPending}
-                onClick={handleInitialSubmit}
-              >
-                {isPending ? "Submitting..." : "Submit"}
-              </Button>
-            </div>
+            </div> */}
           </div>
         )}
       </div>
 
-      {isAcknowledgementOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-semibold mb-4">Acknowledgement</h3>
-            <p className="mb-2 font-medium">I acknowledge that:</p>
-            <ul className="list-disc pl-5 mb-4 text-sm space-y-1 text-gray-700">
-              <li>
-                I have raised the expense as per the policy-defined limits
-              </li>
-              <li>I have attached payment proof for all bills</li>
-              <li>
-                I have uploaded the approval email screenshot for exceptional
-                expenses.
-              </li>
-            </ul>
-            <div className="flex items-start gap-2 mb-6">
-              <input
-                type="checkbox"
-                id="ack-checkbox"
-                checked={isAcknowledgementChecked}
-                onChange={(e) => setIsAcknowledgementChecked(e.target.checked)}
-                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label
-                htmlFor="ack-checkbox"
-                className="text-sm text-gray-800 cursor-pointer"
-              >
-                Otherwise I acknowledge that, the claim may be rejected on a
-                later stage.
-              </label>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" size="md" className="font-semibold" onClick={() => setIsAcknowledgementOpen(false)}>
-                Cancel
-              </Button>
-              <Button size="md" className="font-semibold" onClick={handleProceed}>
-                Proceed
-              </Button>
+      {
+        isAcknowledgementOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-lg font-semibold mb-4">Acknowledgement</h3>
+              <p className="mb-2 font-medium">I acknowledge that:</p>
+              <ul className="list-disc pl-5 mb-4 text-sm space-y-1 text-gray-700">
+                <li>
+                  I have raised the expense as per the policy-defined limits
+                </li>
+                <li>I have attached payment proof for all bills</li>
+                <li>
+                  I have uploaded the approval email screenshot for exceptional
+                  expenses.
+                </li>
+              </ul>
+              <div className="flex items-start gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  id="ack-checkbox"
+                  checked={isAcknowledgementChecked}
+                  onChange={(e) => setIsAcknowledgementChecked(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="ack-checkbox"
+                  className="text-sm text-gray-800 cursor-pointer"
+                >
+                  Otherwise I acknowledge that, the claim may be rejected on a
+                  later stage.
+                </label>
+              </div>
+
+              {pendingSubmissionType === "Relocation" && (
+                <div className="flex items-start gap-2 mb-6">
+                  <input
+                    type="checkbox"
+                    id="relocation-ack-checkbox"
+                    checked={isRelocationAcknowledgementChecked}
+                    onChange={(e) => setIsRelocationAcknowledgementChecked(e.target.checked)}
+                    className="mt-1 w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="relocation-ack-checkbox"
+                    className="text-sm text-gray-800 cursor-pointer"
+                  >
+                    I have checked the relocation expenses thoroughly.
+                  </label>
+                </div>
+              )}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" size="md" className="font-semibold" onClick={() => setIsAcknowledgementOpen(false)}>
+                  Cancel
+                </Button>
+                <Button size="md" className="font-semibold" onClick={handleProceed}>
+                  Proceed
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
-      {isSharePanelOpen && (
-        <ParticipantsDrawer
-          isOpen={isSharePanelOpen}
-          onClose={() => setIsSharePanelOpen(false)}
-          expenseAmount={Number(
-            editingExpenseId
-              ? (expenses.find((x) => x.uid === editingExpenseId)?.amount ??
-                dynamicFormData?.amount)
-              : (dynamicFormData?.amount ?? 0),
-          )}
-          editingExpenseId={editingExpenseId}
-          expenses={expenses}
-          setExpenses={(fn) => setExpenses(fn)}
-          currentEmployee={currentEmployee || undefined}
-          maxParticipants={maxAllowedParticipants}
-          employeeOptions={employeeOptionsForDrawer}
-          employeeOptionsLoading={isLoadingEmployees as boolean}
-          onSave={(formattedParticipants) => {
-            if (editingExpenseId) {
-              setExpenses((prev) =>
-                prev.map((e) =>
-                  e.uid === editingExpenseId
-                    ? { ...e, participants: formattedParticipants }
-                    : e,
-                ),
-              );
-            } else {
-              setDynamicFormData((prev: any) => ({
-                ...prev,
-                participants: formattedParticipants,
-              }));
-            }
-          }}
-        />
-      )}
-    </div>
+      {
+        isSharePanelOpen && (
+          <ParticipantsDrawer
+            isOpen={isSharePanelOpen}
+            onClose={() => setIsSharePanelOpen(false)}
+            expenseAmount={Number(
+              editingExpenseId
+                ? (expenses.find((x) => x.uid === editingExpenseId)?.amount ??
+                  dynamicFormData?.amount)
+                : (dynamicFormData?.amount ?? 0),
+            )}
+            editingExpenseId={editingExpenseId}
+            expenses={expenses}
+            setExpenses={(fn) => setExpenses(fn)}
+            currentEmployee={currentEmployee || undefined}
+            maxParticipants={maxAllowedParticipants}
+            employeeOptions={employeeOptionsForDrawer}
+            employeeOptionsLoading={isLoadingEmployees as boolean}
+            onSave={(formattedParticipants) => {
+              if (editingExpenseId) {
+                setExpenses((prev) =>
+                  prev.map((e) =>
+                    e.uid === editingExpenseId
+                      ? { ...e, participants: formattedParticipants }
+                      : e,
+                  ),
+                );
+              } else {
+                setDynamicFormData((prev: any) => ({
+                  ...prev,
+                  participants: formattedParticipants,
+                }));
+              }
+            }}
+          />
+        )
+      }
+    </div >
   );
 
   if (isDesktop) {
