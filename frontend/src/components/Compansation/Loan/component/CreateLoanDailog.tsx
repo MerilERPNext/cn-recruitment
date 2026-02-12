@@ -31,7 +31,7 @@ export default function CreateLoanDialog({
   const { setRefetchAttendance } = useGlobalStore();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || ""
+    currentUser?.name || "",
   );
 
   const { isDesktop } = useScreenSize();
@@ -51,7 +51,7 @@ export default function CreateLoanDialog({
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
+    requiredMap: Record<string, boolean>,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
     // deep clone
@@ -87,7 +87,7 @@ export default function CreateLoanDialog({
         }
         if (comp.rows && Array.isArray(comp.rows)) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+            row.forEach((cell: any) => applyToComponents(cell.components)),
           );
         }
       });
@@ -100,7 +100,7 @@ export default function CreateLoanDialog({
   const transformedSchema = useMemo(() => {
     return transformSchemaWithRequired(
       createLoanFormSchema as FormSchema,
-      requiredFieldMap
+      requiredFieldMap,
     );
   }, [requiredFieldMap]);
 
@@ -128,7 +128,7 @@ export default function CreateLoanDialog({
             onError: (error: CustomError) => {
               const formatedError = errorResponseFormater(
                 error,
-                "Submission failed. Please try again."
+                "Submission failed. Please try again.",
               );
               toast.error(formatedError);
               console.error(error);
@@ -161,22 +161,21 @@ export default function CreateLoanDialog({
         {isDesktop ? (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
             <h2 className=" base-title text-gray-900">Create New Loan</h2>
-            <Button
-              variant="soft"
+
+            <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
             >
-              <X />
-            </Button>
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
           </div>
         ) : (
-          
-<div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-<h2 className="text-lg font-semibold text-gray-800">
-          Create New Loan
-        </h2>
-</div>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Create New Loan
+            </h2>
+          </div>
         )}
 
         {/* Dialog Content */}
@@ -201,9 +200,11 @@ export default function CreateLoanDialog({
         </div>
         <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
           <div className=" mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-            {!isDesktop && (<Button onClick={onClose} fullWidth size="md" variant="outline">
-              Cancel
-            </Button>)}
+            {!isDesktop && (
+              <Button onClick={onClose} fullWidth size="md" variant="outline">
+                Cancel
+              </Button>
+            )}
             <Button
               onClick={() => {
                 handleSubmit();
