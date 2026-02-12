@@ -208,7 +208,7 @@ const MyFlowRequestCard = ({
               {request.todo_id}
             </Typography>
           </div>
-          <StatusBadge status={request.status} />
+          <StatusBadge status={overallStatus} />
         </div>
 
         {/* Request Details */}
@@ -247,9 +247,9 @@ const MyFlowRequestCard = ({
               <Typography variant="mobileCardLabel" className="block">
                 CUSTOM/FLOW STATUS
               </Typography>
-              <Typography variant="mobileCardValue">
-                {request.status}
-              </Typography>
+              <div>
+                <StatusBadge status={request.status} />
+              </div>
             </div>
           </div>
         </div>

@@ -7,11 +7,11 @@ import {
   LoadingView,
   ErrorView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 type TeamAdvanceDetailViewProps = {
   documentName: string;
@@ -24,17 +24,6 @@ const formatINR = (amount: number | undefined | null) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
     amount ?? 0,
   );
-
-const getStatus = (status: string | undefined) => {
-  switch (status) {
-    case "Approved":
-      return { label: "Approved", statusColor: "bg-green-100 text-green-600" };
-    case "Rejected":
-      return { label: "Rejected", statusColor: "bg-red-100 text-red-600" };
-    default:
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-600" };
-  }
-};
 
 export default function TeamAdvanceDetailView({
   documentName,
@@ -83,7 +72,6 @@ export default function TeamAdvanceDetailView({
       return [];
     }
   })();
-  const status = getStatus(ref.status);
 
   const DesktopBreakup = (
     <div className="mt-2 border border-gray-200 rounded-lg overflow-x-auto bg-white shadow-sm">
@@ -236,7 +224,8 @@ export default function TeamAdvanceDetailView({
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge label={status.label} backgroundColor={status.statusColor} />
+            <StatusBadge status={ref.status} />
+
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full"
