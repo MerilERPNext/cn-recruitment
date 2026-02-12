@@ -1,0 +1,32 @@
+{
+    "title": "Change Self Service Status",
+    "name": "changeSelfServiceForm",
+    "path": "change-self-service-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Self Service Status",
+            "errorLabel": "Self Service Status",
+            "key": "self_service_status",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Self Service Status",
+            "customClass": "mb-4",
+            "validate": {
+                "required": true
+            },
+            "data": {
+                "values": [
+                    {
+                        "label": "Yes",
+                        "value": "Yes"
+                    },
+                    {
+                        "label": "No",
+                        "value": "No"
+                    }
+                ]
+            }
+        }
+    ]
+}

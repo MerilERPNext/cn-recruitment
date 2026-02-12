@@ -19,8 +19,6 @@ interface MultiSelectProps<T extends Option> {
     onSearchChange?: (value: string) => void;
     isLoading?: boolean;
     renderOption?: (option: T) => React.ReactNode;
-
-
 }
 
 const MultiSelect = <T extends Option>({
@@ -36,7 +34,7 @@ const MultiSelect = <T extends Option>({
     searchValue,
     onSearchChange,
     isLoading,
-    renderOption
+    renderOption,
 }: MultiSelectProps<T>) => {
     const [query, setQuery] = useState("");
     const [open, setOpen] = useState(false);
@@ -68,22 +66,24 @@ const MultiSelect = <T extends Option>({
 
     /* ---------- adjust highlighted index when options change ---------- */
     useEffect(() => {
-        // If highlighted index is beyond the new length, move to the last item
-        // Otherwise, keep the current position (or previous position if possible)
         if (highlightedIndex >= filteredOptions.length && filteredOptions.length > 0) {
             setHighlightedIndex(filteredOptions.length - 1);
         } else if (filteredOptions.length === 0) {
             setHighlightedIndex(0);
         }
-        // If highlightedIndex is still valid, don't change it (maintains position)
     }, [filteredOptions.length]);
 
     /* ---------- scroll highlighted item into view ---------- */
     useEffect(() => {
         if (open && listRef.current) {
-            const highlightedElement = listRef.current.children[highlightedIndex] as HTMLElement;
+            const highlightedElement = listRef.current.children[
+                highlightedIndex
+            ] as HTMLElement;
             if (highlightedElement) {
-                highlightedElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                highlightedElement.scrollIntoView({
+                    block: "nearest",
+                    behavior: "smooth",
+                });
             }
         }
     }, [highlightedIndex, open]);
@@ -95,6 +95,13 @@ const MultiSelect = <T extends Option>({
 
     const removeOption = (opt: T) => {
         onChange(selected.filter((s) => s[valueKey] !== opt[valueKey]));
+    };
+
+    const clearAll = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onChange([]);
+        setQuery("");
+        onSearchChange?.("");
     };
 
     return (
@@ -159,14 +166,16 @@ const MultiSelect = <T extends Option>({
                         onClick={(e) => e.stopPropagation()}
                         onFocus={() => setOpen(true)}
                         onKeyDown={(e) => {
-                            // Remove last selected item on backspace when input is empty
-                            if (e.key === "Backspace" && (searchValue ?? query) === "" && selected.length > 0) {
+                            if (
+                                e.key === "Backspace" &&
+                                (searchValue ?? query) === "" &&
+                                selected.length > 0
+                            ) {
                                 e.preventDefault();
                                 removeOption(selected[selected.length - 1]);
                                 return;
                             }
 
-                            // Keyboard navigation
                             if (!open) return;
 
                             switch (e.key) {
@@ -178,10 +187,12 @@ const MultiSelect = <T extends Option>({
                                     break;
                                 case "ArrowUp":
                                     e.preventDefault();
-                                    setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+                                    setHighlightedIndex((prev) =>
+                                        prev > 0 ? prev - 1 : prev
+                                    );
                                     break;
                                 case "Enter":
-                                case " ": // Space key
+                                case " ":
                                     e.preventDefault();
                                     if (filteredOptions[highlightedIndex]) {
                                         addOption(filteredOptions[highlightedIndex]);
@@ -195,35 +206,50 @@ const MultiSelect = <T extends Option>({
                         }}
                         placeholder={selected.length === 0 ? placeholder : ""}
                         className="
-                            flex-1 min-w-[60px]
-                            bg-transparent text-sm
-                            text-gray-900 placeholder-gray-400
-                            outline-none
-                        "
+              flex-1 min-w-[60px]
+              bg-transparent text-sm
+              text-gray-900 placeholder-gray-400
+              outline-none
+            "
                         disabled={disabled}
                     />
-
                 </div>
 
-                <ChevronDown
-                    className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""
-                        }`}
-                />
+                {/* Clear + Chevron */}
+                <div className="flex items-center gap-2">
+                    {selected.length > 0 && !disabled && (
+                        <button
+                            type="button"
+                            onClick={clearAll}
+                            className="text-xs font-medium text-gray-400 hover:text-primary-600 transition-colors"
+                        >
+                            Clear
+                        </button>
+                    )}
+
+                    <ChevronDown
+                        className={`h-4 w-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""
+                            }`}
+                    />
+                </div>
             </Button>
 
-            {isLoading &&
+            {/* Loading */}
+            {isLoading && (
                 <div
                     className="
             absolute z-50 mt-2 w-full
             rounded-xl border border-gray-200
             bg-white shadow-lg
             animate-in fade-in zoom-in-95 flex flex-col gap-2 p-2
-          ">
-                    {Array.from({ length: 3 }).map(() => (
-                        <div className="h-6 w-full bg-gray-200 rounded" />
+          "
+                >
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="h-6 w-full bg-gray-200 rounded" />
                     ))}
+                </div>
+            )}
 
-                </div>}
             {/* Dropdown */}
             {open && !disabled && filteredOptions.length > 0 && (
                 <div
@@ -234,7 +260,6 @@ const MultiSelect = <T extends Option>({
             animate-in fade-in zoom-in-95
           "
                 >
-
                     <ul className="max-h-60 overflow-auto p-1" ref={listRef}>
                         {filteredOptions.map((opt, index) => (
                             <li
@@ -242,20 +267,21 @@ const MultiSelect = <T extends Option>({
                                 onClick={() => addOption(opt)}
                                 onMouseEnter={() => setHighlightedIndex(index)}
                                 className={`
-                                flex cursor-pointer items-center
-                                rounded-lg px-3 py-2 text-sm
-                                text-gray-700 transition
-                                hover:bg-gray-100
-                                ${index === highlightedIndex
+                  flex cursor-pointer items-center
+                  rounded-lg px-3 py-2 text-sm
+                  text-gray-700 transition
+                  hover:bg-gray-100
+                  ${index === highlightedIndex
                                         ? "bg-primary-50 border-l-2 border-primary-500"
                                         : ""
                                     }
-                                `}
+                `}
                             >
-                                {renderOption ? renderOption(opt) : String(opt[labelKey])}
+                                {renderOption
+                                    ? renderOption(opt)
+                                    : String(opt[labelKey])}
                             </li>
                         ))}
-
                     </ul>
                 </div>
             )}
