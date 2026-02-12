@@ -178,14 +178,7 @@ const SalarySlipsList = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipList"),
   "SalarySlipsList",
 );
-const ShiftChangeForm = lazyWithRetry(
-  () => import("./components/ShiftRequest/AddRequestForm"),
-  "ShiftChangeForm",
-);
-const ShiftReqeustEditForm = lazyWithRetry(
-  () => import("./components/ShiftRequest/EditRequestForm"),
-  "ShiftReqeustEditForm",
-);
+
 // const ShiftRequestList = lazyWithRetry(
 //   () => import("./components/ShiftRequest/MyShiftList"),
 //   "ShiftRequestList"
@@ -754,16 +747,7 @@ export const routesConfig: AppRoute[] = [
     ],
   },
 
-  {
-    path: "/webapp/shift-request/shift-change-form",
-    element: <ShiftChangeForm />,
-    permissionKey: "Shift Change Requests",
-  },
-  {
-    path: "/webapp/shift-request/shift-change-form/:id",
-    element: <ShiftReqeustEditForm />,
-    permissionKey: "Shift Change Requests",
-  },
+
 
   {
     path: "/webapp/notices",
