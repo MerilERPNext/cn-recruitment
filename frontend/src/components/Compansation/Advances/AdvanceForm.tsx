@@ -14,6 +14,8 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import {
   useCreateNewAdvance,
   useEmployeeAdvancesAmount,
+  useEmployeeAdvanceUpdate,
+  useGetEmployeeAdvanceDoc,
 } from "../../../hooks/useEmployeeAdvances";
 
 // ✅ Import JSON schema
@@ -30,11 +32,16 @@ import { Typography } from "../../shared/atoms/Typography";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface AdvanceFormProps {
+  docname?: string | null;
   user?: any;
   onClose?: () => void;
 }
 
-const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
+const AdvanceForm: React.FC<AdvanceFormProps> = ({
+  docname,
+  user,
+  onClose,
+}) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
@@ -42,16 +49,63 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const { uploadFiles } = useFileUploader();
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string>();
   const [postingDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const { data: advanceAmountData } = useEmployeeAdvancesAmount(
     user?.employee,
     selectedAdvanceType,
     postingDate,
-    user?.company
+    user?.company,
   );
+  const mutateUpdate = useEmployeeAdvanceUpdate();
+  const mutateCreate = useCreateNewAdvance();
+  const mapedFormData = (advance: any) => {
+    if (!advance) return null;
 
-  const mutation = useCreateNewAdvance();
+    const formData: Record<string, any> = {
+      custom_advance_type: advance.custom_advance_type,
+      advance_amount: advance.advance_amount,
+      custom_repayment_type: advance.custom_repayment_type,
+      repayment_method: advance.custom_repayment_methods,
+      custom_repayment_start_date: advance.custom_repayment_start_date,
+      repayment_periods: advance.custom_repayment_period_in_months,
+      repayment_amount: advance.custom_monthly_repayment_amount,
+      purpose: advance.purpose,
+    };
+
+    if (formData.custom_repayment_start_date) {
+      formData.custom_repayment_start_date = new Date(
+        formData.custom_repayment_start_date,
+      )
+        .toISOString()
+        .split("T")[0];
+    }
+
+    return formData;
+  };
+
+  const { data: advance, isLoading: advanceLoading } = useGetEmployeeAdvanceDoc(
+    docname ?? "",
+  );
+  useEffect(() => {
+    const instance = formAdvanceInstance.current;
+
+    if (!instance) return;
+    if (advanceLoading) return;
+    if (!advance) return;
+
+    const mappedData = mapedFormData(advance);
+    if (!mappedData) return;
+
+    instance.setSubmission({
+      data: mappedData,
+    });
+
+    // keep state in sync
+    if (mappedData.custom_advance_type) {
+      setSelectedAdvanceType(mappedData.custom_advance_type);
+    }
+  }, [advanceLoading, advance, formAdvanceInstance.current]);
 
   const { data: requiredFields } = useRequiredFields("Employee Advance");
   const requiredFieldMap = useMemo(() => {
@@ -65,7 +119,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
+    requiredMap: Record<string, boolean>,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
     // deep clone
@@ -101,7 +155,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         }
         if (comp.rows && Array.isArray(comp.rows)) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+            row.forEach((cell: any) => applyToComponents(cell.components)),
           );
         }
       });
@@ -114,7 +168,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const trasnsformedSchema = useMemo(() => {
     return transformSchemaWithRequired(
       advanceFormJson as FormSchema,
-      requiredFieldMap
+      requiredFieldMap,
     );
   }, [requiredFieldMap]);
 
@@ -137,66 +191,94 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
   const loading = useLoadingOverlay();
   /** ✅ Handle Submit */
   const handleSubmit = async () => {
-  try {
-    const submission = await formAdvanceInstance.current?.submit();
-    const formData = submission?.data;
+    try {
+      const submission = await formAdvanceInstance.current?.submit();
+      const formData = submission?.data;
 
-    if (!formData) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
+      if (!formData) {
+        toast.error("Please fill all required fields.");
+        return;
+      }
 
-    if (formData.custom_repayment_start_date) {
-      formData.custom_repayment_start_date = new Date(
-        formData.custom_repayment_start_date
-      )
-        .toISOString()
-        .split("T")[0];
-    }
+      if (formData.custom_repayment_start_date) {
+        formData.custom_repayment_start_date = new Date(
+          formData.custom_repayment_start_date,
+        )
+          .toISOString()
+          .split("T")[0];
+      }
 
-    const submissionData = {
-      ...formData,
-      custom_advance_type:
-        selectedAdvanceType || formData.custom_advance_type,
-      applicant_type: "Employee",
-      company: user?.company,
-      employee: user?.employee,
-      advance_account: advanceAmountData?.advance_account,
-      exchange_rate: 1.0,
-      custom_repayment_methods: formData.repayment_method || "",
-      custom_repayment_period_in_months: formData.repayment_periods || 0,
-      custom_monthly_repayment_amount: formData.repayment_amount || 0,
-    };
+      const submissionData = {
+        ...formData,
+        custom_advance_type:
+          selectedAdvanceType || formData.custom_advance_type,
+        applicant_type: "Employee",
+        company: user?.company,
+        employee: user?.employee,
+        advance_account: advanceAmountData?.advance_account,
+        exchange_rate: 1.0,
+        custom_repayment_methods: formData.repayment_method || "",
+        custom_repayment_period_in_months: formData.repayment_periods || 0,
+        custom_monthly_repayment_amount: formData.repayment_amount || 0,
+      };
 
-    // ✅ Wrap only the mutation + file upload
-    await loading?.wrap(async () => {
-       await new Promise<void>((resolve, reject) => {
-      mutation.mutate(submissionData, {
-        onSuccess: async (data: any) => {
-          if (attachments?.length > 0) {
-            await uploadFiles(attachments, data.doctype, data.name);
-          }
-          toast.success("Advance Request submitted successfully!");
-          onClose?.();
-          setTimeout(() => setRefetchAttendance(true), 2000);
-          resolve();
-        },
-        onError: (error: any) => {
-          console.error(error);
-          reject(error);
-        },
-      })});
-    }, "Submitting advance request…");
-  } catch (err) {
-    console.error("❌ Form submission error", err);
-    const formatedError = errorResponseFormater(
+      // ✅ Wrap only the mutate + file upload
+
+      if (docname) {
+        await loading?.wrap(async () => {
+          await new Promise<void>((resolve, reject) => {
+            mutateUpdate.mutate(
+              { docname, data: submissionData },
+              {
+                onSuccess: async (data: any) => {
+                  if (attachments?.length > 0) {
+                    await uploadFiles(attachments, data.doctype, data.name);
+                  }
+                  toast.success("Advance Request updated successfully!");
+                  onClose?.();
+                  setTimeout(() => setRefetchAttendance(true), 2000);
+                  resolve();
+                },
+                onError: (error: any) => {
+                  console.error(error);
+                  reject(error);
+                },
+              },
+            );
+          });
+        }, "Submitting advance request…");
+
+        return;
+      }
+
+      await loading?.wrap(async () => {
+        await new Promise<void>((resolve, reject) => {
+          mutateCreate.mutate(submissionData, {
+            onSuccess: async (data: any) => {
+              if (attachments?.length > 0) {
+                await uploadFiles(attachments, data.doctype, data.name);
+              }
+              toast.success("Advance Request submitted successfully!");
+              onClose?.();
+              setTimeout(() => setRefetchAttendance(true), 2000);
+              resolve();
+            },
+            onError: (error: any) => {
+              console.error(error);
+              reject(error);
+            },
+          });
+        });
+      }, "Submitting advance request…");
+    } catch (err) {
+      console.error("❌ Form submission error", err);
+      const formatedError = errorResponseFormater(
         err,
-        "Submission failed. Please try again."
+        "Submission failed. Please try again.",
       );
       toast.error(formatedError);
-  }
-};
-
+    }
+  };
 
   const handleCancel = useCallback(() => {
     if (formAdvanceInstance.current) {
@@ -223,11 +305,10 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             </div>
           ) : (
             <div className="flex items-center justify-between px-6 py-4   bg-white sticky top-0 z-20">
-<h2 className="text-lg font-semibold text-gray-800">
-Advance Request
-        </h2>
-</div>
-
+              <h2 className="text-lg font-semibold text-gray-800">
+                Advance Request
+              </h2>
+            </div>
           )}
         </div>
       </div>
@@ -240,6 +321,16 @@ Advance Request
             form={trasnsformedSchema}
             onFormReady={(instance: any) => {
               formAdvanceInstance.current = instance;
+
+              // if advance already loaded before form was ready
+              if (advance && !advanceLoading) {
+                const mappedData = mapedFormData(advance);
+                instance.setSubmission({ data: mappedData });
+
+                if (mappedData?.custom_advance_type) {
+                  setSelectedAdvanceType(mappedData.custom_advance_type);
+                }
+              }
             }}
             options={{ submitButton: false, noAlerts: true }}
             onChange={(submission: any) => {
@@ -259,21 +350,23 @@ Advance Request
       {/* Footer */}
       <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 py-2.5">
         <div className=" flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-        {!isDesktop && ( <Button
-            onClick={handleCancel}
-            size="md"
-            variant="outline"
-            className="w-full md:w-auto min-w-[150px]"
-          >
-            Cancel
-          </Button>)}
+          {!isDesktop && (
+            <Button
+              onClick={handleCancel}
+              size="md"
+              variant="outline"
+              className="w-full md:w-auto min-w-[150px]"
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
-                          size="md"
-              variant="contain"
-              className="w-full md:w-auto min-w-[150px]"
+            size="md"
+            variant="contain"
+            className="w-full md:w-auto min-w-[150px]"
           >
-            Submit
+            {docname ? "Update" : "Submit"}
           </Button>
         </div>
       </div>

@@ -8,6 +8,8 @@ export interface ApiRepayment {
 }
 
 export type ApiAdvance =  {
+  name: string;
+   can_edit: number;
   employee_name: string;
   amount: number;
   advance_account: string;
@@ -24,6 +26,7 @@ export type ApiAdvance =  {
 
 // UI shape (your old Advance type)
 export interface UiAdvance {
+  docname: string;
   employee_name: string;
   name: string;
   amount: number;
@@ -32,6 +35,7 @@ export interface UiAdvance {
   endDate: string;
   advanceStatus: string;
   installments: Installment[];
+  can_edit: number;
 }
 
 export interface Installment {
