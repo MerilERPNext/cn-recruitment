@@ -5,7 +5,7 @@ import RequestShiftChangeButton from "./RequestShiftChangeButton";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
+
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
 import Button from "../shared/atoms/Button";
@@ -74,11 +74,7 @@ const ShiftRequestApp: React.FC = () => {
   };
 
   const handleShiftForm = () => {
-    if (isDesktop) {
-      setShowShiftRequestModal(true);
-    } else {
-      navigate(`/webapp/shift-request/shift-change-form`);
-    }
+    setShowShiftRequestModal(true);
   };
 
   const handleCloseShiftModal = () => {
@@ -124,6 +120,9 @@ const ShiftRequestApp: React.FC = () => {
       {activeTab === "My Shift Assignment" && (
         <RequestShiftChangeButton onClick={handleShiftForm} />
       )}
+      {showShiftRequestModal && (
+        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
+      )}
     </div>
   );
 
@@ -137,13 +136,9 @@ const ShiftRequestApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
       <Outlet />
-      <ExpenseFormModal
-        isOpen={showShiftRequestModal}
-        onClose={handleCloseShiftModal}
-        title="Request Shift Change"
-      >
+      {showShiftRequestModal && (
         <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      </ExpenseFormModal>
+      )}
     </DesktopLayoutWrapper>
   );
 
