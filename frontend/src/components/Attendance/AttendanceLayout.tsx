@@ -232,7 +232,7 @@ const AttendanceLayoutContent: React.FC = () => {
             size="lg"
           >
             {isOvertimePage && plannedOvertimAllowed
-              ? "+ Overtime"
+              ? "+ Overtime Request"
               : "+ Attendance Request"}
             {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${
