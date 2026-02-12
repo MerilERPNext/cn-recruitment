@@ -22,7 +22,11 @@ export default function LoansPage() {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
   const { data: loanData, isLoading } = useLoan(employeeId || "");
-
+  const [loanId, setLoanId] = useState<string | null>(null);
+  const handleEdit = (docname: string) => {
+    setLoanId(docname);
+    setIsDialogOpen(true);
+  };
   // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
   //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
   // )
@@ -100,7 +104,7 @@ export default function LoansPage() {
           {isLoading ? (
             <CardSkeleton />
           ) : filteredLoans.length > 0 ? (
-            <LoanList loans={filteredLoans} />
+            <LoanList handleEdit={handleEdit} loans={filteredLoans} />
           ) : (
             <div className="text-center py-12 px-4">
               <p className="text-gray-500">
@@ -122,10 +126,17 @@ export default function LoansPage() {
   return (
     <>
       {isDesktop ? DesktopLayout : <MobileLayout />}
-      <CreateLoanDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-      />
+
+      {isDialogOpen && (
+        <CreateLoanDialog
+          loanId={loanId}
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setLoanId(null);
+          }}
+        />
+      )}
     </>
   );
 }

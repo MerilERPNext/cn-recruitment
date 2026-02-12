@@ -10,12 +10,14 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Tooltip from "../../../shared/Tooltip";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { formatCurrency } from "../../../../utils/currency";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 
 interface LoanListProps {
   loans: Loan[];
+  handleEdit: (docname: string) => void;
 }
 
-export default function LoanList({ loans }: LoanListProps) {
+export default function LoanList({ handleEdit, loans }: LoanListProps) {
   const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
   const toggleLoanExpansion = (loan_name: string) => {
@@ -46,10 +48,12 @@ export default function LoanList({ loans }: LoanListProps) {
     "Start Date",
     "End Month",
     "Status",
+    "Actions",
   ];
 
   const columnWidths = [
     "3rem",
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
@@ -174,6 +178,14 @@ export default function LoanList({ loans }: LoanListProps) {
                 <Tooltip content={`Allocated to : ${loan?.employee_name}`}>
                   <StatusBadge status={loan.status} />
                 </Tooltip>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <MyApprovalActionPill
+                  isPending={true}
+                  canEdit={!!loan.can_edit}
+                  onEdit={() => handleEdit(loan.name)}
+                />
               </div>
             </div>
 
