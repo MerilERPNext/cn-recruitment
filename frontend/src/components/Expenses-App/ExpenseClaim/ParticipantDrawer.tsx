@@ -64,18 +64,28 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     const normalized = rows.map((row) => {
       const r: ParticipantRow = { ...(row || {}) };
       if (modeToUse === "percentage") {
+        const rawP = r.percentage;
         const p =
-          typeof r.percentage === "number"
-            ? r.percentage
-            : Number(r.percentage || 0) || 0;
+          rawP === null || rawP === undefined
+            ? 0
+            : typeof rawP === "number"
+              ? rawP
+              : Number(rawP || 0) || 0;
         const amt = +(totalAmount * (p / 100) || 0);
-        r.percentage = isNaN(p) ? null : +p;
+        // Preserve null so the input can show empty
+        r.percentage = rawP === null ? null : isNaN(p) ? null : +p;
         r.amount = isNaN(amt) ? null : Number(amt.toFixed(2));
       } else {
+        const rawAmt = r.amount;
         const amt =
-          typeof r.amount === "number" ? r.amount : Number(r.amount || 0) || 0;
+          rawAmt === null || rawAmt === undefined
+            ? 0
+            : typeof rawAmt === "number"
+              ? rawAmt
+              : Number(rawAmt || 0) || 0;
         const p = totalAmount > 0 ? +((amt / totalAmount) * 100) : 0;
-        r.amount = isNaN(amt) ? null : +amt;
+        // Preserve null so the input can show empty
+        r.amount = rawAmt === null ? null : isNaN(amt) ? null : +amt;
         r.percentage = isNaN(p) ? null : +p.toFixed(2);
       }
       totalPercent += Number(r.percentage || 0);
@@ -404,7 +414,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         onClick={onClose}
       />
       <aside
-        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-[650px] transform transition-transform duration-300 ease-out bg-white shadow-2xl overflow-hidden flex flex-col"
+        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-[50vw] xl:max-w-[40vw] 2xl:max-w-[35vw] transform transition-transform duration-300 ease-out bg-white shadow-2xl overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
       >
@@ -662,16 +672,16 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             <button
               onClick={resetParticipants}
               type="button"
-              className="px-6 py-2.5 text-sm font-bold text-[#64748b] hover:text-gray-900 transition-colors uppercase tracking-wider"
+              className="px-6 py-2.5 text-sm font-bold border border-gray-200 rounded-xl text-[#64748b] hover:text-gray-900 transition-colors"
             >
-              RESET
+              Reset
             </button>
             <button
               onClick={saveParticipants}
               type="button"
-              className="px-8 py-3 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95 uppercase tracking-widest"
+              className="px-8 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-600 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
             >
-              SAVE
+              Save
             </button>
           </div>
         </div>
