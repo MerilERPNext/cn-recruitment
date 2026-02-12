@@ -444,7 +444,7 @@ const SalarySlipItemDesktop = ({
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
           <span className="blur-sm text-gray-400">
-            {formatCurrency("XX,XXX")}
+            ₹XX,XXX
           </span>
         ) : (
           formatCurrency2(item.gross_pay)
