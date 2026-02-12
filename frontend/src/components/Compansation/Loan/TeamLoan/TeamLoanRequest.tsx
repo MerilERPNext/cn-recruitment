@@ -8,6 +8,7 @@ import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import LoanDetailsModal from "./LoanDetailsView";
 import { Typography } from "../../../shared/atoms/Typography";
+import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
@@ -96,6 +97,7 @@ const TeamLoanRequest = () => {
               },
             ]}
             defaultFilters={{ status: "Open" }}
+            SkeletonComponent={CardSkeleton}
             renderCardContent={(item: any) => (
               <ApprovalRejectionLoanList
                 data={item.data}

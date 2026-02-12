@@ -9,6 +9,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
+import { formatCurrency } from "../../../utils/currency";
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
   const { data: userId } = useLoggedInUser();
@@ -35,12 +36,7 @@ export default function PerquisiteList() {
 
   const titles = ["Perquisite Name", "Taxable Value", "Status", "Action"];
   const columnWidths = ["2fr", "1.2fr", "1.2fr", "1fr"];
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
+
   return (
     <div className="w-full">
       <div className="mb-6">
@@ -71,11 +67,10 @@ export default function PerquisiteList() {
                 <div>
                   <span
                     className={`px-2.5 py-1.5 rounded-2xl text-xs font-medium
-                    ${
-                      item.status === "Paid"
+                    ${item.status === "Paid"
                         ? "bg-success/20 text-success"
                         : "bg-gray-100 text-gray-600"
-                    }`}
+                      }`}
                   >
                     {item.status}
                   </span>
@@ -129,11 +124,10 @@ export default function PerquisiteList() {
 
                 <span
                   className={`px-2 py-0.5 rounded-xl text-xs font-medium
-                  ${
-                    item.status === "Applicable"
+                  ${item.status === "Applicable"
                       ? "bg-green-100 text-green-800"
                       : "bg-gray-100 text-gray-600"
-                  }`}
+                    }`}
                 >
                   {item.status}
                 </span>
@@ -189,16 +183,15 @@ export default function PerquisiteList() {
                         {key.replace(/([A-Z])/g, " $1")}
                       </span>
                       <span
-  className={`font-medium ${
-    typeof value === "boolean"
-      ? value
-        ? "bg-success-100 text-success"
-        : "bg-error-100 text-error"
-      : "bg-transparent text-gray-800"
-  } px-2 py-1 rounded`}
->
-  {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
-</span>
+                        className={`font-medium ${typeof value === "boolean"
+                            ? value
+                              ? "bg-success-100 text-success"
+                              : "bg-error-100 text-error"
+                            : "bg-transparent text-gray-800"
+                          } px-2 py-1 rounded`}
+                      >
+                        {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
+                      </span>
                     </li>
                   )
                 )}

@@ -16,6 +16,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { FileText } from "lucide-react";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -110,7 +111,7 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3">
+      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 border-primary mb-3">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-base font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
@@ -144,7 +145,10 @@ const MyAdvanceExpenseList = () => {
             </Link>
 
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block text-right">
+              <Typography
+                variant="mobileCardLabel"
+                className="block text-right"
+              >
                 Date
               </Typography>
               <Typography variant="mobileCardValue">
@@ -157,9 +161,7 @@ const MyAdvanceExpenseList = () => {
               <Typography variant="mobileCardLabel" className="block">
                 Company
               </Typography>
-              <Typography variant="mobileCardValue">
-                {doc.company}
-              </Typography>
+              <Typography variant="mobileCardValue">{doc.company}</Typography>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -288,18 +290,8 @@ const MyAdvanceExpenseList = () => {
               custom_type: "Reimbursement / Expense Advance",
               status: "Pending",
             }}
+            SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
             isSearch={true}
             isFilter={true}
             filterFields={[

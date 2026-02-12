@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 import CardTable from "../shared/CardTable";
 import { ShiftDetailView } from "./ShiftDetailView";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
@@ -105,6 +106,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
               },
             ]}
             defaultFilters={{ status: "Draft" }}
+            SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue
                 isSelected={item?.isSelected}

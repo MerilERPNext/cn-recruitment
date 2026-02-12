@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../../hooks/useEmployee";
-import { MyLeaveRequestSkeleton } from "../LeaveSkeletons";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import CompensatoryRequestCard, {
@@ -11,6 +10,7 @@ import CompOffDetailsModal from "./CompOffDetailsModal";
 import { useGetCompOffList } from "../../../hooks/useLeaves";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const STATUS_OPTIONS = [
   { label: "Issued", value: "Issued" },
@@ -70,14 +70,14 @@ const CompensatoryRequest: React.FC = () => {
     );
   }
 
-  if (
-    isLoading ||
-    isUserLoading ||
-    isEmployeeLoading ||
-    !currentEmployee?.name
-  ) {
-    return <MyLeaveRequestSkeleton />;
-  }
+  // if (
+  //   isLoading ||
+  //   isUserLoading ||
+  //   isEmployeeLoading ||
+  //   !currentEmployee?.name
+  // ) {
+  //   return <MyLeaveRequestSkeleton />;
+  // }
 
   if (isError) return <p>Error: {(error as Error).message}</p>;
 
@@ -119,19 +119,21 @@ const CompensatoryRequest: React.FC = () => {
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1.5fr", "1fr", "1fr"]}
         >
-          {filteredData.length === 0 ? (
+          {isLoading || isUserLoading || isEmployeeLoading ? (
+            <CardSkeleton />
+          ) : filteredData.length === 0 ? (
             <div className="py-12 text-center text-gray-600">
-              No records found{" "}
+              No records found
             </div>
-          ) : null}
-
-          {filteredData.map((item) => (
-            <CompensatoryRequestCard
-              key={item.name}
-              item={item}
-              onClick={() => handleCardClick(item)}
-            />
-          ))}
+          ) : (
+            filteredData.map((item) => (
+              <CompensatoryRequestCard
+                key={item.name}
+                item={item}
+                onClick={() => handleCardClick(item)}
+              />
+            ))
+          )}
         </CardTable>
       </div>
 

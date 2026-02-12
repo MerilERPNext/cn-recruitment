@@ -7,6 +7,7 @@ import BenefitRequestItem from "./BenefitRequestItem";
 import { Typography } from "../../shared/atoms/Typography";
 import { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -78,6 +79,7 @@ const MyTeamRequest: React.FC = () => {
               },
             ]}
             defaultFilters={{ status: "Pending" }}
+            SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => (
               <BenefitRequestItem
                 isSelected={item?.isSelected}

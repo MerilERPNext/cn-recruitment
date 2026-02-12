@@ -11,6 +11,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +21,7 @@ export default function LoansPage() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
-  const { data: loanData } = useLoan(employeeId || "");
+  const { data: loanData, isLoading } = useLoan(employeeId || "");
 
   // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
   //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -96,23 +97,25 @@ export default function LoansPage() {
         {/* Search */}
 
         <div className="max-w-screen">
-          <LoanList loans={filteredLoans} />
+          {isLoading ? (
+            <CardSkeleton />
+          ) : filteredLoans.length > 0 ? (
+            <LoanList loans={filteredLoans} />
+          ) : (
+            <div className="text-center py-12 px-4">
+              <p className="text-gray-500">
+                No loans found matching your search criteria.
+              </p>
+            </div>
+          )}
         </div>
-
-        {filteredLoans.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <p className="text-gray-500">
-              No loans found matching your search criteria.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
 
   const MobileLayout = () => (
-    <div className="min-h-screen w-full ">
-      <ListViewOfLoanForMobile />
+    <div className="min-h-screen w-full px-4 py-4">
+      {isLoading ? <CardSkeleton /> : <ListViewOfLoanForMobile />}
     </div>
   );
 

@@ -247,8 +247,9 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex h-full overflow-y-auto min-h-0`}>
       <div
-        className={`flex p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -288,9 +289,6 @@ const EmployeeAttendance = () => {
             </div>
           </div>
         )}
-
-        {/* Request Attendance Correction */}
-
         {/* My Attendance Requests */}
         <Card className="pb-20 mt-4">
           <div className="flex justify-between items-center w-full pb-2">

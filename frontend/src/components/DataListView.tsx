@@ -938,9 +938,7 @@ const DataListView = <T extends BaseItem>({
           </div>
         ) : isListLoading && processedData.length === 0 ? (
           SkeletonComponent ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <SkeletonComponent key={index} />
-            ))
+            <SkeletonComponent />
           ) : (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-2 text-gray-500">

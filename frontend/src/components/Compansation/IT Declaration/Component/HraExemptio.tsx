@@ -7,7 +7,7 @@ import LTACards from "./LtaBreakUp";
 import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { useFileUpload } from "../../../../hooks/useEmployee";
-import { RupeeSymbolPerfix } from "../../../../utils/currency";
+import { formatCurrency } from "../../../../utils/currency";
 
 export interface LTAItem {
   exemption_sub_category: string;
@@ -232,8 +232,8 @@ useEffect(() => {
         {/* ✅ Show warning only when rent > 8333 */}
         {isPanMandatory && (
           <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
-            If rent is more than {RupeeSymbolPerfix("8,333")}/month or{" "}
-            {RupeeSymbolPerfix("1,00,000")}/year, PAN is mandatory.
+            If rent is more than {formatCurrency(8333)}/month or{" "}
+            {formatCurrency(100000)}/year, PAN is mandatory.
           </div>
         )}
 
@@ -337,7 +337,7 @@ useEffect(() => {
             {isPanMandatory && !hraData.pan && (
               <p className="text-xs text-red-500 mt-1">
                 PAN is required when rent exceeds
-                {RupeeSymbolPerfix("8,333")}/month.
+                {formatCurrency(8333)}/month.
               </p>
             )}
           </div>
@@ -472,11 +472,10 @@ useEffect(() => {
 
                           onChange("lta", { items: updatedItems });
                         }}
-                        className={`max-w-[500px] border rounded px-3 py-1 ${
-                          item.editable === 0
+                        className={`max-w-[500px] border rounded px-3 py-1 ${item.editable === 0
                             ? "bg-gray-200 cursor-not-allowed w-full"
                             : ""
-                        }`}
+                          }`}
                       />
                     </div>
                     <div className=" flex flex-col gap-2 ">
