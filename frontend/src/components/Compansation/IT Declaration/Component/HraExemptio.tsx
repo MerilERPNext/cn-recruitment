@@ -225,7 +225,7 @@ const HRAForm: React.FC<HRAFormProps> = ({
             {isPanMandatory && !hraData.pan && (
               <p className="text-xs text-red-500 mt-1">
                 PAN is required when rent exceeds
-                {formatCurrency("8,333")}/month.
+                {formatCurrency(8333)}/month.
               </p>
             )}
           </div>
