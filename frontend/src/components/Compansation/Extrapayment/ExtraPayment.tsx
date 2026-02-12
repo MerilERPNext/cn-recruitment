@@ -242,7 +242,7 @@ export default function ExtraPayment() {
                     variant="bodySmall"
                     className="font-medium text-center"
                   >
-                    {RupeeSymbolPerfix(payment.amount)}
+                    {formatCurrency(payment.amount)}
                   </Typography>
 
                   <div className="flex items-center justify-center">
