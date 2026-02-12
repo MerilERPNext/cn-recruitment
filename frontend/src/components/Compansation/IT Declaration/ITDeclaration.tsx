@@ -24,6 +24,7 @@ import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Form12B from "./Component/Form12B";
+import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 
 type PayrollPeriod = {
   name: string;
@@ -65,7 +66,7 @@ const ITDeclarationForm = () => {
       });
     }
   }, [activeMainTab]);
-  
+  console.log("hragggggg", hraData);
 
 
   /* ---------------- Regime ---------------- */
@@ -157,8 +158,6 @@ useEffect(() => {
   );
 
   const sectionCategories = activeSectionData?.categories || [];
-
-  console.log(sectionCategories, "sectionCategories in category section");
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
@@ -184,22 +183,29 @@ useEffect(() => {
     );
   };
   /* ---------------- Submit ---------------- */
+ 
   const LTAData = (hraData as unknown as any[])?.[1];
+  console.log("LTA BREAKUP", LTAData );
   console.log(   LTAData?.items, "LTA items")
   const handleSubmit = () => {
     const ltaDeclarations =
     LTAData?.items?.flatMap((cat: any) =>
-    cat.items
-      .filter((item: any) => Number(item?.amount) > 0)
-      .map((item: any) => ({
-        exemption_category: cat.category_name, // usually "LTA"
-        exemption_sub_category: item.exemption_sub_category,
-        amount: Number(item.amount),
-        max_amount: Number(item.max_amount),
-        attach_proof: typeof item.proof_file === "string" ? item.proof_file : null,
-        note: "",
-      }))
-  ) || [];
+      cat.items
+        .filter((item: any) => Number(item?.amount) > 0)
+        .map((item: any) => ({
+          exemption_category: cat.category_name,
+          exemption_sub_category: item.exemption_sub_category,
+          amount: Number(item.amount),
+          max_amount: Number(item.max_amount),
+  
+          attach_proof:
+            typeof item.proof_file === "string" && item.proof_file.length > 0
+              ? item.proof_file        // new uploaded file
+              : item.attach_proof || null,   // existing API file
+  
+          note: "",
+        }))
+    );
     const itDeclarations = groupedCategories.flatMap((sec) =>
       sec.categories.flatMap((cat: any) =>
         cat.items
@@ -232,26 +238,46 @@ useEffect(() => {
       data: {
         monthly_house_rent: goHeadWithNewRegimeBool
           ? 0
-          : hraData?.monthly_hra ?? 0,
+          : Number(hraData?.monthly_hra || 0),
+      
         rented_in_metro_city: goHeadWithNewRegimeBool
           ? 0
-          : hraData?.rented_in_metro_city ?? 0,
-        start_date: goHeadWithNewRegimeBool ? "" : hraData?.start_date ?? "",
-        end_date: goHeadWithNewRegimeBool ? "" : hraData?.end_date ?? "",
-        pan: goHeadWithNewRegimeBool ? "" : hraData?.pan ?? "",
+          : Number(hraData?.rented_in_metro_city || 0),
+      
+        start_date: goHeadWithNewRegimeBool
+          ? ""
+          : hraData?.start_date || "",
+      
+        end_date: goHeadWithNewRegimeBool
+          ? ""
+          : hraData?.end_date || "",
+      
+        pan: goHeadWithNewRegimeBool
+          ? ""
+          : hraData?.pan || "",
+      
+        cunstom_name: goHeadWithNewRegimeBool
+          ? ""
+          : hraData?.owner_name || "",
+      
         address_title1: goHeadWithNewRegimeBool
           ? ""
-          : hraData?.address_line1 ?? "",
-          address_title2: goHeadWithNewRegimeBool
+          : hraData?.address_line1 || "",
+      
+        address_title2: goHeadWithNewRegimeBool
           ? ""
-          : hraData?.address_line2 ?? "",
-        company: user?.company,
-        custom_hra_proof_attach: goHeadWithNewRegimeBool ? null : hraData?.proof_file ?? null,
+          : hraData?.address_line2 || "",
+      
+        attach_proof: goHeadWithNewRegimeBool
+          ? null
+          : hraData?.proof_file || null,
+      
         payroll_period: selectedPeriod,
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
-      },
+      }
+      
     };
 console.log("Submitting payload", payload);
     mutation.mutate(payload, {
@@ -317,6 +343,10 @@ console.log("Submitting payload", payload);
             <Form12B
               declarationId={declarationIdFromITDeclaration}
                docName={declarationDoctype}
+              disabled={false}
+            />
+            <PreviewOfITDeclaration
+              declarationId={declarationIdFromITDeclaration}
               disabled={false}
             />
             <Button
