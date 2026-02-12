@@ -61,8 +61,70 @@ const HRAForm: React.FC<HRAFormProps> = ({
   const [showLTAModal, setShowLTAModal] = useState(false);
   const uploadMutation = useFileUpload();
   const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [address1, setAddress1] = useState("");
+const [isMetro, setIsMetro] = useState<number>(0);
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
+const [monthlyHra, setMonthlyHra] = useState("");
+const [ownerName, setOwnerName] = useState("");
+const [pan, setPan] = useState("");
 
-  const LTAData = (hraData as unknown as any[])?.[1];
+const LTAData = (hraData as unknown as any[])?.[1];
+const hraDetails = (hraData as unknown as any[])?.[0];
+
+useEffect(() => {
+  const addr =
+    hraData.address_line1 ??
+    hraDetails?.address_line1 ??
+    "";
+
+  const metro =
+    hraData.rented_in_metro_city ??
+    hraDetails?.rented_in_metro_city ??
+    0;
+
+  const sDate =
+    hraData.start_date ??
+    hraDetails?.start_date ??
+    "";
+
+  const eDate =
+    hraData.end_date ??
+    hraDetails?.end_date ??
+    "";
+
+  const mHra =
+    hraData.monthly_hra ??
+    hraDetails?.monthly_hra ??
+    "";
+
+  const owner =
+    hraData.owner_name ??
+    hraDetails?.owner_name ??
+    "";
+
+  const p =
+    hraData.pan ??
+    hraDetails?.pan ??
+    "";
+
+  setAddress1(addr);
+  setIsMetro(metro);
+  setStartDate(sDate);
+  setEndDate(eDate);
+  setMonthlyHra(String(mHra));
+  setOwnerName(owner);
+  setPan(p);
+
+  // 🔥 IMPORTANT: sync to parent also
+  onChange("address_line1", addr);
+  onChange("rented_in_metro_city", metro);
+  onChange("start_date", sDate);
+  onChange("end_date", eDate);
+  onChange("monthly_hra", Number(mHra || 0));
+  onChange("owner_name", owner);
+  onChange("pan", p);
+}, []);
 
   // ✅ PAN mandatory condition
   const isPanMandatory = Number(hraData.monthly_hra) > 8333;
@@ -179,8 +241,11 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div className="col-span-2">
             <label className="text-xs text-gray-500">Address</label>
             <input
-              value={hraData.address_line1}
-              onChange={(e) => onChange("address_line1", e.target.value)}
+  value={address1}
+  onChange={(e) => {
+    setAddress1(e.target.value);
+    onChange("address_line1", e.target.value);
+  }}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -188,10 +253,12 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div>
             <label className="text-xs text-gray-500">Is Metro</label>
             <select
-              value={hraData.rented_in_metro_city}
-              onChange={(e) =>
-                onChange("rented_in_metro_city", Number(e.target.value))
-              }
+  value={isMetro}
+  onChange={(e) => {
+    const v = Number(e.target.value);
+    setIsMetro(v);
+    onChange("rented_in_metro_city", v);
+  }}
               className="w-full border rounded px-3 py-2 text-sm"
             >
               <option value={0}>Non-Metro</option>
@@ -202,9 +269,12 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div>
             <label className="text-xs text-gray-500">From</label>
             <input
-              type="date"
-              value={hraData.start_date}
-              onChange={(e) => onChange("start_date", e.target.value)}
+  type="date"
+  value={startDate}
+  onChange={(e) => {
+    setStartDate(e.target.value);
+    onChange("start_date", e.target.value);
+  }}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -212,9 +282,12 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div>
             <label className="text-xs text-gray-500">To</label>
             <input
-              type="date"
-              value={hraData.end_date}
-              onChange={(e) => onChange("end_date", e.target.value)}
+  type="date"
+  value={endDate}
+  onChange={(e) => {
+    setEndDate(e.target.value);
+    onChange("end_date", e.target.value);
+  }}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -223,9 +296,12 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div>
             <label className="text-xs text-gray-500">Monthly Rental</label>
             <input
-              type="number"
-              value={hraData.monthly_hra}
-              onChange={(e) => onChange("monthly_hra", Number(e.target.value))}
+  type="number"
+  value={monthlyHra}
+  onChange={(e) => {
+    setMonthlyHra(e.target.value);
+    onChange("monthly_hra", Number(e.target.value));
+  }}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -233,8 +309,11 @@ const HRAForm: React.FC<HRAFormProps> = ({
           <div>
             <label className="text-xs text-gray-500">Owner name</label>
             <input
-              value={hraData.owner_name}
-              onChange={(e) => onChange("owner_name", e.target.value)}
+         value={ownerName}
+         onChange={(e) => {
+           setOwnerName(e.target.value);
+           onChange("owner_name", e.target.value);
+         }}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -245,10 +324,14 @@ const HRAForm: React.FC<HRAFormProps> = ({
               PAN {isPanMandatory && <span className="text-red-500">*</span>}
             </label>
             <input
-              value={hraData.pan}
-              onChange={(e) => onChange("pan", e.target.value)}
-              className={`w-full border rounded px-3 py-2 text-sm ${isPanMandatory && !hraData.pan ? "border-red-500" : ""
-                }`}
+  value={pan}
+  onChange={(e) => {
+    setPan(e.target.value);
+    onChange("pan", e.target.value);
+  }}
+              className={`w-full border rounded px-3 py-2 text-sm ${
+                isPanMandatory && !hraData.pan ? "border-red-500" : ""
+              }`}
               placeholder={isPanMandatory ? "PAN is mandatory" : "Enter PAN"}
             />
             {isPanMandatory && !hraData.pan && (
@@ -261,45 +344,49 @@ const HRAForm: React.FC<HRAFormProps> = ({
 
           {/* ✅ Attachment */}
           {hraData.attach_reqd !== 0 && (
-            <div className="col-span-2 flex flex-col gap-2">
+  <div className="col-span-2 flex flex-col gap-2">
+    <label className="text-xs text-gray-600">
+      Attachment
+    </label>
 
-              <label className="text-xs text-gray-600">Attachment</label>
+    <div className="flex items-center gap-2">
 
-              <div className="flex items-center gap-2">
+      <input
+        type="file"
+        onChange={(e) =>
+          handleHRAFileUpload(
+            e.target.files?.[0] || null
+          )
+        }
+        className="border rounded pr-3 text-xs
+          file:text-xs file:border-0
+          file:bg-primary file:text-white
+          file:px-3 file:py-1"
+      />
 
-                <input
-                  type="file"
-                  onChange={(e) =>
-                    handleHRAFileUpload(
-                      e.target.files?.[0] || null
-                    )
-                  }
-                  className="border rounded pr-3 text-xs
-                    file:text-xs file:border-0
-                    file:bg-primary file:text-white
-                    file:px-3 file:py-1"
-                />
+      {(hraData?.proof_file ?? hraDetails?.attach_proof) && (
+        <div className="flex items-center gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
 
-                {hraData.proof_file && (
-                  <div className="flex items-center gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-                    <span className="text-xs truncate">
-                      {hraData.proof_file}
-                    </span>
+          <span className="text-xs truncate">
+            {hraData?.proof_file ??
+              hraDetails?.attach_proof}
+          </span>
 
-                    <button
-                      type="button"
-                      onClick={handleHRARemoveProof}
-                      className="text-gray-500 hover:text-red-600"
-                    >
-                      <FiX size={14} />
-                    </button>
-                  </div>
-                )}
-                              </div>
+          <button
+            type="button"
+            onClick={handleHRARemoveProof}
+            className="text-gray-500 hover:text-red-600"
+          >
+            <FiX size={14} />
+          </button>
 
-</div>
-)}
         </div>
+      )}
+
+    </div>
+  </div>
+)}
+</div>
       </div>
 
       {/* ================= LTA Section ================= */}
@@ -412,10 +499,10 @@ const HRAForm: React.FC<HRAFormProps> = ({
       file:px-3 file:py-1"
   />
 
-  {item?.proof_file && (
+  {(item?.proof_file ?? item?.attach_reqd === 1) && (
     <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
       <span className="text-xs text-gray-700 truncate">
-        {item?.proof_file}
+        {item?.proof_file ?? item?.attach_proof}
       </span>
 
       <button
