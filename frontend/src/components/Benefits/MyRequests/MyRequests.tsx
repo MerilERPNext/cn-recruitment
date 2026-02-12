@@ -281,9 +281,7 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {formatCurrency(
-            maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
-          )}
+          {maskAmounts ? "₹#####" : formatCurrency(item?.claimed_amount ?? 0)}
         </span>
       </Typography>
 
