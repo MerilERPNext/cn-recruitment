@@ -49,7 +49,7 @@ const AdvancesList: React.FC = () => {
           </span>
           {maskAmounts ? (
             <span className="blur-sm select-none text-gray-400">
-              {formatCurrency("XX,XXX")}
+              {formatCurrency(0).replace('0', 'XX,XXX')}
             </span>
           ) : (
             <span className="font-medium">{formatCurrency(value)}</span>
