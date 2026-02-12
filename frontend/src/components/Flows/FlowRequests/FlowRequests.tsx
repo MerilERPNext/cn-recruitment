@@ -11,6 +11,7 @@ import HeaderBar from "../../HeaderBar";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import FlowDetails from "./FlowDetails";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const titles = [
   "Request ID",
@@ -120,6 +121,7 @@ const FlowRequests: React.FC = () => {
             //     options: ["Open", "Approved", "Rejected"],
             //   },
             // ]}
+            SkeletonComponent={CardSkeleton}
             pageSize={10}
             showRefreshButton={false}
             orderBy="modified desc"

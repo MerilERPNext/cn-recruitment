@@ -1,4 +1,5 @@
 import React from "react";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 function TableSkeleton({ columns = 4, rows = 5 }) {
   return (
@@ -37,6 +38,35 @@ interface CardSkeletonProps {
 }
 
 export const CardSkeleton: React.FC<CardSkeletonProps> = ({ rows = 6 }) => {
+  const { isDesktop } = useScreenSize();
+
+  if (!isDesktop) {
+    // ================= MOBILE (FINAL VERSION - KEEPING YOUR APPROVED ONE) =================
+    return (
+      <div className="space-y-3 animate-pulse">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div
+            key={i}
+            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm space-y-3"
+          >
+            <div className="flex justify-between">
+              <div className="h-4 bg-gray-200 rounded w-1/3" />
+              <div className="h-4 bg-gray-200 rounded w-20" />
+            </div>
+
+            <div className="h-3 bg-gray-200 rounded w-2/3" />
+            <div className="h-3 bg-gray-200 rounded w-3/4" />
+
+            <div className="flex gap-3 pt-2">
+              <div className="h-8 bg-gray-200 rounded-md flex-1" />
+              <div className="h-8 bg-gray-200 rounded-md flex-1" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <>
       {Array.from({ length: rows }).map((_, index) => (
@@ -130,6 +160,25 @@ export const DashboardContentSkeleton: React.FC<
           )}
         </div>
       </div>
+    </div>
+  );
+};
+
+export const AdminAppsSkeleton = ({ count = 8 }) => {
+  return (
+    <div className="grid xl:grid-cols-4 lg:grid-cols-3 sm:grid-cols-2 grid-cols-2 gap-6 animate-pulse">
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          key={index}
+          className="flex flex-col items-center justify-center p-4 bg-gray-100 rounded-xl"
+        >
+          {/* Icon box */}
+          <div className="h-16 w-16 bg-gray-300 rounded-lg mb-3" />
+
+          {/* Label */}
+          <div className="h-3 w-20 bg-gray-300 rounded" />
+        </div>
+      ))}
     </div>
   );
 };

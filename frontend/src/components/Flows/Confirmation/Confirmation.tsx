@@ -20,7 +20,6 @@ import {
   CalendarCheck,
   Clock,
   FileText,
-  Loader2,
 } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCallback, useEffect, useMemo } from "react";
@@ -34,6 +33,7 @@ import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
 import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -268,14 +268,7 @@ const ConfirmationWorkflow = () => {
 
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <span className="text-sm text-gray-600">Loading...</span>
-        </div>
-      </div>
-    );
+    return <DashboardContentSkeleton />;
   }
   /* ---------------------------------------------------------- */
 
