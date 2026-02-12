@@ -141,8 +141,8 @@ const HRAForm: React.FC<HRAFormProps> = ({
         {/* ✅ Show warning only when rent > 8333 */}
         {isPanMandatory && (
           <div className="bg-yellow-100 text-yellow-800 text-xs px-3 py-2 rounded">
-            If rent is more than {formatCurrency("8,333")}/month or{" "}
-            {formatCurrency("1,00,000")}/year, PAN is mandatory.
+            If rent is more than {formatCurrency(8333)}/month or{" "}
+            {formatCurrency(100000)}/year, PAN is mandatory.
           </div>
         )}
 
