@@ -263,29 +263,34 @@ export default function ExtraPayment() {
       {/* ---------------------- MOBILE ---------------------- */}
       {isMobile && (
         <div className="space-y-4">
-          {filteredPayments.map((payment) => (
-            <div
-              key={payment.id}
-              className="p-4 rounded-xl border shadow-sm bg-white"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">{payment.recipient}</h3>
-                <StatusBadge status={payment.status} />
+          {isLoading ? (
+            <CardSkeleton />
+          ) : filteredPayments.length > 0 ? (
+            filteredPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="p-4 rounded-xl border shadow-sm bg-white"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold">{payment.recipient}</h3>
+                  <StatusBadge status={payment.status} />
+                </div>
+
+                <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
+                <p className="text-sm mb-1">Date: {payment.date}</p>
+                <p className="font-semibold text-lg mt-2">
+                  {RupeeSymbolPerfix(payment.amount)}
+                </p>
               </div>
-              <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
-              <p className="text-sm mb-1">Date: {payment.date}</p>
-              <p className="font-semibold text-lg mt-2">
-                {" "}
-                {RupeeSymbolPerfix(payment.amount)}
-              </p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-center text-gray-500 mt-10">
+              No payments found.
+            </p>
+          )}
         </div>
       )}
 
-      {filteredPayments.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">No payments found.</p>
-      )}
       {showExtraPaymentForm && (
         <Modal onClose={() => setShowExtraPaymentForm(false)}>
           <ExtraPaymentForm

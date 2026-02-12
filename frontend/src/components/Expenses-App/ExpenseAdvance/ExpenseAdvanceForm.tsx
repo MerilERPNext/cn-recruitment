@@ -679,29 +679,29 @@ const ExpenseAdvanceForm: React.FC<{
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
-        <Button
-          fullWidth
-          variant="outline"
-          size="lg"
-          onClick={
-            onClose
-              ? onClose
-              : () => navigate("/webapp/expenses-app/my-advance-expense")
-          }
-        >
-          Cancel
-        </Button>
+      <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
+          <Button
+            onClick={onClose ? onClose : () => navigate(-1)}
+            size="md"
+            variant="outline"
+            bgColor="primary"
+            className="w-full md:w-auto min-w-[150px]"
+          >
+            Cancel
+          </Button>
 
-        <Button
-          fullWidth
-          size="lg"
-          onClick={handleSubmit}
-          disabled={submitting}
-          bgColor="primary"
-        >
-          {submitting ? "Submitting..." : "Submit"}
-        </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting}
+            size="md"
+            variant="contain"
+            bgColor="primary"
+            className="w-full md:w-auto min-w-[150px]"
+          >
+            {submitting ? "Submitting..." : "Submit"}
+          </Button>
+        </div>
       </div>
 
       <ExpenseBreakupModal

@@ -69,26 +69,53 @@ const AttendanceLayoutContent: React.FC = () => {
     };
   }, [showActionsDropdown]);
 
-  const tabs: Tab[] = useMemo(
-    () => {
-      if (permittedPages && permittedPages?.length > 0) {
-        const tabList = [
-          { label: "Attendance Summary", key: "summary", permissionKey: "Attendance Summary" },
-          { label: "My Attendance", key: "calendar-views", permissionKey: "My Attendance" },
-          { label: "Team Attendance", key: "team-attendance", permissionKey: "Team Attendance" },
-          { label: "My Requests", key: "attendance-request", permissionKey: "My Requests" },
-          { label: "Team Requests", key: "team-attendance-requests", permissionKey: "Team Requests" },
-          { label: "Planned Overtime", key: "my-overtime-requests", permissionKey: "My Overtime" },
-          { label: "Team Overtime", key: "team-overtime-requests", permissionKey: "Team Overtime" },
-        ]
-        // return tabList
-        return tabList.filter((tab) => permittedPages?.includes(tab?.permissionKey))
-      } else {
-        return []
-      }
-    },
-    [permittedPages],
-  );
+  const tabs: Tab[] = useMemo(() => {
+    if (permittedPages && permittedPages?.length > 0) {
+      const tabList = [
+        {
+          label: "Attendance Summary",
+          key: "summary",
+          permissionKey: "Attendance Summary",
+        },
+        {
+          label: "My Attendance",
+          key: "calendar-views",
+          permissionKey: "My Attendance",
+        },
+        {
+          label: "Team Attendance",
+          key: "team-attendance",
+          permissionKey: "Team Attendance",
+        },
+        {
+          label: "My Requests",
+          key: "attendance-request",
+          permissionKey: "My Requests",
+        },
+        {
+          label: "Team Requests",
+          key: "team-attendance-requests",
+          permissionKey: "Team Requests",
+        },
+        {
+          label: "Planned Overtime",
+          key: "my-overtime-requests",
+          permissionKey: "Planned Overtime",
+        },
+        {
+          label: "Team Overtime",
+          key: "team-overtime-requests",
+          permissionKey: "Team Overtime",
+        },
+      ];
+      // return tabList
+      return tabList.filter((tab) =>
+        permittedPages?.includes(tab?.permissionKey),
+      );
+    } else {
+      return [];
+    }
+  }, [permittedPages]);
 
   const calendarSubTabs = useMemo(
     () => [{ label: "My Attendance Details", key: "emp-attendance" }],
@@ -99,7 +126,9 @@ const AttendanceLayoutContent: React.FC = () => {
   const navigate = useNavigate();
 
   // Initialize state with default values
-  const [activeTab, setActiveTab] = useState<Tab>(tabs[0] || { key: "", label: "" });
+  const [activeTab, setActiveTab] = useState<Tab>(
+    tabs[0] || { key: "", label: "" },
+  );
   const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
 
   useEffect(() => {
@@ -140,7 +169,10 @@ const AttendanceLayoutContent: React.FC = () => {
   const mobileLayout = (
     <div className="min-h-screen">
       {/* Fixed Header */}
-      <HeaderBar title={activeTab?.label || "Attendance"} onBack={() => navigate("/webapp")} />
+      <HeaderBar
+        title={activeTab?.label || "Attendance"}
+        onBack={() => navigate("/webapp")}
+      />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
         <div className="sticky top-[58px] z-40 border-t border-gray-200">
           <NavigationTabs

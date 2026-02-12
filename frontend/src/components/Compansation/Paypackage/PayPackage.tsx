@@ -207,60 +207,63 @@ export default function SalaryAssignmentList() {
           </CardTable>
         ) : (
           <div className="space-y-1 mt-2">
-            {list.map((item) => (
-              <div
-                key={item.name}
-                onClick={() => setSelected(item)}
-                className="border border-indigo-200 rounded-xl p-3 bg-white
-                               flex flex-col items-start justify-between gap-3
-                               active:bg-indigo-50 cursor-pointer"
-              >
-                {/* LEFT */}
-                <div className="flex w-full items-start justify-between gap-3">
-                  {/* Icon */}
-
-                  {/* Text */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                      <span className="text-success text-lg font-semibold">
-                        {" "}
-                        <Banknote />
-                      </span>
-                    </div>
-
-                    <p className="font-semibold text-sm text-gray-900">
-                      Pay Package
-                    </p>
-                  </div>
-                  <span className="text-gray-400 text-lg leading-none">›</span>
-                </div>
-
-                {/* RIGHT */}
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-[11px] text-gray-400 uppercase">
-                      Fixed Gross (Annual)
-                    </p>
-
-                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      {renderAmount(item.fixed_gross_annual)}
-                      <span className="text-gray-400 text-xs">👁</span>
-                    </div>
-                  </div>
-                  <div className="text-right flex flex-col items-end gap-1">
-                    <p className="text-[11px] text-gray-400 uppercase">
-                      Effective From
-                    </p>
-                    <p className="text-xs font-medium text-gray-700">
-                      {formatToIndianDate(item.from_date)}
-                    </p>
-                  </div>
-                </div>
-                <div></div>
+            {isLoading ? (
+              <CardSkeleton />
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center py-10 text-red-500">
+                <MdErrorOutline size={32} className="mb-2" />
+                <p className="text-sm font-semibold">Error loading data</p>
               </div>
-            ))}
+            ) : list.length > 0 ? (
+              list.map((item) => (
+                <div
+                  key={item.name}
+                  onClick={() => setSelected(item)}
+                  className="border border-indigo-200 rounded-xl p-3 bg-white
+                     flex flex-col items-start justify-between gap-3
+                     active:bg-indigo-50 cursor-pointer"
+                >
+                  {/* LEFT */}
+                  <div className="flex w-full items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <span className="text-success text-lg font-semibold">
+                          <Banknote />
+                        </span>
+                      </div>
 
-            {!list.length && (
+                      <p className="font-semibold text-sm text-gray-900">
+                        Pay Package
+                      </p>
+                    </div>
+                    <span className="text-gray-400 text-lg leading-none">
+                      ›
+                    </span>
+                  </div>
+
+                  {/* RIGHT */}
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-gray-400 uppercase">
+                        Fixed Gross (Annual)
+                      </p>
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                        {renderAmount(item.fixed_gross_annual)}
+                      </div>
+                    </div>
+
+                    <div className="text-right flex flex-col items-end gap-1">
+                      <p className="text-[11px] text-gray-400 uppercase">
+                        Effective From
+                      </p>
+                      <p className="text-xs font-medium text-gray-700">
+                        {formatToIndianDate(item.from_date)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
               <p className="text-center text-gray-500 py-10">
                 No records found
               </p>
