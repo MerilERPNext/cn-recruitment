@@ -43,7 +43,7 @@ export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
       {/* Periodic Original Amount */}
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatCurrency(
-          (item.periodic_original_amount ?? 0).toLocaleString(),
+          item.periodic_original_amount ?? 0,
         )}
       </Typography>
 
