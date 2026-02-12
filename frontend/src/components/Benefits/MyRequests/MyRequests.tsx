@@ -28,13 +28,22 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Link } from "react-router-dom";
 import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [showBenefitForm, setShowBenefitForm] = useState(false);
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Benefits");
+  const canRequestBenefit = isActionEnabled(
+    userUiPermission,
+    "request_benefit",
+    "My Requests",
+  );
+
 
   // const [refetch, setRefetch] = useState(false);
   const handleRequestBenefit = () => {
@@ -87,14 +96,15 @@ const MyRequests: React.FC = () => {
       today,
     );
   const showBenefitRequestButton =
-    !benefitClaimLockLoading && benefitClaimLock?.status === "success";
+    canRequestBenefit &&
+    !benefitClaimLockLoading &&
+    benefitClaimLock?.status === "success";
   const LockRequestMessage = useMemo(() => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
-          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-        }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+          }`}
       >
         {data?.message}
       </div>
@@ -262,15 +272,13 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
-            maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
-          )}
+          {maskAmounts ? "₹#####" : formatCurrency(item?.claimed_amount ?? 0)}
         </span>
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={` ${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
+          {formatCurrency(
             maskAmounts ? "#####" : item?.custom_taxable_amount,
           )}
         </span>
@@ -278,7 +286,7 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
+          {formatCurrency(
             maskAmounts ? "#####" : item?.custom_non_taxable_amount,
           )}
         </span>
@@ -327,11 +335,10 @@ const BenefitSlipItem = ({
         <div className="flex ml-auto flex-col">
           <label className="text-gray-500 text-sm">Claim Amount</label>
           <span
-            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${
-              maskAmounts ? "blur-[3px]" : ""
-            }`}
+            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${maskAmounts ? "blur-[3px]" : ""
+              }`}
           >
-            {RupeeSymbolPerfix(
+            {formatCurrency(
               maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
             )}
           </span>

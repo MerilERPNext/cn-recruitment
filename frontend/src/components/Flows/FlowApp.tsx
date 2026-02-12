@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -6,6 +6,8 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import InitiateFlow from "./Initiate/InitiateFlow";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+
 type TabName = "Flow Requests" | "Confirmation" | "Separation";
 
 const tabRoutes: Record<TabName, string> = {
@@ -21,17 +23,65 @@ const FlowApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] = useState<TabName>("Flow Requests");
   const navigate = useNavigate();
-  const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
-    key,
-    label: key,
-  }));
   const location = useLocation();
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+
+  const canInitiateFlow = useMemo(() => {
+    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
+      (item) => item.page_name === "Flow Requests",
+    );
+    const initiateAction = initiateFlowPage?.actions?.find(
+      (action) => action.action_name === "initiate",
+    );
+    return !!initiateAction?.enabled;
+  }, [userUiPermission]);
+
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      {
+        key: "Flow Requests",
+        label: "Flow Requests",
+        permissionKey: "Flow Requests",
+      },
+      {
+        key: "Confirmation",
+        label: "Confirmation",
+        permissionKey: "Confirmation",
+      },
+      {
+        key: "Separation",
+        label: "Separation",
+        permissionKey: "Separation",
+      },
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const flowAppPermission = userUiPermission.find(
+      (perm) => perm.app_name === "HR Process",
+    );
+
+    if (!flowAppPermission || !flowAppPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = flowAppPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
   const [seprateRoute, setSeprateRoute] = useState<SeprateRouteName | null>(
     null,
   );
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
-  const showInitiateButton = activeTab === "Flow Requests" && !seprateRoute;
+  const showInitiateButton = activeTab === "Flow Requests" && !seprateRoute && canInitiateFlow;
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -70,12 +120,12 @@ const FlowApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/flow-app") {
-      const fallback = "Flow Requests";
-      setActiveTab(fallback);
-      navigate(tabRoutes[fallback], { replace: true });
+    if (location.pathname === "/webapp/flow-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      setActiveTab(firstTab);
+      navigate(tabRoutes[firstTab], { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">

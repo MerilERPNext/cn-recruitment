@@ -9,7 +9,6 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
-import { formatCurrency } from "../../../utils/currencyFormatter";
 import Modal from "./commonModal";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -18,7 +17,7 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const AdvancesList: React.FC = () => {
@@ -55,7 +54,7 @@ const AdvancesList: React.FC = () => {
           </span>
           {maskAmounts ? (
             <span className="blur-sm select-none text-gray-400">
-              {RupeeSymbolPerfix("XX,XXX")}
+              {formatCurrency(0).replace('0', 'XX,XXX')}
             </span>
           ) : (
             <span className="font-medium">{formatCurrency(value)}</span>
@@ -152,7 +151,7 @@ const AdvancesList: React.FC = () => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
               <span className="blur-sm select-none text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
               <span>{formatCurrency(advance.amount)}</span>
@@ -163,7 +162,7 @@ const AdvancesList: React.FC = () => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
               <span className="blur-sm select-none text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
               <span>{advance.numberOfDeductions}</span>

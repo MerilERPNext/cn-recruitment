@@ -9,6 +9,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import Tooltip from "../../../shared/Tooltip";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import { formatCurrency } from "../../../../utils/currency";
 
 interface LoanListProps {
   loans: Loan[];
@@ -19,15 +20,6 @@ export default function LoanList({ loans }: LoanListProps) {
 
   const toggleLoanExpansion = (loan_name: string) => {
     setExpandedLoan(expandedLoan === loan_name ? null : loan_name);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   function calculateEndMonth(startDate: string, tenure: number) {

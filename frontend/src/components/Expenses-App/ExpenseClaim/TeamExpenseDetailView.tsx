@@ -27,7 +27,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
 import StatusBadge from "../../shared/atoms/statusBadge";
 
 export function TeamExpenseDetailView({
@@ -652,7 +652,7 @@ export function TeamExpenseDetailView({
                               Claimed Amount:
                             </p>
                             <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.amount)}
+                              {formatCurrency(item.amount)}
                             </p>
                           </div>
                           <div>
@@ -660,7 +660,7 @@ export function TeamExpenseDetailView({
                               Sanctioned Amount:
                             </p>
                             <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.sanctioned_amount)}
+                              {formatCurrency(item.sanctioned_amount)}
                             </p>
                           </div>
                         </div>
@@ -683,7 +683,7 @@ export function TeamExpenseDetailView({
 
                         <div className="mb-3">
                           <label className="text-xs text-gray-500 uppercase mb-1 block">
-                            SANCTIONED AMOUNT (RupeeSymbolPerfix("")) *
+                            SANCTIONED AMOUNT ({CURRENCY_SYMBOL}) *
                           </label>
 
                           <input
@@ -740,7 +740,7 @@ export function TeamExpenseDetailView({
               <div className="flex justify-between">
                 <span className="text-gray-600">Non Reimbursable Amount</span>
                 <span className="font-medium">
-                  {RupeeSymbolPerfix(nonReimbursableAmount)}
+                  {formatCurrency(nonReimbursableAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -748,7 +748,7 @@ export function TeamExpenseDetailView({
                   Total Amount To Be Reimbursed
                 </span>
                 <span className="font-medium">
-                  {RupeeSymbolPerfix(totalToBeReimbursed)}
+                  {formatCurrency(totalToBeReimbursed)}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t">
@@ -756,7 +756,7 @@ export function TeamExpenseDetailView({
                   Total Amount
                 </span>
                 <span className="font-bold text-lg text-gray-900">
-                  {RupeeSymbolPerfix(totalAmount)}
+                  {formatCurrency(totalAmount)}
                 </span>
               </div>
             </div>

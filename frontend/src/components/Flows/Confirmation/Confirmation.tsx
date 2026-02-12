@@ -33,6 +33,7 @@ import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
 import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const ConfirmationWorkflow = () => {
@@ -54,10 +55,26 @@ const ConfirmationWorkflow = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
+        (item: any) => item?.trigger_category?.name === trigger_category,
+      )
       : [];
   }
+
+  // action buttons permission
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+
+  const enabledActions = useMemo(() => {
+    let actions: string[] = [];
+    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
+      (item) => item.page_name === "Confirmation",
+    );
+    actions = initiateFlowPage?.actions?.filter(
+      action => action.enabled,
+    ).map(action => action.action_name) ?? [];
+    return actions;
+  }, [userUiPermission]);
+
+  // END action buttons permission
 
   const { data: showConfirmatoinButton, isLoading: loadingCardData } =
     useGetShouldShowConfirmationButton(document_name);
@@ -157,7 +174,9 @@ const ConfirmationWorkflow = () => {
     [mutation],
   );
 
+
   const canPerformAction = useMemo(() => {
+    if (!enabledActions.includes("act_confirmation")) return false;
     let actionPermission = false;
 
     if (!item?.custom_doctype_actions) return false;
@@ -181,6 +200,7 @@ const ConfirmationWorkflow = () => {
   const postStagesStarted = Array.isArray(stages) && stages.length > 0;
 
   const canInitiateConfirmation =
+    enabledActions?.includes("initiate_confirmation") &&
     (!postStagesStarted ||
       (allStagesComplted &&
         item?.reference_document?.status !== "Confirmed")) &&
@@ -222,14 +242,14 @@ const ConfirmationWorkflow = () => {
       },
       ...(item?.reference_document?.creation
         ? [
-            {
-              label: "Trigger Date",
-              value: formatToIndianDate(item.reference_document.creation),
-              Icon: Clock,
-              bg: "bg-orange-50",
-              text: "text-orange-600",
-            },
-          ]
+          {
+            label: "Trigger Date",
+            value: formatToIndianDate(item.reference_document.creation),
+            Icon: Clock,
+            bg: "bg-orange-50",
+            text: "text-orange-600",
+          },
+        ]
         : []),
       {
         label: "Status",

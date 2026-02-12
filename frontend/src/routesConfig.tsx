@@ -1035,38 +1035,14 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/flow-app",
     element: <FlowApp />,
-    permissionKey: "Flows",
+    permissionKey: "HR Process",
     children: [
-      {
-        path: "flow-requests",
-        element: <FlowRequests2 />,
-        permissionKey: "Flow Requests",
-      },
-      {
-        path: "separation",
-        element: <Separation />,
-        permissionKey: "Separation",
-      },
-      {
-        path: "separation-workflow/:id",
-        element: <SeparationWorkflow />,
-        permissionKey: "Separation",
-      },
-      {
-        path: "confirmation",
-        element: <Confirmation />,
-        permissionKey: "Confirmation",
-      },
-      {
-        path: "initiate-flow",
-        element: <InitiateFlow2 />,
-        permissionKey: "Flows",
-      },
-      {
-        path: "flow-request/:id",
-        element: <RequestDetails />,
-        permissionKey: "Flow Requests",
-      },
+      { path: "flow-requests", element: <FlowRequests2 />, permissionKey: "Flow Requests" },
+      { path: "separation", element: <Separation />, permissionKey: "Separation" },
+      { path: "separation-workflow/:id", element: <SeparationWorkflow />, permissionKey: "Separation" },
+      { path: "confirmation", element: <Confirmation />, permissionKey: "Confirmation" },
+      { path: "initiate-flow", element: <InitiateFlow2 />, permissionKey: "Initiate Flow" },
+      { path: "flow-request/:id", element: <RequestDetails />, permissionKey: "Flow Requests" },
     ],
   },
   {
