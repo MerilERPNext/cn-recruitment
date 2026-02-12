@@ -245,7 +245,7 @@ const MyFlowRequestCard = ({
 
             <div className="flex flex-col gap-2 text-right">
               <Typography variant="mobileCardLabel" className="block">
-                CUSTOM/FLOW STATUS
+                Approval Status{" "}
               </Typography>
               <div>
                 <StatusBadge status={request.status} />

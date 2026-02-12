@@ -182,3 +182,29 @@ export const AdminAppsSkeleton = ({ count = 8 }) => {
     </div>
   );
 };
+
+export const LibraryTableSkeleton = () => {
+  return (
+    <tbody>
+      {[...Array(6)].map((_, i) => (
+        <tr key={i} className="border-t animate-pulse">
+          <td className="py-4 px-6">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+          </td>
+          <td className="py-4 px-6">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+          </td>
+          <td className="py-4 px-6">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+          </td>
+          <td className="py-4 px-6">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+          </td>
+          <td className="py-4 px-6">
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  );
+};

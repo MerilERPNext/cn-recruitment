@@ -19,7 +19,6 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
@@ -495,8 +494,6 @@ export function TeamExpenseDetailView({
 
             {expenseItems.length > 0 ? (
               expenseItems.map((item) => {
-                const itemStatus = getStatus(item.custom_approval_staus || "");
-
                 const originalSanctionedAmount =
                   typeof item.sanctioned_amount === "number"
                     ? item.sanctioned_amount
@@ -526,10 +523,7 @@ export function TeamExpenseDetailView({
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
                             item.custom_approval_staus === "Rejected") && (
-                            <Badge
-                              label={itemStatus?.label as string}
-                              backgroundColor={itemStatus?.statusColor}
-                            />
+                            <StatusBadge status={item.custom_approval_staus} />
                           )}
                         </div>
 

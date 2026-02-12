@@ -89,7 +89,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
               <p className="text-sm text-gray-700 flex gap-4 items-center">
                 <span className="card-title">Status:</span>
-                <StatusBadge status={data?.status} />
+                <StatusBadge status={data?.approval_status} />
               </p>
               <p className="text-sm text-gray-700">
                 <span className="card-title">Claimed Amount:</span>

@@ -11,6 +11,7 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -89,32 +90,6 @@ const DocumentLibrary = () => {
   );
 
   const getFileUrl = (path: string) => `${path}`;
-
-  const TableSkeleton = () => {
-    return (
-      <tbody>
-        {[...Array(6)].map((_, i) => (
-          <tr key={i} className="border-t animate-pulse">
-            <td className="py-4 px-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </td>
-            <td className="py-4 px-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </td>
-            <td className="py-4 px-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </td>
-            <td className="py-4 px-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </td>
-            <td className="py-4 px-6">
-              <div className="h-4 bg-gray-200 rounded w-3/4" />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    );
-  };
 
   return (
     <div className="bg-white px-0 md:p-6 ">
@@ -216,7 +191,7 @@ const DocumentLibrary = () => {
           </thead>
 
           {isLoading ? (
-            <TableSkeleton />
+            <LibraryTableSkeleton />
           ) : (
             <tbody className="text-gray-800">
               {filteredDocuments.length > 0 ? (
