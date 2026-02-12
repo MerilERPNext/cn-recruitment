@@ -13,6 +13,7 @@ import {
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamAttendance = () => {
   const { data: userId } = useLoggedInUser();
@@ -224,28 +225,23 @@ const TeamAttendance = () => {
             />
           </div>
 
-          {isReportiesAttendanceLoading && (
-            <div className="text-center py-4 text-gray-500">
-              Loading attendance...
-            </div>
-          )}
-
-          <div className="border border-gray-200 rounded-lg">
-            {!isReportiesAttendanceLoading &&
-              filteredAttendanceData?.map((item: EmployeeStatusItem) => (
+          <div className="border border-gray-200 rounded-lg p-2">
+            {isReportiesAttendanceLoading ? (
+              <CardSkeleton />
+            ) : filteredAttendanceData?.length ? (
+              filteredAttendanceData.map((item: EmployeeStatusItem) => (
                 <EmployeeStatusCard
                   key={item.employee}
                   data={item}
                   onRefetchData={refetchReportiesAttendance}
                 />
-              ))}
+              ))
+            ) : (
+              <div className="text-center py-4 text-gray-400">
+                No attendance data found
+              </div>
+            )}
           </div>
-
-          {!isReportiesAttendanceLoading && attendanceData?.length === 0 && (
-            <div className="text-center py-4 text-gray-400">
-              No attendance data found
-            </div>
-          )}
         </Card>
       </div>
     </div>

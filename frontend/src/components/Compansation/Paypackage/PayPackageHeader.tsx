@@ -24,21 +24,20 @@ export default function SalaryAssignmentHeader({
   showAmount,
   onToggleAmount,
 }: Props) {
-  const { isDesktop } = useScreenSize();
-
+    const { isDesktop } = useScreenSize();
   return (
-    <div className="flex-shrink-0">
-      <div className="px-1 md:px-6 py-1 md:py-4">
-        <div className="flex items-center justify-between">
-          {isDesktop && (
-            <div>
-              <Typography variant="h4">Pay package</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage Pay Package
-              </Typography>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2 w-full md:w-auto">
+    <div className="border-gray-100">
+      <div className="md:px-6 py-4">
+        <div className="flex justify-between items-center">
+         {isDesktop && <div>
+            <Typography variant="h4">Pay package</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track and manage Pay Package
+            </Typography>
+          </div>}
+
+          <div className="flex items-center justify-between gap-3 w-full">
+            {/* 👁 Toggle */}
             <button
               onClick={onToggleAmount}
               className="my-btn-secondary"

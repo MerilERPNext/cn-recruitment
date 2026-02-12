@@ -8,6 +8,7 @@ import AdvanceApprovalCard from "./AdvanceApprovalCard";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { FileText } from "lucide-react";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
@@ -43,22 +44,22 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ]
     : [
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -154,6 +155,7 @@ const TeamAdvanceExpenseList = () => {
                 },
               ]}
               defaultFilters={{ status: "Pending" }}
+              SkeletonComponent={CardSkeleton}
               noRecordsScreen={noRecordsScreen}
               renderCardContent={(item) => (
                 <AdvanceApprovalCard

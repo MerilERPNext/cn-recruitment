@@ -43,6 +43,7 @@ type ApprovalListProps = {
   noRecordsScreen?:
     | React.ReactNode
     | ((filters: Record<string, any>) => React.ReactNode);
+  SkeletonComponent?: React.ComponentType;
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -81,6 +82,7 @@ const ApprovalList = ({
   defaultFilters,
   columnWidths,
   noRecordsScreen,
+  SkeletonComponent,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -324,6 +326,7 @@ const ApprovalList = ({
         infiniteScroll={infiniteScroll}
         loadMorePagination={loadMorePagination}
         onDataLoad={(data) => setAllRequests(data)}
+        SkeletonComponent={SkeletonComponent}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
             {isBulkSelectEnabled && (

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type React from "react";
 
 import {
@@ -22,6 +22,8 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import Form12B from "./Component/Form12B";
 
 type PayrollPeriod = {
   name: string;
@@ -33,13 +35,13 @@ const ITDeclarationForm = () => {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const mutation = useSubmitITDeclaration();
+  const { isDesktop } = useScreenSize();
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
   ) as {
     data: PayrollPeriod[] | undefined;
   };
-console.log("payrollPeriods", payrollPeriods);
   /* ---------------- State ---------------- */
   const [selectedPeriod, setSelectedPeriod] = useState("");
   const [goHeadWithNewRegime, setGoHeadWithNewRegime] = useState<0 | 1 | null>(
@@ -52,6 +54,19 @@ console.log("payrollPeriods", payrollPeriods);
   const [groupedCategories, setGroupedCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState("");
   const [hraData, setHraData] = useState<HRAData | null>(null);
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  useEffect(() => {
+    const el = tabRefs.current[activeMainTab];
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [activeMainTab]);
+  
+
 
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
@@ -72,6 +87,7 @@ console.log("payrollPeriods", payrollPeriods);
   ) as { data?: any };
   const declarationDoctype = responseData?.doctype;
   const proofId = responseData?.proof_id;
+  const declarationIdFromITDeclaration = proofId || declarationId ;
   const currentDate = new Date().toISOString().split("T")[0];
   const { data: PrrofOfITDeclaration } = useProofDateForITDeclaration(
     currentDate,
@@ -81,7 +97,7 @@ console.log("payrollPeriods", payrollPeriods);
   ) as { data?: any };
   const {data: LTABreakup } = useLTABrakup(user?.employee || "");
 
-  console.log("ProofOfITDeclaration DATA", LTABreakup, );
+  console.log("ProofOfITDeclaration DATA", groupedCategories, );
 
   // Initial payroll period 
 useEffect(() => {
@@ -142,6 +158,7 @@ useEffect(() => {
 
   const sectionCategories = activeSectionData?.categories || [];
 
+  console.log(sectionCategories, "sectionCategories in category section");
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
@@ -166,19 +183,20 @@ useEffect(() => {
       }))
     );
   };
-
   /* ---------------- Submit ---------------- */
+  const LTAData = (hraData as unknown as any[])?.[1];
+  console.log(   LTAData?.items, "LTA items")
   const handleSubmit = () => {
     const ltaDeclarations =
-  hraData?.lta?.items?.flatMap((cat: any) =>
+    LTAData?.items?.flatMap((cat: any) =>
     cat.items
-      .filter((item: any) => Number(item.amount) > 0)
+      .filter((item: any) => Number(item?.amount) > 0)
       .map((item: any) => ({
         exemption_category: cat.category_name, // usually "LTA"
         exemption_sub_category: item.exemption_sub_category,
         amount: Number(item.amount),
         max_amount: Number(item.max_amount),
-        attach_proof: null,
+        attach_proof: typeof item.proof_file === "string" ? item.proof_file : null,
         note: "",
       }))
   ) || [];
@@ -187,8 +205,8 @@ useEffect(() => {
         cat.items
           .filter(
             (item: any) =>
-              item.is_selected &&
-              Number(item.amount) > 0
+              item.is_selected === true || item.editable === 0 ||
+              Number(item?.amount) > 0
           )
           .map((item: any) => ({
             exemption_category: cat.category_name,
@@ -221,24 +239,27 @@ useEffect(() => {
         start_date: goHeadWithNewRegimeBool ? "" : hraData?.start_date ?? "",
         end_date: goHeadWithNewRegimeBool ? "" : hraData?.end_date ?? "",
         pan: goHeadWithNewRegimeBool ? "" : hraData?.pan ?? "",
-        address_line1: goHeadWithNewRegimeBool
+        address_title1: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line1 ?? "",
-        address_line2: goHeadWithNewRegimeBool
+          address_title2: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line2 ?? "",
         company: user?.company,
+        custom_hra_proof_attach: goHeadWithNewRegimeBool ? null : hraData?.proof_file ?? null,
         payroll_period: selectedPeriod,
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
       },
     };
-
+console.log("Submitting payload", payload);
     mutation.mutate(payload, {
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
+        // window.location.reload();
+        
       },
       onError: () => toast.error("Submission failed"),
     });
@@ -253,7 +274,7 @@ useEffect(() => {
 
   return (
     <div className="bg-white min-h-screen">
-      <header className=" p-4  rounded-lg">
+      <header className=" md:p-4  rounded-lg">
         <div
           className={`p-2 mb-2 rounded ${
             PrrofOfITDeclaration?.status === "failed"
@@ -271,14 +292,14 @@ useEffect(() => {
             )}
           </Typography>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
           <div className="flex flex-col">
             <Typography variant="h4">IT Declaration</Typography>
             <Typography variant="bodySmall" color="body2">
             Track and manage your IT Declarations.
             </Typography>
           </div>
-          <div className="flex gap-2 justify-between items-center">
+          <div className="flex flex-col md:flex-row gap-2 md:items-center w-full md:w-auto">
             <CustomDropdown
               value={selectedPeriod}
               onChange={handlePeriodChange}
@@ -293,48 +314,54 @@ useEffect(() => {
               declarationId={declarationId}
               disabled={false}
             />
+            <Form12B
+              declarationId={declarationIdFromITDeclaration}
+               docName={declarationDoctype}
+              disabled={false}
+            />
             <Button
               onClick={handleSubmit}
               disabled={PrrofOfITDeclaration?.status === "failed"}
-              className="bg-primary text-white py-2 rounded text-xs"
+              className="bg-primary text-white py-2 rounded text-xs w-full md:w-auto"
             >
               Submit
             </Button>
           </div>
         </div>
-        <div className="flex justify-between items-center mt-4">
-          <p className="text-gray-500">Tax Regime</p>
+        <div className="flex flex-col md:flex-row gap-2 md:items-center mt-4">
+          {isDesktop && <p className="text-gray-500">Tax Regime</p>}
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
               onClick={() => setGoHeadWithNewRegime(1)}
-              className={`px-6 py-1 rounded-md ${
+              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
                 goHeadWithNewRegime === 1
                   ? "bg-primary text-white"
                   : "text-gray-600"
               }`}
             >
-              New
+              New Regime
             </button>
             <button
               onClick={() => setGoHeadWithNewRegime(0)}
-              className={`px-6 py-1 rounded-md ${
+              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
                 goHeadWithNewRegime === 0
                   ? "bg-primary text-white"
                   : "text-gray-600"
               }`}
             >
-              Old
+              Old Regime
             </button>
           </div>
         </div>
 
         {/* Tabs */}
 
-        <div>
-          <div className="flex gap-2 mt-4 border-b">
+        <div className="w-full">
+          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-20 md:px-0">
             <button
+             ref={(el) => {tabRefs.current["category"] = el;}}
               onClick={() => setActiveMainTab("category")}
-              className={`px-4 py-2 ${
+              className={`px-4 whitespace-nowrap py-2 ${
                 activeMainTab === "category"
                   ? "border-b-2 border-primary text-primary"
                   : "text-gray-600"
@@ -345,14 +372,15 @@ useEffect(() => {
 
             {!goHeadWithNewRegimeBool && (
               <button
+                ref={(el) => {tabRefs.current["hra"] = el;}}
                 onClick={() => setActiveMainTab("hra")}
-                className={`px-4 py-2 ${
+                className={`px-4 whitespace-nowrap py-2 ${
                   activeMainTab === "hra"
                     ? "border-b-2 border-primary text-primary"
                     : "text-gray-600"
                 }`}
               >
-                HRA & Other Exemption Declaration
+                HRA & Other (U/S 10)
               </button>
             )}
           </div>
@@ -361,7 +389,7 @@ useEffect(() => {
           )}
           {activeMainTab === "category" && (
             <>
-              <div className="flex gap-2 mt-4">
+              <div className="flex flex-wrap md:flex-nowrap gap-2 mt-4">
                 {groupedCategories.map((sec) => (
                   <button
                     key={sec.section}

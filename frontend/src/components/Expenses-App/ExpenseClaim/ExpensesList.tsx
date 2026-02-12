@@ -23,6 +23,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -172,7 +173,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() && canEditExpense
+              item?.send_back_user?.toLowerCase() && canEditExpense
           }
           onEdit={handleEditClick}
         />
@@ -258,18 +259,6 @@ const ExpensesList: React.FC = () => {
       </div>
     );
   };
-
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2 flex justify-between">
-        <div>
-          <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-          <div className="h-3 w-24 bg-gray-300 rounded"></div>
-        </div>
-        <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-      </div>
-    </div>
-  );
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;

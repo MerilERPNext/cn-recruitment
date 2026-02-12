@@ -254,7 +254,7 @@ const EmpLeaveRequestCard = ({
                 {cleanDescription}
               </Typography>
 
-              {cleanDescription.length > 120 && (
+              {cleanDescription.length > 40 && (
                 <button
                   onClick={() => setShowDescriptionModal(true)}
                   className="absolute bottom-0 right-0 text-primary text-sm bg-white pl-1"

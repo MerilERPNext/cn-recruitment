@@ -290,7 +290,7 @@ const EmployeeAttendanceDetails = ({
             </Button>
           )}
           {showButton?.show_edit_button && canEditLeave && (
-            <Button variant="soft" size="md" onClick={handleEdit} className="w-full whitespace-nowrap">
+            <Button variant="soft" size="md" onClick={() => { setShowReqAttendanceCorrection(true) }} className="w-full whitespace-nowrap">
               Attendance Adjustment
             </Button>
           )}
@@ -478,7 +478,7 @@ const EmployeeAttendanceDetails = ({
             latestInAndOutTime={empCheckIns && empCheckIns?.length > 0 ?
               {
                 in_time: empCheckIns?.[0].time as string,
-                out_time: empCheckIns?.[empCheckIns.length - 1].time as string,
+                out_time: empCheckIns?.length > 1 ? empCheckIns?.[empCheckIns.length - 1].time as string : "",
               } : undefined
             }
           />,
