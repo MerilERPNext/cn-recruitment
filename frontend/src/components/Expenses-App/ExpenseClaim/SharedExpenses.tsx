@@ -9,6 +9,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import HeaderBar from "../../HeaderBar";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -164,18 +165,6 @@ const SharedExpenses: React.FC = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
 
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2 flex justify-between">
-        <div>
-          <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-          <div className="h-3 w-24 bg-gray-300 rounded"></div>
-        </div>
-        <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -202,51 +191,49 @@ const SharedExpenses: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {currentEmployee?.name && (
-          <CardTable
-            titles={[
-              "Shared By",
-              "Posting Date",
-              "Expense Date",
-              "Status",
-              "Sanctioned Amount",
-              "% Share",
-              "Allocated Amount",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
-            <DataListView
-              queryKey={["shared-expenses", currentEmployee?.name]}
-              customAPI={{
-                method:
-                  "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
-              }}
-              // Removed click handlers: rows/cards are no longer clickable
-              ItemComponent={(props: { item: any }) => {
-                const row = props.item?.message?.data
-                  ? props.item.message.data
-                  : props.item;
-                const doc = Array.isArray(row) ? row[0] : row;
-                return isDesktop ? (
-                  <SharedExpensesRow item={doc} />
-                ) : (
-                  <SharedExpenseCard item={doc} />
-                );
-              }}
-              SkeletonComponent={CardSkeleton}
-              onRefetchComplete={() => setRefetchAttendance(false)}
-              refetchTrigger={refetchAttendance}
-              isSearch={false}
-              isFilter={false}
-              showRefreshButton={false}
-              orderBy="posting_date desc"
-              pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
-              loadMorePagination={false}
-            />
-          </CardTable>
-        )}
+        <CardTable
+          titles={[
+            "Shared By",
+            "Posting Date",
+            "Expense Date",
+            "Status",
+            "Sanctioned Amount",
+            "% Share",
+            "Allocated Amount",
+          ]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+        >
+          <DataListView
+            queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
+            customAPI={{
+              method:
+                "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
+            }}
+            // Removed click handlers: rows/cards are no longer clickable
+            ItemComponent={(props: { item: any }) => {
+              const row = props.item?.message?.data
+                ? props.item.message.data
+                : props.item;
+              const doc = Array.isArray(row) ? row[0] : row;
+              return isDesktop ? (
+                <SharedExpensesRow item={doc} />
+              ) : (
+                <SharedExpenseCard item={doc} />
+              );
+            }}
+            SkeletonComponent={CardSkeleton}
+            onRefetchComplete={() => setRefetchAttendance(false)}
+            refetchTrigger={refetchAttendance}
+            isSearch={false}
+            isFilter={false}
+            showRefreshButton={false}
+            orderBy="posting_date desc"
+            pageSize={10}
+            infiniteScroll={true}
+            showPagination={true}
+            loadMorePagination={false}
+          />
+        </CardTable>
       </div>
     </div>
   );

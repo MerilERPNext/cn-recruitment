@@ -18,6 +18,7 @@ import { useShiftAssignments } from "../../hooks/useShiftAssignments";
 import { ShiftDetailView } from "./ShiftDetailView";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import StatusBadge from "../shared/atoms/statusBadge";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const Card = ({
   children,
@@ -44,7 +45,6 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-
   return (
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
@@ -67,7 +67,8 @@ const MyShiftItem: React.FC<{
 
 const MyShifts: React.FC = () => {
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
+
   const myShifts = data?.filter((s) => s.is_self === 1).slice(0, 4) ?? [];
 
   return (
@@ -77,11 +78,15 @@ const MyShifts: React.FC = () => {
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
-        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-          {myShifts.map((shift, idx) => (
-            <MyShiftItem key={shift.name} item={shift} index={idx} />
-          ))}
-        </ul>
+        {isLoading ? (
+          <CardSkeleton rows={3} />
+        ) : (
+          <ul>
+            {myShifts.map((shift, idx) => (
+              <MyShiftItem key={shift.name} item={shift} index={idx} />
+            ))}
+          </ul>
+        )}
       </div>
     </Card>
   );
@@ -124,7 +129,7 @@ const TeamShiftItem: React.FC<{
 
 const TeamShiftList = () => {
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
   const teamShifts = data?.filter((s) => s.is_self === 0).slice(0, 3) ?? [];
   return (
     <Card>
@@ -133,11 +138,15 @@ const TeamShiftList = () => {
         onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
-        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-          {teamShifts.map((shift, idx) => (
-            <TeamShiftItem key={shift.name} item={shift} index={idx} />
-          ))}
-        </ul>
+        {isLoading ? (
+          <CardSkeleton rows={3} />
+        ) : (
+          <ul>
+            {teamShifts.map((shift, idx) => (
+              <TeamShiftItem key={shift.name} item={shift} index={idx} />
+            ))}
+          </ul>
+        )}
       </div>
     </Card>
   );
@@ -154,19 +163,6 @@ const AllMyShiftRequestsList = () => {
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -198,7 +194,7 @@ const AllMyShiftRequestsList = () => {
                   />
                 );
               }}
-              SkeletonComponent={CardSkeleton}
+              SkeletonComponent={() => <CardSkeleton rows={3} />}
               onItemClick={(data) => {
                 console.log(data);
               }}
@@ -300,6 +296,7 @@ export default function AllShiftsDashboard() {
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
+                    SkeletonComponent={() => <CardSkeleton rows={3} />}
                     renderCardContent={(item) => (
                       <ApprovalRejectionQueue
                         isSelected={item?.isSelected}

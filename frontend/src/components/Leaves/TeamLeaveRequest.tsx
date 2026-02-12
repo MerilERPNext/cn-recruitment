@@ -7,6 +7,7 @@ import { LeaveDetailView } from "./LeaveDetails";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -110,6 +111,7 @@ const TeamLeaveRequest = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
+              SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <LeaveApprovalCard
                   isSelected={item?.isSelected}

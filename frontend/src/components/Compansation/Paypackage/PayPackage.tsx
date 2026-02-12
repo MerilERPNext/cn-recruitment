@@ -14,7 +14,9 @@ import SalaryAssignmentHeader from "./PayPackageHeader";
 import HeaderBar from "../../HeaderBar";
 import { Banknote, CalendarDays } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type SalaryItem = any;
 
@@ -98,25 +100,16 @@ export default function SalaryAssignmentList() {
 
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  const SkeletonLoader = () => (
-    <div className="space-y-4 animate-pulse mt-6">
-      <div className="h-10 bg-gray-50 rounded" />
-      <div className="h-10 bg-gray-50 rounded" />
-      <div className="h-10 bg-gray-50 rounded" />
-      <div className="h-10 bg-gray-50 rounded" />
-    </div>
-  );
-
   const renderAmount = (value?: number | string) => {
     if (showAmount) {
       return (
         <span className="blur-sm select-none">
-          {RupeeSymbolPerfix("XXXXX")}
+          {formatCurrency("XXXXX")}
         </span>
       );
     }
     if (value === undefined || value === null) return "—";
-    return `${RupeeSymbolPerfix(Number(value).toLocaleString("en-IN"))}`;
+    return `${formatCurrency(Number(value).toLocaleString("en-IN"))}`;
   };
 
   return (
@@ -131,22 +124,19 @@ export default function SalaryAssignmentList() {
         onToggleAmount={toggleAmount}
       />
 
-      {/* 🔹 Page content ONLY */}
-      {isLoading && <SkeletonLoader />}
-
-      {isError && !isLoading && (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
-          <MdErrorOutline size={40} className="mb-2" />
-          <p className="text-lg font-semibold">Error loading data</p>
-          <p className="text-sm text-red-400">Please try again later</p>
-        </div>
-      )}
-
-      {!isLoading && !isError && (
-        <div className="flex-1 overflow-y-auto md:px-4 md:pb-20">
-          {isDesktop ? (
-            <CardTable titles={titles} columnWidths={columnWidths}>
-              {list.map((item) => (
+      <div className="flex-1 overflow-y-auto md:px-4 md:pb-20">
+        {isDesktop ? (
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            {isLoading ? (
+              <CardSkeleton />
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
+                <MdErrorOutline size={40} className="mb-2" />
+                <p className="text-lg font-semibold">Error loading data</p>
+                <p className="text-sm text-red-400">Please try again later</p>
+              </div>
+            ) : list.length > 0 ? (
+              list.map((item) => (
                 <div
                   key={item.name}
                   className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -156,7 +146,7 @@ export default function SalaryAssignmentList() {
                     variant="bodySmall"
                     className="font-medium text-center"
                   >
-                    {item.from_date}
+                    {formatToIndianDate(item.from_date)}
                   </Typography>
 
                   <div className="flex items-center justify-center">
@@ -178,6 +168,7 @@ export default function SalaryAssignmentList() {
                   >
                     {renderAmount(item.monthly_ctc)}
                   </Typography>
+
                   <Typography
                     variant="bodySmall"
                     className="font-medium text-center"
@@ -207,88 +198,83 @@ export default function SalaryAssignmentList() {
                     </button>
                   </div>
                 </div>
-              ))}
-
-              {!list.length && (
-                <div className="my-empty-state-card py-10 text-center text-gray-500">
-                  No records found.
-                </div>
-              )}
-            </CardTable>
-          ) : (
-            <div className="space-y-1 mt-2">
-              {list.map((item) => (
-                <div
-                  key={item.name}
-                  onClick={() => setSelected(item)}
-                  className="border border-indigo-200 rounded-xl p-3 bg-white
+              ))
+            ) : (
+              <div className="p-4 text-center text-gray-500">
+                No records found.
+              </div>
+            )}
+          </CardTable>
+        ) : (
+          <div className="space-y-1 mt-2">
+            {list.map((item) => (
+              <div
+                key={item.name}
+                onClick={() => setSelected(item)}
+                className="border border-indigo-200 rounded-xl p-3 bg-white
                                flex flex-col items-start justify-between gap-3
                                active:bg-indigo-50 cursor-pointer"
-                >
-                  {/* LEFT */}
-                  <div className="flex w-full items-start justify-between gap-3">
-                    {/* Icon */}
+              >
+                {/* LEFT */}
+                <div className="flex w-full items-start justify-between gap-3">
+                  {/* Icon */}
 
-                    {/* Text */}
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                        <span className="text-success text-lg font-semibold">
-                          {" "}
-                          <Banknote />
-                        </span>
-                      </div>
-
-                      <p className="font-semibold text-sm text-gray-900">
-                        Pay Package
-                      </p>
+                  {/* Text */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <span className="text-success text-lg font-semibold">
+                        {" "}
+                        <Banknote />
+                      </span>
                     </div>
-                    <span className="text-gray-400 text-lg leading-none">
-                      ›
-                    </span>
+
+                    <p className="font-semibold text-sm text-gray-900">
+                      Pay Package
+                    </p>
                   </div>
-
-                  {/* RIGHT */}
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[11px] text-gray-400 uppercase">
-                        Fixed Gross (Annual)
-                      </p>
-
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                        {renderAmount(item.fixed_gross_annual)}
-                        <span className="text-gray-400 text-xs">👁</span>
-                      </div>
-                    </div>
-                    <div className="text-right flex flex-col items-end gap-1">
-                      <p className="text-[11px] text-gray-400 uppercase">
-                        Effective From
-                      </p>
-                      <p className="text-xs font-medium text-gray-700">
-                        {item.from_date}
-                      </p>
-                    </div>
-                  </div>
-                  <div></div>
+                  <span className="text-gray-400 text-lg leading-none">›</span>
                 </div>
-              ))}
 
-              {!list.length && (
-                <p className="text-center text-gray-500 py-10">
-                  No records found
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+                {/* RIGHT */}
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-[11px] text-gray-400 uppercase">
+                      Fixed Gross (Annual)
+                    </p>
+
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      {renderAmount(item.fixed_gross_annual)}
+                      <span className="text-gray-400 text-xs">👁</span>
+                    </div>
+                  </div>
+                  <div className="text-right flex flex-col items-end gap-1">
+                    <p className="text-[11px] text-gray-400 uppercase">
+                      Effective From
+                    </p>
+                    <p className="text-xs font-medium text-gray-700">
+                      {formatToIndianDate(item.from_date)}
+                    </p>
+                  </div>
+                </div>
+                <div></div>
+              </div>
+            ))}
+
+            {!list.length && (
+              <p className="text-center text-gray-500 py-10">
+                No records found
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ================= CTC MODAL ================= */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40">
           <div
-            className={`bg-white w-full ${
-              isDesktop ? "max-w-[600px]" : ""
-            } shadow-lg relative h-screen overflow-y-auto`}
+            className={`bg-white w-full ${isDesktop ? "max-w-[600px]" : ""
+              } shadow-lg relative h-screen overflow-y-auto`}
           >
             {isDesktop ? (
               <div className="flex justify-between items-center p-4 border-b">

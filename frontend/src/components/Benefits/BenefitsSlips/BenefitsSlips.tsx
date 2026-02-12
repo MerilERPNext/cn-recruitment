@@ -28,6 +28,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const BenefitsSlips = () => {
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
@@ -115,17 +116,7 @@ const BenefitsSlips = () => {
             }}
             getItemKey={(item: any, _: number) => item.name}
             ItemComponent={BenefitSlipItem}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
+            SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             // onRefetchComplete={() => setRefetchAttendance(false)}
             isSearch={false}

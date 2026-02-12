@@ -6,7 +6,6 @@ import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { UiAdvance } from "../../../types/employeeAttendance";
-import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
@@ -14,7 +13,7 @@ import { Card } from "../../shared/atoms/Card";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
 import { Typography } from "../../shared/atoms/Typography";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -75,7 +74,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 <div className="font-semibold">
                   {maskAmounts ? (
                     <span className="blur-sm select-none">
-                      {RupeeSymbolPerfix("XX,XXX")}
+                      {formatCurrency("XX,XXX")}
                     </span>
                   ) : (
                     formatCurrency(advance.amount)
@@ -144,7 +143,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               >
                 {maskAmounts ? (
                   <span className="blur-sm select-none">
-                    {RupeeSymbolPerfix("XX,XXX")}
+                    {formatCurrency("XX,XXX")}
                   </span>
                 ) : (
                   <span>{formatCurrency(installment.openingBalance)}</span>
@@ -157,7 +156,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               >
                 {maskAmounts ? (
                   <span className="blur-sm select-none">
-                    {RupeeSymbolPerfix("XX,XXX")}
+                    {formatCurrency("XX,XXX")}
                   </span>
                 ) : (
                   <span>{formatCurrency(installment.installmentAmount)}</span>
@@ -170,7 +169,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               >
                 {maskAmounts ? (
                   <span className="blur-sm select-none">
-                    {RupeeSymbolPerfix("XX,XXX")}
+                    {formatCurrency("XX,XXX")}
                   </span>
                 ) : (
                   <span>{formatCurrency(installment.principalBalance)}</span>
@@ -216,7 +215,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <div className="font-semibold">
                 {maskAmounts ? (
                   <span className="blur-sm select-none">
-                    {RupeeSymbolPerfix("XX,XXX")}
+                    {formatCurrency("XX,XXX")}
                   </span>
                 ) : (
                   formatCurrency(advance.amount)
@@ -298,7 +297,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            {RupeeSymbolPerfix("XX,XXX")}
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div className="text-sm font-medium leading-tight">
@@ -309,7 +308,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            {RupeeSymbolPerfix("XX,XXX")}
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div className="text-sm font-medium text-primary leading-tight">
@@ -320,15 +319,14 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            {RupeeSymbolPerfix("XX,XXX")}
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div
-                            className={`text-sm font-medium leading-tight ${
-                              installment.principalBalance === 0
-                                ? "text-green-600"
-                                : ""
-                            }`}
+                            className={`text-sm font-medium leading-tight ${installment.principalBalance === 0
+                              ? "text-green-600"
+                              : ""
+                              }`}
                           >
                             {formatCurrency(installment.principalBalance)}
                           </div>

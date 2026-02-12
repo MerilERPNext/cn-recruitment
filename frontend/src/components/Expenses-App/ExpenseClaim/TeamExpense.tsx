@@ -8,6 +8,7 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { FileText } from "lucide-react";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -43,22 +44,22 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Expense Category",
-      "Claimed Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee",
+        "Expense Category",
+        "Claimed Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ]
     : [
-      "Employee",
-      "Expense Category",
-      "Claimed Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee",
+        "Expense Category",
+        "Claimed Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
@@ -159,6 +160,7 @@ const TeamExpense = () => {
               ]}
               noRecordsScreen={noRecordsScreen}
               defaultFilters={{ status: "Draft" }}
+              SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <ExpenseApprovalCard
                   isSelected={item?.isSelected}
