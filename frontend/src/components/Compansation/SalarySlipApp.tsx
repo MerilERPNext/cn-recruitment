@@ -121,7 +121,7 @@ const SalarySlipApp: React.FC = () => {
               bgColor="primary"
               onClick={() => setIsLoanDialogOpen(true)}
             >
-              + Create Loan
+              + Request Loan
             </Button>
           </footer>
         )}

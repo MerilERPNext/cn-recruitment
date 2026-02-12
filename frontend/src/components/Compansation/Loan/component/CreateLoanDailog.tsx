@@ -160,7 +160,7 @@ export default function CreateLoanDialog({
         {/* Dialog Header */}
         {isDesktop ? (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-            <h2 className=" base-title text-gray-900">Create New Loan</h2>
+            <h2 className=" base-title text-gray-900">Request Loan</h2>
 
             <button
               onClick={onClose}
@@ -173,7 +173,7 @@ export default function CreateLoanDialog({
         ) : (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
             <h2 className="text-lg font-semibold text-gray-800">
-              Create New Loan
+              Request Loan
             </h2>
           </div>
         )}

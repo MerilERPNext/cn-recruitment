@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import { useState, useCallback } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
@@ -154,7 +153,7 @@ const AttendanceRequest = ({
                   className="hover:bg-blue-700"
                   onClick={() => setShowForm(!showForm)}
                 >
-                  <Plus /> <span>Add Attendance Request</span>
+                  <span>+ Attendance Request</span>
                 </Button>
               </div>
             </div>

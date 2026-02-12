@@ -277,7 +277,7 @@ const AdvancesList: React.FC = () => {
                 onClick={handleCreateAdvance}
                 className="hover:bg-primary-700 py-[0.65rem] font-semibold"
               >
-                Create Advance
+                + Request Advance
               </Button>
             </div>
           </div>
