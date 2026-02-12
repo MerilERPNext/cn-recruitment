@@ -1,3 +1,4 @@
+import { formatCurrency } from "../../../../utils/currency";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
@@ -10,14 +11,6 @@ interface LoanInstallmentsProps {
 export default function LoanInstallments({
   installments,
 }: LoanInstallmentsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-IN").format(num);
@@ -84,7 +77,7 @@ export default function LoanInstallments({
               >
                 {formatCurrency(
                   installment.balance_loan_amount +
-                    installment.principal_amount,
+                  installment.principal_amount,
                 )}
               </Typography>
 
