@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
-import Badge from "../shared/Badge";
 import Button, { ButtonColor } from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -16,6 +15,7 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 export function AttendanceDetailView({
   data: propData,
@@ -51,30 +51,7 @@ export function AttendanceDetailView({
   const cleanExplaination = DOMPurify.sanitize(
     data?.reference_document?.explanation || "",
   );
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
 
-  const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
@@ -226,10 +203,7 @@ export function AttendanceDetailView({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
           <div className="py-4">
-            <Badge
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />{" "}
+            <StatusBadge status={data?.status} />
           </div>
           <div className="py-2">
             <div className="flex gap-2 justify-between">

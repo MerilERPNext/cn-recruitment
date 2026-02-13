@@ -14,7 +14,6 @@ import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 
-
 import type {
   ShiftRequestFormData,
   FormioSubmission,
@@ -23,9 +22,10 @@ import type {
 import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { X } from "lucide-react";
 
 interface ShiftRequestFormModalProps {
-  onClose?: () => void;
+  onClose: () => void;
   schema?: FormSchema;
   defaultShiftRequestData?: ShiftRequest;
   forActionType?: "create" | "edit";
@@ -44,9 +44,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const formRef = useRef<any>(null);
   const { setRefetchAttendance } = useGlobalStore();
   const [formSchema, setFormSchema] = useState<FormSchema>(
-    (propSchema || defaultFormSchema) as FormSchema
+    (propSchema || defaultFormSchema) as FormSchema,
   );
-    const { isDesktop } = useScreenSize();
+  const { isDesktop } = useScreenSize();
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
@@ -130,12 +130,12 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
               onError: (error: any) => {
                 handleSubmitionError("Error updating shift request:", error);
                 toast.error(
-                  errorResponseFormater(error, "Error updating shift request")
+                  errorResponseFormater(error, "Error updating shift request"),
                 );
                 reject(error);
               },
-            }
-          )
+            },
+          ),
         );
       } else {
         await new Promise<void>((resolve, reject) =>
@@ -147,17 +147,15 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onError: (error: any) => {
               handleSubmitionError("Error creating shift request:", error);
               toast.error(
-                errorResponseFormater(error, "Error creating shift request")
+                errorResponseFormater(error, "Error creating shift request"),
               );
               reject(error);
             },
-          })
+          }),
         );
       }
     }, "Submitting shift request…"); // overlay message
   };
-
-
 
   const { data: requiredFields } = useRequiredFields("Shift Request");
   const requiredFieldMap = useMemo(() => {
@@ -177,7 +175,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>
+    requiredMap: Record<string, boolean>,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
 
@@ -213,7 +211,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
         }
         if (comp.rows) {
           comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components))
+            row.forEach((cell: any) => applyToComponents(cell.components)),
           );
         }
       });
@@ -235,27 +233,44 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   if (employeeLoading) {
     return (
-      <div className="bg-gray-50 flex flex-col font-sans">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6 flex-grow w-full">
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <div className="animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="space-y-3">
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-10 bg-gray-200 rounded"></div>
-                <div className="h-20 bg-gray-200 rounded"></div>
-              </div>
-            </div>
-          </div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white p-6 rounded-lg">
+          <div className="w-8 h-8 border-4 border-t-transparent border-black rounded-full animate-spin"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white flex flex-col font-sans  ${className}`}>
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6  flex-grow w-full">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="w-[100vw] h-[100vh] md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Request Shift Change
+          </h2>
+          {isDesktop && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
+        </div>
+
+        {/* Content Area */}
+        <div
+          className={`flex-1 min-h-0 overflow-y-auto px-4 py-6 ${className}`}
+        >
           <Form
             form={validatedSchema}
             onFormReady={(instance: Formio) => {
@@ -285,25 +300,29 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             }}
             className="space-y-6"
           />
-      </div>
+        </div>
 
-      <div className="sticky bottom-0  border-t shadow-lg py-4 px-4 w-full">
-        <div className="max-w-4xl mx-auto flex space-x-4 md:justify-end">
-         {!isDesktop && ( <Button
-            onClick={onClose}
-            size="md"
-            variant="outline"
-            className="w-full md:w-auto min-w-[150px]"
-          >
-            Cancel
-          </Button>)}
-          <Button
-            onClick={handleSubmit}
-            size="md"
-            className="w-full md:w-auto min-w-[150px]"
-          >
-            Submit 
-          </Button>
+        {/* Footer */}
+        <div className="sticky bottom-0 border-t shadow-lg py-4 px-4 w-full bg-white z-20">
+          <div className="max-w-4xl mx-auto flex space-x-4 md:justify-end">
+            {!isDesktop && (
+              <Button
+                onClick={onClose}
+                size="md"
+                variant="outline"
+                className="w-full md:w-auto min-w-[150px]"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              onClick={handleSubmit}
+              size="md"
+              className="w-full md:w-auto min-w-[150px]"
+            >
+              Submit
+            </Button>
+          </div>
         </div>
       </div>
     </div>

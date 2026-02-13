@@ -153,6 +153,20 @@ const Requests = () => {
             </p>
           </div>
 
+          {/* Expense Advance */}
+          <div
+            className="shadow-sm hover-lift rounded-lg cursor-pointer 
+  h-28 w-full flex flex-col items-center justify-center p-2"
+            onClick={() => navigate("/webapp/expenses-app/new-expense-advance")}
+          >
+            <div className="w-10 h-10 bg-amber-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
+              <IndianRupee className="w-5 h-5 text-amber-600" />
+            </div>
+            <p className="text-xs text-gray-600 font-medium text-center">
+              Expense Advance
+            </p>
+          </div>
+
           {/* Create Flow Request */}
           <div
             className="shadow-sm hover-lift rounded-lg cursor-pointer 
@@ -203,13 +217,18 @@ const Requests = () => {
           onClose={handleCloseShiftModal}
           title="Request Shift Change"
         >
-          <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
+          <ShiftRequestFormModal
+            className="h-full"
+            onClose={handleCloseShiftModal}
+          />
         </ExpenseFormModal>
-        {showInitiateModel && (
+        {showInitiateModel &&
           createPortal(
-            <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
-            , document.body)
-        )}
+            <InitiateFlow
+              handleCloseModel={() => setShowInitiateModel(false)}
+            />,
+            document.body,
+          )}
         {showAdvanceForm && (
           <Modal onClose={handleCloseAdvanceModal}>
             <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
@@ -221,7 +240,9 @@ const Requests = () => {
   const isRequestPage = useLocation().pathname === "/webapp/requests";
   const mobileLayout = (
     <div className="flex flex-col min-h-fit bg-white h-fit">
-      {isRequestPage && <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />}
+      {isRequestPage && (
+        <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
+      )}
       <div className="md:p-4 z-100 flex-grow overflow-y-auto h-fit">
         {requestsCards()}
         <Outlet />

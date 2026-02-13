@@ -9,7 +9,6 @@ import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import Button from "../../shared/atoms/Button";
-import { Plus } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
@@ -39,7 +38,7 @@ const MyOvertimeRequests = () => {
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "My Overtime",
+    "Planned Overtime",
   );
 
   const [showForm, setShowForm] = useState(false);
@@ -82,7 +81,7 @@ const MyOvertimeRequests = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
           columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr"]}
           titles={[
@@ -151,7 +150,7 @@ const MyOvertimeRequests = () => {
               className="hover:bg-blue-700"
               onClick={() => setShowForm(!showForm)}
             >
-              <Plus /> <span>Add Overtime Request</span>
+              <span>+ Overtime Request</span>
             </Button>
           </div>
         </div>

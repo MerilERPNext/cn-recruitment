@@ -9,9 +9,10 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { CNMicroapp } from "./DashboardApps/AppsCard";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
+import { AdminAppsSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const MicroAppInDashboard: React.FC = () => {
-  const { data: microappsList } = useUserMicroApps();
+  const { data: microappsList, isLoading } = useUserMicroApps();
   const { mutateAsync: saveUserMicroApps } = useSaveUserMicroApps();
   const handleOrderChange = (apps: CNMicroapp[]) => {
     // Persist to backend
@@ -22,7 +23,7 @@ const MicroAppInDashboard: React.FC = () => {
         is_pinned,
         is_favorite,
         display_order,
-      })
+      }),
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,14 +33,20 @@ const MicroAppInDashboard: React.FC = () => {
   return (
     <Card shadow="sm" className="h-full ">
       <div className="flex items-center justify-between mb-4">
-        <Typography variant="subheading" color="title">Admin apps</Typography>
+        <Typography variant="subheading" color="title">
+          Admin apps
+        </Typography>
       </div>
       <DndProvider backend={HTML5Backend}>
-        {microappsList?.apps && (
-          <AppGrid
-            apps={microappsList?.apps}
-            onOrderChange={handleOrderChange}
-          />
+        {isLoading ? (
+          <AdminAppsSkeleton />
+        ) : (
+          microappsList?.apps && (
+            <AppGrid
+              apps={microappsList?.apps}
+              onOrderChange={handleOrderChange}
+            />
+          )
         )}
       </DndProvider>
     </Card>

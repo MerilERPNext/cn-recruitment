@@ -154,7 +154,7 @@ const FlowApp: React.FC = () => {
               size="lg"
               bgColor="primary"
             >
-              Initiate
+              + Initiate Flow
             </Button>
           </div>
         </div>
@@ -169,7 +169,7 @@ const FlowApp: React.FC = () => {
       className="hover:bg-blue-700 text-white"
       onClick={handleInitiateModel}
     >
-      + Initiate
+      + Initiate Flow
     </Button>
   ) : null;
 

@@ -376,7 +376,7 @@ const AttendanceSummary = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4 min-h-0">
+    <div className="h-full overflow-y-auto p-0 md:p-4 space-y-4 min-h-0">
       {/* Date Navigation */}
       <Card
         padding="sm"

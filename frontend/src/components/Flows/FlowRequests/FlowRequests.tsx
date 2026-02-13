@@ -11,6 +11,7 @@ import HeaderBar from "../../HeaderBar";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import FlowDetails from "./FlowDetails";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const titles = [
   "Request ID",
@@ -120,6 +121,7 @@ const FlowRequests: React.FC = () => {
             //     options: ["Open", "Approved", "Rejected"],
             //   },
             // ]}
+            SkeletonComponent={CardSkeleton}
             pageSize={10}
             showRefreshButton={false}
             orderBy="modified desc"
@@ -206,7 +208,7 @@ const MyFlowRequestCard = ({
               {request.todo_id}
             </Typography>
           </div>
-          <StatusBadge status={request.status} />
+          <StatusBadge status={overallStatus} />
         </div>
 
         {/* Request Details */}
@@ -243,11 +245,11 @@ const MyFlowRequestCard = ({
 
             <div className="flex flex-col gap-2 text-right">
               <Typography variant="mobileCardLabel" className="block">
-                CUSTOM/FLOW STATUS
+                Approval Status{" "}
               </Typography>
-              <Typography variant="mobileCardValue">
-                {request.status}
-              </Typography>
+              <div>
+                <StatusBadge status={request.status} />
+              </div>
             </div>
           </div>
         </div>
