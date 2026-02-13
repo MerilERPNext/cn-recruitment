@@ -10,6 +10,8 @@ import Button from "../shared/atoms/Button";
 import ChangeSelfServiceStatus from "./tools/ChangeSelfServiceStatus/ChangeSelfServiceStatus";
 import ChangeWeekOff from "./tools/ChangeWeekOff/ChangeWeekOff";
 import ResetPassword from "./tools/ResetPassword/ResetPassword";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 const EmployeeTable = ({
   employees,
   selectedEmployees = [],
@@ -19,6 +21,24 @@ const EmployeeTable = ({
   selectedEmployees: Employee[];
   setSelectedEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
 }) => {
+
+  const { data: userUiPermission } = useGetUiPermission("Employee Directory");
+  const canChangeSelfServiceStatus = isActionEnabled(
+    userUiPermission,
+    "change_self_service_status",
+    "Employee Directory"
+  );
+  const canChangeWeeklyOff = isActionEnabled(
+    userUiPermission,
+    "change_week_off",
+    "Employee Directory"
+  );
+  const canResetPassword = isActionEnabled(
+    userUiPermission,
+    "reset_password",
+    "Employee Directory"
+  );
+
   const { isDesktop } = useScreenSize();
   const [activeTool, setActiveTool] = useState<'week_off' | 'self_service' | 'password' | null>(null);
   const [selectedRowEmployee, setSelectedRowEmployee] = useState<Employee | null>(null);
@@ -123,7 +143,7 @@ const EmployeeTable = ({
                     </Link>
 
                     <div>
-                      <Button
+                      {(canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword) && <Button
                         ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                         variant="subtle"
                         size="sm"
@@ -131,7 +151,7 @@ const EmployeeTable = ({
                         className="p-1"
                       >
                         <EllipsisVertical size={16} />
-                      </Button>
+                      </Button>}
 
                       <ContextualPopup
                         isOpen={openPopupId === item.name}
@@ -140,7 +160,7 @@ const EmployeeTable = ({
                         className="mt-1"
                       >
                         <div className="flex flex-col p-1 min-w-[160px]">
-                          <Button
+                          {canChangeWeeklyOff && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -153,8 +173,8 @@ const EmployeeTable = ({
                             }}
                           >
                             Weekly off
-                          </Button>
-                          <Button
+                          </Button>}
+                          {canChangeSelfServiceStatus && <Button
                             variant="subtle"
                             contentAlign="start"
                             fullWidth
@@ -166,8 +186,8 @@ const EmployeeTable = ({
                             }}
                           >
                             Self service
-                          </Button>
-                          <Button
+                          </Button>}
+                          {canResetPassword && <Button
                             variant="subtle"
                             size="md"
                             contentAlign="start"
@@ -179,7 +199,7 @@ const EmployeeTable = ({
                             }}
                           >
                             Reset password
-                          </Button>
+                          </Button>}
                         </div>
                       </ContextualPopup>
                     </div>
@@ -296,7 +316,7 @@ const EmployeeTable = ({
               </div>
 
               <div className="relative">
-                <Button
+                {canChangeWeeklyOff || canChangeSelfServiceStatus || canResetPassword && <Button
                   ref={(el) => { actionButtonRefs.current[item.name] = el; }}
                   variant="soft"
                   size="sm"
@@ -304,7 +324,7 @@ const EmployeeTable = ({
                   className="p-1.5 rounded-lg hover:bg-gray-100"
                 >
                   <EllipsisVertical size={18} className="text-gray-500" />
-                </Button>
+                </Button>}
 
                 <ContextualPopup
                   isOpen={openPopupId === item.name}
@@ -313,7 +333,7 @@ const EmployeeTable = ({
                   className="mt-1 right-0"
                 >
                   <div className="flex flex-col p-1.5 min-w-[170px]">
-                    <Button
+                    {canChangeWeeklyOff && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -327,8 +347,8 @@ const EmployeeTable = ({
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
                       Weekly off
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canChangeSelfServiceStatus && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -341,8 +361,8 @@ const EmployeeTable = ({
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
                       Self service
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canResetPassword && <Button
                       variant="subtle"
                       size="sm"
                       contentAlign="start"
@@ -355,7 +375,7 @@ const EmployeeTable = ({
                       className="text-xs py-2 px-3 hover:bg-primary-50"
                     >
                       Reset password
-                    </Button>
+                    </Button>}
                   </div>
                 </ContextualPopup>
               </div>

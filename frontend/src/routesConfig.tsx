@@ -493,7 +493,7 @@ export interface AppRoute {
   path: string;
   element: ReactElement;
   children?: AppRoute[];
-  permissionKey?: string;
+  permissionKey: string;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -858,6 +858,7 @@ export const routesConfig: AppRoute[] = [
         path: "",
         index: true,
         element: <Navigate to="summary" replace />,
+        permissionKey: "Attendance Summary",
       },
       {
         path: "summary",
@@ -1086,22 +1087,22 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/helpdesk/my-tickets",
     element: <HelpDeskApp />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk My Tickets",
   },
   {
     path: "/webapp/helpdesk/assigned",
     element: <HelpDeskApp />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk Assigned",
   },
   {
     path: "/webapp/helpdesk/faq",
     element: <FAQPage />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk FAQ",
   },
   {
     path: "/webapp/helpdesk/ticket/:ticketId",
     element: <TicketDetailView />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk Ticket",
   },
   {
     path: "/webapp/todo-app",

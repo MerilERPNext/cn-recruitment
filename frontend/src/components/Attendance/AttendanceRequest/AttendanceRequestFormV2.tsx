@@ -210,7 +210,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useAttendanceRequestAttachments(
       activeEmployeeId,
       fromDateChanged ||
-        formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      format(selectedDate ? new Date(selectedDate) : new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -416,17 +416,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         checkin_time: defaultAttendanceData?.reference_document
           ?.custom_from_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document.custom_from_time,
-              )}`,
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document.custom_from_time,
+            )}`,
+          )
           : undefined,
         checkout_time: defaultAttendanceData?.reference_document?.custom_to_time
           ? new Date(
-              `1970-01-01T${normalizeTime(
-                defaultAttendanceData?.reference_document?.custom_to_time,
-              )}`,
-            )
+            `1970-01-01T${normalizeTime(
+              defaultAttendanceData?.reference_document?.custom_to_time,
+            )}`,
+          )
           : undefined,
         custom__request_reason:
           defaultAttendanceData?.reference_document?.custom__request_reason ||
@@ -442,13 +442,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         allowed_to_date: attendanceRequestAttachmentsMandatory?.allowed_to_date,
         attachments:
           defaultAttendanceData?.attachments &&
-          defaultAttendanceData?.attachments?.length > 0
+            defaultAttendanceData?.attachments?.length > 0
             ? defaultAttendanceData?.attachments?.map((item) => {
-                return {
-                  name: item?.file_url?.split("/").pop(),
-                  url: item?.file_url,
-                };
-              })
+              return {
+                name: item?.file_url?.split("/").pop(),
+                url: item?.file_url,
+              };
+            })
             : [],
         isForOthers: isForOthers,
         currentEmployeeId: currentEmployee?.employee || "",
@@ -638,11 +638,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               submission.data.from_date)) && {
             to_date:
               submission.data.request_type === "Out Duty" &&
-              submission.data.from_date
+                submission.data.from_date
                 ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
                 : formatDateToYYYYMMDD(
-                    new Date(submission.data.to_date as string),
-                  ),
+                  new Date(submission.data.to_date as string),
+                ),
           }),
         };
 
@@ -1070,11 +1070,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                   rootEl as HTMLElement
                 ).querySelectorAll
                   ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input",
-                    )
+                    "input.flatpickr-input",
+                  )
                   : document.querySelectorAll<FlatpickrInput>(
-                      "input.flatpickr-input",
-                    );
+                    "input.flatpickr-input",
+                  );
 
                 flatInputs.forEach((input) => {
                   const handler = () => {

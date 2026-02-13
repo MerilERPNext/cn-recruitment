@@ -124,9 +124,9 @@ const EmployeeAttendanceDetails = ({
   const { data: empCheckIns, isLoading } = useAllEmployeeCheckIns(
     validDate && effectiveEmployeeId
       ? [
-          ["time", "between", [start, end]],
-          ["employee", "=", effectiveEmployeeId],
-        ]
+        ["time", "between", [start, end]],
+        ["employee", "=", effectiveEmployeeId],
+      ]
       : [],
     { enabled: !!validDate && !!effectiveEmployeeId },
   );
@@ -139,11 +139,11 @@ const EmployeeAttendanceDetails = ({
         status === "absent" ||
         status === "half day")
       ? [
-          ["employee", "=", effectiveEmployeeId],
-          ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
-          ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
-          ["docstatus", "!=", 2],
-        ]
+        ["employee", "=", effectiveEmployeeId],
+        ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
+        ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
+        ["docstatus", "!=", 2],
+      ]
       : [],
     {
       enabled:
@@ -382,7 +382,7 @@ const EmployeeAttendanceDetails = ({
       <div>
         <LeaveDetailsCard data={leaveDetails} />
         {data?.custom_auto_created === 1 ||
-        (leaveEvent && status === "on leave")
+          (leaveEvent && status === "on leave")
           ? renderLeaveDetailsActions()
           : null}
         {/* <div className="border-t-1 border-gray-100 mt-6"></div> */}
@@ -464,7 +464,7 @@ const EmployeeAttendanceDetails = ({
       !!leaveEvent
     )
       return null;
-    const isButtonDisabled = status !== "absent" && status !== "half day";
+    // const isButtonDisabled = status !== "absent" && status !== "half day";
 
     if (hasExistingRequest) {
       return (
@@ -494,7 +494,7 @@ const EmployeeAttendanceDetails = ({
             variant="soft"
             fullWidth
             size="md"
-            disabled={isButtonDisabled}
+            // disabled={isButtonDisabled}
             bgColor="primary"
             onClick={() => setShowReqAttendanceCorrection(true)}
           >
@@ -522,12 +522,12 @@ const EmployeeAttendanceDetails = ({
             latestInAndOutTime={
               empCheckIns && empCheckIns?.length > 0
                 ? {
-                    in_time: empCheckIns?.[0].time as string,
-                    out_time:
-                      empCheckIns?.length > 1
-                        ? (empCheckIns?.[empCheckIns.length - 1].time as string)
-                        : "",
-                  }
+                  in_time: empCheckIns?.[0].time as string,
+                  out_time:
+                    empCheckIns?.length > 1
+                      ? (empCheckIns?.[empCheckIns.length - 1].time as string)
+                      : "",
+                }
                 : undefined
             }
           />,

@@ -13,6 +13,8 @@ import { useState } from "react";
 import ChangeDottedLineManager from "./tools/ChangeDottedLineManager/ChangeDottedLineManager";
 import ChangeProbationPeriod from "./tools/ChangeProbationPeriod/ChangeProbationPeriod";
 import DeactivateEmployee from "./tools/DeactivateEmployee/DeactivateEmployee";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 type Props = {
     employees: Employee[];
@@ -40,8 +42,35 @@ const EmployeeDirectoryContent = ({
         setIsPopupOpen,
         buttonRef,
     } = uiState;
-
+    const { data: userUiPermission } = useGetUiPermission("Employee Directory");
+    const canChangeHrbp = isActionEnabled(
+        userUiPermission,
+        "change_hrbp",
+        "Employee Directory"
+    );
+    const canChangeDottedLineManager = isActionEnabled(
+        userUiPermission,
+        "change_dotted_line_manager",
+        "Employee Directory"
+    );
+    const canChangeProbationPeriod = isActionEnabled(
+        userUiPermission,
+        "change_probation_period",
+        "Employee Directory"
+    );
+    const canDeactivateEmployee = isActionEnabled(
+        userUiPermission,
+        "deactivate_employee",
+        "Employee Directory"
+    );
+    const canAttendanceAssignments = isActionEnabled(
+        userUiPermission,
+        "attendance_assignments",
+        "Employee Directory"
+    );
     const [activeTool, setActiveTool] = useState<ToolType>(null);
+
+    const canPerformDropdownActions = canChangeHrbp || canChangeDottedLineManager || canChangeProbationPeriod || canDeactivateEmployee;
     return (
         <>
             <EmployeeSearch {...searchState} />
@@ -52,17 +81,17 @@ const EmployeeDirectoryContent = ({
                 setSelectedEmployees={setSelectedEmployees}
             />
 
-            {selectedEmployees.length > 0 && (
+            {selectedEmployees.length > 0 && canPerformDropdownActions && canAttendanceAssignments && (
                 <div className="sticky bottom-1 flex justify-end bg-primary rounded-md p-2 gap-2">
-                    <Button
+                    {canAttendanceAssignments && <Button
                         variant="soft"
                         size="sm"
                         onClick={() => setActiveTool('attendance_assignments')}
                     >
                         Attendance Assignments
-                    </Button>
+                    </Button>}
 
-                    <Button
+                    {canPerformDropdownActions && <Button
                         ref={buttonRef}
                         variant="soft"
                         size="sm"
@@ -70,7 +99,7 @@ const EmployeeDirectoryContent = ({
                         className="h-full px-2"
                     >
                         <EllipsisVertical size={18} />
-                    </Button>
+                    </Button>}
                 </div>
             )}
 
@@ -82,7 +111,7 @@ const EmployeeDirectoryContent = ({
             >
                 <div className="flex flex-col p-2">
 
-                    <Button
+                    {canChangeHrbp && <Button
                         variant="subtle"
                         contentAlign="start"
                         size="sm"
@@ -94,8 +123,8 @@ const EmployeeDirectoryContent = ({
                         }}
                     >
                         Change HRBP
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canChangeDottedLineManager && <Button
                         variant="subtle"
                         contentAlign="start"
                         size="sm"
@@ -107,8 +136,8 @@ const EmployeeDirectoryContent = ({
                         }}
                     >
                         Change Dotted Line Manager
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canChangeProbationPeriod && <Button
                         variant="subtle"
                         contentAlign="start"
                         size="sm"
@@ -120,8 +149,8 @@ const EmployeeDirectoryContent = ({
                         }}
                     >
                         Change Probation Period
-                    </Button>
-                    <Button
+                    </Button>}
+                    {canDeactivateEmployee && <Button
                         variant="subtle"
                         contentAlign="start"
                         size="sm"
@@ -133,7 +162,7 @@ const EmployeeDirectoryContent = ({
                         }}
                     >
                         Deactivate Employee
-                    </Button>
+                    </Button>}
                 </div>
             </ContextualPopup>
 
