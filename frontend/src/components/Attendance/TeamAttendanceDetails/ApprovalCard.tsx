@@ -1,4 +1,3 @@
-import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import Tooltip from "../../shared/Tooltip";
@@ -81,33 +80,10 @@ const ApprovalCard = ({
     ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr"
     : "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr";
 
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected" || status === "Cancelled") {
-      return {
-        label: status === "Cancelled" ? "Cancelled" : "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
   const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation,
   );
   const truncatedExplaination = truncateByChars(cleanExplaination);
-  const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
@@ -173,16 +149,11 @@ const ApprovalCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.status === "Pending"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.status} />
             </Tooltip>
           </div>
@@ -235,11 +206,7 @@ const ApprovalCard = ({
                   {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
                 </div>
 
-                <Badge
-                  size="sm"
-                  label={status?.label as string}
-                  backgroundColor={status?.statusColor}
-                />
+                <StatusBadge status={data?.status} />
               </div>
               <div className="my-2 py-2">
                 <div className="flex justify-between w-full ">

@@ -6,6 +6,7 @@ type FetchHTMLArgs = {
   declaration_id: string;
   doctype?: string;
   docname?: string;
+  proof_id?: string;
 };
 
 export const getNewRegime = async (employee: string | null, company: string | null, payroll_period: string | null) => {
@@ -75,6 +76,16 @@ export const getForm12B = async (declarationId: string, docName: string) => {
     {
       docname: declarationId,
       doctype: docName,
+      declaration_id: ""
+    }
+  );
+};
+
+export const getPerviewOfITDeclaration = async (declarationId: string,) => {
+  return fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_tds_projection_poi_print_html",
+    {
+      proof_id: declarationId,
       declaration_id: ""
     }
   );

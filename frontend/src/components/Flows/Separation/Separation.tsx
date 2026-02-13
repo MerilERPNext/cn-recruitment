@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import { useSeparation } from "../../../hooks/useConfiremnation";
 import {
@@ -21,6 +20,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -171,14 +171,7 @@ const Separation = () => {
   const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <span className="text-sm text-gray-600">Loading...</span>
-        </div>
-      </div>
-    );
+    return <DashboardContentSkeleton />;
   }
   /* ---------------------------------------------------------- */
 

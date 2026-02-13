@@ -30,6 +30,7 @@
   {
    "fieldname": "hr_letter_field",
    "fieldtype": "Select",
+   "hidden": 1,
    "in_list_view": 1,
    "label": "HR Letter Field",
    "options": "Employment Related"
@@ -43,16 +44,17 @@
   },
   {
    "fieldname": "cc_users",
-   "fieldtype": "Select",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "CC Users"
+   "label": "CC Users",
+   "options": "User Group"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-01-08 17:40:12.424942",
+ "modified": "2026-02-12 20:07:36.629277",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Letter Configuration Table",

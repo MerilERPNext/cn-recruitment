@@ -297,16 +297,20 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
           {isDesktop ? (
             <div className="flex items-center mt-0.5 justify-between h-16">
               <Typography variant="subheading" color="body1">
-                Advance Request
+                Request Advance
               </Typography>
-              <Button variant="soft" onClick={onClose}>
-                <X className="w-6 h-6" />
-              </Button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between px-6 py-4   bg-white sticky top-0 z-20">
+            <div className="flex items-center justify-between px-2 py-4   bg-white sticky top-0 z-20">
               <h2 className="text-lg font-semibold text-gray-800">
-                Advance Request
+                Request Advance
               </h2>
             </div>
           )}

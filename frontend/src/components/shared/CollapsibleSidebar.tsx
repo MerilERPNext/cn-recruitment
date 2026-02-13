@@ -55,7 +55,7 @@ interface SubMenuItem {
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   subItems?: SubSubMenuItem[];
-  permissionKey: string
+  permissionKey: string;
 }
 
 interface NavigationItem {
@@ -208,7 +208,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Planned Overtime",
           icon: TimerIcon,
           href: "/webapp/attendance/my-overtime-requests",
-          permissionKey: "My Overtime",
+          permissionKey: "Planned Overtime",
         },
         {
           name: "Team Overtime",
@@ -889,7 +889,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       h-full w-[2px] bg-primary
                                       origin-center
                                       rounded-md
-                                      transition-transform transition-opacity duration-400 ease-out
+                                      transition-opacity duration-400 ease-out
                                       ${isSubActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}
                                     `}
                                     />

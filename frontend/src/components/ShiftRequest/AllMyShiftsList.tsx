@@ -152,7 +152,9 @@ const AllMyShiftsList: React.FC = () => {
       ) : (
         <div className="w-full mx-auto pb-20">
           <div className="mt-4">
-            {myShifts.length > 0 ? (
+            {isLoading ? (
+              <CardSkeleton />
+            ) : myShifts.length > 0 ? (
               myShifts.map((shift) => (
                 <ShiftAssignmentItem key={shift.name} item={shift} />
               ))

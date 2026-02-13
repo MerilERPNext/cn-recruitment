@@ -7,6 +7,8 @@ import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { formatCurrency } from "../../../../utils/currency";
 type Item = {
+  attach_link: string | null;
+  approval_needed: string;
   idx: string;
   proof_file?: File | string;
   attach_proof: string | null;
@@ -259,7 +261,7 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
               )}
             </div>
 
-            {showProofFields && item.attach_reqd === 1 && (
+            {showProofFields && item.attach_reqd === 1 || item?.approval_needed === "yes" && (
               <div className="flex gap-2 pb-1 bg-white">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">Attachment</label>
@@ -283,7 +285,7 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
                       <span className="text-sm text-gray-700 truncate">
                         {typeof item.attach_proof === "string"
                           ? item.attach_proof
-                          : ""}
+                          : item.attach_link}
                       </span>
 
                       <button

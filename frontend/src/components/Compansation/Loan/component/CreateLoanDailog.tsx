@@ -370,25 +370,21 @@ export default function CreateLoanDialog({
         {/* Dialog Header */}
         {isDesktop ? (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-            <h2 className=" base-title text-gray-900">Create New Loan</h2>
-            <Button
-              variant="soft"
+            <h2 className=" base-title text-gray-900">Request Loan</h2>
+
+            <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
             >
-              <X />
-            </Button>
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
           </div>
         ) : (
-          <div className="flex items-center p-4 border-b bg-primary-600 text-white">
-            <button
-              onClick={onClose}
-              className="mr-4 hover:bg-primary-700 p-1 rounded transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
-            <h2 className="text-lg font-semibold">Create New Loan</h2>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Request Loan
+            </h2>
           </div>
         )}
 
@@ -398,9 +394,13 @@ export default function CreateLoanDialog({
             <Form form={transformedSchema} onFormReady={onFormReady} />
           )}
         </div>
-
-        <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
-          {!isDesktop && (
+        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
+          <div className=" mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
+            {!isDesktop && (
+              <Button onClick={onClose} fullWidth size="md" variant="outline">
+                Cancel
+              </Button>
+            )}
             <Button
               onClick={onClose}
               fullWidth

@@ -6,6 +6,7 @@ import { useLoan } from "../../../../hooks/useLoan";
 import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 import { useEffect, useState } from "react";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 export default function LoanSummary() {
   const { data: userId } = useLoggedInUser();
@@ -19,7 +20,7 @@ export default function LoanSummary() {
   useEffect(() => {
     if (loanData && loanData?.length > 0 && loanId) {
       const foundLoan = loanData.find(
-        (loan: any) => loan?.loan_name === loanId
+        (loan: any) => loan?.loan_name === loanId,
       );
       setSelectedLoan(foundLoan || null);
     }
@@ -42,7 +43,7 @@ export default function LoanSummary() {
         item.principal_amount,
         item.interest_amount,
         item.balance_loan_amount,
-      ]
+      ],
     );
 
     const csvContent =
@@ -99,17 +100,8 @@ export default function LoanSummary() {
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Status</p>
-              <p
-                className={` text-gray-900 inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ml-auto ${
-                  selectedLoan.status === "Open"
-                    ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                    : "bg-green-100 text-green-800 border border-green-200"
-                }`}
-              >
-                {selectedLoan.status === "Open"
-                  ? "Pending"
-                  : selectedLoan.status}
-              </p>
+
+              <StatusBadge status={selectedLoan.status} />
             </div>
           </div>
         </div>
@@ -151,7 +143,7 @@ export default function LoanSummary() {
                     {formatCurrency(item.balance_loan_amount)}
                   </div>
                 </div>
-              )
+              ),
             )}
           </div>
         </div>

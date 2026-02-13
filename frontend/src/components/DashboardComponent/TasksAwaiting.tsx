@@ -230,6 +230,7 @@ const TasksAwaiting: React.FC = () => {
             "custom_redirect_url",
           ]}
           showPagination={false}
+          SkeletonComponent={() => <CardSkeleton rows={2} />}
         />
       )}
       <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">

@@ -90,7 +90,7 @@ const TeamAttendance = () => {
 
   return (
     <div className="h-full overflow-y-auto min-h-0">
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4 p-0 md:p-4">
         {/* ---------------- Calendar ---------------- */}
         <div className="w-full border-gray-200">
           <Card

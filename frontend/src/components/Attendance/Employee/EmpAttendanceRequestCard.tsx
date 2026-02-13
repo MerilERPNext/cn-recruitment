@@ -62,33 +62,6 @@ const EmpAttendanceRequestCard = ({
     }
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-
-    if (status === "pending") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-800",
-      };
-    } else if (status === "approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-800",
-      };
-    } else if (status === "rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-800",
-      };
-    } else {
-      return {
-        statusColor: "bg-gray-100 text-gray-800",
-        label: rawStatus || "Unknown",
-      };
-    }
-  };
-
-  const status = getStatus(data?.reference_document?.custom_status);
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 
@@ -161,16 +134,11 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.reference_document?.custom_status === "Pending"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.reference_document?.custom_status} />
             </Tooltip>
           </div>
@@ -228,12 +196,7 @@ const EmpAttendanceRequestCard = ({
                     )}
                   </div>
                 </div>
-                <Badge
-                  size="sm"
-                  backgroundColor={status?.statusColor}
-                  label={status?.label || ""}
-                />
-                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+                <StatusBadge status={data?.reference_document?.custom_status} />
               </div>
               <div className="card-subtitle">
                 {formattedFromDate}

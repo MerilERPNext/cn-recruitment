@@ -140,7 +140,8 @@ export const useUpdateCurrentEmployeeProfile = () => {
   return {
     updateEmployeeMutation: useMutation({
       mutationKey: ["updateCurrentEmployeeProfile"],
-      mutationFn: (employeeDetails: unknown) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mutationFn: (employeeDetails: any) =>
         EmployeeService.updateCurrentEmployeeProfile(employeeDetails),
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -189,7 +190,8 @@ export const useEmployeeIdCard = (
 
 // Hook to get current user's employee ID card
 export const useCurrentEmployeeIdCard = (
-  ...args: unknown[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options?: any
 ): UseQueryResult<EmployeeIdCard | null, Error> => {
   return useQuery<EmployeeIdCard | null, Error>({
     queryKey: ["currentEmployeeIdCard"],
@@ -201,7 +203,7 @@ export const useCurrentEmployeeIdCard = (
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 1,
-    ...args,
+    ...options,
   });
 };
 
@@ -221,7 +223,7 @@ export const useGetAllEmployees = (
   orFilters?: FilterCondition[]
 ): UseQueryResult<Employee[], Error> => {
   return useQuery<Employee[], Error>({
-    queryKey: ["all-employees-list", fields, filters, orFilters],
+    queryKey: ["all-employees-list", fields, limit, filters, orFilters],
     queryFn: () => EmployeeService.getAllEmployees(fields, filters, orFilters, limit),
     // staleTime: 1000 * 60 * 5,
   });
@@ -229,11 +231,11 @@ export const useGetAllEmployees = (
 
 export const useGetAllReasons = (requestType: string) => {
   return useQuery({
-    queryKey: ["all-reasons-list", "Attendance Request"],
+    queryKey: ["all-reasons-list", requestType],
     queryFn: () => {
       return EmployeeService.getAllReasons([
         // We might need to change it to a dynamic value but currently we are hard coding it.
-        ["reference_doctype", "=", "Attendance Request"],
+        ["reference_doctype", "=", requestType],
       ]);
     },
     enabled: !!requestType,
@@ -442,3 +444,130 @@ export const useGetEmployeeHoverData = () => {
     },
   });
 };
+
+
+export const useResetPasswordMutation = () => {
+  return useMutation({
+    mutationKey: ["resetPassword"],
+    mutationFn: ({
+      employee,
+      new_password,
+      send_mail,
+    }: {
+      employee: string;
+      new_password: string;
+      send_mail: boolean;
+    }) => EmployeeService.resetPassword(employee, new_password, send_mail),
+    onError: (error) => {
+      console.error("Error resetting password:", error);
+    },
+  });
+};
+
+export const useUpdateEmployeeSelfServiceMutation = () => {
+  return useMutation({
+    mutationKey: ["updateEmployeeSelfService"],
+    mutationFn: ({ employee, status }: { employee: string; status: string }) =>
+      EmployeeService.updateEmployeeSelfService(employee, status),
+    onError: (error) => {
+      console.error("Error updating employee self service:", error);
+    },
+  });
+};
+
+export const useUpdateProbationPeriodMutation = () => {
+  return useMutation({
+    mutationKey: ["updateProbationPeriod"],
+    mutationFn: ({
+      employees,
+      probation_period,
+    }: {
+      employees: string[];
+      probation_period: string;
+    }) => EmployeeService.updateProbationPeriod(employees, probation_period),
+    onError: (error) => {
+      console.error("Error updating probation period:", error);
+    },
+  });
+};
+export const useUpdateHRBPMutation = () => {
+  return useMutation({
+    mutationKey: ["updateHRBP"],
+    mutationFn: ({
+      employees,
+      hrbp,
+      effective_date,
+    }: {
+      employees: string[];
+      hrbp: string;
+      effective_date: string;
+    }) => EmployeeService.updateHRBP(employees, hrbp, effective_date),
+    onError: (error) => {
+      console.error("Error updating HRBP:", error);
+    },
+  });
+};
+export const useUpdateDottedLineManagerMutation = () => {
+  return useMutation({
+    mutationKey: ["updateDottedLineManager"],
+    mutationFn: ({
+      employees,
+      dotted_line_manager,
+      effective_date,
+    }: {
+      employees: string[];
+      dotted_line_manager: string;
+      effective_date: string;
+    }) =>
+      EmployeeService.updateDottedLineManager(
+        employees,
+        dotted_line_manager,
+        effective_date
+      ),
+    onError: (error) => {
+      console.error("Error updating dotted line manager:", error);
+    },
+  });
+};
+export const useUpdateEmployeeWeekOffMutation = () => {
+  return useMutation({
+    mutationKey: ["updateEmployeeWeekOff"],
+    mutationFn: ({
+      employee,
+      week_off,
+      date,
+    }: {
+      employee: string;
+      week_off: string;
+      date: string;
+    }) => EmployeeService.updateEmployeeWeekOff(employee, week_off, date),
+    onError: (error) => {
+      console.error("Error updating employee week off:", error);
+    },
+  });
+};
+export const useDeactivateEmployeeMutation = () => {
+  return useMutation({
+    mutationKey: ["deactivateEmployee"],
+    mutationFn: ({
+      employees,
+      deactivate_reason,
+      comment,
+      notice_period_start_date,
+    }: {
+      employees: string[];
+      deactivate_reason: string;
+      comment: string;
+      notice_period_start_date: string;
+    }) => EmployeeService.deactivateEmployee(
+      employees,
+      deactivate_reason,
+      comment,
+      notice_period_start_date,
+    ),
+    onError: (error) => {
+      console.error("Error deactivating employee:", error);
+    },
+  });
+};
+
