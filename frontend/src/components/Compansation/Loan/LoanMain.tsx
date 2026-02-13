@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search as SearchIcon } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateLoanDialog from "./component/CreateLoanDailog";
 import LoanList from "./component/LoanListView";
@@ -81,36 +80,17 @@ export default function LoansPage() {
         </div>
       </div>
 
-      <div className="pb-2 px-4 w-full">
-        <div className="relative w-full ">
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-            <SearchIcon />
-          </div>
-          <input
-            type="text"
-            placeholder="Search loans..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md 
-              focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          />
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {/* Search */}
-
         <div className="max-w-screen">
           {isLoading ? (
             <CardSkeleton />
-          ) : filteredLoans.length > 0 ? (
-            <LoanList handleEdit={handleEdit} loans={filteredLoans} />
           ) : (
-            <div className="text-center py-12 px-4">
-              <p className="text-gray-500">
-                No loans found matching your search criteria.
-              </p>
-            </div>
+            <LoanList
+              handleEdit={handleEdit}
+              loans={filteredLoans}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
           )}
         </div>
       </div>

@@ -20,7 +20,6 @@ import Tooltip from "../../shared/Tooltip";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
-import { SquarePen } from "lucide-react";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -227,7 +226,14 @@ const AdvancesList: React.FC = () => {
                 {advance.name}
               </h3>
             </div>
-            <StatusBadge status={advance.advanceStatus} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={advance.advanceStatus} />
+              <MyApprovalActionPill
+                isPending={true}
+                canEdit={!!advance.can_edit}
+                onEdit={() => handleEdit(advance.docname)}
+              />
+            </div>
           </div>
           <AmountRow
             label="Total Amount"
@@ -249,18 +255,6 @@ const AdvancesList: React.FC = () => {
               <span>{advance.installments.length} installments</span>
             </div>
           </div>
-
-          <Button
-            fullWidth
-            variant="contain"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(advance.docname);
-            }}
-            icon={<SquarePen className="w-4 h-4" />}
-          >
-            Edit
-          </Button>
         </div>
       ))}
     </>

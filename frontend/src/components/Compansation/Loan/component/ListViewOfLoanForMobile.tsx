@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { IoIosArrowForward } from "react-icons/io";
 import { useNavigate } from "react-router";
 import DataListView from "../../../DataListView";
@@ -5,46 +6,67 @@ import { useCurrentEmployee } from "../../../../hooks/useEmployee";
 import { Loan } from "../Type/loan";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
-
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import CreateLoanDialog from "./CreateLoanDailog";
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
   const { data: currentEmployee } = useCurrentEmployee();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const [loanId, setLoanId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleGoToLoanDetails = (loan_application: string) => {
     navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
   };
 
+  const handleEdit = (docname: string) => {
+    setLoanId(docname);
+    setIsDialogOpen(true);
+  };
+
   return (
-    <DataListView
-      queryKey="loan-requests"
-      customAPI={{
-        method:
-          "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
-        params: {
-          employee: currentEmployee?.name,
-        },
-      }}
-      ItemComponent={({ item }) => <LoantItem item={item} />}
-      onRefetchComplete={() => setRefetchAttendance(false)}
-      refetchTrigger={refetchAttendance}
-      onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
-      isSearch={true}
-      isFilter={false}
-      pageSize={10}
-      showRefreshButton={false}
-      orderBy="modified desc"
-      infiniteScroll={true}
-      loadMorePagination={true}
-      showPagination={false}
-      searchFields={["employee", "status", "shift_type"]}
-    />
+    <>
+      <DataListView
+        queryKey="loan-requests"
+        customAPI={{
+          method:
+            "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
+          params: {
+            employee: currentEmployee?.name,
+          },
+        }}
+        ItemComponent={({ item }) => <LoantItem item={item} handleEdit={handleEdit} />}
+        onRefetchComplete={() => setRefetchAttendance(false)}
+        refetchTrigger={refetchAttendance}
+        onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
+        isSearch={true}
+        isFilter={false}
+        pageSize={10}
+        showRefreshButton={false}
+        orderBy="modified desc"
+        infiniteScroll={true}
+        loadMorePagination={true}
+        showPagination={false}
+        searchFields={["employee", "status", "shift_type"]}
+      />
+      {isDialogOpen && (
+        <CreateLoanDialog
+          loanId={loanId}
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setLoanId(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 
 const LoantItem: React.FC<{
   item: Loan;
-}> = ({ item }) => {
+  handleEdit: (docname: string) => void;
+}> = ({ item, handleEdit }) => {
   return (
     <div
       key={item.name}
@@ -62,15 +84,21 @@ const LoantItem: React.FC<{
 
       {/* Right content */}
       <div className="flex items-center gap-3 flex-col">
-        <p
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ml-auto ${
-            item.status === "Open"
+        <div className="flex items-center gap-2">
+          <p
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ${item.status === "Open"
               ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
               : "bg-green-100 text-green-800 border border-green-200"
-          }`}
-        >
-          {item.status === "Open" ? "Pending" : item.status}
-        </p>
+              }`}
+          >
+            {item.status === "Open" ? "Pending" : item.status}
+          </p>
+          <MyApprovalActionPill
+            isPending={true}
+            canEdit={!!item.can_edit}
+            onEdit={() => handleEdit(item.name)}
+          />
+        </div>
         <div className="flex gap-2">
           <p className="flex items-center text-sm text-[var(--text-primary)]">
             <span className="font-bold">
