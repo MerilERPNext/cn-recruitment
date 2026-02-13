@@ -151,26 +151,6 @@ export default function BenefitRequestForm({
 
   const loading = useLoadingOverlay();
 
-  // Utility: normalize attachments returned by form to File[] where possible.
-  // Form.io file component often returns objects (with url/name), not File instances.
-  const normalizeAttachmentsFromSubmission = (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    maybeAttachments: any,
-  ): File[] => {
-    if (!maybeAttachments) return [];
-    // if already File[] (browser File objects), return them
-    if (
-      Array.isArray(maybeAttachments) &&
-      maybeAttachments.every((a) => a instanceof File)
-    ) {
-      return maybeAttachments;
-    }
-    // if objects from form.io (with url/name), we can't turn them into File without download.
-    // So return an empty array or keep the original objects (adjust to your uploader).
-    // For now we keep an empty array so submit doesn't break; update uploader if you expect server-file references.
-    return [];
-  };
-
   // Form submission handler
   const handleSubmit = async () => {
     try {
@@ -182,7 +162,8 @@ export default function BenefitRequestForm({
 
       const submissionData = {
         employee: currentEmployee?.employee,
-        claim_date: new Date().toISOString().split("T")[0],
+        // claim_date: new Date().toISOString().split("T")[0],
+        claim_date: formatToIndianDate(new Date()),
         earning_component: submission.data.earning_component,
         custom_note_by_employee: submission.data.custom_note_by_employee,
         claimed_amount: submission.data.claimed_amount,
@@ -295,10 +276,7 @@ export default function BenefitRequestForm({
               onChange={(submission: any) => {
                 // attachments component key may vary; adjust if your form uses different key
                 if (submission.changed?.component?.key === "attachments") {
-                  const norm = normalizeAttachmentsFromSubmission(
-                    submission?.data?.attachments,
-                  );
-                  setAttachments(norm);
+                  setAttachments(submission?.data?.attachments);
                 }
               }}
             />
