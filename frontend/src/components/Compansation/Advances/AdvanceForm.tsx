@@ -59,7 +59,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
   );
   const mutateUpdate = useEmployeeAdvanceUpdate();
   const mutateCreate = useCreateNewAdvance();
-  const mapedFormData = (advance: any) => {
+  const mappedFormData = (advance: any) => {
     if (!advance) return null;
 
     const formData: Record<string, any> = {
@@ -94,7 +94,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
     if (advanceLoading) return;
     if (!advance) return;
 
-    const mappedData = mapedFormData(advance);
+    const mappedData = mappedFormData(advance);
     if (!mappedData) return;
 
     instance.setSubmission({
@@ -105,7 +105,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
     if (mappedData.custom_advance_type) {
       setSelectedAdvanceType(mappedData.custom_advance_type);
     }
-  }, [advanceLoading, advance, formAdvanceInstance.current]);
+  }, [advanceLoading, advance]);
 
   const { data: requiredFields } = useRequiredFields("Employee Advance");
   const requiredFieldMap = useMemo(() => {
@@ -328,7 +328,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({
 
               // if advance already loaded before form was ready
               if (advance && !advanceLoading) {
-                const mappedData = mapedFormData(advance);
+                const mappedData = mappedFormData(advance);
                 instance.setSubmission({ data: mappedData });
 
                 if (mappedData?.custom_advance_type) {

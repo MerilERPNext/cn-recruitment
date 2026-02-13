@@ -157,7 +157,7 @@ export const useGetBenefitDoc = (
     docname: string
 ) => {
     return useQuery({
-        queryKey: ["advance-doc-data", docname],
+        queryKey: ["benefit-doc-data", docname],
         queryFn: () => FrappeAPI.getDocument("Employee Benefit Claim", docname!),
         enabled: !!docname,
     });

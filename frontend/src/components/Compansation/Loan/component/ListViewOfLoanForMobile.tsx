@@ -37,7 +37,9 @@ const ListViewOfLoanForMobile = () => {
             employee: currentEmployee?.name,
           },
         }}
-        ItemComponent={({ item }) => <LoantItem item={item} handleEdit={handleEdit} />}
+        ItemComponent={({ item }) => (
+          <LoantItem item={item} handleEdit={handleEdit} />
+        )}
         onRefetchComplete={() => setRefetchAttendance(false)}
         refetchTrigger={refetchAttendance}
         onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
@@ -87,12 +89,12 @@ const LoantItem: React.FC<{
       {/* Right content */}
       <div className="flex items-center gap-3 flex-col">
         <div className="flex items-center gap-2">
-           <StatusBadge status={item.status} />
+          <StatusBadge status={item.status} />
           <MyApprovalActionPill
-            isPending={true}
+            isPending={item.status === "Open"}
             canEdit={!!item.can_edit}
             onEdit={() => handleEdit(item.name)}
-          />   
+          />
         </div>
         <div className="flex gap-2">
           <p className="flex items-center text-sm text-[var(--text-primary)]">

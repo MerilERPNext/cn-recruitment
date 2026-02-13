@@ -21,7 +21,10 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import HeaderBar from "../../HeaderBar";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { useGetBenefitDoc, useUpdateBenefitDoc } from "../../../hooks/useBenefit";
+import {
+  useGetBenefitDoc,
+  useUpdateBenefitDoc,
+} from "../../../hooks/useBenefit";
 
 interface BenefitRequestFormProps {
   isOpen: boolean;
@@ -47,7 +50,7 @@ export default function BenefitRequestForm({
   // map incoming benefit (server) -> form field keys
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mapedFormData = (benefit: any) => {
+  const mappedFormData = (benefit: any) => {
     if (!benefit) return null;
     return {
       earning_component: benefit.earning_component,
@@ -80,7 +83,7 @@ export default function BenefitRequestForm({
     };
 
     // When editing, merge in saved benefit claim data
-    const mappedData = mapedFormData(benefitClaim);
+    const mappedData = mappedFormData(benefitClaim);
     if (mappedData) {
       Object.assign(baseData, mappedData);
     }
@@ -180,11 +183,17 @@ export default function BenefitRequestForm({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onSuccess: async (data: any) => {
               if (attachments.length > 0) {
-                await uploadFiles(attachments, data.doctype ?? "Employee Benefit Claim", data.name ?? docname);
+                await uploadFiles(
+                  attachments,
+                  data.doctype ?? "Employee Benefit Claim",
+                  data.name ?? docname,
+                );
               }
               onClose();
               onSuccess();
-              queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
+              queryClient.invalidateQueries({
+                queryKey: ["mybenefit-request"],
+              });
               toast.success("Benefit Request updated successfully!");
             },
             onError: (error: CustomError) => {
@@ -246,7 +255,9 @@ export default function BenefitRequestForm({
       >
         {isDesktop ? (
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-20">
-            <h2 className="text-xl font-semibold">{isEditing ? "Edit Benefit Claim" : "Request Benefit Claim"}</h2>
+            <h2 className="text-xl font-semibold">
+              {isEditing ? "Edit Benefit Claim" : "Request Benefit Claim"}
+            </h2>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-gray-100 transition"
@@ -255,7 +266,10 @@ export default function BenefitRequestForm({
             </button>
           </div>
         ) : (
-          <HeaderBar title={isEditing ? "Edit Benefit Claim" : "Request Benefit Claim"} onBack={onClose} />
+          <HeaderBar
+            title={isEditing ? "Edit Benefit Claim" : "Request Benefit Claim"}
+            onBack={onClose}
+          />
         )}
 
         <div className="flex-1 overflow-y-auto pb-20 px-6">
@@ -276,7 +290,7 @@ export default function BenefitRequestForm({
               onChange={(submission: any) => {
                 // attachments component key may vary; adjust if your form uses different key
                 if (submission.changed?.component?.key === "attachments") {
-                  setAttachments(submission?.data?.attachments);
+                  setAttachments(submission?.data?.attachments || []);
                 }
               }}
             />
@@ -295,7 +309,9 @@ export default function BenefitRequestForm({
             variant="contain"
             bgColor="primary"
           >
-            {fileUploadLoading || mutation.isPending || mutateUpdate.isPending ? (
+            {fileUploadLoading ||
+            mutation.isPending ||
+            mutateUpdate.isPending ? (
               <CircularLoader />
             ) : isEditing ? (
               "Update Request"

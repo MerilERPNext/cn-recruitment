@@ -201,7 +201,7 @@ const AdvancesList: React.FC = () => {
 
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
-              isPending={true}
+              isPending={advance.advanceStatus === "Pending"}
               canEdit={!!advance.can_edit}
               onEdit={() => handleEdit(advance.docname)}
             />

@@ -20,7 +20,12 @@ interface LoanListProps {
   onSearchChange?: (value: string) => void;
 }
 
-export default function LoanList({ handleEdit, loans, searchTerm, onSearchChange }: LoanListProps) {
+export default function LoanList({
+  handleEdit,
+  loans,
+  searchTerm,
+  onSearchChange,
+}: LoanListProps) {
   const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
   const toggleLoanExpansion = (loan_name: string) => {
@@ -202,7 +207,7 @@ export default function LoanList({ handleEdit, loans, searchTerm, onSearchChange
 
               <div className="flex items-center justify-center">
                 <MyApprovalActionPill
-                  isPending={true}
+                  isPending={loan.status === "Open"}
                   canEdit={!!loan.can_edit}
                   onEdit={() => handleEdit(loan.name)}
                 />
@@ -221,7 +226,9 @@ export default function LoanList({ handleEdit, loans, searchTerm, onSearchChange
         ))}
         {loans.length === 0 && (
           <div className="my-empty-state-card py-10 text-center text-gray-500">
-            {searchTerm ? "No loans found matching your search criteria." : "No loans available."}
+            {searchTerm
+              ? "No loans found matching your search criteria."
+              : "No loans available."}
           </div>
         )}
       </div>
