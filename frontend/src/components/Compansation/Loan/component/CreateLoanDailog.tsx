@@ -389,7 +389,7 @@ export default function CreateLoanDialog({
         )}
 
         {/* Dialog Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 min-h-0 bg-white overflow-y-auto pb-20">
           {currentEmployee?.company && (
             <Form form={transformedSchema} onFormReady={onFormReady} />
           )}
@@ -402,26 +402,17 @@ export default function CreateLoanDialog({
               </Button>
             )}
             <Button
-              onClick={onClose}
+              onClick={() => {
+                handleSubmit();
+              }}
               fullWidth
               size="md"
-              variant="outline"
+              variant="contain"
               className="w-full md:w-auto min-w-[150px]"
             >
-              Cancel
+              Submit
             </Button>
-          )}
-          <Button
-            onClick={() => {
-              handleSubmit();
-            }}
-            fullWidth
-            size="md"
-            variant="contain"
-            className="w-full md:w-auto min-w-[150px]"
-          >
-            Submit
-          </Button>
+          </div>
         </div>
       </div>
     </div>
