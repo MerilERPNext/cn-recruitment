@@ -6,7 +6,10 @@ import {
   useCreateShiftRequest,
   useUpdateShiftRequest,
 } from "../../hooks/useShift";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import {
+  useCurrentEmployee,
+  useGetEmployeeDetailsByEmpId,
+} from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
 import Button from "../shared/atoms/Button";
@@ -23,6 +26,7 @@ import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { X } from "lucide-react";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 interface ShiftRequestFormModalProps {
   onClose: () => void;
@@ -57,7 +61,11 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   } = useCurrentEmployee();
 
   const loading = useLoadingOverlay(); // ✅ overlay hook
-
+  const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
+  const { data: targetEmployee } = useGetEmployeeDetailsByEmpId(
+    targetEmployeeId || "",
+  );
+  const activeEmployee = isViewingOtherUser ? targetEmployee : employeeDetails;
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
@@ -88,7 +96,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
     const { shiftType, fromDate, toDate, reason } = submission.data;
 
-    if (!employeeDetails) {
+    if (!activeEmployee) {
       toast.error("Employee details not loaded. Try again.");
       console.log(employeeError, "Employee details not fetched.");
       return;
@@ -108,8 +116,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       to_date: formatDate(toDate),
       reason,
       status: "Draft",
-      employee: employeeDetails.name,
-      shift_request_approver: employeeDetails.shift_request_approver,
+      employee: activeEmployee.name,
+      shift_request_approver: activeEmployee.shift_request_approver,
     };
 
     // 2️⃣ Wrap only the network mutation inside the overlay
