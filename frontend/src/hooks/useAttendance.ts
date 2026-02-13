@@ -319,10 +319,16 @@ export const useGetAllEmployeeRegularize = (
 
 
 export function useMarkBulkAttendance() {
-
+   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.markBulkAttendance(body),
+
+     onSuccess: ()=>{
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+    },
     onError: (e) => {
       console.log(e);
     },
