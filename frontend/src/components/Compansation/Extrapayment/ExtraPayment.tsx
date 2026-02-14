@@ -15,7 +15,7 @@ import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
@@ -57,10 +57,9 @@ function FilterDropdown({
             <button
               key={filter}
               className={`px-3 py-2 rounded-md text-sm text-left border
-                ${
-                  activeFilter === filter
-                    ? "border-primary-600 bg-primary/10 text-primary-700"
-                    : "border-primary-200 hover:bg-primary/10"
+                ${activeFilter === filter
+                  ? "border-primary-600 bg-primary/10 text-primary-700"
+                  : "border-primary-200 hover:bg-primary/10"
                 }
               `}
               onClick={() => {
@@ -243,7 +242,7 @@ export default function ExtraPayment() {
                     variant="bodySmall"
                     className="font-medium text-center"
                   >
-                    {RupeeSymbolPerfix(payment.amount)}
+                    {formatCurrency(payment.amount)}
                   </Typography>
 
                   <div className="flex items-center justify-center">
@@ -263,29 +262,34 @@ export default function ExtraPayment() {
       {/* ---------------------- MOBILE ---------------------- */}
       {isMobile && (
         <div className="space-y-4">
-          {filteredPayments.map((payment) => (
-            <div
-              key={payment.id}
-              className="p-4 rounded-xl border shadow-sm bg-white"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">{payment.recipient}</h3>
-                <StatusBadge status={payment.status} />
+          {isLoading ? (
+            <CardSkeleton />
+          ) : filteredPayments.length > 0 ? (
+            filteredPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="p-4 rounded-xl border shadow-sm bg-white"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold">{payment.recipient}</h3>
+                  <StatusBadge status={payment.status} />
+                </div>
+
+                <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
+                <p className="text-sm mb-1">Date: {payment.date}</p>
+                <p className="font-semibold text-lg mt-2">
+                  {formatCurrency(payment.amount)}
+                </p>
               </div>
-              <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
-              <p className="text-sm mb-1">Date: {payment.date}</p>
-              <p className="font-semibold text-lg mt-2">
-                {" "}
-                {RupeeSymbolPerfix(payment.amount)}
-              </p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-center text-gray-500 mt-10">
+              No payments found.
+            </p>
+          )}
         </div>
       )}
 
-      {filteredPayments.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">No payments found.</p>
-      )}
       {showExtraPaymentForm && (
         <Modal onClose={() => setShowExtraPaymentForm(false)}>
           <ExtraPaymentForm

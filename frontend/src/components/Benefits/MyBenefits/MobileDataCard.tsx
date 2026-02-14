@@ -1,7 +1,7 @@
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { SalaryComponentDetail } from "../../../hooks/useBenefit";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
 
 const MobileDataCard = ({ data }: { data: SalaryComponentDetail }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +32,7 @@ const MobileDataCard = ({ data }: { data: SalaryComponentDetail }) => {
               Closing Balance
             </span>
             <span className="block font-bold text-slate-800">
-              {RupeeSymbolPerfix(data.closing_balance ?? 0)}
+              {formatCurrency(data.closing_balance ?? 0)}
             </span>
           </div>
 
@@ -53,7 +53,7 @@ const MobileDataCard = ({ data }: { data: SalaryComponentDetail }) => {
                 Original
               </span>
               <span className="">
-                {RupeeSymbolPerfix(data?.periodic_original_amount ?? 0)}
+                {formatCurrency(data?.periodic_original_amount ?? 0)}
               </span>
             </div>
 
@@ -62,7 +62,7 @@ const MobileDataCard = ({ data }: { data: SalaryComponentDetail }) => {
               <span className="text-[10px] text-gray-700 uppercase">
                 Accrued
               </span>
-              <span className="">{RupeeSymbolPerfix(data?.amount ?? 0)}</span>
+              <span className="">{formatCurrency(data?.amount ?? 0)}</span>
             </div>
 
             {/* Claimed */}
@@ -70,12 +70,12 @@ const MobileDataCard = ({ data }: { data: SalaryComponentDetail }) => {
               <span className="text-[10px] text-gray-700 uppercase">
                 Claimed
               </span>
-              <span>{RupeeSymbolPerfix(data?.claimed_amount ?? 0)}</span>
+              <span>{formatCurrency(data?.claimed_amount ?? 0)}</span>
             </div>
 
             <div className="flex flex-col">
               <span className="text-[10px] text-gray-700 uppercase">Paid</span>
-              <span>{RupeeSymbolPerfix(data?.paid_amount ?? 0)}</span>
+              <span>{formatCurrency(data?.paid_amount ?? 0)}</span>
             </div>
           </div>
         </div>

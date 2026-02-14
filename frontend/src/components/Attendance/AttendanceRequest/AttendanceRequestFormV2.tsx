@@ -152,7 +152,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 }) => {
   const selectedDate = useMemo(() => {
     if (!propSelectedDate) return new Date();
-    return propSelectedDate instanceof Date ? propSelectedDate : new Date(propSelectedDate);
+    return propSelectedDate instanceof Date
+      ? propSelectedDate
+      : new Date(propSelectedDate);
   }, [propSelectedDate]);
 
   const { setRefetchAttendance } = useGlobalStore();
@@ -179,15 +181,23 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
   const { data: userRoles } = useGetUserRoles();
 
-  const shiftFilters = useMemo(() => ({
-    date: selectedDate,
-  }), [selectedDate]);
+  const shiftFilters = useMemo(
+    () => ({
+      date: selectedDate,
+    }),
+    [selectedDate],
+  );
 
   const shiftEmployeeId = isForOthers
-    ? (typeof currentlySelectedEmployee === "string" ? currentlySelectedEmployee : currentlySelectedEmployee?.user_id || currentlySelectedEmployee?.name)
+    ? typeof currentlySelectedEmployee === "string"
+      ? currentlySelectedEmployee
+      : currentlySelectedEmployee?.user_id || currentlySelectedEmployee?.name
     : currentEmployee?.user_id || currentUser?.name;
 
-  const { data: shiftData } = useGetEmployeeShift(shiftEmployeeId || "", shiftFilters);
+  const { data: shiftData } = useGetEmployeeShift(
+    shiftEmployeeId || "",
+    shiftFilters,
+  );
 
   const queryClient = useQueryClient();
 
@@ -200,7 +210,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     useAttendanceRequestAttachments(
       activeEmployeeId,
       fromDateChanged ||
-      formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      format(selectedDate ? new Date(selectedDate) : new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -403,15 +413,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.custom_request_type,
         employee: defaultAttendanceData?.reference_document?.employee,
         company: "",
-        checkin_time: defaultAttendanceData?.reference_document?.custom_from_time
+        checkin_time: defaultAttendanceData?.reference_document
+          ?.custom_from_time
           ? new Date(
             `1970-01-01T${normalizeTime(
               defaultAttendanceData?.reference_document.custom_from_time,
             )}`,
           )
           : undefined,
-        checkout_time: defaultAttendanceData?.reference_document
-          ?.custom_to_time
+        checkout_time: defaultAttendanceData?.reference_document?.custom_to_time
           ? new Date(
             `1970-01-01T${normalizeTime(
               defaultAttendanceData?.reference_document?.custom_to_time,
@@ -730,8 +740,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           resolve();
           onClose();
           setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: [`attendance-requests-${activeEmployeeId}`] });
-            setRefetchAttendance(true)
+            queryClient.invalidateQueries({
+              queryKey: [`attendance-requests-${activeEmployeeId}`],
+            });
+            setRefetchAttendance(true);
           }, 4000);
           toast.success(message);
         };
@@ -826,7 +838,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       setIsForOthers(!!submission.changed.value);
     }
     // Also sync from submission.data just in case
-    if (submission?.data?.isForOthers !== undefined && !!submission.data.isForOthers !== isForOthers) {
+    if (
+      submission?.data?.isForOthers !== undefined &&
+      !!submission.data.isForOthers !== isForOthers
+    ) {
       setIsForOthers(!!submission.data.isForOthers);
     }
 
@@ -851,13 +866,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     sortedLogs.find((c) => c.log_type === "IN")?.time || null;
 
   const latestCheckout =
-    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time ||
-    null;
+    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time || null;
 
   // 3️⃣ Sync times whenever data or form instance is ready
   useEffect(() => {
     const instance = formAddressInstance.current;
-    if (!instance || !isFormReady || isHomeSummaryLoading || isHomeSummaryFetching) return;
+    if (
+      !instance ||
+      !isFormReady ||
+      isHomeSummaryLoading ||
+      isHomeSummaryFetching
+    )
+      return;
 
     // In edit mode, we want to keep the values from the existing record initialized in onFormReady
     if (forActionType === "edit" && defaultAttendanceData) return;
@@ -935,15 +955,17 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            {forActionType === "edit" ? "Edit" : "Create"} Attendance Request
+            {forActionType === "edit" ? "Edit" : ""} Attendance Request
           </h2>
-          {isDesktop && (<button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>)}
+          {isDesktop && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Content Area */}
@@ -1013,7 +1035,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
               // Improve initial state detection
               const data = initialSubmission?.data as any;
-              if (data?.isForOthers === true || data?.isForOthers === "1" || data?.isForOthers === 1) {
+              if (
+                data?.isForOthers === true ||
+                data?.isForOthers === "1" ||
+                data?.isForOthers === 1
+              ) {
                 setIsForOthers(true);
               }
               if (data?.employee) {
@@ -1081,15 +1107,16 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-
-            {!isDesktop && (<Button
-              onClick={onClose}
-              size="md"
-              variant="outline"
-              className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
-            >
-              Cancel
-            </Button>)}
+            {!isDesktop && (
+              <Button
+                onClick={onClose}
+                size="md"
+                variant="outline"
+                className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+              >
+                Cancel
+              </Button>
+            )}
 
             <Button
               onClick={() => formAddressInstance.current?.submit()}
@@ -1104,10 +1131,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 "Submit"
               )}
             </Button>
-
           </div>
         </div>
-
       </div>
     </div>
   );

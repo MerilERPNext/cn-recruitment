@@ -9,7 +9,6 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import DataListView from "../../DataListView";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import Tooltip from "../../shared/Tooltip";
-import Badge from "../../shared/Badge";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -54,7 +53,6 @@ const MyAdvanceExpenseList = () => {
 
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
-    const status = getStatus(item?.reference_document?.status);
 
     return (
       <div
@@ -89,16 +87,11 @@ const MyAdvanceExpenseList = () => {
         <div className="flex items-center justify-center">
           <Tooltip
             content={
-              status?.label === "Pending"
+              item?.reference_document?.status === "Draft"
                 ? `Allocated to : ${item?.allocated_to}`
                 : ""
             }
           >
-            {/* <Badge
-              size="md"
-              backgroundColor={status?.statusColor}
-              label={status?.label || ""}
-            /> */}
             <StatusBadge status={item?.reference_document?.status} />
           </Tooltip>
         </div>
@@ -120,11 +113,7 @@ const MyAdvanceExpenseList = () => {
             <Tooltip
               content={status?.label === "Pending" ? item?.allocated_to : ""}
             >
-              <Badge
-                size="sm"
-                backgroundColor={status?.statusColor}
-                label={status?.label || ""}
-              />
+              <StatusBadge status={item?.reference_document?.status} />
             </Tooltip>
           </div>
         </div>

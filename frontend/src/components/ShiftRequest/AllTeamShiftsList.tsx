@@ -162,7 +162,9 @@ const AllTeamShiftsList: React.FC = () => {
         </div>
       ) : (
         <div className="pb-24 w-full mx-auto mt-4">
-          {teamShifts.length > 0 ? (
+          {isLoading ? (
+            <CardSkeleton />
+          ) : teamShifts.length > 0 ? (
             teamShifts.map((shift) => (
               <TeamShiftItemComponent key={shift.name} item={shift} />
             ))

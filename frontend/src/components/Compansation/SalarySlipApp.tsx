@@ -90,7 +90,7 @@ const SalarySlipApp: React.FC = () => {
 
   // Mobile layout
   const mobileLayout = (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
+    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => { } }}>
       <div className="flex flex-col min-h-screen bg-white">
         <style>{`
           :root {
@@ -121,7 +121,7 @@ const SalarySlipApp: React.FC = () => {
               bgColor="primary"
               onClick={() => setIsLoanDialogOpen(true)}
             >
-              + Create Loan
+              + Request Loan
             </Button>
           </footer>
         )}
@@ -136,7 +136,7 @@ const SalarySlipApp: React.FC = () => {
 
   // Desktop layout
   const desktopLayout = (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => {} }}>
+    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => { } }}>
       <DesktopLayoutWrapper title="Compensation">
         <Outlet />
       </DesktopLayoutWrapper>

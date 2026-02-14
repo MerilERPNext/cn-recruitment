@@ -1,7 +1,6 @@
 import CardTable from "../../shared/CardTable";
 import { ApprovalStage } from "../../../types/todos";
 import { Typography } from "../../shared/atoms/Typography";
-import Badge from "../../shared/Badge";
 import Button, { ButtonColor } from "../../shared/atoms/Button";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useMemo } from "react";
@@ -9,6 +8,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 interface FlowDetailsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,20 +88,6 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
     // TODO: trigeer refetch after action completed
   };
   const { handleAction } = useApprovalAction(triggerRefetch);
-  const getBadgeColor = (status: string) => {
-    if (!status) return "text-gray-600 bg-gray-100";
-
-    switch (status.toLowerCase()) {
-      case "approved":
-        return "text-green-600 bg-green-100";
-      case "pending":
-        return "text-yellow-600 bg-yellow-100";
-      case "rejected":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -145,11 +131,11 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
         {/* stage?.action_taken_by to be used */}
         <div>{"-"}</div>
       </Typography>
-      <Badge
-        label={stage?.status}
-        backgroundColor={getBadgeColor(stage?.status)}
-        textColor="mx-auto"
-      />
+
+      <div>
+        <StatusBadge status={stage.status} />
+      </div>
+
       <Typography variant="bodyMedium" className="card-subtitle">
         <div>{formatToIndianDate(stage?.approval_time) || "-"}</div>
       </Typography>

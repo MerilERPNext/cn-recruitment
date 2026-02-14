@@ -3,7 +3,7 @@ import MobileDataCard from "./MobileDataCard";
 import { COLUMN_LAYOUT } from "./MyBenefits";
 import { SalaryComponentDetail } from "../../../hooks/useBenefit";
 import { Typography } from "../../shared/atoms/Typography";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
 
 // Desktop / row item
 export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
@@ -42,28 +42,28 @@ export const AccrualItem = ({ item }: { item: SalaryComponentDetail }) => {
 
       {/* Periodic Original Amount */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        {RupeeSymbolPerfix(
-          (item.periodic_original_amount ?? 0).toLocaleString(),
+        {formatCurrency(
+          item.periodic_original_amount ?? 0,
         )}
       </Typography>
 
       {/* Periodic Accrued */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        {RupeeSymbolPerfix(item.amount ?? 0).toLocaleString()}
+        {formatCurrency(item.amount ?? 0).toLocaleString()}
       </Typography>
 
       {/* Claimed Amount */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        {RupeeSymbolPerfix(item.claimed_amount ?? 0).toLocaleString()}
+        {formatCurrency(item.claimed_amount ?? 0).toLocaleString()}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
-        {RupeeSymbolPerfix(item.paid_amount ?? 0).toLocaleString()}
+        {formatCurrency(item.paid_amount ?? 0).toLocaleString()}
       </Typography>
 
       {/* Closing Balance */}
       <Typography variant="bodySmall" className="font-medium text-center">
-        {RupeeSymbolPerfix(item.closing_balance ?? 0).toLocaleString()}
+        {formatCurrency(item.closing_balance ?? 0).toLocaleString()}
       </Typography>
     </div>
   );
@@ -83,11 +83,10 @@ export const StatItem = ({
   highlighted?: boolean;
 }) => (
   <div
-    className={`flex flex-col gap-1 p-3 rounded-lg transition-colors ${
-      highlighted
-        ? "bg-blue-50/50 border border-blue-100"
-        : "group-hover:bg-white bg-transparent"
-    }`}
+    className={`flex flex-col gap-1 p-3 rounded-lg transition-colors ${highlighted
+      ? "bg-blue-50/50 border border-blue-100"
+      : "group-hover:bg-white bg-transparent"
+      }`}
   >
     <span className="text-[11px] uppercase tracking-wide font-semibold text-gray-600">
       {label}
@@ -95,11 +94,10 @@ export const StatItem = ({
 
     <div className="flex flex-col">
       <span
-        className={`text-xl font-bold ${
-          highlighted ? "text-blue-700" : "text-slate-800"
-        }`}
+        className={`text-xl font-bold ${highlighted ? "text-blue-700" : "text-slate-800"
+          }`}
       >
-        {subLabel == "Amount" && RupeeSymbolPerfix("")}
+        {subLabel == "Amount" && CURRENCY_SYMBOL}
         {isNumber ? value : value.toLocaleString()}
       </span>
 

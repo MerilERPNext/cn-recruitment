@@ -28,7 +28,7 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import { RupeeSymbolPerfix } from "../../utils/currency";
+import { formatCurrency } from "../../utils/currency";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 type PayrollPeriod = {
@@ -397,7 +397,7 @@ const SalarySlipItemDesktop = ({
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -446,20 +446,20 @@ const SalarySlipItemDesktop = ({
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
           <span className="blur-sm text-gray-400">
-            {RupeeSymbolPerfix("XX,XXX")}
+            ₹XX,XXX
           </span>
         ) : (
-          formatCurrency(item.gross_pay)
+          formatCurrency2(item.gross_pay)
         )}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
           <span className="blur-sm text-gray-400">
-            {RupeeSymbolPerfix("XX,XXX")}
+            {formatCurrency("XX,XXX")}
           </span>
         ) : (
-          formatCurrency(item.net_pay)
+          formatCurrency2(item.net_pay)
         )}
       </Typography>
 
@@ -489,7 +489,7 @@ const SalarySlipItemMobile = ({
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -538,10 +538,10 @@ const SalarySlipItemMobile = ({
           <span className="font-semibold">
             {maskSalary ? (
               <span className="blur-sm text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
-              formatCurrency(item.gross_pay)
+              formatCurrency2(item.gross_pay)
             )}
           </span>
         </div>
@@ -551,10 +551,10 @@ const SalarySlipItemMobile = ({
           <span className="text-blue-600 font-semibold">
             {maskSalary ? (
               <span className="blur-sm text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
-              formatCurrency(item.net_pay)
+              formatCurrency2(item.net_pay)
             )}
           </span>
         </div>

@@ -177,7 +177,7 @@
           "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
           "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
           "disabled": false,
-          "redrawOn": "from_date"
+          "redrawOn": "allowed_to_date"
         },
         {
           "label": "Check-In Time <span style='color:red'>*</span>",

@@ -19,7 +19,6 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import Badge from "../../shared/Badge";
 import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import DOMPurify from "dompurify";
@@ -27,7 +26,8 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -459,9 +459,8 @@ export function TeamExpenseDetailView({
           {/* Sub-header */}
           <div className="px-6 py-3 bg-gray-50 border-b">
             <div className="flex items-center gap-4">
-              <Badge
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
+              <StatusBadge
+                status={data?.status || ref?.approval_status || ""}
               />
 
               {data?.due_date && (
@@ -469,7 +468,7 @@ export function TeamExpenseDetailView({
                   Due in{" "}
                   {Math.ceil(
                     (new Date(data.due_date).getTime() - Date.now()) /
-                    (1000 * 60 * 60 * 24),
+                      (1000 * 60 * 60 * 24),
                   )}{" "}
                   days
                 </span>
@@ -495,8 +494,6 @@ export function TeamExpenseDetailView({
 
             {expenseItems.length > 0 ? (
               expenseItems.map((item) => {
-                const itemStatus = getStatus(item.custom_approval_staus || "");
-
                 const originalSanctionedAmount =
                   typeof item.sanctioned_amount === "number"
                     ? item.sanctioned_amount
@@ -526,11 +523,8 @@ export function TeamExpenseDetailView({
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
                             item.custom_approval_staus === "Rejected") && (
-                              <Badge
-                                label={itemStatus?.label as string}
-                                backgroundColor={itemStatus?.statusColor}
-                              />
-                            )}
+                            <StatusBadge status={item.custom_approval_staus} />
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -652,7 +646,7 @@ export function TeamExpenseDetailView({
                               Claimed Amount:
                             </p>
                             <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.amount)}
+                              {formatCurrency(item.amount)}
                             </p>
                           </div>
                           <div>
@@ -660,7 +654,7 @@ export function TeamExpenseDetailView({
                               Sanctioned Amount:
                             </p>
                             <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.sanctioned_amount)}
+                              {formatCurrency(item.sanctioned_amount)}
                             </p>
                           </div>
                         </div>
@@ -683,7 +677,7 @@ export function TeamExpenseDetailView({
 
                         <div className="mb-3">
                           <label className="text-xs text-gray-500 uppercase mb-1 block">
-                            SANCTIONED AMOUNT (RupeeSymbolPerfix("")) *
+                            SANCTIONED AMOUNT ({CURRENCY_SYMBOL}) *
                           </label>
 
                           <input
@@ -740,7 +734,7 @@ export function TeamExpenseDetailView({
               <div className="flex justify-between">
                 <span className="text-gray-600">Non Reimbursable Amount</span>
                 <span className="font-medium">
-                  {RupeeSymbolPerfix(nonReimbursableAmount)}
+                  {formatCurrency(nonReimbursableAmount)}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -748,7 +742,7 @@ export function TeamExpenseDetailView({
                   Total Amount To Be Reimbursed
                 </span>
                 <span className="font-medium">
-                  {RupeeSymbolPerfix(totalToBeReimbursed)}
+                  {formatCurrency(totalToBeReimbursed)}
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t">
@@ -756,7 +750,7 @@ export function TeamExpenseDetailView({
                   Total Amount
                 </span>
                 <span className="font-bold text-lg text-gray-900">
-                  {RupeeSymbolPerfix(totalAmount)}
+                  {formatCurrency(totalAmount)}
                 </span>
               </div>
             </div>
@@ -917,36 +911,36 @@ export function TeamExpenseDetailView({
                 {currentDocumentUrl.match(
                   /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
                 ) && (
-                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
-                      <button
-                        onClick={handleZoomOut}
-                        disabled={imageZoom <= 50}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Zoom Out"
-                      >
-                        <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                      <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
-                        {imageZoom}%
-                      </span>
-                      <button
-                        onClick={handleZoomIn}
-                        disabled={imageZoom >= 200}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Zoom In"
-                      >
-                        <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                      <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
-                      <button
-                        onClick={handleResetZoom}
-                        className="p-1 rounded hover:bg-gray-100 transition-colors"
-                        title="Reset Zoom"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
+                    <button
+                      onClick={handleZoomOut}
+                      disabled={imageZoom <= 50}
+                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                    <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
+                      {imageZoom}%
+                    </span>
+                    <button
+                      onClick={handleZoomIn}
+                      disabled={imageZoom >= 200}
+                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                    <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
+                    <button
+                      onClick={handleResetZoom}
+                      className="p-1 rounded hover:bg-gray-100 transition-colors"
+                      title="Reset Zoom"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
+                    </button>
+                  </div>
+                )}
 
                 <a
                   href={currentDocumentUrl}
@@ -987,8 +981,8 @@ export function TeamExpenseDetailView({
                       title="Document Viewer"
                     />
                   ) : currentDocumentUrl.match(
-                    /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                  ) ? (
+                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
+                    ) ? (
                     <div className="w-full h-full flex items-center justify-center p-6 overflow-auto">
                       <div
                         className="transition-transform duration-200 ease-out"

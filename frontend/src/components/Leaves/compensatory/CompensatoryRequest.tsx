@@ -13,6 +13,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
   { label: "Issued", value: "Issued" },
   { label: "Allocated", value: "Allocated" },
   { label: "Expired", value: "Expired" },
@@ -29,7 +30,7 @@ const CompensatoryRequest: React.FC = () => {
     isLoading: isEmployeeLoading,
     error: employeeError,
   } = useEmployeeByUserId(userId);
-  const [selectedStatus, setSelectedStatus] = useState("Issued");
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
 
   const [selectedRequest, setSelectedRequest] =
     useState<CompensatoryRequestItem | null>(null);

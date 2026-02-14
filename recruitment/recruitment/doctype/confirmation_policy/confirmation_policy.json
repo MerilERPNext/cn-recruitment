@@ -139,6 +139,7 @@
   {
    "fieldname": "number_of_days_to_hold_confirmation_from_probation_end",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Number of days to hold Confirmation from Probation end",
    "non_negative": 1
   },
@@ -240,7 +241,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-17 12:51:06.586909",
+ "modified": "2026-02-12 14:45:28.256556",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",

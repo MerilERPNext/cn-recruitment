@@ -56,7 +56,9 @@ const EmployeeAttendanceDetails = ({
   const dateParam = query.get("date");
   const { targetEmployeeId } = useTargetUser();
 
-  const status = propStatus?.toLowerCase().replace(/-/g, " ") || query.get("status")?.toLowerCase().replace(/-/g, " ");
+  const status =
+    propStatus?.toLowerCase().replace(/-/g, " ") ||
+    query.get("status")?.toLowerCase().replace(/-/g, " ");
   const [showReqAttendanceCorrection, setShowReqAttendanceCorrection] =
     useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState(false);
@@ -76,17 +78,23 @@ const EmployeeAttendanceDetails = ({
 
   // Check if there are leave or attendance request events
   const leaveEvent = useMemo(() => {
-    return events?.find(e => e.doctype === "Leave Request");
+    return events?.find((e) => e.doctype === "Leave Request");
   }, [events]);
 
   const hasAttendanceRequestEvent = useMemo(() => {
-    return events?.some(e => e.doctype === "Attendance Request");
+    return events?.some((e) => e.doctype === "Attendance Request");
   }, [events]);
 
   const isLeaveRecord =
-    data?.custom_auto_created === 1 || status === "on leave" || status === "half day" || !!leaveEvent;
+    data?.custom_auto_created === 1 ||
+    status === "on leave" ||
+    status === "half day" ||
+    !!leaveEvent;
 
-  const leaveApplicationName = status === "half day" ? data?.leave_application : data?.leave_application_name || leaveEvent?.name;
+  const leaveApplicationName =
+    status === "half day"
+      ? data?.leave_application
+      : data?.leave_application_name || leaveEvent?.name;
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -96,12 +104,11 @@ const EmployeeAttendanceDetails = ({
   // Only fetch leave details if it's a leave record
   const { data: leaveDetails } = useFrappeDocument(
     "Leave Application",
-    isLeaveRecord && leaveApplicationName
-      ? leaveApplicationName
-      : null!,
+    isLeaveRecord && leaveApplicationName ? leaveApplicationName : null!,
   ) as { data: LeaveApplication | undefined };
 
-  const effectiveEmployeeId = data?.employee || targetEmployeeId || currentEmployee?.employee;
+  const effectiveEmployeeId =
+    data?.employee || targetEmployeeId || currentEmployee?.employee;
 
   const { data: buttonStatus } = useGetButtonsStatus(
     currentEmployee?.employee || "",
@@ -121,12 +128,16 @@ const EmployeeAttendanceDetails = ({
         ["employee", "=", effectiveEmployeeId],
       ]
       : [],
-    { enabled: !!validDate && !!effectiveEmployeeId }
+    { enabled: !!validDate && !!effectiveEmployeeId },
   );
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
-    validDate && effectiveEmployeeId && (hasAttendanceRequestEvent || status === "absent" || status === "half day")
+    validDate &&
+      effectiveEmployeeId &&
+      (hasAttendanceRequestEvent ||
+        status === "absent" ||
+        status === "half day")
       ? [
         ["employee", "=", effectiveEmployeeId],
         ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
@@ -134,9 +145,18 @@ const EmployeeAttendanceDetails = ({
         ["docstatus", "!=", 2],
       ]
       : [],
-    { enabled: !!validDate && !!effectiveEmployeeId && (hasAttendanceRequestEvent || status === "absent" || status === "half day") }
+    {
+      enabled:
+        !!validDate &&
+        !!effectiveEmployeeId &&
+        (hasAttendanceRequestEvent ||
+          status === "absent" ||
+          status === "half day"),
+    },
   );
-  const { data: leaveUserUiPermission } = useGetUiPermission("Leaves and Holidays");
+  const { data: leaveUserUiPermission } = useGetUiPermission(
+    "Leaves and Holidays",
+  );
   const canRequestLeave = isActionEnabled(
     leaveUserUiPermission,
     "request_leave",
@@ -236,14 +256,16 @@ const EmployeeAttendanceDetails = ({
           : undefined,
         isEdit: true,
         leave_application: leaveDetails.name,
-        source: "other"
+        source: "other",
       });
     } else {
-      const dateStr = validDate ? format(validDate, "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd");
+      const dateStr = validDate
+        ? format(validDate, "yyyy-MM-dd")
+        : format(new Date(), "yyyy-MM-dd");
       openLeaveModal({
         fromDate: dateStr,
         toDate: dateStr,
-        source: "other"
+        source: "other",
       });
     }
   };
@@ -258,11 +280,7 @@ const EmployeeAttendanceDetails = ({
           </Typography>
         </div>
         {onClose && (
-          <Button
-            variant="soft"
-            size="sm"
-            onClick={onClose}
-          >
+          <Button variant="soft" size="sm" onClick={onClose}>
             <X className="w-5 h-5 text-gray-500" />
           </Button>
         )}
@@ -278,19 +296,35 @@ const EmployeeAttendanceDetails = ({
     return (
       <div className="mt-5 flex flex-col gap-2">
         <div className="flex gap-2">
-
           {showButton?.show_revoke_button && canRevokeLeave && (
-            <Button variant="soft" size="md" onClick={handleRevoke} className="w-full">
+            <Button
+              variant="soft"
+              size="md"
+              onClick={handleRevoke}
+              className="w-full"
+            >
               {revokePending ? <CircularLoader color="white" /> : "Revoke"}
             </Button>
           )}
           {showButton?.show_replace_button && canReplaceLeave && (
-            <Button variant="soft" size="md" onClick={() => setShowReplaceModal(true)} className="w-full">
+            <Button
+              variant="soft"
+              size="md"
+              onClick={() => setShowReplaceModal(true)}
+              className="w-full"
+            >
               Replace
             </Button>
           )}
           {showButton?.show_edit_button && canEditLeave && (
-            <Button variant="soft" size="md" onClick={() => { setShowReqAttendanceCorrection(true) }} className="w-full whitespace-nowrap">
+            <Button
+              variant="soft"
+              size="md"
+              onClick={() => {
+                setShowReqAttendanceCorrection(true);
+              }}
+              className="w-full whitespace-nowrap"
+            >
               Attendance Adjustment
             </Button>
           )}
@@ -317,7 +351,10 @@ const EmployeeAttendanceDetails = ({
   );
 
   const renderEmptyState = () => (
-    <Typography variant="bodyMedium" className="text-center text-gray-600 bg-gray-50/30 p-2 rounded-lg">
+    <Typography
+      variant="bodyMedium"
+      className="text-center text-gray-600 bg-gray-50/30 p-2 rounded-lg"
+    >
       No check-ins available for{" "}
       <span className="font-semibold">
         {validDate ? format(validDate, "dd/MM/yyyy") : "Unknown Date"}
@@ -344,7 +381,10 @@ const EmployeeAttendanceDetails = ({
     return (
       <div>
         <LeaveDetailsCard data={leaveDetails} />
-        {data?.custom_auto_created === 1 || (leaveEvent && status === "on leave") ? renderLeaveDetailsActions() : null}
+        {data?.custom_auto_created === 1 ||
+          (leaveEvent && status === "on leave")
+          ? renderLeaveDetailsActions()
+          : null}
         {/* <div className="border-t-1 border-gray-100 mt-6"></div> */}
       </div>
     );
@@ -391,7 +431,6 @@ const EmployeeAttendanceDetails = ({
     }
     return (
       <div className="flex-grow overflow-y-auto p-4 space-y-6 ">
-
         {status === "week off" && renderWeekOffMessage()}
         {isLoading ? (
           renderLoadingState()
@@ -406,7 +445,6 @@ const EmployeeAttendanceDetails = ({
           </div>
         )}
 
-
         {attendanceRequests && attendanceRequests.length > 0 && (
           <div className="pt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col gap-6">
@@ -420,9 +458,13 @@ const EmployeeAttendanceDetails = ({
     );
   };
   const renderFooterButton = () => {
-    if (data?.custom_auto_created === 1 || status === "on leave" || !!leaveEvent) return null;
-    const isButtonDisabled =
-      status !== "absent" && status !== "half day";
+    if (
+      data?.custom_auto_created === 1 ||
+      status === "on leave" ||
+      !!leaveEvent
+    )
+      return null;
+    // const isButtonDisabled = status !== "absent" && status !== "half day";
 
     if (hasExistingRequest) {
       return (
@@ -435,8 +477,8 @@ const EmployeeAttendanceDetails = ({
     }
     return (
       <div className="flex items-center justify-center gap-2">
-        {
-          ((status === "absent" || status === "half day") && canRequestLeave) && <Button
+        {(status === "absent" || status === "half day") && canRequestLeave && (
+          <Button
             variant="soft"
             fullWidth
             size="md"
@@ -446,18 +488,20 @@ const EmployeeAttendanceDetails = ({
             <Plus className="w-4 h-4 mr-2" />
             Leave Request
           </Button>
-        }
-        {canRequestAttendance && <Button
-          variant="soft"
-          fullWidth
-          size="md"
-          disabled={isButtonDisabled}
-          bgColor="primary"
-          onClick={() => setShowReqAttendanceCorrection(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Attendance Request
-        </Button>}
+        )}
+        {canRequestAttendance && (
+          <Button
+            variant="soft"
+            fullWidth
+            size="md"
+            // disabled={isButtonDisabled}
+            bgColor="primary"
+            onClick={() => setShowReqAttendanceCorrection(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Attendance Request
+          </Button>
+        )}
       </div>
     );
   };
@@ -475,11 +519,16 @@ const EmployeeAttendanceDetails = ({
           <AttendanceRequestFormV2
             onClose={() => setShowReqAttendanceCorrection(false)}
             selectedDate={validDate || new Date()}
-            latestInAndOutTime={empCheckIns && empCheckIns?.length > 0 ?
-              {
-                in_time: empCheckIns?.[0].time as string,
-                out_time: empCheckIns?.length > 1 ? empCheckIns?.[empCheckIns.length - 1].time as string : "",
-              } : undefined
+            latestInAndOutTime={
+              empCheckIns && empCheckIns?.length > 0
+                ? {
+                  in_time: empCheckIns?.[0].time as string,
+                  out_time:
+                    empCheckIns?.length > 1
+                      ? (empCheckIns?.[empCheckIns.length - 1].time as string)
+                      : "",
+                }
+                : undefined
             }
           />,
           document.body,
@@ -582,10 +631,17 @@ export const AttendanceRequestInfo = ({
         {/* Request Type */}
         {data.custom_request_type && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+            <Typography
+              variant="label"
+              color="body2"
+              className="font-medium text-xs text-gray-500 uppercase tracking-wide block"
+            >
               Request Type
             </Typography>
-            <Typography variant="bodySmall" className="font-semibold text-gray-900">
+            <Typography
+              variant="bodySmall"
+              className="font-semibold text-gray-900"
+            >
               {data.custom_request_type}
             </Typography>
           </div>
@@ -593,7 +649,11 @@ export const AttendanceRequestInfo = ({
 
         {/* Employee */}
         <div className="flex items-start justify-between py-3">
-          <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+          <Typography
+            variant="label"
+            color="body2"
+            className="font-medium text-xs text-gray-500 uppercase tracking-wide block"
+          >
             Employee
           </Typography>
           <Typography
@@ -609,7 +669,11 @@ export const AttendanceRequestInfo = ({
         {/* Department */}
         {data.department && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+            <Typography
+              variant="label"
+              color="body2"
+              className="font-medium text-xs text-gray-500 uppercase tracking-wide block"
+            >
               Department
             </Typography>
             <Typography variant="bodySmall" className="text-gray-900">
@@ -621,7 +685,11 @@ export const AttendanceRequestInfo = ({
         {/* Company */}
         {data.company && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="font-medium text-xs text-gray-500 font-medium uppercase tracking-wide block">
+            <Typography
+              variant="label"
+              color="body2"
+              className="font-medium text-xs text-gray-500 uppercase tracking-wide block"
+            >
               Company
             </Typography>
             <Typography variant="bodySmall" className="text-gray-900">
@@ -632,7 +700,11 @@ export const AttendanceRequestInfo = ({
 
         {/* Date */}
         <div className="flex items-start justify-between py-3">
-          <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block font-medium">
+          <Typography
+            variant="label"
+            color="body2"
+            className="text-xs text-gray-500 uppercase tracking-wide block font-medium"
+          >
             Date
           </Typography>
           <Typography variant="bodySmall" className="text-gray-900 text-right">
@@ -643,7 +715,11 @@ export const AttendanceRequestInfo = ({
 
         {/* Time */}
         <div className="flex items-start justify-between py-3">
-          <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block font-medium">
+          <Typography
+            variant="label"
+            color="body2"
+            className="text-xs text-gray-500 uppercase tracking-wide block font-medium"
+          >
             Time
           </Typography>
           <Typography variant="bodySmall" className="text-gray-900 text-right">
@@ -655,7 +731,11 @@ export const AttendanceRequestInfo = ({
         {/* Location */}
         {data.custom_location && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block font-medium">
+            <Typography
+              variant="label"
+              color="body2"
+              className="text-xs text-gray-500 uppercase tracking-wide block font-medium"
+            >
               Location
             </Typography>
             <Typography variant="bodySmall" className="text-gray-900">
@@ -667,10 +747,17 @@ export const AttendanceRequestInfo = ({
         {/* Reason */}
         {data.reason && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block font-medium">
+            <Typography
+              variant="label"
+              color="body2"
+              className="text-xs text-gray-500 uppercase tracking-wide block font-medium"
+            >
               Reason
             </Typography>
-            <Typography variant="bodySmall" className="font-medium text-gray-900">
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-gray-900"
+            >
               {data.reason}
             </Typography>
           </div>
@@ -679,7 +766,11 @@ export const AttendanceRequestInfo = ({
         {/* Created On */}
         {data.creation && (
           <div className="flex items-start justify-between py-3">
-            <Typography variant="label" color="body2" className="text-xs text-gray-500 font-medium uppercase tracking-wide block font-medium">
+            <Typography
+              variant="label"
+              color="body2"
+              className="text-xs text-gray-500 uppercase tracking-wide block font-medium"
+            >
               Created On
             </Typography>
             <Typography variant="bodySmall" className="text-gray-900">
@@ -695,7 +786,7 @@ export const AttendanceRequestInfo = ({
           <Typography
             variant="label"
             color="body2"
-            className="text-xs text-gray-500 font-medium uppercase tracking-wide block uppercase tracking-wide block mb-2"
+            className="text-xs text-gray-500 font-medium uppercase tracking-wide block mb-2"
           >
             Explanation
           </Typography>
@@ -709,5 +800,4 @@ export const AttendanceRequestInfo = ({
       )}
     </div>
   );
-
 };

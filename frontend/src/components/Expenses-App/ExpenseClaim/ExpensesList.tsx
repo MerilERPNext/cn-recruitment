@@ -58,15 +58,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           )}
         </div>
 
-        {item?.status && (
-          <span
-            className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-              item?.status,
-            )}`}
-          >
-            {item?.status === "Draft" ? "Pending" : item?.status}
-          </span>
-        )}
+        <StatusBadge status={item?.status} />
       </div>
 
       <div className="flex justify-between">

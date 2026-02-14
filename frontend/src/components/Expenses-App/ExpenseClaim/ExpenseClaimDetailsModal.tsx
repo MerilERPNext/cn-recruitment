@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 interface ExpenseClaimModalProps {
   id: string | null;
@@ -90,18 +91,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
               <p className="text-sm text-gray-700 flex gap-4 items-center">
                 <span className="card-title">Status:</span>
-                <Badge
-                  label={
-                    data?.approval_status === "Draft"
-                      ? "Pending"
-                      : data?.approval_status || ""
-                  }
-                  backgroundColor={
-                    badgeFor(data?.approval_status).split(" ")[0]
-                  }
-                  textColor={badgeFor(data?.approval_status).split(" ")[1]}
-                  size="sm"
-                />
+                <StatusBadge status={data?.approval_status} />
               </p>
               <p className="text-sm text-gray-700">
                 <span className="card-title">Claimed Amount:</span>

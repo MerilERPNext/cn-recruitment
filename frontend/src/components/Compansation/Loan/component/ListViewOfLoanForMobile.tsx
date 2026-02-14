@@ -5,6 +5,7 @@ import { useCurrentEmployee } from "../../../../hooks/useEmployee";
 import { Loan } from "../Type/loan";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
@@ -62,15 +63,9 @@ const LoantItem: React.FC<{
 
       {/* Right content */}
       <div className="flex items-center gap-3 flex-col">
-        <p
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-2xl text-xs font-medium ml-auto ${
-            item.status === "Open"
-              ? "bg-yellow-100 text-yellow-800 border border-yellow-200"
-              : "bg-green-100 text-green-800 border border-green-200"
-          }`}
-        >
-          {item.status === "Open" ? "Pending" : item.status}
-        </p>
+        <div>
+          <StatusBadge status={item.status} />
+        </div>
         <div className="flex gap-2">
           <p className="flex items-center text-sm text-[var(--text-primary)]">
             <span className="font-bold">

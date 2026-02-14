@@ -71,7 +71,7 @@ export default function LoansPage() {
               </div>
             )}
             <Button size="md" onClick={() => setIsDialogOpen(true)}>
-              Create Loans
+              + Request Loan
             </Button>
           </div>
         </div>

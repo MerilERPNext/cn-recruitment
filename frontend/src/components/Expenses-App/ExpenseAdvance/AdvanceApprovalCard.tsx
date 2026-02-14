@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
@@ -58,30 +57,6 @@ const AdvanceApprovalCard = ({
     ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
     : "1fr 1fr 1fr 1fr 1fr 1fr";
 
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open" || status === "Draft") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-
-  const status = getStatus(data?.status);
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -139,7 +114,7 @@ const AdvanceApprovalCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.status === "Pending"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
@@ -195,11 +170,7 @@ const AdvanceApprovalCard = ({
                   </Link>
                 </div>
 
-                <Badge
-                  size="sm"
-                  label={data?.status === "Draft" ? "Pending" : data?.status}
-                  backgroundColor={status?.statusColor}
-                />
+                <StatusBadge status={data?.status} />
               </div>
               <div className="flex flex-col items-start justify-between gap-3 mt-2 rounded-md p-1">
                 <div className="flex justify-between items-center w-full">

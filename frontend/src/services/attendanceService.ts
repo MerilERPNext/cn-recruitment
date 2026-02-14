@@ -25,6 +25,7 @@ import type {
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
+import { format } from "date-fns";
 
 export const attendanceService = {
   getAllAttendance: async (
@@ -737,7 +738,7 @@ export const attendanceService = {
       "cn_leave_shift_managment.api.check_attachment_mandatory",
       {
         employee: empId,
-        date: date,
+        date: format(new Date(date), "yyyy-MM-dd'T'HH:mm:ssXXX"),
         request_type: request_type
       }
     );

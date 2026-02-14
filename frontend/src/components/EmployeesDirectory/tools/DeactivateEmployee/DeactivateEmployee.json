@@ -1,0 +1,50 @@
+{
+    "title": "Deactivate Employee",
+    "name": "deactivateEmployeeForm",
+    "path": "deactivate-employee-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Deactivate Reason*",
+            "key": "deactivate_reason",
+            "type": "textfield",
+            "placeholder": "Dishonesty, evasion or lack of integrity on the job",
+            "input": true,
+            "customClass": "mb-4",
+            "errorLabel": "Deactivate Reason",
+            "allowCalculateOverride": true,
+            "applyMaskOn": "change",
+            "validate": {
+                "required": true
+            },
+            "required": true
+        },
+        {
+            "label": "Comments",
+            "key": "comments",
+            "type": "textfield",
+            "placeholder": "Comments",
+            "input": true,
+            "customClass": "mb-4",
+            "errorLabel": "Comments",
+            "allowCalculateOverride": true,
+            "applyMaskOn": "change"
+        },
+        {
+            "label": "Notice Period Start Date*",
+            "key": "notice_period_start_date",
+            "type": "datetime",
+            "input": true,
+            "widget": {
+                "type": "calendar"
+            },
+            "validate": {
+                "required": true
+            },
+            "format": "dd-MM-yyyy",
+            "placeholder": "dd-mm-yyyy",
+            "customClass": "mb-4",
+            "enableTime": false
+        }
+    ]
+}

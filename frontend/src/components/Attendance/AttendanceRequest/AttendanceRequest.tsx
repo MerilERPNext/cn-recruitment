@@ -1,4 +1,3 @@
-import { Plus } from "lucide-react";
 import DataListView from "../../DataListView";
 import { useState, useCallback } from "react";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
@@ -59,7 +58,7 @@ const AttendanceRequest = ({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+          <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
               columnWidths={[
                 "1.5fr",
@@ -154,7 +153,7 @@ const AttendanceRequest = ({
                   className="hover:bg-blue-700"
                   onClick={() => setShowForm(!showForm)}
                 >
-                  <Plus /> <span>Add Attendance Request</span>
+                  <span>+ Attendance Request</span>
                 </Button>
               </div>
             </div>
