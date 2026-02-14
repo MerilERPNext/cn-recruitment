@@ -179,7 +179,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setShowCategoryAndType(true);
   }, [initialExpense, isEditActive]);
 
-  // FIX 1: Reset dynamic form when expense type changes (not in edit mode)
+
   useEffect(() => {
     const expenseType =
       mainFormData?.expenseType || mainFormData?.expense_type || null;
@@ -264,7 +264,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           input: true,
           html: true,
           customClass: "mt-4",
-          // disabled: !!editingExpenseId,
+
         },
         {
           type: "columns",
@@ -294,7 +294,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   input: true,
                   html: true,
                   clearOnRefresh: true,
-                  // disabled: !!editingExpenseId,
                 },
               ],
             },
@@ -324,7 +323,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   input: true,
                   customClass: "mt-4 md:mt-0",
                   html: true,
-                  // disabled: !!editingExpenseId,
                   redrawOn: "expenseCategory",
                 },
               ],
@@ -336,7 +334,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     [currentEmployee],
   );
 
-  // FIX 2: Set previousCategory in handleSubmit
+
   const handleSubmit = (submission: any) => {
     setMainFormData(submission.data);
     setPreviousCategory(submission.data.expenseCategory);
@@ -765,7 +763,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       toast.success("You have chosen this option and in future cannot reapply");
     }
     await loading?.wrap(async () => {
-      // Filter expenses for this category AND that are selected
       const selectedForCategory = expenses.filter(e =>
         (e.categoryType || "General") === type &&
         selectedExpenses.includes(e.uid)
@@ -805,7 +802,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
             if (filteredRest.expense_date) {
               let dateVal = filteredRest.expense_date;
-              // Treat plain IDO date string (YYYY-MM-DD) as local time to avoid timezone shifts
               if (
                 typeof dateVal === "string" &&
                 /^\d{4}-\d{2}-\d{2}$/.test(dateVal)
@@ -855,13 +851,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       await new Promise<void>((resolve, reject) => {
         submitExpenseClaim(JSON.stringify(payload), {
           onSuccess: () => {
-            // Remove submitted expenses from state
+
             const submittedUids = selectedForCategory.map(e => e.uid);
             setExpenses(prev => prev.filter(e => !submittedUids.includes(e.uid)));
             setSelectedExpenses(prev => prev.filter(uid => !submittedUids.includes(uid)));
 
-            // If all matched expenses are gone, we clear local storage or partial clear?
-            // For now, let's rely on setExpenses side effect that writes to localStorage
+
             resolve();
           },
           onError: (err: any) => {
@@ -884,10 +879,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       toast.error("Please acknowledge the terms to proceed.");
       return;
     }
-    // if (pendingSubmissionType === "Relocation" && !isRelocationAcknowledgementChecked) {
-    //   toast.error("Please confirm that you have checked relocation expenses thoroughly.");
-    //   return;
-    // }
+
     if (!pendingSubmissionType) return;
     setIsAcknowledgementOpen(false);
     submitAll(pendingSubmissionType);
@@ -964,7 +956,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               const newExpenseType = change.data.expenseType;
               const prevCategory = previousCategory;
 
-              // Handle category type changes
+
               if (
                 selectedCategoryType &&
                 newCategoryType &&
@@ -992,7 +984,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 return;
               }
 
-              // NEW: Handle category clearing
+
               if (prevCategory && !newCategory) {
                 setPreviousCategory(null);
                 setDynamicFormData({});
@@ -1000,12 +992,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setVehicleType(null);
                 setMainFormData({ ...change.data });
 
-                // Force form refresh to clear cache
                 setFormKey((k) => k + 1);
                 return;
               }
 
-              // Handle category changes
               if (newCategory && prevCategory !== newCategory) {
                 change.data.expenseType = null;
 
@@ -1346,7 +1336,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 if (change.data?.shareExpenseCheckbox !== undefined) {
                   const currentAmount = Number(change.data?.amount);
                   if (change.data.shareExpenseCheckbox && !(currentAmount > 0)) {
-                    // Uncheck the checkbox if amount is not valid
+
                     toast.error("Please enter an amount before sharing the expense.");
                     change.data.shareExpenseCheckbox = false;
                     setDynamicFormData({ ...change.data, shareExpenseCheckbox: false });
