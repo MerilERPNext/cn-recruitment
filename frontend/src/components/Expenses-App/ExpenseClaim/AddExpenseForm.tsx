@@ -19,7 +19,7 @@ import HeaderBar from "../../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
-import { SquarePen, Trash2 } from "lucide-react";
+import { AlertCircle, SquarePen, Trash2 } from "lucide-react";
 import ParticipantsDrawer from "./ParticipantDrawer";
 import { Employee } from "../../../types/employee";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
@@ -835,9 +835,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             if (type === "General") {
               extraParams.custom_is_acknowledged = isAcknowledgementChecked;
             } else if (type === "Relocation") {
-              extraParams.custom_is_acknowledged = true;
+              extraParams.custom_is_acknowledged = isAcknowledgementChecked;
               if (isLast) {
-                extraParams.custom_is_last_relocation_expense = true;
+                extraParams.custom_is_last_relocation_expense = isRelocationAcknowledgementChecked;
               }
             }
 
@@ -884,10 +884,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       toast.error("Please acknowledge the terms to proceed.");
       return;
     }
-    if (pendingSubmissionType === "Relocation" && !isRelocationAcknowledgementChecked) {
-      toast.error("Please confirm that you have checked relocation expenses thoroughly.");
-      return;
-    }
+    // if (pendingSubmissionType === "Relocation" && !isRelocationAcknowledgementChecked) {
+    //   toast.error("Please confirm that you have checked relocation expenses thoroughly.");
+    //   return;
+    // }
     if (!pendingSubmissionType) return;
     setIsAcknowledgementOpen(false);
     submitAll(pendingSubmissionType);
@@ -1521,8 +1521,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             {/* Relocation Expense List */}
             {expenses.filter(e => e.categoryType === "Relocation").length > 0 && (
               <div className="mb-8">
-                <div className="flex justify-between items-center mb-4 px-1 text-gray-800">
+                <div className=" text-gray-800 mb-2">
                   <h2 className="text-lg font-bold">Relocation Expense List</h2>
+                  <div className="flex items-center gap-1 text-amber-600 ">
+                    <AlertCircle size={20} />
+                    <p className="text-sm">Please verify all relocation expenses below before acknowledging the full submission.</p>
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
@@ -1919,7 +1923,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     htmlFor="relocation-ack-checkbox"
                     className="text-sm text-gray-800 cursor-pointer"
                   >
-                    I have checked the relocation expenses thoroughly.
+                    I confirm that I have submitted all my relocation expenses.
                   </label>
                 </div>
               )}
