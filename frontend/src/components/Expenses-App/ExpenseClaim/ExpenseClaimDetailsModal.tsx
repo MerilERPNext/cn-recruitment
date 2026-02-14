@@ -21,6 +21,7 @@ interface ExpenseClaimModalProps {
   getStatusBadgeClasses?: (status: string) => string;
   selectedStages: ApprovalStage[];
   selectedSendBackUser?: string | null;
+  canEdit?: boolean;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -29,6 +30,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   getStatusBadgeClasses,
   selectedStages,
   selectedSendBackUser,
+  canEdit: canEditProp = false,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
   const navigate = useNavigate();
@@ -37,14 +39,14 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const error = raw.error;
   const { data: currentUser } = useCurrentUser();
 
-  const isSendedBack = currentUser?.name === selectedSendBackUser;
+  const isSendedBack = currentUser?.name === selectedSendBackUser && canEditProp;
 
   const formatINR = (value?: number | null) =>
     typeof value === "number"
       ? new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(value)
+        style: "currency",
+        currency: "INR",
+      }).format(value)
       : "—";
 
   const badgeFor = (status?: string) =>
@@ -205,7 +207,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                   <tbody>
                     {Array.isArray(data?.expenses) &&
-                    data.expenses.length > 0 ? (
+                      data.expenses.length > 0 ? (
                       data.expenses.map((item: Expense) => {
                         const rowStatus =
                           item.custom_approval_staus?.trim() ||

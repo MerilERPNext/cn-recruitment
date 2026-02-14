@@ -270,11 +270,6 @@ export function useUpdateExpense() {
         params.participants
       ),
     onSuccess: () => {
-      const allQueries = queryClient.getQueryCache().getAll();
-      console.log(
-        "All queries in cache:",
-        allQueries.map((q) => q.queryKey)
-      );
       toast.dismiss();
       toast.success("Expense claim updated successfully");
 

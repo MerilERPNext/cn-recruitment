@@ -109,6 +109,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     "Expense Claims",
   );
 
+
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
@@ -165,7 +166,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() && canEditExpense
+            item?.send_back_user?.toLowerCase() && canEditExpense && item?.can_edit
           }
           onEdit={handleEditClick}
         />
@@ -186,6 +187,7 @@ const ExpensesList: React.FC = () => {
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
   >(null);
+  const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
 
@@ -210,26 +212,30 @@ const ExpensesList: React.FC = () => {
     id: string,
     stages: ApprovalStage[],
     sendBackUser: string,
+    canEdit: boolean,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
     setSelectedSendBackUser(sendBackUser);
+    setSelectedCanEdit(canEdit);
   };
 
   const closeModal = () => {
     setSelectedId(null);
     setSelectedStages([]);
     setSelectedSendBackUser(null);
+    setSelectedCanEdit(false);
   };
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
+    const canEdit = item?.can_edit || false;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} />
@@ -241,10 +247,11 @@ const ExpensesList: React.FC = () => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
+    const canEdit = item?.can_edit || false;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
@@ -441,6 +448,7 @@ const ExpensesList: React.FC = () => {
           getStatusBadgeClasses={getStatusBadgeClasses}
           selectedStages={selectedStages}
           selectedSendBackUser={selectedSendBackUser}
+          canEdit={selectedCanEdit}
         />
       )}
       <ExpensePolicyDrawer
