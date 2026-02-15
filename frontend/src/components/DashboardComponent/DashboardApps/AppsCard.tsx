@@ -48,10 +48,12 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
     );
 
     const getNotificationCount = (title?: string) => {
-        if (!title || !notificationData?.apps) return 0;
-        return (
-            notificationData.apps.find((app) => app.title === title)?.count ?? 0
-        );
+        if (!title || !notificationData) return 0;
+
+        const app = notificationData.find((app) => app.title === title);
+        if (!app) return 0;
+
+        return app.doctypes.reduce((sum, dt) => sum + (dt.self || 0) + (dt.allocated || 0), 0);
     };
 
     const [{ isDragging }, dragRef] = useDrag({
