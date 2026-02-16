@@ -109,7 +109,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
-  const { getCount } = useAppNotificationCounts();
+  const { getCount, getSubModuleCount } = useAppNotificationCounts();
+
 
   // const getNotificationCount = (sidebarLabel: string) => {
   //   if (!notificationData?.apps) return 0;
@@ -786,8 +787,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 relative">
                           <Icon className="h-5 w-5" />
+                          {!isExpanded && getCount(item.label) > 0 && (
+                            <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
+                              {getCount(item.label)}
+                            </span>
+                          )}
                         </div>
                         <span
                           className={`transition-all duration-300 ${isExpanded
@@ -803,9 +809,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             {item.label}
                           </Typography>
                         </span>
+                        {isExpanded && getCount(item.label) > 0 && (
+                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
+                            {getCount(item.label)}
+                          </span>
+                        )}
                       </div>
                     </Link>
-                  )}
+                  )
+                  }
                   {hasSubItems &&
                     (isDropdownOpen || isAnySubItemActive) &&
                     isExpanded && (
@@ -822,6 +834,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                               subItem.subItems?.some((subSubItem) =>
                                 isSubSubItemActive(subSubItem),
                               );
+
+                            const subItemCount = getSubModuleCount(item.label, subItem.name);
 
                             return (
                               <div key={subItem.name}>
@@ -893,22 +907,31 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       ${isSubActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}
                                     `}
                                     />
-                                    <div className="flex items-center justify-start space-x-2">
+                                    <div className="flex items-center justify-start space-x-2 w-full">
                                       {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
-                                      <span
-                                        className={`transition-all duration-300 whitespace-nowrap ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
-                                      >
-                                        <Typography
-                                          variant="bodySmall"
-                                          color="inherit"
-                                          className="font-medium whitespace-nowrap"
+                                      <div className="flex items-center transition-all duration-300 whitespace-nowrap overflow-hidden">
+                                        <span
+                                          className={`transition-all duration-300 whitespace-nowrap ${isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                            }`}
                                         >
-                                          {subItem.name}
-                                        </Typography>
-                                      </span>
+                                          <Typography
+                                            variant="bodySmall"
+                                            color="inherit"
+                                            className="font-medium whitespace-nowrap"
+                                          >
+                                            {subItem.name}
+                                          </Typography>
+                                        </span>
+                                      </div>
+
+                                      {/* Badge for sub-item */}
+                                      {isExpanded && subItemCount > 0 && (
+                                        <span className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"} min-w-[20px] size-5 rounded-full bg-error-50 text-error text-[10px] font-bold flex items-center justify-center mr-6`}>
+                                          {subItemCount}
+                                        </span>
+                                      )}
                                     </div>
                                   </Link>
                                 )}
