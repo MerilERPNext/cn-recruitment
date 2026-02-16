@@ -75,8 +75,8 @@ export const useAppNotificationCounts = () => {
         return dt?.allocated || 0;
       }
       if (subModuleLabel === "All Shifts") {
-         const dt = app.doctypes.find((d) => d.doctype === "Shift Request");
-         return (dt?.self || 0) + (dt?.allocated || 0);
+        const dt = app.doctypes.find((d) => d.doctype === "Shift Request");
+        return (dt?.self || 0) + (dt?.allocated || 0);
       }
     }
 

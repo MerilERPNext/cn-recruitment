@@ -989,7 +989,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             })}
           </div>
         </div>
-      </aside >
+      </aside>
     </>
   );
 };
