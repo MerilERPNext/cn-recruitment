@@ -33,8 +33,8 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   const DesktopLayout = () => (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0">
-        <div className="px-4 py-1 md:py-4">
-          <div className="border-b border-gray-10">
+        <div className="px-4 py-1 md:py-2">
+          <div className="border-b mb-1 border-gray-10">
             <HeaderBar
               title={`Installments - ${advance.name}`}
               showBackButton={true}
@@ -127,7 +127,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 variant="bodySmall"
                 className="text-center font-medium"
               >
-                #{installment.installmentNo}
+                .{installment.installmentNo}
               </Typography>
 
               <Typography
