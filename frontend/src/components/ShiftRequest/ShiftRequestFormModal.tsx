@@ -62,9 +62,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const loading = useLoadingOverlay(); // ✅ overlay hook
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee } = useGetEmployeeDetailsByEmpId(
-    targetEmployeeId || "",
-  );
+  const { data: targetEmployee, isLoading: targetEmployeeLoading } =
+    useGetEmployeeDetailsByEmpId(targetEmployeeId || "");
   const activeEmployee = isViewingOtherUser ? targetEmployee : employeeDetails;
   const handleSubmitonSuccess = () => {
     onClose?.();
@@ -239,7 +238,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     return transformSchemaWithRequired(formSchema, requiredFieldMap);
   }, [formSchema, requiredFieldMap]);
 
-  if (employeeLoading) {
+  if (employeeLoading || targetEmployeeLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div className="bg-white p-6 rounded-lg">

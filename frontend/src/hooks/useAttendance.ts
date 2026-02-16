@@ -324,7 +324,7 @@ export function useMarkBulkAttendance() {
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.markBulkAttendance(body),
 
-     onSuccess: ()=>{
+     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });

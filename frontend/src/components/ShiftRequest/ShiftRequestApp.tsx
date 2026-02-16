@@ -37,14 +37,14 @@ const ShiftRequestApp: React.FC = () => {
     label: key,
   }));
 
-  const { data: attendnacePermission, isLoading: AttendnacePermissionLoading } =
+  const { data: attendnacePermission, isLoading: attendancePermissionLoading } =
     useGetUiPermission("Attendance");
   const { data: ShiftAppPermission, isLoading: ShiftAppPermissionLoading } =
     useGetUiPermission("My Shift Assignment");
 
   const showShiftChangeButton = useMemo(() => {
     const For = { Desktop: false, Mobile: false };
-    if (!AttendnacePermissionLoading) {
+    if (!attendancePermissionLoading) {
       For.Desktop = Boolean(
         attendnacePermission?.[0]?.pages?.find(
           (page) =>
@@ -74,7 +74,7 @@ const ShiftRequestApp: React.FC = () => {
     attendnacePermission,
     ShiftAppPermission,
     ShiftAppPermissionLoading,
-    AttendnacePermissionLoading,
+    attendancePermissionLoading,
   ]);
 
   useEffect(() => {
