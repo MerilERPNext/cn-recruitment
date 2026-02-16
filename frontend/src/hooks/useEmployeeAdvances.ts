@@ -16,6 +16,7 @@ import {
   updateEmployeeAdvance,
 } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
+import FrappeAPI from "../utils/frappeAPI";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
   return useQuery<ApiAdvance[]>({
@@ -143,3 +144,16 @@ export const useEmployeeAdvanceUpdate = () => {
     },
   });
 };
+
+
+export const useGetEmployeeAdvanceDoc = (
+  docname: string
+) => {
+  return useQuery({
+    queryKey: ["advance-doc-data", docname],
+    queryFn: () => FrappeAPI.getDocument("Employee Advance", docname!),
+    enabled: !!docname,
+  });
+};
+
+

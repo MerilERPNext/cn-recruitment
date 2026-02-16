@@ -14,6 +14,8 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import {
   useCreateNewAdvance,
   useEmployeeAdvancesAmount,
+  useEmployeeAdvanceUpdate,
+  useGetEmployeeAdvanceDoc,
 } from "../../../hooks/useEmployeeAdvances";
 
 // ✅ Import JSON schema
@@ -30,11 +32,16 @@ import { Typography } from "../../shared/atoms/Typography";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 interface AdvanceFormProps {
+  docname?: string | null;
   user?: any;
   onClose?: () => void;
 }
 
-const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
+const AdvanceForm: React.FC<AdvanceFormProps> = ({
+  docname,
+  user,
+  onClose,
+}) => {
   const formAdvanceInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
@@ -50,8 +57,55 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
     postingDate,
     user?.company,
   );
+  const mutateUpdate = useEmployeeAdvanceUpdate();
+  const mutateCreate = useCreateNewAdvance();
+  const mappedFormData = (advance: any) => {
+    if (!advance) return null;
 
-  const mutation = useCreateNewAdvance();
+    const formData: Record<string, any> = {
+      custom_advance_type: advance.custom_advance_type,
+      advance_amount: advance.advance_amount,
+      custom_repayment_type: advance.custom_repayment_type,
+      repayment_method: advance.custom_repayment_methods,
+      custom_repayment_start_date: advance.custom_repayment_start_date,
+      repayment_periods: advance.custom_repayment_period_in_months,
+      repayment_amount: advance.custom_monthly_repayment_amount,
+      purpose: advance.purpose,
+    };
+
+    if (formData.custom_repayment_start_date) {
+      formData.custom_repayment_start_date = new Date(
+        formData.custom_repayment_start_date,
+      )
+        .toISOString()
+        .split("T")[0];
+    }
+
+    return formData;
+  };
+
+  const { data: advance, isLoading: advanceLoading } = useGetEmployeeAdvanceDoc(
+    docname ?? "",
+  );
+  useEffect(() => {
+    const instance = formAdvanceInstance.current;
+
+    if (!instance) return;
+    if (advanceLoading) return;
+    if (!advance) return;
+
+    const mappedData = mappedFormData(advance);
+    if (!mappedData) return;
+
+    instance.setSubmission({
+      data: mappedData,
+    });
+
+    // keep state in sync
+    if (mappedData.custom_advance_type) {
+      setSelectedAdvanceType(mappedData.custom_advance_type);
+    }
+  }, [advanceLoading, advance]);
 
   const { data: requiredFields } = useRequiredFields("Employee Advance");
   const requiredFieldMap = useMemo(() => {
@@ -168,10 +222,38 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
         custom_monthly_repayment_amount: formData.repayment_amount || 0,
       };
 
-      // ✅ Wrap only the mutation + file upload
+      // ✅ Wrap only the mutate + file upload
+
+      if (docname) {
+        await loading?.wrap(async () => {
+          await new Promise<void>((resolve, reject) => {
+            mutateUpdate.mutate(
+              { docname, data: submissionData },
+              {
+                onSuccess: async (data: any) => {
+                  if (attachments?.length > 0) {
+                    await uploadFiles(attachments, data.doctype, data.name);
+                  }
+                  toast.success("Advance Request updated successfully!");
+                  onClose?.();
+                  setTimeout(() => setRefetchAttendance(true), 2000);
+                  resolve();
+                },
+                onError: (error: any) => {
+                  console.error(error);
+                  reject(error);
+                },
+              },
+            );
+          });
+        }, "Submitting advance request…");
+
+        return;
+      }
+
       await loading?.wrap(async () => {
         await new Promise<void>((resolve, reject) => {
-          mutation.mutate(submissionData, {
+          mutateCreate.mutate(submissionData, {
             onSuccess: async (data: any) => {
               if (attachments?.length > 0) {
                 await uploadFiles(attachments, data.doctype, data.name);
@@ -243,6 +325,16 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             form={trasnsformedSchema}
             onFormReady={(instance: any) => {
               formAdvanceInstance.current = instance;
+
+              // if advance already loaded before form was ready
+              if (advance && !advanceLoading) {
+                const mappedData = mappedFormData(advance);
+                instance.setSubmission({ data: mappedData });
+
+                if (mappedData?.custom_advance_type) {
+                  setSelectedAdvanceType(mappedData.custom_advance_type);
+                }
+              }
             }}
             options={{ submitButton: false, noAlerts: true }}
             onChange={(submission: any) => {
@@ -278,7 +370,7 @@ const AdvanceForm: React.FC<AdvanceFormProps> = ({ user, onClose }) => {
             variant="contain"
             className="w-full md:w-auto min-w-[150px]"
           >
-            Submit
+            {docname ? "Update" : "Submit"}
           </Button>
         </div>
       </div>

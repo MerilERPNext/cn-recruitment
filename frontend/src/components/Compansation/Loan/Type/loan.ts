@@ -19,6 +19,7 @@ export interface Installment {
   }
   
   export interface Loan {
+    can_edit: number;
     employee_name: string
     for_user: string
     loan_requested_amount: number
@@ -53,5 +54,14 @@ export interface Installment {
     loanName: string
     name: string
     employee: string
+  }
+
+
+  export type LoanResponseType = {
+    loan_product: string;
+    loan_amount: number;
+    repayment_method: string;
+    repayment_periods: number;
+    description: string;
   }
   

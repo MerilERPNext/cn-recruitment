@@ -73,14 +73,14 @@ export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
 }
@@ -118,8 +118,8 @@ interface DataListViewProps<T extends BaseItem> {
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -235,21 +235,6 @@ const DataListView = <T extends BaseItem>({
     }
   }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
 
-  // Create internal fetch function for custom API
-  const internalFetchFunction = useMemo(() => {
-    if (fetchFunction) {
-      return fetchFunction;
-    }
-
-    if (customAPI) {
-      return (params: FetchParams): Promise<FrappePageResponse> => {
-        return customApiService.fetchData<T>(customAPI, params);
-      };
-    }
-
-    throw new Error("Either fetchFunction or customAPI must be provided");
-  }, [fetchFunction, customAPI]);
-
   // Common query parameters
   const queryParams = useMemo(
     () => ({
@@ -269,9 +254,53 @@ const DataListView = <T extends BaseItem>({
     ],
   );
 
+  // Conditionally add/strip todo_status from customAPI params based on active filters
+  const effectiveCustomAPI = useMemo(() => {
+    if (!customAPI) return customAPI;
+
+    const currentStatus = debouncedFilters?.status;
+    const isPending =
+      !currentStatus ||
+      currentStatus === "Pending" ||
+      currentStatus === "Open" ||
+      currentStatus === "Draft";
+
+    if (isPending) {
+      // Add todo_status: "Open" by default for pending/no-filter state
+      return {
+        ...customAPI,
+        params: { ...customAPI.params, todo_status: "Open" },
+      };
+    }
+
+    // Strip todo_status for non-pending filters
+    if (customAPI.params?.todo_status) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { todo_status, ...restParams } = customAPI.params as Record<string, unknown>;
+      return { ...customAPI, params: restParams };
+    }
+
+    return customAPI;
+  }, [customAPI, debouncedFilters?.status]);
+
+  // Create internal fetch function for custom API
+  const internalFetchFunction = useMemo(() => {
+    if (fetchFunction) {
+      return fetchFunction;
+    }
+
+    if (effectiveCustomAPI) {
+      return (params: FetchParams): Promise<FrappePageResponse> => {
+        return customApiService.fetchData<T>(effectiveCustomAPI, params);
+      };
+    }
+
+    throw new Error("Either fetchFunction or customAPI must be provided");
+  }, [fetchFunction, effectiveCustomAPI]);
+
   // Infinite query for infinite scroll - always call both hooks but enable conditionally
   const customApiInfiniteResult = useCustomApiInfiniteQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -280,7 +309,7 @@ const DataListView = <T extends BaseItem>({
       orderBy: queryParams.orderBy,
     },
     {
-      enabled: infiniteScroll && !isLoading && !!customAPI,
+      enabled: infiniteScroll && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -292,20 +321,20 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: pageParam as number,
       }),
-    enabled: infiniteScroll && !isLoading && !!fetchFunction && !customAPI,
+    enabled: infiniteScroll && !isLoading && !!fetchFunction && !effectiveCustomAPI,
     getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const infiniteQueryResult = customAPI
+  const infiniteQueryResult = effectiveCustomAPI
     ? customApiInfiniteResult
     : fetchFunctionInfiniteResult;
 
   // Traditional pagination query - always call both hooks but enable conditionally
   const customApiPaginationResult = useCustomApiQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -316,7 +345,7 @@ const DataListView = <T extends BaseItem>({
     },
     {
       enabled:
-        !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
+        !infiniteScroll && !loadMorePagination && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -333,18 +362,18 @@ const DataListView = <T extends BaseItem>({
       !loadMorePagination &&
       !isLoading &&
       !!fetchFunction &&
-      !customAPI,
+      !effectiveCustomAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const paginationQueryResult = customAPI
+  const paginationQueryResult = effectiveCustomAPI
     ? customApiPaginationResult
     : fetchFunctionPaginationResult;
 
   // Load more pagination query - always call both hooks but enable conditionally
   const customApiLoadMoreResult = useCustomApiQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -354,7 +383,7 @@ const DataListView = <T extends BaseItem>({
       pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
     },
     {
-      enabled: loadMorePagination && !isLoading && !!customAPI,
+      enabled: loadMorePagination && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -366,12 +395,12 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: loadMorePagination && !isLoading && !!fetchFunction && !customAPI,
+    enabled: loadMorePagination && !isLoading && !!fetchFunction && !effectiveCustomAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const loadMoreQueryResult = customAPI
+  const loadMoreQueryResult = effectiveCustomAPI
     ? customApiLoadMoreResult
     : fetchFunctionLoadMoreResult;
 
@@ -665,11 +694,10 @@ const DataListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -959,9 +987,8 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                    }`}
                 >
                   <ItemComponent item={item} index={index} />
                 </div>

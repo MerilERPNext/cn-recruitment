@@ -19,6 +19,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -44,6 +45,11 @@ const AdvancesList: React.FC = () => {
     value: number;
     maskAmounts: boolean;
   };
+  const [editAdvanceId, setEditAdvanceId] = useState<string | null>(null);
+  const handleEdit = (docname: string) => {
+    setEditAdvanceId(docname);
+    setShowAdvanceForm(true);
+  };
 
   const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
     return (
@@ -54,7 +60,7 @@ const AdvancesList: React.FC = () => {
           </span>
           {maskAmounts ? (
             <span className="blur-sm select-none text-gray-400">
-              {formatCurrency(0).replace('0', 'XX,XXX')}
+              {formatCurrency(0).replace("0", "XX,XXX")}
             </span>
           ) : (
             <span className="font-medium">{formatCurrency(value)}</span>
@@ -74,6 +80,8 @@ const AdvancesList: React.FC = () => {
   const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     return apiData.map((a) => ({
       name: a.advance_type,
+      docname: a.name,
+      can_edit: a.can_edit,
       amount: a.total_advance_amount,
       numberOfDeductions: a.total_paid_amount,
       startDate: a.start_date,
@@ -110,6 +118,7 @@ const AdvancesList: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowAdvanceForm(false);
+    setEditAdvanceId(null);
   };
 
   if (showInstallments && selectedAdvance) {
@@ -129,17 +138,21 @@ const AdvancesList: React.FC = () => {
     "Start Date",
     "End Date",
     "Status",
+    "Actions",
   ];
 
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  const DesktopLayout = () => (
+  interface DesktopLayoutProps {
+    handleEdit: (docname: string) => void;
+  }
+  const DesktopLayout = ({ handleEdit }: DesktopLayoutProps) => (
     <>
       {formattedData.map((advance, index) => (
         <div
           key={`${advance.name}-${index}`}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
           onClick={() => handleViewInstallments(advance)}
         >
           {/* Advance Name */}
@@ -185,6 +198,14 @@ const AdvancesList: React.FC = () => {
               <StatusBadge status={advance.advanceStatus} />
             </Tooltip>
           </div>
+
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              isPending={advance.advanceStatus === "Pending"}
+              canEdit={!!advance.can_edit}
+              onEdit={() => handleEdit(advance.docname)}
+            />
+          </div>
         </div>
       ))}
     </>
@@ -205,14 +226,20 @@ const AdvancesList: React.FC = () => {
                 {advance.name}
               </h3>
             </div>
-            <StatusBadge status={advance.advanceStatus} />
+            <div className="flex items-center gap-2">
+              <StatusBadge status={advance.advanceStatus} />
+              <MyApprovalActionPill
+                isPending={true}
+                canEdit={!!advance.can_edit}
+                onEdit={() => handleEdit(advance.docname)}
+              />
+            </div>
           </div>
           <AmountRow
             label="Total Amount"
             value={advance.amount}
             maskAmounts={maskAmounts}
           />
-
           <AmountRow
             label="Deduction Amount"
             value={advance.numberOfDeductions}
@@ -290,7 +317,7 @@ const AdvancesList: React.FC = () => {
             <CardSkeleton />
           ) : formattedData.length > 0 ? (
             isDesktop ? (
-              <DesktopLayout />
+              <DesktopLayout handleEdit={handleEdit} />
             ) : (
               <MobileLayout />
             )
@@ -304,7 +331,11 @@ const AdvancesList: React.FC = () => {
 
       {showAdvanceForm && (
         <Modal onClose={handleCloseModal}>
-          <AdvanceForm user={user} onClose={handleCloseModal} />
+          <AdvanceForm
+            docname={editAdvanceId}
+            user={user}
+            onClose={handleCloseModal}
+          />
         </Modal>
       )}
     </div>

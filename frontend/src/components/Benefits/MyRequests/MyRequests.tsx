@@ -32,6 +32,7 @@ import { formatCurrency } from "../../../utils/currency";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -43,7 +44,6 @@ const MyRequests: React.FC = () => {
     "request_benefit",
     "My Requests",
   );
-
 
   // const [refetch, setRefetch] = useState(false);
   const handleRequestBenefit = () => {
@@ -62,6 +62,7 @@ const MyRequests: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowBenefitForm(false);
+    setBenefitId(null);
   };
 
   const { data: optionYearsData, isLoading: YearsLoading } =
@@ -77,6 +78,12 @@ const MyRequests: React.FC = () => {
   }, [optionYearsData, YearsLoading]);
 
   const [selectedYear, setSelectedYear] = useState("");
+
+  const [benefitId, setBenefitId] = useState<string | null>(null);
+  const handleEdit = (BenefitId: string) => {
+    setBenefitId(BenefitId);
+    setShowBenefitForm(true);
+  };
 
   useEffect(() => {
     setSelectedYear(() => getCurrentPeriod(optionYears));
@@ -181,6 +188,7 @@ const MyRequests: React.FC = () => {
             "Taxable Amount",
             "Non Taxable Amount",
             "Status",
+            "Actions",
           ]}
         >
           <DataListView
@@ -201,7 +209,11 @@ const MyRequests: React.FC = () => {
             }}
             ItemComponent={(props: { item: BenefitPayslip }) => {
               return (
-                <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
+                <BenefitSlipItem
+                  handleEdit={handleEdit}
+                  item={props?.item}
+                  maskAmounts={maskAmounts}
+                />
               );
             }}
             SkeletonComponent={CardSkeleton}
@@ -222,6 +234,7 @@ const MyRequests: React.FC = () => {
         createPortal(
           <Modal onClose={handleCloseModal}>
             <BenefitRequestForm
+              docname={benefitId}
               isOpen={showBenefitForm}
               onClose={handleCloseModal}
               onSuccess={() => {
@@ -238,14 +251,16 @@ const MyRequests: React.FC = () => {
 const BenefitSlipItem = ({
   item,
   maskAmounts,
+  handleEdit,
 }: {
   item: BenefitPayslip;
   maskAmounts: boolean;
+  handleEdit: (benefitId: string) => void;
 }) => {
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="grid grid-cols-8 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+    <div className="grid grid-cols-9 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
       <Link
         to={`/webapp/employee-profile?target_user=${item?.employee}`}
         target="_blank"
@@ -278,9 +293,7 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={` ${maskAmounts ? "blur-[3px]" : ""}`}>
-          {formatCurrency(
-            maskAmounts ? "#####" : item?.custom_taxable_amount,
-          )}
+          {formatCurrency(maskAmounts ? "#####" : item?.custom_taxable_amount)}
         </span>
       </Typography>
 
@@ -295,10 +308,18 @@ const BenefitSlipItem = ({
       <div className="flex items-center justify-center">
         <StatusBadge status={item?.custom_status} />
       </div>
+
+      <div className="flex items-center justify-center">
+        <MyApprovalActionPill
+          isPending={item.custom_status === "Pending"}
+          canEdit={!!item.can_edit}
+          onEdit={() => handleEdit(item.name)}
+        />
+      </div>
     </div>
   ) : (
     <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
-      <div className="flex w-full">
+      <div className="flex w-full items-center">
         <div className="flex flex-col">
           <Link
             to={`/webapp/employee-profile?target_user=${item?.employee}`}
@@ -312,10 +333,14 @@ const BenefitSlipItem = ({
             {item?.company}
           </span>
         </div>
-        <span className="ml-auto">
-          {" "}
+        <div className="ml-auto flex items-center gap-2">
           <StatusBadge status={item?.custom_status} />
-        </span>
+          <MyApprovalActionPill
+            isPending={item.custom_status === "Pending"}
+            canEdit={!!item.can_edit}
+            onEdit={() => handleEdit(item.name)}
+          />
+        </div>
       </div>
       <div className="grid grid-cols-3 w-full mt-2">
         <div className="flex flex-col">
