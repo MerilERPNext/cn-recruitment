@@ -1,4 +1,6 @@
 export interface Installment {
+    loan_end_date: ReactNode
+    loan_start_date: ReactNode
     principal: string
     opening_balance: number
     payment_date: string

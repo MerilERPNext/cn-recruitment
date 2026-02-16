@@ -52,7 +52,7 @@ const TeamAdvanceRequest = () => {
     <div className="flex flex-col h-full">
       {isDesktop && (
         <div className="flex-shrink-0">
-          <div className="px-6 py-1 md:py-4">
+          <div className="px-2 py-1 md:py-4">
             <Typography variant="h4">Team Advance Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage team advance requests
@@ -61,7 +61,7 @@ const TeamAdvanceRequest = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-2 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
             status="Pending"

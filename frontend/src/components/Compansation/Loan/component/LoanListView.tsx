@@ -9,12 +9,18 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import Tooltip from "../../../shared/Tooltip";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import { SearchIcon } from "lucide-react";
 
 interface LoanListProps {
   loans: Loan[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
-export default function LoanList({ loans }: LoanListProps) {
+export default function LoanList({
+  loans,
+  searchTerm,
+  onSearchChange, }: LoanListProps) {
   const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
   const toggleLoanExpansion = (loan_name: string) => {
@@ -72,6 +78,20 @@ export default function LoanList({ loans }: LoanListProps) {
 
   return (
     <CardTable titles={titles} columnWidths={columnWidths}>
+<div className="relative w-full">
+  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+    <SearchIcon />
+  </div>
+
+  <input
+    type="text"
+    placeholder="Search loans..."
+    value={searchTerm}
+    onChange={(e) => onSearchChange(e.target.value)}
+    className="w-full pl-10 pr-4 py-2 border border-gray-300
+       focus:ring-primary-500 focus:border-primary-500 outline-none"
+  />
+</div>
       <div className="border bg-app divide-y">
         {loans.map((loan) => (
           <div
