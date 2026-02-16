@@ -13,6 +13,7 @@ interface EmploymentHistoryProps {
 
 export interface CustomWorkHistory {
   doctype_name: string;
+  field_label: string;
   records: string;
   start_date: string | null;
   end_date: string | null;
@@ -55,8 +56,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
     (acc, item) => {
-      if (!acc[item.doctype_name]) acc[item.doctype_name] = [];
-      acc[item.doctype_name].push(item);
+      const groupKey = item.field_label;
+      if (!acc[groupKey]) acc[groupKey] = [];
+      acc[groupKey].push(item);
       return acc;
     },
     {},
@@ -151,7 +153,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 if (diff < minDiff) {
                   minDiff = diff;
                   overallClosestItem = item;
-                  overallClosestCategory = item.doctype_name;
+                  overallClosestCategory = item.field_label;
                 }
               });
             }
@@ -186,7 +188,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               return (
                 <div key={category} className="mb-10">
                   <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
-                    {category}
+                    {!!category || ""}
                   </h3>
 
                   <div className="flex gap-2 overflow-auto">
