@@ -1,11 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import {
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Timer,
-  RotateCcw,
-} from "lucide-react";
+import { CheckCircle, XCircle, Timer, RotateCcw, Calendar } from "lucide-react";
 import { useGetUserNotices } from "../hooks/useNotices";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useCompanyLogo } from "../hooks/useCompanyLogo";
@@ -678,14 +672,6 @@ const MobileDashboard: React.FC = () => {
         <div className="mb-2 bg-white px-2 pt-4 pb-2">
           <TasksAwaiting />
         </div>
-        {/* --------------------------------- Requests --------------------------------- */}
-        <div className="mb-2 bg-white px-4 pt-4 pb-2">
-          <Typography variant="subheading" className="mb-3 block">
-            Requests
-          </Typography>
-          <Requests />
-        </div>
-
         <div className="mb-2 bg-white px-4 pt-4 pb-2">
           <div className="flex justify-between items-center mb-3">
             <Typography variant="subheading" className="block">
@@ -698,62 +684,92 @@ const MobileDashboard: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-2">
+            {/* Present */}
             <div
-              className="text-center bg-green-50 border-2 border-green-100 p-3 rounded-lg cursor-pointer"
-              onClick={() => {
-                navigate("/webapp/attendance/summary");
-              }}
+              onClick={() => navigate("/webapp/attendance/summary")}
+              className="bg-green-50 border border-green-100 
+               rounded-xl py-3 px-1 
+               flex flex-col items-center justify-center 
+               min-h-[90px] active:scale-95 transition"
             >
-              <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-              <Typography variant="h3" className="font-bold text-green-800">
+              <CheckCircle className="w-4 h-4 text-green-600 mb-1" />
+
+              <p className="text-base font-semibold text-green-800 leading-none">
                 {employeeAttendanceSummary?.present || 0}
-              </Typography>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-green-700"
-              >
-                Present Days
-              </Typography>
+              </p>
+
+              <p className="text-[10px] font-medium text-green-700 mt-1 text-center leading-tight">
+                Present
+              </p>
             </div>
 
+            {/* Absent */}
             <div
-              className="text-center bg-red-50 border-2 border-red-100 p-3 rounded-lg cursor-pointer"
-              onClick={() => {
-                navigate("/webapp/attendance/emp-attendance");
-              }}
+              onClick={() => navigate("/webapp/attendance/emp-attendance")}
+              className="bg-red-50 border border-red-100 
+               rounded-xl py-3 px-1 
+               flex flex-col items-center justify-center 
+               min-h-[90px] active:scale-95 transition"
             >
-              <AlertCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-              <Typography variant="h3" className="font-bold text-red-800">
+              <XCircle className="w-4 h-4 text-red-600 mb-1" />
+
+              <p className="text-base font-semibold text-red-800 leading-none">
                 {employeeAttendanceSummary?.absent || 0}
-              </Typography>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-red-700"
-              >
-                Absent Days
-              </Typography>
+              </p>
+
+              <p className="text-[10px] font-medium text-red-700 mt-1 text-center leading-tight">
+                Absent
+              </p>
             </div>
 
+            {/* Leaves */}
             <div
-              className="text-center bg-orange-50 border-2 border-orange-100 p-3 rounded-lg cursor-pointer"
-              onClick={() => {
-                navigate("/webapp/leave-app/leaves/leave-balance");
-              }}
+              onClick={() => navigate("/webapp/leave-app/leaves/leave-balance")}
+              className="bg-orange-50 border border-orange-100 
+               rounded-xl py-3 px-1 
+               flex flex-col items-center justify-center 
+               min-h-[90px] active:scale-95 transition"
             >
-              <Timer className="w-6 h-6 text-orange-600 mx-auto mb-1" />
-              <Typography variant="h3" className="font-bold text-orange-800">
+              <Calendar className="w-4 h-4 text-orange-600 mb-1" />
+
+              <p className="text-base font-semibold text-orange-800 leading-none">
                 {employeeAttendanceSummary?.leaves || 0}
-              </Typography>
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-orange-700"
-              >
+              </p>
+
+              <p className="text-[10px] font-medium text-orange-700 mt-1 text-center leading-tight">
                 Leaves
-              </Typography>
+              </p>
+            </div>
+
+            {/* Weekoffs */}
+            <div
+              onClick={() => navigate("/webapp/leave-app/leaves/leave-balance")}
+              className="bg-pink-50 border border-pink-100 
+               rounded-xl py-3 px-1 
+               flex flex-col items-center justify-center 
+               min-h-[90px] active:scale-95 transition"
+            >
+              <Timer className="w-4 h-4 text-pink-600 mb-1" />
+
+              <p className="text-base font-semibold text-pink-800 leading-none">
+                {employeeAttendanceSummary?.week_offs || 0}
+              </p>
+
+              <p className="text-[10px] font-medium text-pink-700 mt-1 text-center leading-tight">
+                Week Offs
+              </p>
             </div>
           </div>
         </div>
+        {/* --------------------------------- Requests --------------------------------- */}
+        <div className="mb-2 bg-white px-4 pt-4 pb-2">
+          <Typography variant="subheading" className="mb-3 block">
+            Requests
+          </Typography>
+          <Requests />
+        </div>
+
         <div className="mb-2 bg-white">
           <MicroAppInDashboard />
         </div>
