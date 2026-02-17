@@ -29,7 +29,7 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
   pdfUrl,
 }) => {
   const [isMasked, setIsMasked] = useState(true)
-  console.log("html console log gornskdnfksdnfkas fkasd aksd aksnksdnfaksda =======", type, { htmlContent })
+  console.log("html console log gornskdnfksdnfkas fkasd aksd aksnksdnfaksda =======", type, { htmlContent },pdfUrl)
 
   if (!isOpen) return null
 
@@ -80,14 +80,29 @@ const SalarySlipPDFModal: React.FC<SalarySlipPDFModalProps> = ({
 
         {/* PDF Content */}
         <div className={`flex-1 overflow-auto bg-app ${isMasked ? "filter blur-xl" : ""}`}>
-        <iframe
+        {pdfUrl ? (
+  // ✅ PDF Preview
+  <object
+    data={`${pdfUrl}#toolbar=0`}
+    type="application/pdf"
+    
     className="w-full h-full border-0"
-    sandbox="allow-same-origin allow-scripts"
-    {...(pdfUrl
-      ? { src: pdfUrl }              // ✅ PDF case
-      : { srcDoc: htmlContent || "" } // ✅ HTML case
-    )}
+  >
+    <p>
+      PDF preview not supported.
+      <a href={pdfUrl} target="_blank" rel="noreferrer">
+        Download PDF
+      </a>
+    </p>
+  </object>
+) : (
+  // ✅ HTML Preview
+  <iframe
+    className="w-full h-full border-0"
+    srcDoc={htmlContent || ""}
   />
+)}
+
         </div>
       </div>
     </div>

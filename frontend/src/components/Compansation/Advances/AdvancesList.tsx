@@ -20,6 +20,7 @@ import Tooltip from "../../shared/Tooltip";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+
 import { Search } from "lucide-react";
 
 const AdvancesList: React.FC = () => {
@@ -266,18 +267,21 @@ const AdvancesList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ===== Header ===== */}
       <div className="flex-shrink-0">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
             {isDesktop && (
               <div>
-                <Typography variant="h4"> My Advance Request</Typography>
+                <Typography variant="h4">My Advance Request</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage your advance requests
                 </Typography>
               </div>
             )}
-            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
+  
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              {/* Toggle Amount */}
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
                 className="my-btn-secondary flex items-center gap-2"
@@ -285,22 +289,18 @@ const AdvancesList: React.FC = () => {
               >
                 {maskAmounts ? (
                   <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Show Amounts
-                    </span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
+                    <span className="text-sm font-medium">Show Amounts</span>
+                    <BsToggleOff className="w-6 h-6" />
                   </>
                 ) : (
                   <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Hide Amounts
-                    </span>
+                    <span className="text-sm font-medium">Hide Amounts</span>
                     <BsToggleOn className="w-6 h-6 text-primary" />
                   </>
                 )}
               </button>
-
-              {/* Create Advance Button */}
+  
+              {/* Create Button */}
               <Button
                 bgColor="primary"
                 size="md"
@@ -359,6 +359,5 @@ const AdvancesList: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default AdvancesList;
+}
+export default AdvancesList;  
