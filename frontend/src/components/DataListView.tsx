@@ -73,14 +73,14 @@ export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-  | "Select"
-  | "Link"
-  | "Data"
-  | "Int"
-  | "Float"
-  | "Check"
-  | "Date"
-  | "Datetime";
+    | "Select"
+    | "Link"
+    | "Data"
+    | "Int"
+    | "Float"
+    | "Check"
+    | "Date"
+    | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
 }
@@ -118,8 +118,8 @@ interface DataListViewProps<T extends BaseItem> {
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
   noRecordsScreen?:
-  | React.ReactNode
-  | ((filters: Record<string, any>) => React.ReactNode);
+    | React.ReactNode
+    | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -276,7 +276,10 @@ const DataListView = <T extends BaseItem>({
     // Strip todo_status for non-pending filters
     if (customAPI.params?.todo_status) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { todo_status, ...restParams } = customAPI.params as Record<string, unknown>;
+      const { todo_status, ...restParams } = customAPI.params as Record<
+        string,
+        unknown
+      >;
       return { ...customAPI, params: restParams };
     }
 
@@ -321,7 +324,8 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: pageParam as number,
       }),
-    enabled: infiniteScroll && !isLoading && !!fetchFunction && !effectiveCustomAPI,
+    enabled:
+      infiniteScroll && !isLoading && !!fetchFunction && !effectiveCustomAPI,
     getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
     refetchOnWindowFocus: false,
@@ -345,7 +349,10 @@ const DataListView = <T extends BaseItem>({
     },
     {
       enabled:
-        !infiniteScroll && !loadMorePagination && !isLoading && !!effectiveCustomAPI,
+        !infiniteScroll &&
+        !loadMorePagination &&
+        !isLoading &&
+        !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -395,7 +402,11 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: loadMorePagination && !isLoading && !!fetchFunction && !effectiveCustomAPI,
+    enabled:
+      loadMorePagination &&
+      !isLoading &&
+      !!fetchFunction &&
+      !effectiveCustomAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -694,10 +705,11 @@ const DataListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
               >
                 {pageNum}
               </button>
@@ -987,8 +999,9 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                    }`}
+                  className={`mb-2 md:mb-0 ${
+                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                  }`}
                 >
                   <ItemComponent item={item} index={index} />
                 </div>
