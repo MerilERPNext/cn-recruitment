@@ -199,13 +199,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                           }`}
                       >
                         <EmploymentHistoryCard
-                          title={item.doctype_name === 'Employee' ? item.records_details?.fullname : item.records}
+                          title={item.records_details?.name || item.records}
                           start_date={item.start_date}
                           end_date={item.end_date}
                           isCurrent={!item.end_date}
                           department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
                           location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
-                          id={item.records}
+                          id={item?.records_details?.id || ""}
                           doctype_name={item.doctype_name}
                         />
                       </div>
