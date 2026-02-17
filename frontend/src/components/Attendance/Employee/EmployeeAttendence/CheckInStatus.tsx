@@ -40,7 +40,7 @@ const CheckInStatus = () => {
     const [selectedMonth, setSelectedMonth] = useState<MonthOption>(formattedDate ? monthOptions.find((month) => month.value === formattedDate) || monthOptions[0] : monthOptions[0]);
 
 
-    const { frm_date, to_date } = getMonthDateRange(formattedDate || selectedMonth.value);
+    const { frm_date, to_date } = getMonthDateRange(selectedMonth.value);
     const {
         data: checkins,
         isLoading,
