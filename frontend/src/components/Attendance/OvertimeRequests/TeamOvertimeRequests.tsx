@@ -93,8 +93,8 @@ const TeamOvertimeRequests = () => {
                   ],
                 },
               ]}
-              defaultFilters={{ status: "Open" }}
               SkeletonComponent={CardSkeleton}
+              defaultFilters={{ status: "Open" }}
               renderCardContent={(item) => (
                 <OvertimeApprovalCard
                   isSelected={item?.isSelected}

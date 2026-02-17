@@ -132,7 +132,6 @@ const MyOvertimeRequests = () => {
               SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}
-              orderBy="modified desc"
               showPagination={true}
               infiniteScroll={true}
               loadMorePagination={false}

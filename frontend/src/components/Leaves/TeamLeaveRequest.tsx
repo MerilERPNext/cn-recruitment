@@ -111,6 +111,7 @@ const TeamLeaveRequest = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
+              orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <LeaveApprovalCard

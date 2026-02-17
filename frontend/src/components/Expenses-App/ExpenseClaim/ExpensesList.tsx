@@ -430,7 +430,7 @@ const ExpensesList: React.FC = () => {
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="modified desc"
+              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={true}
               showPagination={true}

@@ -110,8 +110,9 @@ const MyRequests: React.FC = () => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-          }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
+          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+        }`}
       >
         {data?.message}
       </div>
@@ -217,6 +218,7 @@ const MyRequests: React.FC = () => {
               );
             }}
             SkeletonComponent={CardSkeleton}
+            orderBy="claim_date desc"
             // refetchTrigger={refetchAttendance}
             isSearch={false}
             isFilter={false}
@@ -360,8 +362,9 @@ const BenefitSlipItem = ({
         <div className="flex ml-auto flex-col">
           <label className="text-gray-500 text-sm">Claim Amount</label>
           <span
-            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${maskAmounts ? "blur-[3px]" : ""
-              }`}
+            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${
+              maskAmounts ? "blur-[3px]" : ""
+            }`}
           >
             {formatCurrency(
               maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
