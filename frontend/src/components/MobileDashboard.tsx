@@ -3,9 +3,7 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  FileEdit,
   Timer,
-  BanknoteX,
   RotateCcw,
 } from "lucide-react";
 import { useGetUserNotices } from "../hooks/useNotices";
@@ -20,7 +18,6 @@ import {
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
 
-import { useExpenseClaim } from "../hooks/useExpense";
 import {
   Coordinates,
   formatTimeSafe,
@@ -49,7 +46,6 @@ import ViewingAsBanner from "./ViewingAsBanner";
 import SearchMembers from "./shared/SearchMembers";
 import Button from "./shared/atoms/Button";
 import { Typography } from "./shared/atoms/Typography";
-import { formatDateDDMonthYYYY } from "../utils/formatToIndianDate";
 import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
 import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import Badge from "./shared/Badge";
@@ -60,45 +56,6 @@ import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboar
 import SideDrawer from "./shared/SideDrawer";
 import MobileProfileDrawer from "./EmployeeProfile/MobileProfileDrawer";
 import NotificationBell from "./Notification/NotificationBell";
-
-const statusStyles = {
-  unpaid: {
-    bg: "bg-yellow-50",
-    border: "border-yellow-100",
-    iconBg: "bg-yellow-200",
-    iconText: "text-yellow-600",
-    badgeBg: "bg-yellow-200",
-    badgeText: "text-yellow-800",
-    icon: <BanknoteX className="w-4 h-4 text-yellow-600" />,
-  },
-  draft: {
-    bg: "bg-orange-50",
-    border: "border-orange-100",
-    iconBg: "bg-orange-200",
-    iconText: "text-orange-600",
-    badgeBg: "bg-orange-200",
-    badgeText: "text-orange-800",
-    icon: <FileEdit className="w-4 h-4 text-orange-600" />,
-  },
-  approved: {
-    bg: "bg-green-100",
-    border: "border-green-200",
-    iconBg: "bg-green-200",
-    iconText: "text-green-600",
-    badgeBg: "bg-green-200",
-    badgeText: "text-green-800",
-    icon: <CheckCircle className="w-4 h-4 text-green-600" />,
-  },
-  rejected: {
-    bg: "bg-red-50",
-    border: "border-red-100",
-    iconBg: "bg-red-100",
-    iconText: "text-red-600",
-    badgeBg: "bg-red-100",
-    badgeText: "text-red-800",
-    icon: <XCircle className="w-4 h-4 text-red-600" />,
-  },
-};
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -149,7 +106,6 @@ const MobileDashboard: React.FC = () => {
 
     return () => clearInterval(timer);
   }, []);
-  const { data: expenseData } = useExpenseClaim([["status", "=", "Unpaid"]]);
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -181,11 +137,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-      CompanyLogo.length > 0 &&
-      currentEmployeeCompany
+    CompanyLogo.length > 0 &&
+    currentEmployeeCompany
       ? CompanyLogo.find(
-        (company) => company.company_name === currentEmployeeCompany,
-      )
+          (company) => company.company_name === currentEmployeeCompany,
+        )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -194,7 +150,7 @@ const MobileDashboard: React.FC = () => {
     data: homeSummary,
     refetch: refetchHomeSummary,
     isRefetching,
-    isLoading: homeSummaryLoading
+    isLoading: homeSummaryLoading,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",
@@ -204,30 +160,30 @@ const MobileDashboard: React.FC = () => {
   const [profileDrawer, setProfileDrawer] = useState(false);
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T")),
         ),
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T")),
+          ),
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -327,7 +283,6 @@ const MobileDashboard: React.FC = () => {
     }
   };
 
-
   const getTotalTime = () => {
     if (!homeSummary || homeSummary.length === 0) {
       return "--:--";
@@ -366,7 +321,6 @@ const MobileDashboard: React.FC = () => {
       .padStart(2, "0")}`;
   };
 
-
   const getWorkPercentage = () => {
     if (!firstCheckIn || !firstCheckIn.shift_start || !firstCheckIn.shift_end) {
       return 0;
@@ -378,8 +332,8 @@ const MobileDashboard: React.FC = () => {
       const sortedLogs = [...homeSummary].sort((a, b) =>
         compareAsc(
           parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
+          parseISO(b.time.replace(" ", "T")),
+        ),
       );
 
       let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -410,7 +364,7 @@ const MobileDashboard: React.FC = () => {
     }
 
     const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100
+      (totalWorkedMinutes / totalShiftMinutes) * 100,
     );
     return Math.min(percentage, 100);
   };
@@ -419,7 +373,7 @@ const MobileDashboard: React.FC = () => {
     useGetUserNotices();
 
   if (userNoticeIsLoading || employeeState.isLoading || homeSummaryLoading) {
-    return <MobileDashboardSkeleton />
+    return <MobileDashboardSkeleton />;
   }
   return (
     <div className="h-screen font-sans flex flex-col">
@@ -435,7 +389,12 @@ const MobileDashboard: React.FC = () => {
               alt="CompnayLogo"
               className="w-12 h-12 p-1 rounded-full flex-shrink-0"
             />
-            <Typography variant="subheading">Welcome, <span className="text-primary-900 whitespace-nowrap">{currentEmployee?.employee_name.split(" ")[0] || ""}!</span></Typography>
+            <Typography variant="subheading">
+              Welcome,{" "}
+              <span className="text-primary-900 whitespace-nowrap">
+                {currentEmployee?.employee_name.split(" ")[0] || ""}!
+              </span>
+            </Typography>
           </Button>
 
           <div className="flex items-center gap-3">
@@ -449,7 +408,7 @@ const MobileDashboard: React.FC = () => {
             <div
               className="w-9 h-9 rounded-xl overflow-hidden cursor-pointer border border-gray-400"
               onClick={() => {
-                setProfileDrawer(true)
+                setProfileDrawer(true);
                 // navigate(`/webapp/employee-profile`);
               }}
             >
@@ -471,28 +430,25 @@ const MobileDashboard: React.FC = () => {
         <SearchMembers />
       </div>
 
-
-
-
       <div className="flex-1 overflow-y-auto gap-2">
         {/* ------------------------ User Notice Banner ------------------------ */}
-        {!userNoticeIsLoading &&
-          userNotices &&
-          userNotices?.length > 0 ? <div className=" w-full max-w-full overflow-hidden mb-4">
-          <Carousel
-            className="w-full h-full max-h-[150px] sm:rounded-none"
-            showNavigation={false}
-          >
-            {userNotices?.map((item) => (
-              <CarouselSlide
-                key={item.name}
-                autoScrollDelay={item.auto_scroll_frequency * 1000}
-              >
-                <NoticeSlide data={item} />
-              </CarouselSlide>
-            ))}
-          </Carousel>
-        </div> : null}
+        {!userNoticeIsLoading && userNotices && userNotices?.length > 0 ? (
+          <div className=" w-full max-w-full overflow-hidden mb-4">
+            <Carousel
+              className="w-full h-full max-h-[150px] sm:rounded-none"
+              showNavigation={false}
+            >
+              {userNotices?.map((item) => (
+                <CarouselSlide
+                  key={item.name}
+                  autoScrollDelay={item.auto_scroll_frequency * 1000}
+                >
+                  <NoticeSlide data={item} />
+                </CarouselSlide>
+              ))}
+            </Carousel>
+          </div>
+        ) : null}
         {!employeeState.isLoading && !employeeState.hasValidData && (
           <EmployeeFallback
             message={
@@ -508,16 +464,12 @@ const MobileDashboard: React.FC = () => {
 
         <div className="h-fit flex flex-col px-4 mb-2 bg-white">
           <div className="w-full">
-            <Typography
-              variant="subheading"
-              className="mb-4 text-left block"
-            >
+            <Typography variant="subheading" className="mb-4 text-left block">
               Attendance Tracker
             </Typography>
             <div>
               <div className="flex items-start justify-between w-full mb-2">
                 <div>
-
                   <Typography
                     variant="subheading"
                     className="flex items-center gap-1.5"
@@ -530,21 +482,18 @@ const MobileDashboard: React.FC = () => {
                       ? formatTimeSafe(employeeShift.end_time)
                       : "--:--"}
                   </Typography>
-                  <Typography variant="bodySmall" color="body2">Shift Timings</Typography>
+                  <Typography variant="bodySmall" color="body2">
+                    Shift Timings
+                  </Typography>
                 </div>
-
 
                 {homeSummary && homeSummary.length > 0 && (
                   <Badge
-                    label={
-                      isCurrentlyCheckedIn ? "Checked In" : "Checked Out"
-                    }
+                    label={isCurrentlyCheckedIn ? "Checked In" : "Checked Out"}
                     size="md"
                     pulse={{
                       show: true,
-                      color: isCurrentlyCheckedIn
-                        ? "bg-success"
-                        : "bg-error",
+                      color: isCurrentlyCheckedIn ? "bg-success" : "bg-error",
                     }}
                     backgroundColor={
                       isCurrentlyCheckedIn
@@ -557,7 +506,6 @@ const MobileDashboard: React.FC = () => {
                   />
                 )}
               </div>
-
             </div>
             <div className="flex items-center justify-between w-full mb-3">
               <Typography
@@ -592,8 +540,6 @@ const MobileDashboard: React.FC = () => {
           </div>
 
           <div className="border-t border-gray-100 pt-4">
-
-
             <div className="grid grid-cols-2 gap-4">
               {/* IN TIME */}
               <div className="p-2 rounded-xl border border-primary">
@@ -710,7 +656,9 @@ const MobileDashboard: React.FC = () => {
                 fullWidth
                 size="lg"
                 onClick={() =>
-                  handleClockInOut(isCurrentlyCheckedIn ? "clockOut" : "clockIn")
+                  handleClockInOut(
+                    isCurrentlyCheckedIn ? "clockOut" : "clockIn",
+                  )
                 }
                 disabled={clockInCheckOutPending || !employeeShift?.shift}
                 className="font-medium"
@@ -725,8 +673,6 @@ const MobileDashboard: React.FC = () => {
               </Button>
             ) : null}
           </div>
-
-
         </div>
         {/* ---------------------------------Tasks Awaiting--------------------------------- */}
         <div className="mb-2 bg-white px-2 pt-4 pb-2">
@@ -808,77 +754,6 @@ const MobileDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {expenseData?.length > 0 && (
-          <div className="rounded-xl mb-2 px-4 bg-white pt-4 pb-2">
-            <div className="flex justify-between items-center mb-3">
-              <Typography variant="subheading" className="block">
-                Unpaid Expense Claims
-              </Typography>
-              <ViewAll
-                title="View Claims"
-                onClick={() => navigate("/webapp/expenses-app")}
-              />
-            </div>
-
-            <div className="space-y-3">
-              {expenseData?.map(
-                (item: {
-                  employee_name: string;
-                  creation: string;
-                  total_claimed_amount: string;
-                  status: string;
-                }) => {
-                  const styles =
-                    statusStyles[
-                    item.status?.toLowerCase() as keyof typeof statusStyles
-                    ] || statusStyles.draft;
-
-                  return (
-                    <div
-                      className={`flex items-center justify-between p-3 shadow-sm ${styles.bg} rounded-lg border ${styles.border}`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-8 h-8 ${styles.iconBg} rounded-lg flex items-center justify-center`}
-                        >
-                          {styles.icon}
-                        </div>
-                        <div>
-                          <Typography
-                            variant="bodyMedium"
-                            className="card-title block"
-                          >
-                            {item?.employee_name}
-                          </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            className="text-gray-600 block"
-                          >
-                            {formatDateDDMonthYYYY(item?.creation)}
-                          </Typography>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Typography
-                          variant="bodyMedium"
-                          className="card-title block"
-                        >
-                          {item?.total_claimed_amount} Rs
-                        </Typography>
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${styles.badgeBg} ${styles.badgeText}`}
-                        >
-                          {item?.status}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                },
-              )}
-            </div>
-          </div>
-        )}
         <div className="mb-2 bg-white">
           <MicroAppInDashboard />
         </div>
