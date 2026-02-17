@@ -278,9 +278,7 @@ export function AttendanceDetailView({
             <Typography variant="mobileCardLabel">Explanation</Typography>
 
             <Typography variant="mobileCardValue">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                {cleanExplaination}
-              </div>
+              {cleanExplaination}
             </Typography>
           </div>
 
@@ -289,9 +287,7 @@ export function AttendanceDetailView({
             <Typography variant="mobileCardLabel">Description</Typography>
 
             <Typography variant="mobileCardValue">
-              <div className="bg-gray-50 p-3 rounded-lg">
-                {cleanDescription}
-              </div>
+              {cleanDescription}
             </Typography>
           </div>
 

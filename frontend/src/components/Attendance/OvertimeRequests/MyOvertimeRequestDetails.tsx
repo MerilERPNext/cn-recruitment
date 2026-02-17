@@ -210,9 +210,7 @@ export function MyOvertimeDetails({
             <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  {data?.description}
-                </div>
+                {data?.description}
               </Typography>
             </div>
           </div>
