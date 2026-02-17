@@ -71,3 +71,36 @@ export type TodoResponse = {
     page_length: number;
   };
 };
+
+
+
+
+export type FlowRequestStage = {
+  stage_name: string;
+  user_id: string;
+  user: string;
+  role: string | null;
+  status: string;
+  approval_time: string | null;
+  form_json?: {
+    components: any[];
+  };
+};
+
+export type FlowRequestItem = {
+  request_id: string;
+  flow_name: string;
+  category: string;
+  initiated_on: string;
+  initiated_by: string;
+  initiated_for: string;
+  approval_status: string;
+  workflow_status: string;
+  overall_flow_status: string;
+  approval_stages: FlowRequestStage[];
+  workflow_stages: any[];
+};
+
+export type FlowRequestResponse = {
+  data: FlowRequestItem[];
+};

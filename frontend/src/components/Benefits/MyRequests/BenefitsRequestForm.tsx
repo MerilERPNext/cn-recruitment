@@ -310,8 +310,8 @@ export default function BenefitRequestForm({
             bgColor="primary"
           >
             {fileUploadLoading ||
-            mutation.isPending ||
-            mutateUpdate.isPending ? (
+              mutation.isPending ||
+              mutateUpdate.isPending ? (
               <CircularLoader />
             ) : isEditing ? (
               "Update Request"

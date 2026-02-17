@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CommonSearchAndActions from "../CommonSearchAndActions";
 import HeaderBar from "../../HeaderBar";
-import { useNavigate, useParams } from "react-router-dom";
-import Badge from "../../shared/Badge";
 import RequestTimeline from "./RequestDetailsCard";
 import CardTable from "../../shared/CardTable";
+import { FlowRequestItem } from "../../../types/flows";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
 
 const titles = [
-  "Stage Number",
   "Stage Name",
   "Assigned To",
   "Action Taken By",
@@ -19,100 +20,27 @@ const titles = [
   "Actions",
 ];
 
-const stages = [
-  {
-    stageNumber: 1,
-    stageName: "Initiation",
-    assignedTo: "John Doe",
-    actionTakenBy: "John Doe",
-    status: "Completed",
-    triggerDate: "2025-10-01",
-    dueDate: "2025-10-03",
-    completedDate: "2025-10-02",
-    actions: "View Details",
-  },
-  {
-    stageNumber: 2,
-    stageName: "Manager Approval",
-    assignedTo: "Jane Smith",
-    actionTakenBy: "Jane Smith",
-    status: "Completed",
-    triggerDate: "2025-10-03",
-    dueDate: "2025-10-05",
-    completedDate: "2025-10-04",
-    actions: "View Details",
-  },
-  {
-    stageNumber: 3,
-    stageName: "Finance Review",
-    assignedTo: "Robert Lee",
-    actionTakenBy: "Robert Lee",
-    status: "In Progress",
-    triggerDate: "2025-10-05",
-    dueDate: "2025-10-07",
-    completedDate: "-",
-    actions: "Approve / Reject",
-  },
-  {
-    stageNumber: 4,
-    stageName: "Compliance Check",
-    assignedTo: "Emily Davis",
-    actionTakenBy: "-",
-    status: "Pending",
-    triggerDate: "2025-10-07",
-    dueDate: "2025-10-09",
-    completedDate: "-",
-    actions: "Start Review",
-  },
-  {
-    stageNumber: 5,
-    stageName: "HR Verification",
-    assignedTo: "Michael Brown",
-    actionTakenBy: "Michael Brown",
-    status: "Pending",
-    triggerDate: "2025-10-09",
-    dueDate: "2025-10-11",
-    completedDate: "2025-10-10",
-    actions: "View Record",
-  },
-];
+
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 
-const RequestDetails: React.FC = () => {
+interface RequestDetailsProps {
+  data: FlowRequestItem,
+  handleNavigateBack: () => void
+}
+const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBack }) => {
   const [FlowStatusType, setFlowStatusType] = useState<FlowStatusType>(
     "Approval Flow Status",
   );
+
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
-  const { id } = useParams();
 
-  const handleNavigateBack = () => {
-    navigate(-1);
-  };
-
-  const getBadgeColor = (status: string) => {
-    if (!status) return "text-gray-600 bg-gray-100";
-
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "text-green-600 bg-green-100";
-      case "in progress":
-        return "text-yellow-600 bg-yellow-100";
-      case "pending":
-        return "text-gray-600 bg-gray-100";
-      case "rejected":
-        return "text-red-600 bg-red-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
-  };
   return (
     <div className="min-h-screen bg-white">
       <div className="top-0 sticky z-10 bg-white">
         <div className="sm:px-4">
           <HeaderBar
-            title={"Flow Request Details : " + id}
+            title={data.flow_name}
             onBack={handleNavigateBack}
           />
         </div>
@@ -129,11 +57,10 @@ const RequestDetails: React.FC = () => {
                   onClick={() => setFlowStatusType(btn.value as FlowStatusType)}
                   disabled={isActive}
                   className={`flex-1 sm:flex-none px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 
-          ${
-            isActive
-              ? "bg-blue-600 text-white font-semibold shadow-inner"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
-          }
+          ${isActive
+                      ? "bg-blue-600 text-white font-semibold shadow-inner"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
+                    }
           ${index === 0 ? "rounded-l-2xl" : "rounded-r-2xl"}`}
                 >
                   {btn.label}
@@ -145,14 +72,14 @@ const RequestDetails: React.FC = () => {
           <div className="text-sm flex sm:flex-col justify-between sm:w-fit w-full">
             <div>
               <span className="font-medium text-gray-500 ">Initiated By :</span>{" "}
-              <span className="text-gray-900">Yojesh Jain </span>
+              <span className="text-gray-900"> {data.initiated_by} </span>
             </div>
             <div>
               {" "}
               <span className="font-medium text-gray-500 ">
                 Initiated On :
               </span>{" "}
-              <span className="text-gray-900">17-10-2025</span>{" "}
+              <span className="text-gray-900">{formatToIndianDate(data.initiated_on)}</span>{" "}
             </div>
           </div>
         </div>
@@ -161,48 +88,43 @@ const RequestDetails: React.FC = () => {
         </div>
       </div>
 
-      <div className="sm:px-8 px-4">
+      <div className="sm:px-7 px-4">
         <CardTable titles={titles}>
           {isDesktop ? (
             <div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
               <div className="w-full">
-                {stages.length > 0 ? (
-                  stages.map((stage) => (
+                {data.approval_stages.length > 0 ? (
+                  data.approval_stages.map((stage) => (
                     <div
-                      key={stage.triggerDate}
-                      className="hover:bg-gray-100 grid grid-cols-9 cursor-pointer text-xs w-full border-b"
+                      key={stage.stage_name}
+                      className="hover:bg-gray-100 py-4 text-center grid grid-cols-8 cursor-pointer text-xs w-full border-b"
                     >
-                      <span className="px-4 py-4 inline-block text-sm">
-                        {stage.stageNumber}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.stageName}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.assignedTo}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.actionTakenBy}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        <Badge
-                          label={stage.status}
-                          textColor={getBadgeColor(stage.status)}
-                          size="sm"
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.stage_name}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.role || stage.user || "-"}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.approval_time || "-"}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        <StatusBadge
+                          status={stage.status || "-"}
                         />
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.triggerDate}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.dueDate}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.completedDate}
-                      </span>
-                      <span className="px-4 py-4 inline-block text-sm ">
-                        {stage.actions}
-                      </span>
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.approval_time || "-"}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.approval_time || "-"}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.approval_time || "-"}
+                      </Typography></div>
+                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                        {stage.approval_time || "-"}
+                      </Typography></div>
                     </div>
                   ))
                 ) : (
@@ -212,7 +134,11 @@ const RequestDetails: React.FC = () => {
             </div>
           ) : (
             <div>
-              {true ? <RequestTimeline stages={stages} /> : <EmptyState />}
+              {data.approval_stages && data.approval_stages.length > 0 ? (
+                <RequestTimeline stages={data.approval_stages} />
+              ) : (
+                <EmptyState />
+              )}
             </div>
           )}
         </CardTable>

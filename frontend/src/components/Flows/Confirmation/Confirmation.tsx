@@ -40,10 +40,10 @@ const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee, isLoading: loadingCurrentEmployee } =
+  const { data: currentEmployee, isLoading: loadingCurrentEmployee, refetch: refetchCurrentEmployee } =
     useCurrentEmployeeAllDetails(userId || "");
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+  const { data: targetEmployee, refetch: refetchTargetEmployee } = useEmployee(targetEmployeeId);
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
   const document_name = isViewingOtherUser
@@ -76,15 +76,20 @@ const ConfirmationWorkflow = () => {
 
   // END action buttons permission
 
-  const { data: showConfirmatoinButton, isLoading: loadingCardData } =
+  const { data: showConfirmatoinButton, isLoading: loadingCardData, refetch: refetchShowConfirmatoinButton } =
     useGetShouldShowConfirmationButton(document_name);
 
   const {
-    data: employeeConfirmation,
+    data: employeeConfirmationPending,
     isLoading: loadingConfirmationTodo,
     refetch: refetchConfirmationAndSeparation,
-  } = useConfirmation(doctype);
-  const item = employeeConfirmation?.[0];
+  } = useConfirmation(doctype, "Open");
+  const {
+    data: employeeConfirmationClosed,
+    isLoading: loadingConfirmationClosed,
+    refetch: refetchConfirmationAndSeparationClosed,
+  } = useConfirmation(doctype, "Closed");
+  const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
 
   const stages = item?.approval_stages_status;
   const confirmationData = getFunnelData("Confirmation");
@@ -92,7 +97,7 @@ const ConfirmationWorkflow = () => {
   const l = "true";
 
   const isLoading =
-    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee;
+    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee || loadingConfirmationClosed;
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -189,7 +194,7 @@ const ConfirmationWorkflow = () => {
       );
 
     return actionPermission;
-  }, [item, currentEmployee, currentUser]);
+  }, [item, currentEmployee, currentUser, enabledActions]);
 
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
@@ -207,9 +212,17 @@ const ConfirmationWorkflow = () => {
     showConfirmatoinButton?.show_button;
 
   useEffect(() => {
-    const handleChatClose = () => {
-      refetchConfirmationAndSeparation();
+    const refreshCurrentPageData = () => {
+      refetchCurrentEmployee();
+      refetchTargetEmployee();
       refetch();
+      refetchConfirmationAndSeparation();
+      refetchConfirmationAndSeparationClosed();
+      refetchShowConfirmatoinButton();
+    }
+
+    const handleChatClose = () => {
+      refreshCurrentPageData();
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -220,7 +233,7 @@ const ConfirmationWorkflow = () => {
         handleChatClose,
       );
     };
-  }, [refetchConfirmationAndSeparation, refetch]);
+  }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmatoinButton]);
 
   const confirmationCards = useMemo(
     () => [
@@ -278,11 +291,8 @@ const ConfirmationWorkflow = () => {
       status: showConfirmatoinButton?.show_button
         ? "action_required"
         : "pending",
-      show_confirmation_button: canInitiateConfirmation,
-      self_confirmation_btn_name:
-        activeEmployee?.custom_employment_status == "On Probation"
-          ? "Initiate Confirmation"
-          : "Initiate confirmation Again",
+      show_confirmation_button: canInitiateConfirmation && activeEmployee?.custom_employment_status == "On Probation",
+      self_confirmation_btn_name: "Initiate Confirmation"
     },
   ];
 
@@ -371,6 +381,19 @@ const ConfirmationWorkflow = () => {
           </div>
         ))}
       </Card>
+
+      {showConfirmatoinButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended" &&
+        <div className="flex justify-center mt-6 mb-16">
+          <Button
+            variant="contain"
+            size="md"
+            onClick={handleInitiateConfirmation}
+          >
+            Initiate Confirmation
+          </Button>
+        </div>
+      }
+
     </div>
   );
 };
