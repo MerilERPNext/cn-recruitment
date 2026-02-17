@@ -273,7 +273,9 @@ export function LeaveDetailView({
             <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
-                {cleanDescription}
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  {cleanDescription}
+                </div>
               </Typography>
             </div>
           </div>
