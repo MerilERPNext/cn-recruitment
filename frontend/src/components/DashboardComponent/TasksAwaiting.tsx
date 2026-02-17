@@ -237,7 +237,9 @@ const TasksAwaiting: React.FC = () => {
         {isLoading ? (
           <CardSkeleton rows={2} />
         ) : filtered.length > 0 ? (
-          filtered.map((item) => <MyToDoItem key={item.name} item={item} />)
+          filtered
+            .slice(0, 3)
+            .map((item) => <MyToDoItem key={item.name} item={item} />)
         ) : (
           <div className="p-4 flex justify-center opacity-60">
             <Typography variant="bodySmall">No tasks found.</Typography>
