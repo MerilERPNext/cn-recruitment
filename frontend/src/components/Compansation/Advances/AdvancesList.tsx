@@ -20,7 +20,7 @@ import Tooltip from "../../shared/Tooltip";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+
 import { Search } from "lucide-react";
 
 const AdvancesList: React.FC = () => {
@@ -264,18 +264,21 @@ const AdvancesList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
+      {/* ===== Header ===== */}
       <div className="flex-shrink-0">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
             {isDesktop && (
               <div>
-                <Typography variant="h4"> My Advance Request</Typography>
+                <Typography variant="h4">My Advance Request</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage your advance requests
                 </Typography>
               </div>
             )}
-            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
+  
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              {/* Toggle Amount */}
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
                 className="my-btn-secondary flex items-center gap-2"
@@ -283,22 +286,18 @@ const AdvancesList: React.FC = () => {
               >
                 {maskAmounts ? (
                   <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Show Amounts
-                    </span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
+                    <span className="text-sm font-medium">Show Amounts</span>
+                    <BsToggleOff className="w-6 h-6" />
                   </>
                 ) : (
                   <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Hide Amounts
-                    </span>
+                    <span className="text-sm font-medium">Hide Amounts</span>
                     <BsToggleOn className="w-6 h-6 text-primary" />
                   </>
                 )}
               </button>
-
-              {/* Create Advance Button */}
+  
+              {/* Create Button */}
               <Button
                 bgColor="primary"
                 size="md"
@@ -308,43 +307,16 @@ const AdvancesList: React.FC = () => {
                 + Request Advance
               </Button>
             </div>
-          )}
-
-          <div className="flex gap-2 w-full md:w-auto">
-
-            <button
-              onClick={() => setMaskAmounts(!maskAmounts)}
-              className="my-btn-secondary flex items-center gap-2"
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm">Show Amount</span>
-                  <BsToggleOff className="w-6 h-6" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm">Hide Amount</span>
-                  <BsToggleOn className="w-6 h-6 text-primary" />
-                </>
-              )}
-            </button>
-
-            <Button
-              bgColor="primary"
-              size="md"
-              onClick={handleCreateAdvance}
-            >
-              Create Advance
-            </Button>
           </div>
         </div>
       </div>
-
+  
+      {/* ===== Table Section ===== */}
       <div className="flex-1 overflow-y-auto md:px-1 pb-4">
         <CardTable titles={titles} columnWidths={columnWidths}>
           {isLoading ? (
             <CardSkeleton />
-          ) : formattedData.length > 0 ? (
+          ) : filteredData.length > 0 ? (
             isDesktop ? (
               <DesktopLayout handleEdit={handleEdit} />
             ) : (
@@ -352,27 +324,25 @@ const AdvancesList: React.FC = () => {
             )
           ) : (
             <div className="text-center py-12 px-4 text-gray-500">
+              {/* Search */}
+              <div className="relative w-full mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-100 w-full"
+                />
+              </div>
   
-            <div className="relative w-full ">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-100  w-full "
-          />
-        </div>
-          {isDesktop ? <DesktopLayout /> : <MobileLayout />}
-
-          {filteredData.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
               No advances found.
             </div>
           )}
         </CardTable>
       </div>
-
+  
+      {/* ===== Modal ===== */}
       {showAdvanceForm && (
         <Modal onClose={handleCloseModal}>
           <AdvanceForm
@@ -384,6 +354,5 @@ const AdvancesList: React.FC = () => {
       )}
     </div>
   );
-};
-
-export default AdvancesList;
+}
+export default AdvancesList;  

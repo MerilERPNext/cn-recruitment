@@ -35,8 +35,10 @@ export const useInvoiceSheetViewPDF = (
 ) => {
   return useMutation({
     mutationFn: async (invoiceID: string) => {
-      const html = await getInvoiceHTMLSheet(invoiceID);
-      return { response: html };
+      const res = await getInvoiceHTMLSheet(invoiceID);
+
+      // yahin se url extract karo
+      return res?.message?.file_url;
     },
     onSuccess: options.onSuccess,
   });

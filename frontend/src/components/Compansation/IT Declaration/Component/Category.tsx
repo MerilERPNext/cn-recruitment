@@ -261,7 +261,7 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
               )}
             </div>
 
-            {showProofFields && item.attach_reqd === 1 || item?.approval_needed === "yes" && (
+            {showProofFields && (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
               <div className="flex gap-2 pb-1 bg-white">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">Attachment</label>
