@@ -25,7 +25,9 @@ import { Search } from "lucide-react";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
-  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(null);
+  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(
+    null,
+  );
   const [showInstallments, setShowInstallments] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
 
@@ -106,9 +108,10 @@ const AdvancesList: React.FC = () => {
     : [];
 
   // ✅ FILTERED DATA (SEARCH)
-  const filteredData = formattedData.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredData = formattedData.filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleViewInstallments = (advance: UiAdvance) => {
@@ -309,49 +312,51 @@ const AdvancesList: React.FC = () => {
             </div>
           </div>
         </div>
+
+        <div className="flex-1 overflow-y-auto md:px-1 pb-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            <>
+              {isLoading ? (
+                <CardSkeleton />
+              ) : formattedData.length > 0 ? (
+                <>
+                  <div className="relative w-full ">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 border border-gray-100  w-full "
+                    />
+                  </div>
+                  {isDesktop ? (
+                    <DesktopLayout handleEdit={handleEdit} />
+                  ) : (
+                    <MobileLayout />
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12 px-4 text-gray-500">
+                  <div className="text-center py-12 text-gray-500">
+                    No advances found.
+                  </div>
+                </div>
+              )}
+            </>
+          </CardTable>
+        </div>
+
+        {showAdvanceForm && (
+          <Modal onClose={handleCloseModal}>
+            <AdvanceForm
+              docname={editAdvanceId}
+              user={user}
+              onClose={handleCloseModal}
+            />
+          </Modal>
+        )}
       </div>
-  
-      {/* ===== Table Section ===== */}
-      <div className="flex-1 overflow-y-auto md:px-1 pb-4">
-        <CardTable titles={titles} columnWidths={columnWidths}>
-          {isLoading ? (
-            <CardSkeleton />
-          ) : filteredData.length > 0 ? (
-            isDesktop ? (
-              <DesktopLayout handleEdit={handleEdit} />
-            ) : (
-              <MobileLayout />
-            )
-          ) : (
-            <div className="text-center py-12 px-4 text-gray-500">
-              {/* Search */}
-              <div className="relative w-full mb-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-100 w-full"
-                />
-              </div>
-  
-              No advances found.
-            </div>
-          )}
-        </CardTable>
-      </div>
-  
-      {/* ===== Modal ===== */}
-      {showAdvanceForm && (
-        <Modal onClose={handleCloseModal}>
-          <AdvanceForm
-            docname={editAdvanceId}
-            user={user}
-            onClose={handleCloseModal}
-          />
-        </Modal>
-      )}
     </div>
   );
 }

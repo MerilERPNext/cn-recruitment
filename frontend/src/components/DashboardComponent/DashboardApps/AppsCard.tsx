@@ -48,7 +48,7 @@ const MyMicroApp: React.FC<MyMicroAppProps> = ({
     );
 
     const getNotificationCount = (title?: string) => {
-        if (!title || !notificationData) return 0;
+        if (!title || !Array.isArray(notificationData)) return 0;
 
         const app = notificationData.find((app) => app.title === title);
         if (!app) return 0;
