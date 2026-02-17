@@ -188,7 +188,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               return (
                 <div key={category} className="mb-10">
                   <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
-                    {!!category || ""}
+                    {category !== "null" && category !== null && category !== undefined ? category : "Others"}
                   </h3>
 
                   <div className="flex gap-2 overflow-auto">
