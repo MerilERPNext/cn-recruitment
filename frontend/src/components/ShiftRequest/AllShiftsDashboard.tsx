@@ -204,7 +204,7 @@ const AllMyShiftRequestsList = () => {
               isFilter={false}
               pageSize={4}
               showRefreshButton={false}
-              orderBy="modified desc"
+              orderBy="from_date desc"
               infiniteScroll={false}
               loadMorePagination={true}
               showPagination={false}
@@ -296,6 +296,7 @@ export default function AllShiftsDashboard() {
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
+                    orderBy="from_date desc"
                     SkeletonComponent={() => <CardSkeleton rows={3} />}
                     renderCardContent={(item) => (
                       <ApprovalRejectionQueue

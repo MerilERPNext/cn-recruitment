@@ -169,18 +169,16 @@ const ApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
-          onClick={() => {
-            if (onClick) {
-              onClick(data);
-            }
-          }}
+          className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+          onClick={() => onClick?.(data)}
         >
           <div className="p-4 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
-                className="mt-1 accent-blue-500"
+                className="mt-1 accent-primary"
                 checked={isSelected}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -193,83 +191,104 @@ const ApprovalCard = ({
             )}
 
             <div className="w-full">
-              <div className="flex items-start justify-between">
-                <div className="w-full">
-                  <Link
-                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-                    target="_blank"
+              {/* Header */}
+              <div className="flex items-start justify-between p-1">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">
+                    {data?.reference_document?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>
+
+                  <Typography
+                    variant="mobileCardValue"
+                    className="font-semibold"
                   >
-                    <p className="card-title">
-                      {data?.reference_document?.employee_name}
-                    </p>
-                  </Link>
-                  {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
+                    {data?.reference_document?.employee_name ||
+                      data?.reference_document?.employee}
+                  </Typography>
                 </div>
 
                 <StatusBadge status={data?.status} />
               </div>
-              <div className="my-2 py-2">
-                <div className="flex justify-between w-full ">
-                  {/* Display From Date */}
-                  {data?.reference_document?.from_date && (
-                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span className="card-title mb-1">From</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(
-                          data?.reference_document?.from_date,
-                        )}
-                      </span>
-                    </p>
-                  )}
 
-                  {/* Display To Date */}
-                  {data?.reference_document?.to_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span className="card-title mb-1">To</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.reference_document?.to_date)}
-                      </span>
-                    </p>
-                  )}
-                  {data?.due_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span className="card-title mb-1">Due</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.due_date)}
-                      </span>
-                    </p>
-                  )}
+              {/* Info Section */}
+              <div className="flex flex-col mt-2 p-1 gap-3">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">
+                      Allocated To
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {data?.username || data?.allocated_to}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">Due Date</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.due_date)}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">From</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.reference_document?.from_date)}
+                    </Typography>
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">To</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.reference_document?.to_date)}
+                    </Typography>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2">
-                {actions?.length > 0 &&
-                  data?.status === "Pending" &&
-                  actions.map((action: string) => (
-                    <Button
-                      variant="soft"
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      fullWidth
-                      bgColor={getActionStyles(action).bg}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
+              {/* Explanation (if exists) */}
+              <div className="mt-3 flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Explanation</Typography>
+                <Typography variant="mobileCardValue">
+                  {truncateByChars(cleanExplaination, 40)}
+                </Typography>
               </div>
+
+              {/* Actions */}
+              {actions?.length > 0 && data?.status === "Pending" && (
+                <div className="flex gap-2 mt-3">
+                  {actions.map((action: string) => {
+                    const actionStyle = getActionStyles(action);
+
+                    return (
+                      <Button
+                        key={action}
+                        className="w-full"
+                        variant="soft"
+                        bgColor={actionStyle.bg}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onAction(action, data);
+                        }}
+                        disabled={
+                          loadingAction?.id === data?.todo_id &&
+                          loadingAction?.action === action
+                        }
+                      >
+                        {loadingAction?.id === data?.todo_id &&
+                        loadingAction?.action === action ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          action
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

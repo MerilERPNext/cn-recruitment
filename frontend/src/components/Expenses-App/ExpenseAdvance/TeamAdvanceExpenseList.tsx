@@ -155,6 +155,7 @@ const TeamAdvanceExpenseList = () => {
                 },
               ]}
               defaultFilters={{ status: "Pending" }}
+              orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               noRecordsScreen={noRecordsScreen}
               renderCardContent={(item) => (

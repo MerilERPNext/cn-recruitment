@@ -41,6 +41,7 @@ type ApprovalListProps = {
   bulkSelectVisible?: boolean;
   defaultFilters?: Record<string, any>;
   columnWidths?: string[];
+  orderBy?: string;
   noRecordsScreen?:
     | React.ReactNode
     | ((filters: Record<string, any>) => React.ReactNode);
@@ -85,6 +86,8 @@ const ApprovalList = ({
   columnWidths,
   noRecordsScreen,
   SkeletonComponent,
+  orderBy,
+  
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -336,6 +339,7 @@ const finalBulkSelectVisible =
         loadMorePagination={loadMorePagination}
         onDataLoad={(data) => setAllRequests(data)}
         SkeletonComponent={SkeletonComponent}
+        orderBy={orderBy}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
             {finalBulkSelectVisible && (

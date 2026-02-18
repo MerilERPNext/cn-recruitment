@@ -160,6 +160,7 @@ const TeamExpense = () => {
               ]}
               noRecordsScreen={noRecordsScreen}
               defaultFilters={{ status: "Draft" }}
+              orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <ExpenseApprovalCard

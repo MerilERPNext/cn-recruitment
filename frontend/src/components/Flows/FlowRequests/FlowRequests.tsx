@@ -124,7 +124,7 @@ const FlowRequests: React.FC = () => {
             SkeletonComponent={CardSkeleton}
             pageSize={10}
             showRefreshButton={false}
-            orderBy="modified desc"
+            orderBy="creation desc"
             showPagination={true}
             infiniteScroll={true}
             loadMorePagination={false}

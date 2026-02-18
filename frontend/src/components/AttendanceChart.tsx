@@ -51,7 +51,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     startAngle: number,
     endAngle: number,
     outerRadius: number,
-    innerRadius: number
+    innerRadius: number,
   ) => {
     const startAngleRad = (startAngle - 90) * (Math.PI / 180);
     const endAngleRad = (endAngle - 90) * (Math.PI / 180);
@@ -79,18 +79,26 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
 
   const daysInMonth = getDaysInCurrentMonth();
 
-  const otherDays = Math.max(daysInMonth - (present + absent + leaves + week_offs), 0);
-
+  const otherDays = Math.max(
+    daysInMonth - (present + absent + leaves + week_offs),
+    0,
+  );
 
   // Percentages based on total working days
-  const presentPercent = isNaN((present / total) * 100) ? 0 : (present / total) * 100;
-  const absentPercent = isNaN((absent / total) * 100) ? 0 : (absent / total) * 100;
-  const leavesPercent = isNaN((leaves / total) * 100) ? 0 : (leaves / total) * 100;
-  const otherDaysPercent = isNaN((otherDays / total) * 100) ? 0 : (otherDays / total) * 100;
+  const presentPercent = isNaN((present / total) * 100)
+    ? 0
+    : (present / total) * 100;
+  const absentPercent = isNaN((absent / total) * 100)
+    ? 0
+    : (absent / total) * 100;
+  const leavesPercent = isNaN((leaves / total) * 100)
+    ? 0
+    : (leaves / total) * 100;
+  const otherDaysPercent = isNaN((otherDays / total) * 100)
+    ? 0
+    : (otherDays / total) * 100;
 
-  const toAngle = (percent: number) =>
-    Math.min((percent / 100) * 360, 359.999);
-
+  const toAngle = (percent: number) => Math.min((percent / 100) * 360, 359.999);
 
   // Angles
   const presentAngle = toAngle(presentPercent);
@@ -102,12 +110,13 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
     <div className={`p-1 ${className}`}>
       {/* Header Section */}
 
-
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-stretch ">
         {/* Chart Section - 70% */}
         {/* Chart Section - 70% */}
-        <Card radius="xl" className="w-full lg:w-[70%] p-6 lg:p-0 flex flex-col xl:flex-row items-center justify-center lg:justify-around gap-8">
-
+        <Card
+          radius="xl"
+          className="w-full lg:w-[70%] p-6 lg:p-0 flex flex-col xl:flex-row items-center justify-center lg:justify-around gap-8"
+        >
           {/* Chart */}
           <div className="relative w-full max-w-[20rem] xl:max-w-[24rem] aspect-square flex-shrink-0">
             <svg
@@ -142,7 +151,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     presentAngle,
                     presentAngle + absentAngle,
                     80,
-                    50
+                    50,
                   )}
                   fill="#ef4444"
                   className="transition-all duration-700 hover:opacity-80"
@@ -156,7 +165,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     presentAngle + absentAngle,
                     presentAngle + absentAngle + leavesAngle,
                     80,
-                    50
+                    50,
                   )}
                   fill="#f59e0b"
                   className="transition-all duration-700 hover:opacity-80"
@@ -170,7 +179,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     presentAngle + absentAngle + leavesAngle,
                     presentAngle + absentAngle + leavesAngle,
                     80,
-                    50
+                    50,
                   )}
                   fill="#FFC0CB"
                   className="transition-all duration-700 hover:opacity-80"
@@ -184,7 +193,7 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
                     presentAngle + absentAngle + leavesAngle,
                     presentAngle + absentAngle + leavesAngle + otherDaysAngle,
                     80,
-                    50
+                    50,
                   )}
                   fill="transparent"
                 />
@@ -195,34 +204,50 @@ const AttendanceChart: React.FC<AttendanceChartProps> = ({
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-3xl font-bold text-gray-900">
-                  {(presentPercent.toFixed(0))}%
+                  {presentPercent.toFixed(0)}%
                 </p>
-                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Present</p>
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                  Present
+                </p>
               </div>
             </div>
           </div>
 
           {/* Percentage Cards */}
           <div className="flex flex-col xl:flex-col gap-4 w-full xl:w-auto h-fit justify-center">
-
             {/* Present Card */}
             <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-emerald-50 border border-emerald-100 items-center justify-center">
-              <Typography variant="bodyMedium" color="success" className="font-bold text-">{presentPercent.toFixed(0)}%</Typography>
-              <Typography variant="bodyMedium" color="success" className="">Present</Typography>
+              <Typography
+                variant="bodyMedium"
+                color="success"
+                className="font-bold text-"
+              >
+                {presentPercent.toFixed(0)}%
+              </Typography>
+              <Typography variant="bodyMedium" color="success" className="">
+                Present
+              </Typography>
             </div>
 
             {/* Absent Card */}
-            <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
-              <Typography variant="bodyMedium" color="error">{absentPercent.toFixed(0)}%</Typography>
-              <Typography variant="bodyMedium" color="error">Absent</Typography>
+            <div className="gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center">
+              <Typography variant="bodyMedium" color="error">
+                {absentPercent.toFixed(0)}%
+              </Typography>
+              <Typography variant="bodyMedium" color="error">
+                Absent
+              </Typography>
             </div>
 
             {/* Leave Card */}
-            <div className="flex gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
-              <Typography variant="bodyMedium" color="warning">{leavesPercent.toFixed(0)}%</Typography>
-              <Typography variant="bodyMedium" color="warning">Leaves</Typography>
+            <div className="gap-2 flex-1 xl:flex-none min-w-[120px] px-4 py-3 xl:py-1 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center">
+              <Typography variant="bodyMedium" color="warning">
+                {leavesPercent.toFixed(0)}%
+              </Typography>
+              <Typography variant="bodyMedium" color="warning">
+                Leaves
+              </Typography>
             </div>
-
           </div>
         </Card>
 
