@@ -270,6 +270,7 @@ const EmpLeaveRequestCard = ({
                 {showEdit && (
                   <Button
                     fullWidth
+                    size="md"
                     variant="contain"
                     onClick={handleEditClick}
                     icon={<SquarePen className="w-4 h-4" />}
@@ -281,6 +282,7 @@ const EmpLeaveRequestCard = ({
                 {showReplace && (
                   <Button
                     fullWidth
+                    size="md"
                     variant="contain"
                     onClick={handleReplaceClick}
                     icon={<Repeat1 className="w-4 h-4" />}
@@ -292,6 +294,7 @@ const EmpLeaveRequestCard = ({
                 {showRevoke && (
                   <Button
                     fullWidth
+                    size="md"
                     variant="contain"
                     onClick={handleRevokeClick}
                     disabled={revokeEventMutation.isPending}

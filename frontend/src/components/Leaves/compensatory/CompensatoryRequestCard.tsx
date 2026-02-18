@@ -1,4 +1,3 @@
-import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { usePayCompOff } from "../../../hooks/useLeaves";
@@ -10,6 +9,8 @@ import {
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import Button from "../../shared/atoms/Button";
+import { Wallet } from "lucide-react";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -129,25 +130,68 @@ const CompensatoryRequestCard = ({
     </div>
   ) : (
     <div
-      className="w-full mt-2 flex items-center gap-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3"
+      className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl mt-2"
       onClick={onClick}
     >
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-600">
-        <Calendar size={20} />
-      </div>
+      <div className="p-4 flex flex-col gap-4 w-full">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Leave Type</Typography>
 
-      <div className="flex-1">
-        <div className="card-title">{item?.leave_type}</div>
-        <div className="card-subtitle py-1">
-          {formattedFromDate} – {formattedToDate}
+            <Typography variant="mobileCardValue" className="font-semibold">
+              {item?.leave_type}
+            </Typography>
+          </div>
+
+          <StatusBadge
+            status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+          />
         </div>
-        <div className="card-subtitle truncate">{item.reason || "—"}</div>
-      </div>
 
-      <div className="flex items-center">
-        <StatusBadge
-          status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
-        />
+        {/* Date Range */}
+        <div className="flex justify-between w-full">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">From</Typography>
+            <Typography variant="mobileCardValue">
+              {formattedFromDate}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">To</Typography>
+            <Typography variant="mobileCardValue">{formattedToDate}</Typography>
+          </div>
+        </div>
+
+        {/* Reason */}
+        {cleanReason && (
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Reason</Typography>
+
+            <Typography variant="mobileCardValue">
+              {truncateByChars(cleanReason, 60)}
+            </Typography>
+          </div>
+        )}
+
+        {/* Pay Button */}
+        {item?.pay_button_required && (
+          <div className="mt-2">
+            <Button
+              fullWidth
+              size="md"
+              variant="contain"
+              onClick={handlePay}
+              disabled={isPending}
+              icon={<Wallet className="w-4 h-4" />}
+            >
+              {isPending ? "Processing..." : "Pay"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

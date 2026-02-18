@@ -1,6 +1,6 @@
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Edit } from "lucide-react";
 import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -211,8 +211,10 @@ const EmpAttendanceRequestCard = ({
                 {type === "pending" && data?.can_edit && (
                   <Button
                     fullWidth
+                    size="md"
                     variant="contain"
                     onClick={() => setEdit(true)}
+                    icon={<Edit className="w-4 h-4" />}
                   >
                     Edit
                   </Button>
@@ -221,6 +223,7 @@ const EmpAttendanceRequestCard = ({
                 {data?.custom_allow_revoke && type === "pending" && (
                   <Button
                     fullWidth
+                    size="md"
                     variant="contain"
                     onClick={handleRevokeClick}
                     disabled={revokeEventMutation.isPending}
