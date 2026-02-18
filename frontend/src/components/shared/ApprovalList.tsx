@@ -38,8 +38,10 @@ type ApprovalListProps = {
   isFilter?: boolean;
   isSearch?: boolean;
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
+  bulkSelectVisible?: boolean;
   defaultFilters?: Record<string, any>;
   columnWidths?: string[];
+  orderBy?: string;
   noRecordsScreen?:
     | React.ReactNode
     | ((filters: Record<string, any>) => React.ReactNode);
@@ -79,10 +81,13 @@ const ApprovalList = ({
   isFilter = false,
   isSearch = false,
   onBulkSelectVisibilityChange,
+  bulkSelectVisible, 
   defaultFilters,
   columnWidths,
   noRecordsScreen,
   SkeletonComponent,
+  orderBy,
+  
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -109,14 +114,21 @@ const ApprovalList = ({
 
   const currentStatus = activeFilters?.status || status;
 
-  const isBulkSelectEnabled =
-    currentStatus === "Open" ||
-    currentStatus === "Pending" ||
-    currentStatus === "Draft";
+  const statusBasedBulkEnable =
+  currentStatus === "Open" ||
+  currentStatus === "Pending" ||
+  currentStatus === "Draft";
 
-  useEffect(() => {
-    onBulkSelectVisibilityChange?.(isBulkSelectEnabled);
-  }, [isBulkSelectEnabled, onBulkSelectVisibilityChange]);
+// parent prop + internal logic combine
+const finalBulkSelectVisible =
+  typeof bulkSelectVisible === "boolean"
+    ? bulkSelectVisible
+    : statusBasedBulkEnable;
+
+
+    useEffect(() => {
+      onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
+    }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
 
   const triggerRefetch = () => {
     if (setRefetch) {
@@ -327,9 +339,10 @@ const ApprovalList = ({
         loadMorePagination={loadMorePagination}
         onDataLoad={(data) => setAllRequests(data)}
         SkeletonComponent={SkeletonComponent}
+        orderBy={orderBy}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {isBulkSelectEnabled && (
+            {finalBulkSelectVisible && (
               <BulkActionBar
                 selectedIds={selectedIds}
                 pendingRequests={allRequests}

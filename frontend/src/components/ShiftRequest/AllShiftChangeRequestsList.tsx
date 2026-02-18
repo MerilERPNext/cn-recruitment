@@ -106,6 +106,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
               },
             ]}
             defaultFilters={{ status: "Draft" }}
+            orderBy="from_date desc"
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => (
               <ApprovalRejectionQueue

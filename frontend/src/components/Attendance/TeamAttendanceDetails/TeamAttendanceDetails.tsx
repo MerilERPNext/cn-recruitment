@@ -106,6 +106,7 @@ const TeamAttendanceDetails = () => {
                 },
               ]}
               defaultFilters={{ status: "Pending" }}
+              orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <ApprovalCard

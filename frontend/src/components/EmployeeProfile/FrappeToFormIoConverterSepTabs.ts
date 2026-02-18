@@ -488,7 +488,24 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   }
 
   // Handle read-only fields
-  if (field.read_only === 1 || field.read_only === true) {
+  const readOnlyFields = [
+    "custom_cxo",
+    "custom_designation_name",
+    "custom_dotted_line_manager",
+    "custom_hrbp",
+    "custom_hod",
+    "reports_to",
+    "company",
+    "department",
+    "designation",
+    "custom_functional_area",
+  ];
+
+  if (
+    field.read_only === 1 ||
+    field.read_only === true ||
+    readOnlyFields.includes(field.fieldname)
+  ) {
     // Don't disable Table or Table MultiSelect fields - they need to load their data/options
     if (
       field.fieldtype !== "Table" &&
@@ -734,7 +751,7 @@ export async function convertToFormioWithTabMetadata(
             type: "htmlelement",
             key: `header_${panelKey}`,
             label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</h4>`,
+            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
             input: false,
             tableView: false,
           });
@@ -1095,7 +1112,7 @@ export async function convertToFormioWithLayout(
             type: "htmlelement",
             key: `header_${panelKey}`,
             label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</h4>`,
+            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
             input: false,
             tableView: false,
           });

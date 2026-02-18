@@ -39,16 +39,20 @@ export default function TaxSheet() {
   );
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
-
-    const today = new Date();
-
+  
+    const today = new Date(); 
+  
     const matchedPeriod = payrollPeriods.find((p) => {
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
+  
+      // inclusive range check
       return today >= start && today <= end;
     });
-
-    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  
+    setSelectedPeriod(
+      matchedPeriod?.name || payrollPeriods[0].name
+    );
   }, [payrollPeriods, selectedPeriod]);
 
   const payrollPeriodOptions =

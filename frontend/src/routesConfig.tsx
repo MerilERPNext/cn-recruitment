@@ -22,6 +22,12 @@ import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvan
 import Requests from "./components/Requests";
 import Perquisite from "./components/Compansation/Perquisite/Perquisite";
 import Invoice from "./components/Compansation/Invoice/Invoice";
+import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
+
+const TeamApprovalListExemptionTable = lazyWithRetry(
+  () => import("./components/Compansation/IT Declaration/TeamApproval/TeamApprovalListView"),
+  "TeamApprovalListExemptionTable"
+  );
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -620,6 +626,16 @@ export const routesConfig: AppRoute[] = [
         path: "it-declaration-form",
         element: <ITDeclarationForm />,
         permissionKey: "IT Declaration",
+      },
+      {
+        path: "team-approval-it-declaration/:proofId",
+        element: <TeamApprovalListExemptionTable/>,
+        permissionKey: "Team IT Declaration",
+      },
+      {
+        path: "team-declaration-listview",
+        element: <TeamProofSubmissionList/>,
+        permissionKey: "Team IT Declaration",
       },
       {
         path: "my-loan-requests",

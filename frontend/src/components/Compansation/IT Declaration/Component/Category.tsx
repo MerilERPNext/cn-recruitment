@@ -6,6 +6,7 @@ import { useFileUpload } from "../../../../hooks/useEmployee";
 import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { formatCurrency } from "../../../../utils/currency";
+import toast from "react-hot-toast";
 type Item = {
   attach_link: string | null;
   approval_needed: string;
@@ -248,7 +249,9 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
             key={item.exemption_sub_category}
             className="flex justify-between items-center border-b pb-2"
           >
-            <div>
+       <div className="flex flex-col gap-1 max-w-xs">
+
+       <div>
               <Typography
                 variant="bodySmall"
                 color="body1"
@@ -261,32 +264,41 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
               )}
             </div>
 
-            {showProofFields && item.attach_reqd === 1 || item?.approval_needed === "yes" && (
+            {showProofFields && (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
               <div className="flex gap-2 pb-1 bg-white">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-gray-600">Attachment</label>
 
                   <input
-                    type="file"
-                    onChange={(e) =>
-                      handleProofFileUpload(
-                        item.exemption_sub_category,
-                        e.target.files?.[0] || null,
-                      )
-                    }
-                    className="border rounded pr-3 text-xs
-                      file:text-xs file:border-0
-                      file:bg-primary file:text-white
-                      file:px-3 file:py-1"
-                  />
+  type="file"
+  accept="application/pdf"   // ✅ File picker sirf PDF dikhayega
+  onChange={(e) => {
+    const file = e.target.files?.[0] || null;
 
-                  {item?.attach_proof && (
+    if (file && file.type !== "application/pdf") {
+      toast.error("Please upload only PDF file");
+      e.target.value = ""; // reset input
+      return;
+    }
+
+    handleProofFileUpload(
+      item.exemption_sub_category,
+      file
+    );
+  }}
+  className="border rounded pr-3 text-xs
+    file:text-xs file:border-0
+    file:bg-primary file:text-white
+    file:px-3 file:py-1"
+/>
+
+
+                  {(item?.proof_file ?? item?.attach_reqd === 1) && (
                     <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-                      <span className="text-sm text-gray-700 truncate">
-                        {typeof item.attach_proof === "string"
-                          ? item.attach_proof
-                          : item.attach_link}
-                      </span>
+<span className="text-sm text-gray-700 truncate">
+  {typeof item?.proof_file === "string" ? item.proof_file : item?.proof_file?.name || item?.attach_proof || item?.attach_link || "-"}
+</span>
+
 
                       <button
                         type="button"
@@ -319,6 +331,7 @@ console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_v
                 </div>}
               </div>
             )}
+       </div>
 
             <div className="flex items-center gap-3">
               <div className="text-right">

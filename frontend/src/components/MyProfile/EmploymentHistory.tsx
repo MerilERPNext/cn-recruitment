@@ -13,6 +13,7 @@ interface EmploymentHistoryProps {
 
 export interface CustomWorkHistory {
   doctype_name: string;
+  field_label: string;
   records: string;
   start_date: string | null;
   end_date: string | null;
@@ -55,8 +56,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
     (acc, item) => {
-      if (!acc[item.doctype_name]) acc[item.doctype_name] = [];
-      acc[item.doctype_name].push(item);
+      const groupKey = item.field_label;
+      if (!acc[groupKey]) acc[groupKey] = [];
+      acc[groupKey].push(item);
       return acc;
     },
     {},
@@ -151,7 +153,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 if (diff < minDiff) {
                   minDiff = diff;
                   overallClosestItem = item;
-                  overallClosestCategory = item.doctype_name;
+                  overallClosestCategory = item.field_label;
                 }
               });
             }
@@ -186,7 +188,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               return (
                 <div key={category} className="mb-10">
                   <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
-                    {category}
+                    {category !== "null" && category !== null && category !== undefined ? category : "Others"}
                   </h3>
 
                   <div className="flex gap-2 overflow-auto">
@@ -197,13 +199,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                           }`}
                       >
                         <EmploymentHistoryCard
-                          title={item.doctype_name === 'Employee' ? item.records_details?.fullname : item.records}
+                          title={item.records_details?.name || item.records}
                           start_date={item.start_date}
                           end_date={item.end_date}
                           isCurrent={!item.end_date}
                           department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
                           location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
-                          id={item.records}
+                          id={item?.records_details?.id || ""}
                           doctype_name={item.doctype_name}
                         />
                       </div>

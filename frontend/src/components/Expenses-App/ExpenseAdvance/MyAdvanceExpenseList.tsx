@@ -291,11 +291,11 @@ const MyAdvanceExpenseList = () => {
                 options: ["Pending", "Approved", "Rejected"],
               },
             ]}
+            orderBy="posting_date desc"
             noRecordsScreen={noRecordsScreen}
             refetchTrigger={refetchAttendance}
             onRefetchComplete={() => setRefetchAttendance(false)}
             showRefreshButton={false}
-            orderBy="creation desc"
             pageSize={10}
             infiniteScroll={true}
             showPagination={true}
