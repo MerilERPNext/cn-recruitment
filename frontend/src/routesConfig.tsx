@@ -635,7 +635,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "team-declaration-listview",
         element: <TeamProofSubmissionList/>,
-        permissionKey: "Team IT Declaration Listview",
+        permissionKey: "Team IT Declaration",
       },
       {
         path: "my-loan-requests",
