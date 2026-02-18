@@ -240,6 +240,8 @@ const OvertimeApprovalCard = ({
                   data?.reference_document?.status === "Open" &&
                   actions.map((action: string) => (
                     <Button
+                      fullWidth
+                      size="md"
                       variant="soft"
                       key={action}
                       onClick={(e) => {
@@ -252,7 +254,6 @@ const OvertimeApprovalCard = ({
                         loadingAction?.id === data?.todo_id &&
                         loadingAction?.action === action
                       }
-                      className="w-full"
                     >
                       {loadingAction?.id === data?.todo_id &&
                       loadingAction?.action === action ? (
