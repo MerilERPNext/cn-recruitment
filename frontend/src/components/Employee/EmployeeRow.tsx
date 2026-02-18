@@ -7,6 +7,7 @@ import { Employee } from "../../types/employee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router-dom";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 function initials(name = ""): string {
   const parts = name.trim().split(/\s+/);
@@ -78,6 +79,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
 
   const { data: currentEmployee } = useCurrentEmployee();
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
 
   const handleonClick = (emp: Employee) => () => {
     recentSearch(emp);
@@ -88,7 +90,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     }
 
     // ✅ Other user's profile
-    setTargetEmployee(emp.employee_id, "/webapp/employee-profile", true);
+    setTargetEmployee(emp.employee_id, "/webapp/employee-profile", isDesktop);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";

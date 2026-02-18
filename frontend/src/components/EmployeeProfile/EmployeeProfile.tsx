@@ -54,7 +54,8 @@ const EMPLOYEMENT_STATUS = {
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { targetEmployeeId } = useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
+    useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canAttendanceAssignments = isActionEnabled(
@@ -278,7 +279,15 @@ const EmployeeProfile: React.FC = () => {
           <HeaderInfoSkeleton />
         ) : (
           <div className="bg-white shadow">
-            <HeaderBar title="Profile" onBack={() => navigate(-1)} />
+            <HeaderBar
+              title="Profile"
+              onBack={() => {
+                if (isViewingOtherUser) {
+                  clearTargetEmployee();
+                }
+                navigate("/webapp/");
+              }}
+            />
             <input
               ref={fileInputRef}
               type="file"
