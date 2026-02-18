@@ -41,21 +41,37 @@ const EmployeeOption = ({ employee }: { employee: Employee }) => {
     </div>
   );
 };
+export interface EmployeeSearchProps {
+  setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  pendingEmployees: Employee[];
+  setPendingEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  appliedSearchEmployees: Employee[];
+  setAppliedSearchEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
+  activeFilters: EmployeeDirectoryFilterData;
+  setActiveFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
+  pendingFilters: EmployeeDirectoryFilterData;
+  setPendingFilters: React.Dispatch<React.SetStateAction<EmployeeDirectoryFilterData>>;
+  clearTableSelection: () => void;
+}
 
 const EmployeeSearch = ({
   setEmployees,
-}: {
-  setEmployees: React.Dispatch<React.SetStateAction<Employee[]>>;
-}) => {
+  searchQuery,
+  setSearchQuery,
+  pendingEmployees,
+  setPendingEmployees,
+  appliedSearchEmployees,
+  setAppliedSearchEmployees,
+  activeFilters,
+  setActiveFilters,
+  pendingFilters,
+  setPendingFilters,
+  clearTableSelection,
+}: EmployeeSearchProps) => {
   const { isDesktop } = useScreenSize();
-  const [pendingEmployees, setPendingEmployees] = useState<Employee[]>([]);
-  const [selectedEmployees, setSelectedEmployees] = useState<Employee[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeFilters, setActiveFilters] =
-    useState<EmployeeDirectoryFilterData>({ status: "Active" });
-  const [pendingFilters, setPendingFilters] =
-    useState<EmployeeDirectoryFilterData>({ status: "Active" });
   const debouncedQuery = useDebounce(searchQuery, 350);
 
   const filters: FilterCondition[] = [];
@@ -85,6 +101,7 @@ const EmployeeSearch = ({
     setActiveFilters(data);
     setPendingFilters(data);
     setIsFilterOpen(false);
+    clearTableSelection();
   };
 
   const clearFilter = (key: string) => {
@@ -92,23 +109,26 @@ const EmployeeSearch = ({
     delete newFilters[key];
     setActiveFilters(newFilters);
     setPendingFilters(newFilters);
+    clearTableSelection();
   };
 
   const clearAllFilters = () => {
     setActiveFilters({});
     setPendingFilters({});
+    clearTableSelection();
   };
 
   const handleApplyEmployeeSelection = () => {
-    setSelectedEmployees(pendingEmployees);
+    setAppliedSearchEmployees(pendingEmployees);
     setEmployees(pendingEmployees);
+    clearTableSelection();
   };
 
   const handleSyncEmployeeSelection = () => {
-    setPendingEmployees(selectedEmployees);
+    setPendingEmployees(appliedSearchEmployees);
   };
 
-  const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(selectedEmployees.map(e => e.name).sort());
+  const hasPendingChanges = JSON.stringify(pendingEmployees.map(e => e.name).sort()) !== JSON.stringify(appliedSearchEmployees.map(e => e.name).sort());
 
   const activeFilterCount = Object.keys(activeFilters).filter(
     (key) => activeFilters[key],
@@ -137,12 +157,13 @@ const EmployeeSearch = ({
         </div>
 
         {/* Action buttons */}
-        <div className={`flex gap-2 items-start ${!isDesktop ? 'w-full' : ''}`}>
+        <div className={`flex gap-2 items-start h-full ${!isDesktop ? 'w-full' : ''}`}>
           {hasPendingChanges && (
             <>
               <Button
                 variant="contain"
                 size="sm"
+                className="h-full"
                 onClick={handleApplyEmployeeSelection}
               >
                 <Check size={12} />
@@ -151,6 +172,7 @@ const EmployeeSearch = ({
               <Button
                 variant="outline"
                 size="sm"
+                className="h-full"
                 onClick={handleSyncEmployeeSelection}
               >
                 <RefreshCw size={12} />
@@ -158,10 +180,11 @@ const EmployeeSearch = ({
               </Button>
             </>
           )}
-          <div className="relative">
+          <div className="relative h-full">
             <Button
               variant="soft"
               size="sm"
+              className="h-full"
               onClick={() => {
                 setIsFilterOpen(true);
               }}
@@ -192,21 +215,23 @@ const EmployeeSearch = ({
               <Button key={key} variant="soft" size="sm">
                 <span className="font-medium text-gray-500">{label}:</span>
                 <span>{String(value)}</span>
-                <button
+                <span
+                  role="button"
                   onClick={() => clearFilter(key)}
-                  className="ml-0.5 hover:text-red-600 transition-colors"
+                  className="ml-0.5 hover:text-red-600 transition-colors cursor-pointer"
                 >
                   <X size={12} />
-                </button>
+                </span>
               </Button>
             );
           })}
-          <button
+          <span
+            role="button"
             onClick={clearAllFilters}
-            className="text-xs font-medium text-primary-600 hover:text-primary-700 ml-1 underline-offset-2 hover:underline"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700 ml-1 underline-offset-2 hover:underline cursor-pointer"
           >
             Clear All
-          </button>
+          </span>
         </div>
       )}
 

@@ -108,3 +108,20 @@ export const getOffCyclePayslipHTML = async (salarySlipName: string) => {
   
     return response; // always return array
   };
+
+
+// api/salarySlip.ts
+export const updateSalarySlip = async (
+  salarySlipName: string,
+  fileUrl: string
+) => {
+  const response = await FrappeAPI.updateDocument(
+    "Salary Slip",
+    salarySlipName,
+    {
+      custom_attach: fileUrl,
+    }
+  );
+
+  return response;
+};

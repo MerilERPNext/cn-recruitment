@@ -9,6 +9,7 @@ import { MyShiftRequest } from "../../types/shift";
 import HeaderBar from "../HeaderBar";
 import { useCallback } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
@@ -23,20 +24,6 @@ const AllMyShiftRequestsList = () => {
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
-
-  const CardSkeleton = () => (
-    <div className="my-content-card rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="flex flex-col h-full">
@@ -83,7 +70,7 @@ const AllMyShiftRequestsList = () => {
               onRefetchComplete={handleRefetchComplete}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="modified desc"
+              orderBy="from_date desc"
               isSearch={true}
               isFilter={true}
               filterFields={[

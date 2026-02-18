@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -17,24 +18,19 @@ const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
 
-  function hexToBlob(hexString: string, mimeType = "application/pdf") {
-    const cleanHex = hexString.replace(/\s+/g, "");
-    const bytes = new Uint8Array(
-      cleanHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16))
-    );
-    return new Blob([bytes], { type: mimeType });
-  }
-
-
+console.log(pdfUrl, "pdfUrl in InvoicePDFview");
   const { mutate, isPending } = useInvoiceSheetViewPDF({
-    onSuccess: (data: string) => {
-      const blob = hexToBlob(data);   // convert hex → blob
-      const url = URL.createObjectURL(blob);
+    onSuccess: (data: any) => {
+      const fileUrl = data;
+      if (!fileUrl) {
+        toast.error("File URL not found");
+        return;
+      }
     
-      setPdfUrl(url);
+      setPdfUrl(fileUrl);
       setOpen(true);
-    },
-  });
+    }
+  });  
 
   const handleView = () => {
     if (!invoiceID) {

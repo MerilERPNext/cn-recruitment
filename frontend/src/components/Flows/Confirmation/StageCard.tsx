@@ -139,7 +139,7 @@ const StageCard: React.FC<StageCardProps> = ({
           </div>
         </div>
 
-        <div>{stage?.user_id}</div>
+        {/* <div>{stage?.user_id}</div> */}
       </div>
       {formSchema &&
         show &&

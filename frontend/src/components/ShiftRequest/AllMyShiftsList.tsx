@@ -12,12 +12,12 @@ import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import getShiftStatus from "../../utils/getShiftStatus";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const MyShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item, index }) => {
-
   const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
 
   return (
@@ -102,7 +102,7 @@ const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
 
 const AllMyShiftsList: React.FC = () => {
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
   const { isDesktop } = useScreenSize();
 
   // ✅ Only self shifts
@@ -135,7 +135,9 @@ const AllMyShiftsList: React.FC = () => {
               ]}
               columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
             >
-              {myShifts.length > 0 ? (
+              {isLoading ? (
+                <CardSkeleton />
+              ) : myShifts.length > 0 ? (
                 myShifts.map((shift, index) => (
                   <MyShiftRowItem key={shift.name} item={shift} index={index} />
                 ))
@@ -150,7 +152,9 @@ const AllMyShiftsList: React.FC = () => {
       ) : (
         <div className="w-full mx-auto pb-20">
           <div className="mt-4">
-            {myShifts.length > 0 ? (
+            {isLoading ? (
+              <CardSkeleton />
+            ) : myShifts.length > 0 ? (
               myShifts.map((shift) => (
                 <ShiftAssignmentItem key={shift.name} item={shift} />
               ))

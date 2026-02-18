@@ -4,6 +4,8 @@ import {
   getChatAssistantData,
   getChatAssistantFlowInitiateData,
   getDifinitionNameForSeparation,
+  getFlowRequests,
+  getOpenApprovalTodos,
   getSeparationFunnelData,
   getSeparationWorkflow,
   getShouldShowConfirmationButton,
@@ -12,6 +14,7 @@ import {
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
+import { FlowRequestResponse } from "../types/flows";
 
 
 export const useDifinitaionNameForSeparation = () => {
@@ -145,3 +148,25 @@ export function useConfirmationApproval() {
   });
 }
 
+export const useGetFlowRequests = (
+) => {
+  return useQuery<FlowRequestResponse>({
+    queryKey: [
+      "employee-flow-requests"
+    ],
+    queryFn: () => getFlowRequests(),
+  });
+};
+
+
+export const useGetOpenApprovalTodos = (
+  name: string
+) => {
+  return useQuery<FlowRequestResponse>({
+    queryKey: [
+      "employee-flow-requests",
+    ],
+    queryFn: () => getOpenApprovalTodos({ name }),
+    enabled: !!name
+  });
+};

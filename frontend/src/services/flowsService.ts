@@ -63,6 +63,7 @@ export const getSeparationWorkflow = async (
   return response as any;
 };
 
+
 export const getSeparationFunnelData = async (
   docname: string
 ) => {
@@ -94,5 +95,32 @@ export const postSelectEventFromOptions = async (
 export const getShouldShowConfirmationButton = async (
 ) => {
   const response = FrappeAPI.callMethod('recruitment.recruitment.scheduled_jobs.should_show_confirmation_button');
+  return response as any;
+};
+
+
+// ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
+export const getFlowRequests = async (
+) => {
+  const response = FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
+    {
+      doctype: "Employee"
+    },
+  );
+
+  return response as any;
+};
+
+
+// ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
+export const getOpenApprovalTodos = async (
+  filters: Record<string, string>
+) => {
+  const response = FrappeAPI.callMethod('cn_leave_shift_managment.api.get_open_approval_todos',
+    {
+      filters: JSON.stringify(filters)
+    },
+  );
+
   return response as any;
 };

@@ -1,10 +1,10 @@
-import { Search, X } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
-import RequestTypeCard from './RequestTypeCard';
-import HeaderBar from '../../HeaderBar';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useDifinitaionNameForSeparation } from '../../../hooks/useFlows';
-import { useScreenSize } from '../../../hooks/useScreenSize';
+import { Search, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import RequestTypeCard from "./RequestTypeCard";
+import HeaderBar from "../../HeaderBar";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 
 interface InitiateFlowProps {
   handleCloseModel?: () => void;
@@ -43,51 +43,82 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   const location = useLocation();
 
   const handlGoBack = () => {
-    if (location.pathname === '/webapp/flow-app/initiate-flow') {
+    if (location.pathname === "/webapp/flow-app/initiate-flow") {
       navigate(-1);
     } else {
       handleCloseModel();
     }
   };
 
-  const { data: triggerList, isLoading } =
-    useDifinitaionNameForSeparation();
+  useEffect(() => {
+    const handleChatClose = () => {
+      handleCloseModel();
+    };
 
-  const [inputSearch, setInputSearch] = useState<string>('');
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose,
+      );
+    };
+  }, []);
+
+  const { data: triggerList, isLoading } = useDifinitaionNameForSeparation();
+
+  const [inputSearch, setInputSearch] = useState<string>("");
 
   const filteredTriggerList = useMemo(
     () =>
       Array.isArray(triggerList)
-        ? triggerList.filter(item =>
+        ? triggerList.filter((item) =>
           item?.data_obj?.name_of_action
             ?.toLowerCase()
-            .includes(inputSearch.toLowerCase())
+            .includes(inputSearch.toLowerCase()),
         )
         : [],
-    [triggerList, inputSearch]
+    [triggerList, inputSearch],
   );
 
   const { isDesktop } = useScreenSize();
 
   const EmptyStateComponent = useMemo(() => {
     if (!Array.isArray(triggerList) || triggerList.length === 0)
-      return <div className='flex items-center justify-center text-center text-gray-500'>No Action Found.</div>;
+      return (
+        <div className="flex items-center justify-center text-center text-gray-500">
+          No Action Found.
+        </div>
+      );
     else if (filteredTriggerList.length == 0)
-      return <div className='flex items-center justify-center text-center text-gray-500'>No Action Found. <br /> Please clear Search field to view All Actions.</div>;
+      return (
+        <div className="flex items-center justify-center text-center text-gray-500">
+          No Action Found. <br /> Please clear Search field to view All Actions.
+        </div>
+      );
     return null;
   }, [triggerList, filteredTriggerList]);
 
   return (
-    <div onClick={handleCloseModel} className="flex bg-black/20 items-center justify-center fixed w-screen h-screen top-0 left-0 z-40">
-      <div onClick={e => e.stopPropagation()} className={`bg-white rounded-lg w-full ${isDesktop ? "max-w-xl" : "h-screen"}  pb-5`}>
+    <div
+      onClick={handleCloseModel}
+      className="flex bg-black/20 items-center justify-center fixed w-screen h-screen top-0 left-0 z-40"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white rounded-lg w-full ${isDesktop ? "max-w-xl" : "h-screen"}  pb-5`}
+      >
         {isDesktop ? (
           <>
-            <div className="flex items-center sm:px-8 px-4 pt-4">
+            <div className="flex items-center justify-between sm:px-8 px-4 pt-4">
               <h2 className="text-lg font-semibold">Initiate Flow</h2>
-              <X
+              <button
                 onClick={handleCloseModel}
-                className="ml-auto w-10 h-10 p-2 text-gray-600 hover:text-black rounded-full hover:bg-gray-100 cursor-pointer"
-              />
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
             </div>
             <hr className="my-4" />
           </>
@@ -108,7 +139,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
               <div className="relative mt-2 w-full ">
                 <input
                   value={inputSearch}
-                  onChange={e => setInputSearch(e.target.value)}
+                  onChange={(e) => setInputSearch(e.target.value)}
                   type="text"
                   placeholder="Search"
                   className="w-full peer focus:placeholder-gray-600 pl-10 pr-4 py-2 border border-gray-300 rounded-lg
@@ -121,7 +152,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
               <div className="mt-6 space-y-8 min-h-40">
                 {EmptyStateComponent}
                 <div className="flex flex-wrap gap-4">
-                  {filteredTriggerList.map(t => (
+                  {filteredTriggerList.map((t) => (
                     <RequestTypeCard key={t.name} data={t} />
                   ))}
                 </div>

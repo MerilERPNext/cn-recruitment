@@ -15,6 +15,8 @@ import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Button from "../../shared/atoms/Button";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { formatCurrency } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 type PaymentStatus = "all" | "paid" | "pending" | "overdue";
 
@@ -85,7 +87,7 @@ export default function ExtraPayment() {
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: extraPayment } = useExtraPayment(
+  const { data: extraPayment, isLoading } = useExtraPayment(
     user?.company || null,
     user?.employee || null,
   );
@@ -198,52 +200,62 @@ export default function ExtraPayment() {
       {!isMobile && (
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths}>
-            {filteredPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                style={{
-                  gridTemplateColumns: columnWidths.join(" "),
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
+            {isLoading ? (
+              <CardSkeleton />
+            ) : filteredPayments.length > 0 ? (
+              filteredPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{
+                    gridTemplateColumns: columnWidths.join(" "),
+                  }}
                 >
-                  {payment.recipient}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.invoiceId}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.recipient}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.salary_component}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.date}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.invoiceId}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.amount}
-                </Typography>
-                <div className="flex items-center justify-center">
-                  <StatusBadge status={payment.status} />
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.salary_component}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.date}
+                  </Typography>
+
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {formatCurrency(payment.amount)}
+                  </Typography>
+
+                  <div className="flex items-center justify-center">
+                    <StatusBadge status={payment.status} />
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-gray-500">
+                No payments found.
               </div>
-            ))}
+            )}
           </CardTable>
         </div>
       )}
@@ -251,25 +263,34 @@ export default function ExtraPayment() {
       {/* ---------------------- MOBILE ---------------------- */}
       {isMobile && (
         <div className="space-y-4">
-          {filteredPayments.map((payment) => (
-            <div
-              key={payment.id}
-              className="p-4 rounded-xl border shadow-sm bg-white"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">{payment.recipient}</h3>
-                <StatusBadge status={payment.status} />
-              </div>
-              <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
-              <p className="text-sm mb-1">Date: {payment.date}</p>
-              <p className="font-semibold text-lg mt-2">₹ {payment.amount}</p>
-            </div>
-          ))}
+          {isLoading ? (
+            <CardSkeleton />
+          ) : filteredPayments.length > 0 ? (
+            <>
+              {filteredPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="p-4 rounded-xl border shadow-sm bg-white"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-semibold">{payment.recipient}</h3>
+                    <StatusBadge status={payment.status} />
+                  </div>
+                  <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
+                  <p className="text-sm mb-1">Date: {payment.date}</p>
+                  <p className="font-semibold text-lg mt-2">
+                    {" "}
+                    {formatCurrency(payment.amount)}
+                  </p>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p className="text-center text-gray-500 mt-10">
+              No payments found.
+            </p>
+          )}
         </div>
-      )}
-
-      {filteredPayments.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">No payments found.</p>
       )}
       {showExtraPaymentForm && (
         <Modal onClose={() => setShowExtraPaymentForm(false)}>

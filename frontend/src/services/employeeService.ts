@@ -502,6 +502,98 @@ export class EmployeeService {
     }
     return data?.data as IReason[];
   }
+
+  static async resetPassword(
+    employee: string,
+    new_password: string,
+    send_mail: boolean
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.reset_employee_password", {
+      employee: employee,
+      new_password: new_password,
+      send_mail: send_mail,
+    });
+    const data = await response;
+    return data;
+  }
+  static async updateEmployeeSelfService(
+    employee?: string,
+    status?: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_employee_self_service_role", {
+      employee: employee,
+      status: status,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateProbationPeriod(
+    employees: string[],
+    probation_period: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_probation_period", {
+      employees: employees,
+      probation_period: probation_period,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateHRBP(
+    employees: string[],
+    hrbp: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_hrbp", {
+      employees: employees,
+      hrbp: hrbp,
+      date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateDottedLineManager(
+    employees: string[],
+    dotted_line_manager: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_dotted_line_manager", {
+      employees: employees,
+      dotted_line_manager: dotted_line_manager,
+      date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateEmployeeWeekOff(
+    employee: string,
+    new_week_off: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.api.change_employee_week_off", {
+      employee: employee,
+      new_week_off: new_week_off,
+      effective_date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async deactivateEmployee(
+    employees: string[],
+    deactivate_reason: string,
+    comment: string,
+    notice_period_start_date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.deactivate_employee", {
+      employees: employees,
+      deactivate_reason: deactivate_reason,
+      comment: comment,
+      notice_period_start_date: notice_period_start_date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
 }
+
+
 
 export default EmployeeService;

@@ -2,17 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { ConfirmationEmployeeService, ConfirmationService, } from "../services/ConfirmationService";
 import { TodoType } from "../types/todos";
 
-export const useConfirmation = (doctype: string) => {
+export const useConfirmation = (doctype: string, todo_status: "Open" | "Closed") => {
   return useQuery<TodoType[], Error>({
-    queryKey: ["confirmation", doctype],
-    queryFn: () => ConfirmationService(doctype)
+    queryKey: ["confirmation", todo_status, doctype],
+    queryFn: () => ConfirmationService(doctype, todo_status),
+    enabled: !!doctype && !!todo_status,
   });
 };
 
 export const useSeparation = (doctype: string) => {
   return useQuery<TodoType[], Error>({
     queryKey: ["separation", doctype],
-    queryFn: () => ConfirmationService(doctype)
+    queryFn: () => ConfirmationService(doctype, "Open"),
+    enabled: !!doctype,
   });
 };
 

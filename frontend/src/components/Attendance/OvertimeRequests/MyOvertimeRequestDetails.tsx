@@ -121,7 +121,7 @@ export function MyOvertimeDetails({
 
   return data?.allocated_to ? (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
     >
       <div
@@ -150,10 +150,10 @@ export function MyOvertimeDetails({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Allocated To + Status */}
-          <div className="flex gap-2 justify-between">
+          <div className="flex gap-2 justify-between p-1">
             <div className="flex flex-col gap-1">
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="text-gray-500">
+                <Typography variant="mobileCardLabel">
                   {data?.reference_document?.employee_name
                     ? "Employee Name"
                     : "Employee ID"}
@@ -208,9 +208,7 @@ export function MyOvertimeDetails({
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
-                Description
-              </Typography>
+              <Typography variant="mobileCardLabel">Description</Typography>
               <Typography variant="mobileCardValue">
                 {data?.description}
               </Typography>
@@ -221,8 +219,8 @@ export function MyOvertimeDetails({
           {doc?.overtime_details?.length > 0 && (
             <div>
               <Typography
-                variant="bodyMedium"
-                className="base-title mb-1 block font-semibold"
+                variant="bodySmall"
+                className="base-title mb-1 font-bold block"
               >
                 Overtime Details
               </Typography>
@@ -239,65 +237,49 @@ export function MyOvertimeDetails({
                         </Typography>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-600">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             Start Date
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {formatToIndianDate(item.start_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             Start Time
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {item.start_time}
                           </Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             End Date
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {formatToIndianDate(item.end_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             End Time
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {item.end_time}
                           </Typography>
                         </div>
@@ -305,16 +287,12 @@ export function MyOvertimeDetails({
                         {item.message && (
                           <div className="flex flex-col gap-1">
                             <Typography
-                              variant="bodySmall"
-                              className="card-subtitle"
+                              variant="mobileCardLabel"
+                              className="block"
                             >
                               Message
                             </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              color="body2"
-                              className="card-title"
-                            >
+                            <Typography variant="mobileCardValue">
                               {item.message}
                             </Typography>
                           </div>

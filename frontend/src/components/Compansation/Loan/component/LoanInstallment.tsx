@@ -1,3 +1,4 @@
+import { formatCurrency } from "../../../../utils/currency";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
@@ -10,14 +11,6 @@ interface LoanInstallmentsProps {
 export default function LoanInstallments({
   installments,
 }: LoanInstallmentsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat("en-IN").format(num);
@@ -33,7 +26,7 @@ export default function LoanInstallments({
     "Installments",
     "Start Date",
     "End Month",
-    "Status",
+    // "Status",
   ];
 
   const columnWidths = [
@@ -47,7 +40,7 @@ export default function LoanInstallments({
     "1fr",
     "1fr",
     "1fr",
-    "1fr",
+    // "1fr",
   ];
 
   return (
@@ -84,7 +77,7 @@ export default function LoanInstallments({
               >
                 {formatCurrency(
                   installment.balance_loan_amount +
-                    installment.principal_amount,
+                  installment.principal_amount,
                 )}
               </Typography>
 
@@ -127,22 +120,22 @@ export default function LoanInstallments({
                 variant="bodySmall"
                 className="font-medium text-center"
               >
-                0
+                {installment?.loan_start_date}
               </Typography>
 
               <Typography
                 variant="bodySmall"
                 className="font-medium text-center"
               >
-                0
+                {installment?.loan_end_date}
               </Typography>
 
-              <Typography
+              {/* <Typography
                 variant="bodySmall"
                 className="font-medium text-center"
               >
                 0
-              </Typography>
+              </Typography> */}
             </div>
           ))
         ) : (

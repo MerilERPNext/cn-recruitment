@@ -28,6 +28,8 @@ import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { Typography } from "../shared/atoms/Typography";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { formatCurrency } from "../../utils/currency";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 type PayrollPeriod = {
   name: string;
@@ -285,6 +287,7 @@ const SalarySlipsList = () => {
             ]}
             searchFields={["employee", "status", "posting_date"]}
             infiniteScroll={true}
+            SkeletonComponent={CardSkeleton}
             isFilter={false}
             defaultFilters={filter as any}
           />
@@ -394,7 +397,7 @@ const SalarySlipItemDesktop = ({
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -442,17 +445,21 @@ const SalarySlipItemDesktop = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">₹XX,XXX</span>
+          <span className="blur-sm text-gray-400">
+            ₹XX,XXX
+          </span>
         ) : (
-          formatCurrency(item.gross_pay)
+          formatCurrency2(item.gross_pay)
         )}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">₹XX,XXX</span>
+          <span className="blur-sm text-gray-400">
+            {formatCurrency("XX,XXX")}
+          </span>
         ) : (
-          formatCurrency(item.net_pay)
+          formatCurrency2(item.net_pay)
         )}
       </Typography>
 
@@ -482,7 +489,7 @@ const SalarySlipItemMobile = ({
 }: any) => {
   if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -530,9 +537,11 @@ const SalarySlipItemMobile = ({
           <span className="font-medium text-gray-700">Gross Pay</span>
           <span className="font-semibold">
             {maskSalary ? (
-              <span className="blur-sm text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm text-gray-400">
+                {formatCurrency("XX,XXX")}
+              </span>
             ) : (
-              formatCurrency(item.gross_pay)
+              formatCurrency2(item.gross_pay)
             )}
           </span>
         </div>
@@ -541,9 +550,11 @@ const SalarySlipItemMobile = ({
           <span className="font-medium text-gray-700">Net Pay</span>
           <span className="text-blue-600 font-semibold">
             {maskSalary ? (
-              <span className="blur-sm text-gray-400">₹XX,XXX</span>
+              <span className="blur-sm text-gray-400">
+                {formatCurrency("XX,XXX")}
+              </span>
             ) : (
-              formatCurrency(item.net_pay)
+              formatCurrency2(item.net_pay)
             )}
           </span>
         </div>

@@ -20,7 +20,6 @@ import {
   CalendarCheck,
   Clock,
   FileText,
-  Loader2,
 } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCallback, useEffect, useMemo } from "react";
@@ -34,15 +33,17 @@ import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
 import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee, isLoading: loadingCurrentEmployee } =
+  const { data: currentEmployee, isLoading: loadingCurrentEmployee, refetch: refetchCurrentEmployee } =
     useCurrentEmployeeAllDetails(userId || "");
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee } = useEmployee(targetEmployeeId);
+  const { data: targetEmployee, refetch: refetchTargetEmployee } = useEmployee(targetEmployeeId);
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
   const document_name = isViewingOtherUser
@@ -54,20 +55,41 @@ const ConfirmationWorkflow = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
+        (item: any) => item?.trigger_category?.name === trigger_category,
+      )
       : [];
   }
 
-  const { data: showConfirmatoinButton, isLoading: loadingCardData } =
+  // action buttons permission
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+
+  const enabledActions = useMemo(() => {
+    let actions: string[] = [];
+    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
+      (item) => item.page_name === "Confirmation",
+    );
+    actions = initiateFlowPage?.actions?.filter(
+      action => action.enabled,
+    ).map(action => action.action_name) ?? [];
+    return actions;
+  }, [userUiPermission]);
+
+  // END action buttons permission
+
+  const { data: showConfirmationButton, isLoading: loadingCardData, refetch: refetchShowConfirmationButton } =
     useGetShouldShowConfirmationButton(document_name);
 
   const {
-    data: employeeConfirmation,
+    data: employeeConfirmationPending,
     isLoading: loadingConfirmationTodo,
     refetch: refetchConfirmationAndSeparation,
-  } = useConfirmation(doctype);
-  const item = employeeConfirmation?.[0];
+  } = useConfirmation(doctype, "Open");
+  const {
+    data: employeeConfirmationClosed,
+    isLoading: loadingConfirmationClosed,
+    refetch: refetchConfirmationAndSeparationClosed,
+  } = useConfirmation(doctype, "Closed");
+  const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
 
   const stages = item?.approval_stages_status;
   const confirmationData = getFunnelData("Confirmation");
@@ -75,7 +97,7 @@ const ConfirmationWorkflow = () => {
   const l = "true";
 
   const isLoading =
-    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee;
+    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee || loadingConfirmationClosed;
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -157,7 +179,9 @@ const ConfirmationWorkflow = () => {
     [mutation],
   );
 
+
   const canPerformAction = useMemo(() => {
+    if (!enabledActions.includes("act_confirmation")) return false;
     let actionPermission = false;
 
     if (!item?.custom_doctype_actions) return false;
@@ -170,7 +194,7 @@ const ConfirmationWorkflow = () => {
       );
 
     return actionPermission;
-  }, [item, currentEmployee, currentUser]);
+  }, [item, currentEmployee, currentUser, enabledActions]);
 
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
@@ -181,15 +205,24 @@ const ConfirmationWorkflow = () => {
   const postStagesStarted = Array.isArray(stages) && stages.length > 0;
 
   const canInitiateConfirmation =
+    enabledActions?.includes("initiate_confirmation") &&
     (!postStagesStarted ||
       (allStagesComplted &&
         item?.reference_document?.status !== "Confirmed")) &&
-    showConfirmatoinButton?.show_button;
+    showConfirmationButton?.show_button;
 
   useEffect(() => {
-    const handleChatClose = () => {
-      refetchConfirmationAndSeparation();
+    const refreshCurrentPageData = () => {
+      refetchCurrentEmployee();
+      refetchTargetEmployee();
       refetch();
+      refetchConfirmationAndSeparation();
+      refetchConfirmationAndSeparationClosed();
+      refetchShowConfirmationButton();
+    }
+
+    const handleChatClose = () => {
+      refreshCurrentPageData();
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -200,8 +233,9 @@ const ConfirmationWorkflow = () => {
         handleChatClose,
       );
     };
-  }, [refetchConfirmationAndSeparation, refetch]);
+  }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmationButton]);
 
+  const canInitiateProbationExtension = showConfirmationButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended";
   const confirmationCards = useMemo(
     () => [
       {
@@ -222,14 +256,14 @@ const ConfirmationWorkflow = () => {
       },
       ...(item?.reference_document?.creation
         ? [
-            {
-              label: "Trigger Date",
-              value: formatToIndianDate(item.reference_document.creation),
-              Icon: Clock,
-              bg: "bg-orange-50",
-              text: "text-orange-600",
-            },
-          ]
+          {
+            label: "Trigger Date",
+            value: formatToIndianDate(item.reference_document.creation),
+            Icon: Clock,
+            bg: "bg-orange-50",
+            text: "text-orange-600",
+          },
+        ]
         : []),
       {
         label: "Status",
@@ -255,27 +289,17 @@ const ConfirmationWorkflow = () => {
       title: "Employee Self Form Submission",
       description: "Please submit all required fields",
       time: formatToIndianDate(item?.reference_document?.creation || ""),
-      status: showConfirmatoinButton?.show_button
+      status: showConfirmationButton?.show_button
         ? "action_required"
         : "pending",
-      show_confirmation_button: canInitiateConfirmation,
-      self_confirmation_btn_name:
-        activeEmployee?.custom_employment_status == "On Probation"
-          ? "Initiate Confirmation"
-          : "Initiate confirmation Again",
+      show_confirmation_button: canInitiateConfirmation && activeEmployee?.custom_employment_status == "On Probation",
+      self_confirmation_btn_name: "Initiate Confirmation"
     },
   ];
 
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <span className="text-sm text-gray-600">Loading...</span>
-        </div>
-      </div>
-    );
+    return <DashboardContentSkeleton />;
   }
   /* ---------------------------------------------------------- */
 
@@ -358,6 +382,19 @@ const ConfirmationWorkflow = () => {
           </div>
         ))}
       </Card>
+
+      {canInitiateProbationExtension &&
+        <div className="flex justify-center mt-6 mb-16">
+          <Button
+            variant="contain"
+            size="md"
+            onClick={handleInitiateConfirmation}
+          >
+            Initiate Confirmation
+          </Button>
+        </div>
+      }
+
     </div>
   );
 };

@@ -7,10 +7,14 @@ import { PiListChecksBold } from "react-icons/pi";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
-import { useNotifications, useMarkAsRead } from "../../hooks/useNotificationLog";
+import {
+  useNotifications,
+  useMarkAsRead,
+} from "../../hooks/useNotificationLog";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useNavigate } from "react-router";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -30,15 +34,14 @@ const NotificationList = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] =
-    useState<"all" | "read" | "unread">("all");
-    const { data: apiNotifications = [] } = useNotifications();
-    const [notifications, setNotifications] =
-      useState<NotificationLog[]>(apiNotifications);
+  const [activeTab, setActiveTab] = useState<"all" | "read" | "unread">("all");
+  const { data: apiNotifications = [], isLoading } = useNotifications();
+  const [notifications, setNotifications] =
+    useState<NotificationLog[]>(apiNotifications);
 
-      useEffect(() => {
-        setNotifications(apiNotifications);
-      }, [apiNotifications]);
+  useEffect(() => {
+    setNotifications(apiNotifications);
+  }, [apiNotifications]);
 
   // 🔥 Filter locally
   const filteredNotifications = useMemo(() => {
@@ -74,34 +77,34 @@ const NotificationList = () => {
       </div>
 
       {/* List */}
-      <div className="flex-1 p-2 overflow-y-auto space-y-1">
-        {filteredNotifications.length === 0 ? (
+      <div className="flex-1 p-2 overflow-y-auto">
+        {isLoading ? (
+          <CardSkeleton />
+        ) : filteredNotifications.length === 0 ? (
           <p className="text-center text-gray-500 text-sm">
             No notifications found
           </p>
         ) : (
-          filteredNotifications.map((item: NotificationLog) => (
-            <NotificationItem
-  key={item.name}
-  item={item}
-  onMarkedRead={(id) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.name === id ? { ...n, read: 1 } : n
-      )
-    );
-  }}
-/>
-          ))
+          <div className="space-y-1">
+            {filteredNotifications.map((item: NotificationLog) => (
+              <NotificationItem
+                key={item.name}
+                item={item}
+                onMarkedRead={(id) => {
+                  setNotifications((prev) =>
+                    prev.map((n) => (n.name === id ? { ...n, read: 1 } : n)),
+                  );
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
 
   return isDesktop ? (
-    <DesktopLayoutWrapper title="Notifications">
-      {layout}
-    </DesktopLayoutWrapper>
+    <DesktopLayoutWrapper title="Notifications">{layout}</DesktopLayoutWrapper>
   ) : (
     layout
   );
@@ -121,17 +124,17 @@ const NotificationItem: React.FC<{
   const [isRead, setIsRead] = useState(notification.read === 1);
   const [openDialog, setOpenDialog] = useState(false);
   const markAsRead = useMarkAsRead();
-  console.log("NotificationItem render",openDialog);
-useEffect(() => {
-  setIsRead(notification.read === 1);
-}, [notification.read]);
-  const cleanSubject = sanitizeToPlainText(
-    notification.subject
-  ).replace(/\s+/g, " ").trim();
+  console.log("NotificationItem render", openDialog);
+  useEffect(() => {
+    setIsRead(notification.read === 1);
+  }, [notification.read]);
+  const cleanSubject = sanitizeToPlainText(notification.subject)
+    .replace(/\s+/g, " ")
+    .trim();
 
   const handleClick = async () => {
-    setOpenDialog(true);   // open always
-  
+    setOpenDialog(true); // open always
+
     if (notification.read === 0) {
       try {
         onMarkedRead(notification.name);
@@ -141,7 +144,6 @@ useEffect(() => {
       }
     }
   };
-  
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString);
@@ -187,11 +189,7 @@ useEffect(() => {
                 {notification.type}
               </span>
               :{" "}
-              <span
-                className={
-                  isRead ? "text-gray-400" : "text-gray-600"
-                }
-              >
+              <span className={isRead ? "text-gray-400" : "text-gray-600"}>
                 {cleanSubject}
               </span>
             </p>
@@ -203,9 +201,7 @@ useEffect(() => {
         </div>
 
         {/* Unread dot */}
-        {!isRead && (
-          <span className="w-2 h-2 rounded-full bg-[#AD2D6C]" />
-        )}
+        {!isRead && <span className="w-2 h-2 rounded-full bg-[#AD2D6C]" />}
       </div>
 
       {/* Drawer */}
@@ -221,9 +217,7 @@ useEffect(() => {
           <div className="w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="font-medium truncate">
-                {cleanSubject}
-              </h3>
+              <h3 className="font-medium truncate">{cleanSubject}</h3>
 
               <button
                 onClick={() => setOpenDialog(false)}
@@ -246,16 +240,12 @@ useEffect(() => {
                 {new Date(notification.creation).toLocaleString()}
               </p>
 
-              <div className="pt-4 text-gray-800">
-                {cleanSubject}
-              </div>
+              <div className="pt-4 text-gray-800">{cleanSubject}</div>
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-end">
-              <Button onClick={() => setOpenDialog(false)}>
-                Close
-              </Button>
+              <Button onClick={() => setOpenDialog(false)}>Close</Button>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import {
   getAllLoanProducts,
   updateLoanApplication,
 } from "../services/loanService";
+import FrappeAPI from "../utils/frappeAPI";
 
 export const useLoan = (employeeId?: string) => {
   return useQuery<Loan[]>({
@@ -51,6 +52,8 @@ export const useLoanApplicationUpdate = () => {
     mutationFn: (payload: LoanApplicationUpdatePayload) => updateLoanApplication(payload),
     onSuccess: (data, variables) => {
       console.log("Loan Application updated:", data);
+       queryClient.invalidateQueries({ queryKey: ["loan"] });
+      queryClient.invalidateQueries({ queryKey: [  "loan-application-doc-data"] });
       queryClient.invalidateQueries({ queryKey: ["loan-application", variables.docname] });
       queryClient.invalidateQueries({ queryKey: ["loan-application-list"] });
     },
@@ -59,3 +62,14 @@ export const useLoanApplicationUpdate = () => {
     },
   });
 };
+
+export const useGetLoanApplicationDoc = (
+  docname: string
+) => {
+  return useQuery({
+    queryKey: ["loan-application-doc-data", docname],
+    queryFn: () => FrappeAPI.getDocument("Loan Application", docname!),
+    enabled: !!docname,
+  });
+};
+

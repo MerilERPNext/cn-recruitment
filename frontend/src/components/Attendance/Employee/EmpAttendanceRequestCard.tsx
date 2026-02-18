@@ -1,5 +1,4 @@
 import { MyAttendanceRequest } from "../../../types/attendance";
-import Badge from "../../shared/Badge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { RotateCcw } from "lucide-react";
 import Tooltip from "../../shared/Tooltip";
@@ -62,33 +61,6 @@ const EmpAttendanceRequestCard = ({
     }
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-
-    if (status === "pending") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-800",
-      };
-    } else if (status === "approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-800",
-      };
-    } else if (status === "rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-800",
-      };
-    } else {
-      return {
-        statusColor: "bg-gray-100 text-gray-800",
-        label: rawStatus || "Unknown",
-      };
-    }
-  };
-
-  const status = getStatus(data?.reference_document?.custom_status);
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 
@@ -161,16 +133,11 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                data?.reference_document?.custom_status === "Pending"
                   ? `Allocated to : ${data?.allocated_to}`
                   : ""
               }
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.reference_document?.custom_status} />
             </Tooltip>
           </div>
@@ -186,62 +153,84 @@ const EmpAttendanceRequestCard = ({
           </div>
         </div>
       ) : (
-        <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover-lift transition-shadow">
-          <div className=" flex items-start justify-between gap-4 w-full">
-            <div className="flex gap-1 flex-col justify-around w-full p-2">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-between w-full py-1">
-                  <div className="flex items-center gap-2">
-                    <p className="whitespace-nowrap card-title">
-                      {data?.reference_document?.custom_request_type}
-                    </p>
-                    <Badge
-                      size="sm"
-                      backgroundColor={"bg-blue-100 text-blue-800"}
-                      label={
-                        duration > 1 ? duration + " Days" : duration + " Day"
-                      }
-                    />
-                  </div>
-                  <div className="text-sm text-gray-900 text-start flex gap-2">
-                    {data?.custom_allow_revoke && type === "pending" ? (
-                      <Button
-                        icon={<RotateCcw className="h-3 w-3" />}
-                        variant="contain"
-                        size="sm"
-                        onClick={handleRevokeClick}
-                        disabled={revokeEventMutation.isPending}
-                      >
-                        {revokeEventMutation.isPending ? "Revoking..." : ""}
-                      </Button>
-                    ) : (
-                      <></>
-                    )}
-                    {type == "pending" && data?.can_edit && (
-                      <Button
-                        onClick={() => {
-                          setEdit(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <Badge
-                  size="sm"
-                  backgroundColor={status?.statusColor}
-                  label={status?.label || ""}
-                />
-                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+        <div
+          className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+        >
+          <div className="p-4 flex flex-col gap-4 w-full">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Allocated To</Typography>
+                <Typography variant="mobileCardValue" className="font-semibold">
+                  {data?.username || data?.allocated_to}
+                </Typography>
               </div>
-              <div className="card-subtitle">
-                {formattedFromDate}
-                {data?.reference_document?.to_date && formattedToDate !== "N/A"
-                  ? ` - ${formattedToDate}`
-                  : ""}
+
+              <StatusBadge status={data?.reference_document?.custom_status} />
+            </div>
+
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Request Type</Typography>
+                <Typography variant="mobileCardValue" className="font-semibold">
+                  {data?.reference_document?.custom_request_type}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Leave Days</Typography>
+                <Typography variant="mobileCardValue">
+                  {duration > 1 ? duration + " Days" : duration + " Day"}
+                </Typography>
               </div>
             </div>
+
+            {/* Dates Section */}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Duration</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(formattedFromDate)} to{" "}
+                  {formatToIndianDate(formattedToDate)}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(formattedDueDate)}
+                </Typography>
+              </div>
+            </div>
+
+            {/* Actions */}
+            {(data?.custom_allow_revoke && type === "pending") ||
+            (type === "pending" && data?.can_edit) ? (
+              <div className="flex gap-2 mt-2">
+                {type === "pending" && data?.can_edit && (
+                  <Button
+                    fullWidth
+                    variant="contain"
+                    onClick={() => setEdit(true)}
+                  >
+                    Edit
+                  </Button>
+                )}
+
+                {data?.custom_allow_revoke && type === "pending" && (
+                  <Button
+                    fullWidth
+                    variant="contain"
+                    onClick={handleRevokeClick}
+                    disabled={revokeEventMutation.isPending}
+                    icon={<RotateCcw className="w-4 h-4" />}
+                  >
+                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
+                  </Button>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       )}

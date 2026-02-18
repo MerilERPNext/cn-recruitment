@@ -2,11 +2,32 @@ import React from "react";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 import RequestLeave from "./RequestLeave";
 import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
+import FormDialog from "../shared/FormDialog";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 const GlobalLeaveRequestModal: React.FC = () => {
     const { showModal, closeModal } = useRequestLeaveModal();
+    const { isDesktop } = useScreenSize();
 
     if (!showModal) return null;
+
+    if (!isDesktop) {
+        return (
+            <FormDialog
+                isOpen={showModal}
+                onClose={closeModal}
+                title="Request Leave"
+                size="lg"
+            >
+                <LeaveRequestRefreshProvider>
+                    <RequestLeave
+                        onCancel={closeModal}
+                        onSuccess={closeModal}
+                    />
+                </LeaveRequestRefreshProvider>
+            </FormDialog>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50">
@@ -23,3 +44,4 @@ const GlobalLeaveRequestModal: React.FC = () => {
 };
 
 export default GlobalLeaveRequestModal;
+

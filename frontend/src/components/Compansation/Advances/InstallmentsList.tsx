@@ -6,7 +6,6 @@ import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { UiAdvance } from "../../../types/employeeAttendance";
-import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
@@ -14,6 +13,7 @@ import { Card } from "../../shared/atoms/Card";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import Tooltip from "../../shared/Tooltip";
 import { Typography } from "../../shared/atoms/Typography";
+import { formatCurrency } from "../../../utils/currency";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -33,8 +33,8 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   const DesktopLayout = () => (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0">
-        <div className="px-4 py-1 md:py-4">
-          <div className="border-b border-gray-10">
+        <div className="px-4 py-1 md:py-2">
+          <div className="border-b mb-1 border-gray-10">
             <HeaderBar
               title={`Installments - ${advance.name}`}
               showBackButton={true}
@@ -73,7 +73,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 <span className="text-gray-600">Total Amount:</span>
                 <div className="font-semibold">
                   {maskAmounts ? (
-                    <span className="blur-sm select-none">₹XX,XXX</span>
+                    <span className="blur-sm select-none">
+                      {formatCurrency("XX,XXX")}
+                    </span>
                   ) : (
                     formatCurrency(advance.amount)
                   )}
@@ -125,7 +127,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 variant="bodySmall"
                 className="text-center font-medium"
               >
-                #{installment.installmentNo}
+                .{installment.installmentNo}
               </Typography>
 
               <Typography
@@ -140,7 +142,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 className="text-center font-medium"
               >
                 {maskAmounts ? (
-                  <span className="blur-sm select-none">₹XX,XXX</span>
+                  <span className="blur-sm select-none">
+                    {formatCurrency("XX,XXX")}
+                  </span>
                 ) : (
                   <span>{formatCurrency(installment.openingBalance)}</span>
                 )}
@@ -151,7 +155,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 className="text-center font-medium"
               >
                 {maskAmounts ? (
-                  <span className="blur-sm select-none">₹XX,XXX</span>
+                  <span className="blur-sm select-none">
+                    {formatCurrency("XX,XXX")}
+                  </span>
                 ) : (
                   <span>{formatCurrency(installment.installmentAmount)}</span>
                 )}
@@ -162,7 +168,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                 className="text-center font-medium"
               >
                 {maskAmounts ? (
-                  <span className="blur-sm select-none">₹XX,XXX</span>
+                  <span className="blur-sm select-none">
+                    {formatCurrency("XX,XXX")}
+                  </span>
                 ) : (
                   <span>{formatCurrency(installment.principalBalance)}</span>
                 )}
@@ -206,7 +214,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <span className="text-gray-600">Total Amount:</span>
               <div className="font-semibold">
                 {maskAmounts ? (
-                  <span className="blur-sm select-none">₹XX,XXX</span>
+                  <span className="blur-sm select-none">
+                    {formatCurrency("XX,XXX")}
+                  </span>
                 ) : (
                   formatCurrency(advance.amount)
                 )}
@@ -287,7 +297,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            ₹XX,XXX
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div className="text-sm font-medium leading-tight">
@@ -298,7 +308,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            ₹XX,XXX
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div className="text-sm font-medium text-primary leading-tight">
@@ -309,15 +319,14 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
                       <div className="  text-center flex items-center justify-center">
                         {maskAmounts ? (
                           <span className="blur-sm select-none text-sm">
-                            ₹XX,XXX
+                            {formatCurrency("XX,XXX")}
                           </span>
                         ) : (
                           <div
-                            className={`text-sm font-medium leading-tight ${
-                              installment.principalBalance === 0
-                                ? "text-green-600"
-                                : ""
-                            }`}
+                            className={`text-sm font-medium leading-tight ${installment.principalBalance === 0
+                              ? "text-green-600"
+                              : ""
+                              }`}
                           >
                             {formatCurrency(installment.principalBalance)}
                           </div>

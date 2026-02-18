@@ -9,6 +9,7 @@ import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
@@ -105,6 +106,8 @@ const TeamAttendanceDetails = () => {
                 },
               ]}
               defaultFilters={{ status: "Pending" }}
+              orderBy="from_date desc"
+              SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
                 <ApprovalCard
                   isSelected={item?.isSelected}

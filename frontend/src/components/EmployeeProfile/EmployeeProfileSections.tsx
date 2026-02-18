@@ -77,7 +77,6 @@ export default function EmployeeProfileSections() {
         fetchData();
     }, [fieldPermissions, employee?.employee]);
 
-
     useEffect(() => {
         if (!tabs.length) return;
         const observer = new IntersectionObserver(
@@ -108,7 +107,6 @@ export default function EmployeeProfileSections() {
     if (!employeeId || fieldPermissionsLoading || employeeLoading || !tabs.length) {
         return <ProfileSkeleton />;
     }
-    // console.log(tabs, "tabs------------------------------------")
     return (
         <div>
             <div className="flex items-start justify-between">

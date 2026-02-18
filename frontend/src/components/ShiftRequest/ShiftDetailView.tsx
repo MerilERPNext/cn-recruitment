@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
-import Badge from "../shared/Badge";
 import Button from "../shared/atoms/Button";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import FileRenderer from "../shared/molecules/FileRenderer";
@@ -13,6 +12,7 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { getActionStyles } from "../../utils/actionButtonStyles";
+import StatusBadge from "../shared/atoms/statusBadge";
 
 export function ShiftDetailView({
   data: propData,
@@ -42,30 +42,6 @@ export function ShiftDetailView({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
 
-  const getStatus = (status: string) => {
-    if (status === "Draft") {
-      return {
-        label: "Draft",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
-
-  const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const handleAction = useCallback(
@@ -85,7 +61,7 @@ export function ShiftDetailView({
         console.log("Session data:", responseWithSession?.session);
         console.log(
           "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
+          data?.custom_open_chatnext_assistant_on_action,
         );
 
         if (
@@ -96,12 +72,12 @@ export function ShiftDetailView({
         ) {
           console.log(
             "Opening assistant with session:",
-            responseWithSession?.session
+            responseWithSession?.session,
           );
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
-              responseWithSession?.session
+              responseWithSession?.session,
             );
           }
         } else {
@@ -120,7 +96,7 @@ export function ShiftDetailView({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -167,10 +143,7 @@ export function ShiftDetailView({
         <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
           {/* Employee Info */}
           <div className="py-2">
-            <Badge
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />{" "}
+            <StatusBadge status={data?.status} />
           </div>
           <div className="py-2">
             <div className="flex gap-2 justify-between">

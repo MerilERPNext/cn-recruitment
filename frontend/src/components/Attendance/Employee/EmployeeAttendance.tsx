@@ -247,8 +247,9 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex h-full overflow-y-auto min-h-0`}>
       <div
-        className={`flex p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex p-0 md:p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -281,18 +282,13 @@ const EmployeeAttendance = () => {
                   setShowReqAttendanceCorrection(!showReqAttendanceCorrection);
                 }}
               >
-                {/* <Plus className="w-4 h-4 mr-2 font-bold" /> */}
-                {/* Raise Request */}
-                Attendance Request
+                + Attendance Request
               </Button>
             </div>
           </div>
         )}
-
-        {/* Request Attendance Correction */}
-
         {/* My Attendance Requests */}
-        <Card className="pb-20 mt-4">
+        <Card padding="sm" className="p-0 md:pb-20 mt-2 md:mt-4">
           <div className="flex justify-between items-center w-full pb-2">
             <Typography variant="subheading">My Attendance Requests</Typography>
 

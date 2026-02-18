@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Navigate,
   Route,
@@ -10,6 +10,7 @@ import "./App.css";
 import "./utils/FormioConfig";
 
 import { AppRoute, routesConfig } from "./routesConfig";
+import { findRouteConfig } from "./utils/routeUtils";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
 import { useCurrentEmployee } from "./hooks/useEmployee";
@@ -75,6 +76,35 @@ const App: React.FC = () => {
       preloadAdjacentRoutes(location.pathname);
     }
   }, [location.pathname, currentUser, isLoading]);
+
+  const permittedPages = useMemo(() => {
+    return (
+      uiPermissions?.flatMap(
+        (app) =>
+          app.pages
+            ?.filter((page) => page.enabled)
+            ?.map((page) => page.page_name) || [],
+      ) || []
+    );
+  }, [uiPermissions]);
+
+  useEffect(() => {
+    if (isLoading || !uiPermissions) return;
+
+    const currentPath = location.pathname;
+    if (currentPath === "/webapp" || currentPath === "/webapp/") return;
+
+    const routeConfig = findRouteConfig(routesConfig, currentPath);
+    const routePermissionKey = routeConfig?.permissionKey;
+
+    if (routePermissionKey) {
+      const isPermitted = permittedPages.includes(routePermissionKey);
+      if (!isPermitted) {
+        toast.error(`You do not have permission to access: ${routePermissionKey}`);
+        navigate("/webapp/");
+      }
+    }
+  }, [location.pathname, permittedPages, isLoading, uiPermissions, navigate]);
   return (
     <EmployeeErrorBoundary>
       <PermissionProvider permissions={uiPermissions || []}>

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -190,7 +190,7 @@ const FrappeListView = <T extends BaseItem>({
     },
     {
       enabled: !infiniteScroll && !isLoading,
-    }
+    },
   );
   // Usage
   const combinedFilters: FilterCondition[] = [
@@ -206,7 +206,7 @@ const FrappeListView = <T extends BaseItem>({
     },
     {
       enabled: !infiniteScroll,
-    }
+    },
   );
 
   useEffect(() => {
@@ -222,7 +222,6 @@ const FrappeListView = <T extends BaseItem>({
       refreshData();
     }
   }, [refetchTrigger]);
-
 
   // Determine which query result to use
   const queryResult = infiniteScroll
@@ -393,7 +392,7 @@ const FrappeListView = <T extends BaseItem>({
     if (!isFilter || !showFilters || !doctypeSchema) return null;
 
     const filterableFields = doctypeSchema?.fields?.filter(
-      (field) => field.fieldtype === "Select" || field.fieldtype === "Link"
+      (field) => field.fieldtype === "Select" || field.fieldtype === "Link",
     );
 
     return (
@@ -623,13 +622,11 @@ const FrappeListView = <T extends BaseItem>({
           </div>
         ) : isListLoading && processedData.length === 0 ? (
           SkeletonComponent ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <SkeletonComponent key={index} />
-            ))
+            <SkeletonComponent />
           ) : (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-2 text-gray-500">
-                <RefreshCw className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading...</span>
               </div>
             </div>
@@ -699,9 +696,8 @@ const FrappeListView = <T extends BaseItem>({
   );
 };
 
-
-interface BaseItem {
-  name: string;
+interface BaseItemStatic {
+  name?: string;
   id?: string | number;
   [key: string]: any;
 }
@@ -709,12 +705,36 @@ interface BaseItem {
 interface FilterField {
   fieldname: string;
   label: string;
-  fieldtype: "Select" | "Link" | "Data" | "Int" | "Float" | "Check" | "Date" | "Datetime";
+  fieldtype:
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   options?: string[];
 }
-interface StaticListViewProps<T extends BaseItem> {
+
+interface FilterField {
+  fieldname: string;
+  label: string;
+  fieldtype:
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
+  options?: string[];
+}
+
+interface StaticListViewProps<T extends BaseItemStatic> {
   data: T[];
-  ItemComponent: (index: number, item: any, isLast: boolean) => React.ReactNode;
+  ItemComponent: (index: number, item: T, isLast: boolean) => React.ReactNode;
   PreListComponent?: React.ComponentType<any>;
   PostListComponent?: React.ComponentType<any>;
   SkeletonComponent?: React.ComponentType;
@@ -739,7 +759,7 @@ interface StaticListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
 }
 
-export const StaticListView = <T extends BaseItem>({
+export const StaticListView = <T extends BaseItemStatic>({
   data,
   ItemComponent,
   PreListComponent,
@@ -774,16 +794,35 @@ export const StaticListView = <T extends BaseItem>({
     return () => clearTimeout(t);
   }, [searchTerm]);
 
+  // Create a stable key for each item (used for dedupe)
+  const itemKeyForDedupe = (item: T, index: number) =>
+    getItemKey ? getItemKey(item, index) : (item.id ?? item.name ?? `idx_${index}`).toString();
+
+  // Deduplicate incoming data (prevents parent mistakes from showing duplicates)
+  const dedupedData = useMemo(() => {
+    const seen = new Set<string>();
+    const out: T[] = [];
+    for (let i = 0; i < data.length; i++) {
+      const k = itemKeyForDedupe(data[i], i) ?? JSON.stringify(data[i]);
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(data[i]);
+      }
+    }
+    return out;
+    // include getItemKey intentionally (if provided it affects dedupe)
+  }, [data, getItemKey]);
+
   // Filtering
   const filteredData = useMemo(() => {
-    let result = [...data];
+    let result = [...dedupedData];
 
     // Search filter
     if (debouncedSearch && searchFields.length > 0) {
       const s = debouncedSearch.toLowerCase();
       result = result.filter((item) =>
-        searchFields.some(
-          (field) => item[field]?.toString().toLowerCase().includes(s)
+        searchFields.some((field) =>
+          (item as any)[field]?.toString().toLowerCase().includes(s)
         )
       );
     }
@@ -792,78 +831,100 @@ export const StaticListView = <T extends BaseItem>({
     Object.entries(filters).forEach(([key, val]) => {
       if (val !== "" && val !== undefined && val !== null) {
         result = result.filter((item) => {
-          if (typeof val === "boolean") return item[key] === val;
-          return item[key]?.toString() === val.toString();
+          const v = (item as any)[key];
+          if (typeof val === "boolean") return v === val;
+          return v?.toString() === val.toString();
         });
       }
     });
 
     return result;
-  }, [data, debouncedSearch, filters]);
+  }, [dedupedData, debouncedSearch, filters, searchFields]);
+
+  // Reset page when data/search/filters change to avoid showing old pages
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, JSON.stringify(filters), dedupedData, pageSize]);
 
   // Pagination output
   const paginatedData = useMemo(() => {
+    // If parent is handling server side pagination (i.e. parent passes only the page)
+    // you'd want to disable client-side slicing. This component currently assumes
+    // client-side pagination by default. If using server-side, pass the full
+    // paginated result as `data` and set pageSize to a large number or set a prop
+    // to indicate server-side mode. For general safety we just slice here:
     if (infiniteScroll || loadMorePagination) {
-      return filteredData;
+      return filteredData.slice(0, currentPage * pageSize);
     }
+
     const start = (currentPage - 1) * pageSize;
     return filteredData.slice(start, start + pageSize);
   }, [filteredData, currentPage, pageSize, infiniteScroll, loadMorePagination]);
+
+  // Sentinel ref for infinite scroll
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   // Infinite scroll observer
   useEffect(() => {
     if (!infiniteScroll) return;
 
-    const sentinel = document.getElementById("static-listview-sentinel");
-    if (!sentinel) return;
+    const node = sentinelRef.current;
+    if (!node) return;
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        setCurrentPage((p) => p + 1);
-      }
-    });
+    // If an observer already exists, disconnect it before creating a new one
+    observerRef.current?.disconnect();
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [infiniteScroll]);
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setCurrentPage((p) => p + 1);
+        }
+      },
+      { root: null, rootMargin: "200px", threshold: 0.1 }
+    );
 
-  const totalPages = Math.ceil(filteredData.length / pageSize);
+    observerRef.current.observe(node);
+
+    return () => {
+      observerRef.current?.disconnect();
+      observerRef.current = null;
+    };
+    // we intentionally depend on the node reference and infiniteScroll
+  }, [infiniteScroll, /* sentinelRef is stable */]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
   const renderPagination = () =>
     infiniteScroll ? null : loadMorePagination ? (
-      <div className="flex justify-center py-4">
-        {paginatedData.length < filteredData.length && (
+      paginatedData.length < filteredData.length && (
+        <div className="flex justify-center py-4">
           <button
             onClick={() => setCurrentPage((p) => p + 1)}
             className="px-4 py-2 text-sm border rounded-md bg-white hover:bg-gray-100"
           >
             Load More
           </button>
-        )}
-      </div>
+        </div>
+      )
     ) : (
       <div className="flex justify-between items-center p-4">
         <span className="text-sm text-gray-600">
-          Showing {(currentPage - 1) * pageSize + 1} –{" "}
-          {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
-          {filteredData.length}
+          Showing {filteredData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} –{" "}
+          {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length}
         </span>
 
         <div className="flex items-center gap-2">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            <ChevronLeft />
+          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
+            {/* ChevronLeft */}
+            ‹
           </button>
 
           <span className="text-sm">{currentPage}</span>
 
-          <button
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            <ChevronRight />
+          <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
+            {/* ChevronRight */}
+            ›
           </button>
         </div>
       </div>
@@ -875,9 +936,9 @@ export const StaticListView = <T extends BaseItem>({
       <div className="flex gap-2 mb-3">
         {isSearch && (
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 text-gray-400" />
+            {/* Search icon */}
             <input
-              className="w-full pl-10 pr-3 py-2 border rounded-md"
+              className="w-full pl-3 pr-3 py-2 border rounded-md"
               placeholder="Search…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -886,21 +947,16 @@ export const StaticListView = <T extends BaseItem>({
         )}
 
         {isFilter && filterFields.length > 0 && (
-          <button
-            onClick={() => setShowFilters(true)}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            <Filter size={16} />
+          <button onClick={() => setShowFilters(true)} className="px-3 py-2 border rounded-md bg-white">
+            {/* Filter icon */}
+            Filters
           </button>
         )}
 
         {showRefreshButton && (
-          <button
-            disabled={isLoading}
-            onClick={() => onRefresh?.()}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            <RefreshCw className={isLoading ? "animate-spin" : ""} size={16} />
+          <button disabled={isLoading} onClick={() => onRefresh?.()} className="px-3 py-2 border rounded-md bg-white">
+            {/* Refresh icon */}
+            {isLoading ? "Refreshing..." : "Refresh"}
           </button>
         )}
       </div>
@@ -915,9 +971,7 @@ export const StaticListView = <T extends BaseItem>({
               {f.fieldtype === "Select" ? (
                 <select
                   value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))}
                   className="w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">All</option>
@@ -931,19 +985,14 @@ export const StaticListView = <T extends BaseItem>({
                 <input
                   type="text"
                   value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
+                  onChange={(e) => setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))}
                   className="w-full border px-3 py-2 rounded-md"
                 />
               )}
             </div>
           ))}
 
-          <button
-            onClick={() => setShowFilters(false)}
-            className="w-full py-2 bg-blue-600 text-white rounded-md"
-          >
+          <button onClick={() => setShowFilters(false)} className="w-full py-2 bg-blue-600 text-white rounded-md">
             Apply Filters
           </button>
         </div>
@@ -962,41 +1011,29 @@ export const StaticListView = <T extends BaseItem>({
       {/* LIST */}
       {isLoading ? (
         SkeletonComponent ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <SkeletonComponent key={i} />
-          ))
+          <SkeletonComponent />
         ) : (
-          <div className="flex justify-center py-8">
-            <Loader2 className="animate-spin" />
-          </div>
+          <div className="flex justify-center py-8">Loading…</div>
         )
       ) : paginatedData.length === 0 ? (
         <div className="py-12 text-center text-gray-500">No items found</div>
       ) : (
         <>
-          {(isLoading ? [] : paginatedData).map((item, index) => {
-            const isPaginationActive = infiniteScroll || loadMorePagination || pageSize > 0;
-
-            const isLast = isPaginationActive
-              ? index === paginatedData.length - 1
-              : index === filteredData.length - 1;
-
-            const key = getItemKey
-              ? getItemKey(item, index)
-              : item.name || item.id || index;
+          {paginatedData.map((item, index) => {
+            // compute isLast relative to the currently rendered list
+            const isLast = index === paginatedData.length - 1;
+            const key =
+              getItemKey?.(item, index) ??
+              (item.id ?? item.name ?? `item-${JSON.stringify(item).slice(0, 50)}-${index}`);
 
             return (
-              <div
-                key={key}
-                onClick={() => onItemClick?.(item)}
-                className={onItemClick ? "cursor-pointer" : ""}
-              >
+              <div key={key} onClick={() => onItemClick?.(item)} className={onItemClick ? "cursor-pointer" : ""}>
                 {ItemComponent(index, item, isLast)}
               </div>
             );
           })}
 
-          {infiniteScroll && <div id="static-listview-sentinel" />}
+          {infiniteScroll && <div id="static-listview-sentinel" ref={sentinelRef} />}
         </>
       )}
 
@@ -1015,5 +1052,6 @@ export const StaticListView = <T extends BaseItem>({
     </div>
   );
 };
+
 
 export default FrappeListView;

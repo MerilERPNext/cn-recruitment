@@ -22,36 +22,6 @@ export function MyRequestCard({
 }) {
   const { isDesktop } = useScreenSize();
 
-  const getStatus = (status: string) => {
-    switch (status) {
-      case "Open":
-        return {
-          label: "Pending",
-          statusColor: "bg-yellow-100 text-yellow-600",
-        };
-
-      case "Approved":
-        return {
-          label: "Approved",
-          statusColor: "bg-green-100 text-green-600",
-        };
-
-      case "Rejected":
-        return {
-          label: "Rejected",
-          statusColor: "bg-red-100 text-red-600",
-        };
-
-      default:
-        return {
-          label: status || "Unknown",
-          statusColor: "bg-gray-100 text-gray-600",
-        };
-    }
-  };
-
-  const status = getStatus(request?.status);
-
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
 
@@ -94,7 +64,7 @@ export function MyRequestCard({
           <div className="flex items-center justify-center">
             <Tooltip
               content={
-                status?.label === "Pending"
+                request?.status === "Open"
                   ? `Allocated to : ${request?.allocated_to}`
                   : ""
               }
@@ -115,18 +85,11 @@ export function MyRequestCard({
               {/* Header */}
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="text-gray-500"
-                  >
+                  <Typography variant="mobileCardLabel" className="block">
                     Allocated To
                   </Typography>
-
-                  <Typography
-                    variant="mobileCardValue"
-                    className="font-semibold text-gray-900"
-                  >
-                    {request?.username}
+                  <Typography variant="mobileCardValue">
+                    {request?.username || request?.allocated_to}
                   </Typography>
                 </div>
 

@@ -152,7 +152,7 @@ const CardStages = ({
       return true;
 
     return false;
-  }, [currentEmployee, assignedTo, isActive, currentUser]);
+  }, [currentEmployee, assignedTo, isActive, currentUser, data]);
 
   const mapStatusTimeline = (status: string) => {
     if (isActive) return "action_required";
@@ -234,7 +234,7 @@ const CardStages = ({
             </div>
           </div>
 
-          <div>{data?.user_id}</div>
+          <div className="flex justify-between items-start px-4 pt-1 pb-3">{data?.user_id}</div>
         </div>
       </StatusTimelineRow>
 

@@ -23,6 +23,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -57,15 +58,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           )}
         </div>
 
-        {item?.status && (
-          <span
-            className={`px-3 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-              item?.status,
-            )}`}
-          >
-            {item?.status === "Draft" ? "Pending" : item?.status}
-          </span>
-        )}
+        <StatusBadge status={item?.status} />
       </div>
 
       <div className="flex justify-between">
@@ -115,6 +108,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     "edit_expense",
     "Expense Claims",
   );
+
 
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
@@ -172,7 +166,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() && canEditExpense
+            item?.send_back_user?.toLowerCase() && canEditExpense && item?.can_edit
           }
           onEdit={handleEditClick}
         />
@@ -193,6 +187,7 @@ const ExpensesList: React.FC = () => {
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
   >(null);
+  const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
 
@@ -217,26 +212,30 @@ const ExpensesList: React.FC = () => {
     id: string,
     stages: ApprovalStage[],
     sendBackUser: string,
+    canEdit: boolean,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
     setSelectedSendBackUser(sendBackUser);
+    setSelectedCanEdit(canEdit);
   };
 
   const closeModal = () => {
     setSelectedId(null);
     setSelectedStages([]);
     setSelectedSendBackUser(null);
+    setSelectedCanEdit(false);
   };
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
+    const canEdit = item?.can_edit || false;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} />
@@ -248,28 +247,17 @@ const ExpensesList: React.FC = () => {
     const id = item?.reference_document?.name;
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
+    const canEdit = item?.can_edit || false;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
       </div>
     );
   };
-
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2 flex justify-between">
-        <div>
-          <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-          <div className="h-3 w-24 bg-gray-300 rounded"></div>
-        </div>
-        <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-      </div>
-    </div>
-  );
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -442,7 +430,7 @@ const ExpensesList: React.FC = () => {
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="modified desc"
+              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={true}
               showPagination={true}
@@ -460,6 +448,7 @@ const ExpensesList: React.FC = () => {
           getStatusBadgeClasses={getStatusBadgeClasses}
           selectedStages={selectedStages}
           selectedSendBackUser={selectedSendBackUser}
+          canEdit={selectedCanEdit}
         />
       )}
       <ExpensePolicyDrawer

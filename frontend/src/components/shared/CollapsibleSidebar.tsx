@@ -42,6 +42,7 @@ import { ROUTES } from "../../constants/routes";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useAppNotificationCounts } from "../../hooks/useAppNotificationCounts";
 import { Typography } from "./atoms/Typography";
+import SidebarSkeleton from "./molecules/Skeletons/SidebarSkeleton";
 
 interface SubSubMenuItem {
   name: string;
@@ -54,7 +55,7 @@ interface SubMenuItem {
   icon: React.ComponentType<{ className?: string }>;
   href?: string;
   subItems?: SubSubMenuItem[];
-  permissionKey: string
+  permissionKey: string;
 }
 
 interface NavigationItem {
@@ -80,7 +81,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   const { data: companyLogo } = useCompanyLogo();
   const { data: currentEmployee } = useCurrentEmployee();
-  const { data: uiPermissions } = useGetUiPermission();
+  const { data: uiPermissions, isLoading: isUiPermissionsLoading } = useGetUiPermission();
 
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
@@ -108,7 +109,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   };
 
   const companyName = getTruncatedCompanyName(originalCompanyName);
-  const { getCount } = useAppNotificationCounts();
+  const { getCount, getSubModuleCount } = useAppNotificationCounts();
+
 
   // const getNotificationCount = (sidebarLabel: string) => {
   //   if (!notificationData?.apps) return 0;
@@ -207,7 +209,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           name: "Planned Overtime",
           icon: TimerIcon,
           href: "/webapp/attendance/my-overtime-requests",
-          permissionKey: "My Overtime",
+          permissionKey: "Planned Overtime",
         },
         {
           name: "Team Overtime",
@@ -241,10 +243,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           href: "/webapp/salary-slip-app/it-declaration-form",
           permissionKey: "IT Declaration",
         },
+        
         {
           name: "Team IT Declaration",
           icon: Sheet,
-          href: "/webapp/salary-slip-app/team-it-declaration-form",
+          href: "/webapp/salary-slip-app/team-declaration-listview ",
           permissionKey: "Team IT Declaration",
         },
         {
@@ -320,7 +323,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       icon: Gift,
       label: "Benefits",
       path: "/webapp/benefits-app",
-      permissionKey: "Benefit",
+      permissionKey: "Benefits",
       subItems: [
         {
           name: "My Benefits",
@@ -383,9 +386,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     },
     {
       icon: Workflow,
-      label: "Flows",
+      label: "HR Process",
       path: "/webapp/flow-app",
-      permissionKey: "Flows",
+      permissionKey: "HR Process",
       subItems: [
         {
           name: "Flow Requests",
@@ -638,6 +641,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     setOpenDropdown(activeParent?.label || null);
   }, [location.pathname, navigationItems]);
 
+  if (isUiPermissionsLoading) {
+    return <SidebarSkeleton isExpanded={isExpanded} />;
+  }
+
   return (
     <>
       <style>
@@ -781,8 +788,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                         }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 relative">
                           <Icon className="h-5 w-5" />
+                          {!isExpanded && getCount(item.label) > 0 && (
+                            <span className="absolute -top-0.5 -right-1 min-w-[16px] size-4 p-2 rounded-full bg-error text-white text-[10px] font-bold flex items-center justify-center">
+                              {getCount(item.label)}
+                            </span>
+                          )}
                         </div>
                         <span
                           className={`transition-all duration-300 ${isExpanded
@@ -798,9 +810,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             {item.label}
                           </Typography>
                         </span>
+                        {isExpanded && getCount(item.label) > 0 && (
+                          <span className="ml-auto min-w-[22px] size-5 p-2 rounded-full bg-error-50 text-error text-xs font-semibold flex items-center justify-center">
+                            {getCount(item.label)}
+                          </span>
+                        )}
                       </div>
                     </Link>
-                  )}
+                  )
+                  }
                   {hasSubItems &&
                     (isDropdownOpen || isAnySubItemActive) &&
                     isExpanded && (
@@ -817,6 +835,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                               subItem.subItems?.some((subSubItem) =>
                                 isSubSubItemActive(subSubItem),
                               );
+
+                            const subItemCount = getSubModuleCount(item.label, subItem.name);
 
                             return (
                               <div key={subItem.name}>
@@ -863,7 +883,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                               relative left-5 border-l border-gray-400 transition-colors duration-300
                                               ${isSubActive
                                         ? "text-primary"
-                                        : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"}
+                                        : "text-text-body1 hover:text-primary-600 hover:bg-primary-50"
+                                      }
                                   `}
                                   >
                                     {/* dot */}
@@ -883,26 +904,35 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                                       h-full w-[2px] bg-primary
                                       origin-center
                                       rounded-md
-                                      transition-transform transition-opacity duration-400 ease-out
+                                      transition-opacity duration-400 ease-out
                                       ${isSubActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"}
                                     `}
                                     />
-                                    <div className="flex items-center justify-start space-x-2">
+                                    <div className="flex items-center justify-start space-x-2 w-full">
                                       {/* <SubIcon className="h-3.5 w-3.5 opacity-70" /> */}
-                                      <span
-                                        className={`transition-all duration-300 whitespace-nowrap ${isExpanded
-                                          ? "opacity-100 translate-x-0"
-                                          : "opacity-0 -translate-x-2"
-                                          }`}
-                                      >
-                                        <Typography
-                                          variant="bodySmall"
-                                          color="inherit"
-                                          className="font-medium whitespace-nowrap"
+                                      <div className="flex items-center transition-all duration-300 whitespace-nowrap overflow-hidden">
+                                        <span
+                                          className={`transition-all duration-300 whitespace-nowrap ${isExpanded
+                                            ? "opacity-100 translate-x-0"
+                                            : "opacity-0 -translate-x-2"
+                                            }`}
                                         >
-                                          {subItem.name}
-                                        </Typography>
-                                      </span>
+                                          <Typography
+                                            variant="bodySmall"
+                                            color="inherit"
+                                            className="font-medium whitespace-nowrap"
+                                          >
+                                            {subItem.name}
+                                          </Typography>
+                                        </span>
+                                      </div>
+
+                                      {/* Badge for sub-item */}
+                                      {isExpanded && subItemCount > 0 && (
+                                        <span className={`transition-all duration-300 ${isExpanded ? "opacity-100" : "opacity-0"} min-w-[20px] size-5 rounded-full bg-error-50 text-error text-[10px] font-bold flex items-center justify-center mr-6`}>
+                                          {subItemCount}
+                                        </span>
+                                      )}
                                     </div>
                                   </Link>
                                 )}

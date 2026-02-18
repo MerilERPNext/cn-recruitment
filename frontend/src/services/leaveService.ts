@@ -387,4 +387,16 @@ export const leaveService = {
     );
     return response as { message: boolean };
   },
+
+  checkAttachmentMandatory: async (
+    leaveType: string
+  ): Promise<{ is_mandatory: number }> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.check_attachment_mandatory_for_leave",
+      {
+        leave_type: leaveType,
+      }
+    );
+    return response as { is_mandatory: number };
+  },
 };

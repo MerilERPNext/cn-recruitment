@@ -2,11 +2,9 @@ import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
-import Badge from "../shared/Badge";
 import Button, { ButtonColor } from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import FileRenderer from "../shared/molecules/FileRenderer";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 import {
   ErrorView,
@@ -16,6 +14,8 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
+import StatusBadge from "../shared/atoms/statusBadge";
+import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function AttendanceDetailView({
   data: propData,
@@ -49,103 +49,88 @@ export function AttendanceDetailView({
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
   const cleanExplaination = DOMPurify.sanitize(
-    data?.reference_document?.explanation || ""
+    data?.reference_document?.explanation || "",
   );
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
 
-  const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
- const handleAction = useCallback(
-  async (action: string) => {
-    await loading?.wrap(async () => {
+  const handleAction = useCallback(
+    async (action: string) => {
+      await loading?.wrap(async () => {
+        // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
 
-      // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
+        setCurrentAction(action);
 
-      setCurrentAction(action);
+        try {
+          if (mutation?.isPending) return;
+          const response = await mutation?.mutateAsync({
+            action,
+            name: data?.todo_id || "",
+          });
 
-      try {
-        if (mutation?.isPending) return;
-        const response = await mutation?.mutateAsync({
-          action,
-          name: data?.todo_id || "",
-        });
-
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action
-        );
-
-        if (
-          (data?.custom_approval_type === "Approval Matrix" &&
-            responseWithSession?.session) ||
-          (data?.custom_approval_type === "Multi Actions" &&
-            data?.custom_open_chatnext_assistant_on_action)
-        ) {
+          console.log("Action response:", response);
+          const responseWithSession = response as unknown as { session?: any };
+          console.log("Session data:", responseWithSession?.session);
           console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session
+            "Assistant trigger enabled:",
+            data?.custom_open_chatnext_assistant_on_action,
           );
-          if (window.trigger_chatnext_assistant) {
-            window.trigger_chatnext_assistant(
-              true,
-              responseWithSession?.session
+
+          if (
+            (data?.custom_approval_type === "Approval Matrix" &&
+              responseWithSession?.session) ||
+            (data?.custom_approval_type === "Multi Actions" &&
+              data?.custom_open_chatnext_assistant_on_action)
+          ) {
+            console.log(
+              "Opening assistant with session:",
+              responseWithSession?.session,
             );
+            if (window.trigger_chatnext_assistant) {
+              window.trigger_chatnext_assistant(
+                true,
+                responseWithSession?.session,
+              );
+            }
+          } else {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
           }
-        } else {
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 2000);
+          if (onAction) {
+            onAction();
+          }
+          setCurrentAction(null);
+        } catch (error) {
+          setCurrentAction(null);
+          const formattedError = errorResponseFormater(error);
+          toast.error(formattedError);
+          console.error("Action failed", error);
         }
-        if (onAction) {
-          onAction();
-        }
-        setCurrentAction(null);
-      } catch (error) {
-        setCurrentAction(null);
-        const formattedError = errorResponseFormater(error);
-        toast.error(formattedError);
-        console.error("Action failed", error);
-      }
 
-      // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
+        // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
+      }, "Processing action...");
+    },
 
-    }, "Processing action...");
-  },
-  
-  [data?.custom_approval_type, data?.custom_open_chatnext_assistant_on_action, data?.todo_id, onAction, loading, mutation, setRefetchAttendance]
-);
+    [
+      data?.custom_approval_type,
+      data?.custom_open_chatnext_assistant_on_action,
+      data?.todo_id,
+      onAction,
+      loading,
+      mutation,
+      setRefetchAttendance,
+    ],
+  );
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (action: string): { bg: ButtonColor; text: string } => {
+  const getActionStyles = (
+    action: string,
+  ): { bg: ButtonColor; text: string } => {
     const parsedAction = action.toLowerCase().trim();
     let styles = {
       bg: "disabled" as ButtonColor,
@@ -200,7 +185,9 @@ export function AttendanceDetailView({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
           <div className="flex gap-2 justify-center items-center">
-            <Typography variant="h4" className="font-semibold text-gray-800">{label}</Typography>
+            <Typography variant="h4" className="font-semibold text-gray-800">
+              {label}
+            </Typography>
           </div>
           <Button
             variant="subtle"
@@ -213,75 +200,109 @@ export function AttendanceDetailView({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
-          {/* Employee Info */}
-          <div className="py-4">
-            <Badge
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />{" "}
-          </div>
-          <div className="py-2">
-            <div className="flex gap-2 justify-between">
-              {/* Display From Date */}
-              {data?.reference_document?.from_date && (
-                <div className="flex flex-col gap-1">
-                  <Typography variant="label" color="body2" className="card-title">From Date</Typography>
-                  <Typography variant="bodySmall" className="card-subtitle">
-                    {formatToIndianDate(data?.reference_document?.from_date)}
-                  </Typography>
-                </div>
-              )}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-6">
+          {/* Header Info */}
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                {data?.reference_document?.employee_name
+                  ? "Employee Name"
+                  : "Employee ID"}
+              </Typography>
 
-              {/* Display To Date */}
-              {data?.reference_document?.to_date && (
-                <div className=" flex flex-col gap-1">
-                  <Typography variant="label" color="body2" className="card-title">To Date</Typography>
-                  <Typography variant="bodySmall" className="card-subtitle">
-                    {formatToIndianDate(data?.reference_document?.to_date)}
-                  </Typography>
-                </div>
-              )}
-            </div>
-          </div>
-          {data?.due_date && (
-            <div className=" flex flex-col gap-1">
-              <Typography variant="label" color="body2" className="card-title">Due Date</Typography>
-              <Typography variant="bodySmall" className="card-subtitle">
-                {formatToIndianDate(data?.due_date)}
+              <Typography variant="mobileCardValue" className="font-semibold">
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
               </Typography>
             </div>
-          )}
-          <div className="py-2 flex flex-col gap-1">
-            <Typography variant="label" color="body2" className="card-title">Reason</Typography>
-            <Typography variant="bodySmall" className="card-subtitle">
-              {label === "Leave Application"
-                ? data?.reference_document?.custom_reason
-                : data?.reference_document?.reason}
+
+            <StatusBadge status={data?.status} />
+          </div>
+
+          {/* Dates Section */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to_name}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To Email
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to}
+                </Typography>
+              </div>
+            </div>
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">From Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.from_date)}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">To Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.to_date)}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.due_date || data?.date)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Reason</Typography>
+                <Typography variant="mobileCardValue">
+                  {label === "Leave Application"
+                    ? data?.reference_document?.custom_reason
+                    : data?.reference_document?.reason}
+                </Typography>
+              </div>
+            </div>
+          </div>
+
+          {/* Explanation */}
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel">Explanation</Typography>
+
+            <Typography variant="mobileCardValue">
+              {cleanExplaination}
             </Typography>
           </div>
-          {/* description */}
-          <div className="py-2">
-            <Typography variant="label" color="body2" className="card-title mb-2 block">Description</Typography>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
-              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-            </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel">Description</Typography>
+
+            <Typography variant="mobileCardValue">
+              {cleanDescription}
+            </Typography>
           </div>
-          {/* explanation */}
-          <div className="py-2">
-            <Typography variant="label" color="body2" className="card-title mb-2 block">Explanation</Typography>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
-              <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
+
+          {/* Attachments */}
+          {data?.attachments?.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Attachments</Typography>
+
+              <div className="space-y-2">
+                {data.attachments.map((item: any) => (
+                  <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
+                ))}
+              </div>
             </div>
-          </div>
-          {data?.attachments && data?.attachments?.length > 0 ? (
-            <div className="py-2">
-              <Typography variant="label" color="body2" className="card-title mb-2 block">Attachment</Typography>
-              {data?.attachments?.map((item: { file_url: string }) => (
-                <FileRenderer filePath={item?.file_url || ""} />
-              ))}
-            </div>
-          ) : null}
+          )}
         </div>
 
         {/* Actions */}

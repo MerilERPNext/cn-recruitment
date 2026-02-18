@@ -4,6 +4,9 @@ import FrappeAPI from "../../utils/frappeAPI";
 
 type FetchHTMLArgs = {
   declaration_id: string;
+  doctype?: string;
+  docname?: string;
+  proof_id?: string;
 };
 
 export const getNewRegime = async (employee: string | null, company: string | null, payroll_period: string | null) => {
@@ -63,6 +66,27 @@ export const getCompareTaxSheetHTML = async (declarationId: string) => {
     "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_tds_projection_print_html",
     {
       declaration_id: declarationId, 
+    }
+  );
+};
+
+export const getForm12B = async (declarationId: string, docName: string) => {
+  return fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_form12b_pdf",
+    {
+      docname: declarationId,
+      doctype: docName,
+      declaration_id: ""
+    }
+  );
+};
+
+export const getPerviewOfITDeclaration = async (declarationId: string,) => {
+  return fetchHTML(
+    "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_tds_projection_poi_print_html",
+    {
+      proof_id: declarationId,
+      declaration_id: ""
     }
   );
 };

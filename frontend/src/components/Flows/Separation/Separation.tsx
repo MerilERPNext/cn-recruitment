@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Loader2 } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import { useSeparation } from "../../../hooks/useConfiremnation";
 import {
@@ -15,11 +14,13 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -51,6 +52,20 @@ const Separation = () => {
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const document_name = activeEmployee?.name ?? "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
+
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+
+  const enabledActions = useMemo(() => {
+    let actions = [];
+    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
+      (item) => item.page_name === "Separation",
+    );
+    actions = initiateFlowPage?.actions?.filter(
+      action => action.enabled,
+    ).map(action => action.action_name) ?? [];
+    return actions;
+  }, [userUiPermission]);
+
   const {
     data: confirmationCreationData,
     isLoading,
@@ -62,8 +77,8 @@ const Separation = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
+        (item: any) => item?.trigger_category?.name === trigger_category,
+      )
       : [];
   }
 
@@ -156,14 +171,7 @@ const Separation = () => {
   const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Spinner -------------------- */
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <span className="text-sm text-gray-600">Loading...</span>
-        </div>
-      </div>
-    );
+    return <DashboardContentSkeleton />;
   }
   /* ---------------------------------------------------------- */
 
@@ -176,7 +184,7 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
-        {separationWorkflow?.show_workflow && (
+        {separationWorkflow?.show_workflow && enabledActions.includes("view_workflow") && (
           <Button
             onClick={handleShowWorkflow}
             size="md"
@@ -228,26 +236,29 @@ const Separation = () => {
           {/* Button */}
           {definition_name && (
             <div className="flex items-center py-6 gap-2 flex-col">
-              <Button
-                onClick={handleTriggerChat}
-                size="md"
-                bgColor="blue-500"
-                className="hover:bg-blue-600 text-white"
-                loading={isTriggeringChat}
-                disabled={isTriggeringChat}
-              >
-                Initiate Separation
-              </Button>
-
-              <Button
-                size="md"
-                bgColor="black"
-                className="hover:bg-gray-900 text-white"
-                loading={isTriggeringChat}
-                disabled={isTriggeringChat}
-              >
-                Terminate
-              </Button>
+              {enabledActions?.includes("initiate_separation") && (
+                <Button
+                  onClick={handleTriggerChat}
+                  size="md"
+                  bgColor="blue-500"
+                  className="hover:bg-blue-600 text-white"
+                  loading={isTriggeringChat}
+                  disabled={isTriggeringChat}
+                >
+                  Initiate Separation
+                </Button>
+              )}
+              {enabledActions?.includes("terminate") && (
+                <Button
+                  size="md"
+                  bgColor="black"
+                  className="hover:bg-gray-900 text-white"
+                  loading={isTriggeringChat}
+                  disabled={isTriggeringChat}
+                >
+                  Terminate
+                </Button>
+              )}
             </div>
           )}
         </div>

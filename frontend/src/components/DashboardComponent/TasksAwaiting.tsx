@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import CustomDropdown from "../shared/CustomDropdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 interface ToDo {
   priority: string;
@@ -85,6 +86,7 @@ const TasksAwaiting: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const { data: currentEmployee } = useCurrentUser();
   const currentEmployeeId = currentEmployee?.name;
+  const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -107,6 +109,7 @@ const TasksAwaiting: React.FC = () => {
 
   const handleDataLoad = (items: ToDo[]) => {
     setFullData(items);
+    setIsLoading(false);
   };
 
   const filtered = useMemo(() => {
@@ -172,10 +175,11 @@ const TasksAwaiting: React.FC = () => {
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
-            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
-              ? "bg-primary text-white scale-105"
-              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
-              } transition-all`}
+            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${
+              activeCategory === "All"
+                ? "bg-primary text-white scale-105"
+                : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+            } transition-all`}
           >
             All ({totalCount})
           </button>
@@ -188,10 +192,11 @@ const TasksAwaiting: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                  ? `scale-105 ring-2 ${colors}`
-                  : `${colors} opacity-70 hover:opacity-100`
-                  } `}
+                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
+                  isActive
+                    ? `scale-105 ring-2 ${colors}`
+                    : `${colors} opacity-70 hover:opacity-100`
+                } `}
               >
                 {cat} ({count})
               </button>
@@ -225,15 +230,17 @@ const TasksAwaiting: React.FC = () => {
             "custom_redirect_url",
           ]}
           showPagination={false}
+          SkeletonComponent={() => <CardSkeleton rows={2} />}
         />
       )}
-
       <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">
-        {filtered.map((item) => (
-          <MyToDoItem key={item.name} item={item} />
-        ))}
-
-        {filtered.length === 0 && (
+        {isLoading ? (
+          <CardSkeleton rows={2} />
+        ) : filtered.length > 0 ? (
+          filtered
+            .slice(0, 3)
+            .map((item) => <MyToDoItem key={item.name} item={item} />)
+        ) : (
           <div className="p-4 flex justify-center opacity-60">
             <Typography variant="bodySmall">No tasks found.</Typography>
           </div>

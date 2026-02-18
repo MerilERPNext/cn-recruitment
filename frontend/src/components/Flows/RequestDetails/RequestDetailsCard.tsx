@@ -1,21 +1,11 @@
 import React from "react";
 import { Check, Clock, X, User } from "lucide-react";
-import Badge from "../../shared/Badge";
-
-type StageDataType = {
-  stageNumber: number;
-  stageName: string;
-  assignedTo: string;
-  actionTakenBy: string;
-  status: string;
-  triggerDate: string;
-  dueDate: string;
-  completedDate?: string | null;
-  actions: string;
-};
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { FlowRequestStage } from "../../../types/flows";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface RequestDetailsCardProps {
-  stages: StageDataType[];
+  stages: FlowRequestStage[];
 }
 
 const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
@@ -24,12 +14,14 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
 
     switch (status) {
       case "Completed":
+      case "Approved":
         return <Check {...iconProps} />;
       case "In Progress":
+      case "Pending":
         return <Clock {...iconProps} />;
       case "Failed":
+      case "Rejected":
         return <X {...iconProps} />;
-      case "Pending":
       default:
         return <User {...iconProps} />;
     }
@@ -38,10 +30,12 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
   const getBgColor = (status: string) => {
     switch (status) {
       case "Completed":
+      case "Approved":
         return "bg-green-500";
       case "In Progress":
         return "bg-yellow-500";
       case "Failed":
+      case "Rejected":
         return "bg-red-500";
       case "Pending":
       default:
@@ -49,19 +43,20 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
     }
   };
 
+
   return (
     <div className="relative flex flex-col items-start px-4 py-6">
       {stages.map((stage, index) => {
-        const isCompleted = stage.status === "Completed";
+        const isCompleted = stage.status === "Completed" || stage.status === "Approved";
         const nextStage = stages[index + 1];
         const lineColor =
-          isCompleted && nextStage?.status !== "Failed"
+          isCompleted && nextStage?.status !== "Failed" && nextStage?.status !== "Rejected"
             ? "bg-green-500"
             : "bg-gray-300";
 
         return (
           <div
-            key={stage.stageNumber}
+            key={`${stage.stage_name}-${index}`}
             className="relative flex gap-4 w-full last:mb-0 mb-10"
           >
             {/* RequestDetailsCard Left Column */}
@@ -96,55 +91,53 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
             </div>
 
             {/* Stage Card */}
-            <div className="flex-1">
-              <div className="bg-white shadow-sm border border-gray-200 rounded-xl px-4 py-3 hover:shadow-md transition-all">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-medium text-gray-500">
-                    {new Date(stage.triggerDate).toLocaleDateString()}
-                  </span>
-                  <Badge
-                    backgroundColor={
-                      stage.status === "Completed"
-                        ? "bg-green-100 text-green-700"
-                        : stage.status === "In Progress"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : stage.status === "Failed"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-600"
-                    }
-                    label={stage.status}
-                    size="sm"
-                  />
+            <div className="flex-1 min-w-0">
+              <div className="bg-white shadow-sm border border-gray-200 rounded-xl px-4 py-4 hover:shadow-md transition-all">
+
+                {/* Header: Stage Info & Status */}
+                <div className="flex justify-between items-start gap-3 mb-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Stage {index + 1}
+                    </div>
+                    <h3 className="font-semibold text-gray-900 text-base leading-tight break-words">
+                      {stage.stage_name}
+                    </h3>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <StatusBadge status={stage.status} />
+                  </div>
                 </div>
 
-                {/* Stage Number */}
-                <div className="text-gray-500 text-sm font-semibold mb-0.5">
-                  Stage {stage.stageNumber}
-                </div>
+                {/* Divider */}
+                <div className="h-px bg-gray-100 w-full mb-3" />
 
-                {/* Stage Name */}
-                <h3 className="font-semibold text-gray-800 mt-0.5">
-                  {stage.stageName}
-                </h3>
-
-                <p className="text-sm text-gray-600 mt-1">
-                  Assigned to{" "}
-                  <span className="font-medium">{stage.assignedTo}</span>{" "}
-                  &nbsp;|&nbsp; Action taken by{" "}
-                  <span className="font-medium">{stage.actionTakenBy}</span>
-                </p>
-
-                <div className="flex justify-between text-xs text-gray-500 mt-2">
-                  <span>
-                    Due: {new Date(stage.dueDate).toLocaleDateString()}
-                  </span>
-                  {stage.completedDate && (
-                    <span>
-                      Completed:{" "}
-                      {new Date(stage.completedDate).toLocaleDateString()}
+                {/* Body: Details */}
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Assigned To</span>
+                    <span className="font-medium text-gray-900 text-right truncate pl-2 max-w-[60%]">
+                      {stage.user || stage.role || "-"}
                     </span>
+                  </div>
+
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Action By</span>
+                    <span className="font-medium text-gray-900 text-right truncate pl-2 max-w-[60%]">
+                      {stage.approval_time ? (stage.user || "-") : "-"}
+                    </span>
+                  </div>
+
+                  {stage.approval_time && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Date</span>
+                      <span className="font-medium text-gray-900 text-right">
+                        {formatToIndianDate(stage.approval_time)}
+                      </span>
+                    </div>
                   )}
                 </div>
+
               </div>
             </div>
           </div>

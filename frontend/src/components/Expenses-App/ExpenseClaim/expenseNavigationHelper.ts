@@ -9,6 +9,7 @@ export const buildExpenseNavigationState = (
       uid: expenseItem.name,
       name: expenseItem.name,
       expenseCategory: expenseClaim?.custom_expense_category,
+      categoryType: expenseClaim?.custom_category_type || "General",
       expenseType: expenseItem.expense_type,
       description: expenseItem?.description,
       expense_date: expenseItem.expense_date,

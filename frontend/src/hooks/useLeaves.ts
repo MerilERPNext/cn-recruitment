@@ -477,3 +477,15 @@ export const useIsRejectionReasonMandatory = () => {
     staleTime: Infinity,
   });
 };
+
+export const useCheckAttachmentMandatory = (leaveType: string | undefined) => {
+  return useQuery({
+    queryKey: ["checkAttachmentMandatory", leaveType],
+    queryFn: () => {
+      if (!leaveType) throw new Error("Leave type is required");
+      return leaveService.checkAttachmentMandatory(leaveType);
+    },
+    enabled: !!leaveType,
+    staleTime: 5 * 60 * 1000,
+  });
+};

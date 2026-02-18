@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
@@ -36,10 +36,44 @@ const ExpensesApp: React.FC = () => {
   );
 
   const [activeTab, setActiveTab] = useState<TabName>("Expenses");
-  const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
-    key,
-    label: key,
-  }));
+
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      { key: "Expenses", label: "Expenses", permissionKey: "Expense Claims" },
+      { key: "Team", label: "Team", permissionKey: "Team Requests" },
+      {
+        key: "My Advances",
+        label: "My Advances",
+        permissionKey: "My Advances",
+      },
+      {
+        key: "Team Advances",
+        label: "Team Advances",
+        permissionKey: "Team Advances",
+      },
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const expensesPermission = userUiPermission.find(
+      (perm) => perm.app_name === "Expenses",
+    );
+
+    if (!expensesPermission || !expensesPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = expensesPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -52,12 +86,11 @@ const ExpensesApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/expenses-app") {
-      const fallback = "Expenses";
-      setActiveTab(fallback);
-      navigate(tabRoutes[fallback], { replace: true });
+    if (location.pathname === "/webapp/expenses-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      navigate(tabRoutes[firstTab], { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
   const handleTabChange = (tabKey: string) => {
     const tab = tabKey as TabName;
