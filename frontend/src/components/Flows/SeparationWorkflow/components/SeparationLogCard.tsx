@@ -2,9 +2,9 @@ import React, { useMemo } from "react";
 import { FunnelActivityLog } from "../../../../types/separation";
 import Button from "../../../shared/atoms/Button";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import Badge from "../../../shared/Badge";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { Typography } from "../../../shared/atoms/Typography";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 interface SeparationLogCardProps {
   gtc: string;
@@ -46,14 +46,6 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
     return false;
   }, [currentUser, data, loadingUser, isActive]);
 
-  const statusColors: Record<string, string> = {
-    Approved: "bg-green-100 text-green-600",
-    Completed: "text-green-500 bg-green-100",
-    Cancled: "bg-red-100 text-red-600",
-    Rejected: "bg-red-100 text-red-600",
-    Pending: "bg-yellow-100 text-yellow-600",
-    _: "text-gray-500",
-  };
 
   const { isDesktop } = useScreenSize();
 
@@ -66,9 +58,8 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
         {data?.idx}
       </Typography>
       <div className="inline-flex justify-center self-center">
-        <Badge
-          label={data?.status}
-          textColor={statusColors[data?.status] ?? statusColors._}
+        <StatusBadge
+          status={data?.status}
         />
       </div>
       <Typography variant="bodySmall" className="font-semibold tracking-tight">
@@ -98,10 +89,8 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
           <Typography variant="bodyMedium">{data?.idx}</Typography>
         </div>
 
-        <Badge
-          label={data?.status}
-          textColor={statusColors[data?.status] ?? statusColors._}
-          // textColor={getStatusBadgeClasses(data?.status)}
+        <StatusBadge
+          status={data?.status}
         />
       </div>
 

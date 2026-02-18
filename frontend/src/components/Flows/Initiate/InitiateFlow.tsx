@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import RequestTypeCard from "./RequestTypeCard";
 import HeaderBar from "../../HeaderBar";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -50,6 +50,21 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
     }
   };
 
+  useEffect(() => {
+    const handleChatClose = () => {
+      handleCloseModel();
+    };
+
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose,
+      );
+    };
+  }, []);
+
   const { data: triggerList, isLoading } = useDifinitaionNameForSeparation();
 
   const [inputSearch, setInputSearch] = useState<string>("");
@@ -58,10 +73,10 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
     () =>
       Array.isArray(triggerList)
         ? triggerList.filter((item) =>
-            item?.data_obj?.name_of_action
-              ?.toLowerCase()
-              .includes(inputSearch.toLowerCase()),
-          )
+          item?.data_obj?.name_of_action
+            ?.toLowerCase()
+            .includes(inputSearch.toLowerCase()),
+        )
         : [],
     [triggerList, inputSearch],
   );

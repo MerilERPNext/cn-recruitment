@@ -162,6 +162,15 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <X className="w-4 h-4" />,
       };
 
+    case "triggered":
+      return {
+        label: "Triggered",
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
+        icon: <AlertCircle className="w-4 h-4" />,
+
+      };
+
     default:
       return {
         label: rawStatus || "Unknown",
