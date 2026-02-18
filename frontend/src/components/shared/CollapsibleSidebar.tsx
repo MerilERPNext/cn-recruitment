@@ -247,14 +247,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         {
           name: "Team IT Declaration",
           icon: Sheet,
-          href: "/webapp/salary-slip-app/team-approval-it-declaration ",
-          permissionKey: "Team IT Declaration",
-        },
-        {
-          name: "Team IT Declaration Listview",
-          icon: Sheet,
           href: "/webapp/salary-slip-app/team-declaration-listview ",
-          permissionKey: "Team IT Declaration Listview",
+          permissionKey: "Team IT Declaration",
         },
         {
           name: "Tax Declaration Sheet",
