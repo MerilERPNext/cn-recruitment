@@ -90,11 +90,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     }
 
     // ✅ Other user's profile
-    if (!isDesktop) {
-      setTargetEmployee(emp.employee_id, "/webapp/employee-profile", false);
-    } else {
-      setTargetEmployee(emp.employee_id, "/webapp/employee-profile", true);
-    }
+    setTargetEmployee(emp.employee_id, "/webapp/employee-profile", isDesktop);
   };
 
   const isActive = emp.status?.toLowerCase() === "active";

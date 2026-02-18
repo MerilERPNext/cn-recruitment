@@ -284,10 +284,8 @@ const EmployeeProfile: React.FC = () => {
               onBack={() => {
                 if (isViewingOtherUser) {
                   clearTargetEmployee();
-                  navigate("/webapp/");
-                } else {
-                  navigate(-1);
                 }
+                navigate("/webapp/");
               }}
             />
             <input

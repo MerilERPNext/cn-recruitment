@@ -30,11 +30,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const handleClick = () => {
     if (id) {
       if (id !== currentEmployeeId) {
-        if (!isDesktop) {
-          setTargetEmployee(String(id), `/webapp/employee-profile`, false);
-        } else {
-          setTargetEmployee(String(id), `/webapp/employee-profile`, true);
-        }
+        setTargetEmployee(String(id), `/webapp/employee-profile`, isDesktop);
       } else {
         clearTargetEmployee();
         navigate(`/webapp/employee-profile`);
