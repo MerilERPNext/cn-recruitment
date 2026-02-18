@@ -11,10 +11,9 @@ import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-
 import { useFileUpload } from "../../../hooks/useEmployee";
-import axios from "axios";
 import toast from "react-hot-toast";
+import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -34,6 +33,7 @@ export default function Invoice() {
   );
 
   const invoices = Array.isArray(invoiceData) ? invoiceData : [];
+  const updateSalarySlipMutation = useUpdateSalarySlip();
 
   const handleInvoiceClick = (invoiceID: string) => {
     console.log("Clicked invoiceID:", invoiceID);
@@ -42,28 +42,36 @@ export default function Invoice() {
   // 🔥 Upload → Salary Slip update
   const handleUploadAndAttach = (
     file: File | null,
-    invoiceName: string,
+    invoiceName: string
   ) => {
     if (!file) return;
-
+  
     uploadMutation.mutate(file, {
-      async onSuccess(data) {
+      onSuccess(data) {
         const fileUrl = data?.file_url;
-
-        try {
-          await axios.put(
-            `/api/resource/Salary Slip/${invoiceName}`,
-            {
-              custom_attach: fileUrl,
-            },
-          );
-
-          toast.success("File uploaded & attached successfully");
-        } catch (err) {
-          console.error("Salary Slip update failed", err);
-          toast.error("Upload success but attach failed");
+  
+        if (!fileUrl) {
+          toast.error("File URL not found");
+          return;
         }
+  
+        updateSalarySlipMutation.mutate(
+          {
+            salarySlipName: invoiceName,
+            fileUrl,
+          },
+          {
+            onSuccess() {
+              toast.success("File uploaded & attached successfully");
+            },
+            onError(err) {
+              console.error("Salary Slip update failed", err);
+              toast.error("Upload success but attach failed");
+            },
+          }
+        );
       },
+  
       onError(err) {
         console.error(err);
         toast.error("File upload failed");
