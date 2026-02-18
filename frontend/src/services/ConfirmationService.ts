@@ -10,14 +10,6 @@ export const ConfirmationService = async (doctype: string, todo_status: "Open" |
   return response?.data ?? []; // always return array
 };
 
-export const ConfirmationEmployeeServic = async () => {
-  const response = await FrappeAPI.getDocumentList("Employee Confirmation", {
-    fields: ["*"],
-  }) as { status: string; data: any[] };
-
-  return response.data;   // 👈 Yahi sahi return hai
-};
-
 export const ConfirmationEmployeeService = async () => {
   const res = await FrappeAPI.getDocumentList("Employee Confirmation", {
     fields: ["*"],

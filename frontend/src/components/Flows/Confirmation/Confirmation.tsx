@@ -76,7 +76,7 @@ const ConfirmationWorkflow = () => {
 
   // END action buttons permission
 
-  const { data: showConfirmatoinButton, isLoading: loadingCardData, refetch: refetchShowConfirmatoinButton } =
+  const { data: showConfirmationButton, isLoading: loadingCardData, refetch: refetchShowConfirmationButton } =
     useGetShouldShowConfirmationButton(document_name);
 
   const {
@@ -209,7 +209,7 @@ const ConfirmationWorkflow = () => {
     (!postStagesStarted ||
       (allStagesComplted &&
         item?.reference_document?.status !== "Confirmed")) &&
-    showConfirmatoinButton?.show_button;
+    showConfirmationButton?.show_button;
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
@@ -218,7 +218,7 @@ const ConfirmationWorkflow = () => {
       refetch();
       refetchConfirmationAndSeparation();
       refetchConfirmationAndSeparationClosed();
-      refetchShowConfirmatoinButton();
+      refetchShowConfirmationButton();
     }
 
     const handleChatClose = () => {
@@ -233,8 +233,9 @@ const ConfirmationWorkflow = () => {
         handleChatClose,
       );
     };
-  }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmatoinButton]);
+  }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmationButton]);
 
+  const canInitiateProbationExtension = showConfirmationButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended";
   const confirmationCards = useMemo(
     () => [
       {
@@ -288,7 +289,7 @@ const ConfirmationWorkflow = () => {
       title: "Employee Self Form Submission",
       description: "Please submit all required fields",
       time: formatToIndianDate(item?.reference_document?.creation || ""),
-      status: showConfirmatoinButton?.show_button
+      status: showConfirmationButton?.show_button
         ? "action_required"
         : "pending",
       show_confirmation_button: canInitiateConfirmation && activeEmployee?.custom_employment_status == "On Probation",
@@ -382,7 +383,7 @@ const ConfirmationWorkflow = () => {
         ))}
       </Card>
 
-      {showConfirmatoinButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended" &&
+      {canInitiateProbationExtension &&
         <div className="flex justify-center mt-6 mb-16">
           <Button
             variant="contain"

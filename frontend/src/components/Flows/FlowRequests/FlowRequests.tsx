@@ -21,12 +21,11 @@ const titles = [
   "Overall Flow Status"
 ];
 
-const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr", "1fr"];
+const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [flowDetails, setFlowDetails] = useState<FlowRequestItem | null>(null);
   const handleShowDetails = (data: FlowRequestItem) => {
     // setSearchParams((prev) => ({
@@ -74,7 +73,7 @@ const FlowRequests: React.FC = () => {
               }}
               isSearch={true}
               searchFields={["request_id", "flow_name", "flow_category"]}
-              getItemKey={(item, idx) => item.request_id + idx}
+              getItemKey={(item) => item.request_id}
               pageSize={20}
               SkeletonComponent={CardSkeleton}
               isLoading={flowRequestsLoading}

@@ -7,7 +7,6 @@ import { Typography } from "../../shared/atoms/Typography";
 
 interface FlowRequestCardProps {
     request: FlowRequestItem;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handleShowDetails: (data: FlowRequestItem) => void;
 }
 const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
@@ -94,7 +93,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
 
     return (
         <div className="py-4  grid grid-cols-9 gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
-            <div key={request.request_id}>{request.request_id}</div>
+            <div>{request.request_id}</div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">{request.flow_name}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{request.category}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
