@@ -1,20 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CommonSearchAndActions from "../CommonSearchAndActions";
 import HeaderBar from "../../HeaderBar";
 import RequestTimeline from "./RequestDetailsCard";
 import CardTable from "../../shared/CardTable";
-import { FlowRequestItem } from "../../../types/flows";
+import { FlowRequestItem, FlowRequestStage } from "../../../types/flows";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { useApprovalAction } from "../../../hooks/userApprovalList";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 
 const titles = [
   "Stage Name",
   "Assigned To",
-  "Action Taken By",
   "Status",
-  "Trigger Date",
   "Due Date",
   "Completed Date",
   "Actions",
@@ -32,6 +35,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   const [FlowStatusType, setFlowStatusType] = useState<FlowStatusType>(
     "Approval Flow Status",
   );
+
 
   const { isDesktop } = useScreenSize();
 
@@ -95,37 +99,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
               <div className="w-full">
                 {data.approval_stages.length > 0 ? (
                   data.approval_stages.map((stage) => (
-                    <div
-                      key={stage.stage_name}
-                      className="hover:bg-gray-100 py-4 text-center grid grid-cols-8 cursor-pointer text-xs w-full border-b"
-                    >
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.stage_name}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.role || stage.user || "-"}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.approval_time || "-"}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        <StatusBadge
-                          status={stage.status || "-"}
-                        />
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.approval_time || "-"}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.approval_time || "-"}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.approval_time || "-"}
-                      </Typography></div>
-                      <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                        {stage.approval_time || "-"}
-                      </Typography></div>
-                    </div>
+                    <StageCard stage={stage} />
                   ))
                 ) : (
                   <EmptyState />
@@ -155,4 +129,80 @@ const EmptyState = () => {
   );
 };
 
+
+const StageCard = ({ stage }: { stage: FlowRequestStage }) => {
+  const actions = stage?.todo?.custom_doctype_actions
+    ? JSON.parse(stage?.todo?.custom_doctype_actions)
+    : [];
+  const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
+    ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    : [];
+
+
+  const { handleAction } = useApprovalAction();
+
+  const onAction = (action: string, data: any) => {
+    handleAction(
+      action,
+      {
+        todo_id: data.name,
+        custom_approval_type: data.custom_approval_type,
+        custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action)
+      });
+  };
+  const { data: userId } = useLoggedInUser();
+  const { data: currentUser } = useCurrentUser();
+  const { data: currentEmployee } =
+    useCurrentEmployeeAllDetails(userId || "");
+
+  const canPerformActions = useMemo(() => {
+    let actionPermission = false;
+
+    if (stage?.todo?.allocated_to_emp_id && currentEmployee?.name)
+      actionPermission = stage?.todo?.allocated_to_emp_id === currentEmployee.name;
+
+    if (currentUser?.roles && stage?.role)
+      actionPermission ||= currentUser.roles.some(
+        (role) => role.role === stage.role,
+      );
+
+    return actionPermission;
+  }, [currentEmployee, currentUser, stage]);
+
+  return (
+    <div
+      key={stage.stage_name}
+      className="hover:bg-gray-100 py-4 text-center grid grid-cols-6 cursor-pointer text-xs w-full border-b"
+    >
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        {stage.stage_name}
+      </Typography></div>
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        {stage.role || stage.user || "-"}
+      </Typography></div>
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        <StatusBadge
+          status={stage.status || "-"}
+        />
+      </Typography></div>
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(stage.todo.date) || "-"}
+      </Typography></div>
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(stage.completion_date || "") || "-"}
+      </Typography></div>
+      <div>  <Typography variant="bodySmall" className="font-medium text-center">
+        {canPerformActions &&
+          <TeamApprovalActionPill
+            actions={actions}
+            status={stage?.todo?.status}
+            recordId={stage?.todo?.name}
+            // loadingAction={loadingAction}
+            onAction={(action) => onAction(action, stage?.todo)}
+          />
+        }
+      </Typography></div>
+    </div>
+  )
+}
 export default RequestDetails;

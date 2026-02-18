@@ -82,9 +82,18 @@ export type FlowRequestStage = {
   role: string | null;
   status: string;
   approval_time: string | null;
+  completion_date: string | null;
   form_json?: {
     components: any[];
   };
+  todo: {
+    name: string;
+    custom_doctype_actions: string;
+    custom_doctype_actions_with_form: string;
+    custom_approval_type: string;
+    [key: string]: any;
+
+  }
 };
 
 export type FlowRequestItem = {
