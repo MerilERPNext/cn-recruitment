@@ -108,11 +108,19 @@ const AdvancesList: React.FC = () => {
     : [];
 
   // ✅ FILTERED DATA (SEARCH)
-  const filteredData = formattedData.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // const filteredData = formattedData.filter(
+  //   (item) =>
+  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
+  // );
+
+  const filteredData = formattedData.filter((item) => {
+    const name = item.name?.toLowerCase() || "";
+    const status = item.advanceStatus?.toLowerCase() || "";
+    const search = searchTerm.toLowerCase();
+
+    return name.includes(search) || status.includes(search);
+  });
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -279,7 +287,7 @@ const AdvancesList: React.FC = () => {
                 </Typography>
               </div>
             )}
-  
+
             <div className="flex items-center gap-2 w-full md:w-auto">
               {/* Toggle Amount */}
               <button
@@ -299,7 +307,7 @@ const AdvancesList: React.FC = () => {
                   </>
                 )}
               </button>
-  
+
               {/* Create Button */}
               <Button
                 bgColor="primary"
@@ -359,5 +367,5 @@ const AdvancesList: React.FC = () => {
       </div>
     </div>
   );
-}
-export default AdvancesList;  
+};
+export default AdvancesList;

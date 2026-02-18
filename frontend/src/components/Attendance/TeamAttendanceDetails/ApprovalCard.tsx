@@ -265,7 +265,8 @@ const ApprovalCard = ({
                     return (
                       <Button
                         key={action}
-                        className="w-full"
+                        fullWidth
+                        size="md"
                         variant="soft"
                         bgColor={actionStyle.bg}
                         onClick={(e) => {

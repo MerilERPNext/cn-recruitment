@@ -284,6 +284,7 @@ const LeaveApprovalCard = ({
 
                     return (
                       <Button
+                        size="md"
                         key={action}
                         fullWidth
                         onClick={(e) => {
