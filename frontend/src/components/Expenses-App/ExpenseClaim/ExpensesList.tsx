@@ -32,6 +32,8 @@ const getStatusBadgeClasses = (status: string) => {
       return "bg-yellow-100 text-yellow-800";
     case "Rejected":
       return "bg-red-100 text-red-800";
+    case "Paid":
+      return "bg-emerald-100 text-emerald-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -89,7 +91,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   );
 };
 
-const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
+const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
+  item,
+  isPaidFilter,
+}) => {
   const { data: currentUser } = useCurrentUser();
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -101,11 +106,16 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
 
+  const formattedPaidAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(item?.reference_document?.total_amount_reimbursed ?? 0);
+
   const { data: userUiPermission } = useGetUiPermission("Expenses");
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
-    "Expense Claims",
+    "Expense Claims"
   );
 
   const navigate = useNavigate();
@@ -117,7 +127,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
 
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
-      expenseItem,
+      expenseItem
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
@@ -125,7 +135,11 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{
+        gridTemplateColumns: isPaidFilter
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+      }}
     >
       <Typography
         variant="bodySmall"
@@ -139,9 +153,14 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedSanctionedAmount}
       </Typography>
+      {isPaidFilter && (
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formattedPaidAmount}
+        </Typography>
+      )}
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(
-          item?.reference_document?.expenses[0]?.expense_date,
+          item?.reference_document?.expenses[0]?.expense_date
         )}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -164,7 +183,7 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-              item?.send_back_user?.toLowerCase() &&
+            item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit
           }
@@ -182,7 +201,7 @@ const ExpensesList: React.FC = () => {
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
-    [],
+    []
   );
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
@@ -194,6 +213,12 @@ const ExpensesList: React.FC = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
   const navigate = useNavigate();
+
+  const [currentFilters, setCurrentFilters] = React.useState<
+    Record<string, any>
+  >({
+    status: "Draft",
+  });
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -212,7 +237,7 @@ const ExpensesList: React.FC = () => {
     id: string,
     stages: ApprovalStage[],
     sendBackUser: string,
-    canEdit: boolean,
+    canEdit: boolean
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);
@@ -232,13 +257,14 @@ const ExpensesList: React.FC = () => {
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
     const canEdit = item?.can_edit || false;
+    const isPaidFilter = currentFilters.status === "Paid";
 
     return (
       <div
         onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
-        <ExpensesTableRow item={item} />
+        <ExpensesTableRow item={item} isPaidFilter={isPaidFilter} />
       </div>
     );
   };
@@ -276,6 +302,10 @@ const ExpensesList: React.FC = () => {
         Rejected: {
           title: "No Rejected Claims",
           description: "You have no rejected expense claims.",
+        },
+        Paid: {
+          title: "No Paid Claims",
+          description: "You have no paid expense claims.",
         },
       };
 
@@ -323,6 +353,28 @@ const ExpensesList: React.FC = () => {
       icon: <Users size={16} />,
       onClick: () => navigate("/webapp/expenses-app/shared-expenses"),
     },
+  ];
+
+  const tableTitles = [
+    "Expense Category",
+    "Claimed Amount",
+    "Sanctioned Amount",
+    ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+    "Expense Date",
+    "Claimed Date",
+    "Status",
+    "ACTIONS",
+  ];
+
+  const tableColumnWidths = [
+    "1fr",
+    "1fr",
+    "1fr",
+    ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
   ];
 
   return (
@@ -381,18 +433,7 @@ const ExpensesList: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {currentEmployee?.name && (
-          <CardTable
-            titles={[
-              "Expense Category",
-              "Claimed Amount",
-              "Sanctioned Amount",
-              "Expense Date",
-              "Claimed Date",
-              "Status",
-              "ACTIONS",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
+          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             <DataListView
               queryKey={["expense-claims-all"]}
               customAPI={{
@@ -420,12 +461,14 @@ const ExpensesList: React.FC = () => {
                     { label: "Pending", value: "Draft" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
+                    { label: "Paid", value: "Paid" },
                   ],
                 },
               ]}
               defaultFilters={{
                 status: "Draft",
               }}
+              onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
