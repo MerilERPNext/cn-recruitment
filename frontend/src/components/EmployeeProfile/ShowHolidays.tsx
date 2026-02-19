@@ -44,9 +44,9 @@ const ShowHolidays = () => {
           <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Employee Holidays
           </Typography>
-            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-              Your employee holidays
-            </Typography>
+          <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+            Your employee holidays
+          </Typography>
         </div>
       </div>
 

@@ -73,9 +73,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
             <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Employment History
             </Typography>
-              <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-                                   Your employment history and organizational information
-                                </Typography>
+            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+              Your employment history and organizational information
+            </Typography>
           </div>
           <div className="flex">
             {canEditEmploymentHistory && (

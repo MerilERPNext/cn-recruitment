@@ -150,9 +150,9 @@ const ReportingDetails = () => {
             <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Reporting Details
             </Typography>
-              <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-                  Your reporting hierarchy information
-               </Typography>
+            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+              Your reporting hierarchy information
+            </Typography>
           </div>
           <div className="flex gap-2 ">
             {canEditReportingDetails && <Button

@@ -159,7 +159,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
         }
 
         return (
-            <div className={`${mobileClass}   border-gray-200 px-6`}>
+            <div className={`w-full ${mobileClass}   border-gray-200 px-6`}>
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                     Appreciations
                 </h2>
