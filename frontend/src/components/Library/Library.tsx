@@ -99,9 +99,9 @@ const DocumentLibrary = () => {
           <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Document Library
           </Typography>
-             <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
-                        Your document library
-                      </Typography>
+          <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+            Your document library
+          </Typography>
         </div>
       </div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -282,7 +282,7 @@ const DocumentLibrary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center z-50">
           <div className="bg-white  shadow-lg w-full h-screen flex flex-col">
             <div className="flex justify-between items-center border-b p-4">
-              <Typography variant="h5" className="font-semibold text-gray-800 text-lg">
+              <Typography variant="h3" className="font-semibold text-gray-800 text-lg">
                 Document Preview
               </Typography>
               <button
