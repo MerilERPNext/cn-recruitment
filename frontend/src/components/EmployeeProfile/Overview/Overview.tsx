@@ -18,11 +18,11 @@ const Overview = () => {
     return (
         <div>
             {/* Header */}
-            <div className="px-0 md:px-6 py-6">
-                <Typography variant="h3" className="font-bold text-gray-900 mb-1">
+            <div className="px-0 md:px-6 py-3 md:py-6">
+                <Typography variant="h4" className="font-bold text-gray-900 mb-1 text-xl sm:text-2xl">
                     Overview
                 </Typography>
-                <Typography variant="bodyMedium" color="body2">
+                <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
                     Employee Overview
                 </Typography>
             </div>

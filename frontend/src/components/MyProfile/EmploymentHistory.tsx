@@ -1,4 +1,5 @@
 import React from "react";
+import { Typography } from "../shared/atoms/Typography";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
 import { EditIcon, PlusIcon } from "lucide-react";
@@ -67,14 +68,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   return (
     <div className="address-form-container bg-white rounded-md">
       <div className="px-0 md:px-6 py-2 md:p-8">
-        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
+        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8 rounded-md ">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Employment History
-            </h2>
-            <p className="text-gray-600">
-              Your employment history and organizational information
-            </p>
+            </Typography>
+              <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+                                   Your employment history and organizational information
+                                </Typography>
           </div>
           <div className="flex">
             {canEditEmploymentHistory && (
@@ -186,10 +187,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               });
 
               return (
-                <div key={category} className="mb-10">
-                  <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
+                <div key={category} className="mb-5 md:mb-10">
+                  <Typography variant="h4" className="font-bold text-gray-800 mb-4 text-lg">
                     {category !== "null" && category !== null && category !== undefined ? category : "Others"}
-                  </h3>
+                  </Typography>
 
                   <div className="flex gap-2 overflow-auto">
                     {sortedItems.map((item) => (
