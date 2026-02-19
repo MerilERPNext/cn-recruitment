@@ -11,6 +11,14 @@ frappe.ui.form.on("HR Settings", {
 // Namespace to avoid global pollution
 if (!window.recruitment) window.recruitment = {};
 
+recruitment.parse_duplicate_check_fields = function (frm) {
+	try {
+		return JSON.parse(frm.doc.custom_duplicate_check_fields || "[]");
+	} catch (e) {
+		return [];
+	}
+};
+
 recruitment.render_duplicate_check_table = function (frm) {
 	if (!frm.fields_dict.custom_duplicate_check_html) return;
 
@@ -19,12 +27,7 @@ recruitment.render_duplicate_check_table = function (frm) {
 		return;
 	}
 
-	let fields = [];
-	try {
-		fields = JSON.parse(frm.doc.custom_duplicate_check_fields || "[]");
-	} catch (e) {
-		fields = [];
-	}
+	let fields = recruitment.parse_duplicate_check_fields(frm);
 
 	let html = `
 		<div class="duplicate-check-config">
@@ -95,12 +98,7 @@ recruitment.show_add_field_dialog = function (frm) {
 			let employee_fields = r.message || [];
 
 			// Filter out already added fields
-			let existing = [];
-			try {
-				existing = JSON.parse(frm.doc.custom_duplicate_check_fields || "[]");
-			} catch (e) {
-				existing = [];
-			}
+			let existing = recruitment.parse_duplicate_check_fields(frm);
 			let existing_fieldnames = existing.map((f) => f.fieldname);
 
 			let all_options = employee_fields
@@ -135,14 +133,7 @@ recruitment.show_add_field_dialog = function (frm) {
 
 					let field_data = JSON.parse(selected_option.value);
 
-					let fields = [];
-					try {
-						fields = JSON.parse(
-							frm.doc.custom_duplicate_check_fields || "[]"
-						);
-					} catch (e) {
-						fields = [];
-					}
+					let fields = recruitment.parse_duplicate_check_fields(frm);
 
 					fields.push(field_data);
 					frm.set_value(
@@ -160,12 +151,7 @@ recruitment.show_add_field_dialog = function (frm) {
 };
 
 recruitment.remove_duplicate_check_field = function (frm, idx) {
-	let fields = [];
-	try {
-		fields = JSON.parse(frm.doc.custom_duplicate_check_fields || "[]");
-	} catch (e) {
-		fields = [];
-	}
+	let fields = recruitment.parse_duplicate_check_fields(frm);
 
 	if (idx >= 0 && idx < fields.length) {
 		let removed = fields.splice(idx, 1)[0];

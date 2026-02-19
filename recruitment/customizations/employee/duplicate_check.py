@@ -8,8 +8,8 @@ def validate_duplicate_employee(doc, method):
 	Validate hook on Employee.
 	Checks for duplicate employees based on fields configured in HR Settings.
 	Trigger controlled by custom_duplicate_check_trigger setting:
-	  - "before_insert": only new employees
-	  - "validate": both new and existing employees
+	  - "New Employee Only": only new employees
+	  - "New + Existing Employee": both new and existing employees
 	"""
 	hr_settings = frappe.get_cached_doc("HR Settings")
 
