@@ -970,6 +970,11 @@ export const routesConfig: AppRoute[] = [
         element: <CompensatoryRequest />,
         permissionKey: "Compensatory",
       },
+      {
+        path: "request",
+        element: <></>, // important: render nothing
+        permissionKey: "request-leave",
+      }
     ],
   },
 

@@ -41,6 +41,7 @@ const LeaveAppInner: React.FC = () => {
   const { data: uiPermissions } = useGetUiPermission();
   console.log("ui permission for leave", uiPermissions);
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
+  const isRequestRoute = location.pathname === "/webapp/leave-app/request";
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -138,6 +139,17 @@ const LeaveAppInner: React.FC = () => {
       document.body.style.overflow = "";
     };
   }, [showModal]);
+
+  useEffect(() => {
+    if (isRequestRoute && !showModal) {
+      openModal();
+    }
+
+    if (!isRequestRoute && showModal) {
+      closeModal();
+    }
+  }, [isRequestRoute]);
+
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
