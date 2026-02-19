@@ -1,14 +1,14 @@
-import { useState, useCallback } from "react";
+import { FileText } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import ApprovalList from "../../shared/ApprovalList";
-import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
-import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { FileText } from "lucide-react";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -139,11 +139,11 @@ const TeamExpense = () => {
               refetch={refetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
-              loadMorePagination={false}
               isSearch={true}
               isFilter={true}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[

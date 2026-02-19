@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
-import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Link } from "react-router-dom";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import Button, { ButtonColor } from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -194,10 +194,7 @@ const OvertimeApprovalCard = ({
                         : "Employee ID"}
                     </Typography>
 
-                    <Typography
-                      variant="mobileCardValue"
-                      className="font-semibold text-gray-900"
-                    >
+                    <Typography variant="mobileCardValue">
                       {data?.reference_document?.employee_name ||
                         data?.reference_document?.employee}
                     </Typography>

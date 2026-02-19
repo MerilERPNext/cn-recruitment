@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import {
-  useUpdateRejectionReason,
   useIsRejectionReasonMandatory,
+  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Button from "../shared/atoms/Button";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { getActionStyles } from "../../utils/actionButtonStyles";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import Tooltip from "../shared/Tooltip";
-import StatusBadge from "../shared/atoms/statusBadge";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -213,19 +213,13 @@ const LeaveApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="text-gray-500"
-                  >
+                  <Typography variant="mobileCardLabel">
                     {data?.reference_document?.employee_name
                       ? "Employee Name"
                       : "Employee ID"}
                   </Typography>
 
-                  <Typography
-                    variant="mobileCardValue"
-                    className="font-semibold text-gray-900"
-                  >
+                  <Typography variant="mobileCardValue">
                     {data?.reference_document?.employee_name ||
                       data?.reference_document?.employee}
                   </Typography>

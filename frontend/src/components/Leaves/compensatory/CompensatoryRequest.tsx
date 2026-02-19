@@ -1,16 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../../hooks/useEmployee";
+import { useGetCompOffList } from "../../../hooks/useLeaves";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import CustomDropdown from "../../shared/CustomDropdown";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CompensatoryRequestCard, {
   CompensatoryRequestItem,
 } from "./CompensatoryRequestCard";
 import CompOffDetailsModal from "./CompOffDetailsModal";
-import { useGetCompOffList } from "../../../hooks/useLeaves";
-import CustomDropdown from "../../shared/CustomDropdown";
-import { Typography } from "../../shared/atoms/Typography";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const STATUS_OPTIONS = [
   { label: "Pending", value: "Pending" },
@@ -70,15 +70,6 @@ const CompensatoryRequest: React.FC = () => {
       </div>
     );
   }
-
-  // if (
-  //   isLoading ||
-  //   isUserLoading ||
-  //   isEmployeeLoading ||
-  //   !currentEmployee?.name
-  // ) {
-  //   return <MyLeaveRequestSkeleton />;
-  // }
 
   if (isError) return <p>Error: {(error as Error).message}</p>;
 

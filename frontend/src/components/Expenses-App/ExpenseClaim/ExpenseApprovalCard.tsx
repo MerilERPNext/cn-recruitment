@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import { Link } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import Button from "../../shared/atoms/Button";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -274,6 +274,7 @@ const ExpenseApprovalCard = ({
 
                     return (
                       <Button
+                        size="md"
                         key={action}
                         fullWidth
                         onClick={(e) => {

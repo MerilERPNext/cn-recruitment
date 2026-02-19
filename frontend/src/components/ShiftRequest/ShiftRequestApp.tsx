@@ -1,27 +1,27 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import HeaderBar from "../HeaderBar";
-import RequestShiftChangeButton from "./RequestShiftChangeButton";
-import NavigationTabs, { Tab } from "../NavigationTab";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab";
+import RequestShiftChangeButton from "./RequestShiftChangeButton";
 
-import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
 import Button from "../shared/atoms/Button";
-import { useGetUiPermission } from "../../hooks/userUiPermission";
+import ShiftRequestFormModal from "./ShiftRequestFormModal";
 
 type TabName =
   | "My Shift Assignment"
   | "Team Shift Assignment"
   | "My Shift Requests"
-  | "Shift Change Request";
+  | "Team Shift Requests";
 
 const tabRoutes: Record<TabName, string> = {
   "My Shift Assignment": "/webapp/shift-request/my-shift-assignment",
   "Team Shift Assignment": "/webapp/shift-request/team-shift",
   "My Shift Requests": "/webapp/shift-request/shift-list",
-  "Shift Change Request": "/webapp/shift-request/shift-change-request",
+  "Team Shift Requests": "/webapp/shift-request/shift-change-request",
 };
 
 const ShiftRequestApp: React.FC = () => {

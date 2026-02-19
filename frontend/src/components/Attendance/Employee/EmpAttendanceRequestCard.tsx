@@ -1,24 +1,24 @@
-import { MyAttendanceRequest } from "../../../types/attendance";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RotateCcw, Edit } from "lucide-react";
-import Tooltip from "../../shared/Tooltip";
-import { useRevokeEvent } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import Button from "../../shared/atoms/Button";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
+import { Edit, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
-import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
-import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
-import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
+import Button from "../../shared/atoms/Button";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -163,7 +163,7 @@ const EmpAttendanceRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.username || data?.allocated_to}
                 </Typography>
               </div>
@@ -174,7 +174,7 @@ const EmpAttendanceRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Request Type</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.reference_document?.custom_request_type}
                 </Typography>
               </div>

@@ -2,37 +2,37 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import Modal from "../CommonModel";
-import BenefitRequestForm from "./BenefitsRequestForm";
-import CardTable from "../../shared/CardTable";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import Button from "../../shared/atoms/Button";
-import {
-  useCurrentEmployeeIdCard,
-  useEmployee,
-} from "../../../hooks/useEmployee";
-import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import { Link } from "react-router-dom";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   BenefitPayslip,
   useGetBenefitClaimLockingPeriod,
   useGetBenefitRequestLockView,
   useGetYearFilterOptions,
 } from "../../../hooks/useBenefit";
+import {
+  useCurrentEmployeeIdCard,
+  useEmployee,
+} from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import DataListView from "../../DataListView";
+import CardTable from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { Typography } from "../../shared/atoms/Typography";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import { Link } from "react-router-dom";
-import { getCurrentPeriod } from "../shared/logic";
-import StatusBadge from "../../shared/atoms/statusBadge";
-import { formatCurrency } from "../../../utils/currency";
-import { isActionEnabled } from "../../../utils/uiPermission";
-import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import Modal from "../CommonModel";
+import { getCurrentPeriod } from "../shared/logic";
+import BenefitRequestForm from "./BenefitsRequestForm";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -225,9 +225,9 @@ const MyRequests: React.FC = () => {
             showRefreshButton={false}
             // orderBy="creation desc"
             pageSize={10}
-            infiniteScroll={true}
+            infiniteScroll={false}
+            loadMorePagination={false}
             showPagination={true}
-            // loadMorePagination={false}
             getItemKey={(item) => item.name}
           />
         </CardTable>

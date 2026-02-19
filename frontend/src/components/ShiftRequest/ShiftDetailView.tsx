@@ -1,25 +1,26 @@
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import DOMPurify from "dompurify";
-import Button from "../shared/atoms/Button";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import FileRenderer from "../shared/molecules/FileRenderer";
-import { formatDate } from "../../utils/qrCodeUtils";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { getActionStyles } from "../../utils/actionButtonStyles";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
+import { Typography } from "../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
-import { getActionStyles } from "../../utils/actionButtonStyles";
-import StatusBadge from "../shared/atoms/statusBadge";
+import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function ShiftDetailView({
   data: propData,
   documentName,
   onClose,
   onAction,
-  label = "Shift Request",
+  label = "Team Shift Request",
 }: {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
@@ -124,117 +125,143 @@ export function ShiftDetailView({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography variant="h4" className="font-semibold text-gray-800">
+            {label}
+          </Typography>
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4   border-b border-gray-200 bg-white sticky top-0 z-20">
-          <div className="flex gap-2 justify-center items-center">
-            <h2 className="text-lg font-semibold text-gray-800">{label}</h2>
-          </div>
-          <button
+          <Button
+            variant="subtle"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
+            className="p-2 rounded-full hover:bg-gray-100"
           >
             <X className="h-5 w-5 text-gray-600" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
-          {/* Employee Info */}
-          <div className="py-2">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-6">
+          {/* Employee + Status */}
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                {data?.reference_document?.employee_name
+                  ? "Employee Name"
+                  : "Employee ID"}
+              </Typography>
+
+              <Typography variant="mobileCardValue">
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
+              </Typography>
+            </div>
+
             <StatusBadge status={data?.status} />
           </div>
-          <div className="py-2">
-            <div className="flex gap-2 justify-between">
-              {/* Display Employee Name */}
-              {data?.reference_document?.employee_name && (
-                <p className=" flex flex-col gap-1">
-                  <span className="card-title">Employee Name</span>
-                  <span className="card-subtitle">
-                    {data?.reference_document?.employee_name}
-                  </span>
-                </p>
-              )}
-              {/* Display From Date */}
-              {data?.reference_document?.from_date && (
-                <p className=" flex flex-col gap-1">
-                  <span className="card-title">From Date</span>
-                  <span className="card-subtitle">
-                    {formatDate(data?.reference_document?.from_date)}
-                  </span>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="py-2">
-            <div className="flex gap-2 justify-between">
-              {/* Display Shift Type */}
-              {data?.reference_document?.shift_type && (
-                <p className=" flex flex-col gap-1">
-                  <span className="card-title">Shift Type</span>
-                  <span className="card-subtitle">
-                    {data?.reference_document?.shift_type}
-                  </span>
-                </p>
-              )}
 
-              {/* Display To Date */}
-              {data?.reference_document?.to_date && (
-                <p className=" flex flex-col gap-1">
-                  <span className="card-title">To Date</span>
-                  <span className="card-subtitle">
-                    {formatDate(data?.reference_document?.to_date)}
-                  </span>
-                </p>
-              )}
+          {/* Dates + Shift Info */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to_name}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated To Email
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {data.allocated_to}
+                </Typography>
+              </div>
+            </div>
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Shift Type</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.shift_type || "--"}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">From Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.from_date)}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">To Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.to_date)}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.due_date || data?.date)}
+                </Typography>
+              </div>
             </div>
           </div>
-          {/* explanation */}
-          <div className="py-2 flex flex-col gap-1">
-            <p className="card-title">Description</p>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
-              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
+
+          {/* Description */}
+          {cleanDescription && (
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Description</Typography>
+
+              <Typography variant="mobileCardValue">
+                {cleanDescription}
+              </Typography>
             </div>
-          </div>
-          {data?.reference_document?.custom_attachment ? (
-            <div className="py-4">
-              <p className="text-sm  mb-2 font-bold">Attachment</p>
-              <FileRenderer
-                filePath={data?.reference_document?.custom_attachment || ""}
+          )}
+
+          {/* Attachment */}
+          {data?.reference_document?.custom_attachment && (
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Attachment</Typography>
+
+              <AttachmentCard
+                fileUrl={data?.reference_document?.custom_attachment}
               />
             </div>
-          ) : null}
+          )}
         </div>
 
         {/* Actions */}
         {actions?.length > 0 && data?.status === "Draft" && (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-              {actions?.length &&
-                actions.map((action: string) => {
-                  const actionStyle = getActionStyles(action);
-                  const isLoading =
-                    currentAction === action && mutation.isPending;
+            <div className="flex gap-2">
+              {actions.map((action: string) => {
+                const actionStyle = getActionStyles(action);
+                const isLoading =
+                  currentAction === action && mutation.isPending;
 
-                  return (
-                    <Button
-                      key={action}
-                      fullWidth
-                      disabled={isLoading}
-                      onClick={() => handleAction(action)}
-                      size="md"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
+                return (
+                  <Button
+                    key={action}
+                    fullWidth
+                    size="md"
+                    variant="soft"
+                    bgColor={actionStyle.bgColor}
+                    disabled={isLoading}
+                    onClick={() => handleAction(action)}
+                  >
+                    {isLoading ? (
+                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      action
+                    )}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}

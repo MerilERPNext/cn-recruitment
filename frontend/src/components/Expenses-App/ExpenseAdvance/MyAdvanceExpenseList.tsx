@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import CardTable from "../../shared/CardTable";
+import { FileText } from "lucide-react";
 import { useState } from "react";
-import { formatCurrency } from "../../../utils/currencyFormatter";
-import AdvanceDetailModal from "./AdvanceDetailModal";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import { Link } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DataListView from "../../DataListView";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { ApprovalStage } from "../../../types/expenseAdvance";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import DataListView from "../../DataListView";
+import CardTable from "../../shared/CardTable";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { FileText } from "lucide-react";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceDetailModal from "./AdvanceDetailModal";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -297,9 +297,9 @@ const MyAdvanceExpenseList = () => {
             onRefetchComplete={() => setRefetchAttendance(false)}
             showRefreshButton={false}
             pageSize={10}
-            infiniteScroll={true}
-            showPagination={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
           />
         </CardTable>
       </div>

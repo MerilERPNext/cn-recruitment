@@ -1,13 +1,13 @@
 import React from "react";
-import CardTable from "../../shared/CardTable";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import DataListView from "../../DataListView";
+import { Link, useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { Link, useNavigate } from "react-router-dom";
-import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import DataListView from "../../DataListView";
 import HeaderBar from "../../HeaderBar";
+import CardTable from "../../shared/CardTable";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
@@ -229,9 +229,9 @@ const SharedExpenses: React.FC = () => {
             showRefreshButton={false}
             orderBy="posting_date desc"
             pageSize={10}
-            infiniteScroll={true}
-            showPagination={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
           />
         </CardTable>
       </div>

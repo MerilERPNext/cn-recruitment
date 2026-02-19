@@ -1,15 +1,15 @@
-import { useState, useCallback } from "react";
-import { MyAttendanceRequest } from "../../../types/attendance";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalCard from "./ApprovalCard";
-import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalCard from "./ApprovalCard";
 
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
@@ -90,9 +90,9 @@ const TeamAttendanceDetails = () => {
               setRefetch={setRefetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               isSearch={true}
               isFilter={true}
               columnWidths={tableColumnWidths}
