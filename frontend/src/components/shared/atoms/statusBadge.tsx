@@ -28,7 +28,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Pending",
         bgClass: "bg-yellow-100",
         textClass: "text-yellow-800",
-        icon: <Clock className="w-4 h-4" />,
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "approved":
@@ -36,7 +36,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Approved",
         bgClass: "bg-emerald-100",
         textClass: "text-emerald-700",
-        icon: <Check className="w-4 h-4" />,
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "rejected":
@@ -44,7 +44,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Rejected",
         bgClass: "bg-red-100",
         textClass: "text-red-700",
-        icon: <X className="w-4 h-4" />,
+        icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "cancelled":
@@ -52,7 +52,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Cancelled",
         bgClass: "bg-red-50",
         textClass: "text-red-600",
-        icon: <Ban className="w-4 h-4" />,
+        icon: <Ban className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "completed":
@@ -60,7 +60,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Completed",
         bgClass: "bg-blue-100",
         textClass: "text-blue-700",
-        icon: <Check className="w-4 h-4" />,
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     /* ---------- Timeline statuses ---------- */
@@ -69,7 +69,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Current",
         bgClass: "bg-emerald-50",
         textClass: "text-emerald-700",
-        icon: <Clock className="w-4 h-4" />,
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "upcoming":
@@ -77,7 +77,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Upcoming",
         bgClass: "bg-blue-50",
         textClass: "text-blue-700",
-        icon: <ArrowUpRight className="w-4 h-4" />,
+        icon: <ArrowUpRight className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "previous":
@@ -85,7 +85,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Previous",
         bgClass: "bg-slate-100",
         textClass: "text-slate-600",
-        icon: <ArrowDownRight className="w-4 h-4" />,
+        icon: <ArrowDownRight className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     /* ---------- State statuses ---------- */
@@ -94,7 +94,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Active",
         bgClass: "bg-emerald-50",
         textClass: "text-emerald-700",
-        icon: <Check className="w-4 h-4" />,
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "inactive":
@@ -102,7 +102,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Inactive",
         bgClass: "bg-gray-100",
         textClass: "text-gray-600",
-        icon: <X className="w-4 h-4" />,
+        icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "Pending Approval":
@@ -110,7 +110,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Pending Approval",
         bgClass: "bg-yellow-100",
         textClass: "text-yellow-800",
-        icon: <Clock className="w-4 h-4" />,
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     /* ---------- Payment statuses ---------- */
@@ -119,7 +119,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Paid",
         bgClass: "bg-emerald-100",
         textClass: "text-emerald-700",
-        icon: <Check className="w-4 h-4" />,
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "unpaid":
@@ -127,7 +127,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Unpaid",
         bgClass: "bg-amber-100",
         textClass: "text-amber-800",
-        icon: <AlertTriangle className="w-4 h-4" />,
+        icon: <AlertTriangle className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "overdue":
@@ -135,7 +135,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Overdue",
         bgClass: "bg-red-100",
         textClass: "text-red-700",
-        icon: <AlertCircle className="w-4 h-4" />,
+        icon: <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "issued":
@@ -143,7 +143,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Issued",
         bgClass: "bg-yellow-100",
         textClass: "text-yellow-800",
-        icon: <Clock className="w-4 h-4" />,
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "allocated":
@@ -151,7 +151,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Allocated",
         bgClass: "bg-emerald-100",
         textClass: "text-emerald-700",
-        icon: <Check className="w-4 h-4" />,
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "expired":
@@ -159,7 +159,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Expired",
         bgClass: "bg-red-100",
         textClass: "text-red-700",
-        icon: <X className="w-4 h-4" />,
+        icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "triggered":
@@ -167,8 +167,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         label: "Triggered",
         bgClass: "bg-blue-100",
         textClass: "text-blue-700",
-        icon: <AlertCircle className="w-4 h-4" />,
-
+        icon: <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     default:
@@ -193,11 +192,13 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
       className={`
         inline-flex items-center
         gap-[6px]
-        px-3 py-[6px]
+        px-3 py-[5px]
+        md:py-[6px]
         rounded-lg
         ${badge.bgClass}
         ${badge.textClass}
-        text-sm
+        text-xs
+        md:text-sm
         font-brand
         font-medium
         leading-4

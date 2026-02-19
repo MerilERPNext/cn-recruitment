@@ -1,16 +1,16 @@
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
-import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { Typography } from "../../shared/atoms/Typography";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import Button, { ButtonColor } from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -200,10 +200,7 @@ const ApprovalCard = ({
                       : "Employee ID"}
                   </Typography>
 
-                  <Typography
-                    variant="mobileCardValue"
-                    className="font-semibold"
-                  >
+                  <Typography variant="mobileCardValue">
                     {data?.reference_document?.employee_name ||
                       data?.reference_document?.employee}
                   </Typography>

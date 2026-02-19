@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
 import { Link } from "react-router-dom";
-import { Typography } from "../../shared/atoms/Typography";
-import Tooltip from "../../shared/Tooltip";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Button from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -218,6 +218,7 @@ const AdvanceApprovalCard = ({
                     return (
                       <Button
                         key={action}
+                        size="md"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

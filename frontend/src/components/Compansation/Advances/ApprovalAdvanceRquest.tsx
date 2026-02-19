@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
-import { Typography } from "../../shared/atoms/Typography";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
+import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -71,9 +71,9 @@ const TeamAdvanceRequest = () => {
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}

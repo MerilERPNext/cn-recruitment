@@ -1,24 +1,24 @@
 import { Repeat1, RotateCcw, SquarePen } from "lucide-react";
-import { useRevokeEvent } from "../../hooks/userApprovalList";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import Tooltip from "../shared/Tooltip";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { LeaveCardProps } from "../../types/leaves";
-import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
-import { Typography } from "../shared/atoms/Typography";
+import { LeaveCardProps } from "../../types/leaves";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
+import { isActionEnabled } from "../../utils/uiPermission";
+import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
-import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
-import { useState } from "react";
+import { Typography } from "../shared/atoms/Typography";
+import Tooltip from "../shared/Tooltip";
+import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -201,7 +201,7 @@ const EmpLeaveRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.username || data?.allocated_to}
                 </Typography>
               </div>
@@ -212,7 +212,7 @@ const EmpLeaveRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Leave Type</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.reference_document?.leave_type}
                 </Typography>
               </div>

@@ -1,12 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import type React from "react";
-import { useEffect, useState, useRef, useMemo } from "react";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import FrappeListView from "../ListView";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
@@ -14,22 +17,19 @@ import {
   usePrintFormatMenuOptions,
   useTDSPRintViewPDF,
 } from "../../hooks/useSalaryDetails";
-import SalarySlipPDFModal from "./SalarySlipPDFModal";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { FaRegEye } from "react-icons/fa";
-import CardTable from "../shared/CardTable";
-import ContextualPopup from "../shared/molecules/ContextualPopup";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import Button from "../shared/atoms/Button";
-import { useTargetUser } from "../../context/ViewedUserContext";
-import CustomDropdown from "../shared/CustomDropdown";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { Typography } from "../shared/atoms/Typography";
-import formatToIndianDate from "../../utils/formatToIndianDate";
 import { formatCurrency } from "../../utils/currency";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import FrappeListView from "../ListView";
+import Button from "../shared/atoms/Button";
+import { Typography } from "../shared/atoms/Typography";
+import CardTable from "../shared/CardTable";
+import CustomDropdown from "../shared/CustomDropdown";
+import ContextualPopup from "../shared/molecules/ContextualPopup";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
+import SalarySlipPDFModal from "./SalarySlipPDFModal";
 
 type PayrollPeriod = {
   name: string;
@@ -286,10 +286,15 @@ const SalarySlipsList = () => {
               "posting_date",
             ]}
             searchFields={["employee", "status", "posting_date"]}
-            infiniteScroll={true}
+            infiniteScroll={false}
+            showPagination={true}
             SkeletonComponent={CardSkeleton}
             isFilter={false}
-            defaultFilters={filter as any}
+            // defaultFilters={filter as any}
+            defaultFilters={{
+              status: "Submitted",
+              ...filter,
+            }}
           />
         </CardTable>
       </div>
@@ -395,7 +400,7 @@ const SalarySlipItemDesktop = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  if (item.status.toLowerCase() !== "submitted") return null;
+  // if (item.status.toLowerCase() !== "submitted") return null;
 
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
@@ -445,9 +450,7 @@ const SalarySlipItemDesktop = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">
-            ₹XX,XXX
-          </span>
+          <span className="blur-sm text-gray-400">₹XX,XXX</span>
         ) : (
           formatCurrency2(item.gross_pay)
         )}
@@ -487,7 +490,7 @@ const SalarySlipItemMobile = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  if (item.status.toLowerCase() !== "submitted") return null;
+  // if (item.status.toLowerCase() !== "submitted") return null;
 
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {

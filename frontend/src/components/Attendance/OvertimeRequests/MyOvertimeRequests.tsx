@@ -1,22 +1,22 @@
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import Button from "../../shared/atoms/Button";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CreateOvertimeRequest from "./CreateOvertimeRequest";
-import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
-import { Typography } from "../../shared/atoms/Typography";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -132,9 +132,9 @@ const MyOvertimeRequests = () => {
               SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
             />
           ) : null}
         </CardTable>

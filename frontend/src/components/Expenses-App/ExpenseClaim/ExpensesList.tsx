@@ -1,29 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
-import CardTable from "../../shared/CardTable";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
-import Tooltip from "../../shared/Tooltip";
-import DataListView from "../../DataListView";
+import { FileText, MoreVertical, Users } from "lucide-react";
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { ApprovalStage } from "../../../types/expenseAdvance";
-import { Users } from "lucide-react";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import Button from "../../shared/atoms/Button";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
-import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
-import { MoreVertical, FileText } from "lucide-react";
-import DropdownMenu from "../../shared/DropDownMenu";
-import { Typography } from "../../shared/atoms/Typography";
+import { ApprovalStage } from "../../../types/expenseAdvance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import StatusBadge from "../../shared/atoms/statusBadge";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import DataListView from "../../DataListView";
+import CardTable from "../../shared/CardTable";
+import DropdownMenu from "../../shared/DropDownMenu";
+import Tooltip from "../../shared/Tooltip";
+import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
+import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
+import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -109,7 +108,6 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     "Expense Claims",
   );
 
-
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
@@ -166,7 +164,9 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() && canEditExpense && item?.can_edit
+              item?.send_back_user?.toLowerCase() &&
+            canEditExpense &&
+            item?.can_edit
           }
           onEdit={handleEditClick}
         />
@@ -432,9 +432,9 @@ const ExpensesList: React.FC = () => {
               showRefreshButton={false}
               orderBy="posting_date desc"
               pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               noRecordsScreen={noRecordsScreen}
             />
           </CardTable>

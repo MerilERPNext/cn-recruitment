@@ -1,34 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type React from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  useQueryClient,
-  useQuery,
   useInfiniteQuery,
+  useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
-  useCustomApiQuery,
-  useCustomApiInfiniteQuery,
-} from "../hooks/useCustomApi";
-import {
-  Search,
-  Filter,
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
-  AlertCircle,
+  Filter,
   Loader2,
-  Shield,
+  RefreshCw,
   RepeatIcon as RetryIcon,
+  Search,
+  Shield,
 } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
+import {
+  useCustomApiInfiniteQuery,
+  useCustomApiQuery,
+} from "../hooks/useCustomApi";
+import { useScreenSize } from "../hooks/useScreenSize";
 import {
   customApiService,
   type CustomAPIConfig,
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
-import { useScreenSize } from "../hooks/useScreenSize";
 
 interface BaseItem {
   name?: string;
@@ -171,6 +171,7 @@ const DataListView = <T extends BaseItem>({
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
   const { isDesktop } = useScreenSize();
+  const maxVisiblePages = isDesktop ? 5 : 2;
 
   useEffect(() => {
     if (onFiltersChange) {
@@ -690,18 +691,26 @@ const DataListView = <T extends BaseItem>({
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
+          {/* Calculate page range */}
+          {(() => {
+            let startPage = Math.max(
+              1,
+              currentPage - Math.floor(maxVisiblePages / 2),
+            );
+
+            let endPage = startPage + maxVisiblePages - 1;
+
+            if (endPage > totalPages) {
+              endPage = totalPages;
+              startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            return (
+
+            const pages = [];
+            for (let i = startPage; i <= endPage; i++) {
+              pages.push(i);
+            }
+
+            return pages.map((pageNum) => (
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
@@ -713,8 +722,9 @@ const DataListView = <T extends BaseItem>({
               >
                 {pageNum}
               </button>
-            );
-          })}
+            ));
+          })()}
+
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}

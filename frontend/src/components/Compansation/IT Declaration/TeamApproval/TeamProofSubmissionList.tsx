@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { FileText } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
 
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import ApprovalList from "../../../shared/ApprovalList";
@@ -18,20 +18,20 @@ const TeamProofSubmissionList = () => {
   const navigate = useNavigate();
 
   const { isDesktop } = useScreenSize();
-  
 
   // ---------------- Row Click ----------------
-  const handleRowClick = useCallback((row: any) => {
-    const referenceId =
-      row?.reference_document?.name || row?.todo_id;
-  
-    if (referenceId) {
-      navigate(
-        `/webapp/salary-slip-app/team-approval-it-declaration/${referenceId}`
-      );
-    }
-  }, [navigate]);
+  const handleRowClick = useCallback(
+    (row: any) => {
+      const referenceId = row?.reference_document?.name || row?.todo_id;
 
+      if (referenceId) {
+        navigate(
+          `/webapp/salary-slip-app/team-approval-it-declaration/${referenceId}`,
+        );
+      }
+    },
+    [navigate],
+  );
 
   const titles = [
     "Employee",
@@ -42,14 +42,7 @@ const TeamProofSubmissionList = () => {
     "Actions",
   ];
 
-  const columnWidths: string[] = [
-    "1fr",
-    "2fr",
-    "2fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const columnWidths: string[] = ["1fr", "2fr", "2fr", "1fr", "1fr", "1fr"];
 
   // ---------------- Empty Screen ----------------
   const noRecordsScreen = () => (
@@ -66,7 +59,6 @@ const TeamProofSubmissionList = () => {
 
   return (
     <div className="flex flex-col h-full">
-
       {/* Header */}
       {isDesktop && (
         <div className="px-6 py-4">
@@ -85,8 +77,9 @@ const TeamProofSubmissionList = () => {
             refetch={refetch}
             setRefetch={setRefetch}
             pageSize={10}
-            infiniteScroll
-            showPagination
+            infiniteScroll={false}
+            loadMorePagination={false}
+            showPagination={true}
             isSearch
             isFilter
             filterFields={[

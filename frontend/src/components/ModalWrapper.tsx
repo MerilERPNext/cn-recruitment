@@ -1,5 +1,5 @@
 import React, { useCallback } from "react";
-import { Outlet, useSearchParams, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 
 const requests = [
   {
@@ -15,7 +15,7 @@ const requests = [
     path: "/webapp/expenses-app/daily-allowance-claim",
   },
   {
-    name: "Shift Change Request",
+    name: "Team Shift Requests",
     path: "/webapp/shift-request/shift-change-form",
   },
   { name: "Attendance Request", path: "/webapp/attendance/emp-attendance" },
@@ -88,7 +88,6 @@ export default function ModalWrapper() {
     searchParams.delete("showModal");
     navigate(-1);
   }, [navigate, searchParams]);
-  
 
   return (
     <>

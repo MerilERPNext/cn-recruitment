@@ -1,13 +1,13 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import ApprovalList from "../shared/ApprovalList";
-import CardTable from "../shared/CardTable";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { LeaveDetailView } from "./LeaveDetails";
-import LeaveApprovalCard from "./LeaveApprovalCard";
-import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import ApprovalList from "../shared/ApprovalList";
+import { Typography } from "../shared/atoms/Typography";
+import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import LeaveApprovalCard from "./LeaveApprovalCard";
+import { LeaveDetailView } from "./LeaveDetails";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -91,9 +91,9 @@ const TeamLeaveRequest = () => {
               setRefetch={setRefetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               isSearch={true}
               isFilter={true}
               columnWidths={finalColumnWidths}

@@ -1,13 +1,13 @@
-import HeaderBar from "../HeaderBar";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import HeaderBar from "../HeaderBar";
 
-import ApprovalList from "../shared/ApprovalList";
-import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { useCallback, useState } from "react";
-import CardTable from "../shared/CardTable";
-import { ShiftDetailView } from "./ShiftDetailView";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import ApprovalList from "../shared/ApprovalList";
+import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
+import { ShiftDetailView } from "./ShiftDetailView";
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
@@ -43,27 +43,31 @@ const AllShiftChangeRequestsList: React.FC = () => {
     setRefetchApprovalList(false);
   }, []);
 
-  const tableTitles = [
-    "Select",
-    "Employee",
-    "Shift Type",
-    "From Date",
-    "To Date",
-    "Due Date",
-    "Status",
-    "ACTIONS",
-  ];
+  const tableTitles = isBulkSelectEnabled
+    ? [
+        "Select",
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ]
+    : [
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ];
 
-  const tableColumnWidths = [
-    "0.5fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const tableColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -86,9 +90,9 @@ const AllShiftChangeRequestsList: React.FC = () => {
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}

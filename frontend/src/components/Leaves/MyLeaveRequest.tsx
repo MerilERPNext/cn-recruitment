@@ -1,26 +1,24 @@
 import { useState } from "react";
-import DataListView from "../DataListView";
-import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import CardTable from "../shared/CardTable";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { MyLeaveRequestType } from "../../types/leaves";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
   useReplaceLeave,
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
-import ReplaceLeaveModal from "./ReplaceLeaveModal";
-import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { MyLeaveRequestType } from "../../types/leaves";
+import DataListView from "../DataListView";
+import { Typography } from "../shared/atoms/Typography";
+import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
+import ReplaceLeaveModal from "./ReplaceLeaveModal";
 
 const MyLeaveRequests = ({
   pageSize = 10,
-  showPagination = true,
 }: {
   pageSize?: number;
-  showPagination?: boolean;
   showLeaveRequest?: boolean;
 }) => {
   const replaceLeave = useReplaceLeave();
@@ -168,9 +166,9 @@ const MyLeaveRequests = ({
                 pageSize={pageSize}
                 showRefreshButton={false}
                 orderBy="from_date desc"
-                showPagination={showPagination}
-                infiniteScroll={true}
+                infiniteScroll={false}
                 loadMorePagination={false}
+                showPagination={true}
               />
             )}
           </CardTable>

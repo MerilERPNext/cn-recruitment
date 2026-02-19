@@ -1,20 +1,20 @@
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import DOMPurify from "dompurify";
-import Button, { ButtonColor } from "../shared/atoms/Button";
-import { Typography } from "../shared/atoms/Typography";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import Button, { ButtonColor } from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
+import { Typography } from "../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
-import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function AttendanceDetailView({
@@ -210,7 +210,7 @@ export function AttendanceDetailView({
                   : "Employee ID"}
               </Typography>
 
-              <Typography variant="mobileCardValue" className="font-semibold">
+              <Typography variant="mobileCardValue">
                 {data?.reference_document?.employee_name ||
                   data?.reference_document?.employee}
               </Typography>

@@ -1,15 +1,15 @@
-import React, { useState, useMemo } from "react";
 import { ClipboardList } from "lucide-react";
-import FrappeListView from "../ListView";
-import { ViewAll } from "../shared/atoms/ViewAll";
-import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import FrappeListView from "../ListView";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
-import { useNavigate } from "react-router-dom";
+import { ViewAll } from "../shared/atoms/ViewAll";
 import CustomDropdown from "../shared/CustomDropdown";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 interface ToDo {
@@ -37,16 +37,16 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
     }
   };
 
-  const handleTodoClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate("/webapp/todo-app");
-  };
+  // const handleTodoClick = (e: React.MouseEvent) => {
+  //   e.stopPropagation();
+  //   navigate("/webapp/todo-app");
+  // };
 
   const cleanDescription = sanitizeToPlainText(item.description);
 
   return (
     <div
-      onClick={handleClick}
+      // onClick={handleClick}
       key={item.name} // Assuming item.name is unique
       className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
@@ -72,7 +72,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
         </div>
       </div>
       <button
-        onClick={handleTodoClick}
+        onClick={handleClick}
         className="text-primary-600 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors whitespace-nowrap"
       >
         View task
