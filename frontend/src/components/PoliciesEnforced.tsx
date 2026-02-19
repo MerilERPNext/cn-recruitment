@@ -275,7 +275,7 @@ const PoliciesEnforced: React.FC = () => {
                   status: "Acknowledged",
                   employee_id: currentEmployee?.name || "",
                 }}
-                defaultFields={["name", "status", "policy", "sign_off_mandatory", "due_date"]}
+                defaultFields={["name", "status", "policy", "sign_off_mandatory"]}
                 infiniteScroll={true}
                 isSearch={true}
                 isFilter={false}

@@ -63,6 +63,7 @@ const PolicySignOff: React.FC = () => {
   ]) as {
     data: PolicyDetailsDocument | undefined;
     isLoading: boolean;
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     error: any;
   };
 
@@ -93,9 +94,8 @@ const PolicySignOff: React.FC = () => {
         });
     }
   };
-
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleFormSubmit = (formData: any) => {
-    console.log("Form submitted with data:", formData);
 
     updatePolicy({
       doctype: "Policy Details",
@@ -386,7 +386,7 @@ const PolicySignOff: React.FC = () => {
                       // Form config validation and defaults logic...
                       if (!formConfig || typeof formConfig !== "object") throw new Error("Invalid form config");
                       if (!formConfig.components || !Array.isArray(formConfig.components)) formConfig.components = [];
-
+                      /* eslint-disable @typescript-eslint/no-explicit-any */
                       formConfig.components.forEach((component: any) => {
                         if (!component || typeof component !== "object") return;
                         if (component.key === "employeeName" || component.key === "employee_name") {
