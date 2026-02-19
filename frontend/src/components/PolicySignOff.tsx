@@ -317,7 +317,7 @@ const PolicySignOff: React.FC = () => {
                     <button
                       onClick={handleSignOff}
                       disabled={!isAgreed}
-                      className={`w-full font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${isAgreed
+                      className={`sm:w-fit w-full ml-auto font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${isAgreed
                         ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
                         : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
                         }`}

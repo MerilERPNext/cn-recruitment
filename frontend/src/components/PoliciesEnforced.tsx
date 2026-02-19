@@ -114,7 +114,7 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
       <button
         onClick={handleViewPolicy}
         disabled={isComplete}
-        className={`w-full font-brand font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${isComplete
+        className={`ml-auto sm:w-[200px] w-full font-brand font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${isComplete
           ? "bg-gray-100 text-gray-800 cursor-not-allowed border border-gray-200"
           : "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
           }`}
