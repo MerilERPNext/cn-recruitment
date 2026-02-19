@@ -155,8 +155,8 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             {isResolving
               ? "This will save the resolution and set the ticket status to Resolved."
               : isEditing
-              ? "This will save the resolution and set status to Resolved."
-              : "This will close the ticket and save the resolution details."}
+                ? "This will save the resolution and set status to Resolved."
+                : "This will close the ticket and save the resolution details."}
           </p>
         </div>
 
@@ -647,9 +647,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         />
       ) : (
         <div
-          className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${
-            isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-          }`}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+            }`}
         >
           {getInitials(sender.name)}
         </div>
@@ -669,11 +668,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             href={attachment.file_url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-              isCurrentUser
-                ? "bg-blue-400/20 text-blue-100 hover:bg-blue-400/30"
-                : "bg-gray-200/50 text-gray-700 hover:bg-gray-200"
-            }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${isCurrentUser
+              ? "bg-blue-400/20 text-blue-100 hover:bg-blue-400/30"
+              : "bg-gray-200/50 text-gray-700 hover:bg-gray-200"
+              }`}
           >
             <Paperclip className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{attachment.file_name}</span>
@@ -685,11 +683,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
   // Quoted message component
   const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
-    <div className={`mb-2 p-3 rounded-lg border-l-4 ${
-      isCurrentUser
-        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
-        : 'bg-gray-100 border-gray-300 text-gray-600'
-    }`}>
+    <div className={`mb-2 p-3 rounded-lg border-l-4 ${isCurrentUser
+      ? 'bg-blue-400/20 border-blue-300 text-blue-100'
+      : 'bg-gray-100 border-gray-300 text-gray-600'
+      }`}>
       <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
         {sender ? `${sender} wrote:` : 'Previous message:'}
       </div>
@@ -910,11 +907,10 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                         </span>
                         {entry.satisfaction_status && entry.satisfaction_status !== "Pending" && (
                           <span
-                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                              entry.satisfaction_status === "Satisfied"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
+                            className={`text-xs font-medium px-2 py-0.5 rounded-full ${entry.satisfaction_status === "Satisfied"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                              }`}
                           >
                             {entry.satisfaction_status}
                           </span>
@@ -973,7 +969,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
         <div className="flex items-center gap-4">
           {/* Chat icon */}
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -1005,14 +1001,14 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
           {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
             <>
               {/* Accept Closure - closes the ticket */}
               <button
                 onClick={handleAcceptClosure}
                 disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 <CheckCircle className="w-4 h-4" />
                 {isClosing ? "Closing..." : "Accept Closure"}
@@ -1021,7 +1017,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <button
                 onClick={() => setIsRejectModalOpen(true)}
                 disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 <XCircle className="w-4 h-4" />
                 Reject
@@ -1033,7 +1029,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 <button
                   onClick={handleResolveButtonClick}
                   disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Resolve
@@ -1042,7 +1038,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <button
                 onClick={handleCloseButtonClick}
                 disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 <CheckCircle className="w-4 h-4" />
                 {isClosing ? "Closing..." : "Close Ticket"}
@@ -1066,38 +1062,34 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         <nav className="flex gap-1">
           <button
             onClick={() => setActiveTab("chat")}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${
-              activeTab === "chat"
-                ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "chat"
+              ? "border-blue-500 text-blue-600 bg-blue-50/50"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
           >
             Messages
             {messages.length > 0 && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
-                activeTab === "chat"
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-app text-gray-600"
-              }`}>
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "chat"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-app text-gray-600"
+                }`}>
                 {messages.length}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab("resolution")}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${
-              activeTab === "resolution"
-                ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-            }`}
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+              ? "border-blue-500 text-blue-600 bg-blue-50/50"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
           >
             Resolution
             {ticket.resolution_details && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${
-                activeTab === "resolution"
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-app text-gray-600"
-              }`}>
+              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-app text-gray-600"
+                }`}>
                 1
               </span>
             )}

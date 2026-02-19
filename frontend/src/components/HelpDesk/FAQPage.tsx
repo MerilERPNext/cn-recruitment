@@ -99,7 +99,7 @@ const FAQPage: React.FC = () => {
               </button>
 
               {isCategoryDropdownOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-lg">
+                <div className="absolute  max-sm:left-0 sm:right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-lg">
                   <ul className="max-h-60 overflow-auto p-1">
                     {categories.map((category) => (
                       <li
@@ -108,11 +108,10 @@ const FAQPage: React.FC = () => {
                           setSelectedCategory(category.name);
                           setIsCategoryDropdownOpen(false);
                         }}
-                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${
-                          category.name === selectedCategory
-                            ? "bg-primary-50 text-primary-600 font-medium"
-                            : "text-gray-700 hover:bg-gray-100"
-                        }`}
+                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${category.name === selectedCategory
+                          ? "bg-primary-50 text-primary-600 font-medium"
+                          : "text-gray-700 hover:bg-gray-100"
+                          }`}
                       >
                         {category.category_name} ({category.article_count})
                       </li>
