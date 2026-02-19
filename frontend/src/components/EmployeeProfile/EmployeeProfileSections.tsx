@@ -111,10 +111,10 @@ export default function EmployeeProfileSections() {
         <div>
             <div className="flex items-start justify-between">
                 <div className="px-0 md:px-6 py-6">
-                    <Typography variant="h3" className="font-bold text-gray-900 mb-1">
+                    <Typography variant="h4" className="font-bold text-gray-900 mb-1 text-xl sm:text-2xl">
                         Personal Information
                     </Typography>
-                    <Typography variant="bodyMedium" color="body2">
+                    <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
                         Comprehensive details and records.
                     </Typography>
                 </div>
@@ -141,7 +141,7 @@ export default function EmployeeProfileSections() {
                 </div>
             )}
             {/* Scrollable Sections */}
-            <div className="space-y-6 pb-6">
+            <div className="space-y-2 md:space-y-6 pb-6">
                 {tabs.map(tab => (
                     <section
                         key={tab.key}
@@ -151,8 +151,8 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
-                            <Typography variant="subheading" className="font-bold text-gray-800">
+                        <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
+                            <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
                                 {tab.label}
                             </Typography>
 
@@ -170,7 +170,7 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-0 md:px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6 px-0 md:px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
                                 .map(field => {

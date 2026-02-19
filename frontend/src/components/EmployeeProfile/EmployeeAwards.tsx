@@ -110,10 +110,11 @@ export const AwardBadge: React.FC<{ award: Award }> = ({ award }) => {
 
 interface AwardsSectionProps {
     isDesktop: boolean;
+    mobileClass?: string;
 }
 
 
-export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
+export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileClass = "mt-6 pt-6" }) => {
     const { targetEmployeeId } = useTargetUser();
     const [showAllModal, setShowAllModal] = useState(false);
 
@@ -158,7 +159,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop }) => {
         }
 
         return (
-            <div className="w-full border-gray-200 mt-6 pt-6 px-6">
+            <div className={`w-full ${mobileClass}   border-gray-200 px-6`}>
                 <h2 className="text-base font-bold text-gray-900 mb-4">
                     Appreciations
                 </h2>

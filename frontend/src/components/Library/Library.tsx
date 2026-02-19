@@ -12,6 +12,7 @@ import { isActionEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { Typography } from "../shared/atoms/Typography";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -92,13 +93,15 @@ const DocumentLibrary = () => {
   const getFileUrl = (path: string) => `${path}`;
 
   return (
-    <div className="bg-white px-0 md:p-6 ">
+    <div className="bg-white px-0 py-3 md:p-6 ">
       <div className="flex items-start justify-between">
         <div className="border-gray-200 my-2 pb-2">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Document Library
-          </h2>
-          <p className="text-gray-600">Your document library</p>
+          </Typography>
+          <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
+            Your document library
+          </Typography>
         </div>
       </div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -209,13 +212,12 @@ const DocumentLibrary = () => {
                     </td>
                     <td className="py-4 px-6">
                       <span
-                        className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${
-                          doc.status === "Approved"
-                            ? "bg-green-100 text-green-700"
-                            : doc.status === "Acknowledgement Required"
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-red-100 text-red-700"
-                        }`}
+                        className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
+                          ? "bg-green-100 text-green-700"
+                          : doc.status === "Acknowledgement Required"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                          }`}
                       >
                         {doc.status}
                       </span>
@@ -237,26 +239,26 @@ const DocumentLibrary = () => {
                       {/* Draft or Approved → show View + Download buttons */}
                       {(doc.type === "Personal" ||
                         doc.status === "Approved") && (
-                        <div className="flex gap-2">
-                          {canViewDocument && (
-                            <button
-                              onClick={() => setSelectedFile(doc.file_name)}
-                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all"
-                            >
-                              View
-                            </button>
-                          )}
-                          {canDownloadDocument && (
-                            <a
-                              href={getFileUrl(doc.file_name)}
-                              download
-                              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
-                            >
-                              Download
-                            </a>
-                          )}
-                        </div>
-                      )}
+                          <div className="flex gap-2">
+                            {canViewDocument && (
+                              <button
+                                onClick={() => setSelectedFile(doc.file_name)}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all"
+                              >
+                                View
+                              </button>
+                            )}
+                            {canDownloadDocument && (
+                              <a
+                                href={getFileUrl(doc.file_name)}
+                                download
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
+                              >
+                                Download
+                              </a>
+                            )}
+                          </div>
+                        )}
                     </td>
                   </tr>
                 ))
@@ -280,9 +282,9 @@ const DocumentLibrary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center z-50">
           <div className="bg-white  shadow-lg w-full h-screen flex flex-col">
             <div className="flex justify-between items-center border-b p-4">
-              <h2 className="text-lg font-semibold text-gray-800">
+              <Typography variant="h3" className="font-semibold text-gray-800 text-lg">
                 Document Preview
-              </h2>
+              </Typography>
               <button
                 onClick={closeModal}
                 className="text-gray-500 hover:text-gray-700 text-xl"
@@ -301,14 +303,12 @@ const DocumentLibrary = () => {
             </div>
             {showAcknowledgement && (
               <div
-                className={`border-t p-4 w-full transition-all duration-300 ${
-                  acknowledged ? "bg-green-100" : "bg-red-100"
-                }`}
+                className={`border-t p-4 w-full transition-all duration-300 ${acknowledged ? "bg-green-100" : "bg-red-100"
+                  }`}
               >
                 <p
-                  className={`font-medium transition-all duration-300 ${
-                    acknowledged ? "text-green-700" : "text-red-700"
-                  }`}
+                  className={`font-medium transition-all duration-300 ${acknowledged ? "text-green-700" : "text-red-700"
+                    }`}
                 >
                   {acknowledged
                     ? "Confirm Acknowledge Complete"
@@ -330,9 +330,8 @@ const DocumentLibrary = () => {
                     />
                     <label
                       htmlFor="acknowledgeCheckbox"
-                      className={`font-bold cursor-pointer ${
-                        acknowledged ? "text-green-700" : "text-gray-700"
-                      }`}
+                      className={`font-bold cursor-pointer ${acknowledged ? "text-green-700" : "text-gray-700"
+                        }`}
                     >
                       Acknowledgement Required
                     </label>

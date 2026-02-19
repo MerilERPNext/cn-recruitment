@@ -3,6 +3,7 @@ import { useEmployeeHolidays } from "../../hooks/useEmployeeHolidays";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { Typography } from "../shared/atoms/Typography";
 
 const ShowHolidays = () => {
   const { targetEmployeeId } = useTargetUser();
@@ -37,15 +38,15 @@ const ShowHolidays = () => {
     );
 
   return (
-    <div className="w-full bg-white rounded-lg px-0 md:p-6">
-      <div className="border-b border-gray-200 pb-4 mb-8">
+    <div className="w-full bg-white rounded-lg px-0 py-3 md:p-6">
+      <div className="border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Employee Holidays
-          </h2>
-          <p className="text-gray-600">
+          </Typography>
+          <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
             Your employee holidays
-          </p>
+          </Typography>
         </div>
       </div>
 
