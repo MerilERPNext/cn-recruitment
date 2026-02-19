@@ -84,7 +84,8 @@ doctype_js = {
    "Leave Application":["public/js/leave_application/leave_application.js"],
    "Payroll Entry":["public/js/payroll_entry/payroll_entry.js"],
    "Salary Slip":["public/js/salary_slip/salary_slip.js"],
-   "Salary Structure Assignment":["public/js/salary_structure_assignment/salary_structure_assignment.js"]
+   "Salary Structure Assignment":["public/js/salary_structure_assignment/salary_structure_assignment.js"],
+   "HR Settings":["public/js/hr_settings.js"]
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -202,9 +203,9 @@ doc_events = {
         
     },
     "Employee":{
-        "validate":"recruitment.customizations.job_applicant.validate_blacklist_employee",
+        "validate":["recruitment.customizations.job_applicant.validate_blacklist_employee","recruitment.customizations.employee.duplicate_check.validate_duplicate_employee"],
         "after_insert":"recruitment.auto_fetch_fields.link_employee_to_onboarding"
-    
+
     },
      "Job Applicant": {
         "before_save": "recruitment.customizations.job_applicant.validate_blacklist"
