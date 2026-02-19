@@ -216,10 +216,10 @@ export function ShiftDetailView({
           {cleanDescription && (
             <div className="flex flex-col gap-2">
               <Typography variant="mobileCardLabel">Description</Typography>
-
-              <Typography variant="mobileCardValue">
-                {cleanDescription}
-              </Typography>
+              <div
+                className="text-sm sm:text-base font-brand font-normal text-gray-900"
+                dangerouslySetInnerHTML={{ __html: cleanDescription }}
+              />
             </div>
           )}
 
