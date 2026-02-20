@@ -32,17 +32,17 @@ export default function IncomeComputationSheetContainer() {
 
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
-  
-    const today = new Date(); 
-  
+
+    const today = new Date();
+
     const matchedPeriod = payrollPeriods.find((p) => {
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
-  
+
       // inclusive range check
       return today >= start && today <= end;
     });
-  
+
     setSelectedPeriod(
       matchedPeriod?.name || payrollPeriods[0].name
     );
@@ -63,26 +63,30 @@ export default function IncomeComputationSheetContainer() {
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
   };
-  
+
 
   return (
     <div className="mb-2">
       <div className="py-2 rounded">
-      <Card className="flex items-center justify-between w-full">
-<div className="flex items-center gap-4">
+        <Card className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-3">
+          <div className="flex flex-col w-full flex-wrap sm:flex-row sm:items-center gap-2">
+            <Typography variant="subheading" className="whitespace-nowrap">
+              Income Tax Computation Sheet {selectedPeriod}
+            </Typography>
 
-          <Typography variant="subheading">
-            Income Tax Computation Sheet {selectedPeriod}
-          </Typography>
-          <span className="text-sm bg-success/20  text-success px-2 py-1 rounded">{taxsheetData?.current_tax_regime ?? "Regime not available"}</span>
-</div>
-          <div className="flex flex-row md:flex-row md:items-center md:gap-4">
-            <CustomDropdown
-              value={selectedPeriod}
-              onChange={handlePeriodChange}
-              options={payrollPeriodOptions}
-            />
+            <div className="flex w-full justify-between items-baseline">
+              <span className="text-sm bg-success/20 text-success px-2 py-1 rounded w-fit">
+                {taxsheetData?.current_tax_regime ?? "Regime not available"}
+              </span>
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={payrollPeriodOptions}
+              />
+
+            </div>
           </div>
+
         </Card>
       </div>
       <div>
