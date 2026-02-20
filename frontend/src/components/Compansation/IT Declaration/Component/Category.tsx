@@ -8,6 +8,8 @@ import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { formatCurrency } from "../../../../utils/currency";
 import toast from "react-hot-toast";
 type Item = {
+  custom_note: import("react/jsx-runtime").JSX.Element;
+  custom_proof_status: string;
   attach_link: string | null;
   approval_needed: string;
   idx: string;
@@ -34,7 +36,17 @@ type Props = {
   selectable?: string;
   custom_80d_variable?: string | null;
   locked80DVariable?: string | null;
-  setLocked80DVariable?: (v: string | null) => void ;
+  setLocked80DVariable?: (v: string | null) => void;
+};
+const getProofStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case "Approved":
+      return "bg-success-100 text-success-600";
+    case "Rejected":
+      return "bg-error-50 text-error-600";
+    default:
+      return "bg-gray-50 text-gray-600";
+  }
 };
 
 const CategoryDeclarationSelectable = ({
@@ -52,7 +64,7 @@ const CategoryDeclarationSelectable = ({
   const [isOpen, setIsOpen] = useState(false);
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
-  const { mutateAsync: deleteDoc,} = useDeleteDocument();
+  const { mutateAsync: deleteDoc } = useDeleteDocument();
 
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
@@ -61,13 +73,13 @@ const CategoryDeclarationSelectable = ({
       is_effectively_selected:
         item.is_selected === true || Number(item.amount ?? 0) > 0,
     }));
-  
-    const hasAnySelected = normalized.some(i => i.is_effectively_selected);
-  
-    return normalized.map(item => ({
+
+    const hasAnySelected = normalized.some((i) => i.is_effectively_selected);
+
+    return normalized.map((item) => ({
       label: item.exemption_sub_category,
       value: item.exemption_sub_category,
-  
+
       disabled: isMultipleSelect
         ? item.is_effectively_selected
         : hasAnySelected,
@@ -76,26 +88,12 @@ const CategoryDeclarationSelectable = ({
 
   const normalizedLocked = locked80DVariable || null;
   const normalizedCustom = custom_80d_variable || null;
-  
+
   const isDisabled =
     Boolean(normalizedLocked) &&
     Boolean(normalizedCustom) &&
     normalizedLocked !== normalizedCustom;
-  
 
-
-
-  const handleProofChange = (
-    key: string,
-    field: "proof_file" | "proof_comment",
-    value: File | string | null,
-  ) => {
-    const updated = items.map((item) =>
-      item.exemption_sub_category === key ? { ...item, [field]: value } : item,
-    );
-
-    onChange(updated);
-  };
 
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;
@@ -105,7 +103,7 @@ const CategoryDeclarationSelectable = ({
         const updated = items.map((item) =>
           item.exemption_sub_category === key
             ? { ...item, proof_file: data?.file_url }
-            : item,
+            : item
         );
 
         onChange(updated);
@@ -118,7 +116,7 @@ const CategoryDeclarationSelectable = ({
 
   const handleRemoveProof = async (
     id: string | number | undefined,
-    proofFile?: string | File,
+    proofFile?: string | File
   ) => {
     console.log("proofFile:", typeof proofFile);
 
@@ -128,7 +126,7 @@ const CategoryDeclarationSelectable = ({
     }
 
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete this proof file?",
+      "Are you sure you want to delete this proof file?"
     );
     if (!confirmDelete) return;
 
@@ -147,7 +145,7 @@ const CategoryDeclarationSelectable = ({
       const updated = items.map((item) =>
         item.id === id
           ? { ...item, proof_file: undefined, proof_comment: "" }
-          : item,
+          : item
       );
 
       onChange(updated);
@@ -167,7 +165,6 @@ const CategoryDeclarationSelectable = ({
           ...item,
           is_selected: true,
           amount: item.amount ?? 0,
-          
         };
       }
 
@@ -181,7 +178,6 @@ const CategoryDeclarationSelectable = ({
 
       return item;
     });
-
 
     if (custom_80d_variable) {
       setLocked80DVariable?.(custom_80d_variable);
@@ -209,16 +205,16 @@ const CategoryDeclarationSelectable = ({
     const updated = items.map((item) =>
       item.exemption_sub_category === key
         ? {
-          ...item,
-          is_selected: false,
-          amount: undefined,
-        }
-        : item,
+            ...item,
+            is_selected: false,
+            amount: undefined,
+          }
+        : item
     );
     const stillSelected = updated.some(
       (i) => i.is_selected || Number(i.amount) > 0
     );
-  
+
     if (!stillSelected && custom_80d_variable) {
       setLocked80DVariable?.(null);
     }
@@ -230,148 +226,173 @@ const CategoryDeclarationSelectable = ({
     (item) =>
       item?.is_selected === true ||
       item?.editable === 0 ||
-      Number(item?.amount ?? 0) > 0,
+      Number(item?.amount ?? 0) > 0
   );
 
-console.log(isDisabled, "isDisabled", locked80DVariable,"locked80", custom_80d_variable);
+  console.log(
+    isDisabled,
+    "isDisabled",
+    locked80DVariable,
+    "locked80",
+    custom_80d_variable
+  );
   return (
     <div className="bg-white px-6 py-4 rounded border space-y-4">
-      <Typography variant="bodySmall" color="body2" className="semibold">
-        {categoryName} | Max Amount:{" "}
-        <span className="text-primary text-xs font-semibold">
-          {formatCurrency(max_amount)}
-        </span>
-      </Typography>
+      <div className="border-b pb-2">
+        <Typography
+          variant="bodySmall"
+          color="body2"
+          className="text-xs font-bold"
+        >
+          {categoryName} | Max Amount:{" "}
+          <span className="text-primary text-xs font-bold">
+            {formatCurrency(max_amount)}
+          </span>
+        </Typography>
+      </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 ">
         {selectedItems.map((item) => (
           <div
             key={item.exemption_sub_category}
-            className="flex justify-between items-center border-b pb-2"
+            className="flex justify-between items-center border p-2"
           >
-       <div className="flex flex-col gap-1 max-w-xs">
+            <div className="flex flex-col  gap-1 max-w-xs">
+              <div>
+                <Typography
+                  variant="bodySmall"
+                  color="body1"
+                  className="text-xs font-medium"
+                >
+                  {item.exemption_sub_category}
+                </Typography>
+                {item.description && (
+                  <p className="text-[11px] text-gray-500">
+                    {item.description}
+                  </p>
+                )}
+              </div>
 
-       <div>
-              <Typography
-                variant="bodySmall"
-                color="body1"
-                className="text-xs font-medium"
-              >
-                {item.exemption_sub_category}
-              </Typography>
-              {item.description && (
-                <p className="text-[11px] text-gray-500">{item.description}</p>
-              )}
-            </div>
+              {showProofFields &&
+                (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
+                  <div className="flex gap-2 pb-1 bg-white">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-600">
+                        Attachment
+                      </label>
 
-            {showProofFields && (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
-              <div className="flex gap-2 pb-1 bg-white">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-600">Attachment</label>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
 
-                  <input
-  type="file"
-  accept="application/pdf"   // ✅ File picker sirf PDF dikhayega
-  onChange={(e) => {
-    const file = e.target.files?.[0] || null;
+                          if (file && file.type !== "application/pdf") {
+                            toast.error("Please upload only PDF file");
+                            e.target.value = ""; // reset input
+                            return;
+                          }
 
-    if (file && file.type !== "application/pdf") {
-      toast.error("Please upload only PDF file");
-      e.target.value = ""; // reset input
-      return;
-    }
+                          handleProofFileUpload(
+                            item.exemption_sub_category,
+                            file
+                          );
+                        }}
+                        className="border rounded pr-3 text-xs
+                          file:text-xs file:border-0
+                        file:bg-primary file:text-white
+                          file:px-3 file:py-1"
+                      />
 
-    handleProofFileUpload(
-      item.exemption_sub_category,
-      file
-    );
-  }}
-  className="border rounded pr-3 text-xs
-    file:text-xs file:border-0
-    file:bg-primary file:text-white
-    file:px-3 file:py-1"
-/>
+                      {(item?.proof_file ?? item?.attach_reqd === 1) && (
+                        <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+                          <span className="text-sm text-gray-700 truncate">
+                            {typeof item?.proof_file === "string"
+                              ? item.proof_file
+                              : item?.proof_file?.name ||
+                                item?.attach_proof ||
+                                item?.attach_link ||
+                                "-"}
+                          </span>
 
-
-                  {(item?.proof_file ?? item?.attach_reqd === 1) && (
-                    <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-<span className="text-sm text-gray-700 truncate">
-  {typeof item?.proof_file === "string" ? item.proof_file : item?.proof_file?.name || item?.attach_proof || item?.attach_link || "-"}
-</span>
-
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveProof(item.id)}
-                        className="text-gray-500 hover:text-red-600 transition disabled:opacity-50"
-                        title="Remove file"
-                      >
-                        <FiX size={16} />
-                      </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProof(item.id)}
+                            className="text-gray-500 hover:text-red-600 transition disabled:opacity-50"
+                            title="Remove file"
+                          >
+                            <FiX size={16} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {item?.custom_note && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">
+                          Note / Comment
+                        </label>
+                        <textarea
+                          rows={1}
+                          value={item.custom_note as unknown as string}
+                          placeholder="Enter your comment..."
+                          className="border rounded px-3 py-1 text-xs resize-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+            <div className="flex flex-col items-end gap-2">
+
+              {item?.custom_proof_status && (
+                <span
+                  className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold
+                    ${getProofStatusBadgeClass(item.custom_proof_status)}`}
+                >
+                  {item.custom_proof_status}
+                </span>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-[10px] font-semibold">
+                    Max {formatCurrency(item.max_amount)}
+                  </p>
+                  <input
+                    type="number"
+                    placeholder="Amount"
+                    disabled={item.editable === 0 || lockingDate === "failed"}
+                    value={item.amount === 0 ? "" : item.amount ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+
+                      if (raw === "") {
+                        handleAmountChange(item.exemption_sub_category, 0);
+                        return;
+                      }
+
+                      handleAmountChange(
+                        item.exemption_sub_category,
+                        Number(raw)
+                      );
+                    }}
+                    className="border rounded px-2 py-1 text-xs w-32"
+                  />
                 </div>
 
-                {  item.idx === "we" &&          <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-600">
-                    Note / Comment
-                  </label>
-                  <textarea
-                    rows={1}
-                    onChange={(e) =>
-                      handleProofChange(
-                        item.exemption_sub_category,
-                        "proof_comment",
-                        e.target.value
-                      )
-                    }
-                    placeholder="Enter your comment..."
-                    className="border rounded px-3 py-1 text-xs resize-none"
-                  />
-                </div>}
-              </div>
-            )}
-       </div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-[10px] font-semibold">
-                  Max {formatCurrency(item.max_amount)}
-                </p>
-                <input
-                  type="number"
-                  placeholder="Amount"
-                  disabled={item.editable === 0 || lockingDate === "failed"}
-                  value={item.amount === 0 ? "" : (item.amount ?? "")}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-
-                    if (raw === "") {
-                      handleAmountChange(item.exemption_sub_category, 0);
-                      return;
-                    }
-
-                    handleAmountChange(
-                      item.exemption_sub_category,
-                      Number(raw),
-                    );
-                  }}
-                  className="border rounded px-2 py-1 text-xs w-32"
-                />
-              </div>
-
-              <div className="pt-3">
-                {item.editable !== 0 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleRemoveItem(item.exemption_sub_category)
-                    }
-                    className="text-red-500 p-2 rounded bg-error-50 text-xs hover:underline"
-                  >
-                    <RiDeleteBinLine size={14} />
-                  </button>
-                )}
+                <div className="pt-3">
+                  {item.editable !== 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveItem(item.exemption_sub_category)
+                      }
+                      className="text-error/80 p-2 rounded bg-error-50 text-xs hover:underline"
+                    >
+                      <RiDeleteBinLine size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

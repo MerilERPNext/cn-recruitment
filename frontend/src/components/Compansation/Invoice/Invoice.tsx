@@ -18,6 +18,22 @@ import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
 
+const getStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case "Paid":
+      return "bg-green-100 text-green-700";
+    case "Pending":
+      return "bg-yellow-100 text-yellow-700";
+    case "Overdue":
+      return "bg-red-100 text-red-700";
+    case "Cancelled":
+      return "bg-gray-200 text-gray-700";
+    default:
+      return "bg-blue-100 text-blue-700";
+  }
+};
+
+
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
   const { isDesktop } = useScreenSize();
@@ -212,6 +228,12 @@ export default function Invoice() {
                       onClick={handleInvoiceClick}
                     />
                   </div>
+                  <div
+  className={`inline-block px-3 py-1 rounded-full text-xs font-semibold
+    ${getStatusBadgeClass(inv.invoice_status)}`}
+>
+  {inv.invoice_status}
+</div>
                 </div>
               );
             })

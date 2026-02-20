@@ -34,6 +34,7 @@ interface ExemptionItem {
   proof?: string;
   status: Status;
   note: string;
+  employeeName?: string;
   
 }
 
@@ -72,7 +73,7 @@ export default function TeamApprovalListExemptionTable() {
   } = useTeamApprovalList(proofId || "");
 
   const mutation = useApprovalITDeclaration();
-
+console.log("coment log", comment)
   /* ---------------- Map API Data ---------------- */
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export default function TeamApprovalListExemptionTable() {
           proof: item.attach || "",
           status: item.status || "Pending",
           note: item.note || "",
+          employeeName: item.employee_name || item.employee || "",
         })
       );
       setRows(mapped);
@@ -114,7 +116,7 @@ export default function TeamApprovalListExemptionTable() {
   const handleRowClick = (row: ExemptionItem) => {
     setActiveRow(row);
     setEditAmount(row.actualAmount);
-    setComment("");
+    setComment(comment);
     setIsDirty(false);
     setOpenModal(true);
   };
@@ -199,14 +201,16 @@ export default function TeamApprovalListExemptionTable() {
 
   const columnWidths = ["40px", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1.5fr"];
   /* ---------------- UI ---------------- */
-
+  const employeeName = useMemo(() => {
+    return rows?.[0]?.employeeName || "";
+  }, [rows]);
   return (
     <div className="flex flex-col h-full mt-2">
       {/* HEADER */}
       <div className="px-2 pb-2">
         <Typography variant="h4">Team Proof Approval Request</Typography>
         <Typography variant="bodySmall" color="body2">
-          Review and manage submitted proofs.
+          Review and manage submitted proofs. <b><span className="font-bold text-black">{employeeName}</span>'s</b> declaration is awaiting your approval. 
         </Typography>
       </div>
 

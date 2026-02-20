@@ -188,10 +188,19 @@ const SalarySlipsList = () => {
   // ---------------- FILTER ----------------
   const filter = useMemo(() => {
     const f: Record<string, string> = {};
-    if (targetEmployeeId) f.employee = targetEmployeeId;
-    if (selectedPeriod) f.custom_payroll_period = selectedPeriod; // optional backend support
+  
+    const employeeId = targetEmployeeId || user?.employee;
+    if (employeeId) {
+      f.employee = employeeId;
+    }
+  
+    if (selectedPeriod) {
+      f.custom_payroll_period = selectedPeriod; // optional backend support
+    }
+  
     return f;
-  }, [targetEmployeeId, selectedPeriod]);
+  }, [targetEmployeeId, selectedPeriod, user?.employee]);
+  
 
   return (
     <div className="flex flex-col h-full">

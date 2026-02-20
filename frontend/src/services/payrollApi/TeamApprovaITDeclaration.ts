@@ -28,6 +28,7 @@ export const ApprovalITDeclarationService = {
       exemption_sub_category: string;
       status: string;
       approved_amount: number;
+      notes?: string;
     }) => {
       const response = await FrappeAPI.callMethod(
         "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.approved_poi_components",
@@ -36,6 +37,7 @@ export const ApprovalITDeclarationService = {
           sub_category: payload.exemption_sub_category,
           amount: payload.approved_amount, // Assuming max limit for 80C is 1.5L and others are 0
           status: payload.status,
+          note: payload.notes,
         }
       );
   
