@@ -1,33 +1,35 @@
 import {
+  Download,
+  ExternalLink,
+  RotateCcw,
   X,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
-  Download,
-  ExternalLink,
 } from "lucide-react";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  useExpenseLineItemUpdate,
-  useExpenseCommentUpdate,
-} from "../../../hooks/useExpense";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import {
+  useExpenseCommentUpdate,
+  useExpenseLineItemUpdate,
+} from "../../../hooks/useExpense";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
 
+import DOMPurify from "dompurify";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Button from "../../shared/atoms/Button";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import Button from "../../shared/atoms/Button";
-import toast from "react-hot-toast";
-import DOMPurify from "dompurify";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
-import StatusBadge from "../../shared/atoms/statusBadge";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -48,6 +50,7 @@ export function TeamExpenseDetailView({
   const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
   const { data: user } = useCurrentUser();
+  const { isDesktop } = useScreenSize();
 
   const {
     data: fetchedData,
@@ -222,6 +225,8 @@ export function TeamExpenseDetailView({
       setCurrentAction(null);
     } catch (error) {
       setCurrentAction(null);
+      toast.error(errorResponseFormater(error));
+
       console.error("Action failed", error);
     }
   };
@@ -419,33 +424,6 @@ export function TeamExpenseDetailView({
                 <p className="text-sm text-gray-500">{claimId}</p>
               </div>
             </div>
-
-            {actions?.length > 0 && status?.label === "Pending" && (
-              <div className="ml-auto flex gap-2">
-                {actions.map((action: string) => {
-                  const isLoading =
-                    currentAction === action && mutation?.isPending;
-                  const actionStyle = getActionStyles(action);
-
-                  return (
-                    <Button
-                      key={action}
-                      disabled={isLoading}
-                      onClick={() => handleAction(action)}
-                      size="sm"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
 
             <button
               onClick={handleClose}
@@ -755,6 +733,23 @@ export function TeamExpenseDetailView({
               </div>
             </div>
           </div>
+
+          {actions?.length > 0 && status?.label === "Pending" && (
+            <div className="w-full bg-white border-t shadow-md p-4 z-20">
+              <TeamApprovalActionPill
+                variant={isDesktop ? "modal" : "buttons"}
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={
+                  currentAction
+                    ? { id: data?.todo_id, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleAction(action)}
+              />
+            </div>
+          )}
 
           {/* Comment modal */}
           {showCommentModal && (

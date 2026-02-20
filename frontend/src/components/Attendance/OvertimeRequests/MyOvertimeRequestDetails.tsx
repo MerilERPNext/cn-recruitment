@@ -98,8 +98,7 @@ export function MyOvertimeDetails({
       } catch (error) {
         setCurrentAction(null);
 
-        const formattedError = errorResponseFormater(error);
-        toast.error(formattedError);
+        toast.error(errorResponseFormater(error));
 
         console.error("Action failed", error);
       }

@@ -1,17 +1,18 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import {
-  LoadingView,
-  ErrorView,
-} from "../../shared/DetailViewErrorLoadingWrapper";
-import Button from "../../shared/atoms/Button";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import {
+  ErrorView,
+  LoadingView,
+} from "../../shared/DetailViewErrorLoadingWrapper";
 
 type TeamAdvanceDetailViewProps = {
   documentName: string;
@@ -50,6 +51,8 @@ export default function TeamAdvanceDetailView({
         if (onAction) onAction();
         onClose();
       } catch (e) {
+        toast.error(errorResponseFormater(e));
+
         console.error(e);
       } finally {
         setCurrentAction(null);
@@ -173,32 +176,21 @@ export default function TeamAdvanceDetailView({
     </div>
   );
 
-  const ActionButtons = actions?.length ? (
-    <div className="border-t bg-white p-4 flex flex-col md:flex-row gap-3">
-      {actions.map((action: string) => {
-        const isLoading = currentAction === action && mutation.isPending;
-        const actionStyle = getActionStyles(action);
-
-        return (
-          <Button
-            key={action}
-            disabled={isLoading}
-            onClick={() => handleAction(action)}
-            bgColor={actionStyle.bgColor}
-            variant={actionStyle.variant}
-            fullWidth
-            size="md"
-          >
-            {isLoading ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent animate-spin rounded-full" />
-            ) : (
-              action
-            )}
-          </Button>
-        );
-      })}
-    </div>
-  ) : null;
+  const ActionButtons =
+    actions?.length && ["Open", "Pending", "Draft"].includes(ref.status) ? (
+      <div className="border-t bg-white p-4">
+        <TeamApprovalActionPill
+          variant={isDesktop ? "modal" : "buttons"}
+          actions={actions}
+          status={data?.status}
+          recordId={data?.todo_id}
+          loadingAction={
+            currentAction ? { id: data?.todo_id, action: currentAction } : null
+          }
+          onAction={(action) => handleAction(action)}
+        />
+      </div>
+    ) : null;
 
   return (
     <div

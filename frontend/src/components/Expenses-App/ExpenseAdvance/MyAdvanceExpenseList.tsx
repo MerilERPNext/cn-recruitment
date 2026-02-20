@@ -134,13 +134,10 @@ const MyAdvanceExpenseList = () => {
             </Link>
 
             <div className="flex flex-col gap-2">
-              <Typography
-                variant="mobileCardLabel"
-                className="block text-right"
-              >
-                Date
+              <Typography variant="mobileCardLabel" className="text-right">
+                Posting Date
               </Typography>
-              <Typography variant="mobileCardValue">
+              <Typography variant="mobileCardValue" className="text-right">
                 {formatToIndianDate(doc.posting_date)}
               </Typography>
             </div>
@@ -154,10 +151,10 @@ const MyAdvanceExpenseList = () => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
+              <Typography variant="mobileCardLabel" className="text-right">
                 Department
               </Typography>
-              <Typography variant="mobileCardValue">
+              <Typography variant="mobileCardValue" className="text-right">
                 {doc.department}
               </Typography>
             </div>
