@@ -220,9 +220,9 @@ useEffect(() => {
             amount: Number(item.amount),
             max_amount: Number(item.max_amount),
             attach_proof:
-              typeof item.proof_file === "string"
-                ? item.proof_file
-                : null,
+            typeof item.proof_file === "string" && item.proof_file.length > 0
+              ? item.proof_file        // new uploaded file
+              : item.attach_proof || null,
             note: item.proof_comment || "",
           }))
       )
@@ -284,7 +284,7 @@ console.log("Submitting payload", payload);
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
-        // window.location.reload();
+        window.location.reload();
         
       },
       onError: () => toast.error("Submission failed"),

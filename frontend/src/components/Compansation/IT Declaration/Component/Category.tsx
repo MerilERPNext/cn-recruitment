@@ -255,7 +255,7 @@ const CategoryDeclarationSelectable = ({
         {selectedItems.map((item) => (
           <div
             key={item.exemption_sub_category}
-            className="flex justify-between items-center border p-2"
+            className="flex justify-between items-center rounded border p-4"
           >
             <div className="flex flex-col  gap-1 max-w-xs">
               <div>
