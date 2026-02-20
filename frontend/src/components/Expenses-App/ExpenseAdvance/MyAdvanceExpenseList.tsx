@@ -104,7 +104,7 @@ const MyAdvanceExpenseList = () => {
     const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 border-primary mb-3">
+      <div className="rounded-2xl shadow-sm p-4 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 border-primary mb-3">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-base font-semibold text-gray-900">
             {formatCurrency(doc.advance_amount)}
@@ -162,8 +162,7 @@ const MyAdvanceExpenseList = () => {
               </Typography>
             </div>
           </div>
-          <div>
-            <div className="h-[1px] w-full bg-gray-100 my-4" />
+          <div className="pt-2 border-t">
             <Typography variant="mobileCardFooter">
               Last Updated on{" "}
               {formatToIndianDate(item?.reference_document?.modified)}
