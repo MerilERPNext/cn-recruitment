@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FlowRequestItem } from "../../../types/flows";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
@@ -37,11 +37,26 @@ const FlowRequests: React.FC = () => {
 
   };
 
-  const { data: flowRequests, isLoading: flowRequestsLoading } = useGetFlowRequests();
+  const { data: flowRequests, isLoading: flowRequestsLoading, refetch: refetchFlowRequests } = useGetFlowRequests();
 
   const handleNavigateBack = () => {
     setFlowDetails(null);
   }
+
+  useEffect(() => {
+    const handleChatClose = () => {
+      refetchFlowRequests();
+    };
+
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose,
+      );
+    };
+  }, [refetchFlowRequests]);
 
   if (flowDetails) {
     return (

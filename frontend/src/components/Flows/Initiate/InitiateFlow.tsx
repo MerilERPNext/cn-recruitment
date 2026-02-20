@@ -63,7 +63,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
         handleChatClose,
       );
     };
-  }, []);
+  }, [handleCloseModel]);
 
   const { data: triggerList, isLoading } = useDifinitaionNameForSeparation();
 
