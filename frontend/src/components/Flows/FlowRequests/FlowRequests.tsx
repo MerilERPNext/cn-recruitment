@@ -8,6 +8,7 @@ import { useGetFlowRequests } from "../../../hooks/useFlows";
 import { StaticListView } from "../../ListView";
 import FlowRequestCard from "./FlowRequestCard";
 import RequestDetails from "../RequestDetails/RequestDetails";
+import { createPortal } from "react-dom";
 
 const titles = [
   "Request ID",
@@ -34,8 +35,8 @@ const FlowRequests: React.FC = () => {
     // }));
     setFlowDetails(data);
     // navigate("/webapp/flow-app/flow-request/" + data?.request_id);
-
   };
+
 
   const { data: flowRequests, isLoading: flowRequestsLoading, refetch: refetchFlowRequests } = useGetFlowRequests();
 
@@ -59,8 +60,14 @@ const FlowRequests: React.FC = () => {
   }, [refetchFlowRequests]);
 
   if (flowDetails) {
-    return (
+    return (isDesktop ?
       <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
+      : createPortal(
+        <div className="fixed inset-0 z-50">
+          <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
+        </div>,
+        document.body
+      )
     )
   }
   return (

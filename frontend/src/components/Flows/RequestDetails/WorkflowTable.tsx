@@ -126,7 +126,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
             </Typography></div>
 
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {canPerformActions &&
+                {canPerformActions && actions.length > 0 &&
                     // <TeamApprovalActionPill
                     //     actions={actions}
                     //     status={stage?.todo?.status}
@@ -173,7 +173,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
                     </div>
                 </div>
 
-                {canPerformActions && (
+                {canPerformActions && actions.length > 0 && (
                     <div>
                         <div className="h-[1px] w-full bg-gray-100 mb-4" />
                         <Button className="w-full" onClick={() => onAction(actions[0], stage?.todo)}>Act</Button>

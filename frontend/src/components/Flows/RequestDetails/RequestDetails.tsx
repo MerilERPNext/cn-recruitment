@@ -1,5 +1,4 @@
 import { useState } from "react";
-import CommonSearchAndActions from "../CommonSearchAndActions";
 import HeaderBar from "../../HeaderBar";
 import { FlowRequestItem } from "../../../types/flows";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -27,7 +26,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
           />
         </div>
         <div className="px-8  flex items-center justify-between mb-4 flex-wrap gap-4">
-          <div className="flex w-full sm:w-fit border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="flex w-full sm:w-fit border border-gray-200 rounded-sm overflow-hidden shadow-sm">
             {[
               { label: "Approval Flow Status", value: "Approval Flow Status" },
               { label: "Workflow Status", value: "Workflow Status" },
@@ -40,10 +39,10 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
                   disabled={isActive}
                   className={`flex-1 sm:flex-none px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-all duration-200 
           ${isActive
-                      ? "bg-blue-600 text-white font-semibold shadow-inner"
+                      ? "bg-primary-600 text-white font-semibold shadow-inner"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300"
                     }
-          ${index === 0 ? "rounded-l-2xl" : "rounded-r-2xl"}`}
+          ${index === 0 ? "rounded-l-sm" : "rounded-r-sm"}`}
                 >
                   {btn.label}
                 </button>
@@ -64,9 +63,6 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
               <span className="text-gray-900">{formatToIndianDate(data.initiated_on)}</span>{" "}
             </div>
           </div>
-        </div>
-        <div className="px-8 ">
-          <CommonSearchAndActions hideEyeIcon={true} />
         </div>
       </div>
 

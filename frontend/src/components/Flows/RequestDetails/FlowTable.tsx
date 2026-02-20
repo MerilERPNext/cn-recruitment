@@ -13,6 +13,9 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useMemo } from "react";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { FlowRequestItem, FlowRequestStage } from "../../../types/flows";
+import Tooltip from "../../shared/Tooltip";
+import { StaticListView } from "../../ListView";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const titles = [
     "Stage Name",
@@ -31,38 +34,22 @@ interface FlowTableProps {
 const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
     const { isDesktop } = useScreenSize();
     const activeStageIndex = data.approval_stages.findIndex((stage) => stage.status === "Pending");
-    const EmptyState = () => {
-        return (
-            <div className="py-14 text-center text-sm font-medium text-gray-500">
-                No Records Found
-            </div>
-        );
-    };
 
     return (
         <div className="sm:px-7 px-4">
             <CardTable titles={titles}>
-                {isDesktop ? (
-                    <div className="w-full overflow-x-auto rounded-lg  border border-gray-200 bg-white shadow-sm">
-                        <div className="w-full">
-                            {data.approval_stages.length > 0 ? (
-                                data.approval_stages.map((stage, index) => (
-                                    <StageCard stage={stage} isActive={index === activeStageIndex} />
-                                ))
-                            ) : (
-                                <EmptyState />
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    <div>
-                        {data.approval_stages && data.approval_stages.length > 0 ? (
-                            <RequestTimeline stages={data.approval_stages} />
-                        ) : (
-                            <EmptyState />
-                        )}
-                    </div>
-                )}
+                <StaticListView
+                    data={data.approval_stages}
+                    ItemComponent={(index, item) => {
+                        return isDesktop ? <StageCard stage={item} isActive={index === activeStageIndex} /> : <RequestTimeline stages={data.approval_stages} />;
+                    }}
+                    isSearch={true}
+                    searchFields={["stage_name", "role", "status"]}
+                    getItemKey={(stage, index) => stage?.stage_name + index}
+                    pageSize={20}
+                    SkeletonComponent={CardSkeleton}
+                    loadMorePagination={true}
+                />
             </CardTable>
         </div>
     )
@@ -112,7 +99,7 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
     return (
         <div
             key={stage.stage_name}
-            className="hover:bg-gray-100 py-4 text-center grid grid-cols-6 cursor-pointer text-xs w-full border-b"
+            className="hover:bg-primary-100 py-4 text-center grid grid-cols-6 cursor-pointer text-xs w-full border-b"
         >
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {stage.stage_name || "-"}
@@ -121,9 +108,11 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
                 {stage.role || stage.user || "-"}
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                <StatusBadge
-                    status={stage.status || "-"}
-                />
+                <Tooltip content={stage.user_id}>
+                    <StatusBadge
+                        status={stage.status || "-"}
+                    />
+                </Tooltip>
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {formatToIndianDate(stage.todo.date) || "-"}
