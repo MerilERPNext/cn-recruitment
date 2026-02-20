@@ -99,12 +99,20 @@ console.log("coment log", comment)
 
   const list = useMemo(() => {
     if (!searchTerm) return rows;
-    return rows.filter(
-      (row) =>
-        row.subCategory.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  
+    const lowerSearch = searchTerm.toLowerCase();
+  
+    return rows.filter((row) => {
+      const subCategory = (row.subCategory || "").toLowerCase();
+      const category = (row.category || "").toLowerCase();
+  
+      return (
+        subCategory.includes(lowerSearch) ||
+        category.includes(lowerSearch)
+      );
+    });
   }, [rows, searchTerm]);
+  
 
   const pendingRows = useMemo(
     () => list.filter((r) => r.status === "Pending"),
