@@ -3,7 +3,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getChatAssistantData,
   getChatAssistantFlowInitiateData,
-  getDifinitionNameForSeparation,
+  getFlowConfigSelfTriggerList,
+  getFlowConfigOthersTriggerList,
   getFlowRequests,
   getOpenApprovalTodos,
   getSeparationFunnelData,
@@ -17,10 +18,18 @@ import { approvalListServices } from "../services/approvalListService";
 import { FlowRequestResponse } from "../types/flows";
 
 
-export const useDifinitaionNameForSeparation = () => {
+export const useFlowConfigSelfTriggerList = () => {
   return useQuery<string | AssistantTriggerResponse>({
-    queryKey: ["chatAssistant"],
-    queryFn: getDifinitionNameForSeparation,
+    queryKey: ["flowConfigSelfTriggerList"],
+    queryFn: getFlowConfigSelfTriggerList,
+  });
+};
+
+export const useFlowConfigOthersTriggerList = (employee: string) => {
+  return useQuery<string | AssistantTriggerResponse>({
+    queryKey: ["flowConfigOthersTriggerList", employee],
+    queryFn: () => getFlowConfigOthersTriggerList(employee),
+    enabled: !!employee,
   });
 };
 

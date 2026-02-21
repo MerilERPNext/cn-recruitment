@@ -1,11 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
 
-export const getDifinitionNameForSeparation = async (): Promise<string> => {
-  const response = (await FrappeAPI.callMethod(
-    "nextai.funnel.doctype.funnel_task.assistant_api.get_chatnext_assistant_private_doc_trigger_list",
+export const getFlowConfigSelfTriggerList = async (): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_self_initiate_trigger_list",
     { doctype: "Employee" }
-  ));
+  );
+  return response as string;
+};
+
+export const getFlowConfigOthersTriggerList = async (
+  employee: string
+): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_other_employee_initiate_trigger_list",
+    { doctype: "Employee", employee }
+  );
   return response as string;
 };
 

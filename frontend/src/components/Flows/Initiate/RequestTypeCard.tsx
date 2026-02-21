@@ -4,10 +4,11 @@ import { useCurrentEmployeeIdCard } from '../../../hooks/useEmployee';
 import { useChatAssistantFlowInitiateData } from '../../../hooks/useFlows';
 
 interface RequestTypeCardProps {
-  data: ChatNextAssistantTrigger
+  data: ChatNextAssistantTrigger;
+  targetEmployeeId?: string;
 }
 
-const RequestTypeCard: React.FC<RequestTypeCardProps> = ({ data }) => {
+const RequestTypeCard: React.FC<RequestTypeCardProps> = ({ data, targetEmployeeId }) => {
 
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
   const {
@@ -20,8 +21,9 @@ const RequestTypeCard: React.FC<RequestTypeCardProps> = ({ data }) => {
       typeof window.trigger_chatnext_assistant === "function"
     ) {
       try {
+        const documentName = targetEmployeeId || employeeIdCard?.id || "";
         const trigger = await mutateAsync({
-          document_name: employeeIdCard?.id || "",
+          document_name: documentName,
           definition_name: data.name,
         })
         window.trigger_chatnext_assistant(true, trigger?.session);

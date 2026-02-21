@@ -6,7 +6,7 @@ import {
 import {
   useChatAssistant,
   useConfirmationApproval,
-  useDifinitaionNameForSeparation,
+  useFlowConfigSelfTriggerList,
   useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -50,7 +50,7 @@ const ConfirmationWorkflow = () => {
     ? targetEmployee?.name || ""
     : currentEmployee?.name || "";
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
-  const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
+  const { data: definitionName, refetch } = useFlowConfigSelfTriggerList();
 
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)

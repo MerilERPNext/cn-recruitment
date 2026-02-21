@@ -11,7 +11,6 @@ import RequestDetails from "../RequestDetails/RequestDetails";
 import { createPortal } from "react-dom";
 
 const titles = [
-  "Request ID",
   "Flow Name",
   "Category",
   "Initiated On",
@@ -22,7 +21,7 @@ const titles = [
   "Overall Flow Status"
 ];
 
-const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
+const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -94,7 +93,7 @@ const FlowRequests: React.FC = () => {
                 return <FlowRequestCard request={item} handleShowDetails={handleShowDetails} />;
               }}
               isSearch={true}
-              searchFields={["request_id", "flow_name", "flow_category"]}
+              searchFields={["flow_name", "flow_category"]}
               getItemKey={(item) => item.request_id}
               pageSize={20}
               SkeletonComponent={CardSkeleton}
