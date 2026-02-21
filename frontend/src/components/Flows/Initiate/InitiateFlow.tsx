@@ -3,8 +3,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import RequestTypeCard from "./RequestTypeCard";
 import HeaderBar from "../../HeaderBar";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useDifinitaionNameForSeparation } from "../../../hooks/useFlows";
+import { useFlowConfigSelfTriggerList, useFlowConfigOthersTriggerList } from "../../../hooks/useFlows";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUserRoles } from "../../../hooks/useAttendance";
+import Button from "../../shared/atoms/Button";
+import { EmployeeService } from "../../../services/employeeService";
+import { useQuery } from "@tanstack/react-query";
+import { Employee } from "../../../types/employee";
 
 interface InitiateFlowProps {
   handleCloseModel?: () => void;
@@ -63,9 +68,30 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
         handleChatClose,
       );
     };
-  }, []);
+  }, [handleCloseModel]);
 
-  const { data: triggerList, isLoading } = useDifinitaionNameForSeparation();
+  const [isForOthers, setIsForOthers] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+
+  // Fetch user roles to determine if Self/Others tabs should show
+  const { data: userRoles } = useGetUserRoles();
+
+  // Fetch reportees for employee selector (only when on "Others" tab)
+  const { data: reportees, isLoading: isReporteesLoading } = useQuery<Employee[]>({
+    queryKey: ["employeeReportees"],
+    queryFn: () => EmployeeService.getEmployeeReportees(),
+    enabled: isForOthers,
+  });
+
+  // Self trigger list
+  const { data: selfTriggerList, isLoading: isSelfLoading } = useFlowConfigSelfTriggerList();
+
+  // Others trigger list (only fetched when an employee is selected)
+  const { data: othersTriggerList, isLoading: isOthersLoading } = useFlowConfigOthersTriggerList(selectedEmployee);
+
+  // Determine active trigger list and loading state
+  const triggerList = isForOthers ? othersTriggerList : selfTriggerList;
+  const isLoading = isForOthers ? (isOthersLoading || (!selectedEmployee)) : isSelfLoading;
 
   const [inputSearch, setInputSearch] = useState<string>("");
 
@@ -84,6 +110,13 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   const { isDesktop } = useScreenSize();
 
   const EmptyStateComponent = useMemo(() => {
+    if (isForOthers && !selectedEmployee) {
+      return (
+        <div className="flex items-center justify-center text-center text-gray-500">
+          Please select an employee to view available actions.
+        </div>
+      );
+    }
     if (!Array.isArray(triggerList) || triggerList.length === 0)
       return (
         <div className="flex items-center justify-center text-center text-gray-500">
@@ -97,7 +130,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
         </div>
       );
     return null;
-  }, [triggerList, filteredTriggerList]);
+  }, [triggerList, filteredTriggerList, isForOthers, selectedEmployee]);
 
   return (
     <div
@@ -127,7 +160,64 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
         )}
 
         <div className="sm:px-8 px-4">
-          {isLoading ? (
+          {/* Self / Others Tabs */}
+          {userRoles?.roles["Employee Direct Manager"] ? (
+            <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
+              <Button
+                size="md"
+                fullWidth
+                variant={isForOthers ? "subtle" : "contain"}
+                onClick={() => {
+                  setIsForOthers(false);
+                  setInputSearch("");
+                }}
+              >
+                Self
+              </Button>
+              <Button
+                size="md"
+                fullWidth
+                variant={!isForOthers ? "subtle" : "contain"}
+                onClick={() => {
+                  setIsForOthers(true);
+                  setInputSearch("");
+                }}
+              >
+                For Others
+              </Button>
+            </div>
+          ) : null}
+
+          {/* Employee Selector (shown only for Others tab) */}
+          {isForOthers && (
+            <div className="mt-3">
+              <select
+                value={selectedEmployee}
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
+              >
+                <option value="">Select Employee</option>
+                {isReporteesLoading ? (
+                  <option disabled>Loading...</option>
+                ) : (
+                  reportees?.map((emp) => (
+                    <option key={emp.name} value={emp.name}>
+                      {emp.employee_name} ({emp.name})
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
+
+          {isLoading && selectedEmployee ? (
+            <>
+              <SearchSkeleton />
+              <div className="mt-6">
+                <CardsSkeletonGrid />
+              </div>
+            </>
+          ) : !isForOthers && isSelfLoading ? (
             <>
               <SearchSkeleton />
               <div className="mt-6">
@@ -153,7 +243,11 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
                 {EmptyStateComponent}
                 <div className="flex flex-wrap gap-4">
                   {filteredTriggerList.map((t) => (
-                    <RequestTypeCard key={t.name} data={t} />
+                    <RequestTypeCard
+                      key={t.name}
+                      data={t}
+                      targetEmployeeId={isForOthers ? selectedEmployee : undefined}
+                    />
                   ))}
                 </div>
               </div>
