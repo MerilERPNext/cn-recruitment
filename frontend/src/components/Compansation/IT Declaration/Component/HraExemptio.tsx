@@ -62,69 +62,69 @@ const HRAForm: React.FC<HRAFormProps> = ({
   const uploadMutation = useFileUpload();
   const { mutateAsync: deleteDoc } = useDeleteDocument();
   const [address1, setAddress1] = useState("");
-const [isMetro, setIsMetro] = useState<number>(0);
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
-const [monthlyHra, setMonthlyHra] = useState("");
-const [ownerName, setOwnerName] = useState("");
-const [pan, setPan] = useState("");
+  const [isMetro, setIsMetro] = useState<number>(0);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [monthlyHra, setMonthlyHra] = useState("");
+  const [ownerName, setOwnerName] = useState("");
+  const [pan, setPan] = useState("");
 
-const LTAData = (hraData as unknown as any[])?.[1];
-const hraDetails = (hraData as unknown as any[])?.[0];
+  const LTAData = (hraData as unknown as any[])?.[1];
+  const hraDetails = (hraData as unknown as any[])?.[0];
 
-useEffect(() => {
-  const addr =
-    hraData.address_line1 ??
-    hraDetails?.address_line1 ??
-    "";
+  useEffect(() => {
+    const addr =
+      hraData.address_line1 ??
+      hraDetails?.address_line1 ??
+      "";
 
-  const metro =
-    hraData.rented_in_metro_city ??
-    hraDetails?.rented_in_metro_city ??
-    0;
+    const metro =
+      hraData.rented_in_metro_city ??
+      hraDetails?.rented_in_metro_city ??
+      0;
 
-  const sDate =
-    hraData.start_date ??
-    hraDetails?.start_date ??
-    "";
+    const sDate =
+      hraData.start_date ??
+      hraDetails?.start_date ??
+      "";
 
-  const eDate =
-    hraData.end_date ??
-    hraDetails?.end_date ??
-    "";
+    const eDate =
+      hraData.end_date ??
+      hraDetails?.end_date ??
+      "";
 
-  const mHra =
-    hraData.monthly_hra ??
-    hraDetails?.monthly_hra ??
-    "";
+    const mHra =
+      hraData.monthly_hra ??
+      hraDetails?.monthly_hra ??
+      "";
 
-  const owner =
-    hraData.owner_name ??
-    hraDetails?.owner_name ??
-    "";
+    const owner =
+      hraData.owner_name ??
+      hraDetails?.owner_name ??
+      "";
 
-  const p =
-    hraData.pan ??
-    hraDetails?.pan ??
-    "";
+    const p =
+      hraData.pan ??
+      hraDetails?.pan ??
+      "";
 
-  setAddress1(addr);
-  setIsMetro(metro);
-  setStartDate(sDate);
-  setEndDate(eDate);
-  setMonthlyHra(String(mHra));
-  setOwnerName(owner);
-  setPan(p);
+    setAddress1(addr);
+    setIsMetro(metro);
+    setStartDate(sDate);
+    setEndDate(eDate);
+    setMonthlyHra(String(mHra));
+    setOwnerName(owner);
+    setPan(p);
 
-  // 🔥 IMPORTANT: sync to parent also
-  onChange("address_line1", addr);
-  onChange("rented_in_metro_city", metro);
-  onChange("start_date", sDate);
-  onChange("end_date", eDate);
-  onChange("monthly_hra", Number(mHra || 0));
-  onChange("owner_name", owner);
-  onChange("pan", p);
-}, []);
+    // 🔥 IMPORTANT: sync to parent also
+    onChange("address_line1", addr);
+    onChange("rented_in_metro_city", metro);
+    onChange("start_date", sDate);
+    onChange("end_date", eDate);
+    onChange("monthly_hra", Number(mHra || 0));
+    onChange("owner_name", owner);
+    onChange("pan", p);
+  }, []);
 
   // ✅ PAN mandatory condition
   const isPanMandatory = Number(hraData.monthly_hra) > 8333;
@@ -196,33 +196,33 @@ useEffect(() => {
     fileId?: string,
   ) => {
     if (!fileId) return;
-  
+
     if (!window.confirm("Delete this file?")) return;
-  
+
     try {
       await deleteDoc({
         doctype: "File",
         name: fileId,
       });
-  
+
       const updated = [...LTAData.items];
-  
+
       updated[catIdx].items[itemIdx] = {
         ...updated[catIdx].items[itemIdx],
         proof_file: undefined,
         file_id: undefined,
       };
-  
+
       onChange("lta", { items: updated });
     } catch (err) {
       console.error(err);
       alert("Delete failed");
     }
   };
-  
+
   return (
     <div className="mt-4">
-      <div className="border rounded-lg p-6 space-y-5">
+      <div className="border rounded-lg p-3 md:p-6 space-y-5">
         <div className="flex justify-between items-center">
           <h3 className="text-sm font-semibold text-gray-700 uppercase">
             House Rent Allowance (Exempt u/s 10(13A))
@@ -237,29 +237,29 @@ useEffect(() => {
           </div>
         )}
 
-        <div className="grid grid-cols-6 gap-4">
-          <div className="col-span-2">
-            <label className="text-xs text-gray-500">Address</label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="sm:col-span-2 md:col-span-1">
+            <label className="text-xs text-gray-700 font-medium">Address</label>
             <input
-  value={address1}
-  onChange={(e) => {
-    setAddress1(e.target.value);
-    onChange("address_line1", e.target.value);
-  }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              value={address1}
+              onChange={(e) => {
+                setAddress1(e.target.value);
+                onChange("address_line1", e.target.value);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500">Is Metro</label>
+            <label className="text-xs text-gray-700 font-medium">Is Metro</label>
             <select
-  value={isMetro}
-  onChange={(e) => {
-    const v = Number(e.target.value);
-    setIsMetro(v);
-    onChange("rented_in_metro_city", v);
-  }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              value={isMetro}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                setIsMetro(v);
+                onChange("rented_in_metro_city", v);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all appearance-none bg-white"
             >
               <option value={0}>Non-Metro</option>
               <option value={1}>Metro</option>
@@ -267,71 +267,70 @@ useEffect(() => {
           </div>
 
           <div>
-            <label className="text-xs text-gray-500">From</label>
+            <label className="text-xs text-gray-700 font-medium">From</label>
             <input
-  type="date"
-  value={startDate}
-  onChange={(e) => {
-    setStartDate(e.target.value);
-    onChange("start_date", e.target.value);
-  }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                onChange("start_date", e.target.value);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500">To</label>
+            <label className="text-xs text-gray-700 font-medium">To</label>
             <input
-  type="date"
-  value={endDate}
-  onChange={(e) => {
-    setEndDate(e.target.value);
-    onChange("end_date", e.target.value);
-  }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                onChange("end_date", e.target.value);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
             />
           </div>
 
           {/* ✅ Monthly Rental */}
           <div>
-            <label className="text-xs text-gray-500">Monthly Rental</label>
+            <label className="text-xs text-gray-700 font-medium">Monthly Rental</label>
             <input
-  type="number"
-  value={monthlyHra}
-  onChange={(e) => {
-    setMonthlyHra(e.target.value);
-    onChange("monthly_hra", Number(e.target.value));
-  }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              type="number"
+              value={monthlyHra}
+              onChange={(e) => {
+                setMonthlyHra(e.target.value);
+                onChange("monthly_hra", Number(e.target.value));
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
             />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500">Owner name</label>
+            <label className="text-xs text-gray-700 font-medium">Owner name</label>
             <input
-         value={ownerName}
-         onChange={(e) => {
-           setOwnerName(e.target.value);
-           onChange("owner_name", e.target.value);
-         }}
-              className="w-full border rounded px-3 py-2 text-sm"
+              value={ownerName}
+              onChange={(e) => {
+                setOwnerName(e.target.value);
+                onChange("owner_name", e.target.value);
+              }}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
             />
           </div>
 
           {/* ✅ PAN field – mandatory when rent > 8333 */}
           <div>
-            <label className="text-xs text-gray-500">
+            <label className="text-xs text-gray-700 font-medium">
               PAN {isPanMandatory && <span className="text-red-500">*</span>}
             </label>
             <input
-  value={pan}
-  onChange={(e) => {
-    setPan(e.target.value);
-    onChange("pan", e.target.value);
-  }}
-              className={`w-full border rounded px-3 py-2 text-sm ${
-                isPanMandatory && !hraData.pan ? "border-red-500" : ""
-              }`}
+              value={pan}
+              onChange={(e) => {
+                setPan(e.target.value);
+                onChange("pan", e.target.value);
+              }}
+              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all ${isPanMandatory && !hraData.pan ? "border-red-500" : "border-gray-300"
+                }`}
               placeholder={isPanMandatory ? "PAN is mandatory" : "Enter PAN"}
             />
             {isPanMandatory && !hraData.pan && (
@@ -344,49 +343,49 @@ useEffect(() => {
 
           {/* ✅ Attachment */}
           {hraData.attach_reqd !== 0 && (
-  <div className="col-span-2 flex flex-col gap-2">
-    <label className="text-xs text-gray-600">
-      Attachment
-    </label>
+            <div className="sm:col-span-2 md:col-span-3 flex flex-col gap-2">
+              <label className="text-xs text-gray-700 font-medium">
+                Attachment
+              </label>
 
-    <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
 
-      <input
-        type="file"
-        onChange={(e) =>
-          handleHRAFileUpload(
-            e.target.files?.[0] || null
-          )
-        }
-        className="border rounded pr-3 text-xs
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    handleHRAFileUpload(
+                      e.target.files?.[0] || null
+                    )
+                  }
+                  className="border rounded pr-3 text-xs
           file:text-xs file:border-0
           file:bg-primary file:text-white
           file:px-3 file:py-1"
-      />
+                />
 
-      {(hraData?.proof_file ?? hraDetails?.attach_proof) && (
-        <div className="flex items-center gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+                {(hraData?.proof_file ?? hraDetails?.attach_proof) && (
+                  <div className="flex items-center gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
 
-          <span className="text-xs truncate">
-            {hraData?.proof_file ??
-              hraDetails?.attach_proof}
-          </span>
+                    <span className="text-xs truncate">
+                      {hraData?.proof_file ??
+                        hraDetails?.attach_proof}
+                    </span>
 
-          <button
-            type="button"
-            onClick={handleHRARemoveProof}
-            className="text-gray-500 hover:text-red-600"
-          >
-            <FiX size={14} />
-          </button>
+                    <button
+                      type="button"
+                      onClick={handleHRARemoveProof}
+                      className="text-gray-500 hover:text-red-600"
+                    >
+                      <FiX size={14} />
+                    </button>
 
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-    </div>
-  </div>
-)}
-</div>
       </div>
 
       {/* ================= LTA Section ================= */}
@@ -412,7 +411,7 @@ useEffect(() => {
 
           {showLTAModal && (
             <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40">
-              <div className="bg-white rounded-lg w-[60%] mt-2 max-w-3xl p-4 relative">
+              <div className="bg-white rounded-lg w-[90%] md:w-[60%] mt-2 max-w-3xl p-4 relative">
                 <div className="flex justify-between items-center mb-3">
                   <Typography
                     variant="bodySmall"
@@ -456,9 +455,9 @@ useEffect(() => {
                     </Typography>
                   </div>
 
-                  <div className="flex gap-4 w-full justify-between">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full sm:justify-between">
                     <div className=" w-full flex flex-col gap-2">
-                      <label className="text-sm text-gray-500">Amount</label>
+                      <label className="text-xs text-gray-700 font-medium">Amount</label>
                       <input
                         type="text"
                         value={item.amount ?? ""}
@@ -472,18 +471,18 @@ useEffect(() => {
 
                           onChange("lta", { items: updatedItems });
                         }}
-                        className={`max-w-[500px] border rounded px-3 py-1 ${item.editable === 0
-                            ? "bg-gray-200 cursor-not-allowed w-full"
-                            : ""
+                        className={`max-w-[500px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all ${item.editable === 0
+                          ? "bg-gray-200 cursor-not-allowed w-full"
+                          : "w-full"
                           }`}
                       />
                     </div>
                     <div className=" flex flex-col gap-2 ">
-                      <label className="text-xs text-gray-600">
+                      <label className="text-xs text-gray-700 font-medium">
                         Attachment
                       </label>
 
-                      <div className="flex flex-row items-center gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                         <input
                           type="file"
                           onChange={(e) =>
@@ -497,30 +496,30 @@ useEffect(() => {
       file:text-xs file:border-0
       file:bg-primary file:text-white
       file:px-3 file:py-1"
-  />
+                        />
 
-  {(item?.proof_file ?? item?.attach_reqd === 1) && (
-    <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-      <span className="text-xs text-gray-700 truncate">
-        {item?.proof_file ?? item?.attach_proof}
-      </span>
+                        {(item?.proof_file ?? item?.attach_reqd === 1) && (
+                          <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
+                            <span className="text-xs text-gray-700 truncate">
+                              {item?.proof_file ?? item?.attach_proof}
+                            </span>
 
-      <button
-        type="button"
-        onClick={() =>
-          handleLTARemoveProof(catIdx, idx, item.proof_file)
-        }
-        className="text-gray-500 hover:text-red-600"
-        title="Remove file"
-      >
-        <FiX size={14} />
-      </button>
-    </div>
-  )}
-</div>
-</div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleLTARemoveProof(catIdx, idx, item.proof_file)
+                              }
+                              className="text-gray-500 hover:text-red-600"
+                              title="Remove file"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-              </div>
+                  </div>
                 </div>
               ))}
             </div>

@@ -22,131 +22,133 @@ const IncomeTaxComputationlist = ({ data }: any) => {
 
   return (
     <div className="bg-white border rounded-md overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-gray-100 border-b">
-          <tr>
-            <th className="px-4 py-2 text-left w-[40%]">Description</th>
-            <th className="px-4 py-2 text-right w-[20%]">
-              Declared Amount
-            </th>
-            <th className="px-4 py-2 text-right w-[20%]">
-              Exemption 
-            </th>
-            <th/>
-            <th className="px-4 py-2 text-right w-[20%]">
-              Taxable
-            </th>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[600px]">
+          <thead className="bg-gray-100 border-b">
+            <tr>
+              <th className="px-4 py-2 text-left w-[40%] whitespace-nowrap">Description</th>
+              <th className="px-4 py-2 text-right w-[20%] whitespace-nowrap">
+                Declared Amount
+              </th>
+              <th className="px-4 py-2 text-right w-[20%] whitespace-nowrap">
+                Exemption
+              </th>
+              <th />
+              <th className="px-4 py-2 text-right w-[20%] whitespace-nowrap">
+                Taxable
+              </th>
 
-          </tr>
-        </thead>
+            </tr>
+          </thead>
 
-        <tbody>
-          {/* ================= Salary Summary ================= */}
-          <Section title="Income from Salary" />
+          <tbody>
+            {/* ================= Salary Summary ================= */}
+            <Section title="Income from Salary" />
 
-          {summary.map((item: any) => (
-            <Row
-              key={item.key}
-              label={item.name}
-              declared={formatAmount(item.declared_amount ?? item.col1)}
-              exemption={formatAmount(item.exemption_amount ?? item.col2)}
-              taxable={formatAmount(
-                item.taxable_amount ?? item.col4 ?? item.amount
-              )}
-              bold={item.key?.startsWith("total")}
-            />
-          ))}
+            {summary.map((item: any) => (
+              <Row
+                key={item.key}
+                label={item.name}
+                declared={formatAmount(item.declared_amount ?? item.col1)}
+                exemption={formatAmount(item.exemption_amount ?? item.col2)}
+                taxable={formatAmount(
+                  item.taxable_amount ?? item.col4 ?? item.amount
+                )}
+                bold={item.key?.startsWith("total")}
+              />
+            ))}
 
-          {/* ================= Chapter VIA ================= */}
-          {chapterVia.length > 0 && (
-            <>
-              <tr className="bg-gray-100 border-t font-semibold">
-                <td className="px-4 py-2">Total Chapter-VIA</td>
-                <td className="px-4 py-2 text-right">Declared</td>
-                <td className="px-4 py-2 text-right">Qualified</td>
-                <td className="px-4 py-2 text-right">Deductible</td>
-                <td/>
-              </tr>
+            {/* ================= Chapter VIA ================= */}
+            {chapterVia.length > 0 && (
+              <>
+                <tr className="bg-gray-100 border-t font-semibold">
+                  <td className="px-4 py-2">Total Chapter-VIA</td>
+                  <td className="px-4 py-2 text-right">Declared</td>
+                  <td className="px-4 py-2 text-right">Qualified</td>
+                  <td className="px-4 py-2 text-right">Deductible</td>
+                  <td />
+                </tr>
 
-              {chapterVia.map((section: any) => {
-                if (section.key === "total_chapter_via") return null;
+                {chapterVia.map((section: any) => {
+                  if (section.key === "total_chapter_via") return null;
 
-                // Section with components
-                if (Array.isArray(section.components)) {
-                  return (
-                    <React.Fragment key={section.key}>
-                      {/* Section Name */}
-                      <tr className="border-t font-medium text-blue-600">
+                  // Section with components
+                  if (Array.isArray(section.components)) {
+                    return (
+                      <React.Fragment key={section.key}>
+                        {/* Section Name */}
+                        <tr className="border-t font-medium text-blue-600">
+                          <td className="px-4 py-2">{section.name}</td>
+                          <td />
+                          <td />
+                          <td />
+                        </tr>
+
+                        {/* Components */}
+                        {section.components.map((c: any, i: number) => (
+                          <tr key={i} className="border-t">
+                            <td className="px-6 py-2">{c.component}</td>
+                            <td className="px-4 py-2 text-right">
+                              {formatAmount(c.declared_amount)}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {formatAmount(c.qualified_amount)}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              {formatAmount(c.deductible_amount)}
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  }
+
+                  // Total rows
+                  if (typeof section.amount === "number") {
+                    return (
+                      <tr
+                        key={section.key}
+                        className="border-t bg-gray-200 font-semibold"
+                      >
                         <td className="px-4 py-2">{section.name}</td>
                         <td />
                         <td />
+                        <td className="px-4 py-2 text-right">
+                          {formatAmount(section.amount)}
+                        </td>
                         <td />
                       </tr>
-
-                      {/* Components */}
-                      {section.components.map((c: any, i: number) => (
-                        <tr key={i} className="border-t">
-                          <td className="px-6 py-2">{c.component}</td>
-                          <td className="px-4 py-2 text-right">
-                            {formatAmount(c.declared_amount)}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {formatAmount(c.qualified_amount)}
-                          </td>
-                          <td className="px-4 py-2 text-right">
-                            {formatAmount(c.deductible_amount)}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                }
-
-                // Total rows
-                if (typeof section.amount === "number") {
-                  return (
-                    <tr
-                      key={section.key}
-                      className="border-t bg-gray-200 font-semibold"
-                    >
-                      <td className="px-4 py-2">{section.name}</td>
-                      <td />
-                      <td />
-                      <td className="px-4 py-2 text-right">
-                        {formatAmount(section.amount)}
-                      </td>
-                      <td />
-                    </tr>
-                  );
-                }
-
-                return null;
-              })}
-            </>
-          )}
-
-          {/* ================= Net Tax Calculation ================= */}
-          {netTaxable.length > 0 && (
-            <>
-              <Section title="Tax Calculations" />
-
-              {netTaxable.map((item: any) => (
-                <Row
-                  key={item.key}
-                  label={item.name}
-                  declared={formatAmount(item.amount)}
-                  exemption="-"
-                  taxable={formatAmount(item.amount)}
-                  bold={
-                    item.key === "net_tax_payable" ||
-                    item.key === "remaining_tax"
+                    );
                   }
-                />
-              ))}
-            </>
-          )}
-        </tbody>
-      </table>
+
+                  return null;
+                })}
+              </>
+            )}
+
+            {/* ================= Net Tax Calculation ================= */}
+            {netTaxable.length > 0 && (
+              <>
+                <Section title="Tax Calculations" />
+
+                {netTaxable.map((item: any) => (
+                  <Row
+                    key={item.key}
+                    label={item.name}
+                    declared={formatAmount(item.amount)}
+                    exemption="-"
+                    taxable={formatAmount(item.amount)}
+                    bold={
+                      item.key === "net_tax_payable" ||
+                      item.key === "remaining_tax"
+                    }
+                  />
+                ))}
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
@@ -182,7 +184,7 @@ const Row = ({
     <td className="px-4 py-2">{label}</td>
     <td className="px-4 py-2 text-right">{declared}</td>
     <td className="px-4 py-2 text-right">{exemption}</td>
-    <td/>
+    <td />
     <td className="px-4 py-2 text-right">{taxable}</td>
   </tr>
 );

@@ -103,9 +103,9 @@ export default function SalaryAssignmentList() {
   const renderAmount = (value?: number | string) => {
     if (showAmount) {
       return (
-        <span className="blur-sm select-none">
+        <Typography variant="bodySmall" component="span" className="blur-sm select-none">
           {formatCurrency("XXXXX")}
-        </span>
+        </Typography>
       );
     }
     if (value === undefined || value === null) return "—";
@@ -132,8 +132,8 @@ export default function SalaryAssignmentList() {
             ) : isError ? (
               <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
                 <MdErrorOutline size={40} className="mb-2" />
-                <p className="text-lg font-semibold">Error loading data</p>
-                <p className="text-sm text-red-400">Please try again later</p>
+                <Typography variant="bodyMedium" color="error" className="font-semibold">Error loading data</Typography>
+                <Typography variant="bodySmall" color="error">Please try again later</Typography>
               </div>
             ) : list.length > 0 ? (
               list.map((item) => (
@@ -200,8 +200,8 @@ export default function SalaryAssignmentList() {
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center text-gray-500">
-                No records found.
+              <div className="p-4 text-center">
+                <Typography variant="bodySmall" color="body2">No records found.</Typography>
               </div>
             )}
           </CardTable>
@@ -210,9 +210,9 @@ export default function SalaryAssignmentList() {
             {isLoading ? (
               <CardSkeleton />
             ) : isError ? (
-              <div className="flex flex-col items-center justify-center py-10 text-red-500">
-                <MdErrorOutline size={32} className="mb-2" />
-                <p className="text-sm font-semibold">Error loading data</p>
+              <div className="flex flex-col items-center justify-center py-10">
+                <MdErrorOutline size={32} className="mb-2 text-red-500" />
+                <Typography variant="bodySmall" color="error" className="font-semibold">Error loading data</Typography>
               </div>
             ) : list.length > 0 ? (
               list.map((item) => (
@@ -227,46 +227,46 @@ export default function SalaryAssignmentList() {
                   <div className="flex w-full items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                        <span className="text-success text-lg font-semibold">
+                        <Typography component="span" variant="body" color="success" className="text-lg font-semibold">
                           <Banknote />
-                        </span>
+                        </Typography>
                       </div>
 
-                      <p className="font-semibold text-sm text-gray-900">
+                      <Typography variant="bodySmall" color="title" className="font-semibold">
                         Pay Package
-                      </p>
+                      </Typography>
                     </div>
-                    <span className="text-gray-400 text-lg leading-none">
+                    <Typography component="span" variant="body" color="body2" className="text-lg leading-none">
                       ›
-                    </span>
+                    </Typography>
                   </div>
 
                   {/* RIGHT */}
                   <div className="flex items-center justify-between w-full">
                     <div className="flex flex-col gap-1">
-                      <p className="text-[11px] text-gray-400 uppercase">
+                      <Typography variant="mobileCardLabel">
                         Fixed Gross (Annual)
-                      </p>
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      </Typography>
+                      <Typography variant="mobileCardValue" className="font-medium">
                         {renderAmount(item.fixed_gross_annual)}
-                      </div>
+                      </Typography>
                     </div>
 
                     <div className="text-right flex flex-col items-end gap-1">
-                      <p className="text-[11px] text-gray-400 uppercase">
+                      <Typography variant="mobileCardLabel">
                         Effective From
-                      </p>
-                      <p className="text-xs font-medium text-gray-700">
+                      </Typography>
+                      <Typography variant="mobileCardValue" className="font-medium">
                         {formatToIndianDate(item.from_date)}
-                      </p>
+                      </Typography>
                     </div>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-gray-500 py-10">
-                No records found
-              </p>
+              <div className="text-center py-10">
+                <Typography variant="bodySmall" color="body2">No records found</Typography>
+              </div>
             )}
           </div>
         )}
@@ -300,11 +300,10 @@ export default function SalaryAssignmentList() {
 
             <div className="p-4 space-y-6 text-sm">
               <div className="flex justify-between">
-                <span className="font-semibold">Effective From</span>
+                <Typography variant="bodySmall" color="body1" className="font-semibold">Effective From</Typography>
                 <div className="bg-success-100 rounded px-2 py-0.5 max-w-full flex items-center gap-1">
-                  {" "}
                   <CalendarDays className="w-4 h-4" />
-                  <span className="font-semibold">{selected.from_date}</span>
+                  <Typography variant="bodySmall" color="success" className="font-semibold">{selected.from_date}</Typography>
                 </div>
               </div>
 
@@ -313,7 +312,7 @@ export default function SalaryAssignmentList() {
                   <Typography variant="bodySmall" className="font-medium">
                     Fixed Gross Monthly CTC
                   </Typography>
-                  <Typography>
+                  <Typography variant="bodySmall" color="body1" className="font-semibold">
                     {renderAmount(selected.fixed_gross_monthly)}
                   </Typography>
                 </div>
@@ -322,63 +321,64 @@ export default function SalaryAssignmentList() {
                   <Typography variant="bodySmall" className="font-medium">
                     Monthly CTC
                   </Typography>
-                  <Typography>{renderAmount(selected.monthly_ctc)}</Typography>
+                  <Typography variant="bodySmall" color="body1" className="font-semibold">{renderAmount(selected.monthly_ctc)}</Typography>
                 </div>
 
                 <div className="flex justify-between">
                   <Typography variant="bodySmall" className="font-medium">
                     Fixed Gross Annual CTC
                   </Typography>
-                  <span className="font-semibold">
+                  <Typography variant="bodySmall" color="body1" className="font-semibold">
                     {renderAmount(selected.fixed_gross_annual)}
-                  </span>
+                  </Typography>
                 </div>
 
                 <div className="flex justify-between">
                   <Typography variant="bodySmall" className="font-medium">
                     Annual CTC
                   </Typography>
-                  <Typography>{renderAmount(selected.annual_ctc)}</Typography>
+                  <Typography variant="bodySmall" color="body1" className="font-semibold">{renderAmount(selected.annual_ctc)}</Typography>
                 </div>
               </Card>
 
               <div className="space-y-6">
-                <p className="font-semibold">Salary Components</p>
+                <Typography variant="bodyMedium" color="body1" className="font-semibold">Salary Components</Typography>
 
-                <Card className="space-y-2 border border-gray-200 rounded p-4">
+                <Card className="space-y-3 border border-gray-200 rounded p-4">
                   {selected.component_part_of_ctc?.map(
                     (item: CTCComponentItem, index: number) => (
                       <div
                         key={item.component ?? index}
-                        className="flex justify-between items-start"
+                        className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
                       >
-                        <Typography
-                          variant="bodySmall"
-                          className="font-medium flex"
-                        >
-                          {item.component}
-                          <Typography
-                            variant="bodySmall"
-                            className="ml-1"
-                            color="body2"
-                          >
-                            ({item.type})
-                          </Typography>
-                        </Typography>
-
-                        <div className="text-right">
+                        <div className="flex items-baseline gap-1 min-w-0">
                           <Typography
                             variant="bodySmall"
                             className="font-medium"
                           >
+                            {item.component}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="body2"
+                          >
+                            ({item.type})
+                          </Typography>
+                        </div>
+
+                        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
+                          <Typography
+                            variant="bodySmall"
+                            className="font-medium whitespace-nowrap"
+                          >
                             Annual: {renderAmount(item.amount)}
                           </Typography>
                           <Typography
-                            variant="bodySmall"
-                            className="ml-1"
+                            variant="caption"
                             color="body2"
+                            className="whitespace-nowrap"
                           >
-                            Monthly:
+                            Monthly:{" "}
                             {renderAmount(
                               item.amount ? item.amount / 12 : undefined,
                             )}
@@ -410,9 +410,9 @@ export default function SalaryAssignmentList() {
 
             <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
               {!selectedVersionItem.version?.length && (
-                <p className="text-sm text-gray-500">
+                <Typography variant="bodySmall" color="body2">
                   No version history found.
-                </p>
+                </Typography>
               )}
 
               {selectedVersionItem.version?.map((ver: any) => (
@@ -431,16 +431,16 @@ export default function SalaryAssignmentList() {
                       key={idx}
                       className="text-sm border-l-4 border-indigo-400 pl-3"
                     >
-                      <p className="font-medium">{chg.property}</p>
-                      <p className="text-gray-500">
-                        Old: <span className="">{chg.old_value}</span>
-                      </p>
-                      <p className="text-gray-500">
-                        New: <span className="">{chg.new_value}</span>
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <Typography variant="bodySmall" color="body1" className="font-medium">{chg.property}</Typography>
+                      <Typography variant="bodySmall" color="body2">
+                        Old: <Typography component="span" variant="bodySmall" color="body1">{chg.old_value}</Typography>
+                      </Typography>
+                      <Typography variant="bodySmall" color="body2">
+                        New: <Typography component="span" variant="bodySmall" color="body1">{chg.new_value}</Typography>
+                      </Typography>
+                      <Typography variant="caption" className="mt-1">
                         {chg.modified} by {chg.modified_by}
-                      </p>
+                      </Typography>
                     </div>
                   ))}
                 </Card>

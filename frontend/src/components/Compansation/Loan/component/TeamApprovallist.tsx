@@ -129,20 +129,23 @@ const ApprovalRejectionLoanList = ({
               </p>
             </div>
 
-            {isBulkSelectEnabled && (
-              <input
-                type="checkbox"
-                className="accent-primary mt-1"
-                checked={isSelected}
-                onClick={(e) => e.stopPropagation()}
-                onChange={() => onToggleSelect?.(data?.todo_id)}
-                disabled={
-                  isDisabled ||
-                  actionsWithForm?.includes("Approve") ||
-                  actionsWithForm?.includes("Reject")
-                }
-              />
-            )}
+            <div className="flex items-start gap-2">
+              <StatusBadge status={data?.reference_document?.status} />
+              {isBulkSelectEnabled && (
+                <input
+                  type="checkbox"
+                  className="accent-primary mt-1"
+                  checked={isSelected}
+                  onClick={(e) => e.stopPropagation()}
+                  onChange={() => onToggleSelect?.(data?.todo_id)}
+                  disabled={
+                    isDisabled ||
+                    actionsWithForm?.includes("Approve") ||
+                    actionsWithForm?.includes("Reject")
+                  }
+                />
+              )}
+            </div>
           </div>
 
           {/* Details */}
@@ -167,11 +170,6 @@ const ApprovalRejectionLoanList = ({
                 data?.reference_document?.custom_repayment_start_date,
               )}
             </div>
-
-            <div>
-              <span className="block text-gray-400">Status</span>
-              <StatusBadge status={data?.reference_document?.status} />
-            </div>
           </div>
 
           {/* Actions */}
@@ -191,7 +189,7 @@ const ApprovalRejectionLoanList = ({
                 className="flex-1"
               >
                 {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
+                  loadingAction?.action === action ? (
                   <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   action

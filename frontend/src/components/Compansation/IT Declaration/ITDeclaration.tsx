@@ -28,7 +28,7 @@ import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 
 type PayrollPeriod = {
   name: string;
-  start_date: string; 
+  start_date: string;
   end_date: string;
 };
 
@@ -88,7 +88,7 @@ const ITDeclarationForm = () => {
   ) as { data?: any };
   const declarationDoctype = responseData?.doctype;
   const proofId = responseData?.proof_id;
-  const declarationIdFromITDeclaration = proofId || declarationId ;
+  const declarationIdFromITDeclaration = proofId || declarationId;
   const currentDate = new Date().toISOString().split("T")[0];
   const { data: PrrofOfITDeclaration } = useProofDateForITDeclaration(
     currentDate,
@@ -96,28 +96,28 @@ const ITDeclarationForm = () => {
     declarationDoctype || null,
     selectedPeriod || null
   ) as { data?: any };
-  const {data: LTABreakup } = useLTABrakup(user?.employee || "");
+  const { data: LTABreakup } = useLTABrakup(user?.employee || "");
 
-  console.log("ProofOfITDeclaration DATA", groupedCategories, );
+  console.log("ProofOfITDeclaration DATA", groupedCategories,);
 
   // Initial payroll period 
-useEffect(() => {
-  if (!payrollPeriods?.length || selectedPeriod) return;
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
 
-  const today = new Date(); 
+    const today = new Date();
 
-  const matchedPeriod = payrollPeriods.find((p) => {
-    const start = new Date(p.start_date);
-    const end = new Date(p.end_date);
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
 
-    // inclusive range check
-    return today >= start && today <= end;
-  });
+      // inclusive range check
+      return today >= start && today <= end;
+    });
 
-  setSelectedPeriod(
-    matchedPeriod?.name || payrollPeriods[0].name
-  );
-}, [payrollPeriods, selectedPeriod]);
+    setSelectedPeriod(
+      matchedPeriod?.name || payrollPeriods[0].name
+    );
+  }, [payrollPeriods, selectedPeriod]);
 
 
   useEffect(() => {
@@ -183,29 +183,29 @@ useEffect(() => {
     );
   };
   /* ---------------- Submit ---------------- */
- 
+
   const LTAData = (hraData as unknown as any[])?.[1];
-  console.log("LTA BREAKUP", LTAData );
-  console.log(   LTAData?.items, "LTA items")
+  console.log("LTA BREAKUP", LTAData);
+  console.log(LTAData?.items, "LTA items")
   const handleSubmit = () => {
     const ltaDeclarations =
-    LTAData?.items?.flatMap((cat: any) =>
-      cat.items
-        .filter((item: any) => Number(item?.amount) > 0)
-        .map((item: any) => ({
-          exemption_category: cat.category_name,
-          exemption_sub_category: item.exemption_sub_category,
-          amount: Number(item.amount),
-          max_amount: Number(item.max_amount),
-  
-          attach_proof:
-            typeof item.proof_file === "string" && item.proof_file.length > 0
-              ? item.proof_file        // new uploaded file
-              : item.attach_proof || null,   // existing API file
-  
-          note: "",
-        }))
-    );
+      LTAData?.items?.flatMap((cat: any) =>
+        cat.items
+          .filter((item: any) => Number(item?.amount) > 0)
+          .map((item: any) => ({
+            exemption_category: cat.category_name,
+            exemption_sub_category: item.exemption_sub_category,
+            amount: Number(item.amount),
+            max_amount: Number(item.max_amount),
+
+            attach_proof:
+              typeof item.proof_file === "string" && item.proof_file.length > 0
+                ? item.proof_file        // new uploaded file
+                : item.attach_proof || null,   // existing API file
+
+            note: "",
+          }))
+      );
     const itDeclarations = groupedCategories.flatMap((sec) =>
       sec.categories.flatMap((cat: any) =>
         cat.items
@@ -220,9 +220,9 @@ useEffect(() => {
             amount: Number(item.amount),
             max_amount: Number(item.max_amount),
             attach_proof:
-            typeof item.proof_file === "string" && item.proof_file.length > 0
-              ? item.proof_file        // new uploaded file
-              : item.attach_proof || null,
+              typeof item.proof_file === "string" && item.proof_file.length > 0
+                ? item.proof_file        // new uploaded file
+                : item.attach_proof || null,
             note: item.proof_comment || "",
           }))
       )
@@ -239,53 +239,53 @@ useEffect(() => {
         monthly_house_rent: goHeadWithNewRegimeBool
           ? 0
           : Number(hraData?.monthly_hra || 0),
-      
+
         rented_in_metro_city: goHeadWithNewRegimeBool
           ? 0
           : Number(hraData?.rented_in_metro_city || 0),
-      
+
         start_date: goHeadWithNewRegimeBool
           ? ""
           : hraData?.start_date || "",
-      
+
         end_date: goHeadWithNewRegimeBool
           ? ""
           : hraData?.end_date || "",
-      
+
         pan: goHeadWithNewRegimeBool
           ? ""
           : hraData?.pan || "",
-      
+
         cunstom_name: goHeadWithNewRegimeBool
           ? ""
           : hraData?.owner_name || "",
-      
+
         address_title1: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line1 || "",
-      
+
         address_title2: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line2 || "",
-      
+
         attach_proof: goHeadWithNewRegimeBool
           ? null
           : hraData?.proof_file || null,
-      
+
         payroll_period: selectedPeriod,
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
       }
-      
+
     };
-console.log("Submitting payload", payload);
+    console.log("Submitting payload", payload);
     mutation.mutate(payload, {
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
         window.location.reload();
-        
+
       },
       onError: () => toast.error("Submission failed"),
     });
@@ -302,11 +302,10 @@ console.log("Submitting payload", payload);
     <div className="bg-white min-h-screen">
       <header className=" md:p-4  rounded-lg">
         <div
-          className={`p-2 mb-2 rounded ${
-            PrrofOfITDeclaration?.status === "failed"
-              ? "bg-red-100 text-error"
-              : "bg-green-100 text-success"
-          }`}
+          className={`p-2 mb-2 rounded ${PrrofOfITDeclaration?.status === "failed"
+            ? "bg-red-100 text-error"
+            : "bg-green-100 text-success"
+            }`}
         >
           <Typography variant="bodySmall">
             {parts.map((part: string, index: number) =>
@@ -319,65 +318,111 @@ console.log("Submitting payload", payload);
           </Typography>
         </div>
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <div className="flex flex-col">
-            <Typography variant="h4">IT Declaration</Typography>
-            <Typography variant="bodySmall" color="body2">
-            Track and manage your IT Declarations.
-            </Typography>
+          <div className="flex flex-row justify-between items-start">
+            <div className="flex flex-col">
+              <Typography variant="h4">IT Declaration</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your IT Declarations.
+              </Typography>
+            </div>
+            {/* Mobile: year dropdown aligned right next to title */}
+            {!isDesktop && (
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+            )}
           </div>
-          <div className="flex flex-col md:flex-row gap-2 md:items-center w-full md:w-auto">
-            <CustomDropdown
-              value={selectedPeriod}
-              onChange={handlePeriodChange}
-              options={
-                payrollPeriods?.map((p) => ({
-                  value: p.name,
-                  label: p.name,
-                })) || []
-              }
-            />
-            <CompareTaxSheetHandler
-              declarationId={declarationId}
-              disabled={false}
-            />
-            <Form12B
-              declarationId={declarationIdFromITDeclaration}
-               docName={declarationDoctype}
-              disabled={false}
-            />
-            <PreviewOfITDeclaration
-              declarationId={declarationIdFromITDeclaration}
-              disabled={false}
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={PrrofOfITDeclaration?.status === "failed"}
-              className="bg-primary text-white py-2 rounded text-xs w-full md:w-auto"
-            >
-              Submit
-            </Button>
-          </div>
+          {/* Desktop: single horizontal row */}
+          {isDesktop ? (
+            <div className="flex flex-row gap-2 items-center w-auto">
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+              <CompareTaxSheetHandler
+                declarationId={declarationId}
+                disabled={false}
+              />
+              <Form12B
+                declarationId={declarationIdFromITDeclaration}
+                docName={declarationDoctype}
+                disabled={false}
+              />
+              <PreviewOfITDeclaration
+                declarationId={declarationIdFromITDeclaration}
+                disabled={false}
+              />
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+                className="bg-primary text-white py-2 rounded text-xs"
+              >
+                Submit
+              </Button>
+            </div>
+          ) : (
+            /* Mobile: stacked layout for action buttons */
+            <div className="flex flex-col gap-3 w-full">
+
+              {/* Action buttons — evenly spaced row */}
+              <div className="flex flex-row gap-2 [&>button]:flex-1 [&>button]:w-0 [&>button]:min-w-0">
+                <CompareTaxSheetHandler
+                  declarationId={declarationId}
+                  disabled={false}
+                />
+                <Form12B
+                  declarationId={declarationIdFromITDeclaration}
+                  docName={declarationDoctype}
+                  disabled={false}
+                />
+                <PreviewOfITDeclaration
+                  declarationId={declarationIdFromITDeclaration}
+                  disabled={false}
+                />
+              </div>
+
+              {/* Submit — prominent full-width CTA */}
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+                className="bg-primary text-white py-2.5 rounded-lg text-sm w-full"
+              >
+                Submit
+              </Button>
+            </div>
+          )}
         </div>
         <div className="flex flex-col md:flex-row gap-2 md:items-center mt-4">
           {isDesktop && <p className="text-gray-500">Tax Regime</p>}
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
               onClick={() => setGoHeadWithNewRegime(1)}
-              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
-                goHeadWithNewRegime === 1
-                  ? "bg-primary text-white"
-                  : "text-gray-600"
-              }`}
+              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${goHeadWithNewRegime === 1
+                ? "bg-primary text-white"
+                : "text-gray-600"
+                }`}
             >
               New Regime
             </button>
             <button
               onClick={() => setGoHeadWithNewRegime(0)}
-              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
-                goHeadWithNewRegime === 0
-                  ? "bg-primary text-white"
-                  : "text-gray-600"
-              }`}
+              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${goHeadWithNewRegime === 0
+                ? "bg-primary text-white"
+                : "text-gray-600"
+                }`}
             >
               Old Regime
             </button>
@@ -387,35 +432,33 @@ console.log("Submitting payload", payload);
         {/* Tabs */}
 
         <div className="w-full">
-          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-20 md:px-0">
+          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-0">
             <button
-             ref={(el) => {tabRefs.current["category"] = el;}}
+              ref={(el) => { tabRefs.current["category"] = el; }}
               onClick={() => setActiveMainTab("category")}
-              className={`px-4 whitespace-nowrap py-2 ${
-                activeMainTab === "category"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-gray-600"
-              }`}
+              className={`px-4 whitespace-nowrap py-2 ${activeMainTab === "category"
+                ? "border-b-2 border-primary text-primary"
+                : "text-gray-600"
+                }`}
             >
               Other Investment Declaration
             </button>
 
             {!goHeadWithNewRegimeBool && (
               <button
-                ref={(el) => {tabRefs.current["hra"] = el;}}
+                ref={(el) => { tabRefs.current["hra"] = el; }}
                 onClick={() => setActiveMainTab("hra")}
-                className={`px-4 whitespace-nowrap py-2 ${
-                  activeMainTab === "hra"
-                    ? "border-b-2 border-primary text-primary"
-                    : "text-gray-600"
-                }`}
+                className={`px-4 whitespace-nowrap py-2 ${activeMainTab === "hra"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-gray-600"
+                  }`}
               >
                 HRA & Other (U/S 10)
               </button>
             )}
           </div>
           {activeMainTab === "hra" && hraData && (
-            <HRAForm hraData={hraData} onChange={handleHraChange} LATABreakup = { LTABreakup}/>
+            <HRAForm hraData={hraData} onChange={handleHraChange} LATABreakup={LTABreakup} />
           )}
           {activeMainTab === "category" && (
             <>
@@ -424,23 +467,22 @@ console.log("Submitting payload", payload);
                   <button
                     key={sec.section}
                     onClick={() => setActiveSection(sec.section)}
-                    className={`px-4 py-1 rounded-3xl text-xs ${
-                      activeSection === sec.section
-                        ? "bg-primary text-white"
-                        : "bg-gray-200"
-                    }`}
+                    className={`px-4 py-1 rounded-3xl text-xs ${activeSection === sec.section
+                      ? "bg-primary text-white"
+                      : "bg-gray-200"
+                      }`}
                   >
                     {sec.section}
                   </button>
                 ))}
               </div>
               <CategorySection
-      sectionCategories={sectionCategories}
-      activeSection={activeSection}
-      lockingDate={PrrofOfITDeclaration?.status}
-      responseDoctype={responseData?.doctype}
-      setGroupedCategories={setGroupedCategories}
-    />
+                sectionCategories={sectionCategories}
+                activeSection={activeSection}
+                lockingDate={PrrofOfITDeclaration?.status}
+                responseDoctype={responseData?.doctype}
+                setGroupedCategories={setGroupedCategories}
+              />
             </>
           )}
         </div>

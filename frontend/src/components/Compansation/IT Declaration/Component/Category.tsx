@@ -205,10 +205,10 @@ const CategoryDeclarationSelectable = ({
     const updated = items.map((item) =>
       item.exemption_sub_category === key
         ? {
-            ...item,
-            is_selected: false,
-            amount: undefined,
-          }
+          ...item,
+          is_selected: false,
+          amount: undefined,
+        }
         : item
     );
     const stillSelected = updated.some(
@@ -237,7 +237,7 @@ const CategoryDeclarationSelectable = ({
     custom_80d_variable
   );
   return (
-    <div className="bg-white px-6 py-4 rounded border space-y-4">
+    <div className="bg-white px-3 md:px-6 py-4 rounded-lg border border-gray-200 space-y-4">
       <div className="border-b pb-2">
         <Typography
           variant="bodySmall"
@@ -255,9 +255,9 @@ const CategoryDeclarationSelectable = ({
         {selectedItems.map((item) => (
           <div
             key={item.exemption_sub_category}
-            className="flex justify-between items-center rounded border p-4"
+            className="flex flex-col sm:flex-row sm:justify-between sm:items-center rounded-lg border border-gray-200 p-3 md:p-4 gap-3"
           >
-            <div className="flex flex-col  gap-1 max-w-xs">
+            <div className="flex flex-col gap-1 w-full sm:max-w-xs">
               <div>
                 <Typography
                   variant="bodySmall"
@@ -277,7 +277,7 @@ const CategoryDeclarationSelectable = ({
                 (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
                   <div className="flex gap-2 pb-1 bg-white">
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs text-gray-600">
+                      <label className="text-xs text-gray-700 font-medium">
                         Attachment
                       </label>
 
@@ -298,10 +298,10 @@ const CategoryDeclarationSelectable = ({
                             file
                           );
                         }}
-                        className="border rounded pr-3 text-xs
+                        className="border border-gray-300 rounded-lg pr-3 text-xs transition-all
                           file:text-xs file:border-0
-                        file:bg-primary file:text-white
-                          file:px-3 file:py-1"
+                          file:bg-primary file:text-white
+                          file:px-3 file:py-1.5 file:rounded-l-lg"
                       />
 
                       {(item?.proof_file ?? item?.attach_reqd === 1) && (
@@ -310,9 +310,9 @@ const CategoryDeclarationSelectable = ({
                             {typeof item?.proof_file === "string"
                               ? item.proof_file
                               : item?.proof_file?.name ||
-                                item?.attach_proof ||
-                                item?.attach_link ||
-                                "-"}
+                              item?.attach_proof ||
+                              item?.attach_link ||
+                              "-"}
                           </span>
 
                           <button
@@ -329,21 +329,21 @@ const CategoryDeclarationSelectable = ({
 
                     {item?.custom_note && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-600">
+                        <label className="text-xs text-gray-700 font-medium">
                           Note / Comment
                         </label>
                         <textarea
                           rows={1}
                           value={item.custom_note as unknown as string}
                           placeholder="Enter your comment..."
-                          className="border rounded px-3 py-1 text-xs resize-none"
+                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
                         />
                       </div>
                     )}
                   </div>
                 )}
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
 
               {item?.custom_proof_status && (
                 <span
@@ -353,9 +353,9 @@ const CategoryDeclarationSelectable = ({
                   {item.custom_proof_status}
                 </span>
               )}
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-[10px] font-semibold">
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="text-left sm:text-right flex-1 sm:flex-none">
+                  <p className="text-[10px] font-semibold text-gray-500">
                     Max {formatCurrency(item.max_amount)}
                   </p>
                   <input
@@ -376,7 +376,7 @@ const CategoryDeclarationSelectable = ({
                         Number(raw)
                       );
                     }}
-                    className="border rounded px-2 py-1 text-xs w-32"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
                   />
                 </div>
 
@@ -408,14 +408,14 @@ const CategoryDeclarationSelectable = ({
           variant="soft"
           onClick={() => setIsOpen((prev) => !prev)}
           disabled={isDisabled}
-          className="w-full flex justify-between items-center border border-gray-200 rounded px-3 py-1 text-xs bg-white"
+          className="w-full flex justify-between items-center border border-gray-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
         >
           <span className="text-gray-400">Select Items</span>
           <span className="text-gray-400">▼</span>
         </Button>
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-48 overflow-auto">
+          <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
             {dropdownOptions.map((opt) => (
               <button
                 key={opt.value}
