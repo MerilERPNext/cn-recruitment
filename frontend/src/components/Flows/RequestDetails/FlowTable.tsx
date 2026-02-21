@@ -37,20 +37,26 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
 
     return (
         <div className="sm:px-7 px-4">
-            <CardTable titles={titles}>
-                <StaticListView
-                    data={data.approval_stages}
-                    ItemComponent={(index, item) => {
-                        return isDesktop ? <StageCard stage={item} isActive={index === activeStageIndex} /> : <RequestTimeline stages={data.approval_stages} />;
-                    }}
-                    isSearch={true}
-                    searchFields={["stage_name", "role", "status"]}
-                    getItemKey={(stage, index) => stage?.stage_name + index}
-                    pageSize={20}
-                    SkeletonComponent={CardSkeleton}
-                    loadMorePagination={true}
-                />
-            </CardTable>
+            {isDesktop ? (
+                <CardTable titles={titles}>
+                    <StaticListView
+                        data={data.approval_stages}
+                        ItemComponent={(index, item) => (
+                            <StageCard stage={item} isActive={index === activeStageIndex} />
+                        )}
+                        isSearch={true}
+                        searchFields={["stage_name", "role", "status"]}
+                        getItemKey={(stage, index) => stage?.stage_name + index}
+                        pageSize={20}
+                        SkeletonComponent={CardSkeleton}
+                        loadMorePagination={true}
+                    />
+                </CardTable>
+            ) : (
+                <div className="pb-10">
+                    <RequestTimeline stages={data.approval_stages} />
+                </div>
+            )}
         </div>
     )
 }
