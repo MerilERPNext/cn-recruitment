@@ -11,7 +11,7 @@ import { getActionStyles } from "../../../utils/actionButtonStyles";
 import { Link } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 // Props type
@@ -19,7 +19,6 @@ type BenefitRequestItemProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
@@ -142,15 +141,13 @@ const BenefitRequestItem = ({
             {formatToIndianDate(data.reference_document.claim_date)}
           </Typography>
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Pending" ? data?.allocated_to : undefined}
+              roles={data?.status === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
@@ -245,7 +242,7 @@ const BenefitRequestItem = ({
                     }
                   >
                     {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
+                      loadingAction?.action === action ? (
                       <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
                     ) : (
                       action

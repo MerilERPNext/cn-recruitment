@@ -6,7 +6,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
@@ -159,15 +159,13 @@ const ExpenseApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Draft"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Draft" ? data?.allocated_to : undefined}
+              roles={data?.status === "Draft" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
 
           <div className="flex items-center justify-center">

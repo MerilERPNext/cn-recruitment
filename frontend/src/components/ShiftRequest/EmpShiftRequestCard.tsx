@@ -8,7 +8,7 @@ import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { MyShiftRequest } from "../../types/shift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
-import Tooltip from "../shared/Tooltip";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -59,9 +59,8 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
       );
 
       if (shiftType) {
-        return `${shiftType.start_time || "--"} - ${
-          shiftType.end_time || "--"
-        }`;
+        return `${shiftType.start_time || "--"} - ${shiftType.end_time || "--"
+          }`;
       }
     }
 
@@ -102,15 +101,13 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           {/* Status */}
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data.reference_document.status === "Draft"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data.reference_document.status === "Draft" ? data?.allocated_to : undefined}
+              roles={data.reference_document.status === "Draft" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
