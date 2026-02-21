@@ -1,5 +1,4 @@
 import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
-import { Edit, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
@@ -12,7 +11,6 @@ import { MyAttendanceRequest } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
-import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
@@ -191,49 +189,28 @@ const EmpAttendanceRequestCard = ({
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Duration</Typography>
                 <Typography variant="mobileCardValue">
-                  {formatToIndianDate(formattedFromDate)} to{" "}
-                  {formatToIndianDate(formattedToDate)}
+                  {formattedFromDate} to {formattedToDate}
                 </Typography>
               </div>
 
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Due Date</Typography>
                 <Typography variant="mobileCardValue">
-                  {formatToIndianDate(formattedDueDate)}
+                  {formattedDueDate}
                 </Typography>
               </div>
             </div>
 
             {/* Actions */}
-            {(data?.custom_allow_revoke && type === "pending") ||
-            (type === "pending" && data?.can_edit) ? (
-              <div className="flex gap-2 mt-2">
-                {type === "pending" && data?.can_edit && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={() => setEdit(true)}
-                    icon={<Edit className="w-4 h-4" />}
-                  >
-                    Edit
-                  </Button>
-                )}
-
-                {data?.custom_allow_revoke && type === "pending" && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                    icon={<RotateCcw className="w-4 h-4" />}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                )}
-              </div>
-            ) : null}
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={type === "pending"}
+              canRevoke={type === "pending" && !!data?.custom_allow_revoke}
+              canEdit={type === "pending" && !!data?.can_edit}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={() => setEdit(true)}
+            />
           </div>
         </div>
       )}

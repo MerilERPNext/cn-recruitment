@@ -1,4 +1,3 @@
-import { Pencil, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +9,6 @@ import { MyShiftRequest } from "../../types/shift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import Tooltip from "../shared/Tooltip";
-import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -180,34 +178,15 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
             </div>
 
             {/* Actions */}
-            {(canEdit || canRevoke) && (
-              <div className="flex gap-2 mt-2">
-                {canEdit && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleEditClick}
-                    icon={<Pencil className="w-4 h-4" />}
-                  >
-                    Edit
-                  </Button>
-                )}
-
-                {canRevoke && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                    icon={<RotateCcw className="w-4 h-4" />}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                )}
-              </div>
-            )}
+            <MyApprovalActionPill
+              variant="buttons"
+              canEdit={canEdit}
+              canRevoke={canRevoke}
+              isPending={false}
+              revokeLoading={revokeEventMutation.isPending}
+              onEdit={handleEditClick}
+              onRevoke={handleRevokeClick}
+            />
           </div>
         </div>
       )}

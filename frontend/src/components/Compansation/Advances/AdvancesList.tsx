@@ -2,24 +2,24 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import InstallmentsList from "./InstallmentsList";
-import AdvanceForm from "./AdvanceForm";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
-import Modal from "./commonModal";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
+import { formatCurrency } from "../../../utils/currency";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
+import Tooltip from "../../shared/Tooltip";
 import Button from "../../shared/atoms/Button";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
-import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import AdvanceForm from "./AdvanceForm";
+import InstallmentsList from "./InstallmentsList";
+import Modal from "./commonModal";
 
 import { Search } from "lucide-react";
 
@@ -242,11 +242,6 @@ const AdvancesList: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={advance.advanceStatus} />
-              <MyApprovalActionPill
-                isPending={true}
-                canEdit={!!advance.can_edit}
-                onEdit={() => handleEdit(advance.docname)}
-              />
             </div>
           </div>
 
@@ -268,6 +263,13 @@ const AdvancesList: React.FC = () => {
             </span>
             <span>{advance.installments.length} installments</span>
           </div>
+
+          <MyApprovalActionPill
+            variant="buttons"
+            isPending={advance.advanceStatus === "Pending"}
+            canEdit={!!advance.can_edit}
+            onEdit={() => handleEdit(advance.docname)}
+          />
         </div>
       ))}
     </>

@@ -1,25 +1,26 @@
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import {
-  useUpdateRejectionReason,
-  useIsRejectionReasonMandatory,
-} from "../../hooks/useLeaves";
-import Button from "../shared/atoms/Button";
-import DOMPurify from "dompurify";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import {
+  useIsRejectionReasonMandatory,
+  useUpdateRejectionReason,
+} from "../../hooks/useLeaves";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
+import Button from "../shared/atoms/Button";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import toast from "react-hot-toast";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import { getActionStyles } from "../../utils/actionButtonStyles";
 
 export function LeaveDetailView({
   documentName,
@@ -47,6 +48,7 @@ export function LeaveDetailView({
   } = useGetToDoWithReferenceDoc(documentName || "");
 
   const data = documentName ? fetchedData : propsData;
+  const { isDesktop } = useScreenSize();
 
   const cleanDescription = DOMPurify.sanitize(data?.description || "");
 
@@ -294,34 +296,19 @@ export function LeaveDetailView({
         </div>
 
         {actions?.length > 0 && data?.status === "Open" && (
-          <div className=" w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-              {actions?.length &&
-                actions?.map((action: string) => {
-                  const actionStyle = getActionStyles(action);
-                  const isLoading =
-                    currentAction === action && mutation.isPending;
-                  return (
-                    <Button
-                      key={action}
-                      disabled={isLoading}
-                      onClick={() => {
-                        handleAction(action);
-                      }}
-                      size="md"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                      className="w-full"
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
-            </div>
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            <TeamApprovalActionPill
+              variant={isDesktop ? "modal" : "buttons"}
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data?.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={(action) => handleAction(action)}
+            />
           </div>
         )}
       </div>

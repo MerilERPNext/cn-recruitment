@@ -5,7 +5,6 @@ import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -43,38 +42,6 @@ const ApprovalCard = ({
   const actionsWithForm = data?.custom_doctype_actions_with_form
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
-
-  const getActionStyles = (
-    action: string,
-  ): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr"
@@ -254,39 +221,14 @@ const ApprovalCard = ({
               </div>
 
               {/* Actions */}
-              {actions?.length > 0 && data?.status === "Pending" && (
-                <div className="flex gap-2 mt-3">
-                  {actions.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
-
-                    return (
-                      <Button
-                        key={action}
-                        fullWidth
-                        size="md"
-                        variant="soft"
-                        bgColor={actionStyle.bg}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onAction(action, data);
-                        }}
-                        disabled={
-                          loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action
-                        }
-                      >
-                        {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
             </div>
           </div>
         </div>

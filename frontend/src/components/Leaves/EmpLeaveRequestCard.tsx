@@ -1,4 +1,3 @@
-import { Repeat1, RotateCcw, SquarePen } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -126,10 +125,6 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
-  const showEdit = allowEdit && isPending;
-  const showRevoke = isPending && data?.custom_allow_revoke && canRequestLeave;
-  const showReplace = allowReplace && (isPending || isApproved);
-
   return (
     <>
       {isDesktop ? (
@@ -180,7 +175,6 @@ const EmpLeaveRequestCard = ({
               canRevoke={
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
-              // optional
               canEdit={allowEdit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
@@ -264,47 +258,19 @@ const EmpLeaveRequestCard = ({
               )}
             </div>
 
-            {/* Bottom Actions */}
-            {(showEdit || showRevoke || showReplace) && (
-              <div className="flex gap-2 mt-3">
-                {showEdit && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleEditClick}
-                    icon={<SquarePen className="w-4 h-4" />}
-                  >
-                    Edit
-                  </Button>
-                )}
-
-                {showReplace && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleReplaceClick}
-                    icon={<Repeat1 className="w-4 h-4" />}
-                  >
-                    Replace
-                  </Button>
-                )}
-
-                {showRevoke && (
-                  <Button
-                    fullWidth
-                    size="md"
-                    variant="contain"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                    icon={<RotateCcw className="w-4 h-4" />}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                )}
-              </div>
-            )}
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={isPending}
+              canRevoke={
+                isPending && data?.custom_allow_revoke && canRequestLeave
+              }
+              canEdit={allowEdit}
+              canReplace={allowReplace && (isPending || isApproved)}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={handleEditClick}
+              onReplace={handleReplaceClick}
+            />
           </div>
           {showDescriptionModal && (
             <div className="fixed inset-0 z-[60] bg-black/50 flex items-end">

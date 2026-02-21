@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import Button from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -208,40 +206,14 @@ const AdvanceApprovalCard = ({
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-4 mb-3">
-                {actions?.length > 0 &&
-                  data?.status !== "Approved" &&
-                  data?.status !== "Rejected" &&
-                  actions.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
-
-                    return (
-                      <Button
-                        key={action}
-                        size="md"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onAction(action, data);
-                        }}
-                        fullWidth
-                        bgColor={actionStyle.bgColor}
-                        variant={actionStyle.variant}
-                        disabled={
-                          loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action
-                        }
-                      >
-                        {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
-              </div>
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
             </div>
           </div>
         </div>

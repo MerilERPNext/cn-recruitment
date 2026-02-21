@@ -40,52 +40,112 @@ const getStatusBadgeClasses = (status: string) => {
 };
 
 const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
-  const formattedAmount = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-  }).format(item?.reference_document?.total_claimed_amount ?? 0);
+  const expense = item?.reference_document;
+  const { data: currentUser } = useCurrentUser();
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
+  const navigate = useNavigate();
+
+  const canEditExpense = isActionEnabled(
+    userUiPermission,
+    "edit_expense",
+    "Expense Claims",
+  );
+
+  const canEdit =
+    currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() &&
+    canEditExpense &&
+    item?.can_edit;
+
+  const expenseClaim = item?.reference_document;
+  const expenseItem = expenseClaim?.expenses?.[0];
+
+  const handleEditClick = () => {
+    if (!expenseClaim?.name || !expenseItem?.name) return;
+
+    const navigationState = buildExpenseNavigationState(
+      expenseClaim,
+      expenseItem,
+    );
+
+    navigate("/webapp/expenses-app/add-expense", {
+      state: navigationState,
+    });
+  };
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(value ?? 0);
+
+  const claimedAmount = formatCurrency(expense?.total_claimed_amount);
+  const sanctionedAmount = formatCurrency(expense?.total_sanctioned_amount);
 
   return (
-    <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5">
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex flex-col gap-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Expense category
-          </Typography>
-          {item?.reference_document?.custom_expense_category && (
+    <div
+      className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+    >
+      <div className="p-4 flex flex-col gap-4">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Category</Typography>
+
             <Typography variant="mobileCardValue">
-              {item?.reference_document?.custom_expense_category}
+              {expense?.custom_expense_category || "--"}
             </Typography>
-          )}
+          </div>
+
+          <StatusBadge status={item?.status} />
         </div>
 
-        <StatusBadge status={item?.status} />
-      </div>
+        {/* Amounts */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+            <Typography variant="mobileCardValue">{claimedAmount}</Typography>
+          </div>
 
-      <div className="flex justify-between">
-        <div className="flex flex-col gap-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Claimed Date
-          </Typography>
-          <Typography variant="mobileCardValue">
-            {formatToIndianDate(item?.reference_document?.creation)}
-          </Typography>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
+            <Typography variant="mobileCardValue">
+              {sanctionedAmount}
+            </Typography>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 text-right">
-          <Typography variant="mobileCardLabel" className="block">
-            Claimed Amount
-          </Typography>
-          <Typography variant="mobileCardValue">{formattedAmount}</Typography>
-        </div>
-      </div>
+        {/* Dates */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(expense?.expenses?.[0]?.expense_date)}
+            </Typography>
+          </div>
 
-      <div>
-        <div className="h-[1px] w-full bg-gray-100 mb-4" />
-        <Typography variant="mobileCardFooter">
-          Last Updated on{" "}
-          {formatToIndianDate(item?.reference_document?.modified)}
-        </Typography>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Claimed Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(expense?.creation)}
+            </Typography>
+          </div>
+        </div>
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={item?.status === "Draft"}
+          canEdit={canEdit}
+          onEdit={handleEditClick}
+        />
+
+        {/* Footer */}
+        <div className="pt-2 border-t">
+          <Typography variant="mobileCardFooter">
+            Last Updated on {formatToIndianDate(expense?.modified)}
+          </Typography>
+        </div>
       </div>
     </div>
   );
@@ -115,7 +175,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
-    "Expense Claims"
+    "Expense Claims",
   );
 
   const navigate = useNavigate();
@@ -127,7 +187,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
 
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
-      expenseItem
+      expenseItem,
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
@@ -160,7 +220,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       )}
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(
-          item?.reference_document?.expenses[0]?.expense_date
+          item?.reference_document?.expenses[0]?.expense_date,
         )}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -183,7 +243,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() &&
+              item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit
           }
@@ -201,7 +261,7 @@ const ExpensesList: React.FC = () => {
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
-    []
+    [],
   );
   const [selectedSendBackUser, setSelectedSendBackUser] = React.useState<
     string | null
@@ -237,7 +297,7 @@ const ExpensesList: React.FC = () => {
     id: string,
     stages: ApprovalStage[],
     sendBackUser: string,
-    canEdit: boolean
+    canEdit: boolean,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => setSelectedId(id), 0);

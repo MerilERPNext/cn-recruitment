@@ -37,11 +37,6 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
     }
   };
 
-  // const handleTodoClick = (e: React.MouseEvent) => {
-  //   e.stopPropagation();
-  //   navigate("/webapp/todo-app");
-  // };
-
   const cleanDescription = sanitizeToPlainText(item.description);
 
   return (
@@ -51,7 +46,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
       className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+        <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
         <div>
@@ -171,7 +166,7 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {isDesktop && (
+      {isDesktop && !isLoading && totalCount > 0 && (
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
@@ -233,7 +228,7 @@ const TasksAwaiting: React.FC = () => {
           SkeletonComponent={() => <CardSkeleton rows={2} />}
         />
       )}
-      <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">
+      <div className="flex-1">
         {isLoading ? (
           <CardSkeleton rows={2} />
         ) : filtered.length > 0 ? (
@@ -241,8 +236,14 @@ const TasksAwaiting: React.FC = () => {
             .slice(0, 3)
             .map((item) => <MyToDoItem key={item.name} item={item} />)
         ) : (
-          <div className="p-4 flex justify-center opacity-60">
-            <Typography variant="bodySmall">No tasks found.</Typography>
+          <div className="flex flex-col items-center justify-center py-10 text-center opacity-70">
+            <ClipboardList className="w-10 h-10 mb-3 text-gray-400" />
+            <Typography variant="bodyMedium" className="font-medium">
+              You're all caught up 🎉
+            </Typography>
+            <Typography variant="bodySmall" color="body2">
+              No pending tasks right now.
+            </Typography>
           </div>
         )}
       </div>

@@ -1,16 +1,15 @@
 import { format } from "date-fns";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { usePayCompOff } from "../../../hooks/useLeaves";
 import toast from "react-hot-toast";
-import { Typography } from "../../shared/atoms/Typography";
-import Tooltip from "../../shared/Tooltip";
+import { usePayCompOff } from "../../../hooks/useLeaves";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Button from "../../shared/atoms/Button";
-import { Wallet } from "lucide-react";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -34,8 +33,7 @@ const CompensatoryRequestCard = ({
   const { isDesktop } = useScreenSize();
   const { mutate: payCompOff, isPending } = usePayCompOff();
 
-  const handlePay = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePay = () => {
     payCompOff(item.name, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onSuccess: (response: any) => {
@@ -112,20 +110,14 @@ const CompensatoryRequestCard = ({
           status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
         />
       </div>
+
       <div className="flex items-center justify-center">
-        {item?.pay_button_required ? (
-          <button
-            onClick={handlePay}
-            disabled={isPending}
-            className="bg-primary hover:bg-primary-600 text-white px-4 rounded-lg text-sm py-1"
-          >
-            {isPending ? "Processing..." : "Pay"}
-          </button>
-        ) : (
-          <div className="h-8 px-3 flex items-center justify-center rounded-3xl bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-            NA
-          </div>
-        )}
+        <MyApprovalActionPill
+          isPending={false}
+          canPay={item?.pay_button_required}
+          onPay={handlePay}
+          payLoading={isPending}
+        />
       </div>
     </div>
   ) : (
@@ -178,20 +170,14 @@ const CompensatoryRequestCard = ({
         )}
 
         {/* Pay Button */}
-        {item?.pay_button_required && (
-          <div className="mt-2">
-            <Button
-              fullWidth
-              size="md"
-              variant="contain"
-              onClick={handlePay}
-              disabled={isPending}
-              icon={<Wallet className="w-4 h-4" />}
-            >
-              {isPending ? "Processing..." : "Pay"}
-            </Button>
-          </div>
-        )}
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={false}
+          canPay={item?.pay_button_required}
+          onPay={handlePay}
+          payLoading={isPending}
+        />
       </div>
     </div>
   );
