@@ -12,7 +12,7 @@ interface RequestDetailsProps {
   handleNavigateBack: () => void
 }
 const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBack }) => {
-  const [FlowStatusType, setFlowStatusType] = useState<FlowStatusType>(
+  const [flowStatusType, setFlowStatusType] = useState<FlowStatusType>(
     "Approval Flow Status",
   );
 
@@ -31,7 +31,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
               { label: "Approval Flow Status", value: "Approval Flow Status" },
               { label: "Workflow Status", value: "Workflow Status" },
             ].map((btn, index) => {
-              const isActive = FlowStatusType === btn.value;
+              const isActive = flowStatusType === btn.value;
               return (
                 <button
                   key={btn.value}
@@ -66,7 +66,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
         </div>
       </div>
 
-      {FlowStatusType === "Approval Flow Status" ? (
+      {flowStatusType === "Approval Flow Status" ? (
         <FlowTable data={data} />
       ) : (
         <WorkflowTable data={data} />

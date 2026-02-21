@@ -69,7 +69,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
         ? JSON.parse(stage?.todo?.custom_doctype_actions)
         : [];
     const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-        ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+        ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form)
         : [];
 
 
@@ -86,10 +86,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
                 custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action)
             }, "Action Performed Successfully");
     };
-    // const { data: userId } = useLoggedInUser();
     const { data: currentUser } = useCurrentUser();
-    // const { data: currentEmployee } =
-    //     useCurrentEmployeeAllDetails(userId || "");
 
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
@@ -127,13 +124,6 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
 
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {canPerformActions && actions.length > 0 &&
-                    // <TeamApprovalActionPill
-                    //     actions={actions}
-                    //     status={stage?.todo?.status}
-                    //     recordId={stage?.todo?.name}
-                    //     // loadingAction={loadingAction}
-                    //     onAction={(action) => onAction(action, stage?.todo)}
-                    // />
                     <Button onClick={() => onAction(actions[0], stage?.todo)} >Act</Button>
                 }
             </Typography></div>
