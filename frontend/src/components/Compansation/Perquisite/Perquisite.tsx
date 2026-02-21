@@ -38,7 +38,7 @@ export default function PerquisiteList() {
   const columnWidths = ["2fr", "1.2fr", "1.2fr", "1fr"];
 
   return (
-    <div className="w-full">
+    <div className="w-full p-1">
       <div className="mb-6">
         <Typography variant="subheading" color="body1">Employee Perquisite </Typography>
         <Typography variant="bodySmall" color="body2">Track Employee Perquisite History </Typography>
