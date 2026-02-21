@@ -141,7 +141,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                     {/* Divider between sections */}
                     {hasUsers && hasRoles && (
-                        <div className="border-t border-gray-10" />
+                        <div className="border-t border-gray-100" />
                     )}
 
                     {/* Roles Section */}
