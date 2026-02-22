@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FileText } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -44,26 +45,27 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;

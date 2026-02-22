@@ -1,18 +1,20 @@
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import Tooltip from "../../shared/Tooltip";
-import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -132,14 +134,40 @@ const AdvancesList: React.FC = () => {
     setSelectedAdvance(null);
   };
 
-  const handleCreateAdvance = () => {
-    setShowAdvanceForm(true);
-  };
-
   const handleCloseModal = () => {
     setShowAdvanceForm(false);
     setEditAdvanceId(null);
+    setIsModalOpen(false);
   };
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateAdvance = isActionEnabled(
+    uiPermission,
+    "create_advance",
+    "My Advances",
+  );
+
+  useEffect(() => {
+    if (canCreateAdvance) {
+      setActionButtonConfig({
+        label: "+ Request Advance",
+        onClick: () => {
+          setShowAdvanceForm(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateAdvance]);
 
   if (showInstallments && selectedAdvance) {
     return (
@@ -309,16 +337,6 @@ const AdvancesList: React.FC = () => {
                   </>
                 )}
               </button>
-
-              {/* Create Button */}
-              <Button
-                bgColor="primary"
-                size="md"
-                onClick={handleCreateAdvance}
-                className="hover:bg-primary-700 py-[0.65rem] font-semibold"
-              >
-                + Request Advance
-              </Button>
             </div>
           </div>
         </div>

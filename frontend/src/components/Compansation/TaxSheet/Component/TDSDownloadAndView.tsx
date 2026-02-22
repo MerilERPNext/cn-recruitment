@@ -20,7 +20,7 @@ const TDSSlipHandler = ({ disabled }: Props) => {
   const [html, setHtml] = useState("");
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  
+
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
