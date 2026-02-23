@@ -19,6 +19,7 @@ type TabName =
   | "My Advances"
   | "Team Advances"
   | "Extra Payments"
+  | "Perquisite"
   | "Payroll Documents";
 
 type ViewMode = "annual"; // ❌ removed monthly
@@ -34,8 +35,10 @@ const tabRoutes: Record<TabName, string> = {
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",
   "Team Advances": "/webapp/salary-slip-app/team-advances-list",
+  "Perquisite": "/webapp/salary-slip-app/perquisite-list", 
   "Extra Payments": "/webapp/salary-slip-app/extra-payment",
   "Payroll Documents": "/webapp/salary-slip-app/hr-payroll",
+  
 };
 
 interface ViewModeContextType {

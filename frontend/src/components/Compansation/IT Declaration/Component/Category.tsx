@@ -38,14 +38,32 @@ type Props = {
   locked80DVariable?: string | null;
   setLocked80DVariable?: (v: string | null) => void;
 };
+import { Check, Clock, X } from "lucide-react";
+
+
 const getProofStatusBadgeClass = (status: string) => {
   switch (status) {
     case "Approved":
       return "bg-success-100 text-success-600";
     case "Rejected":
       return "bg-error-50 text-error-600";
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800";
     default:
       return "bg-gray-50 text-gray-600";
+  }
+};
+
+const getProofStatusIcon = (status: string) => {
+  switch (status) {
+    case "Approved":
+      return <Check className="w-3 h-3 md:w-4 md:h-4" />;
+    case "Rejected":
+      return <X className="w-3 h-3 md:w-4 md:h-4" />;
+    case "Pending":
+      return <Clock className="w-3 h-3 md:w-4 md:h-4" />;
+    default:
+      return null;
   }
 };
 
@@ -65,6 +83,7 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
   const { mutateAsync: deleteDoc } = useDeleteDocument();
+  
 
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
@@ -347,11 +366,13 @@ const CategoryDeclarationSelectable = ({
 
               {item?.custom_proof_status && (
                 <span
-                  className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold
-                    ${getProofStatusBadgeClass(item.custom_proof_status)}`}
-                >
-                  {item.custom_proof_status}
-                </span>
+  className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold ${getProofStatusBadgeClass(
+    item.custom_proof_status
+  )}`}
+>
+  {getProofStatusIcon(item.custom_proof_status)}
+  {item.custom_proof_status}
+</span>
               )}
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <div className="text-left sm:text-right flex-1 sm:flex-none">

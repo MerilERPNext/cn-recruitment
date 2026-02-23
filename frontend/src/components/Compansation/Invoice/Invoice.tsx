@@ -101,6 +101,7 @@ export default function Invoice() {
 
   const titles = [
     "Invoice No",
+    "Status",
     "Invoice Date",
     "Due Date",
     "Customer",
@@ -111,6 +112,7 @@ export default function Invoice() {
   ];
 
   const columnWidths = [
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
@@ -180,6 +182,14 @@ export default function Invoice() {
                   <Typography variant="bodySmall" className="text-center">
                     {invoiceNo}
                   </Typography>
+
+                  {inv.invoice_status && (
+                      <span
+                        className={`flex-shrink-0 ml-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(inv.invoice_status)}`}
+                      >
+                        {inv.invoice_status}
+                      </span>
+                    )}
 
                   <Typography variant="bodySmall" className="text-center">
                     {inv.start_date}
