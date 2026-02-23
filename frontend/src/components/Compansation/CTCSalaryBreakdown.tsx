@@ -97,7 +97,7 @@ const CTCSalaryUI = () => {
   );
 
   const Header = () => (
-    <div className="flex justify-between items-start mb-4 px-2">
+    <div className="flex justify-between items-start mb-4 sm:px-2">
       <div>
         <Typography variant="h4">Compensation</Typography>
         <Typography variant="bodySmall" color="body2">
@@ -126,12 +126,12 @@ const CTCSalaryUI = () => {
   );
 
   return (
-    <div className="min-h-screen rounded-lg px-4">
+    <div className="min-h-screen rounded-lg sm:px-4">
       <div className="w-full py-4">
         <Header />
 
         <div className="space-y-8 animate-in fade-in duration-500">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3">
             <StatCard
               label="Annual CTC"
               value={salarySlip?.annual_ctc || 0}
@@ -165,7 +165,7 @@ const CTCSalaryUI = () => {
             <div className="px-6 py-4 bg-gray-50/50">
               <h3 className=" base-title  text-gray-900">Annual Breakdown</h3>
             </div>
-            <div className="p-6 max-h-[550px] overflow-y-auto">
+            <div className="pt-4 pb-6 px-3 max-h-[550px] overflow-y-auto">
               {isDesktop ? (
                 <div>
                   <table className="w-full card-subtitle border-collapse border-0 !border-none">

@@ -1,6 +1,7 @@
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
@@ -62,15 +63,13 @@ export function MyRequestCard({
             </Typography>
           </Link>
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                request?.status === "Open"
-                  ? `Allocated to : ${request?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={request?.status === "Open" ? request?.allocated_to : undefined}
+              roles={request?.status === "Open" ? request?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={request?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
         </div>
       ) : (
@@ -113,7 +112,7 @@ export function MyRequestCard({
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">
-                      {request?.due_date as String}
+                      {request?.due_date as string}
                     </Typography>
                   </div>
                 </div>

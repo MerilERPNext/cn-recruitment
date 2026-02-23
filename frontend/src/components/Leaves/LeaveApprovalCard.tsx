@@ -12,7 +12,7 @@ import Button from "../shared/atoms/Button";
 import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
-import Tooltip from "../shared/Tooltip";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
@@ -162,15 +162,13 @@ const LeaveApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.status === "Open"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.reference_document?.status === "Open" ? data?.allocated_to : undefined}
+              roles={data?.reference_document?.status === "Open" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill

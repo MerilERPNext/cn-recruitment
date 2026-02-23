@@ -14,6 +14,7 @@ import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
@@ -129,15 +130,13 @@ const EmpAttendanceRequestCard = ({
           </Link>
           {/* Status */}
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.custom_status === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.reference_document?.custom_status === "Pending" ? data?.allocated_to : undefined}
+              roles={data?.reference_document?.custom_status === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.custom_status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill

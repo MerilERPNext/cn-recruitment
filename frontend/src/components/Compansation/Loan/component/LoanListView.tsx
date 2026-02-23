@@ -7,7 +7,7 @@ import LoanInstallments from "./LoanInstallment";
 import CardTable from "../../../shared/CardTable";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
-import Tooltip from "../../../shared/Tooltip";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { formatCurrency } from "../../../../utils/currency";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
@@ -45,7 +45,6 @@ export default function LoanList({
   }
 
   const titles = [
-    "",
     "Loan Name",
     "Loan Type",
     "Loan Amount",
@@ -199,9 +198,12 @@ export default function LoanList({
 
               {/* Status + Tooltip */}
               <div className="flex items-center justify-center">
-                <Tooltip content={`Allocated to : ${loan?.employee_name}`}>
+                <AllocatedToTooltip
+                  users={loan?.employee_name}
+                  position="left"
+                >
                   <StatusBadge status={loan.status} />
-                </Tooltip>
+                </AllocatedToTooltip>
               </div>
 
               <div className="flex items-center justify-center">

@@ -1,6 +1,5 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CreateLoanDialog from "./component/CreateLoanDailog";
 import LoanList from "./component/LoanListView";
@@ -8,9 +7,10 @@ import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
 import { useLoan } from "../../../hooks/useLoan";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +55,36 @@ export default function LoansPage() {
     );
   }, [loanData, searchTerm]);
 
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateLoan = isActionEnabled(
+    uiPermission,
+    "create_loan",
+    "My Loan Requests",
+  );
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  useEffect(() => {
+    if (canCreateLoan) {
+      setActionButtonConfig({
+        label: "+ Request Loan",
+        onClick: () => {
+          setIsDialogOpen(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateLoan]);
+
+
   // Desktop Layout
   const DesktopLayout = (
     <div className="flex flex-col h-full">
@@ -73,9 +103,6 @@ export default function LoansPage() {
                 <Typography variant="h4">My Loan Requests</Typography>
               </div>
             )}
-            <Button size="md" onClick={() => setIsDialogOpen(true)}>
-              + Request Loan
-            </Button>
           </div>
         </div>
       </div>
@@ -98,7 +125,7 @@ export default function LoansPage() {
   );
 
   const MobileLayout = () => (
-    <div className="min-h-screen w-full px-4 py-4">
+    <div className="min-h-screen w-full py-4">
       {isLoading ? <CardSkeleton /> : <ListViewOfLoanForMobile />}
     </div>
   );
@@ -114,6 +141,7 @@ export default function LoansPage() {
           onClose={() => {
             setIsDialogOpen(false);
             setLoanId(null);
+            setIsModalOpen(false);
           }}
         />
       )}

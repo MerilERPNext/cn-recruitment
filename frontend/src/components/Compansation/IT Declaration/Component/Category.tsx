@@ -294,8 +294,8 @@ const CategoryDeclarationSelectable = ({
 
               {showProofFields &&
                 (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
-                  <div className="flex gap-2 pb-1 bg-white">
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
+                    <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">
                         Attachment
                       </label>
@@ -317,15 +317,15 @@ const CategoryDeclarationSelectable = ({
                             file
                           );
                         }}
-                        className="border border-gray-300 rounded-lg pr-3 text-xs transition-all
+                        className="border border-gray-300 rounded-lg pr-3 text-xs w-full max-w-full transition-all truncate
                           file:text-xs file:border-0
                           file:bg-primary file:text-white
                           file:px-3 file:py-1.5 file:rounded-l-lg"
                       />
 
                       {(item?.proof_file ?? item?.attach_reqd === 1) && (
-                        <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded bg-gray-50 max-w-xs">
-                          <span className="text-sm text-gray-700 truncate">
+                        <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded w-full bg-gray-50 overflow-hidden">
+                          <span className="text-sm text-gray-700 truncate min-w-0 flex-1">
                             {typeof item?.proof_file === "string"
                               ? item.proof_file
                               : item?.proof_file?.name ||
@@ -337,7 +337,7 @@ const CategoryDeclarationSelectable = ({
                           <button
                             type="button"
                             onClick={() => handleRemoveProof(item.id)}
-                            className="text-gray-500 hover:text-red-600 transition disabled:opacity-50"
+                            className="text-gray-500 hover:text-red-600 transition disabled:opacity-50 shrink-0"
                             title="Remove file"
                           >
                             <FiX size={16} />
@@ -347,7 +347,7 @@ const CategoryDeclarationSelectable = ({
                     </div>
 
                     {item?.custom_note && (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-1 w-full min-w-0">
                         <label className="text-xs text-gray-700 font-medium">
                           Note / Comment
                         </label>
@@ -355,7 +355,7 @@ const CategoryDeclarationSelectable = ({
                           rows={1}
                           value={item.custom_note as unknown as string}
                           placeholder="Enter your comment..."
-                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
+                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-xs w-full resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
                         />
                       </div>
                     )}
@@ -424,7 +424,7 @@ const CategoryDeclarationSelectable = ({
         )}
       </div>
 
-      <div className="relative w-64">
+      <div className="relative w-full sm:w-64">
         <Button
           variant="soft"
           onClick={() => setIsOpen((prev) => !prev)}

@@ -11,7 +11,7 @@ import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { Typography } from "../../shared/atoms/Typography";
 import { formatCurrency } from "../../../utils/currency";
 
@@ -91,9 +91,12 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <div>
                 <span className="text-gray-600">Status:</span>
                 <br />
-                <Tooltip content={`Allocated to : ${advance.employee_name}`}>
+                <AllocatedToTooltip
+                  users={advance.employee_name}
+                  position="left"
+                >
                   <StatusBadge status={advance.advanceStatus} />
-                </Tooltip>
+                </AllocatedToTooltip>
               </div>
               <div>
                 <span className="text-gray-600">Total Installments:</span>

@@ -14,6 +14,7 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { useFileUpload } from "../../../hooks/useEmployee";
 import toast from "react-hot-toast";
 import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -192,11 +193,11 @@ export default function Invoice() {
                     )}
 
                   <Typography variant="bodySmall" className="text-center">
-                    {inv.start_date}
+                    {formatToIndianDate(inv.start_date)}
                   </Typography>
 
                   <Typography variant="bodySmall" className="text-center">
-                    {inv.end_date}
+                    {formatToIndianDate(inv.end_date)}
                   </Typography>
 
                   <Typography variant="bodySmall" className="text-center">
@@ -279,11 +280,11 @@ export default function Invoice() {
                   <div className="p-4 space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Invoice Date</span>
-                      <span className="font-medium text-gray-800">{inv.start_date}</span>
+                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.start_date)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Due Date</span>
-                      <span className="font-medium text-gray-800">{inv.end_date}</span>
+                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.end_date)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Sub Total</span>
