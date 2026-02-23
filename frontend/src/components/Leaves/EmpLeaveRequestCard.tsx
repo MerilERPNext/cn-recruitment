@@ -16,6 +16,7 @@ import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import Tooltip from "../shared/Tooltip";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
@@ -159,15 +160,13 @@ const EmpLeaveRequestCard = ({
               : data?.reference_document?.total_leave_days + " Day"}
           </Typography>
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                status?.label === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={status?.label === "Pending" ? data?.allocated_to : undefined}
+              roles={status?.label === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill

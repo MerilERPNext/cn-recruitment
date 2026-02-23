@@ -10,7 +10,7 @@ import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 import { Link } from "react-router-dom";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
-import Tooltip from "../../../shared/Tooltip";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 
 export type ApprovalRejectionLoanProps = {
@@ -161,15 +161,13 @@ const ApprovalRejectionAdvanceList = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.status === "Draft"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.reference_document?.status === "Draft" ? data?.allocated_to : undefined}
+              roles={data?.reference_document?.status === "Draft" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
 
           <div className="flex items-center justify-center">
@@ -305,7 +303,7 @@ const ApprovalRejectionAdvanceList = ({
               }
             >
               {loadingAction?.id === data?.todo_id &&
-              loadingAction?.action === action ? (
+                loadingAction?.action === action ? (
                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (
                 action

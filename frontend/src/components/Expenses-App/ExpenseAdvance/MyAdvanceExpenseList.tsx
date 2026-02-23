@@ -10,7 +10,7 @@ import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import CardTable from "../../shared/CardTable";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -85,15 +85,13 @@ const MyAdvanceExpenseList = () => {
           {formatCurrency(doc.advance_amount)}
         </Typography>
         <div className="flex items-center justify-center">
-          <Tooltip
-            content={
-              item?.reference_document?.status === "Draft"
-                ? `Allocated to : ${item?.allocated_to}`
-                : ""
-            }
+          <AllocatedToTooltip
+            users={item?.reference_document?.status === "Draft" ? item?.allocated_to : undefined}
+            roles={item?.reference_document?.status === "Draft" ? item?.allocated_roles : undefined}
+            position="left"
           >
             <StatusBadge status={item?.reference_document?.status} />
-          </Tooltip>
+          </AllocatedToTooltip>
         </div>
       </div>
     );
@@ -110,11 +108,13 @@ const MyAdvanceExpenseList = () => {
             {formatCurrency(doc.advance_amount)}
           </h3>
           <div className="flex justify-start">
-            <Tooltip
-              content={status?.label === "Pending" ? item?.allocated_to : ""}
+            <AllocatedToTooltip
+              users={status?.label === "Pending" ? item?.allocated_to : undefined}
+              roles={status?.label === "Pending" ? item?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={item?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
         </div>
         <div className="flex flex-col gap-3">

@@ -5,7 +5,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 // Props type
@@ -87,7 +87,7 @@ const ApprovalRejectionQueue = ({
             {data.reference_document.shift_type}
             <Typography variant="bodySmall" className="font-medium text-center">
               {data.reference_document.custom_start_time &&
-              data.reference_document.custom_end_time
+                data.reference_document.custom_end_time
                 ? `${data.reference_document.custom_start_time} - ${data.reference_document.custom_end_time}`
                 : ""}
             </Typography>
@@ -104,15 +104,13 @@ const ApprovalRejectionQueue = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data.reference_document.status === "Draft"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data.reference_document.status === "Draft" ? data?.allocated_to : undefined}
+              roles={data.reference_document.status === "Draft" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data.reference_document.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill

@@ -70,6 +70,7 @@ export interface MyAttendanceRequest {
   reference_document: AttendanceRequest;
   reference_type: string;
   allocated_to: string;
+  allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
@@ -132,6 +133,7 @@ export interface MyPlannedAttendanceRequest {
   custom_approval_type: string;
   reference_type: string;
   allocated_to: string;
+  allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;

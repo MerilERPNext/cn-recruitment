@@ -5,7 +5,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
@@ -110,15 +110,13 @@ const AdvanceApprovalCard = ({
 
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Pending" ? data?.allocated_to : undefined}
+              roles={data?.status === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill

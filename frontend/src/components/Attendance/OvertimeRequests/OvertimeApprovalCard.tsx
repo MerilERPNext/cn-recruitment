@@ -9,6 +9,7 @@ import {
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
@@ -101,15 +102,13 @@ const OvertimeApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Open"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Open" ? data?.allocated_to : undefined}
+              roles={data?.status === "Open" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
