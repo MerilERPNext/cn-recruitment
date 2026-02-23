@@ -73,14 +73,14 @@ export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
 }
@@ -89,10 +89,11 @@ interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
   fetchFunction?: (params: FetchParams) => Promise<FrappePageResponse>;
   customAPI?: CustomAPIConfig;
-  ItemComponent: React.ComponentType<{
+  ItemComponent?: React.ComponentType<{
     item: T;
     index?: number;
   }>;
+  renderItem?: (item: T, index: number) => React.ReactNode;
   PreListComponent?: React.ComponentType<PreListComponentProps<T>>;
   PostListComponent?: React.ComponentType<PostListComponentProps<T>>;
   SkeletonComponent?: React.ComponentType;
@@ -118,8 +119,8 @@ interface DataListViewProps<T extends BaseItem> {
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -127,6 +128,7 @@ const DataListView = <T extends BaseItem>({
   fetchFunction,
   customAPI,
   ItemComponent,
+  renderItem,
   isLoading,
   PreListComponent,
   PostListComponent,
@@ -714,11 +716,10 @@ const DataListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {pageNum}
               </button>
@@ -1009,11 +1010,14 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                    }`}
                 >
-                  <ItemComponent item={item} index={index} />
+                  {ItemComponent ? (
+                    <ItemComponent item={item} index={index} />
+                  ) : renderItem ? (
+                    renderItem(item, index)
+                  ) : null}
                 </div>
               );
             })}

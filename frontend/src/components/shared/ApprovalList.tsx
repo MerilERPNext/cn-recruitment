@@ -43,8 +43,8 @@ type ApprovalListProps = {
   columnWidths?: string[];
   orderBy?: string;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
   SkeletonComponent?: React.ComponentType;
 };
 
@@ -81,13 +81,13 @@ const ApprovalList = ({
   isFilter = false,
   isSearch = false,
   onBulkSelectVisibilityChange,
-  bulkSelectVisible, 
+  bulkSelectVisible,
   defaultFilters,
   columnWidths,
   noRecordsScreen,
   SkeletonComponent,
   orderBy,
-  
+
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -115,20 +115,20 @@ const ApprovalList = ({
   const currentStatus = activeFilters?.status || status;
 
   const statusBasedBulkEnable =
-  currentStatus === "Open" ||
-  currentStatus === "Pending" ||
-  currentStatus === "Draft";
+    currentStatus === "Open" ||
+    currentStatus === "Pending" ||
+    currentStatus === "Draft";
 
-// parent prop + internal logic combine
-const finalBulkSelectVisible =
-  typeof bulkSelectVisible === "boolean"
-    ? bulkSelectVisible
-    : statusBasedBulkEnable;
+  // parent prop + internal logic combine
+  const finalBulkSelectVisible =
+    typeof bulkSelectVisible === "boolean"
+      ? bulkSelectVisible
+      : statusBasedBulkEnable;
 
 
-    useEffect(() => {
-      onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
-    }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
+  useEffect(() => {
+    onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
+  }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
 
   const triggerRefetch = () => {
     if (setRefetch) {
@@ -167,8 +167,8 @@ const finalBulkSelectVisible =
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-              )
+              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+            )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -279,10 +279,9 @@ const finalBulkSelectVisible =
             {
               onSuccess: () => {
                 toast.success(
-                  `Requests ${
-                    action === "Reject"
-                      ? "rejected"
-                      : `${action.toLowerCase()}d`
+                  `Requests ${action === "Reject"
+                    ? "rejected"
+                    : `${action.toLowerCase()}d`
                   } successfully!`,
                 );
                 triggerRefetch();
@@ -325,7 +324,7 @@ const finalBulkSelectVisible =
         noRecordsScreen={
           typeof noRecordsScreen === "function"
             ? (filters: Record<string, any>) =>
-                noRecordsScreen({ ...filters, ...activeFilters })
+              noRecordsScreen({ ...filters, ...activeFilters })
             : noRecordsScreen
         }
         onFiltersChange={handleFiltersChange}
@@ -354,13 +353,13 @@ const finalBulkSelectVisible =
             )}
           </div>
         )}
-        ItemComponent={(props: { item: any }) => {
-          const todoId = props.item?.todo_id;
+        renderItem={(item: any) => {
+          const todoId = item?.todo_id;
           return renderCardContent({
             todoId: todoId,
             isSelected: selectedIds.includes(todoId),
             onToggleSelect: handleToggleSelect,
-            data: props.item,
+            data: item,
             onAction: handleAction,
             loadingAction: loadingAction,
           });

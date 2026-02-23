@@ -282,13 +282,16 @@ const LeaveApprovalCard = ({
       {showCommentModal && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            handleCancelComment();
           }}
         >
           <div
             className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -304,6 +307,7 @@ const LeaveApprovalCard = ({
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Enter rejection reason..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}
