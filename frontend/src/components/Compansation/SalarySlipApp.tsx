@@ -1,10 +1,9 @@
-import React, { useEffect, useState, createContext } from "react";
+import React, { createContext, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import CreateLoanDialog from "./Loan/component/CreateLoanDailog";
 import Button from "../shared/atoms/Button";
 
 type TabName =
@@ -56,8 +55,15 @@ const SalarySlipApp: React.FC = () => {
   // Only ANNUAL mode now
   const [viewMode] = useState<ViewMode>("annual");
 
-  // Loan dialog state
-  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
+  // Action button config from sub-pages
+  const [actionButtonConfig, setActionButtonConfig] = useState<{
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  } | null>(null);
+
+  // Track if a modal is open (to hide the floating button)
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -109,38 +115,43 @@ const SalarySlipApp: React.FC = () => {
           />
         </header>
 
-        <main className="p-2 z-100 flex-grow overflow-y-auto">
-          <Outlet />
+        <main className={`p-2 z-100 flex-grow overflow-y-auto ${actionButtonConfig ? 'pb-20' : ''}`}>
+          <Outlet context={{ setActionButtonConfig, setIsModalOpen }} />
         </main>
 
-        {activeTab === "My Loan Requests" && (
-          <footer className="fixed bottom-0 left-0 w-full border-t bg-white shadow-md p-2">
+        {actionButtonConfig && !isModalOpen && (
+          <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 p-2">
             <Button
               fullWidth
               size="lg"
               bgColor="primary"
-              onClick={() => setIsLoanDialogOpen(true)}
+              onClick={actionButtonConfig.onClick}
+              disabled={actionButtonConfig.disabled}
             >
-              + Request Loan
+              {actionButtonConfig.label}
             </Button>
-          </footer>
+          </div>
         )}
-
-        <CreateLoanDialog
-          isOpen={isLoanDialogOpen}
-          onClose={() => setIsLoanDialogOpen(false)}
-        />
       </div>
     </ViewModeContext.Provider>
   );
 
   // Desktop layout
+  const actionButton = actionButtonConfig ? (
+    <Button
+      size="lg"
+      bgColor="primary"
+      onClick={actionButtonConfig.onClick}
+      disabled={actionButtonConfig.disabled}
+    >
+      {actionButtonConfig.label}
+    </Button>
+  ) : null;
+
   const desktopLayout = (
-    <ViewModeContext.Provider value={{ viewMode, setViewMode: () => { } }}>
-      <DesktopLayoutWrapper title="Compensation">
-        <Outlet />
-      </DesktopLayoutWrapper>
-    </ViewModeContext.Provider>
+    <DesktopLayoutWrapper title="Compensation" actionButton={actionButton}>
+      <Outlet context={{ setActionButtonConfig, setIsModalOpen }} />
+    </DesktopLayoutWrapper>
   );
 
   return isDesktop ? desktopLayout : mobileLayout;

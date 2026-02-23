@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
+import { useOutletContext } from "react-router-dom";
 
 import {
   useITDeclarationTabData,
@@ -18,13 +19,14 @@ import HRAForm, { type HRAData } from "./Component/HraExemptio";
 import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
-import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Form12B from "./Component/Form12B";
 import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type PayrollPeriod = {
   name: string;
@@ -37,6 +39,12 @@ const ITDeclarationForm = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Compensation");
+  const actionsEnabled = getActionsEnabled(
+    userUiPermission,
+    ["compare_tax", "form_12b", "preview"],
+    "IT Declaration"
+  );
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
@@ -298,6 +306,23 @@ const ITDeclarationForm = () => {
 
   const parts = message.split(dateRegex);
 
+  // Register action button in central SalarySlipApp via ref pattern
+  const { setActionButtonConfig } = useOutletContext<{
+    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+  }>();
+
+  const submitRef = useRef<(() => void) | undefined>(undefined);
+  submitRef.current = handleSubmit;
+
+  useEffect(() => {
+    setActionButtonConfig({
+      label: "Submit",
+      onClick: () => submitRef.current?.(),
+      disabled: PrrofOfITDeclaration?.status === "failed",
+    });
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, PrrofOfITDeclaration?.status]);
+
   return (
     <div className="bg-white min-h-screen">
       <header className=" md:p-4  rounded-lg">
@@ -352,26 +377,25 @@ const ITDeclarationForm = () => {
                   })) || []
                 }
               />
-              <CompareTaxSheetHandler
-                declarationId={declarationId}
-                disabled={false}
-              />
-              <Form12B
-                declarationId={declarationIdFromITDeclaration}
-                docName={declarationDoctype}
-                disabled={false}
-              />
-              <PreviewOfITDeclaration
-                declarationId={declarationIdFromITDeclaration}
-                disabled={false}
-              />
-              <Button
-                onClick={handleSubmit}
-                disabled={PrrofOfITDeclaration?.status === "failed"}
-                className="bg-primary text-white py-2 rounded text-xs"
-              >
-                Submit
-              </Button>
+              {actionsEnabled.compare_tax && (
+                <CompareTaxSheetHandler
+                  declarationId={declarationId}
+                  disabled={false}
+                />
+              )}
+              {actionsEnabled.form_12b && (
+                <Form12B
+                  declarationId={declarationIdFromITDeclaration}
+                  docName={declarationDoctype}
+                  disabled={false}
+                />
+              )}
+              {actionsEnabled.preview && (
+                <PreviewOfITDeclaration
+                  declarationId={declarationIdFromITDeclaration}
+                  disabled={false}
+                />
+              )}
             </div>
           ) : (
             /* Mobile: stacked layout for action buttons */
@@ -393,15 +417,6 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               </div>
-
-              {/* Submit — prominent full-width CTA */}
-              <Button
-                onClick={handleSubmit}
-                disabled={PrrofOfITDeclaration?.status === "failed"}
-                className="bg-primary text-white py-2.5 rounded-lg text-sm w-full"
-              >
-                Submit
-              </Button>
             </div>
           )}
         </div>
