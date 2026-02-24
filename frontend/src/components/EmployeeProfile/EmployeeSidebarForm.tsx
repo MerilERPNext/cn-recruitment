@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import SideDrawer from "../shared/SideDrawer";
 import toast from "react-hot-toast";
@@ -41,6 +41,13 @@ const EmployeeSidebarForm = ({
     employeeIsLoading: boolean | null
 }) => {
     const mutation = useUpdateFrappeDocument();
+    const [isDirty, setIsDirty] = useState(false);
+    const isInitializing = useRef(true);
+
+    useEffect(() => {
+        setIsDirty(false);
+        isInitializing.current = true;
+    }, [edit]);
     const { data: employeeDataQueryResult } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
     const employee = employeeDataQueryResult?.employee;
 
@@ -245,12 +252,22 @@ const EmployeeSidebarForm = ({
                             className="profile-form w-full max-w-full bg-white"
                             form={schema}
                             submission={submissionData}
+                            onChange={(payload: any) => {
+                                if (payload.changed && !isInitializing.current) {
+                                    setIsDirty(true);
+                                }
+                            }}
                             onFormReady={(instance: any) => {
                                 if (!edit) return;
                                 const storageKey = edit.fieldname
                                     ? `${edit.key}-${edit.fieldname}${edit.rowIndex !== undefined ? `-${edit.rowIndex}` : ""}`
                                     : edit.key;
                                 formInstances.current[storageKey] = instance;
+
+                                // Ignore initial change events during data population
+                                setTimeout(() => {
+                                    isInitializing.current = false;
+                                }, 500);
                             }}
                             options={{
                                 builder: { styles: false },
@@ -270,7 +287,7 @@ const EmployeeSidebarForm = ({
                         <div className="w-full bg-white pt-4">
                             <Button
                                 onClick={handleSubmit}
-                                disabled={mutation?.isPending || false}
+                                disabled={mutation?.isPending || !isDirty}
                                 size="md"
                                 fullWidth
                                 className="bg-primary-600 hover:bg-primary-700 text-white font-bold"
