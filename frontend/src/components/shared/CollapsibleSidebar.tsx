@@ -24,13 +24,8 @@ import {
   ReceiptIndianRupee,
   SeparatorHorizontal,
   Sheet,
-  Shield,
-  Telescope,
-  TimerIcon,
-  User,
-  Users,
-  Wallet,
-  Workflow,
+  BriefcaseBusiness,
+  Award,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -467,6 +462,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Policies",
       path: "/webapp/policies-app",
       permissionKey: "Policies",
+    },
+    {
+      icon: Award,
+      label: "Recognition",
+      path: "/webapp/recognition",
+      permissionKey: "Recognition",
     },
     {
       icon: ListTodo,
