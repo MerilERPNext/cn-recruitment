@@ -610,6 +610,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         {isDesktop && (<button
           onClick={(e) => {
             e.stopPropagation();
+            queryClient.invalidateQueries({ queryKey: ["leave-balance"] });
             onCancel?.();
             onSuccess?.();
           }}
@@ -721,6 +722,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           <Button
             onClick={(e) => {
               e.stopPropagation();
+              queryClient.invalidateQueries({ queryKey: ["leave-balance"] });
               if (onCancel) {
                 onCancel();
               }
