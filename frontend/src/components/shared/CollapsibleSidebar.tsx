@@ -24,8 +24,14 @@ import {
   ReceiptIndianRupee,
   SeparatorHorizontal,
   Sheet,
-  BriefcaseBusiness,
   Award,
+  User,
+  Users,
+  Timer,
+  Wallet,
+  Workflow,
+  Telescope,
+  Shield,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -202,7 +208,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         },
         {
           name: "Planned Overtime",
-          icon: TimerIcon,
+          icon: Timer,
           href: "/webapp/attendance/my-overtime-requests",
           permissionKey: "Planned Overtime",
         },
