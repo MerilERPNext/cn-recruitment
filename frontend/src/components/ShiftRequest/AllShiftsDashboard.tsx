@@ -1,24 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import ApprovalList from "../shared/ApprovalList";
-import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import formatToIndianDate, {
-  formatEndDate,
-} from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { MyShiftRequest } from "../../types/shift";
-import EmpShiftRequestCard from "./EmpShiftRequestCard";
-import DataListView from "../DataListView";
-import CardTable from "../shared/CardTable";
-import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
-import { ShiftDetailView } from "./ShiftDetailView";
+import { MyShiftRequest } from "../../types/shift";
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
+import formatToIndianDate, {
+  formatEndDate,
+} from "../../utils/formatToIndianDate";
+import DataListView from "../DataListView";
+import ApprovalList from "../shared/ApprovalList";
+import CardTable from "../shared/CardTable";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
+import { ShiftDetailView } from "./ShiftDetailView";
+import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 
 const Card = ({
   children,
@@ -74,7 +74,7 @@ const MyShifts: React.FC = () => {
   return (
     <Card>
       <CardHeader
-        title="My Shift"
+        title="My Shift Assigments"
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
@@ -134,7 +134,7 @@ const TeamShiftList = () => {
   return (
     <Card>
       <CardHeader
-        title="Team Shift List"
+        title="Team Shift Assigments"
         onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
