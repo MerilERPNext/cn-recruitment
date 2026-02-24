@@ -161,7 +161,9 @@ const ExpenseApprovalCard = ({
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={data?.status === "Draft" ? data?.allocated_to : undefined}
-              roles={data?.status === "Draft" ? data?.allocated_roles : undefined}
+              roles={
+                data?.status === "Draft" ? data?.allocated_roles : undefined
+              }
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -180,14 +182,14 @@ const ExpenseApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
             }
           }}
         >
-          <div className="p-6 flex items-start gap-3 w-full">
+          <div className="p-4 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
@@ -203,62 +205,61 @@ const ExpenseApprovalCard = ({
               />
             )}
 
-            <div className="w-full">
+            <div className="w-full flex flex-col gap-3">
+              {/* Header */}
               <div className="flex items-start justify-between">
-                <div className="w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">
+                    {data?.reference_document?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>
                   <Link
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <Typography
-                      variant="body"
-                      className="font-semibold text-base"
-                    >
-                      {data?.reference_document?.employee_name}
+                    <Typography variant="mobileCardValue">
+                      {data?.reference_document?.employee_name ||
+                        data?.reference_document?.employee}
                     </Typography>
                   </Link>
                 </div>
                 <StatusBadge status={data?.status} />
               </div>
-              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Category
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.reference_document?.custom_expense_category}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claimed Amount
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {totalClaimedAmount}
-                    </Typography>
-                  </div>
-                </div>
 
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claim Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(
-                        data?.reference_document?.expenses[0]?.expense_date,
-                      )}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Due Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(data?.due_date)}
-                    </Typography>
-                  </div>
+              {/* Category & Amount */}
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Category</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.custom_expense_category}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">
+                    Claimed Amount
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {totalClaimedAmount}
+                  </Typography>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Claim Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(
+                      data?.reference_document?.expenses[0]?.expense_date,
+                    )}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Due Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.due_date)}
+                  </Typography>
                 </div>
               </div>
 

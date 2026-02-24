@@ -9,8 +9,8 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
-import CardTable from "../../shared/CardTable";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import CardTable from "../../shared/CardTable";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -35,20 +35,6 @@ const MyAdvanceExpenseList = () => {
   const closeDetailModal = () => {
     setSelectedAdvanceId(null);
     setSelectedStages([]);
-  };
-
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-    if (status === "draft")
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
-    if (status === "approved")
-      return { label: "Approved", statusColor: "bg-green-100 text-green-800" };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-red-100 text-red-800" };
-    return {
-      label: rawStatus || "Unknown",
-      statusColor: "bg-gray-100 text-gray-800",
-    };
   };
 
   const DesktopRow = ({ item }: any) => {
@@ -86,8 +72,16 @@ const MyAdvanceExpenseList = () => {
         </Typography>
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
-            users={item?.reference_document?.status === "Draft" ? item?.allocated_to : undefined}
-            roles={item?.reference_document?.status === "Draft" ? item?.allocated_roles : undefined}
+            users={
+              item?.reference_document?.status === "Draft"
+                ? item?.allocated_to
+                : undefined
+            }
+            roles={
+              item?.reference_document?.status === "Draft"
+                ? item?.allocated_roles
+                : undefined
+            }
             position="left"
           >
             <StatusBadge status={item?.reference_document?.status} />
@@ -99,70 +93,74 @@ const MyAdvanceExpenseList = () => {
 
   const MobileRow = ({ item }: any) => {
     const doc = item.reference_document;
-    const status = getStatus(item?.reference_document?.status);
 
     return (
-      <div className="rounded-2xl shadow-sm p-4 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 border-primary mb-3">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            {formatCurrency(doc.advance_amount)}
-          </h3>
-          <div className="flex justify-start">
+      <div
+        className="cursor-pointer border-t-4 border-x border-b
+        border-x-primary/20 border-b-primary/20
+        shadow-sm border-primary bg-white rounded-xl mb-3"
+      >
+        <div className="p-4 flex flex-col gap-3 w-full">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                {doc?.employee_name ? "Employee Name" : "Employee ID"}
+              </Typography>
+              <Link
+                to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+                target="_blank"
+              >
+                <Typography variant="mobileCardValue">
+                  {doc?.employee_name || doc?.employee}
+                </Typography>
+              </Link>
+            </div>
             <AllocatedToTooltip
-              users={status?.label === "Pending" ? item?.allocated_to : undefined}
-              roles={status?.label === "Pending" ? item?.allocated_roles : undefined}
+              users={doc?.status === "Draft" ? item?.allocated_to : undefined}
+              roles={
+                doc?.status === "Draft" ? item?.allocated_roles : undefined
+              }
               position="left"
             >
-              <StatusBadge status={item?.reference_document?.status} />
+              <StatusBadge status={doc?.status} />
             </AllocatedToTooltip>
           </div>
-        </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-between">
-            <Link
-              to={`/webapp/employee-profile?target_user=${doc?.employee}`}
-              target="_blank"
-            >
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
-                  Employee
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {doc.employee_name}
-                </Typography>
-              </div>
-            </Link>
 
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="text-right">
-                Posting Date
+          {/* Amount & Department */}
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Advance Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(doc?.advance_amount)}
               </Typography>
-              <Typography variant="mobileCardValue" className="text-right">
-                {formatToIndianDate(doc.posting_date)}
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Department</Typography>
+              <Typography variant="mobileCardValue">
+                {doc?.department}
               </Typography>
             </div>
           </div>
-          <div className="flex justify-between">
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
-                Company
-              </Typography>
-              <Typography variant="mobileCardValue">{doc.company}</Typography>
-            </div>
 
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="text-right">
-                Department
-              </Typography>
-              <Typography variant="mobileCardValue" className="text-right">
-                {doc.department}
+          {/* Company & Posting Date */}
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Company</Typography>
+              <Typography variant="mobileCardValue">{doc?.company}</Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Posting Date</Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(doc?.posting_date)}
               </Typography>
             </div>
           </div>
+
+          {/* Footer */}
           <div className="pt-2 border-t">
             <Typography variant="mobileCardFooter">
-              Last Updated on{" "}
-              {formatToIndianDate(item?.reference_document?.modified)}
+              Last Updated on {formatToIndianDate(doc?.modified)}
             </Typography>
           </div>
         </div>
