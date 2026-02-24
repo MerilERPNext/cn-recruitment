@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
 import { useScreenSize } from "./hooks/useScreenSize";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
@@ -171,6 +171,11 @@ const EmployeeAttendance = lazyWithRetry(
 const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
   "TeamAttendance",
+);
+const AttendanceRequestFormV2 = lazyWithRetry(
+  () =>
+    import("./components/Attendance/AttendanceRequest/AttendanceRequestFormV2"),
+  "AttendanceRequestFormV2",
 );
 const TeamAttendanceDetails = lazyWithRetry(
   () =>
@@ -480,6 +485,12 @@ const LoadingSpinner = () => (
     </div>
   </div>
 );
+
+// eslint-disable-next-line react-refresh/only-export-components
+const AttendanceRequestFormRoute = () => {
+  const navigate = useNavigate();
+  return <AttendanceRequestFormV2 onClose={() => navigate(-1)} />;
+};
 
 // HOC to wrap components with Suspense and Error Boundary
 const withLazyLoading = (
@@ -904,6 +915,11 @@ export const routesConfig: AppRoute[] = [
         path: "team-attendance-requests",
         element: <TeamAttendanceDetails />,
         permissionKey: "Team Requests",
+      },
+      {
+        path: "request-form",
+        element: <AttendanceRequestFormRoute />,
+        permissionKey: "Attendance Summary",
       },
       {
         path: "my-overtime-requests",
