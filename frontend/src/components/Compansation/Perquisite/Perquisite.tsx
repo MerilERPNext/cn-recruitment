@@ -55,7 +55,7 @@ export default function PerquisiteList() {
   const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr"];
 
   return (
-    <div className="w-full p-1">
+    <div className="w-full p-4">
       <div className="mb-6">
         <Typography variant="subheading" color="body1">
           Employee Perquisite
@@ -167,7 +167,7 @@ export default function PerquisiteList() {
                 onClick={() => setSelectedPerquisite(item)}
                 className="mt-3 text-sm text-blue-600 font-medium"
               >
-                View Details →
+                View Details 
               </button>
             </div>
           ))}

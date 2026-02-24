@@ -29,16 +29,15 @@ type PayrollPeriod = {
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
-    user?.company || null,
-  ) as {
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined;
   };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     payrollPeriods?.[0]?.name || "",
   );
+
   useEffect(() => {
-    if (!payrollPeriods?.length || selectedPeriod) return;
+    if (!payrollPeriods?.length) return;
 
     const today = new Date();
 

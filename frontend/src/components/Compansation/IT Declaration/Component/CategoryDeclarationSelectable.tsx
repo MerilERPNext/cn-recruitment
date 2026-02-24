@@ -21,8 +21,7 @@ const CategorySection = ({
         (cat) => Boolean(cat.custom_select_type)
       );
 
-      const [global80DLock, setGlobal80DLock] = useState<string | null>(null);
-
+  const [global80DLock, setGlobal80DLock] = useState<string | null>(null);
   return (
     <>
       {sectionCategories.map((cat: any) => (
@@ -33,7 +32,6 @@ const CategorySection = ({
   lockingDate={lockingDate}
   selectable={medicalClaim ? cat.custom_select_type : false}
   custom_80d_variable={cat.custom_80d_variable}
-
   locked80DVariable={global80DLock}
   setLocked80DVariable={setGlobal80DLock}
 
