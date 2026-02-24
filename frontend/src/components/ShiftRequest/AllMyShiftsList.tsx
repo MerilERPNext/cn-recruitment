@@ -136,7 +136,7 @@ const AllMyShiftsList: React.FC = () => {
             <div className="flex-shrink-0">
               <div className="px-4 py-1 md:py-4">
                 <HeaderBar
-                  title="My Shift Assigments"
+                  title="My Shift Assignments"
                   onBack={() => navigate(-1)}
                   className="shadow"
                 />

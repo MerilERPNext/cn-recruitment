@@ -74,7 +74,7 @@ const MyShifts: React.FC = () => {
   return (
     <Card>
       <CardHeader
-        title="My Shift Assigments"
+        title="My Shift Assignments"
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
@@ -134,7 +134,7 @@ const TeamShiftList = () => {
   return (
     <Card>
       <CardHeader
-        title="Team Shift Assigments"
+        title="Team Shift Assignments"
         onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">

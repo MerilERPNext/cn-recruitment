@@ -2,7 +2,7 @@ import { X } from "lucide-react";
 import React from "react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { ApprovalStage } from "../../../types/expenseAdvance";
+import { ApprovalStage, Expense } from "../../../types/expenseAdvance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
@@ -23,7 +23,18 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 }) => {
   const raw = useFrappeDocument("Employee Advance", id as string);
 
-  const advanceDetails = raw.data as any | undefined;
+  interface EmployeeAdvance {
+    employee_name: string;
+    employee: string;
+    status: string;
+    posting_date: string;
+    advance_amount: number;
+    company: string;
+    department: string;
+    expenses?: Expense[];
+  }
+
+  const advanceDetails = raw.data as EmployeeAdvance | undefined;
   const isLoading = raw.isLoading;
   const error = raw.error;
   const { isDesktop } = useScreenSize();
@@ -190,11 +201,11 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                 <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel">Employee</Typography>
                   <Typography variant="mobileCardValue">
-                    {`${advanceDetails.employee_name}: ${advanceDetails.employee}`}
+                    {`${advanceDetails?.employee_name}: ${advanceDetails?.employee}`}
                   </Typography>
                 </div>
                 <div>
-                  <StatusBadge status={advanceDetails.status} />
+                  <StatusBadge status={advanceDetails?.status} />
                 </div>
               </div>
 
@@ -206,7 +217,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       Posting Date
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {formatToIndianDate(advanceDetails.posting_date)}
+                      {formatToIndianDate(advanceDetails?.posting_date ?? "")}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
@@ -217,7 +228,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       variant="mobileCardValue"
                       className="font-bold text-blue-700"
                     >
-                      {formatCurrency(advanceDetails.advance_amount)}
+                      {formatCurrency(advanceDetails?.advance_amount ?? 0)}
                     </Typography>
                   </div>
                 </div>
@@ -228,7 +239,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       Company
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {advanceDetails.company}
+                      {advanceDetails?.company}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
@@ -236,7 +247,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       Department
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {advanceDetails.department}
+                      {advanceDetails?.department}
                     </Typography>
                   </div>
                 </div>
@@ -261,7 +272,8 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   variant="bodySmall"
                   className="base-title mb-1 font-bold block"
                 >
-                  Expense Breakup Items ({advanceDetails.expenses?.length || 0})
+                  Expense Breakup Items ({advanceDetails?.expenses?.length || 0}
+                  )
                 </Typography>
 
                 {isDesktop ? DesktopBreakup : MobileBreakup}

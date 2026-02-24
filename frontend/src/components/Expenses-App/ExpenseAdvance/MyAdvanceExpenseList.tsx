@@ -107,9 +107,14 @@ const MyAdvanceExpenseList = () => {
               <Typography variant="mobileCardLabel">
                 {doc?.employee_name ? "Employee Name" : "Employee ID"}
               </Typography>
-              <Typography variant="mobileCardValue">
-                {doc?.employee_name || doc?.employee}
-              </Typography>
+              <Link
+                to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+                target="_blank"
+              >
+                <Typography variant="mobileCardValue">
+                  {doc?.employee_name || doc?.employee}
+                </Typography>
+              </Link>
             </div>
             <AllocatedToTooltip
               users={doc?.status === "Draft" ? item?.allocated_to : undefined}
