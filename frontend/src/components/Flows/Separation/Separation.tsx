@@ -8,7 +8,6 @@ import {
 import {
   useChatAssistant,
   useDifinitaionNameForSeparation,
-  useFlowConfigSelfTriggerList,
   useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
