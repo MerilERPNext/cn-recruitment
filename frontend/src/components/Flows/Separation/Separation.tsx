@@ -7,6 +7,7 @@ import {
 } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
+  useDifinitaionNameForSeparation,
   useFlowConfigSelfTriggerList,
   useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
@@ -51,7 +52,7 @@ const Separation = () => {
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const document_name = activeEmployee?.name ?? "";
-  const { data: definitionName } = useFlowConfigSelfTriggerList();
+  const { data: definitionName } = useDifinitaionNameForSeparation();
 
   const { data: userUiPermission } = useGetUiPermission("HR Process");
 

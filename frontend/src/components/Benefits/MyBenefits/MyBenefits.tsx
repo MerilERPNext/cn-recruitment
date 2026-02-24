@@ -115,7 +115,7 @@ const MyBenefits: React.FC = () => {
   if (isLoading) {
     const skeletonCount = 4;
     return (
-      <div className="min-h-screen font-sans text-slate-800">
+      <div className="min-h-screen font-sans text-slate-800 p-5">
         <div className="flex flex-col mb-2">
           <Typography variant="h4">
             My Benefits for FY {selectedYear}
@@ -219,10 +219,10 @@ const MyBenefits: React.FC = () => {
               const filtered = !params.searchTerm
                 ? details
                 : details.filter((r) =>
-                    r.month
-                      .toLowerCase()
-                      .includes(params.searchTerm!.toLowerCase()),
-                  );
+                  r.month
+                    .toLowerCase()
+                    .includes(params.searchTerm!.toLowerCase()),
+                );
 
               const response: FrappePageResponse = {
                 data: filtered,
@@ -236,7 +236,7 @@ const MyBenefits: React.FC = () => {
             return (
               <div
                 key={`${component.salary_component}-${compIdx}`}
-                className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden"
+                className="rounded-xl bg-white shadow-sm border border-gray-50 overflow-hidden"
               >
                 {/* Header */}
                 <div
@@ -255,9 +255,8 @@ const MyBenefits: React.FC = () => {
                       </div>
                     </div>
                     <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${
-                        isExpanded ? "rotate-180 bg-gray-50" : ""
-                      }`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${isExpanded ? "rotate-180 bg-gray-50" : ""
+                        }`}
                     >
                       <ChevronDown className="h-5 w-5 text-slate-500" />
                     </div>
@@ -301,11 +300,11 @@ const MyBenefits: React.FC = () => {
                 </div>
 
                 {/* Divider */}
-                {isExpanded && <div className="h-px w-full bg-gray-100"></div>}
+                {isExpanded && isDesktop && <div className="h-px w-full bg-gray-100"></div>}
 
                 {/* Expanded details (list) */}
                 {isExpanded && (
-                  <div className="bg-gray-100 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="bg-slate-50 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center gap-2 mb-6">
                       <TrendingUp className="h-4 w-4 text-slate-500" />
                       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -327,6 +326,7 @@ const MyBenefits: React.FC = () => {
                       ]}
                       columnWidths={[COLUMN_LAYOUT]}
                     >
+
                       <DataListView<SalaryComponentDetail>
                         queryKey={`accrualData-${component.salary_component}`}
                         fetchFunction={fetchFunction}

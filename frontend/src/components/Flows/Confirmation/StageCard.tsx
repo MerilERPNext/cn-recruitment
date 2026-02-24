@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FormIOComponent } from "../../../types/formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -9,6 +9,7 @@ import StatusTimelineItem from "./components/StatusTimelineItem";
 import { ApprovalStage } from "../../../types/todos";
 import { Eye } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 
 type handleActPropsType = {
   name: string;
@@ -20,7 +21,7 @@ type handleActPropsType = {
 interface StageCardProps {
   stages: ApprovalStage[];
   idx: number;
-  canPerformAction: boolean;
+  showActButton?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item: any;
   handleAct: (handleActPropsType: handleActPropsType) => void;
@@ -29,11 +30,12 @@ interface StageCardProps {
 const StageCard: React.FC<StageCardProps> = ({
   stages,
   idx,
-  canPerformAction,
+  showActButton = false,
   item,
   handleAct,
 }) => {
   const stage = stages[idx];
+  const { data: currentUser } = useCurrentUser();
   const getStageStatus = (stage: { status: string }, idx: number) => {
     const isPending = stage?.status === "Pending";
     const prevIsPending = stages[idx - 1]?.status === "Pending";
@@ -49,6 +51,23 @@ const StageCard: React.FC<StageCardProps> = ({
     return "completed";
   };
   const status = getStageStatus(stage, idx);
+
+  const canPerformAction = useMemo(() => {
+
+    if (!showActButton) return false;
+    let actionPermission = false;
+
+    if (!item?.custom_doctype_actions) return false;
+    if (stage?.user_id && currentUser?.name)
+      actionPermission = stage.user_id === currentUser.name;
+
+    if (currentUser?.roles && stage?.role)
+      actionPermission ||= currentUser.roles.some(
+        (role) => role.role === stage.role,
+      );
+
+    return actionPermission;
+  }, [stage, currentUser, item, showActButton]);
 
   const [formSchema, setFormSchema] = useState(null);
   const [show, setShow] = useState(false);

@@ -6,7 +6,7 @@ import {
 import {
   useChatAssistant,
   useConfirmationApproval,
-  useFlowConfigSelfTriggerList,
+  useDifinitaionNameForSeparation,
   useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -27,7 +27,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import toast from "react-hot-toast";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import StageCard from "./StageCard";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
@@ -35,11 +34,11 @@ import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { getActionsEnabled } from "../../../utils/uiPermission";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee, isLoading: loadingCurrentEmployee, refetch: refetchCurrentEmployee } =
     useCurrentEmployeeAllDetails(userId || "");
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
@@ -50,7 +49,7 @@ const ConfirmationWorkflow = () => {
     ? targetEmployee?.name || ""
     : currentEmployee?.name || "";
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
-  const { data: definitionName, refetch } = useFlowConfigSelfTriggerList();
+  const { data: definitionName, refetch } = useDifinitaionNameForSeparation();
 
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
@@ -62,17 +61,12 @@ const ConfirmationWorkflow = () => {
 
   // action buttons permission
   const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    ["act_confirmation", "initiate_confirmation"],
+    "Confirmation",
+  );
 
-  const enabledActions = useMemo(() => {
-    let actions: string[] = [];
-    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
-      (item) => item.page_name === "Confirmation",
-    );
-    actions = initiateFlowPage?.actions?.filter(
-      action => action.enabled,
-    ).map(action => action.action_name) ?? [];
-    return actions;
-  }, [userUiPermission]);
 
   // END action buttons permission
 
@@ -179,23 +173,6 @@ const ConfirmationWorkflow = () => {
     [mutation],
   );
 
-
-  const canPerformAction = useMemo(() => {
-    if (!enabledActions.includes("act_confirmation")) return false;
-    let actionPermission = false;
-
-    if (!item?.custom_doctype_actions) return false;
-    if (item?.allocated_to_emp_id && currentEmployee?.name)
-      actionPermission = item.allocated_to_emp_id === currentEmployee.name;
-
-    if (currentUser?.roles && item?.role)
-      actionPermission ||= currentUser.roles.some(
-        (role) => role.role === item.role,
-      );
-
-    return actionPermission;
-  }, [item, currentEmployee, currentUser, enabledActions]);
-
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
       (stage) => stage.status === "Approved",
@@ -205,7 +182,7 @@ const ConfirmationWorkflow = () => {
   const postStagesStarted = Array.isArray(stages) && stages.length > 0;
 
   const canInitiateConfirmation =
-    enabledActions?.includes("initiate_confirmation") &&
+    enabledActions.initiate_confirmation &&
     (!postStagesStarted ||
       (allStagesComplted &&
         item?.reference_document?.status !== "Confirmed")) &&
@@ -236,6 +213,7 @@ const ConfirmationWorkflow = () => {
   }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmationButton]);
 
   const canInitiateProbationExtension = showConfirmationButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended";
+
   const confirmationCards = useMemo(
     () => [
       {
@@ -373,7 +351,7 @@ const ConfirmationWorkflow = () => {
           <div className="grid sm:grid-cols-[80px_1fr] grid-cols-[30px_1fr] hover:bg-primary-10">
             <StageCard
               handleAct={handleAct}
-              canPerformAction={canPerformAction}
+              showActButton={enabledActions.act_confirmation}
               key={stages[idx].stage_name}
               stages={stages}
               idx={idx}
@@ -384,7 +362,7 @@ const ConfirmationWorkflow = () => {
       </Card>
 
       {canInitiateProbationExtension &&
-        <div className="flex justify-center mt-6 mb-16">
+        < div className="flex justify-center mt-6 mb-16">
           <Button
             variant="contain"
             size="md"
@@ -395,7 +373,7 @@ const ConfirmationWorkflow = () => {
         </div>
       }
 
-    </div>
+    </div >
   );
 };
 

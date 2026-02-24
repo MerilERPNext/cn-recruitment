@@ -39,15 +39,15 @@ export function isActionEnabled(
 }
 
 
-export function getActionsEnabled(
+export function getActionsEnabled<T extends string>(
   userUiPermission: AppPermission[] | undefined,
-  actionNames: string[],
+  actionNames: T[],
   pageName?: string
-): Record<string, boolean> {
+): Record<T, boolean> {
   const actions = getAllActions(userUiPermission, pageName);
   return actionNames.reduce((acc, name) => {
     acc[name] = actions.find((a) => a.action_name === name)?.enabled ?? false;
     return acc;
-  }, {} as Record<string, boolean>);
+  }, {} as Record<T, boolean>);
 }
 

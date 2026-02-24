@@ -45,6 +45,7 @@ export default function LoanList({
   }
 
   const titles = [
+    "",
     "Loan Name",
     "Loan Type",
     "Loan Amount",
