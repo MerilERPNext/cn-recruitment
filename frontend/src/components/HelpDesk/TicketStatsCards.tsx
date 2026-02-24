@@ -13,13 +13,13 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
-  <div className="flex items-center gap-4 px-6 py-4 bg-white border-r border-gray-200 last:border-r-0">
+  <div className="flex max-sm:flex-col max-sm:justify-center  max-sm:border items-center sm:gap-4 gap-2 sm:px-6 py-4 max-sm:rounded-lg bg-white sm:border-r sm:border-gray-200 sm:last:border-r-0">
     <div className="flex-shrink-0">{icon}</div>
-    <div>
+    <div className="flex flex-col max-sm:items-center">
       <Typography
         variant="h2"
         color="primary"
-        className="text-2xl font-semibold"
+        className="sm:text-3xl text-md font-semibold "
       >
         {value}
       </Typography>
@@ -41,7 +41,7 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 bg-white rounded-lg border border-gray-200">
+      <div className="grid grid-cols-2 lg:grid-cols-4 bg-white rounded-lg sm:py-2 border border-gray-200">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -59,24 +59,24 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 bg-white overflow-hidden py-4 rounded-lg border border-gray-200">
+    <div className="grid grid-cols-2 lg:grid-cols-4 max-sm:mb-6 sm:bg-white overflow-hidden sm:py-6 gap-2 rounded-lg sm:border-gray-200">
       <StatCard
-        icon={<img src={TotalIssuesIcon} />}
+        icon={<img src={TotalIssuesIcon} className="max-sm:w-10 max-sm:h-10" />}
         value={stats.total}
         label="Total issues"
       />
       <StatCard
-        icon={<img src={InProgressIcon} />}
+        icon={<img src={InProgressIcon} className="max-sm:w-10 max-sm:h-10" />}
         value={stats.inProgress}
         label="In Progress"
       />
       <StatCard
-        icon={<img src={ClosedIcon} />}
+        icon={<img src={ClosedIcon} className="max-sm:w-10 max-sm:h-10" />}
         value={stats.closed}
         label="Closed"
       />
       <StatCard
-        icon={<img src={ResolvedIcon} />}
+        icon={<img src={ResolvedIcon} className="max-sm:w-10 max-sm:h-10" />}
         value={stats.resolved}
         label="Resolved"
       />

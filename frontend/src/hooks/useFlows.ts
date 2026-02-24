@@ -10,13 +10,20 @@ import {
   getSeparationFunnelData,
   getSeparationWorkflow,
   getShouldShowConfirmationButton,
-  postSelectEventFromOptions
+  postSelectEventFromOptions,
+  getDifinitionNameForSeparation
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
 import { FlowRequestResponse } from "../types/flows";
 
+export const useDifinitaionNameForSeparation = () => {
+  return useQuery<string | AssistantTriggerResponse>({
+    queryKey: ["chatAssistant"],
+    queryFn: getDifinitionNameForSeparation,
+  });
+};
 
 export const useFlowConfigSelfTriggerList = () => {
   return useQuery<string | AssistantTriggerResponse>({

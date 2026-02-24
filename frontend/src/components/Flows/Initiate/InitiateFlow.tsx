@@ -7,9 +7,7 @@ import { useFlowConfigSelfTriggerList, useFlowConfigOthersTriggerList } from "..
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUserRoles } from "../../../hooks/useAttendance";
 import Button from "../../shared/atoms/Button";
-import { EmployeeService } from "../../../services/employeeService";
-import { useQuery } from "@tanstack/react-query";
-import { Employee } from "../../../types/employee";
+import EmployeeSelect from "../../shared/EmployeeSelect";
 
 interface InitiateFlowProps {
   handleCloseModel?: () => void;
@@ -76,12 +74,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   // Fetch user roles to determine if Self/Others tabs should show
   const { data: userRoles } = useGetUserRoles();
 
-  // Fetch reportees for employee selector (only when on "Others" tab)
-  const { data: reportees, isLoading: isReporteesLoading } = useQuery<Employee[]>({
-    queryKey: ["employeeReportees"],
-    queryFn: () => EmployeeService.getEmployeeReportees(),
-    enabled: isForOthers,
-  });
+
 
   // Self trigger list
   const { data: selfTriggerList, isLoading: isSelfLoading } = useFlowConfigSelfTriggerList();
@@ -159,7 +152,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
           <HeaderBar title="Initiate Flow" onBack={handlGoBack} />
         )}
 
-        <div className="sm:px-8 px-4">
+        <div className="sm:px-8 px-4 sm:min-h-96 sm:max-h-96 flex flex-col">
           {/* Self / Others Tabs */}
           {userRoles?.roles["Employee Direct Manager"] ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
@@ -191,22 +184,11 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
           {/* Employee Selector (shown only for Others tab) */}
           {isForOthers && (
             <div className="mt-3">
-              <select
+              <EmployeeSelect
                 value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
-              >
-                <option value="">Select Employee</option>
-                {isReporteesLoading ? (
-                  <option disabled>Loading...</option>
-                ) : (
-                  reportees?.map((emp) => (
-                    <option key={emp.name} value={emp.name}>
-                      {emp.employee_name} ({emp.name})
-                    </option>
-                  ))
-                )}
-              </select>
+                onChange={(val) => setSelectedEmployee(val)}
+                placeholder="Select Employee"
+              />
             </div>
           )}
 
@@ -226,7 +208,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
             </>
           ) : (
             <>
-              <div className="relative mt-2 w-full ">
+              <div className="relative mt-2 w-full">
                 <input
                   value={inputSearch}
                   onChange={(e) => setInputSearch(e.target.value)}
@@ -239,7 +221,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
                 <Search className="absolute peer-focus:text-gray-600 text-gray-400 left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
               </div>
 
-              <div className="mt-6 space-y-8 min-h-40">
+              <div className="mt-6 space-y-8 flex-1 overflow-y-auto">
                 {EmptyStateComponent}
                 <div className="flex flex-wrap gap-4">
                   {filteredTriggerList.map((t) => (

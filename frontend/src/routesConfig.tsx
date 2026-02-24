@@ -1176,6 +1176,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition",
     element: <RecognitionPage />,
+    permissionKey: "Recognition",
   },
 ];
 

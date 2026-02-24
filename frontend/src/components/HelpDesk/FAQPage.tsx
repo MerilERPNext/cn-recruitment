@@ -162,12 +162,13 @@ const FAQPage: React.FC = () => {
       </div>
 
       {/* Footer Buttons - transparent background */}
-      <div className="fixed bottom-4 right-4 flex gap-3 z-50">
+      <div className="max-sm:bg-white max-sm:left-0 right-0 bottom-0 max-sm:px-4 max-sm:pb-4 flex  fixed sm:bottom-4 sm:right-4 flex gap-3 z-50">
         <Button
           variant="outline"
           bgColor="primary"
           size="lg"
           onClick={handleViewRequests}
+          className="max-sm:w-full bg-white"
         >
           View Requests
         </Button>
@@ -176,6 +177,7 @@ const FAQPage: React.FC = () => {
           bgColor="primary"
           size="lg"
           onClick={handleRequestIssue}
+          className="max-sm:w-full"
         >
           <Plus className="w-4 h-4" />
           Request Issue

@@ -22,6 +22,7 @@ import {
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { createPortal } from "react-dom";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -200,7 +201,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="sm:space-y-6 space-y-2">
       {/* Stats Cards */}
       <TicketStatsCards stats={stats} isLoading={statsLoading} />
 
@@ -316,18 +317,19 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
       </div>
 
       {/* Resolution Modal */}
-      <ResolutionModal
-        isOpen={isResolutionModalOpen}
-        onClose={() => {
-          setIsResolutionModalOpen(false);
-          setSelectedTicketForClose(null);
-        }}
-        onSubmit={handleResolutionSubmit}
-        ticketId={selectedTicketForClose?.name || ""}
-        isRequestClosure={isRequestClosureMode}
-        isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
-      />
-
+      {isResolutionModalOpen && createPortal(
+        <ResolutionModal
+          isOpen={isResolutionModalOpen}
+          onClose={() => {
+            setIsResolutionModalOpen(false);
+            setSelectedTicketForClose(null);
+          }}
+          onSubmit={handleResolutionSubmit}
+          ticketId={selectedTicketForClose?.name || ""}
+          isRequestClosure={isRequestClosureMode}
+          isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
+        />
+        , document.body)}
       {/* Ticket Detail Drawer */}
       <TicketDrawer
         isOpen={isDrawerOpen}

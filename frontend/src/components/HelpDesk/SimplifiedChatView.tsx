@@ -13,6 +13,7 @@ import {
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SimplifiedChatInput from "./SimplifiedChatInput";
 import toast from "react-hot-toast";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -305,7 +306,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isResolvingTicket, setIsResolvingTicket] = useState(false);
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
-
+  const [isDropDownOpen, setIsDropDownOpen] = useState(false);
+  const { isDesktop } = useScreenSize();
   // Mutations
   const sendEmailMutation = useSendEmailReply();
   const closeTicketMutation = useCloseTicket();
@@ -966,87 +968,91 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     );
   };
 
+  const Header = () => (
+    <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
+      <div className="flex items-center gap-4">
+        {/* Chat icon */}
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <MessageSquare className="w-6 h-6 text-white" />
+        </div>
+
+        {/* Title and assigned */}
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="font-semibold text-gray-900 text-lg">
+              Issue Discussion
+              <span className="ml-2 text-blue-600">#{ticket.name}</span>
+            </h1>
+            <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
+              {ticket.status}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-sm text-gray-500">Assigned to</span>
+            <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
+                <span className="w-2 h-2 rounded-lg bg-green-500"></span>
+                <span className="text-sm font-medium text-gray-700">
+                  {getAssignedUser()}
+                </span>
+              </div>
+            </WrapperHoverCard>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
+        {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
+          <>
+            {/* Accept Closure - closes the ticket */}
+            <button
+              onClick={handleAcceptClosure}
+              disabled={isClosing}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {isClosing ? "Closing..." : "Accept Closure"}
+            </button>
+            {/* Reject Resolution - reopens for more work */}
+            <button
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isClosing}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            >
+              <XCircle className="w-4 h-4" />
+              Reject
+            </button>
+          </>
+        ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
+          <>
+            {!isDrawer && (
+              <button
+                onClick={handleResolveButtonClick}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Resolve
+              </button>
+            )}
+            <button
+              onClick={handleCloseButtonClick}
+              disabled={isClosing}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+            >
+              <CheckCircle className="w-4 h-4" />
+              {isClosing ? "Closing..." : "Close Ticket"}
+            </button>
+          </>
+        ) : null}
+      </div>
+    </header>
+  );
+
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
-        <div className="flex items-center gap-4">
-          {/* Chat icon */}
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <MessageSquare className="w-6 h-6 text-white" />
-          </div>
 
-          {/* Title and assigned */}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-semibold text-gray-900 text-lg">
-                Issue Discussion
-                <span className="ml-2 text-blue-600">#{ticket.name}</span>
-              </h1>
-              <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
-                {ticket.status}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-sm text-gray-500">Assigned to</span>
-              <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
-                  <span className="w-2 h-2 rounded-lg bg-green-500"></span>
-                  <span className="text-sm font-medium text-gray-700">
-                    {getAssignedUser()}
-                  </span>
-                </div>
-              </WrapperHoverCard>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
-            <>
-              {/* Accept Closure - closes the ticket */}
-              <button
-                onClick={handleAcceptClosure}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Accept Closure"}
-              </button>
-              {/* Reject Resolution - reopens for more work */}
-              <button
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <XCircle className="w-4 h-4" />
-                Reject
-              </button>
-            </>
-          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
-            <>
-              {!isDrawer && (
-                <button
-                  onClick={handleResolveButtonClick}
-                  disabled={isClosing}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Resolve
-                </button>
-              )}
-              <button
-                onClick={handleCloseButtonClick}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Close Ticket"}
-              </button>
-            </>
-          ) : null}
-        </div>
-      </header>
+      {isDesktop && <Header />}
 
       {/* Info banner when agent has requested closure */}
       {ticket.status === "Resolved" && (
@@ -1094,9 +1100,17 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </span>
             )}
           </button>
+          {!isDesktop &&
+            <button
+              onClick={() => setIsDropDownOpen(!isDropDownOpen)}
+              className="flex ml-auto self-center items-center rounded-full p-1 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+              <ChevronUp
+                className={`w-4 h-4 transition-all duration-300 ${isDropDownOpen ? "rotate-180 " : ""}`} />
+            </button>
+          }
         </nav>
       </div>
-
+      {isDropDownOpen && <Header />}
       {/* Content Area */}
       {activeTab === "resolution" ? (
         <div className="flex-1 overflow-y-auto px-6 py-4">
