@@ -16,6 +16,7 @@ import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 type Props = {
   open: boolean;
@@ -26,6 +27,7 @@ type Props = {
 const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   if (!open || !item) return null;
 
+  const {isDesktop} = useScreenSize()
   const data = item.data;
   const ref = data?.reference_document;
   const loadingAction = item.loadingAction;
@@ -291,7 +293,7 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
           {/* ACTION BUTTONS — sticky at bottom */}
           <div className="border-t bg-white p-4">
             <TeamApprovalActionPill
-              variant="modal"
+              variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={ref?.status || data?.status || ""}
               recordId={data?.todo_id}
