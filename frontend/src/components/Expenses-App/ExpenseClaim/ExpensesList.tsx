@@ -12,9 +12,9 @@ import { ApprovalStage } from "../../../types/expenseAdvance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
 import DropdownMenu from "../../shared/DropDownMenu";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -241,7 +241,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() &&
+              item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit
           }
