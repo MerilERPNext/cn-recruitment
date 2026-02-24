@@ -102,7 +102,7 @@ export default function ExtraPayment() {
 
       {/* ---------------------- WEB ---------------------- */}
       {!isMobile && (
-        <div className="flex-1 overflow-y-auto md:px-1 pb-5 md:pb-20">
+        <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           
           <CardTable titles={titles} columnWidths={columnWidths} >
           <div className="flex items-center justify-between">

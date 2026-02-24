@@ -281,7 +281,7 @@ const SalarySlipsList = () => {
                 isDownloading={isDownloading}
               />
             )}
-            isSearch={false}
+            isSearch={true}
             pageSize={10}
             defaultFields={[
               "name",
@@ -424,7 +424,6 @@ const SalarySlipItemDesktop = ({
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
     item.employee,

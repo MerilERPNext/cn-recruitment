@@ -59,6 +59,7 @@ export default function LoanList({
   ];
 
   const columnWidths = [
+    "0.1rem",
     "1fr",
     "1fr",
     "1fr",
@@ -75,7 +76,7 @@ export default function LoanList({
   return (
     <CardTable titles={titles} columnWidths={columnWidths}>
       {onSearchChange && (
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="border-b border-gray-100">
           <div className="relative w-full">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <SearchIcon size={18} />
@@ -85,8 +86,7 @@ export default function LoanList({
               placeholder="Search loans..."
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md
-                focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+              className="pl-10 pr-4 py-2 border border-gray-100  w-full"
             />
           </div>
         </div>

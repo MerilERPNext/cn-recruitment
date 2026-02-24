@@ -3,7 +3,6 @@ import { RiDeleteBinLine } from "react-icons/ri";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import { useFileUpload } from "../../../../hooks/useEmployee";
-import { FiX } from "react-icons/fi";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
 import { formatCurrency } from "../../../../utils/currency";
 import toast from "react-hot-toast";
@@ -38,14 +37,32 @@ type Props = {
   locked80DVariable?: string | null;
   setLocked80DVariable?: (v: string | null) => void;
 };
+import { Check, Clock, X } from "lucide-react";
+
+
 const getProofStatusBadgeClass = (status: string) => {
   switch (status) {
     case "Approved":
       return "bg-success-100 text-success-600";
     case "Rejected":
       return "bg-error-50 text-error-600";
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800";
     default:
       return "bg-gray-50 text-gray-600";
+  }
+};
+
+const getProofStatusIcon = (status: string) => {
+  switch (status) {
+    case "Approved":
+      return <Check className="w-3 h-3 md:w-4 md:h-4" />;
+    case "Rejected":
+      return <X className="w-3 h-3 md:w-4 md:h-4" />;
+    case "Pending":
+      return <Clock className="w-3 h-3 md:w-4 md:h-4" />;
+    default:
+      return null;
   }
 };
 
@@ -65,6 +82,7 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
   const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
@@ -73,28 +91,36 @@ const CategoryDeclarationSelectable = ({
       is_effectively_selected:
         item.is_selected === true || Number(item.amount ?? 0) > 0,
     }));
-
+  
     const hasAnySelected = normalized.some((i) => i.is_effectively_selected);
+  
+    return normalized.map((item) => {
+      const isDifferent80DGroup =
+      locked80DVariable &&
+      custom_80d_variable &&
+      locked80DVariable !== custom_80d_variable;
+  
+      return {
+        label: item.exemption_sub_category,
+        value: item.exemption_sub_category,
+  
+        disabled:
+          Boolean(isDifferent80DGroup) || // 🔥 only disable different group
+          (isMultipleSelect
+            ? item.is_effectively_selected
+            : hasAnySelected),
+      };
+    });
+  }, [items, isMultipleSelect, locked80DVariable, custom_80d_variable]);
 
-    return normalized.map((item) => ({
-      label: item.exemption_sub_category,
-      value: item.exemption_sub_category,
-
-      disabled: isMultipleSelect
-        ? item.is_effectively_selected
-        : hasAnySelected,
-    }));
-  }, [items, isMultipleSelect]);
-
-  const normalizedLocked = locked80DVariable || null;
-  const normalizedCustom = custom_80d_variable || null;
 
   const isDisabled =
-    Boolean(normalizedLocked) &&
-    Boolean(normalizedCustom) &&
-    normalizedLocked !== normalizedCustom;
+  Boolean(locked80DVariable) &&
+  Boolean(custom_80d_variable) &&
+  locked80DVariable === custom_80d_variable &&
+  activeDropdownId !== categoryName; 
 
-
+console.log(custom_80d_variable, "isDisabled",);
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;
 
@@ -118,56 +144,56 @@ const CategoryDeclarationSelectable = ({
     id: string | number | undefined,
     proofFile?: string | File
   ) => {
-    console.log("proofFile:", typeof proofFile);
-
-    if (!proofFile || typeof proofFile !== "string") {
-      console.warn("No backend file to delete");
-      return;
-    }
-
+    if (!proofFile) return;
+  
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this proof file?"
     );
     if (!confirmDelete) return;
-
+  
     try {
-      const parts = proofFile.split("/");
-      let fileName = parts[parts.length - 1];
-      fileName = decodeURIComponent(fileName);
-
-      console.log("Deleting file:", fileName);
-
-      await deleteDoc({
-        doctype: "File",
-        name: fileName,
-      });
-
+      // ✅ Agar backend me uploaded file hai (string URL)
+      if (typeof proofFile === "string") {
+        const parts = proofFile.split("/");
+        let fileName = parts[parts.length - 1];
+        fileName = decodeURIComponent(fileName);
+  
+        await deleteDoc({
+          doctype: "File",
+          name: fileName,
+        });
+      }
+  
+      // ✅ UI se remove karo
       const updated = items.map((item) =>
         item.id === id
           ? { ...item, proof_file: undefined, proof_comment: "" }
           : item
       );
-
+  
       onChange(updated);
-      alert("Proof deleted successfully ✅");
+  
+      toast.success("Proof deleted successfully ✅");
     } catch (err) {
-      console.error("❌ Delete failed:", err);
-      alert("Failed to delete proof. Please try again.");
+      console.error("Delete failed:", err);
+      toast.error("Failed to delete proof");
     }
   };
 
   /* ---------------- Select Item ---------------- */
   const handleSelectItem = (value: string) => {
     if (!value) return;
+  
     const updated = items.map((item) => {
       if (item.exemption_sub_category === value) {
         return {
           ...item,
           is_selected: true,
-          amount: item.amount ?? 0,
+          amount: isMultipleSelect
+            ? item.amount ?? 0
+            : item.max_amount,
         };
       }
-
       if (!isMultipleSelect) {
         return {
           ...item,
@@ -175,13 +201,17 @@ const CategoryDeclarationSelectable = ({
           amount: undefined,
         };
       }
-
+  
       return item;
     });
-
-    if (custom_80d_variable) {
+    setActiveDropdownId(categoryName); 
+    if (
+      custom_80d_variable &&
+      (!locked80DVariable || locked80DVariable === custom_80d_variable)
+    ) {
       setLocked80DVariable?.(custom_80d_variable);
     }
+  
     onChange(updated);
   };
 
@@ -214,9 +244,10 @@ const CategoryDeclarationSelectable = ({
     const stillSelected = updated.some(
       (i) => i.is_selected || Number(i.amount) > 0
     );
-
-    if (!stillSelected && custom_80d_variable) {
+  
+    if (!stillSelected) {
       setLocked80DVariable?.(null);
+      setActiveDropdownId(null); // ✅ reset lock
     }
     onChange(updated);
   };
@@ -229,13 +260,6 @@ const CategoryDeclarationSelectable = ({
       Number(item?.amount ?? 0) > 0
   );
 
-  console.log(
-    isDisabled,
-    "isDisabled",
-    locked80DVariable,
-    "locked80",
-    custom_80d_variable
-  );
   return (
     <div className="bg-white px-3 md:px-6 py-4 rounded-lg border border-gray-200 space-y-4">
       <div className="border-b pb-2">
@@ -273,8 +297,7 @@ const CategoryDeclarationSelectable = ({
                 )}
               </div>
 
-              {showProofFields &&
-                (item.attach_reqd === 1 || item?.approval_needed === "yes") && (
+              {showProofFields && (item.attach_reqd === 1 || item?.approval_needed === "Yes") && (
                   <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
                     <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">
@@ -317,11 +340,12 @@ const CategoryDeclarationSelectable = ({
 
                           <button
                             type="button"
-                            onClick={() => handleRemoveProof(item.id)}
+                            onClick={() =>
+                            handleRemoveProof(item.id, item.proof_file)}
                             className="text-gray-500 hover:text-red-600 transition disabled:opacity-50 shrink-0"
                             title="Remove file"
                           >
-                            <FiX size={16} />
+                            
                           </button>
                         </div>
                       )}
@@ -347,10 +371,12 @@ const CategoryDeclarationSelectable = ({
 
               {item?.custom_proof_status && (
                 <span
-                  className={`inline-block px-3 py-1 rounded-xl text-xs font-semibold
-                    ${getProofStatusBadgeClass(item.custom_proof_status)}`}
-                >
-                  {item.custom_proof_status}
+                     className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold ${getProofStatusBadgeClass(
+                     item.custom_proof_status
+                      )}`}
+                       >
+                    {getProofStatusIcon(item.custom_proof_status)}
+                    {item.custom_proof_status}
                 </span>
               )}
               <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -361,6 +387,7 @@ const CategoryDeclarationSelectable = ({
                   <input
                     type="number"
                     placeholder="Amount"
+                    readOnly={!isMultipleSelect}   
                     disabled={item.editable === 0 || lockingDate === "failed"}
                     value={item.amount === 0 ? "" : item.amount ?? ""}
                     onChange={(e) => {
@@ -406,8 +433,8 @@ const CategoryDeclarationSelectable = ({
       <div className="relative w-full sm:w-64">
         <Button
           variant="soft"
-          onClick={() => setIsOpen((prev) => !prev)}
           disabled={isDisabled}
+          onClick={() => setIsOpen((prev) => !prev)}
           className="w-full flex justify-between items-center border border-gray-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all"
         >
           <span className="text-gray-400">Select Items</span>
