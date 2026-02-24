@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
@@ -34,8 +35,10 @@ type Props = {
   showProofFields?: boolean;
   selectable?: string;
   custom_80d_variable?: string | null;
-  locked80DVariable?: string | null;
-  setLocked80DVariable?: (v: string | null) => void;
+  locked80DVariable?: Map<string, any> | undefined;
+  categoryVaribale?: string | null;
+  itemId: number;
+  setLocked80DVariable?: Dispatch<SetStateAction<Map<string, any> | undefined>>;
 };
 import { Check, Clock, X } from "lucide-react";
 
@@ -74,7 +77,8 @@ const CategoryDeclarationSelectable = ({
   onChange,
   showProofFields,
   selectable,
-  custom_80d_variable,
+  itemId,
+  categoryVaribale,
   locked80DVariable,
   setLocked80DVariable,
 }: Props) => {
@@ -82,7 +86,8 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
   const { mutateAsync: deleteDoc } = useDeleteDocument();
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  // const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+console.log("Category variable:",   locked80DVariable, "===",setLocked80DVariable, );
 
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
@@ -94,33 +99,34 @@ const CategoryDeclarationSelectable = ({
   
     const hasAnySelected = normalized.some((i) => i.is_effectively_selected);
   
-    return normalized.map((item) => {
-      const isDifferent80DGroup =
-      locked80DVariable &&
-      custom_80d_variable &&
-      locked80DVariable !== custom_80d_variable;
+    return normalized.map((item) => ({
+      label: item.exemption_sub_category,
+      value: item.exemption_sub_category,
+      disabled:
+        isMultipleSelect
+          ? item.is_effectively_selected 
+          : hasAnySelected,               
+    }));
+  }, [items, isMultipleSelect]);
+
+  const isDisabled = useMemo(() => {
+    if (!locked80DVariable || !categoryVaribale) return false;
   
-      return {
-        label: item.exemption_sub_category,
-        value: item.exemption_sub_category,
-  
-        disabled:
-          Boolean(isDifferent80DGroup) || // 🔥 only disable different group
-          (isMultipleSelect
-            ? item.is_effectively_selected
-            : hasAnySelected),
-      };
-    });
-  }, [items, isMultipleSelect, locked80DVariable, custom_80d_variable]);
+    const group = locked80DVariable.get(categoryVaribale);
+    console.log(group,"sadfasdfasdfasdf")
+    if (!group) return false;
+    if(group?.indexes?.includes(itemId) && group.parent !== null){
+      console.log("Inside include")
+      if(group.parent === itemId) return false;
+      return true;
+    } 
+    return false;  
+  }, [locked80DVariable, categoryVaribale, itemId]);
 
+    useEffect(() =>{
+      console.log("locked80DVariable ==", locked80DVariable)
+    },[locked80DVariable])
 
-  const isDisabled =
-  Boolean(locked80DVariable) &&
-  Boolean(custom_80d_variable) &&
-  locked80DVariable === custom_80d_variable &&
-  activeDropdownId !== categoryName; 
-
-console.log(custom_80d_variable, "isDisabled",);
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;
 
@@ -204,12 +210,22 @@ console.log(custom_80d_variable, "isDisabled",);
   
       return item;
     });
-    setActiveDropdownId(categoryName); 
-    if (
-      custom_80d_variable &&
-      (!locked80DVariable || locked80DVariable === custom_80d_variable)
-    ) {
-      setLocked80DVariable?.(custom_80d_variable);
+    // setActiveDropdownId(categoryName); 
+    if (categoryVaribale && locked80DVariable) {
+      const updatedMap = new Map(locked80DVariable);
+      const group = updatedMap.get(categoryVaribale);
+  
+   
+      if (group && (group.parent === null || group.parent === undefined)) {
+        updatedMap.set(categoryVaribale, {
+          ...group,
+          parent:  itemId, 
+        });
+        setLocked80DVariable?.(updatedMap);
+      }
+    
+    
+      
     }
   
     onChange(updated);
@@ -241,13 +257,24 @@ console.log(custom_80d_variable, "isDisabled",);
         }
         : item
     );
-    const stillSelected = updated.some(
-      (i) => i.is_selected || Number(i.amount) > 0
+    const selectedItems = items.filter(
+      (item) =>
+        item?.is_selected === true ||
+        item?.editable === 0 ||
+        Number(item?.amount ?? 0) > 0
     );
-  
-    if (!stillSelected) {
-      setLocked80DVariable?.(null);
-      setActiveDropdownId(null); // ✅ reset lock
+    if (categoryVaribale && locked80DVariable) {
+      const updatedMap = new Map(locked80DVariable);
+      const group = updatedMap.get(categoryVaribale);
+    
+      if (group && selectedItems.length === 1) {
+        updatedMap.set(categoryVaribale, {
+          ...group,
+          parent:  null ,
+        });
+      }
+    
+      setLocked80DVariable?.(updatedMap);
     }
     onChange(updated);
   };

@@ -12,7 +12,8 @@ export const normalizeITCategories = (apiResponse: any): GroupedCategory[] => {
   return apiResponse.categories.map((section: any) => ({
     section: section.custom_section_property,
     categories: Array.isArray(section.exemption_category)
-      ? section.exemption_category.map((cat: any) => ({
+      ? section.exemption_category.map((cat: any, index: number) => ({
+          id: index,
           exemption_category: section.custom_section_property,
           category_name: cat.category_name,
           max_amount: cat.max_amount,
