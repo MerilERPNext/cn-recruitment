@@ -459,6 +459,10 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const RecognitionPage = lazyWithRetry(
+  () => import("./components/Recognition/RecognitionPage"),
+  "RecognitionPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -1168,6 +1172,10 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/recognition",
+    element: <RecognitionPage />,
   },
 ];
 
