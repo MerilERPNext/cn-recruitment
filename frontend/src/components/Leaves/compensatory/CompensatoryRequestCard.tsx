@@ -1,15 +1,15 @@
-import { Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { usePayCompOff } from "../../../hooks/useLeaves";
 import toast from "react-hot-toast";
-import { Typography } from "../../shared/atoms/Typography";
-import Tooltip from "../../shared/Tooltip";
+import { usePayCompOff } from "../../../hooks/useLeaves";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -33,8 +33,7 @@ const CompensatoryRequestCard = ({
   const { isDesktop } = useScreenSize();
   const { mutate: payCompOff, isPending } = usePayCompOff();
 
-  const handlePay = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handlePay = () => {
     payCompOff(item.name, {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onSuccess: (response: any) => {
@@ -111,42 +110,73 @@ const CompensatoryRequestCard = ({
           status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
         />
       </div>
+
       <div className="flex items-center justify-center">
-        {item?.pay_button_required ? (
-          <button
-            onClick={handlePay}
-            disabled={isPending}
-            className="bg-primary hover:bg-primary-600 text-white px-4 rounded-lg text-sm py-1"
-          >
-            {isPending ? "Processing..." : "Pay"}
-          </button>
-        ) : (
-          <div className="h-8 px-3 flex items-center justify-center rounded-3xl bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-            NA
-          </div>
-        )}
+        <MyApprovalActionPill
+          isPending={false}
+          canPay={item?.pay_button_required}
+          onPay={handlePay}
+          payLoading={isPending}
+        />
       </div>
     </div>
   ) : (
     <div
-      className="w-full mt-2 flex items-center gap-3 bg-white shadow-sm rounded-xl border border-gray-200 p-3"
+      className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl mt-2"
       onClick={onClick}
     >
-      <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-600">
-        <Calendar size={20} />
-      </div>
+      <div className="p-4 flex flex-col gap-4 w-full">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Leave Type</Typography>
 
-      <div className="flex-1">
-        <div className="card-title">{item?.leave_type}</div>
-        <div className="card-subtitle py-1">
-          {formattedFromDate} – {formattedToDate}
+            <Typography variant="mobileCardValue" className="font-semibold">
+              {item?.leave_type}
+            </Typography>
+          </div>
+
+          <StatusBadge
+            status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+          />
         </div>
-        <div className="card-subtitle truncate">{item.reason || "—"}</div>
-      </div>
 
-      <div className="flex items-center">
-        <StatusBadge
-          status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+        {/* Date Range */}
+        <div className="flex justify-between w-full">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">From</Typography>
+            <Typography variant="mobileCardValue">
+              {formattedFromDate}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">To</Typography>
+            <Typography variant="mobileCardValue">{formattedToDate}</Typography>
+          </div>
+        </div>
+
+        {/* Reason */}
+        {cleanReason && (
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Reason</Typography>
+
+            <Typography variant="mobileCardValue">
+              {truncateByChars(cleanReason, 60)}
+            </Typography>
+          </div>
+        )}
+
+        {/* Pay Button */}
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={false}
+          canPay={item?.pay_button_required}
+          onPay={handlePay}
+          payLoading={isPending}
         />
       </div>
     </div>

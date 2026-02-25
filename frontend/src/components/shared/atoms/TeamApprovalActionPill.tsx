@@ -1,8 +1,10 @@
 "use client";
 
-import { Check, X, SendToBack } from "lucide-react";
+import { Check, SendToBack, X } from "lucide-react";
 import type { JSX } from "react";
+import { getActionStyles } from "../../../utils/actionButtonStyles";
 import Tooltip from "../Tooltip";
+import Button from "./Button";
 
 type TeamApprovalActionPillProps = {
   actions: string[];
@@ -10,7 +12,7 @@ type TeamApprovalActionPillProps = {
   recordId: string;
   loadingAction?: { id: string; action: string } | null;
   onAction: (action: string) => void;
-  isModalAction?: boolean;
+  variant?: "pill" | "buttons" | "modal";
 };
 
 /* ===============================
@@ -54,7 +56,7 @@ const TeamApprovalActionPill = ({
   recordId,
   loadingAction,
   onAction,
-  isModalAction = false,
+  variant = "pill",
 }: TeamApprovalActionPillProps) => {
   const normalizedStatus = status?.toLowerCase();
 
@@ -65,6 +67,8 @@ const TeamApprovalActionPill = ({
     actions?.length > 0;
 
   if (!isActionable) {
+    if (variant === "buttons" || variant === "modal") return null;
+
     return (
       <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
         Action Taken
@@ -79,65 +83,81 @@ const TeamApprovalActionPill = ({
     }))
     .filter(({ normalized }) => ACTION_CONFIG[normalized]);
 
-  // FIXED: Modal button rendering with DIRECT color classes
-  if (isModalAction) {
+  if (variant === "modal") {
     return (
-      <div className="flex sm:flex-row sm:justify-end gap-3">
+      <div className="flex justify-end gap-3">
         {visibleActions.map(({ original, normalized }) => {
-          const meta = ACTION_CONFIG[normalized];
           const isLoading =
             loadingAction?.id === recordId &&
             normalizeAction(loadingAction.action) === normalized;
 
+          const actionStyle = getActionStyles(original);
+
           return (
-            <button
+            <Button
               key={original}
+              size="md"
+              bgColor={actionStyle.bgColor}
+              variant={actionStyle.variant}
               disabled={isLoading}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onAction(original);
               }}
-              className={`
-                flex items-center justify-center gap-2
-                px-6 py-1.5
-                rounded-md font-medium text-sm min-w-[120px]
-                transition-all duration-200
-                border border-transparent shadow-sm
-                hover:shadow-md focus:outline-none focus:ring-4 focus:ring-offset-2
-                ${meta.buttonClasses}
-                disabled:opacity-50 disabled:cursor-not-allowed
-                disabled:shadow-none disabled:hover:shadow-none
-              `.trim()}
+              icon={!isLoading ? ACTION_CONFIG[normalized]?.icon : undefined}
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <>
-                  <span className="flex-shrink-0">{meta.icon}</span>
-                  <span className="font-semibold">{original}</span>
-                </>
+                original
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
     );
   }
-  // existing pill UI (unchanged)
+
+  if (variant === "buttons") {
+    return (
+      <div className="flex flex-wrap gap-2 mt-3 w-full">
+        {visibleActions.map(({ original, normalized }) => {
+          const isLoading =
+            loadingAction?.id === recordId &&
+            normalizeAction(loadingAction.action) === normalized;
+
+          const actionStyle = getActionStyles(original);
+
+          return (
+            <Button
+              key={original}
+              size="md"
+              className="flex-1 min-w-[120px]"
+              bgColor={actionStyle.bgColor}
+              variant={actionStyle.variant}
+              disabled={isLoading}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAction(original);
+              }}
+              icon={!isLoading ? ACTION_CONFIG[normalized]?.icon : undefined}
+            >
+              {isLoading ? (
+                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                original
+              )}
+            </Button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="
-          h-8
-          flex items-center
-          gap-1
-          px-3
-          py-1
-          rounded-3xl
-          bg-gray-10
-          w-fit
-        "
-    >
+    <div className=" h-8 flex items-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit">
       {visibleActions.map(({ original, normalized }, index) => {
         const meta = ACTION_CONFIG[normalized];
         const isLoading =

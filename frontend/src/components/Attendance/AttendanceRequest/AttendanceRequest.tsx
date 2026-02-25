@@ -1,25 +1,23 @@
-import DataListView from "../../DataListView";
-import { useState, useCallback } from "react";
-import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
+import { useCallback, useState } from "react";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CardTable from "../../shared/CardTable";
-import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyAttendanceRequest } from "../../../types/attendance";
+import DataListView from "../../DataListView";
 import Button from "../../shared/atoms/Button";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
+import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const AttendanceRequest = ({
   pageSize = 10,
-  showPagination = true,
   showAttendanceRequest = true,
 }: {
   pageSize?: number;
-  showPagination?: boolean;
   showAttendanceRequest?: boolean;
 }) => {
   const { isDesktop } = useScreenSize();
@@ -111,9 +109,9 @@ const AttendanceRequest = ({
                   pageSize={pageSize}
                   showRefreshButton={false}
                   orderBy="from_date desc"
-                  showPagination={showPagination}
-                  infiniteScroll={true}
+                  infiniteScroll={false}
                   loadMorePagination={false}
+                  showPagination={true}
                   isSearch={true}
                   isFilter={true}
                   filterFields={[

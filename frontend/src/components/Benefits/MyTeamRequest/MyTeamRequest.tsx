@@ -1,13 +1,13 @@
 "use client";
 
 import type React from "react";
-import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import BenefitRequestItem from "./BenefitRequestItem";
-import { Typography } from "../../shared/atoms/Typography";
 import { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import BenefitRequestItem from "./BenefitRequestItem";
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -59,9 +59,9 @@ const MyTeamRequest: React.FC = () => {
             // setRefetch={setRefetchApprovalList}
             // onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={finalColumnWidths}

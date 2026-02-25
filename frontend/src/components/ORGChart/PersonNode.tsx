@@ -7,12 +7,14 @@ import { useTargetUser } from "../../context/ViewedUserContext";
 import Tooltip from "../shared/Tooltip";
 import Avatar from "../shared/Avatar";
 import { Typography } from "../shared/atoms/Typography";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const { data: employee } = useCurrentEmployee();
   const currentEmployeeId = employee?.name;
   const navigate = useNavigate();
   const { setTargetEmployee, clearTargetEmployee } = useTargetUser();
+  const { isDesktop } = useScreenSize();
 
   const {
     id,
@@ -28,7 +30,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
   const handleClick = () => {
     if (id) {
       if (id !== currentEmployeeId) {
-        setTargetEmployee(String(id), `/webapp/employee-profile`, true);
+        setTargetEmployee(String(id), `/webapp/employee-profile`, isDesktop);
       } else {
         clearTargetEmployee();
         navigate(`/webapp/employee-profile`);

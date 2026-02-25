@@ -1,24 +1,24 @@
-import { Repeat1, RotateCcw, SquarePen } from "lucide-react";
-import { useRevokeEvent } from "../../hooks/userApprovalList";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import Tooltip from "../shared/Tooltip";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { LeaveCardProps } from "../../types/leaves";
-import { useRequestLeaveModal } from "./RequestLeaveModalContext";
+import { useRevokeEvent } from "../../hooks/userApprovalList";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
-import { isActionEnabled } from "../../utils/uiPermission";
-import formatToIndianDate from "../../utils/formatToIndianDate";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
-import { Typography } from "../shared/atoms/Typography";
+import { LeaveCardProps } from "../../types/leaves";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../utils/sanitizeToPlainText";
+import { isActionEnabled } from "../../utils/uiPermission";
+import Button from "../shared/atoms/Button";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
-import toast from "react-hot-toast";
-import Button from "../shared/atoms/Button";
-import { useState } from "react";
+import { Typography } from "../shared/atoms/Typography";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import Tooltip from "../shared/Tooltip";
+import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
@@ -126,10 +126,6 @@ const EmpLeaveRequestCard = ({
   const isPending = data?.reference_document?.status === "Open";
   const isApproved = data?.reference_document?.status === "Approved";
 
-  const showEdit = allowEdit && isPending;
-  const showRevoke = isPending && data?.custom_allow_revoke && canRequestLeave;
-  const showReplace = allowReplace && (isPending || isApproved);
-
   return (
     <>
       {isDesktop ? (
@@ -164,15 +160,13 @@ const EmpLeaveRequestCard = ({
               : data?.reference_document?.total_leave_days + " Day"}
           </Typography>
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                status?.label === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={status?.label === "Pending" ? data?.allocated_to : undefined}
+              roles={status?.label === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
@@ -180,7 +174,6 @@ const EmpLeaveRequestCard = ({
               canRevoke={
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
-              // optional
               canEdit={allowEdit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
@@ -201,7 +194,7 @@ const EmpLeaveRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.username || data?.allocated_to}
                 </Typography>
               </div>
@@ -212,7 +205,7 @@ const EmpLeaveRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Leave Type</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.reference_document?.leave_type}
                 </Typography>
               </div>
@@ -264,44 +257,19 @@ const EmpLeaveRequestCard = ({
               )}
             </div>
 
-            {/* Bottom Actions */}
-            {(showEdit || showRevoke || showReplace) && (
-              <div className="flex gap-2 mt-3">
-                {showEdit && (
-                  <Button
-                    fullWidth
-                    variant="contain"
-                    onClick={handleEditClick}
-                    icon={<SquarePen className="w-4 h-4" />}
-                  >
-                    Edit
-                  </Button>
-                )}
-
-                {showReplace && (
-                  <Button
-                    fullWidth
-                    variant="contain"
-                    onClick={handleReplaceClick}
-                    icon={<Repeat1 className="w-4 h-4" />}
-                  >
-                    Replace
-                  </Button>
-                )}
-
-                {showRevoke && (
-                  <Button
-                    fullWidth
-                    variant="contain"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                    icon={<RotateCcw className="w-4 h-4" />}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                )}
-              </div>
-            )}
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={isPending}
+              canRevoke={
+                isPending && data?.custom_allow_revoke && canRequestLeave
+              }
+              canEdit={allowEdit}
+              canReplace={allowReplace && (isPending || isApproved)}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={handleEditClick}
+              onReplace={handleReplaceClick}
+            />
           </div>
           {showDescriptionModal && (
             <div className="fixed inset-0 z-[60] bg-black/50 flex items-end">

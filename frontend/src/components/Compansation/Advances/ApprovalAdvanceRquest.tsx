@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
-import { Typography } from "../../shared/atoms/Typography";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
+import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -53,7 +53,7 @@ const TeamAdvanceRequest = () => {
     <div className="flex flex-col h-full">
       {isDesktop && (
         <div className="flex-shrink-0">
-          <div className="px-2 py-1 md:py-4">
+          <div className="px-4 py-1 md:py-4">
             <Typography variant="h4">Team Advance Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage team advance requests
@@ -62,7 +62,7 @@ const TeamAdvanceRequest = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-2 pb-5 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
             status="Pending"
@@ -71,9 +71,9 @@ const TeamAdvanceRequest = () => {
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}

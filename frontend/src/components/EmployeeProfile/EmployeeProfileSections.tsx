@@ -111,10 +111,10 @@ export default function EmployeeProfileSections() {
         <div>
             <div className="flex items-start justify-between">
                 <div className="px-0 md:px-6 py-6">
-                    <Typography variant="h3" className="font-bold text-gray-900 mb-1">
+                    <Typography variant="h4" className="font-bold text-gray-900 mb-1 text-xl sm:text-2xl">
                         Personal Information
                     </Typography>
-                    <Typography variant="bodyMedium" color="body2">
+                    <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
                         Comprehensive details and records.
                     </Typography>
                 </div>
@@ -141,7 +141,7 @@ export default function EmployeeProfileSections() {
                 </div>
             )}
             {/* Scrollable Sections */}
-            <div className="space-y-6 pb-6">
+            <div className="space-y-2 md:space-y-6 pb-6">
                 {tabs.map(tab => (
                     <section
                         key={tab.key}
@@ -151,8 +151,8 @@ export default function EmployeeProfileSections() {
                         className="scroll-mt-28"
                     >
                         {/* Section Header */}
-                        <div className="flex items-center rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
-                            <Typography variant="subheading" className="font-bold text-gray-800">
+                        <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
+                            <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
                                 {tab.label}
                             </Typography>
 
@@ -161,8 +161,9 @@ export default function EmployeeProfileSections() {
                                     variant="subtle"
                                     icon={<PencilIcon className="h-4 w-4" />}
                                     size="sm"
+                                    disabled={tab.fields.filter(f => !f.hidden).every(f => f.readOnly)}
                                     onClick={() => setEdit({ key: tab.key, label: tab.label })}
-                                    className="font-bold text-primary-600"
+                                    className={`font-bold ${tab.fields.filter(f => !f.hidden).every(f => f.readOnly) ? "text-gray-400 opacity-50 cursor-not-allowed" : "text-primary-600"}`}
                                 >
                                     Edit
                                 </Button>
@@ -170,7 +171,7 @@ export default function EmployeeProfileSections() {
                         </div>
 
                         {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-8 gap-x-6 px-0 md:px-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6 px-0 md:px-6">
                             {tab.fields
                                 ?.filter(field => !field.hidden)
                                 .map(field => {
@@ -184,7 +185,7 @@ export default function EmployeeProfileSections() {
                                                 <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
                                                     {field.label || "-"}
                                                 </Typography>
-                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !isTable && (
+                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly && !isTable && (
                                                     <button
                                                         onClick={() => setEdit({ key: tab.key, label: field.label || tab.label, fieldname: field.key })}
                                                         className="p-1 hover:bg-gray-100 rounded-full transition-colors group/edit"
@@ -203,6 +204,7 @@ export default function EmployeeProfileSections() {
                                                 ) : isTable ? (
                                                     <CardsRenderer
                                                         items={field.value}
+                                                        canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly}
                                                         onEdit={(index) => setEdit({
                                                             key: tab.key,
                                                             label: field.label || tab.label,
@@ -237,7 +239,7 @@ export default function EmployeeProfileSections() {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void }) => {
+const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void, canEdit: boolean }) => {
     if (!Array.isArray(items) || items.length === 0) {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
@@ -282,30 +284,32 @@ const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit
         });
 
     return (
-        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
                 <div key={item?.id || item?.name || originalIndex} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
-                    <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} />
+                    <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} canEdit={canEdit} />
                 </div>
             ))}
         </div>
     );
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GenericCard = ({ data, onEdit }: { data: Record<string, any>, onEdit?: () => void }) => {
+const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onEdit?: () => void, canEdit: boolean }) => {
     if (!data || typeof data !== "object") return null;
     // console.log(data, "data------------------------------------")
     return (
         <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full relative">
-            <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                <button
-                    onClick={onEdit}
-                    className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
-                    title="Edit entry"
-                >
-                    <PencilIcon className="h-3.5 w-3.5" />
-                </button>
-            </div>
+            {canEdit && (
+                <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    <button
+                        onClick={onEdit}
+                        className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
+                        title="Edit entry"
+                    >
+                        <PencilIcon className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            )}
             <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;

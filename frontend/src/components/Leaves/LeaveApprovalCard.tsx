@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import {
-  useUpdateRejectionReason,
   useIsRejectionReasonMandatory,
+  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Button from "../shared/atoms/Button";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import { getActionStyles } from "../../utils/actionButtonStyles";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
-import Tooltip from "../shared/Tooltip";
-import StatusBadge from "../shared/atoms/statusBadge";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -163,15 +162,13 @@ const LeaveApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.status === "Open"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.reference_document?.status === "Open" ? data?.allocated_to : undefined}
+              roles={data?.reference_document?.status === "Open" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
@@ -213,19 +210,13 @@ const LeaveApprovalCard = ({
             <div className="w-full">
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="text-gray-500"
-                  >
+                  <Typography variant="mobileCardLabel">
                     {data?.reference_document?.employee_name
                       ? "Employee Name"
                       : "Employee ID"}
                   </Typography>
 
-                  <Typography
-                    variant="mobileCardValue"
-                    className="font-semibold text-gray-900"
-                  >
+                  <Typography variant="mobileCardValue">
                     {data?.reference_document?.employee_name ||
                       data?.reference_document?.employee}
                   </Typography>
@@ -276,38 +267,14 @@ const LeaveApprovalCard = ({
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length > 0 &&
-                  data?.reference_document?.status === "Open" &&
-                  actions.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
-
-                    return (
-                      <Button
-                        key={action}
-                        fullWidth
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleActionClick(action, data);
-                        }}
-                        bgColor={actionStyle.bgColor}
-                        variant={actionStyle.variant}
-                        disabled={
-                          loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action
-                        }
-                      >
-                        {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
-              </div>
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
             </div>
           </div>
         </div>
@@ -315,13 +282,16 @@ const LeaveApprovalCard = ({
       {showCommentModal && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            handleCancelComment();
           }}
         >
           <div
             className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -337,6 +307,7 @@ const LeaveApprovalCard = ({
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Enter rejection reason..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}

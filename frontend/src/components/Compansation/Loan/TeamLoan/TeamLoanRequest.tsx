@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useCallback } from "react";
-import ApprovalList from "../../../shared/ApprovalList";
-import CardTable from "../../../shared/CardTable";
-import ApprovalRejectionLoanList from "../component/TeamApprovallist";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
-import LoanDetailsModal from "./LoanDetailsView";
+import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
+import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalRejectionLoanList from "../component/TeamApprovallist";
+import LoanDetailsModal from "./LoanDetailsView";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
@@ -77,9 +77,9 @@ const TeamLoanRequest = () => {
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}

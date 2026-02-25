@@ -54,7 +54,8 @@ const EMPLOYEMENT_STATUS = {
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { targetEmployeeId } = useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
+    useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canAttendanceAssignments = isActionEnabled(
@@ -135,6 +136,8 @@ const EmployeeProfile: React.FC = () => {
       });
     }
   };
+
+
 
   const tabs: Tab[] = useMemo(
     () => [
@@ -278,7 +281,15 @@ const EmployeeProfile: React.FC = () => {
           <HeaderInfoSkeleton />
         ) : (
           <div className="bg-white shadow">
-            <HeaderBar title="Profile" onBack={() => navigate(-1)} />
+            <HeaderBar
+              title="Profile"
+              onBack={() => {
+                if (isViewingOtherUser) {
+                  clearTargetEmployee();
+                }
+                navigate("/webapp/");
+              }}
+            />
             <input
               ref={fileInputRef}
               type="file"
@@ -308,8 +319,8 @@ const EmployeeProfile: React.FC = () => {
               </div>
               <div className="flex flex-col flex-1 min-w-0">
                 <Typography
-                  variant="h3"
-                  className="font-bold truncate tracking-tight"
+                  variant="h4"
+                  className="font-bold truncate tracking-tight text-lg sm:text-xl"
                 >
                   {user?.employee_name}
                 </Typography>
@@ -399,7 +410,7 @@ const EmployeeProfile: React.FC = () => {
                 </div>
               </div>
             </div>
-            <AwardsSection isDesktop={false} />
+            <AwardsSection isDesktop={false} mobileClass="pt-4" />
           </div>
         )}
         {/* Horizontal Tabs */}
@@ -429,7 +440,7 @@ const EmployeeProfile: React.FC = () => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="px-4 py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
+              className="px-4 py-3 md:py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
             >
               {tabContent[tab.key]}
             </div>
@@ -597,7 +608,7 @@ const EmployeeProfile: React.FC = () => {
                     </div>
                   </div>
                 </Card>
-                <Card className="flex items-center gap-8 flex-1" shadow="none">
+                <Card className="flex items-center gap-8  flex-1" shadow="none">
                   <AwardsSection isDesktop={true} />
                 </Card>
               </div>

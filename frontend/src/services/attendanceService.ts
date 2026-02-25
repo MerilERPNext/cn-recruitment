@@ -16,6 +16,7 @@ import type {
   EmployeeTeamCheckIns,
   IOvertimeLog,
   IPRestrictionsT,
+  OvertimeJournalData,
   Policy,
   PolicyQuestion,
   ShiftBlock,
@@ -586,6 +587,16 @@ export const attendanceService = {
       }
     );
     return response as UserRoles;
+  },
+  getOvertimeJournal: async (employee: string, date: string): Promise<OvertimeJournalData> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.overtime.get_overtime_journal",
+      {
+        employee: employee,
+        date: date,
+      }
+    );
+    return response as OvertimeJournalData;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getToDoWithReferenceDoc: async (todo_id?: string): Promise<any> => {

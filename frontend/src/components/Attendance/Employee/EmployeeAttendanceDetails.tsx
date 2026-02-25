@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useAllEmployeeCheckIns,
   useAllAttendanceRequests,
+  useGetOvertimeJournal,
 } from "../../../hooks/useAttendance";
 import {
   AttendanceRecord,
@@ -35,6 +36,7 @@ import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import OvertimeJournal from "./OvertimeJournal";
 
 interface EmployeeAttendanceDetailsProps {
   date?: Date;
@@ -130,6 +132,11 @@ const EmployeeAttendanceDetails = ({
       : [],
     { enabled: !!validDate && !!effectiveEmployeeId },
   );
+  const { data:
+    overtimeJournal, isLoading: isOvertimeLoading, isError: isOvertimeError, error: overtimeError } = useGetOvertimeJournal(
+      effectiveEmployeeId || "",
+      validDate ? format(validDate, "yyyy-MM-dd") : "",
+    );
 
   const { data: attendanceRequests } = useAllAttendanceRequests(
     1000,
@@ -279,11 +286,23 @@ const EmployeeAttendanceDetails = ({
             {headerTitle}
           </Typography>
         </div>
-        {onClose && (
-          <Button variant="soft" size="sm" onClick={onClose}>
-            <X className="w-5 h-5 text-gray-500" />
-          </Button>
-        )}
+        <div className="flex justify-between items-center gap-2 px-4 py-2">
+
+          <OvertimeJournal
+            isLoading={isOvertimeLoading}
+            isError={isOvertimeError}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            error={overtimeError as any}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data={overtimeJournal as any}
+            date={validDate ? format(validDate, "dd-MM-yyyy") : ""}
+          />
+          {onClose && (
+            <Button variant="soft" size="sm" onClick={onClose}>
+              <X className="w-5 h-5 text-gray-500" />
+            </Button>
+          )}
+        </div>
       </div>
     );
   };
@@ -357,7 +376,7 @@ const EmployeeAttendanceDetails = ({
     >
       No check-ins available for{" "}
       <span className="font-semibold">
-        {validDate ? format(validDate, "dd/MM/yyyy") : "Unknown Date"}
+        {validDate ? format(validDate, "dd-MM-yyyy") : "Unknown Date"}
       </span>
     </Typography>
   );

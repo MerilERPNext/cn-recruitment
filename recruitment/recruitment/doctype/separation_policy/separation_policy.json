@@ -1,7 +1,7 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "SP.#####",
+ "autoname": "SEPRSN-.#####",
  "creation": "2025-10-16 16:51:48.045783",
  "doctype": "DocType",
  "engine": "InnoDB",
@@ -204,7 +204,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-17 10:52:54.425598",
+ "modified": "2026-02-25 16:04:37.581696",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Separation Policy",
@@ -225,7 +225,9 @@
   }
  ],
  "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "policy_title"
 }

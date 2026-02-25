@@ -1,18 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button from "../../shared/atoms/Button";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import Button from "../../shared/atoms/Button";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -160,15 +159,15 @@ const ExpenseApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Draft"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
+            <AllocatedToTooltip
+              users={data?.status === "Draft" ? data?.allocated_to : undefined}
+              roles={
+                data?.status === "Draft" ? data?.allocated_roles : undefined
               }
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
 
           <div className="flex items-center justify-center">
@@ -183,14 +182,14 @@ const ExpenseApprovalCard = ({
         </div>
       ) : (
         <div
-          className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary bg-white rounded-xl"
+          className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
           onClick={() => {
             if (onClick) {
               onClick(data);
             }
           }}
         >
-          <div className="p-6 flex items-start gap-3 w-full">
+          <div className="p-4 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
@@ -206,98 +205,72 @@ const ExpenseApprovalCard = ({
               />
             )}
 
-            <div className="w-full">
+            <div className="w-full flex flex-col gap-3">
+              {/* Header */}
               <div className="flex items-start justify-between">
-                <div className="w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">
+                    {data?.reference_document?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>
                   <Link
                     to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
                     target="_blank"
                   >
-                    <Typography
-                      variant="body"
-                      className="font-semibold text-base"
-                    >
-                      {data?.reference_document?.employee_name}
+                    <Typography variant="mobileCardValue">
+                      {data?.reference_document?.employee_name ||
+                        data?.reference_document?.employee}
                     </Typography>
                   </Link>
                 </div>
                 <StatusBadge status={data?.status} />
               </div>
-              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Category
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.reference_document?.custom_expense_category}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claimed Amount
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {totalClaimedAmount}
-                    </Typography>
-                  </div>
-                </div>
 
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claim Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(
-                        data?.reference_document?.expenses[0]?.expense_date,
-                      )}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Due Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(data?.due_date)}
-                    </Typography>
-                  </div>
+              {/* Category & Amount */}
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Category</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.custom_expense_category}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">
+                    Claimed Amount
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {totalClaimedAmount}
+                  </Typography>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-4 mb-3">
-                {actions?.length > 0 &&
-                  data?.status !== "Approved" &&
-                  data?.status !== "Rejected" &&
-                  actions.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
-
-                    return (
-                      <Button
-                        key={action}
-                        fullWidth
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleActionClick(action, data);
-                        }}
-                        bgColor={actionStyle.bgColor}
-                        variant={actionStyle.variant}
-                        disabled={
-                          loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action
-                        }
-                      >
-                        {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
+              {/* Dates */}
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Claim Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(
+                      data?.reference_document?.expenses[0]?.expense_date,
+                    )}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Due Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.due_date)}
+                  </Typography>
+                </div>
               </div>
+
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
             </div>
           </div>
         </div>

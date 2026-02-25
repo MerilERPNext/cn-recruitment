@@ -1,24 +1,23 @@
-import { MyAttendanceRequest } from "../../../types/attendance";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RotateCcw } from "lucide-react";
-import Tooltip from "../../shared/Tooltip";
-import { useRevokeEvent } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import Button from "../../shared/atoms/Button";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
-import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
-import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
-import { Typography } from "../../shared/atoms/Typography";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -131,15 +130,13 @@ const EmpAttendanceRequestCard = ({
           </Link>
           {/* Status */}
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.custom_status === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.reference_document?.custom_status === "Pending" ? data?.allocated_to : undefined}
+              roles={data?.reference_document?.custom_status === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.custom_status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
@@ -163,7 +160,7 @@ const EmpAttendanceRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.username || data?.allocated_to}
                 </Typography>
               </div>
@@ -174,7 +171,7 @@ const EmpAttendanceRequestCard = ({
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Request Type</Typography>
-                <Typography variant="mobileCardValue" className="font-semibold">
+                <Typography variant="mobileCardValue">
                   {data?.reference_document?.custom_request_type}
                 </Typography>
               </div>
@@ -191,46 +188,28 @@ const EmpAttendanceRequestCard = ({
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Duration</Typography>
                 <Typography variant="mobileCardValue">
-                  {formatToIndianDate(formattedFromDate)} to{" "}
-                  {formatToIndianDate(formattedToDate)}
+                  {formattedFromDate} to {formattedToDate}
                 </Typography>
               </div>
 
               <div className="flex flex-col gap-1 text-right">
                 <Typography variant="mobileCardLabel">Due Date</Typography>
                 <Typography variant="mobileCardValue">
-                  {formatToIndianDate(formattedDueDate)}
+                  {formattedDueDate}
                 </Typography>
               </div>
             </div>
 
             {/* Actions */}
-            {(data?.custom_allow_revoke && type === "pending") ||
-            (type === "pending" && data?.can_edit) ? (
-              <div className="flex gap-2 mt-2">
-                {type === "pending" && data?.can_edit && (
-                  <Button
-                    fullWidth
-                    variant="contain"
-                    onClick={() => setEdit(true)}
-                  >
-                    Edit
-                  </Button>
-                )}
-
-                {data?.custom_allow_revoke && type === "pending" && (
-                  <Button
-                    fullWidth
-                    variant="contain"
-                    onClick={handleRevokeClick}
-                    disabled={revokeEventMutation.isPending}
-                    icon={<RotateCcw className="w-4 h-4" />}
-                  >
-                    {revokeEventMutation.isPending ? "Revoking..." : "Revoke"}
-                  </Button>
-                )}
-              </div>
-            ) : null}
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={type === "pending"}
+              canRevoke={type === "pending" && !!data?.custom_allow_revoke}
+              canEdit={type === "pending" && !!data?.can_edit}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={() => setEdit(true)}
+            />
           </div>
         </div>
       )}

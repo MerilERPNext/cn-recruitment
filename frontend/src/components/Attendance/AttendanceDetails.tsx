@@ -1,20 +1,22 @@
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import DOMPurify from "dompurify";
-import Button, { ButtonColor } from "../shared/atoms/Button";
-import { Typography } from "../shared/atoms/Typography";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
-import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function AttendanceDetailView({
@@ -42,6 +44,7 @@ export function AttendanceDetailView({
   const data = documentName ? fetchedData : propData;
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
 
   // Don't render anything if neither documentName nor data is provided
   // When documentName is provided, we should render even if data isn't loaded yet
@@ -128,38 +131,6 @@ export function AttendanceDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (
-    action: string,
-  ): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -210,7 +181,7 @@ export function AttendanceDetailView({
                   : "Employee ID"}
               </Typography>
 
-              <Typography variant="mobileCardValue" className="font-semibold">
+              <Typography variant="mobileCardValue">
                 {data?.reference_document?.employee_name ||
                   data?.reference_document?.employee}
               </Typography>
@@ -309,32 +280,18 @@ export function AttendanceDetailView({
         {actions?.length > 0 &&
           (data?.status === "Pending" || data?.status === "Open") && (
             <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length &&
-                  actions?.map((action: string) => {
-                    const isLoading =
-                      currentAction === action && mutation.isPending;
-                    return (
-                      <Button
-                        key={action}
-                        variant="soft"
-                        fullWidth
-                        disabled={isLoading}
-                        onClick={() => {
-                          handleAction(action);
-                        }}
-                        size="md"
-                        bgColor={getActionStyles(action).bg}
-                      >
-                        {isLoading ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
-              </div>
+              <TeamApprovalActionPill
+                variant={isDesktop ? "modal" : "buttons"}
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={
+                  currentAction
+                    ? { id: data?.todo_id, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleAction(action)}
+              />
             </div>
           )}
       </div>

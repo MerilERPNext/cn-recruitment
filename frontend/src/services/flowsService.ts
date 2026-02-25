@@ -10,6 +10,25 @@ export const getDifinitionNameForSeparation = async (): Promise<string> => {
 };
 
 
+export const getFlowConfigSelfTriggerList = async (): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_self_initiate_trigger_list",
+    { doctype: "Employee" }
+  );
+  return response as string;
+};
+
+export const getFlowConfigOthersTriggerList = async (
+  employee: string
+): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_other_employee_initiate_trigger_list",
+    { doctype: "Employee", employee }
+  );
+  return response as string;
+};
+
+
 export const getChatAssistantData = async (
   doctype_name: string,
   document_name: string,

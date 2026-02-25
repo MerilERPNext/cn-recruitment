@@ -1,34 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type React from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  useQueryClient,
-  useQuery,
   useInfiniteQuery,
+  useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
-  useCustomApiQuery,
-  useCustomApiInfiniteQuery,
-} from "../hooks/useCustomApi";
-import {
-  Search,
-  Filter,
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
-  AlertCircle,
+  Filter,
   Loader2,
-  Shield,
+  RefreshCw,
   RepeatIcon as RetryIcon,
+  Search,
+  Shield,
 } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
+import {
+  useCustomApiInfiniteQuery,
+  useCustomApiQuery,
+} from "../hooks/useCustomApi";
+import { useScreenSize } from "../hooks/useScreenSize";
 import {
   customApiService,
   type CustomAPIConfig,
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
-import { useScreenSize } from "../hooks/useScreenSize";
 
 interface BaseItem {
   name?: string;
@@ -73,14 +73,14 @@ export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
 }
@@ -89,10 +89,11 @@ interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
   fetchFunction?: (params: FetchParams) => Promise<FrappePageResponse>;
   customAPI?: CustomAPIConfig;
-  ItemComponent: React.ComponentType<{
+  ItemComponent?: React.ComponentType<{
     item: T;
     index?: number;
   }>;
+  renderItem?: (item: T, index: number) => React.ReactNode;
   PreListComponent?: React.ComponentType<PreListComponentProps<T>>;
   PostListComponent?: React.ComponentType<PostListComponentProps<T>>;
   SkeletonComponent?: React.ComponentType;
@@ -118,8 +119,8 @@ interface DataListViewProps<T extends BaseItem> {
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -127,6 +128,7 @@ const DataListView = <T extends BaseItem>({
   fetchFunction,
   customAPI,
   ItemComponent,
+  renderItem,
   isLoading,
   PreListComponent,
   PostListComponent,
@@ -171,6 +173,7 @@ const DataListView = <T extends BaseItem>({
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
   const { isDesktop } = useScreenSize();
+  const maxVisiblePages = isDesktop ? 5 : 2;
 
   useEffect(() => {
     if (onFiltersChange) {
@@ -690,31 +693,39 @@ const DataListView = <T extends BaseItem>({
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
+          {/* Calculate page range */}
+          {(() => {
+            let startPage = Math.max(
+              1,
+              currentPage - Math.floor(maxVisiblePages / 2),
+            );
+
+            let endPage = startPage + maxVisiblePages - 1;
+
+            if (endPage > totalPages) {
+              endPage = totalPages;
+              startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            return (
+
+            const pages = [];
+            for (let i = startPage; i <= endPage; i++) {
+              pages.push(i);
+            }
+
+            return pages.map((pageNum) => (
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {pageNum}
               </button>
-            );
-          })}
+            ));
+          })()}
+
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -864,11 +875,11 @@ const DataListView = <T extends BaseItem>({
       {/* Header */}
       <div className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full border border-gray-300 rounded-md bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
+                  <Search className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
@@ -999,11 +1010,14 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                    }`}
                 >
-                  <ItemComponent item={item} index={index} />
+                  {ItemComponent ? (
+                    <ItemComponent item={item} index={index} />
+                  ) : renderItem ? (
+                    renderItem(item, index)
+                  ) : null}
                 </div>
               );
             })}

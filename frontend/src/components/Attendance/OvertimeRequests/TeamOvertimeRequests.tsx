@@ -1,14 +1,14 @@
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import ApprovalList from "../../shared/ApprovalList";
-import useCurrentUser from "../../../hooks/useCurrentUser";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
-import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -73,9 +73,9 @@ const TeamOvertimeRequests = () => {
               pageSize={10}
               refetch={refetchApprovalList}
               setRefetch={setRefetchApprovalList}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               isSearch={true}
               isFilter={true}

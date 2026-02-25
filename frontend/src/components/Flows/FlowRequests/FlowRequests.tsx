@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FlowRequestItem } from "../../../types/flows";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
@@ -8,9 +8,9 @@ import { useGetFlowRequests } from "../../../hooks/useFlows";
 import { StaticListView } from "../../ListView";
 import FlowRequestCard from "./FlowRequestCard";
 import RequestDetails from "../RequestDetails/RequestDetails";
+import { createPortal } from "react-dom";
 
 const titles = [
-  "Request ID",
   "Flow Name",
   "Category",
   "Initiated On",
@@ -21,7 +21,7 @@ const titles = [
   "Overall Flow Status"
 ];
 
-const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
+const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -34,18 +34,39 @@ const FlowRequests: React.FC = () => {
     // }));
     setFlowDetails(data);
     // navigate("/webapp/flow-app/flow-request/" + data?.request_id);
-
   };
 
-  const { data: flowRequests, isLoading: flowRequestsLoading } = useGetFlowRequests();
+
+  const { data: flowRequests, isLoading: flowRequestsLoading, refetch: refetchFlowRequests } = useGetFlowRequests();
 
   const handleNavigateBack = () => {
     setFlowDetails(null);
   }
 
+  useEffect(() => {
+    const handleChatClose = () => {
+      refetchFlowRequests();
+    };
+
+    document.addEventListener("chatnext:modal:chat:close", handleChatClose);
+
+    return () => {
+      document.removeEventListener(
+        "chatnext:modal:chat:close",
+        handleChatClose,
+      );
+    };
+  }, [refetchFlowRequests]);
+
   if (flowDetails) {
-    return (
+    return (isDesktop ?
       <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
+      : createPortal(
+        <div className="fixed inset-0 z-50">
+          <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
+        </div>,
+        document.body
+      )
     )
   }
   return (
@@ -72,7 +93,7 @@ const FlowRequests: React.FC = () => {
                 return <FlowRequestCard request={item} handleShowDetails={handleShowDetails} />;
               }}
               isSearch={true}
-              searchFields={["request_id", "flow_name", "flow_category"]}
+              searchFields={["flow_name", "flow_category"]}
               getItemKey={(item) => item.request_id}
               pageSize={20}
               SkeletonComponent={CardSkeleton}

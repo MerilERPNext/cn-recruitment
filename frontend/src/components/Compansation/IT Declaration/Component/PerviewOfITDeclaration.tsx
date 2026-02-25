@@ -37,7 +37,7 @@ const PreviewOfITDeclaration = ({ declarationId, disabled = false }: Props) => {
     }
 
     mutate(
-      { declarationId},
+      { declarationId },
       {
         onError: () => {
           alert("Failed to load Compare Tax Sheet");
@@ -53,14 +53,13 @@ const PreviewOfITDeclaration = ({ declarationId, disabled = false }: Props) => {
         onClick={handleView}
         disabled={disabled || isPending}
         className={`px-4 py-1 text-sm border rounded-xl
-          ${
-            disabled || isPending
-              ? "bg-gray-300 text-primary cursor-not-allowed"
-              : "bg-primary text-primary-500 hover:bg-blue-700"
+          ${disabled || isPending
+            ? "bg-gray-300 text-primary cursor-not-allowed"
+            : "bg-primary text-primary-500 hover:bg-blue-700"
           }
         `}
       >
-        {isPending ? "Loading..." : "Perview"}
+        {isPending ? "Loading..." : "Preview"}
       </Button>
 
       <SalarySlipPDFModal

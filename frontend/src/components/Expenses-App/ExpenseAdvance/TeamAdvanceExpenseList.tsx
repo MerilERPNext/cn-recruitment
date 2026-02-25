@@ -1,14 +1,15 @@
-import { useState, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router";
-import ApprovalList from "../../shared/ApprovalList";
-import CardTable from "../../shared/CardTable";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
-import AdvanceApprovalCard from "./AdvanceApprovalCard";
-import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FileText } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceApprovalCard from "./AdvanceApprovalCard";
+import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
@@ -44,26 +45,27 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -139,9 +141,9 @@ const TeamAdvanceExpenseList = () => {
               refetch={refetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               isSearch={true}
               isFilter={true}
               columnWidths={tableColumnWidths}

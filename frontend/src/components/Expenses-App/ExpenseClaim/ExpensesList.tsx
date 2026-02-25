@@ -1,29 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
-import CardTable from "../../shared/CardTable";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
-import Tooltip from "../../shared/Tooltip";
-import DataListView from "../../DataListView";
+import { FileText, MoreVertical, Users } from "lucide-react";
+import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { ApprovalStage } from "../../../types/expenseAdvance";
-import { Users } from "lucide-react";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import Button from "../../shared/atoms/Button";
-import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
-import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
-import { MoreVertical, FileText } from "lucide-react";
-import DropdownMenu from "../../shared/DropDownMenu";
-import { Typography } from "../../shared/atoms/Typography";
+import { ApprovalStage } from "../../../types/expenseAdvance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import StatusBadge from "../../shared/atoms/statusBadge";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import DataListView from "../../DataListView";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import CardTable from "../../shared/CardTable";
+import DropdownMenu from "../../shared/DropDownMenu";
+import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
+import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
+import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -33,64 +32,129 @@ const getStatusBadgeClasses = (status: string) => {
       return "bg-yellow-100 text-yellow-800";
     case "Rejected":
       return "bg-red-100 text-red-800";
+    case "Paid":
+      return "bg-emerald-100 text-emerald-800";
     default:
       return "bg-gray-100 text-gray-800";
   }
 };
 
 const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
-  const formattedAmount = new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-  }).format(item?.reference_document?.total_claimed_amount ?? 0);
+  const expense = item?.reference_document;
+  const { data: currentUser } = useCurrentUser();
+  const { data: userUiPermission } = useGetUiPermission("Expenses");
+  const navigate = useNavigate();
+
+  const canEditExpense = isActionEnabled(
+    userUiPermission,
+    "edit_expense",
+    "Expense Claims",
+  );
+
+  const canEdit =
+    currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() &&
+    canEditExpense &&
+    item?.can_edit;
+
+  const expenseClaim = item?.reference_document;
+  const expenseItem = expenseClaim?.expenses?.[0];
+
+  const handleEditClick = () => {
+    if (!expenseClaim?.name || !expenseItem?.name) return;
+
+    const navigationState = buildExpenseNavigationState(
+      expenseClaim,
+      expenseItem,
+    );
+
+    navigate("/webapp/expenses-app/add-expense", {
+      state: navigationState,
+    });
+  };
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(value ?? 0);
+
+  const claimedAmount = formatCurrency(expense?.total_claimed_amount);
+  const sanctionedAmount = formatCurrency(expense?.total_sanctioned_amount);
 
   return (
-    <div className="rounded-2xl my-2 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary p-6 transition-shadow duration-200 flex flex-col gap-5">
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex flex-col gap-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Expense category
-          </Typography>
-          {item?.reference_document?.custom_expense_category && (
+    <div
+      className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+    >
+      <div className="p-4 flex flex-col gap-4">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Category</Typography>
+
             <Typography variant="mobileCardValue">
-              {item?.reference_document?.custom_expense_category}
+              {expense?.custom_expense_category || "--"}
             </Typography>
-          )}
+          </div>
+
+          <StatusBadge status={item?.status} />
         </div>
 
-        <StatusBadge status={item?.status} />
-      </div>
+        {/* Amounts */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+            <Typography variant="mobileCardValue">{claimedAmount}</Typography>
+          </div>
 
-      <div className="flex justify-between">
-        <div className="flex flex-col gap-2">
-          <Typography variant="mobileCardLabel" className="block">
-            Claimed Date
-          </Typography>
-          <Typography variant="mobileCardValue">
-            {formatToIndianDate(item?.reference_document?.creation)}
-          </Typography>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
+            <Typography variant="mobileCardValue">
+              {sanctionedAmount}
+            </Typography>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2 text-right">
-          <Typography variant="mobileCardLabel" className="block">
-            Claimed Amount
-          </Typography>
-          <Typography variant="mobileCardValue">{formattedAmount}</Typography>
-        </div>
-      </div>
+        {/* Dates */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(expense?.expenses?.[0]?.expense_date)}
+            </Typography>
+          </div>
 
-      <div>
-        <div className="h-[1px] w-full bg-gray-100 mb-4" />
-        <Typography variant="mobileCardFooter">
-          Last Updated on{" "}
-          {formatToIndianDate(item?.reference_document?.modified)}
-        </Typography>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Claimed Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(expense?.creation)}
+            </Typography>
+          </div>
+        </div>
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={item?.status === "Draft"}
+          canEdit={canEdit}
+          onEdit={handleEditClick}
+        />
+
+        {/* Footer */}
+        <div className="pt-2 border-t">
+          <Typography variant="mobileCardFooter">
+            Last Updated on {formatToIndianDate(expense?.modified)}
+          </Typography>
+        </div>
       </div>
     </div>
   );
 };
 
-const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
+const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
+  item,
+  isPaidFilter,
+}) => {
   const { data: currentUser } = useCurrentUser();
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -102,13 +166,17 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
     currency: "INR",
   }).format(item?.reference_document?.total_sanctioned_amount ?? 0);
 
+  const formattedPaidAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(item?.reference_document?.total_amount_reimbursed ?? 0);
+
   const { data: userUiPermission } = useGetUiPermission("Expenses");
   const canEditExpense = isActionEnabled(
     userUiPermission,
     "edit_expense",
     "Expense Claims",
   );
-
 
   const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
@@ -127,7 +195,11 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{
+        gridTemplateColumns: isPaidFilter
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+      }}
     >
       <Typography
         variant="bodySmall"
@@ -141,6 +213,11 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedSanctionedAmount}
       </Typography>
+      {isPaidFilter && (
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {formattedPaidAmount}
+        </Typography>
+      )}
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(
           item?.reference_document?.expenses[0]?.expense_date,
@@ -150,15 +227,13 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
         {formatToIndianDate(item?.reference_document?.creation)}
       </Typography>
       <div className="flex items-center justify-center">
-        <Tooltip
-          content={
-            item?.status === "Draft"
-              ? `Allocated to : ${item?.allocated_to}`
-              : ""
-          }
+        <AllocatedToTooltip
+          users={item?.status === "Draft" ? item?.allocated_to : undefined}
+          roles={item?.status === "Draft" ? item?.allocated_roles : undefined}
+          position="left"
         >
           <StatusBadge status={item?.status} />
-        </Tooltip>
+        </AllocatedToTooltip>
       </div>
 
       <div className="flex items-center justify-center">
@@ -166,7 +241,9 @@ const ExpensesTableRow: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() && canEditExpense && item?.can_edit
+              item?.send_back_user?.toLowerCase() &&
+            canEditExpense &&
+            item?.can_edit
           }
           onEdit={handleEditClick}
         />
@@ -194,6 +271,12 @@ const ExpensesList: React.FC = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
   const navigate = useNavigate();
+
+  const [currentFilters, setCurrentFilters] = React.useState<
+    Record<string, any>
+  >({
+    status: "Draft",
+  });
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -232,13 +315,14 @@ const ExpensesList: React.FC = () => {
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
     const canEdit = item?.can_edit || false;
+    const isPaidFilter = currentFilters.status === "Paid";
 
     return (
       <div
         onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
         className="cursor-pointer"
       >
-        <ExpensesTableRow item={item} />
+        <ExpensesTableRow item={item} isPaidFilter={isPaidFilter} />
       </div>
     );
   };
@@ -276,6 +360,10 @@ const ExpensesList: React.FC = () => {
         Rejected: {
           title: "No Rejected Claims",
           description: "You have no rejected expense claims.",
+        },
+        Paid: {
+          title: "No Paid Claims",
+          description: "You have no paid expense claims.",
         },
       };
 
@@ -323,6 +411,28 @@ const ExpensesList: React.FC = () => {
       icon: <Users size={16} />,
       onClick: () => navigate("/webapp/expenses-app/shared-expenses"),
     },
+  ];
+
+  const tableTitles = [
+    "Expense Category",
+    "Claimed Amount",
+    "Sanctioned Amount",
+    ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+    "Expense Date",
+    "Claimed Date",
+    "Status",
+    "ACTIONS",
+  ];
+
+  const tableColumnWidths = [
+    "1fr",
+    "1fr",
+    "1fr",
+    ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
   ];
 
   return (
@@ -381,18 +491,7 @@ const ExpensesList: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {currentEmployee?.name && (
-          <CardTable
-            titles={[
-              "Expense Category",
-              "Claimed Amount",
-              "Sanctioned Amount",
-              "Expense Date",
-              "Claimed Date",
-              "Status",
-              "ACTIONS",
-            ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-          >
+          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             <DataListView
               queryKey={["expense-claims-all"]}
               customAPI={{
@@ -420,21 +519,23 @@ const ExpensesList: React.FC = () => {
                     { label: "Pending", value: "Draft" },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
+                    { label: "Paid", value: "Paid" },
                   ],
                 },
               ]}
               defaultFilters={{
                 status: "Draft",
               }}
+              onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
               orderBy="posting_date desc"
               pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               noRecordsScreen={noRecordsScreen}
             />
           </CardTable>

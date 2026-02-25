@@ -32,6 +32,8 @@ import AttendanceStatusModal from "./AttendanceStatusModal";
 import { X } from "lucide-react";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useLocation, useNavigate } from "react-router-dom";
+
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -66,7 +68,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { isDesktop } = useScreenSize();
-
+  const location = useLocation();
+  const isRequestRoute = location.pathname === "/webapp/leave-app/request";
+  const navigate = useNavigate();
   const [dailyConfig, setDailyConfig] = useState<
     Record<string, "Full Day" | "First Half" | "Second Half">
   >({});
@@ -610,6 +614,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         {isDesktop && (<button
           onClick={(e) => {
             e.stopPropagation();
+            if (isRequestRoute) {
+              navigate(-1);
+            }
             onCancel?.();
             onSuccess?.();
           }}
@@ -721,8 +728,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           <Button
             onClick={(e) => {
               e.stopPropagation();
+
               if (onCancel) {
                 onCancel();
+              }
+              if (isRequestRoute) {
+                navigate(-1);
               }
             }}
             size="md"

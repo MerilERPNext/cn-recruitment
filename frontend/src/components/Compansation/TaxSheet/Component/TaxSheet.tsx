@@ -29,27 +29,26 @@ type PayrollPeriod = {
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
-    user?.company || null,
-  ) as {
+  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined;
   };
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     payrollPeriods?.[0]?.name || "",
   );
+
   useEffect(() => {
-    if (!payrollPeriods?.length || selectedPeriod) return;
-  
-    const today = new Date(); 
-  
+    if (!payrollPeriods?.length) return;
+
+    const today = new Date();
+
     const matchedPeriod = payrollPeriods.find((p) => {
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
-  
+
       // inclusive range check
       return today >= start && today <= end;
     });
-  
+
     setSelectedPeriod(
       matchedPeriod?.name || payrollPeriods[0].name
     );

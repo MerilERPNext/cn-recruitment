@@ -92,7 +92,6 @@ export type FlowRequestStage = {
     custom_doctype_actions_with_form: string;
     custom_approval_type: string;
     [key: string]: any;
-
   }
 };
 
@@ -107,7 +106,33 @@ export type FlowRequestItem = {
   workflow_status: string;
   overall_flow_status: string;
   approval_stages: FlowRequestStage[];
-  workflow_stages: any[];
+  workflow_stages: WorkflowStage[];
+};
+
+
+export type WorkflowStage = {
+  status: string;
+  selected_action: string | null;
+  target: string;
+  target_name: string;
+  action_options: string;
+  todo: {
+    name: string;
+    owner: string;
+    creation: string;
+    modified: string;
+    modified_by: string;
+    docstatus: number;
+    idx: number;
+    custom_subject: string;
+    status: string;
+    priority: string;
+    custom_parent_todo: string | null;
+    custom_allocated_name: string | null;
+    custom_redirect_url: string | null;
+    color: string | null;
+    [key: string]: any;
+  }
 };
 
 export type FlowRequestResponse = {

@@ -7,19 +7,18 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import toast from "react-hot-toast";
 import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 import { createPortal } from "react-dom";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
 import { Link } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { formatCurrency } from "../../../utils/currency";
 
 // Props type
 type BenefitRequestItemProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
@@ -43,6 +42,7 @@ const BenefitRequestItem = ({
   const [rejectionComment, setRejectionComment] = useState("");
 
   const CommentBenefitClaim = useCommentOnBenefitClaim();
+
 
   const handleCancelComment = () => {
     setShowCommentModal(false);
@@ -142,15 +142,13 @@ const BenefitRequestItem = ({
             {formatToIndianDate(data.reference_document.claim_date)}
           </Typography>
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Pending" ? data?.allocated_to : undefined}
+              roles={data?.status === "Pending" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
@@ -164,99 +162,94 @@ const BenefitRequestItem = ({
         </div>
       ) : (
         <div
-          className="flex flex-col gap-4 border rounded-lg p-4 mt-2 border-gray-300  hover:bg-gray-50 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns }}
+          className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-2xl mt-2 w-full"
           onClick={() => onClick?.(data)}
         >
-          <div className="flex-1  w-full">
-            <div className="flex items-baseline">
-              {isBulkSelectEnabled && (
-                <input
-                  type="checkbox"
-                  className="accent-blue-500"
-                  checked={isSelected}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => onToggleSelect?.(data?.todo_id)}
-                  disabled={
-                    isDisabled ||
-                    actionsWithForm?.includes("Approve") ||
-                    actionsWithForm?.includes("Reject")
-                  }
-                />
-              )}
-              <div className="pl-4">
-                <Link
-                  to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-                  target="_blank"
-                >
-                  <div className="truncate text-gray-900  font-semibold text-lg text-start">
-                    {data.reference_document.employee_name}
-                  </div>
-                </Link>
-                <div className="flex text-gray-500 font-meduim text-sm flex-col">
-                  {data.reference_document.earning_component}
+          <div className="p-6 flex items-start gap-3 w-full">
+            {isBulkSelectEnabled && (
+              <input
+                type="checkbox"
+                className="mt-1 accent-blue-500"
+                checked={isSelected}
+                onClick={(e) => e.stopPropagation()}
+                onChange={() => onToggleSelect?.(data?.todo_id)}
+                disabled={
+                  isDisabled ||
+                  actionsWithForm?.includes("Approve") ||
+                  actionsWithForm?.includes("Reject")
+                }
+              />
+            )}
+            <div className="w-full">
+              <div className="flex items-start justify-between">
+                <div className="w-full">
+
+                  <Typography variant="mobileCardTitle" className="block mt-1">
+                    {data.reference_document.earning_component}
+                  </Typography>
                 </div>
-              </div>
-              <div className="flex items-center text-sm ml-auto">
                 <StatusBadge status={data?.status} />
               </div>
-            </div>
-          </div>
-          <div className="flex justify-between">
-            <div className="flex flex-col justify-start text-start  text-gray-900 text-sm">
-              <label className="text-sm text-gray-500">claimed amount</label>
-              <span className="text-gray-800 font-semibold">
-                {data.reference_document.claimed_amount}
-              </span>
-            </div>
-            <div className="flex flex-col justify-center text-center  text-gray-900 text-sm">
-              <label className="text-sm text-gray-500">
-                max eligible amount
-              </label>
-              <span className="text-gray-800 font-semibold">
-                {data.reference_document.custom_max_amount}
-              </span>
-            </div>
-            <div className="flex flex-col justify-end text-end  text-gray-900 text-sm">
-              <label className="text-sm text-gray-500">claim date</label>
-              <span className="text-gray-800 font-semibold">
-                {formatToIndianDate(data.reference_document.claim_date)}
-              </span>
-            </div>
-          </div>
-          <div className="flex w-full justify-start gap-2 whitespace-nowrap">
-            {actions?.length &&
-              actions.map((action: string) => {
-                const actionStyle = getActionStyles(action);
-                return (
-                  <Button
-                    className="w-full"
-                    key={action}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handlePreSaveAction(action);
-                    }}
-                    bgColor={actionStyle.bgColor}
-                    variant={actionStyle.variant}
-                    disabled={
-                      loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action
-                    }
+              <div className="flex justify-between mt-4">
+                <div className="flex flex-col justify-start text-start">
+                  <Typography variant="mobileCardLabel" className="block mt-1">
+                    Employee Name
+                  </Typography>
+                  <Link
+                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+                    target={isDesktop ? "_blank" : "_self"}
                   >
-                    {loadingAction?.id === data?.todo_id &&
-                    loadingAction?.action === action ? (
-                      <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      action
-                    )}
-                  </Button>
-                );
-              })}
+                    <Typography variant="mobileCardValue">
+                      {data.reference_document.employee_name}
+                    </Typography>
+                  </Link>
+                </div>
+                <div className="flex flex-col justify-start text-end">
+                  <Typography variant="mobileCardLabel" className="block mb-1">
+                    Claimed amount
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatCurrency(data.reference_document.claimed_amount)}
+                  </Typography>
+                </div>
+              </div>
+              <div className="flex justify-between mt-4">
+
+                <div className="flex flex-col justify-center text-start">
+                  <Typography variant="mobileCardLabel" className="block mb-1">
+                    Max eligible
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatCurrency(data.reference_document.custom_max_amount)}
+                  </Typography>
+                </div>
+                <div className="flex flex-col justify-end text-right">
+                  <Typography variant="mobileCardLabel" className="block mb-1">
+                    Claim date
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data.reference_document.claim_date)}
+                  </Typography>
+                </div>
+              </div>
+
+              <div className="mt-4 w-full">
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => handlePreSaveAction(action)}
+                />
+              </div>
+            </div>
           </div>
         </div>
-      )}
-      {showCommentModal &&
+      )
+      }
+      {
+        showCommentModal &&
         createPortal(
           <div
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
@@ -314,8 +307,9 @@ const BenefitRequestItem = ({
             </div>
           </div>,
           document.body,
-        )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

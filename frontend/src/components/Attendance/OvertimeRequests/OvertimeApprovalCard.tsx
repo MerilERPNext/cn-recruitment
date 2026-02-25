@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
-import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Link } from "react-router-dom";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import { Typography } from "../../shared/atoms/Typography";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -41,38 +41,6 @@ const OvertimeApprovalCard = ({
   const actionsWithForm = data?.custom_doctype_actions_with_form
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
-
-  const getActionStyles = (
-    action: string,
-  ): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "text-success-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "text-error-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "text-gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
 
   const cleanDescription = sanitizeToPlainText(data?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
@@ -134,15 +102,13 @@ const OvertimeApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.status === "Open"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.status === "Open" ? data?.allocated_to : undefined}
+              roles={data?.status === "Open" ? data?.allocated_roles : undefined}
+              position="left"
             >
               <StatusBadge status={data?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
@@ -194,10 +160,7 @@ const OvertimeApprovalCard = ({
                         : "Employee ID"}
                     </Typography>
 
-                    <Typography
-                      variant="mobileCardValue"
-                      className="font-semibold text-gray-900"
-                    >
+                    <Typography variant="mobileCardValue">
                       {data?.reference_document?.employee_name ||
                         data?.reference_document?.employee}
                     </Typography>
@@ -235,34 +198,14 @@ const OvertimeApprovalCard = ({
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length > 0 &&
-                  data?.reference_document?.status === "Open" &&
-                  actions.map((action: string) => (
-                    <Button
-                      variant="soft"
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      bgColor={getActionStyles(action).bg}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                      className="w-full"
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
-              </div>
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
             </div>
           </div>
         </div>

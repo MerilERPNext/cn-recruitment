@@ -1,15 +1,15 @@
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import CardTable from "../shared/CardTable";
-import DataListView from "../DataListView";
-import EmpShiftRequestCard from "./EmpShiftRequestCard";
-import { MyShiftRequest } from "../../types/shift";
-import HeaderBar from "../HeaderBar";
-import { useCallback } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { MyShiftRequest } from "../../types/shift";
+import DataListView from "../DataListView";
+import HeaderBar from "../HeaderBar";
+import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
@@ -89,9 +89,9 @@ const AllMyShiftRequestsList = () => {
                 status: "Draft",
               }}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
             />
           ) : null}
         </CardTable>

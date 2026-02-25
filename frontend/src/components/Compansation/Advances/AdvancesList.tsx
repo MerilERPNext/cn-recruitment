@@ -1,25 +1,27 @@
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import InstallmentsList from "./InstallmentsList";
-import AdvanceForm from "./AdvanceForm";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
-import Modal from "./commonModal";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
+import { formatCurrency } from "../../../utils/currency";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
-import Button from "../../shared/atoms/Button";
+import Tooltip from "../../shared/Tooltip";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
-import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import AdvanceForm from "./AdvanceForm";
+import InstallmentsList from "./InstallmentsList";
+import Modal from "./commonModal";
 
 import { Search } from "lucide-react";
 
@@ -108,11 +110,19 @@ const AdvancesList: React.FC = () => {
     : [];
 
   // ✅ FILTERED DATA (SEARCH)
-  const filteredData = formattedData.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // const filteredData = formattedData.filter(
+  //   (item) =>
+  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
+  // );
+
+  const filteredData = formattedData.filter((item) => {
+    const name = item.name?.toLowerCase() || "";
+    const status = item.advanceStatus?.toLowerCase() || "";
+    const search = searchTerm.toLowerCase();
+
+    return name.includes(search) || status.includes(search);
+  });
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -124,14 +134,40 @@ const AdvancesList: React.FC = () => {
     setSelectedAdvance(null);
   };
 
-  const handleCreateAdvance = () => {
-    setShowAdvanceForm(true);
-  };
-
   const handleCloseModal = () => {
     setShowAdvanceForm(false);
     setEditAdvanceId(null);
+    setIsModalOpen(false);
   };
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateAdvance = isActionEnabled(
+    uiPermission,
+    "create_advance",
+    "My Advances",
+  );
+
+  useEffect(() => {
+    if (canCreateAdvance) {
+      setActionButtonConfig({
+        label: "+ Request Advance",
+        onClick: () => {
+          setShowAdvanceForm(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateAdvance]);
 
   if (showInstallments && selectedAdvance) {
     return (
@@ -234,11 +270,6 @@ const AdvancesList: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={advance.advanceStatus} />
-              <MyApprovalActionPill
-                isPending={true}
-                canEdit={!!advance.can_edit}
-                onEdit={() => handleEdit(advance.docname)}
-              />
             </div>
           </div>
 
@@ -260,6 +291,13 @@ const AdvancesList: React.FC = () => {
             </span>
             <span>{advance.installments.length} installments</span>
           </div>
+
+          <MyApprovalActionPill
+            variant="buttons"
+            isPending={advance.advanceStatus === "Pending"}
+            canEdit={!!advance.can_edit}
+            onEdit={() => handleEdit(advance.docname)}
+          />
         </div>
       ))}
     </>
@@ -279,7 +317,7 @@ const AdvancesList: React.FC = () => {
                 </Typography>
               </div>
             )}
-  
+
             <div className="flex items-center gap-2 w-full md:w-auto">
               {/* Toggle Amount */}
               <button
@@ -299,21 +337,11 @@ const AdvancesList: React.FC = () => {
                   </>
                 )}
               </button>
-  
-              {/* Create Button */}
-              <Button
-                bgColor="primary"
-                size="md"
-                onClick={handleCreateAdvance}
-                className="hover:bg-primary-700 py-[0.65rem] font-semibold"
-              >
-                + Request Advance
-              </Button>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto md:px-1 pb-4">
+        <div className="flex-1 overflow-y-auto md:px-4 pb-4">
           <CardTable titles={titles} columnWidths={columnWidths}>
             <>
               {isLoading ? (
@@ -359,5 +387,5 @@ const AdvancesList: React.FC = () => {
       </div>
     </div>
   );
-}
-export default AdvancesList;  
+};
+export default AdvancesList;

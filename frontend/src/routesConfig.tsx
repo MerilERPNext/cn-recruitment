@@ -1,33 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
-import { useScreenSize } from "./hooks/useScreenSize";
+import { useLocation, useNavigate } from "react-router-dom";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { useScreenSize } from "./hooks/useScreenSize";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
-import { useLocation } from "react-router-dom";
 
 // Keep critical components as static imports for better UX
-import SearchMembers from "./components/SearchMembers";
-import IdCard from "./components/IdCard";
-import NotificationList from "./components/Notification/Notification";
+import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
+import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
+import Invoice from "./components/Compansation/Invoice/Invoice";
+import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
+import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
+import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanRequest";
+import Perquisite from "./components/Compansation/Perquisite/Perquisite";
+import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
-import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
-import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
-import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
-import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
-import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanRequest";
-import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
+import IdCard from "./components/IdCard";
+import NotificationList from "./components/Notification/Notification";
 import Requests from "./components/Requests";
-import Perquisite from "./components/Compansation/Perquisite/Perquisite";
-import Invoice from "./components/Compansation/Invoice/Invoice";
-import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
+import PasswordReset from "./components/ResetPassword/ResetPassword";
+import SearchMembers from "./components/SearchMembers";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
-  () => import("./components/Compansation/IT Declaration/TeamApproval/TeamApprovalListView"),
-  "TeamApprovalListExemptionTable"
-  );
+  () =>
+    import("./components/Compansation/IT Declaration/TeamApproval/TeamApprovalListView"),
+  "TeamApprovalListExemptionTable",
+);
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -170,6 +171,11 @@ const EmployeeAttendance = lazyWithRetry(
 const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
   "TeamAttendance",
+);
+const AttendanceRequestFormV2 = lazyWithRetry(
+  () =>
+    import("./components/Attendance/AttendanceRequest/AttendanceRequestFormV2"),
+  "AttendanceRequestFormV2",
 );
 const TeamAttendanceDetails = lazyWithRetry(
   () =>
@@ -453,6 +459,10 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const RecognitionPage = lazyWithRetry(
+  () => import("./components/Recognition/RecognitionPage"),
+  "RecognitionPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -479,6 +489,12 @@ const LoadingSpinner = () => (
     </div>
   </div>
 );
+
+// eslint-disable-next-line react-refresh/only-export-components
+const AttendanceRequestFormRoute = () => {
+  const navigate = useNavigate();
+  return <AttendanceRequestFormV2 onClose={() => navigate(-1)} />;
+};
 
 // HOC to wrap components with Suspense and Error Boundary
 const withLazyLoading = (
@@ -629,12 +645,12 @@ export const routesConfig: AppRoute[] = [
       },
       {
         path: "team-approval-it-declaration/:proofId",
-        element: <TeamApprovalListExemptionTable/>,
+        element: <TeamApprovalListExemptionTable />,
         permissionKey: "Team IT Declaration",
       },
       {
         path: "team-declaration-listview",
-        element: <TeamProofSubmissionList/>,
+        element: <TeamProofSubmissionList />,
         permissionKey: "Team IT Declaration",
       },
       {
@@ -753,7 +769,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "shift-change-request",
         element: <ShiftChangeRequestsRoute />,
-        permissionKey: "Shift Change Requests",
+        permissionKey: "Team Shift Requests",
       },
       {
         path: "shift-list",
@@ -762,8 +778,6 @@ export const routesConfig: AppRoute[] = [
       },
     ],
   },
-
-
 
   {
     path: "/webapp/notices",
@@ -907,6 +921,11 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Team Requests",
       },
       {
+        path: "request-form",
+        element: <AttendanceRequestFormRoute />,
+        permissionKey: "Attendance Summary",
+      },
+      {
         path: "my-overtime-requests",
         element: <MyOvertimeRequests />,
         permissionKey: "Planned Overtime",
@@ -971,6 +990,11 @@ export const routesConfig: AppRoute[] = [
         element: <CompensatoryRequest />,
         permissionKey: "Compensatory",
       },
+      {
+        path: "request",
+        element: <></>, // important: render nothing
+        permissionKey: "request-leave",
+      }
     ],
   },
 
@@ -1054,12 +1078,36 @@ export const routesConfig: AppRoute[] = [
     element: <FlowApp />,
     permissionKey: "HR Process",
     children: [
-      { path: "flow-requests", element: <FlowRequests2 />, permissionKey: "Flow Requests" },
-      { path: "separation", element: <Separation />, permissionKey: "Separation" },
-      { path: "separation-workflow/:id", element: <SeparationWorkflow />, permissionKey: "Separation" },
-      { path: "confirmation", element: <Confirmation />, permissionKey: "Confirmation" },
-      { path: "initiate-flow", element: <InitiateFlow2 />, permissionKey: "Initiate Flow" },
-      { path: "flow-request/:id", element: <RequestDetails />, permissionKey: "Flow Requests" },
+      {
+        path: "flow-requests",
+        element: <FlowRequests2 />,
+        permissionKey: "Flow Requests",
+      },
+      {
+        path: "separation",
+        element: <Separation />,
+        permissionKey: "Separation",
+      },
+      {
+        path: "separation-workflow/:id",
+        element: <SeparationWorkflow />,
+        permissionKey: "Separation",
+      },
+      {
+        path: "confirmation",
+        element: <Confirmation />,
+        permissionKey: "Confirmation",
+      },
+      {
+        path: "initiate-flow",
+        element: <InitiateFlow2 />,
+        permissionKey: "Initiate Flow",
+      },
+      {
+        path: "flow-request/:id",
+        element: <RequestDetails />,
+        permissionKey: "Flow Requests",
+      },
     ],
   },
   {
@@ -1124,6 +1172,11 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/recognition",
+    element: <RecognitionPage />,
+    permissionKey: "Recognition",
   },
 ];
 
