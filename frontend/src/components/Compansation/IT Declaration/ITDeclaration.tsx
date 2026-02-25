@@ -20,6 +20,7 @@ import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -27,6 +28,7 @@ import Form12B from "./Component/Form12B";
 import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type PayrollPeriod = {
   name: string;
@@ -254,11 +256,11 @@ const ITDeclarationForm = () => {
 
         start_date: goHeadWithNewRegimeBool
           ? ""
-          : hraData?.start_date || "",
+          : formatToIndianDate(hraData?.start_date || ""),
 
         end_date: goHeadWithNewRegimeBool
           ? ""
-          : hraData?.end_date || "",
+          : formatToIndianDate(hraData?.end_date || ""),
 
         pan: goHeadWithNewRegimeBool
           ? ""
@@ -292,7 +294,7 @@ const ITDeclarationForm = () => {
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
-        window.location.reload();
+        // window.location.reload();
 
       },
       onError: () => toast.error("Submission failed"),
@@ -315,13 +317,17 @@ const ITDeclarationForm = () => {
   submitRef.current = handleSubmit;
 
   useEffect(() => {
-    setActionButtonConfig({
-      label: "Submit",
-      onClick: () => submitRef.current?.(),
-      disabled: PrrofOfITDeclaration?.status === "failed",
-    });
+    if (!isDesktop) {
+      setActionButtonConfig({
+        label: "Submit",
+        onClick: () => submitRef.current?.(),
+        disabled: PrrofOfITDeclaration?.status === "failed",
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
     return () => setActionButtonConfig(null);
-  }, [setActionButtonConfig, PrrofOfITDeclaration?.status]);
+  }, [setActionButtonConfig, PrrofOfITDeclaration?.status, isDesktop]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -396,6 +402,12 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
             </div>
           ) : (
             /* Mobile: stacked layout for action buttons */
