@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import type React from "react";
 import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { UiAdvance } from "../../../types/employeeAttendance";
+import { Installment, UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import HeaderBar from "../../HeaderBar";
@@ -121,66 +121,68 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
-          {advance.installments.map((installment: any, index: number) => (
-            <div
-              key={`${installment.installmentNo}-${index}`}
-              className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-              style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
-            >
-              <Typography
-                variant="bodySmall"
-                className="text-center font-medium"
+          {advance.installments.map(
+            (installment: Installment, index: number) => (
+              <div
+                key={`${installment.installmentNo}-${index}`}
+                className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
               >
-                .{installment.installmentNo}
-              </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  .{installment.installmentNo}
+                </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="text-center font-medium"
-              >
-                {formatToIndianDate(installment.installmentDate)}
-              </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {formatToIndianDate(installment.installmentDate)}
+                </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="text-center font-medium"
-              >
-                {maskAmounts ? (
-                  <span className="blur-sm select-none">
-                    {formatCurrency("XX,XXX")}
-                  </span>
-                ) : (
-                  <span>{formatCurrency(installment.openingBalance)}</span>
-                )}
-              </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">
+                      {formatCurrency("XX,XXX")}
+                    </span>
+                  ) : (
+                    <span>{formatCurrency(installment.openingBalance)}</span>
+                  )}
+                </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="text-center font-medium"
-              >
-                {maskAmounts ? (
-                  <span className="blur-sm select-none">
-                    {formatCurrency("XX,XXX")}
-                  </span>
-                ) : (
-                  <span>{formatCurrency(installment.installmentAmount)}</span>
-                )}
-              </Typography>
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">
+                      {formatCurrency("XX,XXX")}
+                    </span>
+                  ) : (
+                    <span>{formatCurrency(installment.installmentAmount)}</span>
+                  )}
+                </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="text-center font-medium"
-              >
-                {maskAmounts ? (
-                  <span className="blur-sm select-none">
-                    {formatCurrency("XX,XXX")}
-                  </span>
-                ) : (
-                  <span>{formatCurrency(installment.principalBalance)}</span>
-                )}
-              </Typography>
-            </div>
-          ))}
+                <Typography
+                  variant="bodySmall"
+                  className="text-center font-medium"
+                >
+                  {maskAmounts ? (
+                    <span className="blur-sm select-none">
+                      {formatCurrency("XX,XXX")}
+                    </span>
+                  ) : (
+                    <span>{formatCurrency(installment.principalBalance)}</span>
+                  )}
+                </Typography>
+              </div>
+            ),
+          )}
         </CardTable>
       </div>
     </div>
@@ -277,73 +279,87 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
 
             {advance.installments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {advance.installments.map((installment: any, index: number) => (
-                  <div
-                    key={`${installment.installmentNo}-${index}`}
-                    className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
-                  >
-                    <div className="mb-3">
-                      <Typography variant="label" className="card-title">
-                        Installment #{installment.installmentNo}
-                      </Typography>
-                    </div>
+                {advance.installments.map(
+                  (installment: Installment, index: number) => (
+                    <div
+                      key={`${installment.installmentNo}-${index}`}
+                      className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+                    >
+                      <div className="mb-3">
+                        <Typography variant="label" className="card-title">
+                          Installment #{installment.installmentNo}
+                        </Typography>
+                      </div>
 
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                      <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel" className="block">
-                          Date
-                        </Typography>
-                        <Typography variant="mobileCardValue">
-                          {formatToIndianDate(installment.installmentDate)}
-                        </Typography>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel" className="block">
-                          Opening Balance
-                        </Typography>
-                        <Typography variant="mobileCardValue">
-                          {maskAmounts ? (
-                            <span className="blur-sm select-none">
-                              {formatCurrency("XX,XXX")}
-                            </span>
-                          ) : (
-                            formatCurrency(installment.openingBalance)
-                          )}
-                        </Typography>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel" className="block">
-                          Installment Amount
-                        </Typography>
-                        <Typography variant="mobileCardValue">
-                          {maskAmounts ? (
-                            <span className="blur-sm select-none">
-                              {formatCurrency("XX,XXX")}
-                            </span>
-                          ) : (
-                            formatCurrency(installment.installmentAmount)
-                          )}
-                        </Typography>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <Typography variant="mobileCardLabel" className="block">
-                          Principal Balance
-                        </Typography>
-                        <Typography variant="mobileCardValue">
-                          {maskAmounts ? (
-                            <span className="blur-sm select-none">
-                              {formatCurrency("XX,XXX")}
-                            </span>
-                          ) : (
-                            <span>
-                              {formatCurrency(installment.principalBalance)}
-                            </span>
-                          )}
-                        </Typography>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Date
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {formatToIndianDate(installment.installmentDate)}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Opening Balance
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {maskAmounts ? (
+                              <span className="blur-sm select-none">
+                                {formatCurrency("XX,XXX")}
+                              </span>
+                            ) : (
+                              formatCurrency(installment.openingBalance)
+                            )}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Installment Amount
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {maskAmounts ? (
+                              <span className="blur-sm select-none">
+                                {formatCurrency("XX,XXX")}
+                              </span>
+                            ) : (
+                              formatCurrency(installment.installmentAmount)
+                            )}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Principal Balance
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {maskAmounts ? (
+                              <span className="blur-sm select-none">
+                                {formatCurrency("XX,XXX")}
+                              </span>
+                            ) : (
+                              <span>
+                                {formatCurrency(installment.principalBalance)}
+                              </span>
+                            )}
+                          </Typography>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             ) : (
               <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">

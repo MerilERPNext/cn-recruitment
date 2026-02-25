@@ -12,6 +12,13 @@ import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 
+interface RepaymentItem {
+  payment_date: string;
+  principal_amount: number;
+  interest_amount: number;
+  balance_loan_amount: number;
+}
+
 export default function LoanSummary() {
   const { data: userId } = useLoggedInUser();
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
@@ -49,7 +56,7 @@ export default function LoanSummary() {
       "Balance",
     ];
     const rows = selectedLoan.repayment_schedule.map(
-      (item: any, index: number) => [
+      (item: RepaymentItem, index: number) => [
         index + 1,
         item.payment_date,
         item.principal_amount,
@@ -198,7 +205,7 @@ export default function LoanSummary() {
             {selectedLoan.repayment_schedule?.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
                 {selectedLoan.repayment_schedule.map(
-                  (item: any, index: number) => (
+                  (item: RepaymentItem, index: number) => (
                     <div
                       key={index}
                       className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
