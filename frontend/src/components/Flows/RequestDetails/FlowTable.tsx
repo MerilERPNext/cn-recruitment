@@ -82,25 +82,22 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
                 custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action)
             });
     };
-    const { data: userId } = useLoggedInUser();
     const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } =
-        useCurrentEmployeeAllDetails(userId || "");
 
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
         let actionPermission = false;
 
-        if (stage?.todo?.allocated_to_emp_id && currentEmployee?.name)
-            actionPermission = stage?.todo?.allocated_to_emp_id === currentEmployee.name;
+        if (stage?.todo?.custom_allocated_to_users && currentUser?.name)
+            actionPermission = stage?.todo?.custom_allocated_to_users.includes(currentUser?.name);
 
-        if (currentUser?.roles && stage?.role)
+        if (currentUser?.roles && stage?.todo?.custom_assigned_to_roles)
             actionPermission ||= currentUser.roles.some(
-                (role) => role.role === stage.role,
+                (role) => stage?.todo?.custom_assigned_to_roles?.includes(role.role),
             );
 
         return actionPermission;
-    }, [currentEmployee, currentUser, stage, isActive]);
+    }, [currentUser, stage, isActive]);
 
     return (
         <div
