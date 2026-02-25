@@ -118,8 +118,28 @@ const CategoryDeclarationSelectable = ({
     return false;  
   }, [locked80DVariable, categoryVaribale, itemId]);
 
-    useEffect(() =>{
-    },[locked80DVariable])
+// set default value in parent 
+useEffect(() => {
+  if (!locked80DVariable || !categoryVaribale || !setLocked80DVariable) return;
+  const group = locked80DVariable.get(categoryVaribale);
+  if (!group) return;
+  if (group.parent !== null && group.parent !== undefined) return;
+  const hasSelected = items.some(
+    (item) =>
+      item?.is_selected === true ||
+      Number(item?.amount ?? 0) > 0
+  );
+
+  if (hasSelected) {
+    const updatedMap = new Map(locked80DVariable);
+    updatedMap.set(categoryVaribale, {
+      ...group,
+      parent: itemId,
+    });
+
+    setLocked80DVariable(updatedMap);
+  }
+}, [items, locked80DVariable, categoryVaribale, itemId, setLocked80DVariable]);
 
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;

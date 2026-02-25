@@ -13,6 +13,7 @@ type TabName =
   | "Salary Slip"
   | "Tax Declaration"
   | "IT Declaration"
+  | "Team IT Declaration"
   | "My Loan Requests"
   | "Team Loan Requests"
   | "My Advances"
@@ -26,10 +27,11 @@ type ViewMode = "annual"; // ❌ removed monthly
 const tabRoutes: Record<TabName, string> = {
   "Pay Package": "/webapp/salary-slip-app/pay-package",
   "Annual CTC": "/webapp/salary-slip-app/ctc-salary-breakdown",
+  "IT Declaration": "/webapp/salary-slip-app/it-declaration-form",
+  "Team IT Declaration": "/webapp/salary-slip-app/team-declaration-listview",
+  "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
   "Invoice Slip": "/webapp/salary-slip-app/invoice-page",
   "Salary Slip": "/webapp/salary-slip-app/salary-slip-list",
-  "Tax Declaration": "/webapp/salary-slip-app/income-tax-sheet",
-  "IT Declaration": "/webapp/salary-slip-app/it-declaration-form",
   "My Loan Requests": "/webapp/salary-slip-app/my-loan-requests",
   "Team Loan Requests": "/webapp/salary-slip-app/team-loan-requests",
   "My Advances": "/webapp/salary-slip-app/advances-list",
