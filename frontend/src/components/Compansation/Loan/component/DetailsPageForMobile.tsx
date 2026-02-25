@@ -1,12 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Download, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
-import HeaderBar from "../../../HeaderBar";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useLoan } from "../../../../hooks/useLoan";
 import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
-import { useEffect, useState } from "react";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
 
 export default function LoanSummary() {
   const { data: userId } = useLoggedInUser();
@@ -16,6 +20,14 @@ export default function LoanSummary() {
   const employeeId = user?.employee ?? "";
   const { data: loanData } = useLoan(employeeId || "");
   const navigate = useNavigate();
+  const { isDesktop } = useScreenSize();
+
+  useEffect(() => {
+    if (isDesktop) {
+      navigate("/webapp/salary-slip-app/my-loan-requests", { replace: true });
+      return;
+    }
+  }, [isDesktop, navigate]);
 
   useEffect(() => {
     if (loanData && loanData?.length > 0 && loanId) {
@@ -59,102 +71,211 @@ export default function LoanSummary() {
     document.body.removeChild(link);
   };
 
+  // Desktop users are redirected above
+  if (isDesktop) return null;
+
   if (!selectedLoan) {
     return (
-      <div className="text-center text-gray-600">
-        <HeaderBar title="Loan Details" onBack={() => navigate(-1)} />
-        <p>No loan found for this ID.</p>
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="w-full h-full bg-white flex flex-col overflow-hidden relative">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <Typography
+              variant="bodyMedium"
+              className="font-semibold text-gray-900 leading-tight"
+            >
+              Loan Details
+            </Typography>
+            <Button
+              variant="subtle"
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </Button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4">
+            <Typography variant="mobileCardValue" className="text-gray-500">
+              No loan found for this ID.
+            </Typography>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <HeaderBar title="Loan Details" onBack={() => navigate(-1)} />
-      <div className="max-w-md mx-auto bg-gray-50 p-6 font-sans">
-        {/* Loan Summary */}
-        <div className="mb-8 bg-white p-6 rounded-lg shadow">
-          <h1 className="text-lg font-semibold text-gray-900 mb-6">
-            Loan Summary
-          </h1>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Loan Name</p>
-              <p className="text-xs font-semibold text-gray-900">
-                {selectedLoan.loan_name}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Loan Type</p>
-              <p className="text-xs font-semibold text-gray-900">
-                {selectedLoan.loan_type}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Loan Amount</p>
-              <p className="text-xs font-semibold text-gray-900">
-                {selectedLoan.status === "Open"
-                  ? formatCurrency(selectedLoan.loan_requested_amount)
-                  : formatCurrency(selectedLoan.loan_approved_amount)}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Status</p>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+      <div className="w-full h-full bg-white flex flex-col overflow-hidden relative">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography
+            variant="bodyMedium"
+            className="font-semibold text-gray-900 leading-tight"
+          >
+            Loan Details
+          </Typography>
+          <Button
+            variant="subtle"
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </Button>
+        </div>
 
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Loan Name + Status */}
+          <div className="flex gap-2 justify-between p-1">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Loan Name</Typography>
+              <Typography variant="mobileCardValue">
+                {selectedLoan.loan_name}
+              </Typography>
+            </div>
+            <div>
               <StatusBadge status={selectedLoan.status} />
             </div>
           </div>
-        </div>
 
-        {/* Installment Breakup */}
-        <div className="mb-8 bg-white py-6 px-2 rounded-lg shadow">
-          <h2 className="text-lg ml-4 font-semibold text-gray-900 mb-6">
-            Installment Breakup
-          </h2>
+          {/* Paired data rows */}
+          <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Loan Type
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {selectedLoan.loan_type}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Loan Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {selectedLoan.status === "Open"
+                    ? formatCurrency(selectedLoan.loan_requested_amount)
+                    : formatCurrency(selectedLoan.loan_approved_amount)}
+                </Typography>
+              </div>
+            </div>
 
-          <div className="bg-gray-100 px-4 py-3 grid grid-cols-5 gap-4 text-[9px] font-medium text-gray-700 uppercase tracking-wider">
-            <div>#</div>
-            <div>Payment Date</div>
-            <div>Principal</div>
-            <div>Interest</div>
-            <div>Balance</div>
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Interest Rate
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {selectedLoan.rate_of_interest
+                    ? `${selectedLoan.rate_of_interest}%`
+                    : "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Start Date
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(selectedLoan.loan_start_date) || "—"}
+                </Typography>
+              </div>
+            </div>
           </div>
 
-          <div className="divide-y divide-gray-200">
-            {selectedLoan.repayment_schedule?.map(
-              (item: any, index: number) => (
-                <div
-                  key={index}
-                  className={`px-4 py-4 grid grid-cols-5 gap-4 text-[9px] ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  }`}
-                >
-                  <div className="text-gray-900 font-medium max-w-4">
-                    {index + 1}
-                  </div>
-                  <div className="text-gray-600">{item.payment_date}</div>
-                  <div className="text-gray-900">
-                    {formatCurrency(item.principal_amount)}
-                  </div>
-                  <div className="text-gray-900">
-                    {formatCurrency(item.interest_amount)}
-                  </div>
-                  <div className="text-gray-900">
-                    {formatCurrency(item.balance_loan_amount)}
-                  </div>
-                </div>
-              ),
+          {/* Installment Breakup — card-style like Expense Claim Items */}
+          <div className="mt-4">
+            <Typography
+              variant="bodySmall"
+              className="base-title mb-2 font-bold block"
+            >
+              Installment Breakup
+            </Typography>
+
+            {selectedLoan.repayment_schedule?.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {selectedLoan.repayment_schedule.map(
+                  (item: any, index: number) => (
+                    <div
+                      key={index}
+                      className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+                    >
+                      <div className="mb-3">
+                        <Typography variant="label" className="card-title">
+                          Installment {index + 1}
+                        </Typography>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Payment Date
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {formatToIndianDate(item.payment_date)}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Principal
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {formatCurrency(item.principal_amount)}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Interest
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {formatCurrency(item.interest_amount)}
+                          </Typography>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <Typography
+                            variant="mobileCardLabel"
+                            className="block"
+                          >
+                            Balance
+                          </Typography>
+                          <Typography variant="mobileCardValue">
+                            {formatCurrency(item.balance_loan_amount)}
+                          </Typography>
+                        </div>
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">
+                <Typography variant="mobileCardValue" className="text-gray-500">
+                  No installment data available.
+                </Typography>
+              </div>
             )}
           </div>
         </div>
 
-        {/* Download Button */}
-        <button
-          onClick={downloadCSV}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
-        >
-          Download Loan Statement
-        </button>
+        {/* Download Button — sticky at bottom */}
+        <div className="border-t bg-white px-4 py-3">
+          <Button size="lg" fullWidth bgColor="primary" onClick={downloadCSV}>
+            <Download className="h-4 w-4" />
+            Download Loan Statement
+          </Button>
+        </div>
       </div>
     </div>
   );
