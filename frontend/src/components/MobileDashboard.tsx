@@ -49,6 +49,7 @@ import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboar
 import SearchMembers from "./shared/SearchMembers";
 import SideDrawer from "./shared/SideDrawer";
 import ViewingAsBanner from "./ViewingAsBanner";
+import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -774,6 +775,11 @@ const MobileDashboard: React.FC = () => {
           </div>
           <Requests limitCards={8} />
         </div>
+        {!window.isApp && (
+          <div className="mb-2 bg-white">
+            <MicroAppInDashboard />
+          </div>
+        )}
       </div>
       <SideDrawer
         open={profileDrawer}
