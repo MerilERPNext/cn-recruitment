@@ -86,9 +86,6 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
   const { mutateAsync: deleteDoc } = useDeleteDocument();
-  // const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
-console.log("Category variable:",   locked80DVariable, "===",setLocked80DVariable, );
-
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
     const normalized = items.map((item) => ({
@@ -113,10 +110,8 @@ console.log("Category variable:",   locked80DVariable, "===",setLocked80DVariabl
     if (!locked80DVariable || !categoryVaribale) return false;
   
     const group = locked80DVariable.get(categoryVaribale);
-    console.log(group,"sadfasdfasdfasdf")
     if (!group) return false;
     if(group?.indexes?.includes(itemId) && group.parent !== null){
-      console.log("Inside include")
       if(group.parent === itemId) return false;
       return true;
     } 
@@ -124,7 +119,6 @@ console.log("Category variable:",   locked80DVariable, "===",setLocked80DVariabl
   }, [locked80DVariable, categoryVaribale, itemId]);
 
     useEffect(() =>{
-      console.log("locked80DVariable ==", locked80DVariable)
     },[locked80DVariable])
 
   const handleProofFileUpload = (key: string, file: File | null) => {
@@ -210,7 +204,6 @@ console.log("Category variable:",   locked80DVariable, "===",setLocked80DVariabl
   
       return item;
     });
-    // setActiveDropdownId(categoryName); 
     if (categoryVaribale && locked80DVariable) {
       const updatedMap = new Map(locked80DVariable);
       const group = updatedMap.get(categoryVaribale);

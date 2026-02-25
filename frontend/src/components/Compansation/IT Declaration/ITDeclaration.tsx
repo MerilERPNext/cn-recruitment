@@ -76,7 +76,6 @@ const ITDeclarationForm = () => {
   }, [activeMainTab]);
   console.log("hragggggg", hraData);
 
-
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
     user?.employee || null,
@@ -106,9 +105,9 @@ const ITDeclarationForm = () => {
   ) as { data?: any };
   const { data: LTABreakup } = useLTABrakup(user?.employee || "");
 
-  console.log("ProofOfITDeclaration DATA", groupedCategories,);
+  console.log("ProofOfITDeclaration DATA", groupedCategories);
 
-  // Initial payroll period 
+  // Initial payroll period
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
 
@@ -122,11 +121,8 @@ const ITDeclarationForm = () => {
       return today >= start && today <= end;
     });
 
-    setSelectedPeriod(
-      matchedPeriod?.name || payrollPeriods[0].name
-    );
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
   }, [payrollPeriods, selectedPeriod]);
-
 
   useEffect(() => {
     if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
@@ -194,32 +190,32 @@ const ITDeclarationForm = () => {
 
   const LTAData = (hraData as unknown as any[])?.[1];
   console.log("LTA BREAKUP", LTAData);
-  console.log(LTAData?.items, "LTA items")
+  console.log(LTAData?.items, "LTA items");
   const handleSubmit = () => {
-    const ltaDeclarations =
-      LTAData?.items?.flatMap((cat: any) =>
-        cat.items
-          .filter((item: any) => Number(item?.amount) > 0)
-          .map((item: any) => ({
-            exemption_category: cat.category_name,
-            exemption_sub_category: item.exemption_sub_category,
-            amount: Number(item.amount),
-            max_amount: Number(item.max_amount),
+    const ltaDeclarations = LTAData?.items?.flatMap((cat: any) =>
+      cat.items
+        .filter((item: any) => Number(item?.amount) > 0)
+        .map((item: any) => ({
+          exemption_category: cat.category_name,
+          exemption_sub_category: item.exemption_sub_category,
+          amount: Number(item.amount),
+          max_amount: Number(item.max_amount),
 
-            attach_proof:
-              typeof item.proof_file === "string" && item.proof_file.length > 0
-                ? item.proof_file        // new uploaded file
-                : item.attach_proof || null,   // existing API file
+          attach_proof:
+            typeof item.proof_file === "string" && item.proof_file.length > 0
+              ? item.proof_file // new uploaded file
+              : item.attach_proof || null, // existing API file
 
-            note: "",
-          }))
-      );
+          note: "",
+        }))
+    );
     const itDeclarations = groupedCategories.flatMap((sec) =>
       sec.categories.flatMap((cat: any) =>
         cat.items
           .filter(
             (item: any) =>
-              item.is_selected === true || item.editable === 0 ||
+              item.is_selected === true ||
+              item.editable === 0 ||
               Number(item?.amount) > 0
           )
           .map((item: any) => ({
@@ -229,7 +225,7 @@ const ITDeclarationForm = () => {
             max_amount: Number(item.max_amount),
             attach_proof:
               typeof item.proof_file === "string" && item.proof_file.length > 0
-                ? item.proof_file        // new uploaded file
+                ? item.proof_file // new uploaded file
                 : item.attach_proof || null,
             note: item.proof_comment || "",
           }))
@@ -252,21 +248,13 @@ const ITDeclarationForm = () => {
           ? 0
           : Number(hraData?.rented_in_metro_city || 0),
 
-        start_date: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.start_date || "",
+        start_date: goHeadWithNewRegimeBool ? "" : hraData?.start_date || "",
 
-        end_date: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.end_date || "",
+        end_date: goHeadWithNewRegimeBool ? "" : hraData?.end_date || "",
 
-        pan: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.pan || "",
+        pan: goHeadWithNewRegimeBool ? "" : hraData?.pan || "",
 
-        cunstom_name: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.owner_name || "",
+        cunstom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
 
         address_title1: goHeadWithNewRegimeBool
           ? ""
@@ -284,8 +272,7 @@ const ITDeclarationForm = () => {
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
-      }
-
+      },
     };
     console.log("Submitting payload", payload);
     mutation.mutate(payload, {
@@ -293,7 +280,6 @@ const ITDeclarationForm = () => {
         toast.success("Declaration submitted successfully");
         resetForm();
         window.location.reload();
-
       },
       onError: () => toast.error("Submission failed"),
     });
@@ -308,7 +294,9 @@ const ITDeclarationForm = () => {
 
   // Register action button in central SalarySlipApp via ref pattern
   const { setActionButtonConfig } = useOutletContext<{
-    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null
+    ) => void;
   }>();
 
   const submitRef = useRef<(() => void) | undefined>(undefined);
@@ -327,10 +315,11 @@ const ITDeclarationForm = () => {
     <div className="bg-white min-h-screen">
       <header className=" md:p-4  rounded-lg">
         <div
-          className={`p-2 mb-2 rounded ${PrrofOfITDeclaration?.status === "failed"
-            ? "bg-red-100 text-error"
-            : "bg-green-100 text-success"
-            }`}
+          className={`p-2 mb-2 rounded ${
+            PrrofOfITDeclaration?.status === "failed"
+              ? "bg-red-100 text-error"
+              : "bg-green-100 text-success"
+          }`}
         >
           <Typography variant="bodySmall">
             {parts.map((part: string, index: number) =>
@@ -400,7 +389,6 @@ const ITDeclarationForm = () => {
           ) : (
             /* Mobile: stacked layout for action buttons */
             <div className="flex flex-col gap-3 w-full">
-
               {/* Action buttons — evenly spaced row */}
               <div className="flex flex-row gap-2 [&>button]:flex-1 [&>button]:w-0 [&>button]:min-w-0">
                 <CompareTaxSheetHandler
@@ -425,19 +413,21 @@ const ITDeclarationForm = () => {
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
               onClick={() => setGoHeadWithNewRegime(1)}
-              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${goHeadWithNewRegime === 1
-                ? "bg-primary text-white"
-                : "text-gray-600"
-                }`}
+              className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
+                goHeadWithNewRegime === 1
+                  ? "bg-primary text-white"
+                  : "text-gray-600"
+              }`}
             >
               New Regime
             </button>
             <button
               onClick={() => setGoHeadWithNewRegime(0)}
-              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${goHeadWithNewRegime === 0
-                ? "bg-primary text-white"
-                : "text-gray-600"
-                }`}
+              className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
+                goHeadWithNewRegime === 0
+                  ? "bg-primary text-white"
+                  : "text-gray-600"
+              }`}
             >
               Old Regime
             </button>
@@ -449,31 +439,41 @@ const ITDeclarationForm = () => {
         <div className="w-full">
           <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-0">
             <button
-              ref={(el) => { tabRefs.current["category"] = el; }}
+              ref={(el) => {
+                tabRefs.current["category"] = el;
+              }}
               onClick={() => setActiveMainTab("category")}
-              className={`px-4 whitespace-nowrap py-2 ${activeMainTab === "category"
-                ? "border-b-2 border-primary text-primary"
-                : "text-gray-600"
-                }`}
+              className={`px-4 whitespace-nowrap py-2 ${
+                activeMainTab === "category"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-gray-600"
+              }`}
             >
               Other Investment Declaration
             </button>
 
             {!goHeadWithNewRegimeBool && (
               <button
-                ref={(el) => { tabRefs.current["hra"] = el; }}
+                ref={(el) => {
+                  tabRefs.current["hra"] = el;
+                }}
                 onClick={() => setActiveMainTab("hra")}
-                className={`px-4 whitespace-nowrap py-2 ${activeMainTab === "hra"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-gray-600"
-                  }`}
+                className={`px-4 whitespace-nowrap py-2 ${
+                  activeMainTab === "hra"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-gray-600"
+                }`}
               >
                 HRA & Other (U/S 10)
               </button>
             )}
           </div>
           {activeMainTab === "hra" && hraData && (
-            <HRAForm hraData={hraData} onChange={handleHraChange} LATABreakup={LTABreakup} />
+            <HRAForm
+              hraData={hraData}
+              onChange={handleHraChange}
+              LATABreakup={LTABreakup}
+            />
           )}
           {activeMainTab === "category" && (
             <>
@@ -482,10 +482,11 @@ const ITDeclarationForm = () => {
                   <button
                     key={sec.section}
                     onClick={() => setActiveSection(sec.section)}
-                    className={`px-4 py-1 rounded-3xl text-xs ${activeSection === sec.section
-                      ? "bg-primary text-white"
-                      : "bg-gray-200"
-                      }`}
+                    className={`px-4 py-1 rounded-3xl text-xs ${
+                      activeSection === sec.section
+                        ? "bg-primary text-white"
+                        : "bg-gray-200"
+                    }`}
                   >
                     {sec.section}
                   </button>

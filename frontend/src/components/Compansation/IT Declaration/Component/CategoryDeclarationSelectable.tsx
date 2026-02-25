@@ -18,8 +18,6 @@ const CategorySection = ({
   setGroupedCategories,
 }: CategorySectionProps) => {
   const [global80DLock, setGlobal80DLock] = useState<Map<string, any>>();
-console.log(global80DLock, "global80DLock==>")
-
   useEffect(() => {
     const initialLockMap = new Map<string, any>();
   
@@ -41,7 +39,6 @@ console.log(global80DLock, "global80DLock==>")
         initialLockMap.set(key, existing);
       }
     });
-  console.log("setting the intialmap value")
     setGlobal80DLock(initialLockMap)
   }, [sectionCategories]);
 
