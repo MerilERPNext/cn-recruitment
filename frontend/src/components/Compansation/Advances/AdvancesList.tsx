@@ -2,7 +2,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -24,6 +23,7 @@ import InstallmentsList from "./InstallmentsList";
 import Modal from "./commonModal";
 
 import { Search } from "lucide-react";
+import ShowHideButton from "../ui/ShowHideButton";
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -60,17 +60,19 @@ const AdvancesList: React.FC = () => {
 
   const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
     return (
-      <div className="mt-0 pt-3">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span className="text-gray-600 text-xs uppercase tracking-wide">
-            {label}
-          </span>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <Typography variant="mobileCardLabel">{label}</Typography>
+        </div>
+        <div className="flex flex-col gap-1 text-right">
           {maskAmounts ? (
-            <span className="blur-sm select-none text-gray-400">
+            <Typography variant="mobileCardValue" className="blur-sm select-none text-gray-400">
               {formatCurrency(0).replace("0", "XX,XXX")}
-            </span>
+            </Typography>
           ) : (
-            <span className="font-medium">{formatCurrency(value)}</span>
+            <Typography variant="mobileCardValue">
+              {formatCurrency(value)}
+            </Typography>
           )}
         </div>
       </div>
@@ -224,7 +226,7 @@ const AdvancesList: React.FC = () => {
                 {formatCurrency("XX,XXX")}
               </span>
             ) : (
-              <span>{advance.numberOfDeductions}</span>
+              <span>{formatCurrency(advance.numberOfDeductions)}</span>
             )}
           </Typography>
 
@@ -259,45 +261,59 @@ const AdvancesList: React.FC = () => {
       {filteredData.map((advance, index) => (
         <div
           key={`${advance.name}-${index}`}
-          className="my-content-card cursor-pointer"
+          className="cursor-pointer border-t-4 border-x border-b mt-2
+            border-x-primary/20 border-b-primary/20 
+            shadow-sm border-primary bg-white rounded-xl"
           onClick={() => handleViewInstallments(advance)}
         >
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                {advance.name}
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
+          <div className="p-4 flex flex-col gap-3 w-full">
+            {/* Header: Advance Name + Status */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Advance Name</Typography>
+                <Typography variant="mobileCardValue">
+                  {advance.name}
+                </Typography>
+              </div>
               <StatusBadge status={advance.advanceStatus} />
             </div>
+
+            {/* Amount rows */}
+            <AmountRow
+              label="Total Amount"
+              value={advance.amount}
+              maskAmounts={maskAmounts}
+            />
+            <AmountRow
+              label="Deduction Amount"
+              value={advance.numberOfDeductions}
+              maskAmounts={maskAmounts}
+            />
+
+            {/* Duration + Installments */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Duration</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(advance.startDate)} to{" "}
+                  {formatToIndianDate(advance.endDate)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Installments</Typography>
+                <Typography variant="mobileCardValue">
+                  {advance.installments.length}
+                </Typography>
+              </div>
+            </div>
+
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={advance.advanceStatus === "Pending"}
+              canEdit={!!advance.can_edit}
+              onEdit={() => handleEdit(advance.docname)}
+            />
           </div>
-
-          <AmountRow
-            label="Total Amount"
-            value={advance.amount}
-            maskAmounts={maskAmounts}
-          />
-          <AmountRow
-            label="Deduction Amount"
-            value={advance.numberOfDeductions}
-            maskAmounts={maskAmounts}
-          />
-
-          <div className="mt-0 pt-3 flex justify-between text-sm text-gray-600">
-            <span>
-              <strong>{formatToIndianDate(advance.startDate)}</strong> to{" "}
-              <strong>{formatToIndianDate(advance.endDate)}</strong>
-            </span>
-            <span>{advance.installments.length} installments</span>
-          </div>
-
-          <MyApprovalActionPill
-            variant="buttons"
-            isPending={advance.advanceStatus === "Pending"}
-            canEdit={!!advance.can_edit}
-            onEdit={() => handleEdit(advance.docname)}
-          />
         </div>
       ))}
     </>
@@ -308,36 +324,19 @@ const AdvancesList: React.FC = () => {
       {/* ===== Header ===== */}
       <div className="flex-shrink-0">
         <div className="px-1 md:px-6 py-1 md:py-4">
-          <div className="flex items-center justify-between">
-            {isDesktop && (
+          <div className="flex items-center justify-between max-sm:mb-2">
+            {isDesktop ? (
               <div>
                 <Typography variant="h4">My Advance Request</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage your advance requests
                 </Typography>
               </div>
+            ) : (
+              <Typography variant="h4">My Advance Request</Typography>
             )}
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              {/* Toggle Amount */}
-              <button
-                onClick={() => setMaskAmounts(!maskAmounts)}
-                className="my-btn-secondary flex items-center gap-2"
-                title={maskAmounts ? "Show amounts" : "Hide amounts"}
-              >
-                {maskAmounts ? (
-                  <>
-                    <span className="text-sm font-medium">Show Amounts</span>
-                    <BsToggleOff className="w-6 h-6" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium">Hide Amounts</span>
-                    <BsToggleOn className="w-6 h-6 text-primary" />
-                  </>
-                )}
-              </button>
-            </div>
+            <ShowHideButton showAmount={maskAmounts} onToggleAmount={() => setMaskAmounts((prev) => !prev)} />
           </div>
         </div>
 

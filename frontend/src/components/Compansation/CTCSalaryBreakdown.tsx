@@ -2,10 +2,10 @@ import { useState } from "react";
 import { TrendingUp, Wallet, PieChart } from "lucide-react";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
-import { DashboardContentSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+
+import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -47,8 +47,88 @@ const CTCSalaryUI = () => {
     setIsMoneyMasked(!isMoneyMasked);
   };
 
+  const Header = () => (
+    <div className="flex justify-between items-start mb-4 sm:px-2">
+      <div>
+        <Typography variant="h4">Compensation</Typography>
+        <Typography variant="bodySmall" color="body2">
+          Detailed breakdown of your salary structure
+        </Typography>
+      </div>
+
+      <ShowHideButton showAmount={isMoneyMasked} onToggleAmount={toggleMoneyMask} />
+    </div>
+  );
+
   if (isLoading) {
-    return <DashboardContentSkeleton />;
+    const skeletonCards = [
+      { cardBg: "bg-blue-50", iconBg: "bg-blue-100" },
+      { cardBg: "bg-purple-50", iconBg: "bg-purple-100" },
+      { cardBg: "bg-orange-50", iconBg: "bg-orange-100" },
+    ];
+
+    return (
+      <div className="min-h-screen rounded-lg sm:px-4">
+        <div className="w-full py-4">
+          <Header />
+
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3 mt-4">
+              {skeletonCards.map((card, i) => (
+                <div
+                  key={i}
+                  className={`${card.cardBg} p-6 rounded-lg border border-gray-100 shadow-sm animate-pulse`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-4 w-32 bg-white/60 rounded"></div>
+                    <div className={`w-10 h-10 rounded-lg ${card.iconBg}`}></div>
+                  </div>
+                  <div className="h-8 w-40 bg-white/60 rounded mb-2 mt-2"></div>
+                  <div className="h-3 w-48 bg-white/60 rounded"></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-xl ">
+              <div className="px-6 py-4 bg-gray-50/50">
+                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="pt-4 pb-6 px-3">
+                {isDesktop ? (
+                  <div className="w-full space-y-4">
+                    <div className="h-10 bg-gray-100 rounded w-full animate-pulse border-none"></div>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div key={i} className="h-16 bg-gray-50 rounded w-full animate-pulse border-none"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="bg-gray-50 p-4 rounded-lg border border-gray-200 animate-pulse">
+                        <div className="flex justify-between mb-3">
+                          <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                          <div className="h-6 w-24 bg-gray-200 rounded-md"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                            <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                            <div className="h-5 w-24 bg-gray-200 rounded"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (isError || (!isLoading && !salarySlip)) {
@@ -96,34 +176,7 @@ const CTCSalaryUI = () => {
     </div>
   );
 
-  const Header = () => (
-    <div className="flex justify-between items-start mb-4 sm:px-2">
-      <div>
-        <Typography variant="h4">Compensation</Typography>
-        <Typography variant="bodySmall" color="body2">
-          Detailed breakdown of your salary structure
-        </Typography>
-      </div>
 
-      <button
-        onClick={toggleMoneyMask}
-        className="my-btn-secondary card-subtitle px-3 py-2 flex items-center gap-2"
-        title={isMoneyMasked ? "Show amounts" : "Hide amounts"}
-      >
-        {isMoneyMasked ? (
-          <>
-            <span className="card-subtitle  text-gray-700">Show Amounts</span>
-            <BsToggleOff className="w-6 h-6 text-gray-400" />
-          </>
-        ) : (
-          <>
-            <span className="card-subtitle text-gray-700">Hide Amounts</span>
-            <BsToggleOn className="w-6 h-6 text-primary" />
-          </>
-        )}
-      </button>
-    </div>
-  );
 
   return (
     <div className="min-h-screen rounded-lg sm:px-4">

@@ -6,6 +6,9 @@ import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
+import { Upload } from "lucide-react";
+import Button from "../../shared/atoms/Button";
+import { useRef } from "react";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -15,28 +18,16 @@ import { useFileUpload } from "../../../hooks/useEmployee";
 import toast from "react-hot-toast";
 import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import ShowHideButton from "../ui/ShowHideButton";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
 
-const getStatusBadgeClass = (status: string) => {
-  switch (status) {
-    case "Paid":
-      return "bg-green-100 text-green-700";
-    case "Pending":
-      return "bg-yellow-100 text-yellow-700";
-    case "Overdue":
-      return "bg-red-100 text-red-700";
-    case "Cancelled":
-      return "bg-gray-200 text-gray-700";
-    default:
-      return "bg-blue-100 text-blue-700";
-  }
-};
-
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { isDesktop } = useScreenSize();
 
   const uploadMutation = useFileUpload();
@@ -127,7 +118,7 @@ export default function Invoice() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 max-sm:mb-2">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
             {isDesktop ? (
@@ -141,21 +132,7 @@ export default function Invoice() {
               <Typography variant="h4">My Invoices</Typography>
             )}
 
-            <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
-              <span className="text-sm text-gray-600">
-                {hideAmount ? "Show Amount" : "Hide Amount"}
-              </span>
-              <button
-                onClick={() => setHideAmount((p) => !p)}
-                className={`w-8 h-5 rounded-xl relative transition ${hideAmount ? "bg-primary-500" : "bg-gray-300"
-                  }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${hideAmount ? "right-0.5" : "left-0.5"
-                    }`}
-                />
-              </button>
-            </div>
+            <ShowHideButton showAmount={hideAmount} onToggleAmount={() => setHideAmount((prev) => !prev)} />
           </div>
         </div>
       </div>
@@ -184,13 +161,9 @@ export default function Invoice() {
                     {invoiceNo}
                   </Typography>
 
-                  {inv.invoice_status && (
-                      <span
-                        className={`flex-shrink-0 ml-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(inv.invoice_status)}`}
-                      >
-                        {inv.invoice_status}
-                      </span>
-                    )}
+                  <div className="flex justify-center">
+                    <StatusBadge status={inv.invoice_status} />
+                  </div>
 
                   <Typography variant="bodySmall" className="text-center">
                     {formatToIndianDate(inv.start_date)}
@@ -221,17 +194,25 @@ export default function Invoice() {
                   {/* Upload */}
                   <div className="flex justify-center">
                     <input
+                      ref={(el) => { fileInputRefs.current[`desktop-${invoiceNo}`] = el; }}
                       type="file"
-                      onChange={(e) =>
+                      className="hidden"
+                      onChange={(e) => {
                         handleUploadAndAttach(
                           e.target.files?.[0] || null,
                           invoiceNo,
-                        )
-                      }
-                      className="text-xs border rounded
-                      file:border-0 file:bg-primary
-                      file:text-white file:px-2 file:py-1"
+                        );
+                        e.target.value = "";
+                      }}
                     />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={<Upload className="w-3.5 h-3.5" />}
+                      onClick={() => fileInputRefs.current[`desktop-${invoiceNo}`]?.click()}
+                    >
+                      Upload
+                    </Button>
                   </div>
 
                   {/* View */}
@@ -255,72 +236,88 @@ export default function Invoice() {
               return (
                 <div
                   key={invoiceNo || idx}
-                  className="border rounded-lg bg-white shadow-sm"
+                  className="cursor-pointer border-t-4 border-x border-b 
+                    border-x-primary/20 border-b-primary/20 
+                    shadow-sm border-primary bg-white rounded-xl"
                 >
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between p-4 border-b">
-                    <div className="flex flex-col min-w-0">
-                      <Typography variant="bodySmall" className="font-semibold text-gray-800 truncate">
-                        {invoiceNo}
-                      </Typography>
-                      <span className="text-xs text-gray-500">
-                        {inv.employee_name}
-                      </span>
+                  <div className="p-4 flex flex-col gap-3 w-full">
+                    {/* Row 1: Invoice No + Status */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Invoice No</Typography>
+                        <Typography variant="mobileCardValue">
+                          {invoiceNo}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 items-end">
+                        <Typography variant="mobileCardLabel">Status</Typography>
+                        <StatusBadge status={inv.invoice_status} />
+                      </div>
                     </div>
-                    {inv.invoice_status && (
-                      <span
-                        className={`flex-shrink-0 ml-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(inv.invoice_status)}`}
-                      >
-                        {inv.invoice_status}
-                      </span>
-                    )}
-                  </div>
 
-                  {/* Card Body */}
-                  <div className="p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Invoice Date</span>
-                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.start_date)}</span>
+                    {/* Row 2: Customer + Due Date */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Customer</Typography>
+                        <Typography variant="mobileCardValue">
+                          {inv.employee_name}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 text-right">
+                        <Typography variant="mobileCardLabel">Invoice Date</Typography>
+                        <Typography variant="mobileCardValue">
+                          {formatToIndianDate(inv.start_date)}
+                        </Typography>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Due Date</span>
-                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.end_date)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Sub Total</span>
-                      <span className={`font-medium ${amountClass}`}>
-                        {formatINR(inv.gross_pay || 0)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Total Amount</span>
-                      <span className={`font-semibold text-blue-600 ${amountClass}`}>
-                        {formatINR(inv.net_pay || 0)}
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Card Footer */}
-                  <div className="flex items-center gap-3 px-4 py-3 border-t bg-gray-50 rounded-b-lg">
-                    <label className="flex-1 cursor-pointer">
+                    {/* Row 3: Sub Total + Total Amount */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Sub Total</Typography>
+                        <Typography variant="mobileCardValue" className={amountClass}>
+                          {formatINR(inv.gross_pay || 0)}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 text-right">
+                        <Typography variant="mobileCardLabel">Total Amount</Typography>
+                        <Typography variant="mobileCardValue" className={amountClass}>
+                          {formatINR(inv.net_pay || 0)}
+                        </Typography>
+                      </div>
+                    </div>
+
+                    {/* Footer: Upload + View */}
+                    <div className="flex gap-3 pt-2 border-t border-primary/10">
                       <input
+                        ref={(el) => { fileInputRefs.current[`mobile-${invoiceNo}`] = el; }}
                         type="file"
-                        onChange={(e) =>
+                        className="hidden"
+                        onChange={(e) => {
                           handleUploadAndAttach(
                             e.target.files?.[0] || null,
                             invoiceNo,
-                          )
-                        }
-                        className="text-xs w-full border rounded
-                        file:border-0 file:bg-primary
-                        file:text-white file:px-2 file:py-1"
+                          );
+                          e.target.value = "";
+                        }}
                       />
-                    </label>
-                    <InvoicePDFview
-                      invoiceID={invoiceNo}
-                      disabled={false}
-                      onClick={handleInvoiceClick}
-                    />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        fullWidth
+                        icon={<Upload className="w-3.5 h-3.5" />}
+                        onClick={() => fileInputRefs.current[`mobile-${invoiceNo}`]?.click()}
+                        className=""
+                      >
+                        Upload Proof
+                      </Button>
+                      <InvoicePDFview
+                        invoiceID={invoiceNo}
+                        disabled={false}
+                        onClick={handleInvoiceClick}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 </div>
               );

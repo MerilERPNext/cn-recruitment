@@ -2,18 +2,18 @@
 "use client";
 
 import type React from "react";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import HeaderBar from "../../HeaderBar";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { UiAdvance } from "../../../types/employeeAttendance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
-import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { Typography } from "../../shared/atoms/Typography";
 import { formatCurrency } from "../../../utils/currency";
+import ShowHideButton from "../ui/ShowHideButton";
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -41,29 +41,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               onBack={onBack}
               rightSlot={
                 // CHANGED: Using .btn-secondary for consistent button styling.
-                <Button
-                  bgColor="none"
-                  onClick={onToggleMask}
-                  className="whitespace-nowrap border border-gray-300"
-                  data-tooltip={maskAmounts ? "Show amounts" : "Hide amounts"}
-                >
-                  {maskAmounts ? (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Show Amounts
-                      </span>
-                      <BsToggleOff className="w-6 h-6 text-gray-400" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hide Amounts
-                      </span>
-                      {/* CHANGED: Using brand 'primary' color from config */}
-                      <BsToggleOn className="w-6 h-6 text-primary" />
-                    </>
-                  )}
-                </Button>
+                <ShowHideButton showAmount={maskAmounts} onToggleAmount={onToggleMask} />
               }
             />
           </div>
@@ -188,7 +166,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
   // NOTE: Mobile layout is highly custom. We will apply standardization where possible.
   const MobileLayout = () => (
     <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      <div className="bg-white border-b border-gray-200 sm:px-4 sm:py-3 flex-shrink-0">
         <HeaderBar
           title={`Installments - ${advance.name}`}
           showBackButton={true}
@@ -209,7 +187,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-gray-50 min-h-0">
+      <div className="flex-1 overflow-y-auto bg-white min-h-0">
         {/* CHANGED: Using reusable .my-info-card class */}
         <div className="my-info-card mx-4 mt-4 mb-6">
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -240,22 +218,9 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               </span>
               <div className="mt-1">{advance.installments.length}</div>
             </div>
-            <div>
-              <span className="text-gray-600">Status:</span>
-              <div className=" text-start relative group inline-block overflow-visible">
-                <StatusBadge status={advance.advanceStatus} />
-
-                {/* Tooltip */}
-                <div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2
-                               opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                               transition-all duration-150 ease-out pointer-events-none
-                               bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap
-                               shadow-lg z-50"
-                >
-                  {advance.employee_name}
-                </div>
-              </div>
+            <div className="flex flex-col items-start gap-2">
+              <span className="text-gray-600 text-right">Status:</span>
+              <StatusBadge status={advance.advanceStatus} />
             </div>
           </div>
         </div>
