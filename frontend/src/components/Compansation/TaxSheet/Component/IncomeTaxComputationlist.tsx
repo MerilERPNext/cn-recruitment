@@ -135,7 +135,7 @@ const IncomeTaxComputationlist = ({ data }: any) => {
                   <Row
                     key={item.key}
                     label={item.name}
-                    declared={formatAmount(item.amount)}
+                    declared={""}
                     exemption="-"
                     taxable={formatAmount(item.amount)}
                     bold={
