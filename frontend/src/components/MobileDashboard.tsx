@@ -1,8 +1,5 @@
+import { Calendar, CheckCircle, RotateCcw, Timer, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle, XCircle, Timer, RotateCcw, Calendar } from "lucide-react";
-import { useGetUserNotices } from "../hooks/useNotices";
-import { useCurrentUser } from "../hooks/useCurrentUser";
-import { useCompanyLogo } from "../hooks/useCompanyLogo";
 import {
   useCanShowClockIn,
   useCheckInOutService,
@@ -11,17 +8,10 @@ import {
   useGetQuickAttendanceSummary,
   useHomeSummaryDetails,
 } from "../hooks/useAttendance";
+import { useCompanyLogo } from "../hooks/useCompanyLogo";
+import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useGetUserNotices } from "../hooks/useNotices";
 
-import {
-  Coordinates,
-  formatTimeSafe,
-  formatTo24HourTime,
-  getDeviceLocation,
-} from "../utils/helperUtils";
-import defaultProfile from "../assets/face-rec.png";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
-import EmployeeFallback from "./EmployeeFallback";
 import {
   compareAsc,
   compareDesc,
@@ -35,21 +25,30 @@ import {
 } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ViewAll } from "./shared/atoms/ViewAll";
-import ViewingAsBanner from "./ViewingAsBanner";
-import SearchMembers from "./shared/SearchMembers";
-import Button from "./shared/atoms/Button";
-import { Typography } from "./shared/atoms/Typography";
-import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
-import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import Badge from "./shared/Badge";
+import defaultProfile from "../assets/face-rec.png";
+import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import {
+  Coordinates,
+  formatTimeSafe,
+  formatTo24HourTime,
+  getDeviceLocation,
+} from "../utils/helperUtils";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
-import Requests from "./Requests";
-import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
-import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
-import SideDrawer from "./shared/SideDrawer";
+import EmployeeFallback from "./EmployeeFallback";
 import MobileProfileDrawer from "./EmployeeProfile/MobileProfileDrawer";
 import NotificationBell from "./Notification/NotificationBell";
+import Requests from "./Requests";
+import Button from "./shared/atoms/Button";
+import { Typography } from "./shared/atoms/Typography";
+import { ViewAll } from "./shared/atoms/ViewAll";
+import Badge from "./shared/Badge";
+import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import { NoticeSlide } from "./shared/molecules/NoticeSlide";
+import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
+import SearchMembers from "./shared/SearchMembers";
+import SideDrawer from "./shared/SideDrawer";
+import ViewingAsBanner from "./ViewingAsBanner";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -764,14 +763,16 @@ const MobileDashboard: React.FC = () => {
         </div>
         {/* --------------------------------- Requests --------------------------------- */}
         <div className="mb-2 bg-white px-4 pt-4 pb-2">
-          <Typography variant="subheading" className="mb-3 block">
-            Requests
-          </Typography>
-          <Requests />
-        </div>
-
-        <div className="mb-2 bg-white">
-          <MicroAppInDashboard />
+          <div className="flex justify-between items-center mb-3">
+            <Typography variant="subheading" className="block">
+              Requests
+            </Typography>
+            <ViewAll
+              title="All Requests"
+              onClick={() => navigate("/webapp/requests")}
+            />
+          </div>
+          <Requests limitCards={8} />
         </div>
       </div>
       <SideDrawer
