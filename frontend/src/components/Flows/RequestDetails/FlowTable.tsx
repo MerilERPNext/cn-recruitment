@@ -11,13 +11,13 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useMemo } from "react";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { FlowRequestItem, FlowRequestStage } from "../../../types/flows";
-import Tooltip from "../../shared/Tooltip";
 import { StaticListView } from "../../ListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { extractRolesAndUsers } from "../../../utils/flowUtils";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 
 const titles = [
     "Stage Name",
-    "Assigned To",
     "Status",
     "Due Date",
     "Completed Date",
@@ -59,7 +59,6 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
     )
 }
 
-
 const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boolean }) => {
     const actions = stage?.todo?.custom_doctype_actions
         ? JSON.parse(stage?.todo?.custom_doctype_actions)
@@ -67,7 +66,6 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
     const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
         ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
         : [];
-
 
     const { handleAction } = useApprovalAction();
 
@@ -82,38 +80,36 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
     };
     const { data: currentUser } = useCurrentUser();
 
+    const allocatedTo = useMemo( () => extractRolesAndUsers(stage), [stage]); 
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
         let actionPermission = false;
 
-        if (stage?.todo?.custom_allocated_to_users && currentUser?.name)
-            actionPermission = stage?.todo?.custom_allocated_to_users.includes(currentUser?.name);
+        if (allocatedTo?.users && currentUser?.name)
+            actionPermission = allocatedTo.users.includes(currentUser?.name);
 
-        if (currentUser?.roles && stage?.todo?.custom_assigned_to_roles)
+        if (currentUser?.roles && allocatedTo?.roles)
             actionPermission ||= currentUser.roles.some(
-                (role) => stage?.todo?.custom_assigned_to_roles?.includes(role.role),
+                (role) => allocatedTo.roles.includes(role.role),
             );
 
         return actionPermission;
-    }, [currentUser, stage, isActive]);
+    }, [currentUser, isActive, allocatedTo]);
 
     return (
         <div
             key={stage.stage_name}
-            className="hover:bg-primary-100 py-4 text-center grid grid-cols-6 cursor-pointer text-xs w-full border-b"
+            className="hover:bg-primary-100 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
         >
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {stage.stage_name || "-"}
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {stage.todo.custom_assigned_to_roles || stage.todo.custom_allocated_to_users || "-"}
-            </Typography></div>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                <Tooltip content={stage.user_id}>
+                <AllocatedToTooltip position="right" users={allocatedTo.users} roles={allocatedTo.roles}>
                     <StatusBadge
                         status={stage.status || "-"}
                     />
-                </Tooltip>
+                </AllocatedToTooltip>
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {formatToIndianDate(stage.todo.date) || "-"}

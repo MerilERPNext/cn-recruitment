@@ -6,6 +6,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { extractRolesAndUsers } from "../../../utils/flowUtils";
 
   const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -102,20 +103,21 @@ const RequestDetailCard = ({stage, index, stages } : RequestDetailCardProps) =>{
       };
       const { data: currentUser } = useCurrentUser();
   
-      const canPerformActions = useMemo(() => {
-          if (!isActive) return false;
-          let actionPermission = false;
-  
-          if (stage?.todo?.custom_allocated_to_users && currentUser?.name)
-              actionPermission = stage?.todo?.custom_allocated_to_users.includes(currentUser?.name);
-  
-          if (currentUser?.roles && stage?.todo?.custom_assigned_to_roles)
-              actionPermission ||= currentUser.roles.some(
-                  (role) => stage?.todo?.custom_assigned_to_roles?.includes(role.role),
-              );
-  
-          return actionPermission;
-      }, [currentUser, stage, isActive]);
+        const allocatedTo = useMemo( () => extractRolesAndUsers(stage), [stage]); 
+        const canPerformActions = useMemo(() => {
+            if (!isActive) return false;
+            let actionPermission = false;
+    
+            if (allocatedTo?.users && currentUser?.name)
+                actionPermission = allocatedTo.users.includes(currentUser?.name);
+    
+            if (currentUser?.roles && allocatedTo?.roles)
+                actionPermission ||= currentUser.roles.some(
+                    (role) => allocatedTo.roles.includes(role.role),
+                );
+    
+            return actionPermission;
+        }, [currentUser, isActive, allocatedTo]);
   
 
   return (
@@ -181,7 +183,7 @@ const RequestDetailCard = ({stage, index, stages } : RequestDetailCardProps) =>{
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500">Assigned To</span>
                     <span className="font-medium text-gray-900 text-right truncate pl-2 max-w-[60%]">
-                      {stage.todo.custom_allocated_to_users || stage.todo.custom_assigned_to_roles || "-"}
+                      {allocatedTo.roles.join(",") || allocatedTo.users.join(",") || "-"}
                     </span>
                   </div>
 

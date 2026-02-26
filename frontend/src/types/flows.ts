@@ -91,10 +91,38 @@ export type FlowRequestStage = {
     custom_doctype_actions: string;
     custom_doctype_actions_with_form: string;
     custom_approval_type: string;
-    custom_allocated_to_users: string[];
-    custom_assigned_to_roles: string[];
+    custom_allocated_to_users: Array<{
+      name: string;
+      owner: string;
+      creation: string;
+      modified: string;
+      modified_by: string;
+      docstatus: number;
+      idx: number;
+      user: string;
+      parent: string;
+      parentfield: string;
+      parenttype: string;
+      doctype: string;
+    }>;
+    custom_assigned_to_roles: RoleSelect[];
     [key: string]: any;
   }
+};
+
+export type RoleSelect = {
+  name: string;
+  owner: string;
+  creation: string;
+  modified: string;
+  modified_by: string;
+  docstatus: number;
+  idx: number;
+  role: string;
+  parent: string;
+  parentfield: string;
+  parenttype: string;
+  doctype: string;
 };
 
 export type FlowRequestItem = {
@@ -129,14 +157,27 @@ export type WorkflowStage = {
     custom_subject: string;
     status: string;
     priority: string;
-    custom_allocated_to_users: string[];
-    custom_assigned_to_roles: string[];
+    custom_allocated_to_users: Array<{
+      name: string;
+      owner: string;
+      creation: string;
+      modified: string;
+      modified_by: string;
+      docstatus: number;
+      idx: number;
+      user: string;
+      parent: string;
+      parentfield: string;
+      parenttype: string;
+      doctype: string;
+    }>;
+    custom_assigned_to_roles: RoleSelect[];
     custom_parent_todo: string | null;
     custom_allocated_name: string | null;
     custom_redirect_url: string | null;
     color: string | null;
     [key: string]: any;
-  }
+  };
 };
 
 export type FlowRequestResponse = {
