@@ -139,13 +139,6 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           canEdit={canEdit}
           onEdit={handleEditClick}
         />
-
-        {/* Footer */}
-        <div className="pt-2 border-t">
-          <Typography variant="mobileCardFooter">
-            Last Updated on {formatToIndianDate(expense?.modified)}
-          </Typography>
-        </div>
       </div>
     </div>
   );

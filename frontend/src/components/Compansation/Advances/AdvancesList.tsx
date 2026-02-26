@@ -8,10 +8,10 @@ import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import CardTable from "../../shared/CardTable";
 import Tooltip from "../../shared/Tooltip";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
@@ -66,7 +66,10 @@ const AdvancesList: React.FC = () => {
         </div>
         <div className="flex flex-col gap-1 text-right">
           {maskAmounts ? (
-            <Typography variant="mobileCardValue" className="blur-sm select-none text-gray-400">
+            <Typography
+              variant="mobileCardValue"
+              className="blur-sm select-none text-gray-400"
+            >
               {formatCurrency(0).replace("0", "XX,XXX")}
             </Typography>
           ) : (
@@ -144,7 +147,9 @@ const AdvancesList: React.FC = () => {
 
   // Register action button in central SalarySlipApp
   const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
-    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
     setIsModalOpen: (open: boolean) => void;
   }>();
 
@@ -333,10 +338,13 @@ const AdvancesList: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <Typography variant="h4">My Advance Request</Typography>
+              <Typography variant="h4">Advance Request</Typography>
             )}
 
-            <ShowHideButton showAmount={maskAmounts} onToggleAmount={() => setMaskAmounts((prev) => !prev)} />
+            <ShowHideButton
+              showAmount={maskAmounts}
+              onToggleAmount={() => setMaskAmounts((prev) => !prev)}
+            />
           </div>
         </div>
 
