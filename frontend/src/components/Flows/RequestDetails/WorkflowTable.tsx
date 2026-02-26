@@ -91,7 +91,7 @@ const WorkflowCard = ({
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
     : [];
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-    ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form)
+    ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
   const { isDesktop } = useScreenSize();
