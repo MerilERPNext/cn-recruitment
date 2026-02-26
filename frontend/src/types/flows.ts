@@ -91,6 +91,8 @@ export type FlowRequestStage = {
     custom_doctype_actions: string;
     custom_doctype_actions_with_form: string;
     custom_approval_type: string;
+    custom_allocated_to_users: string[];
+    custom_assigned_to_roles: string[];
     [key: string]: any;
   }
 };
@@ -127,6 +129,8 @@ export type WorkflowStage = {
     custom_subject: string;
     status: string;
     priority: string;
+    custom_allocated_to_users: string[];
+    custom_assigned_to_roles: string[];
     custom_parent_todo: string | null;
     custom_allocated_name: string | null;
     custom_redirect_url: string | null;

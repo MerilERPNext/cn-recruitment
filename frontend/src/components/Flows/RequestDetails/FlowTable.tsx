@@ -32,7 +32,7 @@ interface FlowTableProps {
 const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
     const { isDesktop } = useScreenSize();
     const activeStageIndex = data.approval_stages.findIndex((stage) => stage.status === "Pending");
-
+    
     return (
         <div className="sm:px-7 px-4">
             {isDesktop ? (
@@ -106,7 +106,7 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
                 {stage.stage_name || "-"}
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {stage.role || stage.user || "-"}
+                {stage.todo.custom_assigned_to_roles || stage.todo.custom_allocated_to_users || "-"}
             </Typography></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 <Tooltip content={stage.user_id}>
@@ -122,17 +122,14 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
                 {formatToIndianDate(stage.completion_date || "") || "-"}
             </Typography></div>
             <div className="flex items-center justify-center pr-2">  <Typography variant="bodySmall" className="font-medium text-center">
-                {canPerformActions ?
+                {canPerformActions &&
                     <TeamApprovalActionPill
                         actions={actions}
                         status={stage?.todo?.status}
                         recordId={stage?.todo?.name}
                         // loadingAction={loadingAction}
                         onAction={(action) => onAction(action, stage?.todo)}
-                    /> :
-                    <div className="h-8 px-3 flex items-center  justify-center rounded-3xl bg-gray-10 text-gray-600 text-xs font-medium w-fit">
-                        NA
-                    </div>
+                    /> 
                 }
             </Typography></div>
         </div>

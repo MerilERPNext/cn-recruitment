@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react'
 import { FlowRequestItem, WorkflowStage } from '../../../types/flows';
 import CardTable from '../../shared/CardTable';
@@ -88,20 +89,21 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
     };
     const { data: currentUser } = useCurrentUser();
 
-    const canPerformActions = useMemo(() => {
+      const canPerformActions = useMemo(() => {
         if (!isActive) return false;
         let actionPermission = false;
 
-        if (stage?.todo?.allocated_to && currentUser?.name)
-            actionPermission = stage?.todo?.allocated_to === currentUser.name;
+        if (stage?.todo?.custom_allocated_to_users && currentUser?.name)
+            actionPermission = stage?.todo?.custom_allocated_to_users.includes(currentUser?.name);
 
-        if (currentUser?.roles && stage?.todo?.role)
+        if (currentUser?.roles && stage?.todo?.custom_assigned_to_roles)
             actionPermission ||= currentUser.roles.some(
-                (role) => role.role === stage?.todo?.role,
+                (role) => stage?.todo?.custom_assigned_to_roles?.includes(role.role),
             );
 
         return actionPermission;
     }, [currentUser, stage, isActive]);
+
     return (
         isDesktop ? (<div
             key={idx}
@@ -149,7 +151,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
                             Assigned To
                         </Typography>
                         <Typography variant="mobileCardValue">
-                            {stage.todo?.allocated_to || stage.todo?.role || "-"}
+                            {stage.todo?.custom_allocated_to_users || stage.todo?.custom_assigned_to_roles || "-"}
                         </Typography>
                     </div>
 
