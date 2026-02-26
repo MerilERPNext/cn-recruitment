@@ -1,4 +1,5 @@
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import RequestTimeline from "./RequestDetailsCard";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";

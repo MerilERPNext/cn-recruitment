@@ -11,10 +11,11 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import HeaderBar from "../../HeaderBar";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
-import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import Button from "../../shared/atoms/Button";
+import ShowHideButton from "../ui/ShowHideButton";
 
 interface InstallmentsListProps {
   advance: UiAdvance;
@@ -42,29 +43,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               onBack={onBack}
               rightSlot={
                 // CHANGED: Using .btn-secondary for consistent button styling.
-                <Button
-                  bgColor="none"
-                  onClick={onToggleMask}
-                  className="whitespace-nowrap border border-gray-300"
-                  data-tooltip={maskAmounts ? "Show amounts" : "Hide amounts"}
-                >
-                  {maskAmounts ? (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Show Amounts
-                      </span>
-                      <BsToggleOff className="w-6 h-6 text-gray-400" />
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm font-medium text-gray-700">
-                        Hide Amounts
-                      </span>
-                      {/* CHANGED: Using brand 'primary' color from config */}
-                      <BsToggleOn className="w-6 h-6 text-primary" />
-                    </>
-                  )}
-                </Button>
+                <ShowHideButton showAmount={maskAmounts} onToggleAmount={onToggleMask} />
               }
             />
           </div>

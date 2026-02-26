@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Search } from "lucide-react";
 import { useExtraPayment } from "../../../hooks/useExtraPAyments";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { formatCurrency } from "../../../utils/currency";
 import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -38,14 +39,7 @@ export default function ExtraPayment() {
     user?.employee || null,
   );
 
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkScreen = () => setIsMobile(window.innerWidth < 768);
-    checkScreen();
-    window.addEventListener("resize", checkScreen);
-    return () => window.removeEventListener("resize", checkScreen);
-  }, []);
 
   // -------- MAP API DATA ----------
   const apiPayments: Payment[] =
@@ -91,7 +85,7 @@ export default function ExtraPayment() {
               </div>
             ) : (
               <div>
-                <Typography variant="h4">Extra Payment History</Typography>
+                <Typography variant="h4" className="mb-2">Extra Payment History</Typography>
               </div>
             )}
           </div>
@@ -101,22 +95,22 @@ export default function ExtraPayment() {
 
 
       {/* ---------------------- WEB ---------------------- */}
-      {!isMobile && (
+      {isDesktop && (
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-          
+
           <CardTable titles={titles} columnWidths={columnWidths} >
-          <div className="flex items-center justify-between">
-        <div className="relative w-full ">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-100  w-full "
-          />
-        </div>
-      </div>
+            <div className="flex items-center justify-between">
+              <div className="relative w-full ">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-100  w-full "
+                />
+              </div>
+            </div>
             {filteredPayments.map((payment) => (
               <div
                 key={payment.id}
@@ -168,23 +162,59 @@ export default function ExtraPayment() {
       )}
 
       {/* ---------------------- MOBILE ---------------------- */}
-      {isMobile && (
-        <div className="space-y-4">
+      {!isDesktop && (
+        <div className="space-y-4 px-1">
           {filteredPayments.map((payment) => (
             <div
               key={payment.id}
-              className="p-4 rounded-xl border shadow-sm bg-white"
+              className="cursor-pointer border-t-4 border-x border-b 
+                border-x-primary/20 border-b-primary/20 
+                shadow-sm border-primary bg-white rounded-xl"
             >
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold">{payment.recipient}</h3>
-                <StatusBadge status={payment.status} />
+              <div className="p-4 flex flex-col gap-3 w-full">
+                {/* Header: Recipient + Status */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">Recipient</Typography>
+                    <Typography variant="mobileCardValue">
+                      {payment.recipient}
+                    </Typography>
+                  </div>
+                  <StatusBadge status={payment.status} />
+                </div>
+
+                {/* Salary Component + Document ID */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">Salary Component</Typography>
+                    <Typography variant="mobileCardValue">
+                      {payment.salary_component}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">Document ID</Typography>
+                    <Typography variant="mobileCardValue">
+                      {payment.invoiceId}
+                    </Typography>
+                  </div>
+                </div>
+
+                {/* Date + Amount */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">Date</Typography>
+                    <Typography variant="mobileCardValue">
+                      {payment.date}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">Amount</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatCurrency(payment.amount)}
+                    </Typography>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm mb-1">Invoice: {payment.invoiceId}</p>
-              <p className="text-sm mb-1">Date: {payment.date}</p>
-              <p className="font-semibold text-lg mt-2">
-                {" "}
-                {(payment.amount)}
-              </p>
             </div>
           ))}
         </div>
