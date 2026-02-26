@@ -254,7 +254,7 @@ const ITDeclarationForm = () => {
 
         pan: goHeadWithNewRegimeBool ? "" : hraData?.pan || "",
 
-        cunstom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
+        custom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
 
         address_title1: goHeadWithNewRegimeBool
           ? ""
