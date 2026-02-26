@@ -50,7 +50,7 @@ export function LeaveDetailView({
   const data = documentName ? fetchedData : propsData;
   const { isDesktop } = useScreenSize();
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const cleanDescription = DOMPurify.sanitize(data?.reference_document?.description || "");
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -278,6 +278,14 @@ export function LeaveDetailView({
                 {cleanDescription}
               </Typography>
             </div>
+            {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel">Reject Reason</Typography>
+                <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
+                  {data?.reference_document?.custom_rejection_reason}
+                </Typography>
+              </div>
+            )}
           </div>
 
           {data?.attachments && data?.attachments?.length > 0 ? (
