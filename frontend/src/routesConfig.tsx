@@ -534,7 +534,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/notification-log",
     element: <NotificationList />,
-    permissionKey: "Dashboard",
+    permissionKey: "NotificationList",
   },
   // Standalone Routes
   {

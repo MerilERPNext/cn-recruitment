@@ -1,3 +1,4 @@
+
 import React, { useMemo } from 'react'
 import { FlowRequestItem, WorkflowStage } from '../../../types/flows';
 import CardTable from '../../shared/CardTable';
@@ -8,6 +9,8 @@ import useCurrentUser from '../../../hooks/useCurrentUser'
 import { useApprovalAction } from '../../../hooks/userApprovalList';
 import { useScreenSize } from '../../../hooks/useScreenSize';
 import Button from '../../shared/atoms/Button';
+import { extractRolesAndUsers } from '../../../utils/flowUtils';
+import AllocatedToTooltip from '../../shared/AllocatedToTooltip';
 
 interface WorkflowTableProps {
     data: FlowRequestItem;
@@ -15,7 +18,6 @@ interface WorkflowTableProps {
 
 const titles = [
     "Stage No.",
-    "Assigned To",
     "Status",
     "Due Date",
     "Actions",
@@ -88,24 +90,26 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
     };
     const { data: currentUser } = useCurrentUser();
 
+   const allocatedTo = useMemo( () => extractRolesAndUsers(stage), [stage]); 
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
         let actionPermission = false;
 
-        if (stage?.todo?.allocated_to && currentUser?.name)
-            actionPermission = stage?.todo?.allocated_to === currentUser.name;
+        if (allocatedTo?.users && currentUser?.name)
+            actionPermission = allocatedTo.users.includes(currentUser?.name);
 
-        if (currentUser?.roles && stage?.todo?.role)
+        if (currentUser?.roles && allocatedTo?.roles)
             actionPermission ||= currentUser.roles.some(
-                (role) => role.role === stage?.todo?.role,
+                (role) => allocatedTo.roles.includes(role.role),
             );
 
         return actionPermission;
-    }, [currentUser, stage, isActive]);
+    }, [currentUser, isActive, allocatedTo]);
+
     return (
         isDesktop ? (<div
             key={idx}
-            className="hover:bg-gray-100 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
+            className="hover:bg-gray-100 py-4 text-center grid grid-cols-4 cursor-pointer text-xs w-full border-b"
         >
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {idx + 1}
@@ -113,11 +117,11 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {stage.target_name || stage.target || "-"}
             </Typography></div>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                <StatusBadge
-                    status={stage.status || "-"}
-                />
-            </Typography></div>
+            <div>        <AllocatedToTooltip position="right" users={allocatedTo.users} roles={allocatedTo.roles}>
+                    <StatusBadge
+                        status={stage.status || "-"}
+                    />
+                </AllocatedToTooltip></div>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {formatToIndianDate(stage.todo.date) || "-"}
             </Typography></div>
@@ -149,7 +153,7 @@ const WorkflowCard = ({ stage, idx, isActive }: { stage: WorkflowStage, idx: num
                             Assigned To
                         </Typography>
                         <Typography variant="mobileCardValue">
-                            {stage.todo?.allocated_to || stage.todo?.role || "-"}
+                             {allocatedTo.roles.join(",") || allocatedTo.users.join(",") || "-"}
                         </Typography>
                     </div>
 

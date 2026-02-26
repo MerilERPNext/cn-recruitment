@@ -1,14 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Check, Clock, X, User } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { FlowRequestStage } from "../../../types/flows";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { useApprovalAction } from "../../../hooks/userApprovalList";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { extractRolesAndUsers } from "../../../utils/flowUtils";
 
-interface RequestDetailsCardProps {
-  stages: FlowRequestStage[];
-}
-
-const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
   const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
 
@@ -43,18 +42,85 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
     }
   };
 
+interface RequestTimelineProps {
+  stages: FlowRequestStage[];
+}
 
+const RequestTimeline: React.FC<RequestTimelineProps> = ({ stages }) => {
   return (
     <div className="relative flex flex-col items-start px-4 py-6">
-      {stages.map((stage, index) => {
-        const isCompleted = stage.status === "Completed" || stage.status === "Approved";
+      {stages.map((stage, index) => 
+      <RequestDetailCard stage={stage} index={index} stages={stages} />
+      )}
+
+      {/* RequestDetailsCard End Indicator */}
+      <div className="flex items-center gap-2 text-green-600 text-sm font-medium mt-2 ml-7">
+        <Check size={18} strokeWidth={3} /> TimeLine up to date
+      </div>
+    </div>
+  );
+};
+
+interface RequestDetailCardProps{
+  stage: FlowRequestStage;
+  index: number;
+  stages: FlowRequestStage[];
+};
+
+
+const RequestDetailCard = ({stage, index, stages } : RequestDetailCardProps) =>{
+     const isCompleted = stage.status === "Completed" || stage.status === "Approved";
         const nextStage = stages[index + 1];
         const lineColor =
           isCompleted && nextStage?.status !== "Failed" && nextStage?.status !== "Rejected"
             ? "bg-green-500"
             : "bg-gray-300";
 
-        return (
+            const actions = stage?.todo?.custom_doctype_actions
+          ? JSON.parse(stage?.todo?.custom_doctype_actions)
+          : [];
+      const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
+          ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+          : [];
+
+
+     
+      const isActive = useMemo(()=>{
+         const activeStageIndex = stages.findIndex((stage) => stage.status === "Pending");
+         return activeStageIndex === index;
+      },[index, stages]); 
+  
+      const { handleAction } = useApprovalAction();
+  
+      const onAction = (action: string, data: any) => {
+          handleAction(
+              action,
+              {
+                  todo_id: data.name,
+                  custom_approval_type: data.custom_approval_type,
+                  custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action)
+              });
+      };
+      const { data: currentUser } = useCurrentUser();
+  
+        const allocatedTo = useMemo( () => extractRolesAndUsers(stage), [stage]); 
+        const canPerformActions = useMemo(() => {
+            if (!isActive) return false;
+            let actionPermission = false;
+    
+            if (allocatedTo?.users && currentUser?.name)
+                actionPermission = allocatedTo.users.includes(currentUser?.name);
+    
+            if (currentUser?.roles && allocatedTo?.roles)
+                actionPermission ||= currentUser.roles.some(
+                    (role) => allocatedTo.roles.includes(role.role),
+                );
+    
+            return actionPermission;
+        }, [currentUser, isActive, allocatedTo]);
+  
+
+  return (
           <div
             key={`${stage.stage_name}-${index}`}
             className="relative flex gap-4 w-full last:mb-0 mb-10"
@@ -82,10 +148,10 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
                 )}
                 <div
                   className={`z-10 rounded-full p-2.5 shadow-md flex items-center justify-center ${getBgColor(
-                    stage.status
+                    canPerformActions ? "In Progress" : stage.status
                   )}`}
                 >
-                  {getIcon(stage.status)}
+                  {getIcon(canPerformActions ? "In Progress" : stage.status)}
                 </div>
               </div>
             </div>
@@ -117,7 +183,7 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-gray-500">Assigned To</span>
                     <span className="font-medium text-gray-900 text-right truncate pl-2 max-w-[60%]">
-                      {stage.user || stage.role || "-"}
+                      {allocatedTo.roles.join(",") || allocatedTo.users.join(",") || "-"}
                     </span>
                   </div>
 
@@ -137,19 +203,20 @@ const RequestDetailsCard: React.FC<RequestDetailsCardProps> = ({ stages }) => {
                     </div>
                   )}
                 </div>
-
               </div>
+              {canPerformActions &&
+                    <TeamApprovalActionPill
+                        actions={actions}
+                        status={stage?.todo?.status}
+                        recordId={stage?.todo?.name}
+                        // loadingAction={loadingAction}
+                        onAction={(action) => onAction(action, stage?.todo)}
+                        variant="buttons"
+                    /> 
+                }
             </div>
           </div>
         );
-      })}
+}
 
-      {/* RequestDetailsCard End Indicator */}
-      <div className="flex items-center gap-2 text-green-600 text-sm font-medium mt-2 ml-7">
-        <Check size={18} strokeWidth={3} /> TimeLine up to date
-      </div>
-    </div>
-  );
-};
-
-export default RequestDetailsCard;
+export default RequestTimeline;

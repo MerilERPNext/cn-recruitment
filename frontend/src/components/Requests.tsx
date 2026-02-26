@@ -9,242 +9,200 @@ import {
   Workflow,
 } from "lucide-react";
 import { useState } from "react";
-import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
-import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
-import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
-import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
-import { useScreenSize } from "../hooks/useScreenSize";
+import { createPortal } from "react-dom";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
-import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useLoggedInUser } from "../hooks/useLoggedInUser";
+import { useScreenSize } from "../hooks/useScreenSize";
+import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
+import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import HeaderBar from "./HeaderBar";
-import { createPortal } from "react-dom";
+import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 
-const Requests = () => {
+interface RequestsProps {
+  limitCards?: number;
+}
+
+const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
+
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-  const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
+  const [showInitiateModel, setShowInitiateModel] = useState(false);
 
-  const handleShiftForm = () => {
-    setShowShiftRequestModal(true);
-  };
+  const handleShiftForm = () => setShowShiftRequestModal(true);
+  const handleCloseShiftModal = () => setShowShiftRequestModal(false);
+  const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
 
-  const handleCloseShiftModal = () => {
-    setShowShiftRequestModal(false);
-  };
-  const handleCloseAdvanceModal = () => {
-    setShowAdvanceForm(false);
-  };
+  /* ---------- Cards Config ---------- */
 
-  const requestsCards = () => {
-    return (
-      <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
-        <div className="grid grid-cols-4 md:grid-cols-4 gap-3 justify-center">
-          {/* Apply Leave */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => openModal()}
-          >
-            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+  const cards = [
+    {
+      label: "Apply Leaves",
+      icon: <Calendar className="w-5 h-5 text-blue-600" />,
+      bg: "bg-blue-100",
+      onClick: () => openModal(),
+    },
+    {
+      label: "Attendance Request",
+      icon: <FileText className="w-5 h-5 text-blue-600" />,
+      bg: "bg-blue-100",
+      onClick: () => setShowAttendanceRequest(true),
+    },
+    {
+      label: "Planned Overtime",
+      icon: <Timer className="w-5 h-5 text-purple-600" />,
+      bg: "bg-purple-100",
+      onClick: () => setShowOvertimeRequest(true),
+    },
+    {
+      label: "Change Shifts",
+      icon: <ArrowUpDown className="w-5 h-5 text-green-600" />,
+      bg: "bg-green-100",
+      onClick: handleShiftForm,
+    },
+    {
+      label: "Create Loan Request",
+      icon: <Wallet className="w-5 h-5 text-pink-600" />,
+      bg: "bg-pink-100",
+      onClick: () => setIsLoanDialogOpen(true),
+    },
+    {
+      label: "Create Advance",
+      icon: <IndianRupee className="w-5 h-5 text-orange-600" />,
+      bg: "bg-orange-100",
+      onClick: () => setShowAdvanceForm(true),
+    },
+    {
+      label: "Create Expense",
+      icon: <ReceiptIndianRupeeIcon className="w-5 h-5 text-green-600" />,
+      bg: "bg-green-100",
+      onClick: () => navigate("/webapp/expenses-app/add-expense"),
+    },
+    {
+      label: "Expense Advance",
+      icon: <IndianRupee className="w-5 h-5 text-amber-600" />,
+      bg: "bg-amber-100",
+      onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
+    },
+    {
+      label: "Create Flow Request",
+      icon: <Workflow className="w-5 h-5 text-purple-600" />,
+      bg: "bg-purple-100",
+      onClick: () => setShowInitiateModel(true),
+    },
+  ];
+
+  /* ---------- Requests Cards UI ---------- */
+
+  const requestsCards = () => (
+    <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
+      <div className="grid grid-cols-4 gap-3 justify-center">
+        {(limitCards ? cards.slice(0, limitCards) : cards).map(
+          (card, index) => (
+            <div
+              key={index}
+              className="shadow-sm hover-lift rounded-lg cursor-pointer
+              h-28 w-full flex flex-col items-center justify-center p-2"
+              onClick={card.onClick}
+            >
+              <div
+                className={`w-10 h-10 ${card.bg}
+                rounded-full md:rounded-lg
+                flex items-center justify-center mb-2`}
+              >
+                {card.icon}
+              </div>
+
+              <p className="text-xs text-gray-600 font-medium text-center">
+                {card.label}
+              </p>
             </div>
-            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
-              Apply Leaves
-            </p>
-          </div>
-
-          {/* Attendance Request */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowAttendanceRequest(true)}
-          >
-            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Attendance Request
-            </p>
-          </div>
-
-          {/* Overtime */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowOvertimeRequest(true)}
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Timer className="w-5 h-5 text-purple-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Planned Overtime
-            </p>
-          </div>
-
-          {/* Shift Change */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={handleShiftForm}
-          >
-            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <ArrowUpDown className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Change Shifts
-            </p>
-          </div>
-
-          {/* Create Loan */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setIsLoanDialogOpen(true)}
-          >
-            <div className="w-10 h-10 bg-pink-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Wallet className="w-5 h-5 text-pink-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
-              Create Loan Request
-            </p>
-          </div>
-
-          {/* Create Advance */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowAdvanceForm(true)}
-          >
-            <div className="w-10 h-10 bg-orange-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <IndianRupee className="w-5 h-5 text-orange-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Advance
-            </p>
-          </div>
-
-          {/* Create Expense */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => navigate("/webapp/expenses-app/add-expense")}
-          >
-            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <ReceiptIndianRupeeIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Expense
-            </p>
-          </div>
-
-          {/* Expense Advance */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-  h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => navigate("/webapp/expenses-app/new-expense-advance")}
-          >
-            <div className="w-10 h-10 bg-amber-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <IndianRupee className="w-5 h-5 text-amber-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Expense Advance
-            </p>
-          </div>
-
-          {/* Create Flow Request */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowInitiateModel(true)}
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Workflow className="w-5 h-5 text-purple-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Flow Request
-            </p>
-          </div>
-        </div>
-
-        {showAttendanceRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <AttendanceRequestFormV2
-                onClose={() => setShowAttendanceRequest(false)}
-              />
-            </div>
-          </div>
-        )}
-        {showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <CreateOvertimeRequest
-                onCancel={() => setShowOvertimeRequest(false)}
-              />
-            </div>
-          </div>
-        )}
-        <CreateLoanDialog
-          isOpen={isLoanDialogOpen}
-          onClose={() => {
-            try {
-              setIsLoanDialogOpen(false);
-            } catch (error) {
-              console.error("Error closing loan dialog:", error);
-            }
-          }}
-        />
-
-        <ExpenseFormModal
-          forMbileScreen={true}
-          isOpen={showShiftRequestModal}
-          onClose={handleCloseShiftModal}
-          title="Request Shift Change"
-        >
-          <ShiftRequestFormModal
-            className="h-full"
-            onClose={handleCloseShiftModal}
-          />
-        </ExpenseFormModal>
-        {showInitiateModel &&
-          createPortal(
-            <InitiateFlow
-              handleCloseModel={() => setShowInitiateModel(false)}
-            />,
-            document.body,
-          )}
-        {showAdvanceForm && (
-          <Modal onClose={handleCloseAdvanceModal}>
-            <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
-          </Modal>
+          ),
         )}
       </div>
-    );
-  };
+
+      {/* Attendance Modal */}
+
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestFormV2
+              onClose={() => setShowAttendanceRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Overtime Modal */}
+
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      <CreateLoanDialog
+        isOpen={isLoanDialogOpen}
+        onClose={() => setIsLoanDialogOpen(false)}
+      />
+
+      <ExpenseFormModal
+        forMbileScreen={true}
+        isOpen={showShiftRequestModal}
+        onClose={handleCloseShiftModal}
+        title="Request Shift Change"
+      >
+        <ShiftRequestFormModal
+          className="h-full"
+          onClose={handleCloseShiftModal}
+        />
+      </ExpenseFormModal>
+
+      {showInitiateModel &&
+        createPortal(
+          <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />,
+          document.body,
+        )}
+
+      {showAdvanceForm && (
+        <Modal onClose={handleCloseAdvanceModal}>
+          <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
+        </Modal>
+      )}
+    </div>
+  );
+
   const isRequestPage = useLocation().pathname === "/webapp/requests";
+
   const mobileLayout = (
-    <div className="flex flex-col min-h-fit bg-white h-fit">
+    <div className="flex flex-col min-h-fit bg-white">
       {isRequestPage && (
         <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
       )}
-      <div className="md:p-4 z-100 flex-grow overflow-y-auto h-fit">
+
+      <div className="md:p-4 flex-grow">
         {requestsCards()}
+
         <Outlet />
       </div>
     </div>

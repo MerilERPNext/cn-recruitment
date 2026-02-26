@@ -23,6 +23,7 @@ const MyLeaveRequests = ({
 }) => {
   const replaceLeave = useReplaceLeave();
   const { isDesktop } = useScreenSize();
+  const [activeStatus, setActiveStatus] = useState("Open");
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
@@ -108,16 +109,33 @@ const MyLeaveRequests = ({
           <CardSkeleton />
         ) : (
           <CardTable
-            titles={[
-              "Leave Type",
-              "From Date",
-              "To Date",
-              "Description",
-              "Leave Days",
-              "Status",
-              "ACTIONS",
-            ]}
-            columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 1fr"]}
+            titles={
+              activeStatus === "Rejected"
+                ? [
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Leave Days",
+                  "Status",
+                  "Reject Reason",
+                  "ACTIONS",
+                ]
+                : [
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Leave Days",
+                  "Status",
+                  "ACTIONS",
+                ]
+            }
+            columnWidths={
+              activeStatus === "Rejected"
+                ? ["1fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr 1fr"]
+                : ["1.5fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr"]
+            }
           >
             {currentEmployee?.name && (
               <DataListView
@@ -141,8 +159,12 @@ const MyLeaveRequests = ({
                     onRevokeApproved={() =>
                       revokeLeave(props.item.reference_document?.name ?? "")
                     }
+                    showRejectReason={activeStatus === "Rejected"}
                   />
                 )}
+                onFiltersChange={(filters) => {
+                  setActiveStatus(filters.status || "Open");
+                }}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[

@@ -8,6 +8,7 @@ export interface LeaveRequest {
   description?: string;
   department?: string;
   custom_reason?: string;
+  custom_rejection_reason?: string;
   half_day: boolean;
   custom_attachment?: { url: string }[];
   half_day_date?: string;
@@ -215,6 +216,7 @@ export interface LeaveApplication {
   custom_half_day_type?: string | null;
   total_leave_days: number;
   custom_reason?: string | null;
+  custom_rejection_reason?: string | null;
   description?: string | undefined;
   custom_attachment?: string | null;
   leave_balance: number;

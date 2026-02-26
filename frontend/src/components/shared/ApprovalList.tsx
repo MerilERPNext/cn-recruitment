@@ -46,6 +46,7 @@ type ApprovalListProps = {
   | React.ReactNode
   | ((filters: Record<string, any>) => React.ReactNode);
   SkeletonComponent?: React.ComponentType;
+  onActiveFiltersChange?: (filters: Record<string, any>) => void;
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -87,7 +88,7 @@ const ApprovalList = ({
   noRecordsScreen,
   SkeletonComponent,
   orderBy,
-
+  onActiveFiltersChange,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -95,7 +96,10 @@ const ApprovalList = ({
   const handleFiltersChange = useCallback((filters: Record<string, any>) => {
     const normalized = normalizeFilters(filters);
     setActiveFilters(normalized);
-  }, []);
+    if (onActiveFiltersChange) {
+      onActiveFiltersChange(normalized);
+    }
+  }, [onActiveFiltersChange]);
 
   const loading = useLoadingOverlay();
 

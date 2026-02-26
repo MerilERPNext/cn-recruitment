@@ -616,6 +616,10 @@ console.log("coment log", comment)
 
                   <button
                     onClick={() => {
+                      if (!comment.trim()) {
+                        toast.error("Comment mandatory for Approval");
+                        return;
+                      }
                       if (isDirty) {
                         setPendingAction("Approved");
                         setShowConfirm(true);
