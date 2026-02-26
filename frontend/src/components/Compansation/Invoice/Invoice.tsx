@@ -2,19 +2,21 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import {
+  useCurrentEmployeeAllDetails,
+  useFileUpload,
+} from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import InvoicePDFview from "./Component/InvoicePDFview";
-import CardTable from "../../shared/CardTable";
-import { Typography } from "../../shared/atoms/Typography";
+import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
-import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { useFileUpload } from "../../../hooks/useEmployee";
-import toast from "react-hot-toast";
-import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import InvoicePDFview from "./Component/InvoicePDFview";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -34,6 +36,15 @@ const getStatusBadgeClass = (status: string) => {
   }
 };
 
+interface InvoiceItem {
+  name: string;
+  invoice_status?: string;
+  start_date: string;
+  end_date: string;
+  employee_name: string;
+  gross_pay?: number;
+  net_pay?: number;
+}
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
@@ -57,10 +68,7 @@ export default function Invoice() {
   };
 
   // 🔥 Upload → Salary Slip update
-  const handleUploadAndAttach = (
-    file: File | null,
-    invoiceName: string
-  ) => {
+  const handleUploadAndAttach = (file: File | null, invoiceName: string) => {
     if (!file) return;
 
     uploadMutation.mutate(file, {
@@ -85,7 +93,7 @@ export default function Invoice() {
               console.error("Salary Slip update failed", err);
               toast.error("Upload success but attach failed");
             },
-          }
+          },
         );
       },
 
@@ -147,12 +155,14 @@ export default function Invoice() {
               </span>
               <button
                 onClick={() => setHideAmount((p) => !p)}
-                className={`w-8 h-5 rounded-xl relative transition ${hideAmount ? "bg-primary-500" : "bg-gray-300"
-                  }`}
+                className={`w-8 h-5 rounded-xl relative transition ${
+                  hideAmount ? "bg-primary-500" : "bg-gray-300"
+                }`}
               >
                 <span
-                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${hideAmount ? "right-0.5" : "left-0.5"
-                    }`}
+                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${
+                    hideAmount ? "right-0.5" : "left-0.5"
+                  }`}
                 />
               </button>
             </div>
@@ -162,29 +172,30 @@ export default function Invoice() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {isLoading ? (
-          <CardSkeleton />
-        ) : invoices.length === 0 ? (
-          <div className="py-10 text-center text-gray-500">
-            No invoices found
-          </div>
-        ) : isDesktop ? (
+        {isDesktop ? (
           /* ================= DESKTOP TABLE ================= */
           <CardTable titles={titles} columnWidths={columnWidths}>
-            {invoices.map((inv: any, idx: number) => {
-              const invoiceNo = inv.name;
+            {isLoading ? (
+              <CardSkeleton />
+            ) : invoices.length === 0 ? (
+              <div className="py-12 text-center text-gray-600">
+                No invoices found
+              </div>
+            ) : (
+              invoices.map((inv: InvoiceItem, idx: number) => {
+                const invoiceNo = inv.name;
 
-              return (
-                <div
-                  key={invoiceNo || idx}
-                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
-                  style={{ gridTemplateColumns: columnWidths.join(" ") }}
-                >
-                  <Typography variant="bodySmall" className="text-center">
-                    {invoiceNo}
-                  </Typography>
+                return (
+                  <div
+                    key={invoiceNo || idx}
+                    className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
+                    style={{ gridTemplateColumns: columnWidths.join(" ") }}
+                  >
+                    <Typography variant="bodySmall" className="text-center">
+                      {invoiceNo}
+                    </Typography>
 
-                  {inv.invoice_status && (
+                    {inv.invoice_status && (
                       <span
                         className={`flex-shrink-0 ml-2 px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusBadgeClass(inv.invoice_status)}`}
                       >
@@ -192,64 +203,71 @@ export default function Invoice() {
                       </span>
                     )}
 
-                  <Typography variant="bodySmall" className="text-center">
-                    {formatToIndianDate(inv.start_date)}
-                  </Typography>
+                    <Typography variant="bodySmall" className="text-center">
+                      {formatToIndianDate(inv.start_date)}
+                    </Typography>
 
-                  <Typography variant="bodySmall" className="text-center">
-                    {formatToIndianDate(inv.end_date)}
-                  </Typography>
+                    <Typography variant="bodySmall" className="text-center">
+                      {formatToIndianDate(inv.end_date)}
+                    </Typography>
 
-                  <Typography variant="bodySmall" className="text-center">
-                    {inv.employee_name}
-                  </Typography>
+                    <Typography variant="bodySmall" className="text-center">
+                      {inv.employee_name}
+                    </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className={`text-center ${amountClass}`}
-                  >
-                    {formatINR(inv.gross_pay || 0)}
-                  </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      className={`text-center ${amountClass}`}
+                    >
+                      {formatINR(inv.gross_pay || 0)}
+                    </Typography>
 
-                  <Typography
-                    variant="bodySmall"
-                    className={`text-center ${amountClass}`}
-                  >
-                    {formatINR(inv.net_pay || 0)}
-                  </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      className={`text-center ${amountClass}`}
+                    >
+                      {formatINR(inv.net_pay || 0)}
+                    </Typography>
 
-                  {/* Upload */}
-                  <div className="flex justify-center">
-                    <input
-                      type="file"
-                      onChange={(e) =>
-                        handleUploadAndAttach(
-                          e.target.files?.[0] || null,
-                          invoiceNo,
-                        )
-                      }
-                      className="text-xs border rounded
-                      file:border-0 file:bg-primary
-                      file:text-white file:px-2 file:py-1"
-                    />
+                    {/* Upload */}
+                    <div className="flex justify-center">
+                      <input
+                        type="file"
+                        onChange={(e) =>
+                          handleUploadAndAttach(
+                            e.target.files?.[0] || null,
+                            invoiceNo,
+                          )
+                        }
+                        className="text-xs border rounded
+                        file:border-0 file:bg-primary
+                        file:text-white file:px-2 file:py-1"
+                      />
+                    </div>
+
+                    {/* View */}
+                    <div className="flex justify-center">
+                      <InvoicePDFview
+                        invoiceID={invoiceNo}
+                        disabled={false}
+                        onClick={handleInvoiceClick}
+                      />
+                    </div>
                   </div>
-
-                  {/* View */}
-                  <div className="flex justify-center">
-                    <InvoicePDFview
-                      invoiceID={invoiceNo}
-                      disabled={false}
-                      onClick={handleInvoiceClick}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </CardTable>
+        ) : /* ================= MOBILE CARDS ================= */
+        isLoading ? (
+          <CardSkeleton />
+        ) : invoices.length === 0 ? (
+          <div className="py-12 text-center text-gray-600">
+            No invoices found
+          </div>
         ) : (
-          /* ================= MOBILE CARDS ================= */
           <div className="space-y-3 px-1">
-            {invoices.map((inv: any, idx: number) => {
+            {invoices.map((inv: InvoiceItem, idx: number) => {
               const invoiceNo = inv.name;
 
               return (
@@ -260,7 +278,10 @@ export default function Invoice() {
                   {/* Card Header */}
                   <div className="flex items-center justify-between p-4 border-b">
                     <div className="flex flex-col min-w-0">
-                      <Typography variant="bodySmall" className="font-semibold text-gray-800 truncate">
+                      <Typography
+                        variant="bodySmall"
+                        className="font-semibold text-gray-800 truncate"
+                      >
                         {invoiceNo}
                       </Typography>
                       <span className="text-xs text-gray-500">
@@ -280,11 +301,15 @@ export default function Invoice() {
                   <div className="p-4 space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Invoice Date</span>
-                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.start_date)}</span>
+                      <span className="font-medium text-gray-800">
+                        {formatToIndianDate(inv.start_date)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Due Date</span>
-                      <span className="font-medium text-gray-800">{formatToIndianDate(inv.end_date)}</span>
+                      <span className="font-medium text-gray-800">
+                        {formatToIndianDate(inv.end_date)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Sub Total</span>
@@ -294,7 +319,9 @@ export default function Invoice() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Total Amount</span>
-                      <span className={`font-semibold text-blue-600 ${amountClass}`}>
+                      <span
+                        className={`font-semibold text-blue-600 ${amountClass}`}
+                      >
                         {formatINR(inv.net_pay || 0)}
                       </span>
                     </div>
@@ -312,8 +339,8 @@ export default function Invoice() {
                           )
                         }
                         className="text-xs w-full border rounded
-                        file:border-0 file:bg-primary
-                        file:text-white file:px-2 file:py-1"
+                          file:border-0 file:bg-primary
+                          file:text-white file:px-2 file:py-1"
                       />
                     </label>
                     <InvoicePDFview
