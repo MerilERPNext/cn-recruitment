@@ -7,9 +7,9 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { ApprovalStage } from "../../../types/todos";
-import { Eye } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import ViewFormButton from "../ViewFormButton";
 
 type handleActPropsType = {
   name: string;
@@ -53,7 +53,6 @@ const StageCard: React.FC<StageCardProps> = ({
   const status = getStageStatus(stage, idx);
 
   const canPerformAction = useMemo(() => {
-
     if (!showActButton) return false;
     let actionPermission = false;
 
@@ -118,25 +117,19 @@ const StageCard: React.FC<StageCardProps> = ({
           <Typography variant="bodySmall">
             {approverPerfix} {stage?.role || stage?.user}
           </Typography>
+        </div>
 
+        <div className="flex max-lg:flex-row-reverse justify-between items-center px-4 pt-1 pb-3">
           {stage?.approval_response_data && stage?.status != "pending" && (
-            <Button
-              variant="subtle"
-              size="md"
+            <ViewFormButton
               onClick={() =>
                 handleShowForm(
                   stage?.form_json?.components,
                   stage?.approval_response_data,
                 )
               }
-            >
-              <Eye className="w-4 h-4" />
-              View Form
-            </Button>
+            />
           )}
-        </div>
-
-        <div className="flex max-lg:flex-row-reverse justify-between items-start px-4 pt-1 pb-3">
           {canPerformAction && status == "action_required" ? (
             <Button
               variant="contain"

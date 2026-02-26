@@ -83,7 +83,6 @@ const Separation = () => {
   }
 
   const separationData = getFunnelData("Separation");
-  console.log("separationData", separationData);
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
 

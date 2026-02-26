@@ -5,7 +5,6 @@ import {
 } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
-  useConfirmationApproval,
   useDifinitaionNameForSeparation,
   useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
@@ -15,18 +14,12 @@ import {
   // useConfirmationEmployee,
 } from "../../../hooks/useConfiremnation";
 import Button from "../../shared/atoms/Button";
-import {
-  Calendar,
-  CalendarCheck,
-  Clock,
-  FileText,
-} from "lucide-react";
+import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useCallback, useEffect, useMemo } from "react";
+import {  useEffect, useMemo, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import toast from "react-hot-toast";
 import StageCard from "./StageCard";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { statusConfig } from "./constants";
@@ -35,14 +28,25 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import { Form } from "@tsed/react-formio";
+import ReviewForm from "../Separation/components/ReviewForm";
+import { createPortal } from "react-dom";
+import ViewFormButton from "../ViewFormButton";
+import { FormIOComponent } from "../../../types/formio";
+import { useApprovalAction } from "../../../hooks/userApprovalList";
+import { TodoType } from "../../../types/todos";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee, isLoading: loadingCurrentEmployee, refetch: refetchCurrentEmployee } =
-    useCurrentEmployeeAllDetails(userId || "");
+  const {
+    data: currentEmployee,
+    isLoading: loadingCurrentEmployee,
+    refetch: refetchCurrentEmployee,
+  } = useCurrentEmployeeAllDetails(userId || "");
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
-  const { data: targetEmployee, refetch: refetchTargetEmployee } = useEmployee(targetEmployeeId);
+  const { data: targetEmployee, refetch: refetchTargetEmployee } =
+    useEmployee(targetEmployeeId);
   const doctype_name = "Employee";
   const doctype = "Employee Confirmation";
   const document_name = isViewingOtherUser
@@ -54,8 +58,8 @@ const ConfirmationWorkflow = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-        (item: any) => item?.trigger_category?.name === trigger_category,
-      )
+          (item: any) => item?.trigger_category?.name === trigger_category,
+        )
       : [];
   }
 
@@ -67,11 +71,13 @@ const ConfirmationWorkflow = () => {
     "Confirmation",
   );
 
-
   // END action buttons permission
 
-  const { data: showConfirmationButton, isLoading: loadingCardData, refetch: refetchShowConfirmationButton } =
-    useGetShouldShowConfirmationButton(document_name);
+  const {
+    data: showConfirmationButton,
+    isLoading: loadingCardData,
+    refetch: refetchShowConfirmationButton,
+  } = useGetShouldShowConfirmationButton(document_name);
 
   const {
     data: employeeConfirmationPending,
@@ -83,15 +89,20 @@ const ConfirmationWorkflow = () => {
     isLoading: loadingConfirmationClosed,
     refetch: refetchConfirmationAndSeparationClosed,
   } = useConfirmation(doctype, "Closed");
-  const item = employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
+  const item =
+    employeeConfirmationPending?.[0] || employeeConfirmationClosed?.[0];
 
   const stages = item?.approval_stages_status;
+
   const confirmationData = getFunnelData("Confirmation");
   const definition_name = confirmationData?.[0]?.name || "";
   const l = "true";
 
   const isLoading =
-    loadingCardData || loadingConfirmationTodo || loadingCurrentEmployee || loadingConfirmationClosed;
+    loadingCardData ||
+    loadingConfirmationTodo ||
+    loadingCurrentEmployee ||
+    loadingConfirmationClosed;
 
   const { data } = useChatAssistant(
     doctype_name,
@@ -99,6 +110,46 @@ const ConfirmationWorkflow = () => {
     definition_name,
     l,
   );
+
+  const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
+  const selfInitFormAndAns = useMemo(
+    () =>
+      item?.reference_document?.initiator_form
+        ? JSON.parse(item?.reference_document?.initiator_form)
+        : null,
+    [item]);
+
+  const [formSchema, setFormSchema] = useState();
+  const handleShowForm = () => {
+    const schema: FormIOComponent[] = selfInitFormAndAns?.form?.components;
+    const answer = selfInitFormAndAns?.answer;
+
+    setFormSchema((prev: any) => {
+      if (!schema) return prev;
+
+      const updatedSchema = schema
+        .filter((comp) => comp.key !== "submit")
+        .map((component) => {
+          const key = component.key;
+
+          if (key && answer[key] != "undefined") {
+            return {
+              ...component,
+              defaultValue: answer[key],
+            };
+          }
+
+          return component;
+        });
+
+      return {
+        display: "form",
+        components: updatedSchema,
+      };
+    });
+
+    setShowSelfInitForm(true);
+  };
 
   const handleInitiateConfirmation = () => {
     const maxAttempts = 500; // 50 seconds max (500 * 100ms)
@@ -128,50 +179,15 @@ const ConfirmationWorkflow = () => {
 
   /** Actions for approver actions */
 
-  const mutation = useConfirmationApproval();
-  const handleAct = useCallback(
-    async (action: { name: string; hasForm: boolean; todo: any }) => {
-      try {
-        if (mutation?.isPending) return;
-        const response = await mutation?.mutateAsync({
-          action: action.name,
-          name: action?.todo?.todo_id || "",
-        });
+  const { handleAction } = useApprovalAction();
 
-        console.log("Action response:", response);
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          action?.todo?.custom_open_chatnext_assistant_on_action,
-        );
-
-        console.log(
-          "Opening assistant with session:",
-          responseWithSession?.session,
-        );
-
-        if (window.trigger_chatnext_assistant && action.hasForm) {
-          window.trigger_chatnext_assistant(true, responseWithSession?.session);
-        }
-
-        if (action.name.toLowerCase() !== "approve") {
-          // triggerRefetch();
-        }
-
-        // Query invalidation now handled by Frappe realtime events
-      } catch (error: any) {
-        const exceptions = error?.response?.data?.exception?.split(":");
-        const errMessage =
-          exceptions?.length > 1
-            ? exceptions[1] + " " + exceptions[2]
-            : exceptions[1];
-        console.error("Action failed", error);
-        toast.error(errMessage);
-      }
-    },
-    [mutation],
-  );
+  const handleAct = async (action: { name: string; hasForm: boolean; todo: TodoType }) => {
+      handleAction( action.name, {
+        todo_id: action.todo?.todo_id,
+        custom_open_chatnext_assistant_on_action: action.hasForm,
+        custom_approval_type: action.todo?.custom_approval_type,
+      });
+    }
 
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
@@ -196,7 +212,7 @@ const ConfirmationWorkflow = () => {
       refetchConfirmationAndSeparation();
       refetchConfirmationAndSeparationClosed();
       refetchShowConfirmationButton();
-    }
+    };
 
     const handleChatClose = () => {
       refreshCurrentPageData();
@@ -210,9 +226,19 @@ const ConfirmationWorkflow = () => {
         handleChatClose,
       );
     };
-  }, [refetchCurrentEmployee, refetchTargetEmployee, refetch, refetchConfirmationAndSeparation, refetchConfirmationAndSeparationClosed, refetchShowConfirmationButton]);
+  }, [
+    refetchCurrentEmployee,
+    refetchTargetEmployee,
+    refetch,
+    refetchConfirmationAndSeparation,
+    refetchConfirmationAndSeparationClosed,
+    refetchShowConfirmationButton,
+  ]);
 
-  const canInitiateProbationExtension = showConfirmationButton?.show_button && canInitiateConfirmation && activeEmployee?.custom_employment_status == "Probation Extended";
+  const canInitiateProbationExtension =
+    showConfirmationButton?.show_button &&
+    canInitiateConfirmation &&
+    activeEmployee?.custom_employment_status == "Probation Extended";
 
   const confirmationCards = useMemo(
     () => [
@@ -234,14 +260,14 @@ const ConfirmationWorkflow = () => {
       },
       ...(item?.reference_document?.creation
         ? [
-          {
-            label: "Trigger Date",
-            value: formatToIndianDate(item.reference_document.creation),
-            Icon: Clock,
-            bg: "bg-orange-50",
-            text: "text-orange-600",
-          },
-        ]
+            {
+              label: "Trigger Date",
+              value: formatToIndianDate(item.reference_document.creation),
+              Icon: Clock,
+              bg: "bg-orange-50",
+              text: "text-orange-600",
+            },
+          ]
         : []),
       {
         label: "Status",
@@ -270,8 +296,11 @@ const ConfirmationWorkflow = () => {
       status: showConfirmationButton?.show_button
         ? "action_required"
         : "pending",
-      show_confirmation_button: canInitiateConfirmation && activeEmployee?.custom_employment_status == "On Probation",
-      self_confirmation_btn_name: "Initiate Confirmation"
+      show_confirmation_button:
+        canInitiateConfirmation &&
+        activeEmployee?.custom_employment_status == "On Probation",
+      self_confirmation_btn_name: "Initiate Confirmation",
+      show_view_form_btn: !!selfInitFormAndAns,
     },
   ];
 
@@ -328,6 +357,9 @@ const ConfirmationWorkflow = () => {
                 </div>
 
                 <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
+                    {item?.show_view_form_btn && (
+                    <ViewFormButton onClick={() => handleShowForm()} />
+                  )}
                   {item.show_confirmation_button ? (
                     <Button
                       variant="contain"
@@ -339,7 +371,6 @@ const ConfirmationWorkflow = () => {
                   ) : (
                     <div></div>
                   )}
-
                   <div>{item.time}</div>
                 </div>
               </div>
@@ -361,8 +392,8 @@ const ConfirmationWorkflow = () => {
         ))}
       </Card>
 
-      {canInitiateProbationExtension &&
-        < div className="flex justify-center mt-6 mb-16">
+      {canInitiateProbationExtension && (
+        <div className="flex justify-center mt-6 mb-16">
           <Button
             variant="contain"
             size="md"
@@ -371,9 +402,24 @@ const ConfirmationWorkflow = () => {
             Initiate Confirmation
           </Button>
         </div>
-      }
+      )}
 
-    </div >
+      {formSchema &&
+        showSelfInitForm &&
+        createPortal(
+          <ReviewForm onClose={() => setShowSelfInitForm(false)}>
+            <Form
+              form={formSchema}
+              options={{
+                readOnly: true, // This makes the entire form read-only
+                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
+              }}
+              submit={false}
+            />
+          </ReviewForm>,
+          document.body,
+        )}
+    </div>
   );
 };
 

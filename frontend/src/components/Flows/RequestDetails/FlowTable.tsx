@@ -1,6 +1,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import RequestTimeline from "./RequestDetailsCard";
+import RequestTimeline from "./RequestDetailsTimeline";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 
@@ -32,7 +32,7 @@ interface FlowTableProps {
 
 const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
     const { isDesktop } = useScreenSize();
-    const activeStageIndex = data.approval_stages.findIndex((stage) => stage.status === "Pending");
+    const activeStageIndex = data.approval_status === "Pending" ? data.approval_stages.findIndex((stage) => stage.status === "Pending") : -1;
     
     return (
         <div className="sm:px-7 px-4">
@@ -52,8 +52,8 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
                     />
                 </CardTable>
             ) : (
-                <div className="pb-10">
-                    <RequestTimeline stages={data.approval_stages} />
+                <div className="pb-10 overflow-y-auto">
+                    <RequestTimeline stages={data.approval_stages} activeStageIndex={activeStageIndex} />
                 </div>
             )}
         </div>
@@ -100,7 +100,7 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
     return (
         <div
             key={stage.stage_name}
-            className="hover:bg-primary-100 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
+            className="hover:bg-primary-100 px-6 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
         >
             <div>  <Typography variant="bodySmall" className="font-medium text-center">
                 {stage.stage_name || "-"}
