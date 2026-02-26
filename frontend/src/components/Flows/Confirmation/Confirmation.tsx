@@ -132,7 +132,7 @@ const ConfirmationWorkflow = () => {
         .map((component) => {
           const key = component.key;
 
-          if (key && answer[key] != "undefined") {
+          if (key && answer[key] !== undefined) {
             return {
               ...component,
               defaultValue: answer[key],
