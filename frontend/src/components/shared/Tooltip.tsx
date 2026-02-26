@@ -29,7 +29,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 🔥 Correct Position Calculation
+  // ✅ Position Calculation
   const calculatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
@@ -93,7 +93,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     setCoords({ top, left });
   }, [position]);
 
-  // 🔥 Visibility Effect
+  // ✅ Visibility effect
   useEffect(() => {
     if (!isVisible) return;
 
@@ -110,14 +110,13 @@ const Tooltip: React.FC<TooltipProps> = ({
     };
   }, [isVisible, calculatePosition]);
 
-  // Cleanup timeout
+  // Cleanup
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
-  // Show
   const show = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -126,11 +125,32 @@ const Tooltip: React.FC<TooltipProps> = ({
     }, delay);
   };
 
-  // Hide
   const hide = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
     setIsVisible(false);
+  };
+
+  const getArrowClasses = () => {
+    switch (position) {
+      case "bottom":
+        return "bottom-full left-1/2 -translate-x-1/2 border-b-gray-900 border-l-transparent border-r-transparent border-t-0";
+
+      case "left":
+        return "left-full top-1/2 -translate-y-1/2 border-l-gray-900 border-t-transparent border-b-transparent border-r-0";
+
+      case "right":
+        return "right-full top-1/2 -translate-y-1/2 border-r-gray-900 border-t-transparent border-b-transparent border-l-0";
+
+      case "tl":
+        return "top-full left-[15%] border-t-gray-900 border-l-transparent border-r-transparent";
+
+      case "tr":
+        return "top-full right-[10%] border-t-gray-900 border-l-transparent border-r-transparent";
+
+      case "top":
+      default:
+        return "top-full left-1/2 -translate-x-1/2 border-t-gray-900 border-l-transparent border-r-transparent";
+    }
   };
 
   if (!content) return <>{children}</>;
@@ -139,16 +159,19 @@ const Tooltip: React.FC<TooltipProps> = ({
     <div
       ref={tooltipRef}
       role="tooltip"
-      className={`fixed z-[9999] pointer-events-none`}
+      className="fixed z-[9999] pointer-events-none"
       style={{
-        top: `${coords.top}px`,
-        left: `${coords.left}px`,
+        top: coords.top,
+        left: coords.left,
       }}
     >
       <div
-        className={`px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
+        className={`relative px-3 py-2 text-sm text-white bg-gray-900 rounded-lg shadow-lg whitespace-normal break-words text-center max-w-xs ${className}`}
       >
         {content}
+
+        {/* ✅ Arrow */}
+        <div className={`absolute w-0 h-0 border-4 ${getArrowClasses()}`} />
       </div>
     </div>
   );

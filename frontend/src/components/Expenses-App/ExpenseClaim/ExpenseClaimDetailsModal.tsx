@@ -14,7 +14,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
-import Badge from "../../shared/Badge";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 
@@ -30,7 +30,6 @@ interface ExpenseClaimModalProps {
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   id,
   onClose,
-  getStatusBadgeClasses,
   selectedStages,
   selectedSendBackUser,
   canEdit: canEditProp = false,
@@ -54,45 +53,48 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
         }).format(value)
       : "—";
 
-  const badgeFor = (status?: string) =>
-    getStatusBadgeClasses
-      ? getStatusBadgeClasses(status || "")
-      : "bg-gray-100 text-gray-800";
-
   if (!id) return null;
 
   // Desktop table for participants
   const DesktopParticipants = (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 text-sm text-left">
-        <thead className="bg-gray-100 text-gray-700">
-          <tr>
-            <th className="px-4 py-2 border-b">Employee Type</th>
-            <th className="px-4 py-2 border-b">Employee Name</th>
-            <th className="px-4 py-2 border-b text-right">Percentage</th>
-            <th className="px-4 py-2 border-b text-right">Allocated Amount</th>
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Name
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Percentage
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Allocated Amount
+            </th>
           </tr>
         </thead>
 
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {data?.custom_participants?.map((p: Participant) => {
             const name =
               p?.employee_name || p?.guest_name || p?.employee || "—";
             return (
               <tr
                 key={p?.name}
-                className="even:bg-white odd:bg-gray-50 hover:bg-gray-100"
+                className="bg-white hover:bg-gray-50 transition-colors duration-150"
               >
-                <td className="px-4 py-2 border-b align-top">
+                <td className="px-4 py-3 text-gray-800">
                   {p?.employee_type ?? "—"}
                 </td>
-                <td className="px-4 py-2 border-b align-top">{name}</td>
-                <td className="px-4 py-2 border-b text-right align-top">
+                <td className="px-4 py-3 text-gray-800">{name}</td>
+                <td className="px-4 py-3 text-gray-800">
                   {typeof p?.percentage === "number"
                     ? `${p?.percentage}%`
                     : "—"}
                 </td>
-                <td className="px-4 py-2 border-b text-right align-top">
+                <td className="px-4 py-3 text-gray-800">
                   {formatINR(p?.allocated_amount)}
                 </td>
               </tr>
@@ -161,81 +163,78 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
   // Desktop table for expense items
   const DesktopExpenseItems = (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-200 text-sm text-left">
-        <thead className="bg-gray-100 text-gray-700">
-          <tr>
-            <th className="px-4 py-2 border">Expense Claim Type</th>
-            <th className="px-4 py-2 border ">Expense Date</th>
-            <th className="px-4 py-2 border">Approval Status</th>
-            <th className="px-4 py-2 border text-right">Claimed Amount</th>
-            <th className="px-4 py-2 border text-right">Sanctioned Amount</th>
-            <th className="px-4 py-2 border text-center">Attachment</th>
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Expense Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Expense Date
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Status
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Claimed Amt
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Sanctioned Amt
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Attachment
+            </th>
             {isSendedBack && (
-              <th className="px-4 py-2 border-b text-center">Actions</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+                Actions
+              </th>
             )}
           </tr>
         </thead>
 
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
             data.expenses.map((item: Expense) => {
-              const rowStatus =
-                item.custom_approval_staus?.trim() ||
-                data?.approval_status ||
-                "";
-              const badgeClass = badgeFor(rowStatus);
-              const badgeBg = badgeClass.split(" ")[0];
-              const badgeText = badgeClass.split(" ")[1];
-
               return (
                 <tr
                   key={item.name}
-                  className="even:bg-white odd:bg-gray-50 hover:bg-gray-100"
+                  className="bg-white hover:bg-gray-50 transition-colors duration-150"
                 >
-                  <td className="px-4 py-2 border-b align-top">
+                  <td className="px-4 py-3 text-gray-800">
                     {item.expense_type ?? "—"}
                   </td>
-                  <td className="px-4 py-2 border-b align-top">
+                  <td className="px-4 py-3 text-gray-800">
                     {formatToIndianDate(item.expense_date)}
                   </td>
 
-                  <td className="px-4 py-2 border-b align-top">
-                    <Badge
-                      label={
-                        item.custom_approval_staus === "Draft"
-                          ? "Pending"
-                          : item.custom_approval_staus || ""
-                      }
-                      backgroundColor={badgeBg}
-                      textColor={badgeText}
-                      size="sm"
-                    />
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center">
+                      <StatusBadge status={item.custom_approval_staus} />
+                    </div>
                   </td>
 
-                  <td className="px-4 py-2 border-b text-right align-top">
+                  <td className="px-4 py-3 text-gray-800">
                     {formatINR(item.amount)}
                   </td>
 
-                  <td className="px-4 py-2 border-b text-right align-top">
+                  <td className="px-4 py-3 text-gray-800">
                     {formatINR(item.sanctioned_amount)}
                   </td>
-                  <td className="px-4 py-2 border-b text-center align-top">
+                  <td className="px-4 py-3 flex justify-center">
                     {item.custom_attach_receipt ? (
-                      <a
-                        href={item.custom_attach_receipt}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline text-sm"
-                      >
-                        View File
-                      </a>
+                      <AttachmentCard
+                        fileUrl={item.custom_attach_receipt}
+                        compact
+                      />
                     ) : (
-                      <span className="text-gray-400 text-sm">No File</span>
+                      <span className="text-xs text-gray-400 italic">
+                        No file
+                      </span>
                     )}
                   </td>
                   {isSendedBack && (
-                    <td className="flex justify-center">
+                    <td className="px-4 py-3">
                       <button
                         onClick={() => {
                           const navigationState = buildExpenseNavigationState(
@@ -246,7 +245,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                             state: navigationState,
                           });
                         }}
-                        className="text-gray-500 hover:text-blue-600"
+                        className="text-gray-500 hover:text-blue-600 transition-colors"
                       >
                         <SquarePen size={18} />
                       </button>
@@ -257,7 +256,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             })
           ) : (
             <tr>
-              <td className="px-4 py-6 text-center text-gray-500" colSpan={4}>
+              <td
+                className="px-4 py-8 text-center text-gray-400 italic"
+                colSpan={isSendedBack ? 7 : 6}
+              >
                 No expense items found.
               </td>
             </tr>
@@ -272,12 +274,6 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
         data.expenses.map((item: Expense, idx: number) => {
-          const rowStatus =
-            item.custom_approval_staus?.trim() || data?.approval_status || "";
-          const badgeClass = badgeFor(rowStatus);
-          const badgeBg = badgeClass.split(" ")[0];
-          const badgeText = badgeClass.split(" ")[1];
-
           return (
             <div
               key={item.name}
@@ -287,16 +283,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 <Typography variant="label" className="card-title">
                   Expense Item {idx + 1}
                 </Typography>
-                <Badge
-                  label={
-                    item.custom_approval_staus === "Draft"
-                      ? "Pending"
-                      : item.custom_approval_staus || ""
-                  }
-                  backgroundColor={badgeBg}
-                  textColor={badgeText}
-                  size="sm"
-                />
+                <StatusBadge status={item.custom_approval_staus} />
               </div>
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -340,14 +327,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   Attachment
                 </Typography>
                 {item.custom_attach_receipt ? (
-                  <a
-                    href={item.custom_attach_receipt}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline text-sm"
-                  >
-                    View File
-                  </a>
+                  <AttachmentCard fileUrl={item.custom_attach_receipt} />
                 ) : (
                   <span className="text-gray-400 text-sm">No File</span>
                 )}

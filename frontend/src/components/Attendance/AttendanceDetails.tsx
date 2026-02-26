@@ -1,4 +1,3 @@
-import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
@@ -9,6 +8,7 @@ import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import formatToIndianDate from "../../utils/formatToIndianDate";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 import Button from "../shared/atoms/Button";
 import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
@@ -50,8 +50,8 @@ export function AttendanceDetailView({
   // When documentName is provided, we should render even if data isn't loaded yet
   const shouldRender = !!documentName || !!data?.todo_id;
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const cleanExplaination = DOMPurify.sanitize(
+  const cleanDescription = sanitizeToPlainText(data?.description || "");
+  const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation || "",
   );
 

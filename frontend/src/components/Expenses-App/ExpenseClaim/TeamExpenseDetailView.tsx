@@ -1,11 +1,4 @@
-import {
-  Download,
-  ExternalLink,
-  RotateCcw,
-  X,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
@@ -31,6 +24,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -74,9 +68,6 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
-  const [currentDocumentUrl, setCurrentDocumentUrl] = useState<string>("");
-  const [imageZoom, setImageZoom] = useState<number>(100);
 
   const loading = useLoadingOverlay();
 
@@ -279,30 +270,6 @@ export function TeamExpenseDetailView({
   const handleCancelComment = () => {
     setShowCommentModal(false);
     setPendingAction(null);
-  };
-
-  const handleOpenDocument = (url: string) => {
-    setCurrentDocumentUrl(url);
-    setShowDocumentViewer(true);
-    setImageZoom(100);
-  };
-
-  const handleCloseDocumentViewer = () => {
-    setShowDocumentViewer(false);
-    setCurrentDocumentUrl("");
-    setImageZoom(100);
-  };
-
-  const handleZoomIn = () => {
-    setImageZoom((prev) => Math.min(prev + 25, 200));
-  };
-
-  const handleZoomOut = () => {
-    setImageZoom((prev) => Math.max(prev - 25, 50));
-  };
-
-  const handleResetZoom = () => {
-    setImageZoom(100);
   };
 
   const getStatus = (status: string) => {
@@ -657,14 +624,10 @@ export function TeamExpenseDetailView({
                             >
                               DOCUMENTS
                             </Typography>
-                            <button
-                              onClick={() =>
-                                handleOpenDocument(item.custom_attach_receipt)
-                              }
-                              className="text-sm text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
-                            >
-                              {item.custom_attach_receipt.split("/").pop()}
-                            </button>
+                            <AttachmentCard
+                              fileUrl={item.custom_attach_receipt}
+                              compact={isDesktop ? false : true}
+                            />
                           </div>
                         )}
 
@@ -882,145 +845,6 @@ export function TeamExpenseDetailView({
           )}
         </div>
       </div>
-
-      {/* Document Viewer Modal - Helpdesk Style */}
-      {showDocumentViewer && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
-          onClick={handleCloseDocumentViewer}
-        >
-          <div
-            className="relative bg-white rounded-xl w-[95vw] h-[90vh] max-w-xl flex flex-col overflow-hidden shadow-2xl animate-slideUp"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Compact Header Toolbar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-              {/* File name */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-gray-900 truncate">
-                  {currentDocumentUrl.split("/").pop()}
-                </span>
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center gap-1.5">
-                {/* Zoom controls for images */}
-                {currentDocumentUrl.match(
-                  /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                ) && (
-                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
-                    <button
-                      onClick={handleZoomOut}
-                      disabled={imageZoom <= 50}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
-                      {imageZoom}%
-                    </span>
-                    <button
-                      onClick={handleZoomIn}
-                      disabled={imageZoom >= 200}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
-                    <button
-                      onClick={handleResetZoom}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                      title="Reset Zoom"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                  </div>
-                )}
-
-                <a
-                  href={currentDocumentUrl}
-                  download
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Download"
-                >
-                  <Download className="h-4 w-4 text-gray-600" />
-                </a>
-                <a
-                  href={currentDocumentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Open in New Tab"
-                >
-                  <ExternalLink className="h-4 w-4 text-gray-600" />
-                </a>
-                <div className="w-px h-4 bg-gray-300 mx-0.5" />
-                <button
-                  onClick={handleCloseDocumentViewer}
-                  className="p-1.5 rounded-md hover:bg-red-100 transition-colors"
-                  title="Close"
-                >
-                  <X className="h-4 w-4 text-gray-500 hover:text-red-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Preview Area */}
-            <div className="flex-1 overflow-auto bg-gray-100">
-              {currentDocumentUrl && (
-                <>
-                  {currentDocumentUrl.toLowerCase().endsWith(".pdf") ? (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  ) : currentDocumentUrl.match(
-                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                    ) ? (
-                    <div className="w-full h-full flex items-center justify-center p-6 overflow-auto">
-                      <div
-                        className="transition-transform duration-200 ease-out"
-                        style={{ transform: `scale(${imageZoom / 100})` }}
-                      >
-                        <img
-                          src={currentDocumentUrl}
-                          alt="Document"
-                          className="max-w-full object-contain rounded shadow-lg"
-                          style={{ maxHeight: "80vh" }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
