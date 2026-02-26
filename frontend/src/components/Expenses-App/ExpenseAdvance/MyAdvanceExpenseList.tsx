@@ -53,7 +53,6 @@ const MyAdvanceExpenseList = () => {
             variant="bodySmall"
             className="font-medium text-center truncate"
           >
-            {" "}
             <WrapperHoverCard employeeId={item?.allocated_to_emp_id}>
               {item?.username}
             </WrapperHoverCard>
@@ -149,7 +148,7 @@ const MyAdvanceExpenseList = () => {
           {/* Company & Posting Date */}
           <div className="flex justify-between w-full">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Advnace Policy</Typography>
+              <Typography variant="mobileCardLabel">Advance Policy</Typography>
               <Typography variant="mobileCardValue">
                 {doc?.custom_advance_policy}
               </Typography>
@@ -239,7 +238,7 @@ const MyAdvanceExpenseList = () => {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">My Advance Expenses</Typography>{" "}
+            <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
