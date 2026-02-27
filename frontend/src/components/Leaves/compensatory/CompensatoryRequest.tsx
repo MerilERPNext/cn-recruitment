@@ -86,9 +86,7 @@ const CompensatoryRequest: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <div>
-                <Typography variant="h4">Compensatory Requests</Typography>
-              </div>
+              <span></span>
             )}
             <CustomDropdown
               value={selectedStatus}

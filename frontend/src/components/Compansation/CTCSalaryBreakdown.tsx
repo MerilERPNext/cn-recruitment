@@ -49,13 +49,15 @@ const CTCSalaryUI = () => {
   };
 
   const Header = () => (
-    <div className="flex justify-between items-center mb-4 sm:px-2">
+    <div className="flex justify-between items-center mb-2 sm:px-2">
       <div>
-        <Typography variant="h4">Compensation</Typography>
         {isDesktop && (
-          <Typography variant="bodySmall" color="body2">
-            Detailed breakdown of your salary structure
-          </Typography>
+          <div>
+            <Typography variant="h4">Compensation</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Detailed breakdown of your salary structure
+            </Typography>
+          </div>
         )}
       </div>
 

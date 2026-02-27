@@ -338,7 +338,7 @@ const AdvancesList: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <Typography variant="h4">Advance Request</Typography>
+              <span></span>
             )}
 
             <ShowHideButton

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { FileText, MoreVertical, Users } from "lucide-react";
+import { FileText, Users } from "lucide-react";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -14,7 +14,6 @@ import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
-import DropdownMenu from "../../shared/DropDownMenu";
 import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -393,19 +392,6 @@ const ExpensesList: React.FC = () => {
     );
   };
 
-  const mobileMenuItems = [
-    {
-      label: "Policy",
-      icon: <FileText size={16} />,
-      onClick: () => setIsPolicyDrawerOpen(true),
-    },
-    {
-      label: "Shared",
-      icon: <Users size={16} />,
-      onClick: () => navigate("/webapp/expenses-app/shared-expenses"),
-    },
-  ];
-
   const tableTitles = [
     "Expense Category",
     "Claimed Amount",
@@ -441,42 +427,28 @@ const ExpensesList: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <div>
-                <Typography variant="h4">My Expense Claims</Typography>
-              </div>
+              <span></span>
             )}
             <div className="flex items-center space-x-3 pb-1">
-              {isDesktop ? (
-                <>
-                  <Button
-                    icon={<FileText size={16} />}
-                    variant="outline"
-                    size="md"
-                    className="rounded-xl hover:bg-blue-100 py-1"
-                    onClick={() => setIsPolicyDrawerOpen(true)}
-                  >
-                    Policy
-                  </Button>
+              <Button
+                icon={<FileText size={16} />}
+                variant="outline"
+                size="md"
+                className="rounded-xl hover:bg-blue-100 py-1"
+                onClick={() => setIsPolicyDrawerOpen(true)}
+              >
+                Policy
+              </Button>
 
-                  <Button
-                    onClick={() =>
-                      navigate("/webapp/expenses-app/shared-expenses")
-                    }
-                    icon={<Users size={16} />}
-                    size="md"
-                    variant="outline"
-                    className="hover:bg-blue-100 rounded-xl py-1"
-                  >
-                    Shared
-                  </Button>
-                </>
-              ) : (
-                <DropdownMenu items={mobileMenuItems} placement="bottom-left">
-                  <button className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100">
-                    <MoreVertical size={18} />
-                  </button>
-                </DropdownMenu>
-              )}
+              <Button
+                onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
+                icon={<Users size={16} />}
+                size="md"
+                variant="outline"
+                className="hover:bg-blue-100 rounded-xl py-1"
+              >
+                Shared
+              </Button>
             </div>
           </div>
         </div>

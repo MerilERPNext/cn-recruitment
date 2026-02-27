@@ -126,7 +126,7 @@ export default function Invoice() {
                 </Typography>
               </div>
             ) : (
-              <Typography variant="h4">My Invoices</Typography>
+              <span></span>
             )}
 
             <ShowHideButton
