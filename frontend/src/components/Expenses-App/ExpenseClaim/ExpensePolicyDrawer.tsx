@@ -1,10 +1,10 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Form } from "@tsed/react-formio";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
-import { Form } from "@tsed/react-formio";
 import { useGetExpensePolicyQuestions } from "../../../hooks/useExpense";
 import type { ExpensePolicyCategory } from "../../../types/expense";
 
@@ -33,12 +33,12 @@ const ExpensePolicyDrawer: React.FC<ExpensePolicyDrawerProps> = ({
   size = "xxl",
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-    undefined
+    undefined,
   );
 
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   const isAllPolicies = !selectedCategory;
@@ -97,7 +97,7 @@ const ExpensePolicyDrawer: React.FC<ExpensePolicyDrawerProps> = ({
         },
       ],
     }),
-    [categoryOptions]
+    [categoryOptions],
   );
 
   const handleFormChange = (submission: any) => {
@@ -162,6 +162,12 @@ const ExpensePolicyDrawer: React.FC<ExpensePolicyDrawerProps> = ({
           <div className="border rounded-xl divide-y overflow-hidden">
             {isLoading && (
               <p className="p-4 text-sm text-gray-500">Loading policy…</p>
+            )}
+
+            {!isLoading && policyData.length === 0 && (
+              <p className="p-6 text-sm text-gray-500 text-center">
+                {data?.message || "No policy questions available."}
+              </p>
             )}
 
             {!isLoading &&

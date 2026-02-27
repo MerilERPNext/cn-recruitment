@@ -286,7 +286,7 @@ const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[
     return (
         <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
-                <div key={item?.id || item?.name || originalIndex} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
+                <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] h-fit flex-shrink-0 snap-start">
                     <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} canEdit={canEdit} />
                 </div>
             ))}
@@ -323,7 +323,7 @@ const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onE
                             className="flex items-center justify-between gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
-                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest">
+                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest trim line-clamp-1">
                                 {label}
                             </Typography>
 

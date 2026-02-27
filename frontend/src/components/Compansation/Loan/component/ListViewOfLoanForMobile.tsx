@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { IoIosArrowForward } from "react-icons/io";
 import { useNavigate } from "react-router";
 import DataListView from "../../../DataListView";
 import { useCurrentEmployee } from "../../../../hooks/useEmployee";
@@ -9,6 +8,8 @@ import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
 import CreateLoanDialog from "./CreateLoanDailog";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
@@ -38,7 +39,11 @@ const ListViewOfLoanForMobile = () => {
           },
         }}
         ItemComponent={({ item }) => (
-          <LoantItem item={item} handleEdit={handleEdit} />
+          <LoantItem
+            item={item}
+            handleEdit={handleEdit}
+            onClick={() => handleGoToLoanDetails(item.loan_name)}
+          />
         )}
         onRefetchComplete={() => setRefetchAttendance(false)}
         refetchTrigger={refetchAttendance}
@@ -70,44 +75,86 @@ const ListViewOfLoanForMobile = () => {
 const LoantItem: React.FC<{
   item: Loan;
   handleEdit: (docname: string) => void;
-}> = ({ item, handleEdit }) => {
+  onClick: () => void;
+}> = ({ item, handleEdit, onClick }) => {
   return (
     <div
       key={item.name}
-      className="flex justify-between items-center bg-white p-4 mt-2 rounded-xl border cursor-pointer hover:shadow-md transition-shadow"
+      className="cursor-pointer border-t-4 border-x border-b mt-2
+        border-x-primary/20 border-b-primary/20 
+        shadow-sm border-primary bg-white rounded-xl"
+      onClick={onClick}
     >
-      {/* Left content */}
-      <div className="flex flex-col flex-grow">
-        <h3 className="text-[var(--text-primary)] text-base font-semibold mb-1">
-          {item.loan_name}
-        </h3>
-        <p className="text-sm text-[var(--secondary-color)]">
-          <span className="font-semibold">{item.emi_type}</span>
-        </p>
-      </div>
-
-      {/* Right content */}
-      <div className="flex items-center gap-3 flex-col">
-        <div className="flex items-center gap-2">
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Header: Loan Name + Status */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Loan Name</Typography>
+            <Typography variant="mobileCardValue">
+              {item.loan_name}
+            </Typography>
+          </div>
           <StatusBadge status={item.status} />
-          <MyApprovalActionPill
-            isPending={item.status === "Open"}
-            canEdit={!!item.can_edit}
-            onEdit={() => handleEdit(item.name)}
-          />
         </div>
-        <div className="flex gap-2">
-          <p className="flex items-center text-sm text-[var(--text-primary)]">
-            <span className="font-bold">
+
+        {/* Amount rows */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Amount</Typography>
+            <Typography variant="mobileCardValue">
               {item.status === "Open"
                 ? formatCurrency(item.loan_requested_amount)
                 : formatCurrency(item.loan_approved_amount)}
-            </span>
-          </p>
-          <button className="text-xl text-[var(--secondary-color)] hover:text-[var(--text-primary)] transition-colors">
-            <IoIosArrowForward />
-          </button>
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Loan Type</Typography>
+            <Typography variant="mobileCardValue">
+              {item.loan_type}
+            </Typography>
+          </div>
         </div>
+
+        {/* Duration + EMI Type */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">EMI Type</Typography>
+            <Typography variant="mobileCardValue">
+              {item.emi_type}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Tenure</Typography>
+            <Typography variant="mobileCardValue">
+              {item.loan_tenure || "0"}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Interest + Start Date */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Interest</Typography>
+            <Typography variant="mobileCardValue">
+              {item.rate_of_interest || "0"}%
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Start Date</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.loan_start_date)}
+            </Typography>
+          </div>
+        </div>
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={item.status === "Open"}
+          canEdit={!!item.can_edit}
+          onEdit={() => {
+            handleEdit(item.name);
+          }}
+        />
       </div>
     </div>
   );

@@ -32,6 +32,8 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
     company: string;
     department: string;
     expenses?: Expense[];
+    custom_advance_policy?: string;
+    custom_advance_type?: string;
   }
 
   const advanceDetails = raw.data as EmployeeAdvance | undefined;
@@ -43,47 +45,65 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 
   // Desktop table for expense breakup
   const DesktopBreakup = (
-    <div className="overflow-x-auto border border-gray-200 rounded-lg whitespace-nowrap">
-      <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-        <thead className="bg-gray-100 text-gray-700">
-          <tr>
-            <th className="px-4 py-3 border-b">Advance Type</th>
-            <th className="px-4 py-3 border-b">Date</th>
-            <th className="px-4 py-3 border-b text-right">Sanctioned Amount</th>
-            <th className="px-4 py-3 border-b text-right">Claimed Amount</th>
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Advance Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Date
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Sanctioned Amt
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Claimed Amt
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Invoice No.
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Merchant
+            </th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-gray-100">
           {Array.isArray(advanceDetails?.expenses) &&
           advanceDetails.expenses.length > 0 ? (
-            advanceDetails.expenses.map((item: any, index: number) => {
-              return (
-                <tr
-                  key={item.name || index}
-                  className="even:bg-white odd:bg-gray-50 hover:bg-gray-100"
-                >
-                  <td className="px-4 py-3 align-top">
-                    {item.expense_type ?? "—"}
-                  </td>
-
-                  <td className="px-4 py-3 align-top">
-                    {formatToIndianDate(item.expense_date)}
-                  </td>
-
-                  <td className="px-4 py-3 text-right align-top font-medium">
-                    {formatCurrency(item.sanctioned_amount)}
-                  </td>
-
-                  <td className="px-4 py-3 text-right align-top font-medium">
-                    {formatCurrency(item.amount)}
-                  </td>
-                </tr>
-              );
-            })
+            advanceDetails.expenses.map((item: any, index: number) => (
+              <tr
+                key={item.name || index}
+                className="bg-white hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-4 py-3 text-gray-800">
+                  {item.expense_type ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatToIndianDate(item.expense_date)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(item.sanctioned_amount)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(item.amount)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {item.custom_invoice_number ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {item.custom_mercent ?? "—"}
+                </td>
+              </tr>
+            ))
           ) : (
             <tr>
-              <td className="px-4 py-6 text-center text-gray-500" colSpan={4}>
+              <td
+                className="px-4 py-8 text-center text-gray-400 italic"
+                colSpan={6}
+              >
                 No specific breakup items found for this advance.
               </td>
             </tr>
@@ -140,6 +160,22 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatCurrency(item.amount)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Invoice No.
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {item.custom_invoice_number ?? "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Merchant
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {item.custom_mercent ?? "—"}
                 </Typography>
               </div>
             </div>
@@ -199,9 +235,13 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
               {/* Employee + Status */}
               <div className="flex gap-2 justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Employee</Typography>
+                  <Typography variant="mobileCardLabel">
+                    {advanceDetails?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>{" "}
                   <Typography variant="mobileCardValue">
-                    {`${advanceDetails?.employee_name}: ${advanceDetails?.employee}`}
+                    {advanceDetails?.employee_name || advanceDetails?.employee}
                   </Typography>
                 </div>
                 <div>
@@ -214,10 +254,28 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                 <div className="flex justify-between w-full">
                   <div className="flex flex-col gap-2">
                     <Typography variant="mobileCardLabel" className="block">
+                      Advance Policy
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {advanceDetails?.custom_advance_policy}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
                       Posting Date
                     </Typography>
                     <Typography variant="mobileCardValue">
                       {formatToIndianDate(advanceDetails?.posting_date ?? "")}
+                    </Typography>
+                  </div>
+                </div>
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Advance Category
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {advanceDetails?.custom_advance_type}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-2 text-right">
@@ -229,25 +287,6 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                       className="font-bold text-blue-700"
                     >
                       {formatCurrency(advanceDetails?.advance_amount ?? 0)}
-                    </Typography>
-                  </div>
-                </div>
-
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Company
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {advanceDetails?.company}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Department
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {advanceDetails?.department}
                     </Typography>
                   </div>
                 </div>

@@ -100,8 +100,8 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
     case "inactive":
       return {
         label: "Inactive",
-        bgClass: "bg-gray-100",
-        textClass: "text-gray-600",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
         icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 

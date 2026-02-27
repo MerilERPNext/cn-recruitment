@@ -4,7 +4,6 @@
 import { MoreVertical } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -30,6 +29,7 @@ import ContextualPopup from "../shared/molecules/ContextualPopup";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SalarySlipPDFModal from "./SalarySlipPDFModal";
+import ShowHideButton from "./ui/ShowHideButton";
 
 type PayrollPeriod = {
   name: string;
@@ -188,19 +188,19 @@ const SalarySlipsList = () => {
   // ---------------- FILTER ----------------
   const filter = useMemo(() => {
     const f: Record<string, string> = {};
-  
+
     const employeeId = targetEmployeeId || user?.employee;
     if (employeeId) {
       f.employee = employeeId;
     }
-  
+
     if (selectedPeriod) {
       f.custom_payroll_period = selectedPeriod; // optional backend support
     }
-  
+
     return f;
   }, [targetEmployeeId, selectedPeriod, user?.employee]);
-  
+
 
   return (
     <div className="flex flex-col h-full">
@@ -216,27 +216,7 @@ const SalarySlipsList = () => {
               </div>
             )}
             <div className="flex items-center justify-between gap-2 w-full md:w-auto">
-              <button
-                onClick={() => setMaskSalary((prev) => !prev)}
-                className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm"
-                title={maskSalary ? "Show amount" : "Hide amount"}
-              >
-                {maskSalary ? (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Show Amount
-                    </span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Hide Amount
-                    </span>
-                    <BsToggleOn className="w-6 h-6 text-primary" />
-                  </>
-                )}
-              </button>
+              <ShowHideButton showAmount={maskSalary} onToggleAmount={() => setMaskSalary((prev) => !prev)} />
               <CustomDropdown
                 value={selectedPeriod}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -520,54 +500,67 @@ const SalarySlipItemMobile = ({
   );
 
   return (
-    <div className="border rounded-lg mb-3 bg-white">
-      <div className="flex justify-between p-4 items-center border-b">
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-800">
-            {item.employee_name}
-          </span>
-          <span className="flex flex-row gap-2 text-xs text-gray-600">
-            <p>{formatToIndianDate(item.start_date)}</p>To
-            <p>{formatToIndianDate(item.end_date)}</p>
-          </span>
+    <div
+      className="cursor-pointer border-t-4 border-x border-b mt-2
+        border-x-primary/20 border-b-primary/20 
+        shadow-sm border-primary bg-white rounded-xl"
+    >
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Header: Employee Name + Actions */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Employee</Typography>
+            <Typography variant="mobileCardValue">
+              {item.employee_name}
+            </Typography>
+          </div>
+          <DownloadMenu
+            itemName={item.name}
+            isDownloading={isDownloading}
+            onType1={onDownloadType1}
+            onType2={onDownloadType2}
+            onType3={onDownloadType3}
+            onType4={onDownloadType4}
+            onShowPrintFormatMenu={printFormatMenuRef}
+          />
         </div>
 
-        <DownloadMenu
-          itemName={item.name}
-          isDownloading={isDownloading}
-          onType1={onDownloadType1}
-          onType2={onDownloadType2}
-          onType3={onDownloadType3}
-          onType4={onDownloadType4}
-          onShowPrintFormatMenu={printFormatMenuRef}
-        />
-      </div>
-
-      <div className="text-sm text-gray-600 p-4">
-        <div className="flex justify-between pb-2">
-          <span className="font-medium text-gray-700">Gross Pay</span>
-          <span className="font-semibold">
-            {maskSalary ? (
-              <span className="blur-sm text-gray-400">
-                {formatCurrency("XX,XXX")}
-              </span>
-            ) : (
-              formatCurrency2(item.gross_pay)
-            )}
-          </span>
+        {/* Duration Row */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Duration</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.start_date)} to {formatToIndianDate(item.end_date)}
+            </Typography>
+          </div>
         </div>
 
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Net Pay</span>
-          <span className="text-blue-600 font-semibold">
-            {maskSalary ? (
-              <span className="blur-sm text-gray-400">
-                {formatCurrency("XX,XXX")}
-              </span>
-            ) : (
-              formatCurrency2(item.net_pay)
-            )}
-          </span>
+        {/* Amounts */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Gross Pay</Typography>
+            <Typography variant="mobileCardValue">
+              {maskSalary ? (
+                <span className="blur-sm select-none text-gray-400">
+                  {formatCurrency("XX,XXX")}
+                </span>
+              ) : (
+                formatCurrency2(item.gross_pay)
+              )}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Net Pay</Typography>
+            <Typography variant="mobileCardValue" className="text-blue-600">
+              {maskSalary ? (
+                <span className="blur-sm select-none text-gray-400">
+                  {formatCurrency("XX,XXX")}
+                </span>
+              ) : (
+                formatCurrency2(item.net_pay)
+              )}
+            </Typography>
+          </div>
         </div>
       </div>
     </div>

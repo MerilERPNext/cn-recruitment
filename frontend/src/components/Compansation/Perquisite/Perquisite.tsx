@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState, useMemo } from "react";
-import { X, SearchIcon } from "lucide-react";
-import CardTable from "../../shared/CardTable";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import { SearchIcon, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { Typography } from "../../shared/atoms/Typography";
-import { Card } from "../../shared/atoms/Card";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
+import { Card } from "../../shared/atoms/Card";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
 
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
@@ -17,37 +18,33 @@ export default function PerquisiteList() {
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: perquisiteData } = usePerquisite(
-    user?.employee,
-    user?.company
-  );
+  const { data: perquisiteData } = usePerquisite(user?.employee, user?.company);
 
   const { isDesktop } = useScreenSize();
 
   const perquisites = useMemo(() => {
-    return ((perquisiteData as any)?.extra_payments || []).map(
-      (item: any) => ({
-        id: item.name,
-        name: item.salary_component,
-        taxableValue: item.amount,
-        status: item.is_tax_applicable === 1 ? "Paid" : "Not Paid",
-        description: `Payment Date: ${item.payment_date}`,
-        details: {
-          paymentDate: item.payment_date,
-          taxApplicable: item.is_tax_applicable === 1,
-          referenceNo: item.name,
-        },
-      })
-    );
+    return ((perquisiteData as any)?.extra_payments || []).map((item: any) => ({
+      id: item.name,
+      name: item.salary_component,
+      taxableValue: item.amount,
+      status: item.is_tax_applicable === 1 ? "Paid" : "Not Paid",
+      description: `Payment Date: ${item.payment_date}`,
+      details: {
+        paymentDate: item.payment_date,
+        taxApplicable: item.is_tax_applicable === 1,
+        referenceNo: item.name,
+      },
+    }));
   }, [perquisiteData]);
 
   // ✅ SEARCH FILTER
   const filteredPerquisites = useMemo(() => {
     if (!searchTerm) return perquisites;
 
-    return perquisites.filter((item: any) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.status.toLowerCase().includes(searchTerm.toLowerCase())
+    return perquisites.filter(
+      (item: any) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.status.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [perquisites, searchTerm]);
 
@@ -55,18 +52,19 @@ export default function PerquisiteList() {
   const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr"];
 
   return (
-    <div className="w-full p-4">
-      <div className="mb-6">
-        <Typography variant="subheading" color="body1">
-          Employee Perquisite
-        </Typography>
-        <Typography variant="bodySmall" color="body2">
-          Track Employee Perquisite History
-        </Typography>
+    <div className="w-full lg:p-4 p-2">
+      <div className="sm:mb-6 mb-2">
+        {isDesktop && (
+          <div>
+            <Typography variant="h4">Employee Perquisite</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Track Employee Perquisite History
+            </Typography>
+          </div>
+        )}
       </div>
       {isDesktop ? (
         <CardTable titles={titles} columnWidths={columnWidths}>
-
           <div className="relative w-full">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <SearchIcon size={18} />
@@ -102,16 +100,7 @@ export default function PerquisiteList() {
                 </div>
 
                 <div className="font-medium items-center flex justify-center">
-                  <span
-                    className={`px-2.5 py-1.5 rounded-2xl text-xs font-medium
-                    ${
-                      item.status === "Paid"
-                        ? "bg-success/20 text-success"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
+                  <StatusBadge status={item.status} />
                 </div>
 
                 <div className="font-medium items-center flex justify-center">
@@ -140,35 +129,51 @@ export default function PerquisiteList() {
           {filteredPerquisites.map((item: any) => (
             <div
               key={item.id}
-              className="bg-white rounded-xl p-4 shadow-sm border"
+              className="cursor-pointer border-t-4 border-x border-b mt-2
+                border-x-primary/20 border-b-primary/20 
+                shadow-sm border-primary bg-white rounded-xl"
+              onClick={() => setSelectedPerquisite(item)}
             >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold text-sm">{item.name}</h3>
+              <div className="p-4 flex flex-col gap-3 w-full">
+                {/* Header: Perquisite Name + Status */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">
+                      Perquisite Name
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {item.name}
+                    </Typography>
+                  </div>
+                  <StatusBadge status={item.status} />
                 </div>
 
-                <span
-                  className={`px-2 py-0.5 rounded-xl text-xs font-medium
-                  ${
-                    item.status === "Paid"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {item.status}
-                </span>
-              </div>
+                {/* Amount Row */}
+                <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">
+                      Taxable Value
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatCurrency(item.taxableValue)}
+                    </Typography>
+                  </div>
+                </div>
 
-              <div className="mt-2 text-sm font-medium">
-                {formatCurrency(item.taxableValue)}
+                <div className="w-full flex justify-end">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedPerquisite(item);
+                    }}
+                    className="text-[13px] font-medium text-primary border border-primary/40 
+                    bg-primary-20 px-3 py-1 rounded-lg hover:bg-primary/40 
+                    hover:border-primary/60 hover:text-primary-800 transition-colors duration-150"
+                  >
+                    View Details
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={() => setSelectedPerquisite(item)}
-                className="mt-3 text-sm text-blue-600 font-medium"
-              >
-                View Details 
-              </button>
             </div>
           ))}
         </div>
@@ -185,13 +190,10 @@ export default function PerquisiteList() {
               <X size={18} />
             </button>
 
-            <h2 className="text-xl font-semibold">
-              {selectedPerquisite.name}
-            </h2>
+            <h2 className="text-xl font-semibold">{selectedPerquisite.name}</h2>
 
             <p className="text-sm text-gray-500 mb-3 font-bold">
-              Taxable Value:{" "}
-              {formatCurrency(selectedPerquisite.taxableValue)}
+              Taxable Value: {formatCurrency(selectedPerquisite.taxableValue)}
             </p>
 
             <p className="text-sm text-gray-600 mb-4 font-bold">
@@ -227,7 +229,7 @@ export default function PerquisiteList() {
                           : String(value)}
                       </span>
                     </li>
-                  )
+                  ),
                 )}
               </ul>
             </div>

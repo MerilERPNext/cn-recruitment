@@ -11,6 +11,7 @@ import {
   useEmployeeAdvanceUpdate,
 } from "../../../../hooks/useEmployeeAdvances";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
@@ -23,11 +24,9 @@ type Props = {
   onClose: () => void;
 };
 
-
-
 const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
   if (!open || !item) return null;
-
+  const { isDesktop } = useScreenSize();
   const data = item.data;
   const ref = data?.reference_document;
   const loadingAction = item.loadingAction;
@@ -123,7 +122,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
     <>
       {/* MAIN MODAL */}
       <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-        <div className="w-full h-full md:h-auto md:max-w-3xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+        <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
             <Typography
@@ -229,7 +228,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
           {/* ACTION BUTTONS — sticky at bottom */}
           <div className="border-t bg-white p-4">
             <TeamApprovalActionPill
-              variant="modal"
+              variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={ref?.status || data?.status || ""}
               recordId={data?.todo_id}

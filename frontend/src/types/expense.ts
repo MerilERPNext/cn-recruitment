@@ -14,6 +14,7 @@ export interface ExpensePolicyCategory {
 
 export interface ExpensePolicyQuestionsResponse {
   success: boolean;
+  message?: string;
   data: ExpensePolicyCategory[];
   options: string[];
 }

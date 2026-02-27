@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface FileType {
     label: string;
     value: string;
@@ -92,12 +93,15 @@ export interface ReferenceDocument {
     modified: string;
     modified_by: string;
     docstatus: number;
+    initiator_form: string;
     [key: string]: any;
 }
 
 export interface TodoType {
+    allocated_roles: string[];
+    allocated_to: string[];
     todo_id: string;
-    allocated_to: string;
+    custom_approval_type: "Approval Matrix" | "Multi Actions";
     allocated_to_emp_id: string;
     role: null | string;
     username: string;
@@ -110,7 +114,6 @@ export interface TodoType {
     description: string;
     custom_doctype_actions_with_form: string;
     is_allocated_todo: boolean;
-    custom_approval_type: string;
     send_back_user: null;
     can_edit: boolean;
     todo_status: string;

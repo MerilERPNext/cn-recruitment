@@ -78,48 +78,64 @@ export default function TeamAdvanceDetailView({
   })();
 
   const DesktopBreakup = (
-    <div className="mt-2 border border-gray-200 rounded-lg overflow-x-auto bg-white shadow-sm">
-      <table className="min-w-full text-sm text-gray-800">
-        <thead className="bg-gray-50">
-          <tr className="text-left">
-            <th className="px-4 py-2 font-semibold">Expense Type</th>
-            <th className="px-4 py-2 font-semibold">Date</th>
-            <th className="px-4 py-2 font-semibold">Merchant</th>
-            <th className="px-4 py-2 font-semibold">Invoice No.</th>
-            <th className="px-4 py-2 font-semibold text-right">Amount</th>
-            <th className="px-4 py-2 font-semibold text-center">Attachment</th>
+    <div className="mt-2 rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Expense Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Date
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Merchant
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Invoice No.
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Amount
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Attachment
+            </th>
           </tr>
         </thead>
 
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {ref.expenses?.map((item: any, idx: number) => (
             <tr
               key={item.name || idx}
-              className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
+              className="bg-white hover:bg-gray-50 transition-colors duration-150"
             >
-              <td className="px-4 py-2">{item.expense_type || "-"}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3 text-gray-800">
+                {item.expense_type || "-"}
+              </td>
+              <td className="px-4 py-3 text-gray-800">
                 {formatToIndianDate(item.expense_date)}
               </td>
-              <td className="px-4 py-2">{item.custom_mercent || "-"}</td>
-              <td className="px-4 py-2">{item.custom_invoice_number || "-"}</td>
-
-              <td className="px-4 py-2 text-right">
+              <td className="px-4 py-3 text-gray-800">
+                {item.custom_mercent || "-"}
+              </td>
+              <td className="px-4 py-3 text-gray-800">
+                {item.custom_invoice_number || "-"}
+              </td>
+              <td className="px-4 py-3 text-gray-800">
                 {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
               </td>
-
-              <td className="px-4 py-2 text-center">
+              <td className="px-4 py-3">
                 {item.custom_attach_receipt ? (
                   <a
                     href={item.custom_attach_receipt}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-600 underline"
+                    className="inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                   >
-                    View Attachment
+                    View File
                   </a>
                 ) : (
-                  <span className="text-xs text-gray-400">-</span>
+                  <span className="text-xs text-gray-400 italic">No file</span>
                 )}
               </td>
             </tr>
