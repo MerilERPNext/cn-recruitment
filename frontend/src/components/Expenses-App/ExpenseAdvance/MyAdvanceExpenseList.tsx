@@ -46,27 +46,28 @@ const MyAdvanceExpenseList = () => {
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
         <Link
-          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+          to={`/webapp/employee-profile?target_user=${item?.allocated_to_emp_id}`}
           target="_blank"
         >
           <Typography
             variant="bodySmall"
             className="font-medium text-center truncate"
           >
-            <WrapperHoverCard employeeId={doc.employee}>
-              {doc.employee_name}
+            <WrapperHoverCard employeeId={item?.allocated_to_emp_id}>
+              {item?.username}
             </WrapperHoverCard>
           </Typography>
         </Link>
         <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.custom_advance_type}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.custom_advance_policy}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
         </Typography>
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.company}
-        </Typography>
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.department}
-        </Typography>
+
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
@@ -104,15 +105,14 @@ const MyAdvanceExpenseList = () => {
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">
-                {doc?.employee_name ? "Employee Name" : "Employee ID"}
-              </Typography>
+              <Typography variant="mobileCardLabel">Allocated To</Typography>
+
               <Link
-                to={`/webapp/employee-profile?target_user=${doc?.employee}`}
+                to={`/webapp/employee-profile?target_user=${doc?.allocated_to_emp_id}`}
                 target="_blank"
               >
                 <Typography variant="mobileCardValue">
-                  {doc?.employee_name || doc?.employee}
+                  {item?.username}
                 </Typography>
               </Link>
             </div>
@@ -130,15 +130,17 @@ const MyAdvanceExpenseList = () => {
           {/* Amount & Department */}
           <div className="flex justify-between w-full">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Advance Amount</Typography>
+              <Typography variant="mobileCardLabel">
+                Advance Category
+              </Typography>
               <Typography variant="mobileCardValue">
-                {formatCurrency(doc?.advance_amount)}
+                {doc?.custom_advance_type}
               </Typography>
             </div>
             <div className="flex flex-col gap-1 text-right">
-              <Typography variant="mobileCardLabel">Department</Typography>
+              <Typography variant="mobileCardLabel">Advance Amount</Typography>
               <Typography variant="mobileCardValue">
-                {doc?.department}
+                {formatCurrency(doc?.advance_amount)}
               </Typography>
             </div>
           </div>
@@ -146,8 +148,10 @@ const MyAdvanceExpenseList = () => {
           {/* Company & Posting Date */}
           <div className="flex justify-between w-full">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Company</Typography>
-              <Typography variant="mobileCardValue">{doc?.company}</Typography>
+              <Typography variant="mobileCardLabel">Advance Policy</Typography>
+              <Typography variant="mobileCardValue">
+                {doc?.custom_advance_policy}
+              </Typography>
             </div>
             <div className="flex flex-col gap-1 text-right">
               <Typography variant="mobileCardLabel">Posting Date</Typography>
@@ -155,13 +159,6 @@ const MyAdvanceExpenseList = () => {
                 {formatToIndianDate(doc?.posting_date)}
               </Typography>
             </div>
-          </div>
-
-          {/* Footer */}
-          <div className="pt-2 border-t">
-            <Typography variant="mobileCardFooter">
-              Last Updated on {formatToIndianDate(doc?.modified)}
-            </Typography>
           </div>
         </div>
       </div>
@@ -241,7 +238,7 @@ const MyAdvanceExpenseList = () => {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">My Advance Expenses</Typography>{" "}
+            <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
@@ -251,10 +248,10 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Employee",
+            "Allocated To",
+            "Advance Category",
+            "Advance Policy",
             "Posting Date",
-            "Company",
-            "Department",
             "Advance Amount",
             "Status",
           ]}
