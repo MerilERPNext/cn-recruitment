@@ -130,9 +130,7 @@ export default function SalaryAssignmentList() {
               <CardSkeleton />
             ) : isError ? (
               <div className="flex flex-col items-center justify-center min-h-[50vh] text-red-500">
-                <MdErrorOutline size={40} className="mb-2" />
-                <Typography variant="bodyMedium" color="error" className="font-semibold">Error loading data</Typography>
-                <Typography variant="bodySmall" color="error">Please try again later</Typography>
+                <Typography variant="bodyMedium" color="error" className="font-semibold">No records found</Typography>
               </div>
             ) : list.length > 0 ? (
               list.map((item) => (
