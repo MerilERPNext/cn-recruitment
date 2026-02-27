@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import HeaderBar from "../HeaderBar";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import ExpenseFormModal from "./ExpenseFormModal";
-import NavigationTabs, { Tab } from "../NavigationTab";
-import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
-import Button from "../shared/atoms/Button";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import { isActionEnabled } from "../../utils/uiPermission";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab";
+import Button from "../shared/atoms/Button";
+import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
+import ExpenseFormModal from "./ExpenseFormModal";
 
 type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances";
 
@@ -148,21 +148,27 @@ const ExpensesApp: React.FC = () => {
     );
   };
 
+  const isSharedExpenses = location.pathname.includes("shared-expenses");
+
   const mobileLayout = (
     <div className="flex flex-col min-h-screen">
-      <div className="sticky top-0 z-50 bg-white border-b">
-        <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
-        <NavigationTabs
-          tabs={tabs}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-      </div>
+      {!isSharedExpenses && (
+        <div className="sticky top-0 z-50 bg-white border-b">
+          <HeaderBar title={activeTab} onBack={() => navigate("/webapp")} />
+          <NavigationTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+      )}
 
-      <main className="p-2 z-100 flex-grow overflow-y-auto">
+      <main
+        className={`z-100 flex-grow ${isSharedExpenses ? "h-full overflow-hidden" : "overflow-y-auto p-2"}`}
+      >
         <Outlet />
       </main>
-      {shouldShowActionButton() && (
+      {!isSharedExpenses && shouldShowActionButton() && (
         <div className="sticky mt-auto bottom-0 bg-white border-t shadow-lg py-4 px-4 w-full">
           <div className="max-w-4xl mx-auto flex space-x-4">
             <Button
