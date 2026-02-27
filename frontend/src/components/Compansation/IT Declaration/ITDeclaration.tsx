@@ -27,6 +27,7 @@ import Form12B from "./Component/Form12B";
 import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import { validateITDeclarationProofs } from "./util/Validation";
 
 type PayrollPeriod = {
   name: string;
@@ -45,7 +46,6 @@ const ITDeclarationForm = () => {
     ["compare_tax", "form_12b", "preview"],
     "IT Declaration"
   );
-
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
   ) as {
@@ -59,7 +59,6 @@ const ITDeclarationForm = () => {
   const [activeMainTab, setActiveMainTab] = useState<"category" | "hra">(
     "category"
   );
-
   const [groupedCategories, setGroupedCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState("");
   const [hraData, setHraData] = useState<HRAData | null>(null);
@@ -74,18 +73,14 @@ const ITDeclarationForm = () => {
       });
     }
   }, [activeMainTab]);
-  console.log("hragggggg", hraData);
-
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
     user?.employee || null,
     user?.company || null,
     selectedPeriod || null
   ).data as any;
-
   const declarationId = newRegimeResponse?.declaration_id;
   const goHeadWithNewRegimeBool = goHeadWithNewRegime === 1;
-
   /* ---------------- IT Declaration API ---------------- */
   const { data: responseData } = useITDeclarationTabData(
     goHeadWithNewRegimeBool,
@@ -104,32 +99,23 @@ const ITDeclarationForm = () => {
     selectedPeriod || null
   ) as { data?: any };
   const { data: LTABreakup } = useLTABrakup(user?.employee || "");
-
-  console.log("ProofOfITDeclaration DATA", groupedCategories);
-
   // Initial payroll period
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
-
     const today = new Date();
-
     const matchedPeriod = payrollPeriods.find((p) => {
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
-
       // inclusive range check
       return today >= start && today <= end;
     });
-
     setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
   }, [payrollPeriods, selectedPeriod]);
-
   useEffect(() => {
     if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
       setActiveMainTab("category");
     }
   }, [goHeadWithNewRegimeBool, activeMainTab]);
-
   /* ---------------- Regime flag ---------------- */
   useEffect(() => {
     if (
@@ -139,38 +125,30 @@ const ITDeclarationForm = () => {
       setGoHeadWithNewRegime(newRegimeResponse.go_head_with_new_regime);
     }
   }, [newRegimeResponse]);
-
   /* ---------------- Normalize data ---------------- */
   useEffect(() => {
     if (!responseData) return;
-
     const normalized = normalizeITCategories(responseData);
     setGroupedCategories(normalized);
-
     if (normalized.length) {
       setActiveSection(normalized[0].section);
     }
-
     if (responseData?.hra_exemption) {
       setHraData(responseData.hra_exemption);
     }
   }, [responseData]);
-
   /* ---------------- Derived ---------------- */
   const activeSectionData = groupedCategories.find(
     (sec) => sec.section === activeSection
   );
-
   const sectionCategories = activeSectionData?.categories || [];
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
   };
-
   const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
-
   /* ---------------- Reset ---------------- */
   const resetForm = () => {
     setGroupedCategories((prev) =>
@@ -187,11 +165,15 @@ const ITDeclarationForm = () => {
     );
   };
   /* ---------------- Submit ---------------- */
-
   const LTAData = (hraData as unknown as any[])?.[1];
-  console.log("LTA BREAKUP", LTAData);
-  console.log(LTAData?.items, "LTA items");
   const handleSubmit = () => {
+    const isValid = validateITDeclarationProofs({
+      groupedCategories,
+      hraData,
+      goHeadWithNewRegimeBool,
+      toast
+    });
+      if (!isValid) return;
     const ltaDeclarations = LTAData?.items?.flatMap((cat: any) =>
       cat.items
         .filter((item: any) => Number(item?.amount) > 0)

@@ -69,7 +69,6 @@ export default function PerquisiteList() {
       </div>
       {isDesktop ? (
         <CardTable titles={titles} columnWidths={columnWidths}>
-
           <div className="relative w-full">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
               <SearchIcon size={18} />

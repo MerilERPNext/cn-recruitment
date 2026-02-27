@@ -90,7 +90,11 @@ const DocumentLibrary = () => {
       doc.status === "Acknowledgement Required",
   );
 
-  const getFileUrl = (path: string) => `${path}`;
+  const getFileUrl = (path: string) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `${window.location.origin}${path}`;
+  };
 
   return (
     <div className="bg-white px-0 py-3 md:p-6 ">
@@ -296,7 +300,7 @@ const DocumentLibrary = () => {
             {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={selectedFile + "#toolbar=0"}
+                src={getFileUrl(selectedFile) + "#toolbar=0"}
                 title="Document PDF"
                 className="w-full h-[80vh]"
               ></iframe>
