@@ -1,16 +1,16 @@
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CreateLoanDialog from "./component/CreateLoanDailog";
-import LoanList from "./component/LoanListView";
-import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
-import { useLoan } from "../../../hooks/useLoan";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useLoan } from "../../../hooks/useLoan";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
+import CreateLoanDialog from "./component/CreateLoanDailog";
+import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
+import LoanList from "./component/LoanListView";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,23 +26,6 @@ export default function LoansPage() {
     setLoanId(docname);
     setIsDialogOpen(true);
   };
-  // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
-  //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  // )
-
-  // const filteredLoans = useMemo(() => {
-  //   if (!searchTerm.trim()){
-  //     return loanData || []
-  //   }
-  //   const lowercasedSearchTerm = searchTerm.toLowerCase()
-  //   return (loanData || []).filter(
-  //     (loan) =>
-  //     loan.loan_name?.toLowerCase().includes(lowercasedSearchTerm) ||
-  //     loan.loan_type?.toLowerCase().includes(lowercasedSearchTerm) ||
-  //     loan.status?.toLowerCase().includes(lowercasedSearchTerm),
-  //   )
-  // },[loanData, searchTerm]
-  // )
 
   const filteredLoans = useMemo(() => {
     if (!loanData) return [];
@@ -65,7 +48,9 @@ export default function LoansPage() {
 
   // Register action button in central SalarySlipApp
   const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
-    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
     setIsModalOpen: (open: boolean) => void;
   }>();
 
@@ -83,7 +68,6 @@ export default function LoansPage() {
     }
     return () => setActionButtonConfig(null);
   }, [setActionButtonConfig, setIsModalOpen, canCreateLoan]);
-
 
   // Desktop Layout
   const DesktopLayout = (
