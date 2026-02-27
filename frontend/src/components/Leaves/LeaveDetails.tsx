@@ -48,6 +48,7 @@ export function LeaveDetailView({
   } = useGetToDoWithReferenceDoc(documentName || "");
 
   const data = documentName ? fetchedData : propsData;
+  console.log(data)
   const { isDesktop } = useScreenSize();
 
   const cleanDescription = DOMPurify.sanitize(data?.reference_document?.description || "");

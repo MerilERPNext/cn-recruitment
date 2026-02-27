@@ -66,6 +66,18 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 break;
         }
 
+        // Apply viewport constraints
+        const PADDING = 10; // offset from window edges
+        const maxLeft = window.innerWidth - tooltipRect.width - PADDING + scrollX;
+        const minLeft = PADDING + scrollX;
+
+        // Clamp left coordinate
+        if (left < minLeft) {
+            left = minLeft;
+        } else if (left > maxLeft) {
+            left = maxLeft;
+        }
+
         setCoords({ top, left });
     }, [position]);
 

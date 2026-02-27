@@ -43,6 +43,7 @@ export type TodoItem = {
   reference_document: any;
   todo_id: string;
   allocated_to: string;
+  allocated_roles: string[];
   allocated_to_emp_id: string;
   role: string | null;
   username: string;
