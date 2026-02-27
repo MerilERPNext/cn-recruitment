@@ -1,19 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
 import { Search } from "lucide-react";
+import { useState } from "react";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useExtraPayment } from "../../../hooks/useExtraPAyments";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { Typography } from "../../shared/atoms/Typography";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { formatCurrency } from "../../../utils/currency";
-import CardTable from "../../shared/CardTable";
-import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-
-
+import { formatCurrency } from "../../../utils/currency";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 interface Payment {
   salary_component: string;
@@ -25,9 +23,6 @@ interface Payment {
   status: "Paid" | "Pending" | "Overdue";
 }
 
-
-
-
 export default function ExtraPayment() {
   const [searchTerm, setSearchTerm] = useState("");
   const { isDesktop } = useScreenSize();
@@ -38,8 +33,6 @@ export default function ExtraPayment() {
     user?.company || null,
     user?.employee || null,
   );
-
-
 
   // -------- MAP API DATA ----------
   const apiPayments: Payment[] =
@@ -55,10 +48,13 @@ export default function ExtraPayment() {
 
   // -------- FILTER ----------
 
-  const filteredPayments = apiPayments.filter((payment) =>
-    payment.recipient?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.invoiceId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    payment.salary_component?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPayments = apiPayments.filter(
+    (payment) =>
+      payment.recipient?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.invoiceId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      payment.salary_component
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()),
   );
   const titles = [
     "Recipient",
@@ -76,29 +72,22 @@ export default function ExtraPayment() {
       <div className="flex-shrink-0">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
-            {isDesktop ? (
+            {isDesktop && (
               <div>
                 <Typography variant="h4">Extra Payment History</Typography>
                 <Typography variant="bodySmall" color="body2">
                   Track and manage your extra payments
                 </Typography>
               </div>
-            ) : (
-              <div>
-                <Typography variant="h4" className="mb-2">Extra Payment History</Typography>
-              </div>
             )}
           </div>
         </div>
       </div>
 
-
-
       {/* ---------------------- WEB ---------------------- */}
       {isDesktop && (
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-
-          <CardTable titles={titles} columnWidths={columnWidths} >
+          <CardTable titles={titles} columnWidths={columnWidths}>
             <div className="flex items-center justify-between">
               <div className="relative w-full ">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -186,13 +175,17 @@ export default function ExtraPayment() {
                 {/* Salary Component + Document ID */}
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">Salary Component</Typography>
+                    <Typography variant="mobileCardLabel">
+                      Salary Component
+                    </Typography>
                     <Typography variant="mobileCardValue">
                       {payment.salary_component}
                     </Typography>
                   </div>
                   <div className="flex flex-col gap-1 text-right">
-                    <Typography variant="mobileCardLabel">Document ID</Typography>
+                    <Typography variant="mobileCardLabel">
+                      Document ID
+                    </Typography>
                     <Typography variant="mobileCardValue">
                       {payment.invoiceId}
                     </Typography>

@@ -429,8 +429,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     : "Add Expense Advance Breakup";
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-xl rounded-lg shadow-xl overflow-visible p-4">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end md:items-center justify-center md:p-4">
+      <div className="bg-white w-full h-full md:h-auto md:max-w-xl md:min-h-[520px] md:rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="font-semibold text-lg">{modalTitle}</h2>
           <button
@@ -442,7 +442,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           </button>
         </div>
 
-        <div className="p-2 max-h-[70vh] min-h-[50vh] overflow-y-auto">
+        <div className="p-2 flex-1 overflow-y-auto">
           <Form
             key={formKey}
             form={formSchema}

@@ -29,7 +29,6 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import Modal from "../CommonModel";
 import { getCurrentPeriod } from "../shared/logic";
 import BenefitRequestForm from "./BenefitsRequestForm";
 
@@ -59,12 +58,11 @@ const MyRequests: React.FC = () => {
     setBenefitId(null);
   };
 
-
   const { setActionButtonConfig } = useOutletContext<{
-    setActionButtonConfig: (config: { label: string; onClick: () => void; disabled?: boolean } | null) => void;
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
   }>();
-
-
 
   const { data: optionYearsData, isLoading: YearsLoading } =
     useGetYearFilterOptions(effectiveEmployee?.company || "");
@@ -126,8 +124,9 @@ const MyRequests: React.FC = () => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-          }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
+          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+        }`}
       >
         {data?.message}
       </div>
@@ -239,16 +238,24 @@ const MyRequests: React.FC = () => {
       </div>
       {showBenefitForm &&
         createPortal(
-          <Modal onClose={handleCloseModal}>
-            <BenefitRequestForm
-              docname={benefitId}
-              isOpen={showBenefitForm}
-              onClose={handleCloseModal}
-              onSuccess={() => {
-                // setRefetch(true);
-              }}
-            />
-          </Modal>,
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div
+              className={
+                isDesktop
+                  ? "relative bg-white rounded-xl shadow-xl w-[70%] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+                  : "relative bg-white w-full h-full flex flex-col overflow-hidden"
+              }
+            >
+              <BenefitRequestForm
+                docname={benefitId}
+                isOpen={showBenefitForm}
+                onClose={handleCloseModal}
+                onSuccess={() => {
+                  // setRefetch(true);
+                }}
+              />
+            </div>
+          </div>,
           document.body,
         )}
     </div>
@@ -382,9 +389,9 @@ const BenefitSlipItem = ({
               variant="mobileCardValue"
               className={maskAmounts ? "blur-[3px]" : ""}
             >
-              {maskAmounts ? "#####" : formatCurrency(
-                (item?.claimed_amount ?? 0),
-              )}
+              {maskAmounts
+                ? "#####"
+                : formatCurrency(item?.claimed_amount ?? 0)}
             </Typography>
           </div>
           <div className="flex flex-col justify-center text-center">
@@ -395,9 +402,9 @@ const BenefitSlipItem = ({
               variant="mobileCardValue"
               className={maskAmounts ? "blur-[3px]" : ""}
             >
-              {maskAmounts ? "#####" : formatCurrency(
-                (item?.custom_taxable_amount ?? 0),
-              )}
+              {maskAmounts
+                ? "#####"
+                : formatCurrency(item?.custom_taxable_amount ?? 0)}
             </Typography>
           </div>
           <div className="flex flex-col justify-end text-right">
@@ -408,9 +415,9 @@ const BenefitSlipItem = ({
               variant="mobileCardValue"
               className={maskAmounts ? "blur-[3px]" : ""}
             >
-              {maskAmounts ? "#####" : formatCurrency(
-                (item?.custom_non_taxable_amount ?? 0),
-              )}
+              {maskAmounts
+                ? "#####"
+                : formatCurrency(item?.custom_non_taxable_amount ?? 0)}
             </Typography>
           </div>
         </div>
