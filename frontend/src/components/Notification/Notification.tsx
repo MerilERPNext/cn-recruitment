@@ -176,7 +176,9 @@ const NotificationList = () => {
 
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-end">
-              <Button onClick={handleDrawerClose}>Close</Button>
+              <Button size="md" onClick={handleDrawerClose}>
+                Close
+              </Button>
             </div>
           </div>
         </div>
