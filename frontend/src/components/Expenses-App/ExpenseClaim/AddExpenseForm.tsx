@@ -773,15 +773,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         return;
       }
 
-      const participantsForClaim: any[] =
-        (dynamicFormData?.participants &&
-          Array.isArray(dynamicFormData.participants)
-          ? dynamicFormData.participants
-          : null) ||
-        selectedForCategory.flatMap((e) =>
-          Array.isArray(e.participants) ? e.participants : [],
-        );
-
       const payload = {
         employee: currentEmployee?.name,
         employee_name: currentEmployee?.employee_name,
@@ -845,7 +836,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             };
           },
         ),
-        participants: participantsForClaim || [],
       };
 
       await new Promise<void>((resolve, reject) => {
@@ -1250,10 +1240,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         amount: amountFromApi ?? combinedData.amount,
                       },
                     ],
-                    participants:
-                      combinedData.participants ||
-                      dynamicFormData.participants ||
-                      [],
                   };
 
                   if (isEditingFromDetailsPage && expense_claim_name) {
@@ -1277,22 +1263,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 };
 
                 if (isEditingFromDetailsPage) {
-                  const participants = dynamicFormData?.participants
-                    ? dynamicFormData.participants.map((p: any) => ({
-                      name: p.name,
-                      employee_type: p.employee_type || p.employeetype,
-                      employee: p.employee,
-                      employee_name: p.employee_name || p.employeename,
-                      guest_name: p.guest_name || p.guestname,
-                      percentage: p.percentage,
-                      allocated_amount: p.allocated_amount || p.amount,
-                    }))
-                    : [];
                   updateExpense(
                     {
                       expense_claim_name: expense_claim_name || "",
                       expenses: [newExpense],
-                      participants: participants,
                     },
                     {
                       onSuccess: () => {
