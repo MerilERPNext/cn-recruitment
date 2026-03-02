@@ -8,7 +8,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Filter,
   Loader2,
   RefreshCw,
@@ -31,7 +30,6 @@ import {
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
 import SearchInputWrapper from "./shared/SearchBar";
-import { Typography } from "./shared/atoms/Typography";
 
 interface BaseItem {
   name?: string;

@@ -256,7 +256,15 @@ export default function Invoice() {
           </CardTable>
         ) : (
           <div className="space-y-3 px-1">
-            {!hasSearchData && searchTerm ? (
+            <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {invoices.length === 0 ? (
+              <NoDataFound title="No Invoices Found" subtitle="No invoice records available." />
+            ) : filteredInvoices.length === 0 ? (
               <NoDataFound title="No Matching Invoices" subtitle="No matching invoice found for your search." />
             ) : (
               filteredInvoices.map((inv: any, idx: number) => {
