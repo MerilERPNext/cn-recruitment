@@ -20,6 +20,7 @@ import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import Button from "../../shared/atoms/Button";
 import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -30,6 +31,7 @@ import { getActionsEnabled } from "../../../utils/uiPermission";
 import { validateITDeclarationProofs } from "./util/Validation";
 import EditITDeclarationAccess from "./Component/EditITDeclarationAccess";
 import { SquarePen } from "lucide-react";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 type PayrollPeriod = {
   name: string;
@@ -233,9 +235,13 @@ const ITDeclarationForm = () => {
           ? 0
           : Number(hraData?.rented_in_metro_city || 0),
 
-        start_date: goHeadWithNewRegimeBool ? "" : hraData?.start_date || "",
+        start_date: goHeadWithNewRegimeBool
+          ? ""
+          : formatToIndianDate(hraData?.start_date || ""),
 
-        end_date: goHeadWithNewRegimeBool ? "" : hraData?.end_date || "",
+        end_date: goHeadWithNewRegimeBool
+          ? ""
+          : formatToIndianDate(hraData?.end_date || ""),
 
         pan: goHeadWithNewRegimeBool ? "" : hraData?.pan || "",
 
@@ -288,13 +294,17 @@ const ITDeclarationForm = () => {
   submitRef.current = handleSubmit;
 
   useEffect(() => {
-    setActionButtonConfig({
-      label: "Submit",
-      onClick: () => submitRef.current?.(),
-      disabled: PrrofOfITDeclaration?.status === "failed",
-    });
+    if (!isDesktop) {
+      setActionButtonConfig({
+        label: "Submit",
+        onClick: () => submitRef.current?.(),
+        disabled: PrrofOfITDeclaration?.status === "failed",
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
     return () => setActionButtonConfig(null);
-  }, [setActionButtonConfig, PrrofOfITDeclaration?.status]);
+  }, [setActionButtonConfig, PrrofOfITDeclaration?.status, isDesktop]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -370,6 +380,12 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
             </div>
           ) : (
             /* Mobile: stacked layout for action buttons */
