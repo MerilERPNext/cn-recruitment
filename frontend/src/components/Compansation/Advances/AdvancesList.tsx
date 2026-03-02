@@ -22,9 +22,9 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceForm from "./AdvanceForm";
 import InstallmentsList from "./InstallmentsList";
 import Modal from "./commonModal";
-
-import { Search } from "lucide-react";
 import ShowHideButton from "../ui/ShowHideButton";
+import SearchInputWrapper from "../../shared/SearchBar";
+
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -352,28 +352,28 @@ const AdvancesList: React.FC = () => {
         <div className="flex-1 overflow-y-auto md:px-4 pb-4">
           <CardTable titles={titles} columnWidths={columnWidths}>
             <>
+              <div className="flex items-center w-full border border-gray-300 bg-white">
+                <SearchInputWrapper
+                  searchTerm={searchTerm}
+                  handleSearch={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
               {isLoading ? (
                 <CardSkeleton />
-              ) : formattedData.length > 0 ? (
+              ) : formattedData.length === 0 ? (
+                <NoDataFound title="No Advance Records" subtitle="You have not requested any advance yet." />
+              ) : (
                 <>
-                  <div className="relative w-full ">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-100  w-full "
-                    />
-                  </div>
-                  {isDesktop ? (
+
+
+                  {filteredData.length === 0 ? (
+                    <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
+                  ) : isDesktop ? (
                     <DesktopLayout handleEdit={handleEdit} />
                   ) : (
                     <MobileLayout />
                   )}
                 </>
-              ) : (
-                <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
               )}
             </>
           </CardTable>
