@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { SearchIcon, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -10,6 +10,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { formatCurrency } from "../../../utils/currency";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import SearchInputWrapper from "../../shared/SearchBar";
 import CardTable from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
 
@@ -54,32 +55,29 @@ export default function PerquisiteList() {
 
   return (
     <div className="w-full lg:p-4 p-2">
-      <div className="sm:mb-6 mb-2">
-        {isDesktop && (
-          <div>
-            <Typography variant="h4">Employee Perquisite</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track Employee Perquisite History
-            </Typography>
-          </div>
-        )}
+      <div className="sm:mb-4 px-2 mb-2">
+        <Typography variant="h4">
+          Employee Perquisite
+        </Typography>
+        {isDesktop &&
+          <Typography variant="bodySmall" color="body2">
+            Track Employee Perquisite History
+          </Typography>
+        }
       </div>
       {isDesktop ? (
         <CardTable titles={titles} columnWidths={columnWidths}>
-          <div className="relative w-full">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <SearchIcon size={18} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search loans..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-100  w-full"
+
+
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            <SearchInputWrapper
+              searchTerm={searchTerm}
+              handleSearch={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="border bg-white hover:bg-primary/20">
+
+          <div className="border bg-white hover:bg-primary/10">
             {filteredPerquisites.length === 0 && (
               <NoDataFound title="No Perquisites Found" subtitle="No perquisite records available." />
             )}
@@ -212,10 +210,10 @@ export default function PerquisiteList() {
                       </span>
                       <span
                         className={`font-medium ${typeof value === "boolean"
-                            ? value
-                              ? "bg-success-100 text-success"
-                              : "bg-error-100 text-error"
-                            : "bg-transparent text-gray-800"
+                          ? value
+                            ? "bg-success-100 text-success"
+                            : "bg-error-100 text-error"
+                          : "bg-transparent text-gray-800"
                           } px-2 py-1 rounded`}
                       >
                         {typeof value === "boolean"
