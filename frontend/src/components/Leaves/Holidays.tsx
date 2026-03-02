@@ -14,7 +14,6 @@ import { HolidayCardSkeletonList } from "./LeaveSkeletons";
 import { Holiday, HolidayGroup } from "../../types/leaves";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-import { Typography } from "../shared/atoms/Typography";
 import CustomDropdown from "../shared/CustomDropdown";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 import Button from "../shared/atoms/Button";
