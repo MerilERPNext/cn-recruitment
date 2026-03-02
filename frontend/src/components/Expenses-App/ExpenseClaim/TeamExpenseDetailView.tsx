@@ -1,11 +1,4 @@
-import {
-  Download,
-  ExternalLink,
-  RotateCcw,
-  X,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
@@ -26,10 +19,12 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import Button from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -73,9 +68,6 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
-  const [currentDocumentUrl, setCurrentDocumentUrl] = useState<string>("");
-  const [imageZoom, setImageZoom] = useState<number>(100);
 
   const loading = useLoadingOverlay();
 
@@ -280,30 +272,6 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
-  const handleOpenDocument = (url: string) => {
-    setCurrentDocumentUrl(url);
-    setShowDocumentViewer(true);
-    setImageZoom(100);
-  };
-
-  const handleCloseDocumentViewer = () => {
-    setShowDocumentViewer(false);
-    setCurrentDocumentUrl("");
-    setImageZoom(100);
-  };
-
-  const handleZoomIn = () => {
-    setImageZoom((prev) => Math.min(prev + 25, 200));
-  };
-
-  const handleZoomOut = () => {
-    setImageZoom((prev) => Math.max(prev - 25, 50));
-  };
-
-  const handleResetZoom = () => {
-    setImageZoom(100);
-  };
-
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
       return {
@@ -412,19 +380,13 @@ export function TeamExpenseDetailView({
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <div className="flex gap-2 items-center">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                {ref?.employee_name?.substring(0, 2).toUpperCase() || "AD"}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {ref?.employee_name || "Employee Name"}
-                </h2>
-                <p className="text-sm text-gray-500">{claimId}</p>
-              </div>
-            </div>
-
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <Typography
+              variant="bodyMedium"
+              className="font-semibold text-gray-900 leading-tight"
+            >
+              Expense Claim: {claimId}
+            </Typography>
             <button
               onClick={handleClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -457,15 +419,29 @@ export function TeamExpenseDetailView({
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+              <Typography
+                variant="mobileCardLabel"
+                className="text-md font-bold mb-2"
+              >
                 Report Details
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-600">Policy:</span>{" "}
-                  <span className="font-medium">
+              </Typography>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="text-gray-500"
+                  >
+                    {ref?.employee_name ? "Employee Name" : "Employee ID"}
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {ref?.employee_name || ref?.employee}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Policy</Typography>
+                  <Typography variant="mobileCardValue">
                     {ref?.custom_expense_category || "N/A"}
-                  </span>
+                  </Typography>
                 </div>
               </div>
             </div>
@@ -489,14 +465,14 @@ export function TeamExpenseDetailView({
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-500 uppercase">
-                                EXPENSE DATE:
-                              </span>
-                              <span className="text-sm font-medium text-gray-900">
+                              <Typography variant="mobileCardLabel">
+                                EXPENSE DATE
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {formatToIndianDate(
                                   item.expense_date || item.creation,
                                 )}
-                              </span>
+                              </Typography>
                             </div>
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
@@ -506,109 +482,112 @@ export function TeamExpenseDetailView({
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div className="">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
                               EXPENSE TYPE
-                            </p>
-                            <p className="text-sm font-medium text-gray-800">
+                            </Typography>
+                            <Typography variant="mobileCardValue">
                               {item.expense_type}
-                            </p>
+                            </Typography>
                           </div>
 
                           {item.custom_invoice_number && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 INVOICE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_invoice_number}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_mercent && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 MERCHANT
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_mercent}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_from_location && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 FROM LOCATION
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_from_location}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_to_location && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 TO LOCATION
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_to_location}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_vehicle_type && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 VEHICLE TYPE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_vehicle_type}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_units && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 UNITS
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_units}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_start_datetime && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 START DATE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {formatToIndianDate(item.custom_start_datetime)}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_end_datetime && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 END DATE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {formatToIndianDate(item.custom_end_datetime)}
-                              </p>
+                              </Typography>
                             </div>
                           )}
                         </div>
 
                         {item.description && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
+                            <Typography
+                              variant="mobileCardLabel"
+                              className="mb-1"
+                            >
                               DESCRIPTION
-                            </p>
+                            </Typography>
                             <div
                               className="text-sm text-gray-700 [&_p]:m-0 [&_p]:mb-1 [&_p:last-child]:mb-0"
                               dangerouslySetInnerHTML={{
@@ -619,37 +598,36 @@ export function TeamExpenseDetailView({
                         )}
 
                         <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">
-                              Claimed Amount:
-                            </p>
-                            <p className="text-sm font-medium">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              Claimed Amount
+                            </Typography>
+                            <Typography variant="mobileCardValue">
                               {formatCurrency(item.amount)}
-                            </p>
+                            </Typography>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">
-                              Sanctioned Amount:
-                            </p>
-                            <p className="text-sm font-medium">
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              Sanctioned Amount
+                            </Typography>
+                            <Typography variant="mobileCardValue">
                               {formatCurrency(item.sanctioned_amount)}
-                            </p>
+                            </Typography>
                           </div>
                         </div>
 
                         {item.custom_attach_receipt && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
-                              DOCUMENTS
-                            </p>
-                            <button
-                              onClick={() =>
-                                handleOpenDocument(item.custom_attach_receipt)
-                              }
-                              className="text-sm text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+                            <Typography
+                              variant="mobileCardLabel"
+                              className="mb-1"
                             >
-                              {item.custom_attach_receipt.split("/").pop()}
-                            </button>
+                              DOCUMENTS
+                            </Typography>
+                            <AttachmentCard
+                              fileUrl={item.custom_attach_receipt}
+                              compact={isDesktop ? false : true}
+                            />
                           </div>
                         )}
 
@@ -700,8 +678,10 @@ export function TeamExpenseDetailView({
                 );
               })
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                No expense items found
+              <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">
+                <Typography variant="mobileCardValue" className="text-gray-500">
+                  No expense items found.
+                </Typography>
               </div>
             )}
           </div>
@@ -865,145 +845,6 @@ export function TeamExpenseDetailView({
           )}
         </div>
       </div>
-
-      {/* Document Viewer Modal - Helpdesk Style */}
-      {showDocumentViewer && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
-          onClick={handleCloseDocumentViewer}
-        >
-          <div
-            className="relative bg-white rounded-xl w-[95vw] h-[90vh] max-w-xl flex flex-col overflow-hidden shadow-2xl animate-slideUp"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Compact Header Toolbar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-              {/* File name */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-gray-900 truncate">
-                  {currentDocumentUrl.split("/").pop()}
-                </span>
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center gap-1.5">
-                {/* Zoom controls for images */}
-                {currentDocumentUrl.match(
-                  /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                ) && (
-                  <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
-                    <button
-                      onClick={handleZoomOut}
-                      disabled={imageZoom <= 50}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom Out"
-                    >
-                      <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
-                      {imageZoom}%
-                    </span>
-                    <button
-                      onClick={handleZoomIn}
-                      disabled={imageZoom >= 200}
-                      className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Zoom In"
-                    >
-                      <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                    <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
-                    <button
-                      onClick={handleResetZoom}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                      title="Reset Zoom"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
-                    </button>
-                  </div>
-                )}
-
-                <a
-                  href={currentDocumentUrl}
-                  download
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Download"
-                >
-                  <Download className="h-4 w-4 text-gray-600" />
-                </a>
-                <a
-                  href={currentDocumentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Open in New Tab"
-                >
-                  <ExternalLink className="h-4 w-4 text-gray-600" />
-                </a>
-                <div className="w-px h-4 bg-gray-300 mx-0.5" />
-                <button
-                  onClick={handleCloseDocumentViewer}
-                  className="p-1.5 rounded-md hover:bg-red-100 transition-colors"
-                  title="Close"
-                >
-                  <X className="h-4 w-4 text-gray-500 hover:text-red-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Preview Area */}
-            <div className="flex-1 overflow-auto bg-gray-100">
-              {currentDocumentUrl && (
-                <>
-                  {currentDocumentUrl.toLowerCase().endsWith(".pdf") ? (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  ) : currentDocumentUrl.match(
-                      /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                    ) ? (
-                    <div className="w-full h-full flex items-center justify-center p-6 overflow-auto">
-                      <div
-                        className="transition-transform duration-200 ease-out"
-                        style={{ transform: `scale(${imageZoom / 100})` }}
-                      >
-                        <img
-                          src={currentDocumentUrl}
-                          alt="Document"
-                          className="max-w-full object-contain rounded shadow-lg"
-                          style={{ maxHeight: "80vh" }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

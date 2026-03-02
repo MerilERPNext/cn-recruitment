@@ -1,17 +1,17 @@
 "use client";
+import { Search as SearchIcon } from "lucide-react";
 import { useState } from "react";
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { formatCurrency } from "../../../../utils/currency";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import CardTable from "../../../shared/CardTable";
 import { Loan } from "../Type/loan";
 import LoanDetails from "./LoanDetails";
 import LoanInstallments from "./LoanInstallment";
-import CardTable from "../../../shared/CardTable";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import { Typography } from "../../../shared/atoms/Typography";
-import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import StatusBadge from "../../../shared/atoms/statusBadge";
-import { formatCurrency } from "../../../../utils/currency";
-import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
-import { Search as SearchIcon } from "lucide-react";
 
 interface LoanListProps {
   loans: Loan[];
@@ -45,13 +45,14 @@ export default function LoanList({
   }
 
   const titles = [
+    "",
     "Loan Name",
     "Loan Type",
     "Loan Amount",
     "Rate of Interest",
     "Standard Interest",
     "EMI Type",
-    "Installments",
+    "Tenure",
     "Start Date",
     "End Month",
     "Status",
@@ -198,10 +199,7 @@ export default function LoanList({
 
               {/* Status + Tooltip */}
               <div className="flex items-center justify-center">
-                <AllocatedToTooltip
-                  users={loan?.employee_name}
-                  position="left"
-                >
+                <AllocatedToTooltip users={loan?.employee_name} position="left">
                   <StatusBadge status={loan.status} />
                 </AllocatedToTooltip>
               </div>

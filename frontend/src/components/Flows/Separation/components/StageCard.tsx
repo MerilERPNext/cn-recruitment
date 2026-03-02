@@ -1,6 +1,5 @@
 import { createPortal } from "react-dom";
 import { Form } from "@tsed/react-formio";
-import { Eye } from "lucide-react";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useApprovalListActions } from "../../../../hooks/userApprovalList";
 import { FormIOComponent, FormIOSchema } from "../../../../types/formio";
@@ -14,6 +13,7 @@ import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import ViewFormButton from "../../ViewFormButton";
 
 interface CardStagesProps {
   data: ApprovalStage;
@@ -22,8 +22,7 @@ interface CardStagesProps {
   isActive: boolean;
   assignedTo: {
     emp_id: string;
-    user_id: string;
-    role: string | null;
+    roles: string[];
   };
   isLastStage: boolean;
 }
@@ -135,18 +134,11 @@ const CardStages = ({
     // Case 1: employee name matches assigned emp_id
     if (currentEmployee?.name === assignedTo?.emp_id) return true;
 
-    // Case 2: user name matches assigned user_id
-    if (
-      assignedTo?.user_id === currentUser?.name ||
-      currentUser?.name === data?.user_id
-    )
-      return true;
-
-    // Case 3: user has a role matching assigned role
+    // Case 2: user has a role matching assigned role
     if (
       currentUser?.roles &&
       currentUser.roles.some(
-        (role) => role.role === assignedTo?.role || role.role == data?.role,
+        (role) => assignedTo?.roles.includes(role.role) || role.role == data?.role,
       )
     )
       return true;
@@ -197,25 +189,18 @@ const CardStages = ({
               {approverPerfix} {data?.role || data?.user}
             </Typography>
 
+          </div>
+
+          <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
+            <div className="flex gap-3">
             {data?.approval_response_data && data?.status != "Pending" && (
-              <Button
-                variant="subtle"
-                size="md"
-                onClick={() =>
+             <ViewFormButton onClick={() =>
                   handleShowForm(
                     data?.form_json?.components,
                     data?.approval_response_data,
                   )
-                }
-              >
-                <Eye className="w-4 h-4" />
-                View Form
-              </Button>
+                }/>
             )}
-          </div>
-
-          <div className="flex justify-between items-start px-4 pt-1 pb-3">
-            <div className="flex gap-3">
               {canPerformActions &&
                 actions.map((action) => (
                   <Button
@@ -233,8 +218,6 @@ const CardStages = ({
                 : formatToIndianDate(data?.approval_time)}
             </div>
           </div>
-
-          <div className="flex justify-between items-start px-4 pt-1 pb-3">{data?.user_id}</div>
         </div>
       </StatusTimelineRow>
 

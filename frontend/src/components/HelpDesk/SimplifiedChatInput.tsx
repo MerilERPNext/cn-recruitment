@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Paperclip, Send, X, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import FrappeAPI from "../../utils/frappeAPI";
+import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface UploadedFile {
   file_url: string;
@@ -37,6 +38,7 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { isDesktop } = useScreenSize();
 
   // Auto-resize textarea
   useEffect(() => {
@@ -100,7 +102,7 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
 
   // Handle keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && isDesktop) {
       e.preventDefault();
       handleSend();
     }
@@ -152,44 +154,45 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
       )}
 
       {/* Input area */}
-      <div className="p-4">
-        <div className="flex items-end gap-3">
+      <div className="sm:p-4 p-2">
+        <div className="flex items-center gap-3">
           {/* Attachment button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isDisabled}
-            className="flex-shrink-0 p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isUploading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Paperclip className="w-5 h-5" />
-            )}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            onChange={(e) => handleFileUpload(e.target.files)}
-            className="hidden"
-          />
-
-          {/* Text input */}
-          <div className="flex-1">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
+          <div className="flex items-center border border-gray-300 rounded-xl focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 overflow-hidden w-full pl-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
               disabled={isDisabled}
-              rows={1}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
-              style={{ maxHeight: "150px" }}
+              className="flex-shrink-0 flex items-center justify-center sm:p-2.5 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Paperclip className="w-5 h-5" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={(e) => handleFileUpload(e.target.files)}
+              className="hidden"
             />
-          </div>
 
+            {/* Text input */}
+            <div className="flex-1 flex">
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                disabled={isDisabled}
+                rows={1}
+                className="w-full px-2 py-3 text-sm resize-none focus:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed"
+                style={{ maxHeight: "150px" }}
+              />
+            </div>
+          </div>
           {/* Send button */}
           <button
             type="button"
@@ -206,7 +209,7 @@ const SimplifiedChatInput: React.FC<SimplifiedChatInputProps> = ({
         </div>
 
         {/* Helper text */}
-        <p className="text-xs text-gray-400 mt-2 ml-12">
+        <p className="hidden md:block text-xs text-gray-400 sm:mt-2 ml-12">
           Press enter to send, shift + enter for new line
         </p>
       </div>

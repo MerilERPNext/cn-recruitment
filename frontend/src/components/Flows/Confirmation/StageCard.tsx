@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { FormIOComponent } from "../../../types/formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -7,8 +7,9 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { ApprovalStage } from "../../../types/todos";
-import { Eye } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import ViewFormButton from "../ViewFormButton";
 
 type handleActPropsType = {
   name: string;
@@ -20,7 +21,7 @@ type handleActPropsType = {
 interface StageCardProps {
   stages: ApprovalStage[];
   idx: number;
-  canPerformAction: boolean;
+  showActButton?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item: any;
   handleAct: (handleActPropsType: handleActPropsType) => void;
@@ -29,11 +30,12 @@ interface StageCardProps {
 const StageCard: React.FC<StageCardProps> = ({
   stages,
   idx,
-  canPerformAction,
+  showActButton = false,
   item,
   handleAct,
 }) => {
   const stage = stages[idx];
+  const { data: currentUser } = useCurrentUser();
   const getStageStatus = (stage: { status: string }, idx: number) => {
     const isPending = stage?.status === "Pending";
     const prevIsPending = stages[idx - 1]?.status === "Pending";
@@ -49,6 +51,22 @@ const StageCard: React.FC<StageCardProps> = ({
     return "completed";
   };
   const status = getStageStatus(stage, idx);
+
+  const canPerformAction = useMemo(() => {
+    if (!showActButton) return false;
+    let actionPermission = false;
+
+    if (!item?.custom_doctype_actions) return false;
+    if (stage?.user_id && currentUser?.name)
+      actionPermission = stage.user_id === currentUser.name;
+
+    if (currentUser?.roles && stage?.role)
+      actionPermission ||= currentUser.roles.some(
+        (role) => role.role === stage.role,
+      );
+
+    return actionPermission;
+  }, [stage, currentUser, item, showActButton]);
 
   const [formSchema, setFormSchema] = useState(null);
   const [show, setShow] = useState(false);
@@ -99,25 +117,19 @@ const StageCard: React.FC<StageCardProps> = ({
           <Typography variant="bodySmall">
             {approverPerfix} {stage?.role || stage?.user}
           </Typography>
+        </div>
 
+        <div className="flex max-lg:flex-row-reverse justify-between items-center px-4 pt-1 pb-3">
           {stage?.approval_response_data && stage?.status != "pending" && (
-            <Button
-              variant="subtle"
-              size="md"
+            <ViewFormButton
               onClick={() =>
                 handleShowForm(
                   stage?.form_json?.components,
                   stage?.approval_response_data,
                 )
               }
-            >
-              <Eye className="w-4 h-4" />
-              View Form
-            </Button>
+            />
           )}
-        </div>
-
-        <div className="flex max-lg:flex-row-reverse justify-between items-start px-4 pt-1 pb-3">
           {canPerformAction && status == "action_required" ? (
             <Button
               variant="contain"

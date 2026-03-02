@@ -185,9 +185,8 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
                 <CardStages
                   data={item as ApprovalStage}
                   assignedTo={{
-                    user_id: data?.allocated_to,
                     emp_id: data?.allocated_to_emp_id,
-                    role: data?.role,
+                    roles: data?.allocated_roles,
                   }}
                   actions={actions}
                   isActive={isActive}

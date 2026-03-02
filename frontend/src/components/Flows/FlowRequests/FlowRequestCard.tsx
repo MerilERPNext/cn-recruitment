@@ -92,7 +92,7 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     }
 
     return (
-        <div className="py-4 grid grid-cols-8 gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
+        <div className="px-4 py-4 grid grid-cols-8 gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
             <div>  <Typography variant="bodySmall" className="font-medium text-center">{request.flow_name}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{request.category}</Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>

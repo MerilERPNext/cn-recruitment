@@ -19,7 +19,7 @@ type LTAItem = {
             className="tw-rounded-lg tw-border tw-border-gray-200 tw-bg-white tw-p-4 tw-shadow-sm"
           >
             <div className="tw-flex tw-items-center tw-justify-between tw-mb-2">
-              <h3 className="tw-text-lg tw-font-semibold">
+              <h3 className="tw-text-sx tw-font-semibold">
                 LTA Record {item.sl_no}
               </h3>
               <span

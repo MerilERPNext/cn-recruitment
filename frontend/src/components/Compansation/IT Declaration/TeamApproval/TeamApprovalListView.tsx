@@ -390,7 +390,142 @@ console.log("coment log", comment)
             )}
           </CardTable>
         ) : (
-          <div className="p-4">Mobile view coming soon</div>
+          <div className="flex flex-col gap-3  pb-24">
+    
+          {/* SEARCH */}
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-2 border rounded-lg w-full text-sm"
+            />
+          </div>
+      
+          {/* BULK ACTION */}
+          {selected.length > 0 && (
+            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg shadow-sm">
+              <span className="text-sm font-medium">
+                {selected.length} Selected
+              </span>
+      
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleBulkAction("Approved")}
+                  disabled={bulkLoading}
+                  className="text-xs px-3 py-1 rounded bg-success-100 text-success-600"
+                >
+                  Approve
+                </button>
+      
+                <button
+                  onClick={() => handleBulkAction("Rejected")}
+                  disabled={bulkLoading}
+                  className="text-xs px-3 py-1 rounded bg-error-100 text-error-600"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          )}
+      
+          {/* LIST */}
+          {isLoading ? (
+            <CardSkeleton />
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-10 text-error">
+              <MdErrorOutline size={32} className="mb-2" />
+              Error loading data
+            </div>
+          ) : list.length ? (
+            list.map((row) => (
+              <div
+                key={row.id}
+                onClick={() => handleRowClick(row)}
+                className="bg-white rounded-xl shadow-sm border p-4 flex flex-col gap-3"
+              >
+                {/* Top Row */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {row.subCategory}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {row.category}
+                    </p>
+                  </div>
+      
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(row.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => toggleSelect(row.id)}
+                    className="w-4 h-4"
+                  />
+                </div>
+      
+                {/* Amount Section */}
+                <div className="flex justify-between text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Max Limit</p>
+                    <p className="font-medium">
+                      {formatCurrency(row.maxLimit)}
+                    </p>
+                  </div>
+      
+                  <div>
+                    <p className="text-gray-500 text-xs">Declared</p>
+                    <p className="font-medium">
+                      {formatCurrency(row.actualAmount)}
+                    </p>
+                  </div>
+                </div>
+      
+                {/* Status + Actions */}
+                <div className="flex justify-between items-center">
+                  <StatusBadge status={row.status} />
+      
+                  {row.status === "Pending" && (
+                    <div
+                      className="flex gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={() =>
+                          handleStatusChange(row, "Approved")
+                        }
+                        className="p-2 rounded-full bg-green-100"
+                      >
+                        <Check
+                          className="w-4 h-4 text-green-600"
+                          strokeWidth={2}
+                        />
+                      </button>
+      
+                      <button
+                        onClick={() =>
+                          handleStatusChange(row, "Rejected")
+                        }
+                        className="p-2 rounded-full bg-red-100"
+                      >
+                        <X
+                          className="w-4 h-4 text-red-500"
+                          strokeWidth={2}
+                        />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center text-gray-500 py-10">
+              No records found
+            </div>
+          )}
+        </div>
         )}
       </div>
 
@@ -398,7 +533,7 @@ console.log("coment log", comment)
 
       {openModal && activeRow && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center">
-          <div className="bg-white w-[95%] h-[90%] rounded-lg flex flex-col overflow-hidden">
+          <div className="bg-white w-full h-screen md:h-[90%] md:w-[95%] md:rounded-lg flex flex-col overflow-hidden">
             {/* HEADER */}
             <div className="flex justify-between items-center px-6 py-3 border-b">
               <Typography variant="h4">{activeRow?.category}</Typography>
@@ -412,7 +547,7 @@ console.log("coment log", comment)
             {/* BODY */}
             <div className="flex-1 flex flex-col gap-2 md:flex-row">
               {/* PDF */}
-              <div className="md:w-[60%] w-full border-r">
+              <div className="md:w-[60%] h-full  w-full border-r">
                 {activeRow.proof ? (
                   <iframe
                     src={`${activeRow.proof}#toolbar=0`}
@@ -481,6 +616,10 @@ console.log("coment log", comment)
 
                   <button
                     onClick={() => {
+                      if (!comment.trim()) {
+                        toast.error("Comment mandatory for Approval");
+                        return;
+                      }
                       if (isDirty) {
                         setPendingAction("Approved");
                         setShowConfirm(true);

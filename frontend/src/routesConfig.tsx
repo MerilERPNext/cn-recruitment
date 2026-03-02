@@ -534,7 +534,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/notification-log",
     element: <NotificationList />,
-    permissionKey: "Dashboard",
+    permissionKey: "NotificationList",
   },
   // Standalone Routes
   {
@@ -807,7 +807,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
-    permissionKey: "Employee Directory",
+    permissionKey: "Employee Profile",
   },
 
   // Nested Expenses App Routes

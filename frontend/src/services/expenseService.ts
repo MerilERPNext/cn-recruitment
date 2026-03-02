@@ -203,8 +203,7 @@ export const expenseService = {
   //expense update
   updateExpense: async (
     expense_claim_name: string,
-    expenses: Array<Record<string, any>>,
-    participants: Array<Record<string, any>>
+    expenses: Array<Record<string, any>>
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -214,12 +213,8 @@ export const expenseService = {
       throw new Error("expenses must be an array");
     }
 
-    if (!Array.isArray(participants)) {
-      throw new Error("participants must be an array");
-    }
-
     const payload = {
-      expense_claim_data: { expense_claim_name, expenses, participants },
+      expense_claim_data: { expense_claim_name, expenses },
     };
 
     return FrappeAPI.callMethod(

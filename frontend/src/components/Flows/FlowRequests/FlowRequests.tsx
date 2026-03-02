@@ -43,6 +43,17 @@ const FlowRequests: React.FC = () => {
     setFlowDetails(null);
   }
 
+  // refresh request details page after fetching new flowDetails 
+  useEffect(()=>{
+    if(!flowDetails || flowRequestsLoading) return;
+    const newDetails = flowRequests?.data.find(d => d.request_id === flowDetails.request_id);
+    if(!newDetails){
+      setFlowDetails(null);
+    }else{
+      setFlowDetails(newDetails);
+    }
+  },[flowRequestsLoading, flowRequests, flowDetails])
+
   useEffect(() => {
     const handleChatClose = () => {
       refetchFlowRequests();

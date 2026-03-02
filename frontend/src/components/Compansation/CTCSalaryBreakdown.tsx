@@ -1,11 +1,11 @@
+import { PieChart, TrendingUp, Wallet } from "lucide-react";
 import { useState } from "react";
-import { TrendingUp, Wallet, PieChart } from "lucide-react";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useGenerateSalarySlip } from "../../hooks/useCTC";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
-import { DashboardContentSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+
+import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
   const { data: employee, isLoading: isEmpLoading } = useCurrentEmployee();
@@ -26,14 +26,15 @@ const CTCSalaryUI = () => {
   const isLoading = isEmpLoading || isSalaryLoading;
 
   const formatCurrency = (amount: number | bigint) => {
-    const formattedAmount = new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    const formattedAmount = new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
 
     if (isMoneyMasked) {
-      const maskedText = '₹ ' + '•'.repeat(Math.max(4, formattedAmount.length - 2));
+      const maskedText =
+        "₹ " + "•".repeat(Math.max(4, formattedAmount.length - 2));
       return (
         <span className="font-mono text-gray-400 tracking-wider">
           {maskedText}
@@ -47,8 +48,103 @@ const CTCSalaryUI = () => {
     setIsMoneyMasked(!isMoneyMasked);
   };
 
+  const Header = () => (
+    <div className="flex justify-between items-center mb-2 sm:px-2">
+      <div>
+        {isDesktop && (
+          <div>
+            <Typography variant="h4">Compensation</Typography>
+            <Typography variant="bodySmall" color="body2">
+              Detailed breakdown of your salary structure
+            </Typography>
+          </div>
+        )}
+      </div>
+
+      <ShowHideButton
+        showAmount={isMoneyMasked}
+        onToggleAmount={toggleMoneyMask}
+      />
+    </div>
+  );
+
   if (isLoading) {
-    return <DashboardContentSkeleton />;
+    const skeletonCards = [
+      { cardBg: "bg-blue-50", iconBg: "bg-blue-100" },
+      { cardBg: "bg-purple-50", iconBg: "bg-purple-100" },
+      { cardBg: "bg-orange-50", iconBg: "bg-orange-100" },
+    ];
+
+    return (
+      <div className="min-h-screen rounded-lg sm:px-4">
+        <div className="w-full py-4">
+          <Header />
+
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-6 gap-3 mt-4">
+              {skeletonCards.map((card, i) => (
+                <div
+                  key={i}
+                  className={`${card.cardBg} p-6 rounded-lg border border-gray-100 shadow-sm animate-pulse`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-4 w-32 bg-white/60 rounded"></div>
+                    <div
+                      className={`w-10 h-10 rounded-lg ${card.iconBg}`}
+                    ></div>
+                  </div>
+                  <div className="h-8 w-40 bg-white/60 rounded mb-2 mt-2"></div>
+                  <div className="h-3 w-48 bg-white/60 rounded"></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-xl ">
+              <div className="px-6 py-4 bg-gray-50/50">
+                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              <div className="pt-4 pb-6 px-3">
+                {isDesktop ? (
+                  <div className="w-full space-y-4">
+                    <div className="h-10 bg-gray-100 rounded w-full animate-pulse border-none"></div>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className="h-16 bg-gray-50 rounded w-full animate-pulse border-none"
+                      ></div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="bg-gray-50 p-4 rounded-lg border border-gray-200 animate-pulse"
+                      >
+                        <div className="flex justify-between mb-3">
+                          <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                          <div className="h-6 w-24 bg-gray-200 rounded-md"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                            <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                            <div className="h-5 w-24 bg-gray-200 rounded"></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (isError || (!isLoading && !salarySlip)) {
@@ -93,35 +189,6 @@ const CTCSalaryUI = () => {
         {formatCurrency(value)}
       </div>
       {subLabel && <p className="text-xs text-gray-500">{subLabel}</p>}
-    </div>
-  );
-
-  const Header = () => (
-    <div className="flex justify-between items-start mb-4 sm:px-2">
-      <div>
-        <Typography variant="h4">Compensation</Typography>
-        <Typography variant="bodySmall" color="body2">
-          Detailed breakdown of your salary structure
-        </Typography>
-      </div>
-
-      <button
-        onClick={toggleMoneyMask}
-        className="my-btn-secondary card-subtitle px-3 py-2 flex items-center gap-2"
-        title={isMoneyMasked ? "Show amounts" : "Hide amounts"}
-      >
-        {isMoneyMasked ? (
-          <>
-            <span className="card-subtitle  text-gray-700">Show Amounts</span>
-            <BsToggleOff className="w-6 h-6 text-gray-400" />
-          </>
-        ) : (
-          <>
-            <span className="card-subtitle text-gray-700">Hide Amounts</span>
-            <BsToggleOn className="w-6 h-6 text-primary" />
-          </>
-        )}
-      </button>
     </div>
   );
 
@@ -199,12 +266,13 @@ const CTCSalaryUI = () => {
                             </td>
                             <td className="py-4 px-4 border-none">
                               <span
-                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : component.type === "Reimbursement"
-                                    ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                    : "bg-blue-50 text-blue-700 border border-blue-200"
-                                  }`}
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                  component.type === "Deduction"
+                                    ? "bg-red-50 text-red-700 border border-red-200"
+                                    : component.type === "Reimbursement"
+                                      ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                                }`}
                               >
                                 {component.type}
                               </span>
@@ -237,12 +305,13 @@ const CTCSalaryUI = () => {
                             </h4>
                           </div>
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
-                              ? "bg-red-50 text-red-700 border border-red-200"
-                              : component.type === "Reimbursement"
-                                ? "bg-orange-50 text-orange-700 border border-orange-200"
-                                : "bg-blue-50 text-blue-700 border border-blue-200"
-                              }`}
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                              component.type === "Deduction"
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : component.type === "Reimbursement"
+                                  ? "bg-orange-50 text-orange-700 border border-orange-200"
+                                  : "bg-blue-50 text-blue-700 border border-blue-200"
+                            }`}
                           >
                             {component.type}
                           </span>
@@ -273,10 +342,10 @@ const CTCSalaryUI = () => {
 
               {(!salarySlip?.component_part_of_ctc ||
                 salarySlip.component_part_of_ctc.length === 0) && (
-                  <div className="text-center py-8 text-gray-400">
-                    <p>No component breakdown available</p>
-                  </div>
-                )}
+                <div className="text-center py-8 text-gray-400">
+                  <p>No component breakdown available</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -251,12 +251,10 @@ export function useExpenseSingleItemApproval() {
 //edit expense
 
 type ExpenseItem = Record<string, any>;
-type ParticipantItem = Record<string, any>;
 
 export type UpdateExpensePayload = {
   expense_claim_name: string;
   expenses: ExpenseItem[];
-  participants: ParticipantItem[];
 };
 
 export function useUpdateExpense() {
@@ -266,8 +264,7 @@ export function useUpdateExpense() {
     mutationFn: (params: UpdateExpensePayload) =>
       expenseService.updateExpense(
         params.expense_claim_name,
-        params.expenses,
-        params.participants
+        params.expenses
       ),
     onSuccess: () => {
       toast.dismiss();

@@ -137,13 +137,6 @@ const EmployeeProfile: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (isViewingOtherUser && !isDesktop) {
-        clearTargetEmployee();
-      }
-    }
-  }, [isViewingOtherUser, isDesktop, clearTargetEmployee]);
 
 
   const tabs: Tab[] = useMemo(

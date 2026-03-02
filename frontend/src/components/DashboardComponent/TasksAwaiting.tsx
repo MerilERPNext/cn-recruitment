@@ -20,6 +20,7 @@ interface ToDo {
   owner?: string;
   status?: string;
   reference_type?: string;
+  custom_todo_type?: string;
   reference_name?: string;
   date?: string;
   due_date?: string;
@@ -110,11 +111,11 @@ const TasksAwaiting: React.FC = () => {
   const filtered = useMemo(() => {
     if (activeCategory === "All") return fullData;
 
-    if (activeCategory === "Others") {
-      return fullData.filter((item) => !item.reference_type);
+    if (activeCategory === "Uncategorized") {
+      return fullData.filter((item) => !item.custom_todo_type);
     }
 
-    return fullData.filter((item) => item.reference_type === activeCategory);
+    return fullData.filter((item) => item.custom_todo_type === activeCategory);
   }, [activeCategory, fullData]);
 
   const categoryCounts = useMemo(() => {
@@ -122,7 +123,7 @@ const TasksAwaiting: React.FC = () => {
 
     fullData.forEach((item) => {
       if (item.status === "Open") {
-        const cat = item.reference_type || "Others";
+        const cat = item.custom_todo_type || "Uncategorized";
         grouped[cat] = (grouped[cat] || 0) + 1;
       }
     });
@@ -132,16 +133,22 @@ const TasksAwaiting: React.FC = () => {
 
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
-  const filterOptions = useMemo(
-    () => [
-      { label: `All (${totalCount})`, value: "All" },
-      ...Object.entries(categoryCounts).map(([cat, count]) => ({
+  const filterOptions = useMemo(() => {
+    const entries = Object.entries(categoryCounts);
+
+    const sorted = [
+      ...entries.filter(([cat]) => cat !== "Uncategorized"),
+      ...entries.filter(([cat]) => cat === "Uncategorized"),
+    ];
+
+    return [
+      { label: `All Tasks (${totalCount})`, value: "All" },
+      ...sorted.map(([cat, count]) => ({
         label: `${cat} (${count})`,
         value: cat,
       })),
-    ],
-    [categoryCounts, totalCount],
-  );
+    ];
+  }, [categoryCounts, totalCount]);
 
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
@@ -170,16 +177,22 @@ const TasksAwaiting: React.FC = () => {
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
-            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${
-              activeCategory === "All"
+            className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
                 ? "bg-primary text-white scale-105"
                 : "bg-primary-100 text-primary-700 hover:bg-primary-300"
-            } transition-all`}
+              } transition-all`}
           >
-            All ({totalCount})
+            All Tasks ({totalCount})
           </button>
 
-          {Object.entries(categoryCounts).map(([cat, count], idx) => {
+          {[
+            ...Object.entries(categoryCounts).filter(
+              ([cat]) => cat !== "Uncategorized",
+            ),
+            ...Object.entries(categoryCounts).filter(
+              ([cat]) => cat === "Uncategorized",
+            ),
+          ].map(([cat, count], idx) => {
             const isActive = activeCategory === cat;
             const colors = generatePastelColor(idx);
 
@@ -187,11 +200,10 @@ const TasksAwaiting: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${
-                  isActive
+                className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
                     ? `scale-105 ring-2 ${colors}`
                     : `${colors} opacity-70 hover:opacity-100`
-                } `}
+                  } `}
               >
                 {cat} ({count})
               </button>
@@ -201,32 +213,37 @@ const TasksAwaiting: React.FC = () => {
       )}
 
       {currentEmployeeId && fullData.length === 0 && (
-        <FrappeListView
-          doctype="ToDo"
-          ItemComponent={() => null}
-          isSearch={false}
-          pageSize={1000}
-          orderBy="date desc"
-          onDataLoad={handleDataLoad}
-          defaultFilters={{
-            status: "Open",
-            allocated_to: currentEmployeeId,
-          }}
-          defaultFields={[
-            "name",
-            "description",
-            "owner",
-            "status",
-            "reference_type",
-            "reference_name",
-            "date",
-            "priority",
-            "allocated_to",
-            "custom_redirect_url",
-          ]}
-          showPagination={false}
-          SkeletonComponent={() => <CardSkeleton rows={2} />}
-        />
+        <div className="hidden">
+
+          <FrappeListView
+            doctype="ToDo"
+            ItemComponent={() => null}
+            isSearch={false}
+            pageSize={1000}
+            orderBy="modified desc"
+            onDataLoad={handleDataLoad}
+            defaultFilters={{
+              status: "Open",
+              allocated_to: currentEmployeeId,
+            }}
+            defaultFields={[
+              "name",
+              "modified",
+              "description",
+              "owner",
+              "status",
+              "reference_type",
+              "reference_name",
+              "date",
+              "priority",
+              "allocated_to",
+              "custom_redirect_url",
+              "custom_todo_type",
+            ]}
+            showPagination={false}
+            SkeletonComponent={() => <CardSkeleton rows={2} />}
+          />
+        </div>
       )}
       <div className="flex-1">
         {isLoading ? (

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { User, Shield } from "lucide-react";
 
 interface AllocatedToTooltipProps {
-    users?: string;
+    users?: string | string[];
     roles?: string[];
     children: ReactNode;
     position?: "top" | "bottom" | "left" | "right";
@@ -15,9 +15,19 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     children,
     position = "top",
 }) => {
-    const usersStr = users != null ? String(users) : "";
-    const hasUsers = !!usersStr.trim();
-    const hasRoles = roles && roles.length > 0;
+    // normalize users to an array (handles string or string[] or CSV string)
+    const usersArray: string[] = React.useMemo(() => {
+        if (!users && users !== "") return [];
+        if (Array.isArray(users)) return users.filter(Boolean).map(u => String(u));
+        // users is a string: allow comma-separated values or single value
+        return String(users)
+            .split(",")
+            .map(u => u.trim())
+            .filter(Boolean);
+    }, [users]);
+
+    const hasUsers = usersArray.length > 0;
+    const hasRoles = !!(roles && roles.length > 0);
     const hasContent = hasUsers || hasRoles;
 
     const [isVisible, setIsVisible] = useState(false);
@@ -56,12 +66,27 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 break;
         }
 
+        // Apply viewport constraints
+        const PADDING = 10; // offset from window edges
+        const maxLeft = window.innerWidth - tooltipRect.width - PADDING + scrollX;
+        const minLeft = PADDING + scrollX;
+
+        // Clamp left coordinate
+        if (left < minLeft) {
+            left = minLeft;
+        } else if (left > maxLeft) {
+            left = maxLeft;
+        }
+
         setCoords({ top, left });
     }, [position]);
 
     useEffect(() => {
         if (isVisible) {
-            calculatePosition();
+            // recalc after next paint to ensure tooltip size is measured correctly
+            requestAnimationFrame(() => {
+                calculatePosition();
+            });
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
             return () => {
@@ -110,7 +135,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 className="
           bg-white rounded-xl shadow-xl
           border border-primary-100
-          min-w-[200px] max-w-[280px]
+          min-w-[200px] max-w-[320px]
           overflow-hidden
         "
             >
@@ -122,7 +147,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-2.5 p-3.5">
-                    {/* Users Section */}
+                    {/* Users Section (now badges) */}
                     {hasUsers && (
                         <div className="flex items-start gap-2.5">
                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 shrink-0">
@@ -130,19 +155,32 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                             </div>
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
-                                    User
+                                    {usersArray.length > 1 ? "Users" : "User"}
                                 </span>
-                                <span className="text-[13px] font-brand font-medium text-gray-900 leading-snug break-words">
-                                    {usersStr}
-                                </span>
+
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {usersArray.map((u, idx) => (
+                                        <span
+                                            key={`user-${idx}-${u}`}
+                                            className="
+                        inline-flex items-center
+                        text-[11px] font-brand font-medium
+                        text-primary-700 bg-primary-50
+                        border border-primary-200
+                        px-2 py-0.5 rounded-md max-w-full truncate
+                      "
+                                            title={u}
+                                        >
+                                            {u}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {/* Divider between sections */}
-                    {hasUsers && hasRoles && (
-                        <div className="border-t border-gray-100" />
-                    )}
+                    {hasUsers && hasRoles && <div className="border-t border-gray-100" />}
 
                     {/* Roles Section */}
                     {hasRoles && (
@@ -152,12 +190,12 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                             </div>
                             <div className="flex flex-col gap-1 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
-                                    {roles.length > 1 ? "Roles" : "Role"}
+                                    {roles!.length > 1 ? "Roles" : "Role"}
                                 </span>
                                 <div className="flex flex-wrap gap-1">
-                                    {roles.map((role, idx) => (
+                                    {roles!.map((role, idx) => (
                                         <span
-                                            key={idx}
+                                            key={`role-${idx}-${role}`}
                                             className="
                         inline-flex items-center
                         text-[11px] font-brand font-medium

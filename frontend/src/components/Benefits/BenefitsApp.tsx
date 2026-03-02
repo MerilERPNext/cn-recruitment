@@ -5,6 +5,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "My Benefits"
@@ -24,6 +25,11 @@ const BenefitsApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabName>("My Benefits");
   const navigate = useNavigate();
   const location = useLocation();
+  const [actionButtonConfig, setActionButtonConfig] = useState<{
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  } | null>(null);
 
   const { data: userUiPermission } = useGetUiPermission("Benefits");
 
@@ -106,14 +112,38 @@ const BenefitsApp: React.FC = () => {
         />
       </header>
       <main className="z-10 p-2 flex-grow">
-        <Outlet />
+        <Outlet context={{ setActionButtonConfig }} />
       </main>
+      {actionButtonConfig && (
+        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 p-2">
+          <Button
+            fullWidth
+            size="lg"
+            bgColor="primary"
+            onClick={actionButtonConfig.onClick}
+            disabled={actionButtonConfig.disabled}
+          >
+            {actionButtonConfig.label}
+          </Button>
+        </div>
+      )}
     </div>
   );
 
+  const actionButton = actionButtonConfig ? (
+    <Button
+      size="lg"
+      bgColor="primary"
+      onClick={actionButtonConfig.onClick}
+      disabled={actionButtonConfig.disabled}
+    >
+      {actionButtonConfig.label}
+    </Button>
+  ) : null;
+
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Benefits">
-      <Outlet />
+    <DesktopLayoutWrapper title="Benefits" actionButton={actionButton}>
+      <Outlet context={{ setActionButtonConfig }} />
     </DesktopLayoutWrapper>
   );
 

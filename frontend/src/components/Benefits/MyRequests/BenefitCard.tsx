@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
 
 const BenefitCard = ({
     data,
@@ -72,33 +73,36 @@ const BenefitCard = ({
                     </div>
                 </div>
             ) : (
-                <div className="w-full px-2 my-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover:shadow-md transition-shadow">
-                    <div className="p-2 w-full">
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex gap-1 flex-col">
-                                <div className="font-bold">{data?.employee_name}</div>
-                                <div className="flex gap-2">
+                <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-2xl w-full my-2">
+                    <div className="p-4 flex items-start w-full">
+                        <div className="flex flex-col gap-1 w-full text-start">
+                            <Typography variant="mobileCardTitle">
+                                {data?.employee_name}
+                            </Typography>
+
+                            <div className="flex items-center gap-2 mt-1">
+                                <Typography variant="mobileCardLabel">
                                     {data?.earning_component}
-                                    <StatusBadge status={status?.label} />
-                                </div>
-                                <div className="text-sm text-gray-500">
+                                </Typography>
+                                <StatusBadge status={status?.label} />
+                            </div>
+
+                            <div className="mt-1">
+                                <Typography variant="mobileCardLabel">
                                     {formattedClaimDate}
-                                </div>
-                                <div
-                                    className={
-                                        isMasked ? "text-start blur-sm select-none" : "text-start"
-                                    }
-                                >
-                                    Claimed Amount: {data?.claimed_amount} {data?.currency}
-                                </div>
-                                <div
-                                    className={
-                                        isMasked ? "text-start blur-sm select-none" : "text-start"
-                                    }
-                                >
-                                    Max Amount Eligible: {data?.max_amount_eligible}{" "}
-                                    {data?.currency}
-                                </div>
+                                </Typography>
+                            </div>
+
+                            <div className={isMasked ? "blur-sm select-none mt-1" : "mt-1"}>
+                                <Typography variant="mobileCardLabel">
+                                    Claimed Amount: <span className="text-gray-800 font-semibold">{data?.claimed_amount} {data?.currency}</span>
+                                </Typography>
+                            </div>
+
+                            <div className={isMasked ? "blur-sm select-none" : ""}>
+                                <Typography variant="mobileCardLabel">
+                                    Max Amount Eligible: <span className="text-gray-800 font-semibold">{data?.max_amount_eligible} {data?.currency}</span>
+                                </Typography>
                             </div>
                         </div>
                     </div>

@@ -59,7 +59,7 @@ const PreviewOfITDeclaration = ({ declarationId, disabled = false }: Props) => {
           }
         `}
       >
-        {isPending ? "Loading..." : "Perview"}
+        {isPending ? "Loading..." : "Preview"}
       </Button>
 
       <SalarySlipPDFModal

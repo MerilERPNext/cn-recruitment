@@ -13,6 +13,7 @@ const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
   const { isDesktop } = useScreenSize();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("Open");
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const navigate = useNavigate();
@@ -43,32 +44,31 @@ const TeamLeaveRequest = () => {
     setRefetchApprovalList(true);
   }, [setSearchParams]);
 
+  const isRejectedFilter = activeStatus === "Rejected";
+
   const tableTitles = isBulkSelectEnabled
-    ? [
-        "Select",
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "ACTIONS",
+    ? (isRejectedFilter
+      ? [
+        "Select", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
       ]
-    : [
-        "Employee",
-        "Leave Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Leave Days",
-        "Status",
-        "ACTIONS",
-      ];
+      : [
+        "Select", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+      ])
+    : (isRejectedFilter
+      ? [
+        "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
+      ]
+      : [
+        "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+      ]);
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? (isRejectedFilter
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
+      : ["0.5fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"])
+    : (isRejectedFilter
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
+      : ["1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"]);
 
   return (
     <div className="flex flex-col h-full">
@@ -122,8 +122,12 @@ const TeamLeaveRequest = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  showRejectReason={isRejectedFilter}
                 />
               )}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters.status || "Open");
+              }}
             />
           ) : null}
         </CardTable>

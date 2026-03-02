@@ -7,7 +7,7 @@ import {
 } from "../../../hooks/useEmployee";
 import {
   useChatAssistant,
-  useFlowConfigSelfTriggerList,
+  useDifinitaionNameForSeparation,
   useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
@@ -51,7 +51,7 @@ const Separation = () => {
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const document_name = activeEmployee?.name ?? "";
-  const { data: definitionName } = useFlowConfigSelfTriggerList();
+  const { data: definitionName } = useDifinitaionNameForSeparation();
 
   const { data: userUiPermission } = useGetUiPermission("HR Process");
 
@@ -83,7 +83,6 @@ const Separation = () => {
   }
 
   const separationData = getFunnelData("Separation");
-  console.log("separationData", separationData);
   const definition_name = separationData?.[0]?.name || "";
   const l = "true";
 

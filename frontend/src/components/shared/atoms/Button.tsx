@@ -1,12 +1,13 @@
 import React, { ReactNode, forwardRef } from "react";
 import { Loader2 } from "lucide-react";
 
-type ButtonVariant = "contain" | "outline" | "subtle" | "soft";
+export type ButtonVariant = "contain" | "outline" | "subtle" | "soft";
 type ButtonSize = "sm" | "md" | "lg";
 export type ButtonColor =
   | "primary"
   | "secondary"
   | "success"
+  | "text"
   | "warning"
   | "error"
   | "info"
@@ -118,6 +119,13 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         outline: "border border-gray-200 text-gray-600 hover:bg-gray-200",
         subtle: "text-gray-600 hover:bg-gray-200",
         soft: "bg-gray-50 text-gray-600 hover:bg-gray-100",
+      },
+      text: {
+        contain:
+          "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-200",
+        outline: "border border-gray-100 text-gray-900 hover:bg-gray-200",
+        subtle: "text-gray-900 hover:bg-gray-200",
+        soft: "bg-gray-50 text-gray-900 hover:bg-gray-100",
       },
     };
 

@@ -5,6 +5,7 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import WrapperHoverCard from "../../../shared/WrapperHoverCard";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
 
 type Props = {
   data: any;
@@ -22,7 +23,7 @@ const TeamProofApprovalCard = ({
   onClick,
   loadingAction,
 }: Props) => {
-//   const { isDesktop } = useScreenSize();
+  const { isDesktop } = useScreenSize();
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data.custom_doctype_actions)
@@ -31,7 +32,8 @@ const TeamProofApprovalCard = ({
   const gridTemplateColumns = "1fr 2fr 2fr 1fr 1fr 1fr";
 
   return (
-    <div
+    <>
+    {isDesktop ? (<div
       className="grid items-center gap-4 px-6 h-16 border-b hover:bg-primary/10 cursor-pointer"
       style={{ gridTemplateColumns }}
       onClick={() => onClick?.(data)}
@@ -88,6 +90,45 @@ const TeamProofApprovalCard = ({
         />
       </div>
     </div>
+    ) : (
+      <div
+        className="flex flex-col gap-2 p-4 border rounded hover:bg-primary/10 cursor-pointer"
+        onClick={() => onClick?.(data)}
+      >
+        <div className="flex items-center justify-between">
+          <Link
+            to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
+            target="_blank"
+          >
+            <Typography
+              variant="bodyMedium"
+              className="font-medium truncate"
+            >
+              <WrapperHoverCard employeeId={data?.reference_document?.employee}>
+                {data?.reference_document?.employee_name}
+              </WrapperHoverCard>
+            </Typography>
+          </Link>
+          <StatusBadge status={data?.status} />
+        </div>
+
+        <Typography variant="bodySmall" className="text-gray-500">
+          {data?.reference_document?.doctype} - ₹{" "}
+          {Number(
+            data?.reference_document?.total_actual_amount
+          ).toLocaleString("en-IN")}
+        </Typography>
+
+        <TeamApprovalActionPill
+          actions={actions}
+          status={data?.status}
+          recordId={data?.todo_id}
+          loadingAction={loadingAction}
+          onAction={(action) => onAction(action, data)}
+        />
+      </div>
+    )}  
+    </>
   );
 };
 
