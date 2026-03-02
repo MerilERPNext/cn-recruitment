@@ -8,7 +8,6 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
-import { MdErrorOutline } from "react-icons/md";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import SalaryAssignmentHeader from "./PayPackageHeader";
 import { CalendarDays } from "lucide-react";
@@ -208,8 +207,7 @@ export default function SalaryAssignmentList() {
               <CardSkeleton />
             ) : isError ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <MdErrorOutline size={32} className="mb-2 text-red-500" />
-                <Typography variant="bodySmall" color="error" className="font-semibold">Error loading data</Typography>
+                <Typography variant="bodySmall" color="error" className="font-semibold">No records found</Typography>
               </div>
             ) : list.length > 0 ? (
               list.map((item) => (

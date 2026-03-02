@@ -52,7 +52,7 @@ const TeamAdvanceRequest = () => {
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 px-2">
           <div className="px-4 py-1 md:py-4">
             <Typography variant="h4">Team Advance Requests</Typography>
             <Typography variant="bodySmall" color="body2">

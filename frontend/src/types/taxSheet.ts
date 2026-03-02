@@ -6,6 +6,7 @@ export interface SeriesItem {
   }
   
   export interface TaxSheetData {
+    current_tax_regime: ReactNode;
     status: string;
     months: string[]; // e.g. ["April-2025", ...]
     earnings: SeriesItem[]; // Example items: "Basic", "House Rent Allowance", "Gross Earnings"

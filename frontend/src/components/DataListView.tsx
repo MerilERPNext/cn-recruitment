@@ -8,11 +8,11 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
+  FileText,
   Filter,
   Loader2,
   RefreshCw,
   RepeatIcon as RetryIcon,
-  Search,
   Shield,
 } from "lucide-react";
 import type React from "react";
@@ -29,6 +29,8 @@ import {
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
+import SearchInputWrapper from "./shared/SearchBar";
+import { Typography } from "./shared/atoms/Typography";
 
 interface BaseItem {
   name?: string;
@@ -864,7 +866,15 @@ const DataListView = <T extends BaseItem>({
     return (
       customScreen ?? (
         <div className="flex items-center justify-center py-12">
-          <span className="text-gray-500">No records found</span>
+              <div className="flex items-center justify-center py-16">
+      <div className="text-center">
+        <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
+        <Typography variant="h4">No records found</Typography>
+        <Typography variant="bodySmall">
+          Not available.
+        </Typography>
+      </div>
+    </div>
         </div>
       )
     );
@@ -877,18 +887,10 @@ const DataListView = <T extends BaseItem>({
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  placeholder="Search..."
-                  className="w-full h-12 pl-10 pr-3 text-sm bg-transparent placeholder-gray-400 outline-none border-none focus:outline-none"
-                />
-              </div>
+              <SearchInputWrapper
+              searchTerm={searchTerm}
+              handleSearch={handleSearch}
+            />
             )}
             {isFilter && filterFields.length > 0 && (
               <button

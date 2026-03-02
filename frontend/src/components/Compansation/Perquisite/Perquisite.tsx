@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useMemo } from "react";
-import { X, SearchIcon } from "lucide-react";
+import { FileText, X } from "lucide-react";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
@@ -11,6 +11,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import { formatCurrency } from "../../../utils/currency";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import SearchInputWrapper from "../../shared/SearchBar";
 
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
@@ -57,7 +58,7 @@ export default function PerquisiteList() {
 
   return (
     <div className="w-full lg:p-4 p-2">
-      <div className="sm:mb-6 mb-2">
+      <div className="sm:mb-4 px-2 mb-2">
         <Typography variant="h4">
           Employee Perquisite
         </Typography>
@@ -69,24 +70,27 @@ export default function PerquisiteList() {
       </div>
       {isDesktop ? (
         <CardTable titles={titles} columnWidths={columnWidths}>
-          <div className="relative w-full">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <SearchIcon size={18} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search loans..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-100  w-full"
-            />
-          </div>
 
-          <div className="border bg-white hover:bg-primary/20">
+        
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+   
+
+          <div className="border bg-white hover:bg-primary/10">
             {filteredPerquisites.length === 0 && (
-              <div className="px-6 py-6 text-sm text-gray-500 text-center">
-                No perquisites found
-              </div>
+    <div className="flex items-center justify-center py-16">
+    <div className="text-center">
+      <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
+      <Typography variant="h4">No records found</Typography>
+      <Typography variant="bodySmall">
+        No invoice available.
+      </Typography>
+    </div>
+  </div>
             )}
 
             {filteredPerquisites.map((item: any) => (
