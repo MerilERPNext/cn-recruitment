@@ -16,6 +16,7 @@ import CardTable from "../../shared/CardTable";
 import Tooltip from "../../shared/Tooltip";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceForm from "./AdvanceForm";
@@ -372,11 +373,7 @@ const AdvancesList: React.FC = () => {
                   )}
                 </>
               ) : (
-                <div className="text-center py-12 px-4 text-gray-500">
-                  <div className="text-center py-12 text-gray-500">
-                    No advances found.
-                  </div>
-                </div>
+                <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
               )}
             </>
           </CardTable>

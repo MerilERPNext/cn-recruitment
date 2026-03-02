@@ -13,7 +13,7 @@ import {
   IoCloudDownloadOutline,
   IoWarningOutline,
   IoCheckmarkCircleOutline,
-  IoCloseCircleOutline
+  IoCloseCircleOutline,
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
 import { Typography } from "./shared/atoms/Typography";
@@ -96,7 +96,6 @@ const PolicySignOff: React.FC = () => {
   };
   /* eslint-disable @typescript-eslint/no-explicit-any */
   const handleFormSubmit = (formData: any) => {
-
     updatePolicy({
       doctype: "Policy Details",
       name: policyId || "",
@@ -132,6 +131,12 @@ const PolicySignOff: React.FC = () => {
     })
       .then(() => {
         toast.success("Policy declined successfully");
+        queryClient.invalidateQueries({
+          queryKey: ["documents-infinite", "Policy Details"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["document-count", "Policy Details"],
+        });
         navigate("/webapp/policies-enforced");
       })
       .catch((error) => {
@@ -153,7 +158,11 @@ const PolicySignOff: React.FC = () => {
       className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
     >
       <IoCloudDownloadOutline className="w-5 h-5" />
-      {isDesktop && <Typography variant="bodyMedium" className="text-white">Download</Typography>}
+      {isDesktop && (
+        <Typography variant="bodyMedium" className="text-white">
+          Download
+        </Typography>
+      )}
     </a>
   );
 
@@ -200,7 +209,10 @@ const PolicySignOff: React.FC = () => {
             <Typography variant="h3" className="text-gray-900 mb-3">
               Policy Not Found
             </Typography>
-            <Typography variant="body" className="text-gray-500 mb-8 max-w-sm mx-auto">
+            <Typography
+              variant="body"
+              className="text-gray-500 mb-8 max-w-sm mx-auto"
+            >
               {error
                 ? "Error loading policy details."
                 : "The requested policy could not be found or you don't have permission to view it."}
@@ -221,7 +233,6 @@ const PolicySignOff: React.FC = () => {
     <div className="h-[100dvh] w-full overflow-hidden flex flex-col items-center bg-gray-100/50">
       {/* Container to limits width heavily like a document viewer */}
       <div className="w-full h-full lg:max-w-4xl flex flex-col bg-white shadow-2xl lg:h-[calc(100vh-2rem)] lg:my-4 lg:rounded-xl overflow-hidden relative">
-
         {/* Header - Fixed at top */}
         <div className="shrink-0 z-50 bg-gradient-to-r from-primary-600 to-secondary-600 shadow-md">
           <div className="px-4 py-4 sm:px-6">
@@ -265,7 +276,10 @@ const PolicySignOff: React.FC = () => {
           {policyData.policy_document ? (
             <div className="flex-1 w-full h-full overflow-hidden p-4">
               <div className="bg-white rounded-lg shadow-sm w-full h-full border border-gray-200 overflow-hidden">
-                <SecurePdfViewer fetchUrl={policyData.policy_document} className="h-full" />
+                <SecurePdfViewer
+                  fetchUrl={policyData.policy_document}
+                  className="h-full"
+                />
               </div>
             </div>
           ) : (
@@ -273,8 +287,12 @@ const PolicySignOff: React.FC = () => {
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <IoWarningOutline className="w-8 h-8 text-gray-400" />
               </div>
-              <Typography variant="h4" className="text-gray-900 mb-2">No Document Available</Typography>
-              <Typography variant="body" className="text-gray-500">There is no PDF document attached to this policy.</Typography>
+              <Typography variant="h4" className="text-gray-900 mb-2">
+                No Document Available
+              </Typography>
+              <Typography variant="body" className="text-gray-500">
+                There is no PDF document attached to this policy.
+              </Typography>
             </div>
           )}
         </div>
@@ -304,23 +322,31 @@ const PolicySignOff: React.FC = () => {
                       />
                     </div>
                     <div className="ms-2">
-                      <Typography variant="body" className="text-gray-700 font-medium">
+                      <Typography
+                        variant="body"
+                        className="text-gray-700 font-medium"
+                      >
                         I have read and understood this policy
                       </Typography>
-                      <Typography variant="caption" className="text-gray-500 mt-1 block">
-                        By checking this box, you confirm that you have reviewed the document above.
+                      <Typography
+                        variant="caption"
+                        className="text-gray-500 mt-1 block"
+                      >
+                        By checking this box, you confirm that you have reviewed
+                        the document above.
                       </Typography>
                     </div>
                   </label>
 
-                  <div className={`grid gap-3 ${policyData.allow_decline === 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                  <div className={`flex gap-x-4`}>
                     <button
                       onClick={handleSignOff}
                       disabled={!isAgreed}
-                      className={`sm:w-fit w-full ml-auto font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${isAgreed
-                        ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                        }`}
+                      className={`sm:w-[250px] w-full max-sm:text-sm ml-auto font-medium sm:py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
+                        isAgreed
+                          ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
+                          : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                      }`}
                     >
                       <IoCheckmarkCircleOutline size={20} />
                       Acknowledge Policy
@@ -329,7 +355,7 @@ const PolicySignOff: React.FC = () => {
                     {policyData.allow_decline === 1 && (
                       <button
                         onClick={handleDecline}
-                        className="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 font-medium py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                        className="sm:w-[250px] max-sm:text-sm w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 font-medium py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
                       >
                         <IoCloseCircleOutline size={20} />
                         Decline
@@ -341,13 +367,21 @@ const PolicySignOff: React.FC = () => {
             </div>
           ) : (
             <div className="flex items-center justify-center p-2">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${policyData.status === "Acknowledged"
-                ? "bg-success-50 text-success-700 border border-success-100"
-                : "bg-red-50 text-red-700 border border-red-100"
-                }`}>
-                {policyData.status === "Acknowledged" ? <IoCheckmarkCircleOutline size={18} /> : <IoCloseCircleOutline size={18} />}
+              <div
+                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+                  policyData.status === "Acknowledged"
+                    ? "bg-success-50 text-success-700 border border-success-100"
+                    : "bg-red-50 text-red-700 border border-red-100"
+                }`}
+              >
+                {policyData.status === "Acknowledged" ? (
+                  <IoCheckmarkCircleOutline size={18} />
+                ) : (
+                  <IoCloseCircleOutline size={18} />
+                )}
                 <Typography variant="bodyMedium" className="font-semibold">
-                  Policy {policyData.status} on {new Date(policyData.modified).toLocaleDateString()}
+                  Policy {policyData.status} on{" "}
+                  {new Date(policyData.modified).toLocaleDateString()}
                 </Typography>
               </div>
             </div>
@@ -375,7 +409,10 @@ const PolicySignOff: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
                 <div className="mb-6 bg-blue-50 border border-blue-100 rounded-lg p-4">
                   <Typography variant="body" className="text-blue-800">
-                    Please complete the form below to finalize your acknowledgment of <span className="font-semibold">"{policyData.policy}"</span>.
+                    Please complete the form below to finalize your
+                    acknowledgment of{" "}
+                    <span className="font-semibold">"{policyData.policy}"</span>
+                    .
                   </Typography>
                 </div>
 
@@ -384,16 +421,30 @@ const PolicySignOff: React.FC = () => {
                     try {
                       const formConfig = JSON.parse(policyData.form_json);
                       // Form config validation and defaults logic...
-                      if (!formConfig || typeof formConfig !== "object") throw new Error("Invalid form config");
-                      if (!formConfig.components || !Array.isArray(formConfig.components)) formConfig.components = [];
+                      if (!formConfig || typeof formConfig !== "object")
+                        throw new Error("Invalid form config");
+                      if (
+                        !formConfig.components ||
+                        !Array.isArray(formConfig.components)
+                      )
+                        formConfig.components = [];
                       /* eslint-disable @typescript-eslint/no-explicit-any */
                       formConfig.components.forEach((component: any) => {
                         if (!component || typeof component !== "object") return;
-                        if (component.key === "employeeName" || component.key === "employee_name") {
+                        if (
+                          component.key === "employeeName" ||
+                          component.key === "employee_name"
+                        ) {
                           component.defaultValue = policyData.employee_name;
-                        } else if (component.key === "employeeId" || component.key === "employee_id") {
+                        } else if (
+                          component.key === "employeeId" ||
+                          component.key === "employee_id"
+                        ) {
                           component.defaultValue = policyData.employee_id;
-                        } else if (component.key === "acknowledgedDate" || component.key === "acknowledged_date") {
+                        } else if (
+                          component.key === "acknowledgedDate" ||
+                          component.key === "acknowledged_date"
+                        ) {
                           component.defaultValue = new Date().toISOString();
                         }
                       });
@@ -417,7 +468,10 @@ const PolicySignOff: React.FC = () => {
                       return (
                         <div className="text-center py-8">
                           <IoWarningOutline className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                          <Typography variant="body" className="text-red-600 mb-4">
+                          <Typography
+                            variant="body"
+                            className="text-red-600 mb-4"
+                          >
                             Error loading acknowledgment form configuration.
                           </Typography>
                           <button

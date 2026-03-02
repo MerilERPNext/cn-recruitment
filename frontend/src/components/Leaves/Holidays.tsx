@@ -16,7 +16,7 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
 import CustomDropdown from "../shared/CustomDropdown";
-import DataNotFoundPng from "../../assets/data-not-found.png";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 import Button from "../shared/atoms/Button";
 
 interface HolidayCardProps {
@@ -69,7 +69,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
           <p className="text-xs sm:text-sm text-gray-500 truncate">
             {weekday}
             {showOptionalLabel &&
-            holiday?.leave_type.toLowerCase() === "optional holiday"
+              holiday?.leave_type.toLowerCase() === "optional holiday"
               ? " | Optional Holiday"
               : ""}
           </p>
@@ -98,12 +98,11 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
         {statusLabel && (
           <span
             className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium
-              ${
-                statusLabel === "Taken" || statusLabel === "Applied"
-                  ? "bg-primary/10 text-primary"
-                  : statusLabel === "Rejected"
-                    ? "bg-red-100 text-red-600"
-                    : "bg-yellow-100 text-yellow-700"
+              ${statusLabel === "Taken" || statusLabel === "Applied"
+                ? "bg-primary/10 text-primary"
+                : statusLabel === "Rejected"
+                  ? "bg-red-100 text-red-600"
+                  : "bg-yellow-100 text-yellow-700"
               }`}
           >
             {statusLabel === "Taken" ? "Applied" : statusLabel}
@@ -278,16 +277,7 @@ const Holidays: React.FC = () => {
         )}
 
         {listToShow.length === 0 ? (
-          <div className="flex flex-col items-center text-center  mt-6">
-            <img
-              src={DataNotFoundPng}
-              alt="No holidays found"
-              className="w-36 h-36 sm:size-60 mt-4"
-            />
-            <Typography variant="h4" className="mt-4" color="disabled">
-              No holidays found
-            </Typography>
-          </div>
+          <NoDataFound title="No Holidays Found" subtitle="There are no holidays available for the selected year." />
         ) : (
           <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
             {listToShow.map((h) => (

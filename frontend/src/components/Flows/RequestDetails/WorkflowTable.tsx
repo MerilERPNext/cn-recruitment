@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { FlowRequestItem, WorkflowStage } from "../../../types/flows";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -23,9 +24,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const { isDesktop } = useScreenSize();
   const EmptyState = () => {
     return (
-      <div className="py-14 text-center text-sm font-medium text-gray-500">
-        No Records Found
-      </div>
+      <NoDataFound title="No Records Found" subtitle="No workflow records available." />
     );
   };
 

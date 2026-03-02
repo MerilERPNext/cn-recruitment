@@ -12,6 +12,8 @@ import CardTable from "../../../shared/CardTable";
 import { Loan } from "../Type/loan";
 import LoanDetails from "./LoanDetails";
 import LoanInstallments from "./LoanInstallment";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+
 
 interface LoanListProps {
   loans: Loan[];
@@ -224,11 +226,12 @@ export default function LoanList({
           </div>
         ))}
         {loans.length === 0 && (
-          <div className="my-empty-state-card py-10 text-center text-gray-500">
-            {searchTerm
+          <NoDataFound
+            title="No Loan Requests"
+            subtitle={searchTerm
               ? "No loans found matching your search criteria."
               : "No loans available."}
-          </div>
+          />
         )}
       </div>
     </CardTable>

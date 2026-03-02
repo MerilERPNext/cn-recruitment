@@ -1,18 +1,17 @@
-
-import React, { useEffect, useRef, useState } from 'react';
-import * as pdfjs from 'pdfjs-dist';
+import React, { useEffect, useRef, useState } from "react";
+import * as pdfjs from "pdfjs-dist";
 
 // Configure PDF.js worker with multiple fallback options
 const configurePdfWorker = () => {
   const workerSources = [
     `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.mjs`,
     `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.mjs`,
-    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`
+    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`,
   ];
-  
+
   // Try the first worker source
   pdfjs.GlobalWorkerOptions.workerSrc = workerSources[0];
-  
+
   // Store fallback sources for potential retry
   (window as any).__pdfWorkerFallbacks = workerSources.slice(1);
 };
@@ -24,13 +23,18 @@ interface SecurePdfViewerProps {
   className?: string;
 }
 
-const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className = "" }) => {
+const DEFAULT_SCALE = 1.0; // <-- change the default zoom here (1.0 = 100%)
+
+const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({
+  fetchUrl,
+  className = "",
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1.2);
+  const [scale, setScale] = useState<number>(DEFAULT_SCALE);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [retryCount, setRetryCount] = useState<number>(0);
   const [renderedPages, setRenderedPages] = useState<HTMLCanvasElement[]>([]);
 
@@ -38,11 +42,11 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
     const fetchPdf = async (currentRetryCount = 0) => {
       try {
         setIsLoading(true);
-        setError('');
-        
+        setError("");
+
         const res = await fetch(fetchUrl, {
-          method: 'GET',
-          credentials: 'include', // Use cookies for auth
+          method: "GET",
+          credentials: "include", // Use cookies for auth
         });
 
         if (!res.ok) {
@@ -50,12 +54,15 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
         }
 
         const blob = await res.blob();
-        
+
         // Verify it's a PDF
-        if (!blob.type.includes('pdf') && !blob.type.includes('application/octet-stream')) {
-          console.warn('File might not be a PDF, type:', blob.type);
+        if (
+          !blob.type.includes("pdf") &&
+          !blob.type.includes("application/octet-stream")
+        ) {
+          console.warn("File might not be a PDF, type:", blob.type);
         }
-        
+
         const arrayBuffer = await blob.arrayBuffer();
 
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
@@ -63,20 +70,28 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
         setNumPages(pdf.numPages);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error loading PDF:', err);
-        
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
-        
+        console.error("Error loading PDF:", err);
+
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load PDF";
+
         // Check if it's a worker-related error and we can retry
-        if ((errorMessage.includes('worker') || errorMessage.includes('Worker') || errorMessage.includes('dynamically imported module')) && currentRetryCount < 2) {
-          console.log(`Worker failed, trying fallback ${currentRetryCount + 1}`);
+        if (
+          (errorMessage.includes("worker") ||
+            errorMessage.includes("Worker") ||
+            errorMessage.includes("dynamically imported module")) &&
+          currentRetryCount < 2
+        ) {
+          console.log(
+            `Worker failed, trying fallback ${currentRetryCount + 1}`,
+          );
           setRetryCount(currentRetryCount + 1);
-          
+
           // Try fallback worker sources
           const fallbacks = (window as any).__pdfWorkerFallbacks;
           if (fallbacks && fallbacks[currentRetryCount]) {
             pdfjs.GlobalWorkerOptions.workerSrc = fallbacks[currentRetryCount];
-            
+
             // Retry after a short delay
             setTimeout(() => {
               fetchPdf(currentRetryCount + 1);
@@ -84,12 +99,20 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
             return;
           }
         }
-        
+
         // Final error handling
-        if (errorMessage.includes('worker') || errorMessage.includes('Worker') || errorMessage.includes('dynamically imported module')) {
-          setError('PDF worker failed to load from all CDN sources. Please check your internet connection and try refreshing the page.');
-        } else if (errorMessage.includes('fetch')) {
-          setError('Failed to download PDF. Please check your internet connection.');
+        if (
+          errorMessage.includes("worker") ||
+          errorMessage.includes("Worker") ||
+          errorMessage.includes("dynamically imported module")
+        ) {
+          setError(
+            "PDF worker failed to load from all CDN sources. Please check your internet connection and try refreshing the page.",
+          );
+        } else if (errorMessage.includes("fetch")) {
+          setError(
+            "Failed to download PDF. Please check your internet connection.",
+          );
         } else {
           setError(errorMessage);
         }
@@ -104,25 +127,25 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
 
   const handleRetry = () => {
     setRetryCount(0);
-    setError('');
+    setError("");
     // Reset to first worker source
     const workerSources = [
       `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.mjs`,
       `//cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.mjs`,
-      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`
+      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`,
     ];
     pdfjs.GlobalWorkerOptions.workerSrc = workerSources[0];
     (window as any).__pdfWorkerFallbacks = workerSources.slice(1);
-    
+
     // Trigger re-fetch
     const retryFetchPdf = async () => {
       try {
         setIsLoading(true);
-        setError('');
-        
+        setError("");
+
         const res = await fetch(fetchUrl, {
-          method: 'GET',
-          credentials: 'include',
+          method: "GET",
+          credentials: "include",
         });
 
         if (!res.ok) {
@@ -130,24 +153,28 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
         }
 
         const blob = await res.blob();
-        
-        if (!blob.type.includes('pdf') && !blob.type.includes('application/octet-stream')) {
-          console.warn('File might not be a PDF, type:', blob.type);
+
+        if (
+          !blob.type.includes("pdf") &&
+          !blob.type.includes("application/octet-stream")
+        ) {
+          console.warn("File might not be a PDF, type:", blob.type);
         }
-        
+
         const arrayBuffer = await blob.arrayBuffer();
         const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
         setPdfDoc(pdf);
         setNumPages(pdf.numPages);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error loading PDF:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF';
+        console.error("Error loading PDF:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load PDF";
         setError(errorMessage);
         setIsLoading(false);
       }
     };
-    
+
     retryFetchPdf();
   };
 
@@ -157,44 +184,44 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
 
       try {
         const canvases: HTMLCanvasElement[] = [];
-        
+
         // Get container width for initial scale calculation
         const container = containerRef.current;
         const containerWidth = container ? container.clientWidth - 32 : 800; // Account for padding
-        
+
         for (let pageNum = 1; pageNum <= numPages; pageNum++) {
           const page = await pdfDoc.getPage(pageNum);
-          
+
           // Calculate fit-to-width scale for reference
           const baseViewport = page.getViewport({ scale: 1 });
           const fitToWidthScale = (containerWidth * 0.95) / baseViewport.width;
-          
+
           // Use user's zoom scale, but ensure minimum readability
           let actualScale = scale;
-          
-          // If user hasn't zoomed (scale is default 1.2), use responsive fit-to-width
-          if (scale === 1.2) {
+
+          // If scale equals the default (user hasn't zoomed yet), use responsive fit-to-width
+          if (scale === DEFAULT_SCALE) {
             actualScale = Math.max(fitToWidthScale, 0.8); // Minimum 80% scale for readability
           }
-          
+
           const viewport = page.getViewport({ scale: actualScale });
 
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
           if (!context) continue;
 
           canvas.height = viewport.height;
           canvas.width = viewport.width;
-          canvas.className = 'shadow-lg bg-white mb-4 mx-auto block rounded';
+          canvas.className = "shadow-lg bg-white mb-4 mx-auto block rounded";
 
           await page.render({ canvasContext: context, viewport }).promise;
           canvases.push(canvas);
         }
-        
+
         setRenderedPages(canvases);
       } catch (err) {
-        console.error('Error rendering pages:', err);
-        setError('Failed to render PDF pages');
+        console.error("Error rendering pages:", err);
+        setError("Failed to render PDF pages");
       }
     };
 
@@ -210,24 +237,25 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
     if (!container || renderedPages.length === 0) return;
 
     // Clear existing content
-    container.innerHTML = '';
-    
+    container.innerHTML = "";
+
     // Add all rendered pages with proper responsive layout
     renderedPages.forEach((canvas, index) => {
-      const pageWrapper = document.createElement('div');
-      pageWrapper.className = 'flex justify-center mb-6 last:mb-2';
-      
-      const canvasWrapper = document.createElement('div');
-      canvasWrapper.className = 'relative max-w-full';
-      
-      const pageLabel = document.createElement('div');
-      pageLabel.className = 'absolute -top-6 left-0 bg-gray-600 text-white text-xs px-2 py-1 rounded-t text-center min-w-[60px]';
+      const pageWrapper = document.createElement("div");
+      pageWrapper.className = "flex justify-center mb-6 last:mb-2";
+
+      const canvasWrapper = document.createElement("div");
+      canvasWrapper.className = "relative max-w-full";
+
+      const pageLabel = document.createElement("div");
+      pageLabel.className =
+        "absolute -top-6 left-0 bg-gray-600 text-white text-xs px-2 py-1 rounded-t text-center min-w-[60px]";
       pageLabel.textContent = `Page ${index + 1}`;
-      
+
       // Canvas styling for zoom support
-      canvas.style.height = 'auto';
-      canvas.style.display = 'block';
-      
+      canvas.style.height = "auto";
+      canvas.style.display = "block";
+
       canvasWrapper.appendChild(pageLabel);
       canvasWrapper.appendChild(canvas);
       pageWrapper.appendChild(canvasWrapper);
@@ -257,18 +285,40 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <div className="text-center">
-          <svg className="w-12 h-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-12 h-12 text-red-400 mx-auto mb-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading PDF</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Error Loading PDF
+          </h3>
           <p className="text-sm text-gray-600 mb-4">{error}</p>
           <div className="flex flex-col space-y-2">
             <button
               onClick={handleRetry}
               className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-700 transition-colors"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
               </svg>
               Retry Loading
             </button>
@@ -278,8 +328,18 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
               rel="noopener noreferrer"
               className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
             >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-4 h-4 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Download PDF
             </a>
@@ -295,7 +355,7 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200 flex-shrink-0">
         {/* Document Info */}
         <div className="text-sm text-gray-600 font-medium">
-          {numPages > 0 && `${numPages} page${numPages !== 1 ? 's' : ''}`}
+          {numPages > 0 && `${numPages} page${numPages !== 1 ? "s" : ""}`}
         </div>
 
         {/* Zoom Controls */}
@@ -320,7 +380,6 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
             +
           </button>
         </div>
-
       </div>
 
       {/* Scrollable PDF Container - Supports zooming */}
@@ -329,7 +388,7 @@ const SecurePdfViewer: React.FC<SecurePdfViewerProps> = ({ fetchUrl, className =
           <div
             ref={containerRef}
             className="w-full max-w-none mx-auto"
-            style={{ minWidth: 'fit-content' }}
+            style={{ minWidth: "fit-content" }}
           />
         </div>
       </div>

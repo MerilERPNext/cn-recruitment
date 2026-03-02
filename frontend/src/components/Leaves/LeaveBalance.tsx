@@ -20,6 +20,7 @@ import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -177,17 +178,11 @@ const LeaveBalance: React.FC = () => {
 
   if (!data || !data.leave_balance || data.leave_balance.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <div className="max-w-md mx-auto">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            No Leave Data Found
-          </h3>
-          <p className="text-gray-500 mb-6">
-            No leave balance information is available for your account at this
-            time.
-          </p>
-          <div className="w-full"></div>
-        </div>
+      <div className="p-8">
+        <NoDataFound
+          title="No Leave Data Found"
+          subtitle="No leave balance information is available for your account at this time."
+        />
       </div>
     );
   }
