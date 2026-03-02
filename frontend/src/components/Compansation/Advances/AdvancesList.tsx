@@ -24,7 +24,7 @@ import InstallmentsList from "./InstallmentsList";
 import Modal from "./commonModal";
 import ShowHideButton from "../ui/ShowHideButton";
 import SearchInputWrapper from "../../shared/SearchBar";
-import { FileText } from "lucide-react";
+
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -361,15 +361,7 @@ const AdvancesList: React.FC = () => {
               {isLoading ? (
                 <CardSkeleton />
               ) : formattedData.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-center">
-                  <div>
-                    <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-                    <Typography variant="h4">No Advance Records</Typography>
-                    <Typography variant="bodySmall">
-                      You have not requested any advance yet.
-                    </Typography>
-                  </div>
-                </div>
+                <NoDataFound title="No Advance Records" subtitle="You have not requested any advance yet." />
               ) : (
                 <>
 

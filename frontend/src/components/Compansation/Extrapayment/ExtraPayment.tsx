@@ -6,12 +6,12 @@ import { useExtraPayment } from "../../../hooks/useExtraPAyments";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import SearchInputWrapper from "../../shared/SearchBar";
-import { FileText } from "lucide-react";
 import { formatCurrency } from "../../../utils/currency";
 
 interface Payment {
@@ -103,31 +103,9 @@ export default function ExtraPayment() {
             </div>
 
             {apiPayments.length === 0 ? (
-              <div className="flex justify-center items-center h-50 col-span-6">
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center">
-                    <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-                    <Typography variant="h4">
-                      No records found
-                    </Typography>
-                    <Typography variant="bodySmall">
-                      No extra payment available.
-                    </Typography>
-                  </div>
-                </div>
-              </div>
+              <NoDataFound title="No Extra Payments Found" subtitle="No extra payment records available." />
             ) : filteredPayments.length === 0 ? (
-              <div className="flex justify-center items-center h-50 col-span-6">
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center">
-                    <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-                    <Typography variant="h4">Not Found</Typography>
-                    <Typography variant="bodySmall">
-                      No matching payment found.
-                    </Typography>
-                  </div>
-                </div>
-              </div>
+              <NoDataFound title="No Matching Payments" subtitle="No matching payment found for your search." />
             ) : (
               filteredPayments.map((payment) => (
                 <div
@@ -187,13 +165,9 @@ export default function ExtraPayment() {
       {!isDesktop && (
         <div className="space-y-4 px-1">
           {apiPayments.length === 0 ? (
-            <p className="text-center text-gray-500 mt-10">
-              No records found.
-            </p>
+            <NoDataFound title="No Extra Payments Found" subtitle="No extra payment records available." />
           ) : filteredPayments.length === 0 ? (
-            <p className="text-center text-gray-500 mt-10">
-              No matching payment found.
-            </p>
+            <NoDataFound title="No Matching Payments" subtitle="No matching payment found for your search." />
           ) : (
             filteredPayments.map((payment) => (
               <div

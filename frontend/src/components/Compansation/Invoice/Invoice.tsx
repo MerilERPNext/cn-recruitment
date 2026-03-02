@@ -12,10 +12,10 @@ import {
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 import InvoicePDFview from "./Component/InvoicePDFview";
-import { FileText } from "lucide-react";
 import Button from "../../shared/atoms/Button";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -164,29 +164,9 @@ export default function Invoice() {
             </div>
 
             {invoices.length === 0 ? (
-              <div className="flex justify-center items-center h-50 col-span-9">
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center">
-                    <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-                    <Typography variant="h4">No records found</Typography>
-                    <Typography variant="bodySmall">
-                      No invoice available.
-                    </Typography>
-                  </div>
-                </div>
-              </div>
+              <NoDataFound title="No Invoices Found" subtitle="No invoice records available." />
             ) : filteredInvoices.length === 0 ? (
-              <div className="flex justify-center items-center h-50 col-span-9">
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center">
-                    <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-                    <Typography variant="h4">Not Found</Typography>
-                    <Typography variant="bodySmall">
-                      No matching invoice found.
-                    </Typography>
-                  </div>
-                </div>
-              </div>
+              <NoDataFound title="No Matching Invoices" subtitle="No matching invoice found for your search." />
             ) : (
               filteredInvoices.map((inv: any, idx: number) => {
                 const invoiceNo = inv.name;
@@ -277,9 +257,7 @@ export default function Invoice() {
         ) : (
           <div className="space-y-3 px-1">
             {!hasSearchData && searchTerm ? (
-              <div className="flex justify-center items-center h-40">
-                <Typography variant="bodySmall">Not found</Typography>
-              </div>
+              <NoDataFound title="No Matching Invoices" subtitle="No matching invoice found for your search." />
             ) : (
               filteredInvoices.map((inv: any, idx: number) => {
                 const invoiceNo = inv.name;

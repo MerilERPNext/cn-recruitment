@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
-import { FileText } from "lucide-react";
-import { Typography } from "../../../shared/atoms/Typography";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 
 const IncomeTaxComputationlist = ({ data }: any) => {
   const payload = data || {};
@@ -18,25 +17,17 @@ const IncomeTaxComputationlist = ({ data }: any) => {
   const formatAmount = (val: any) =>
     typeof val === "number" ? val.toLocaleString("en-IN") : "-";
 
-// Loading state
-if (!summary && !chapterVia && !netTaxable) {
-  return <CardSkeleton />;
-}
+  // Loading state
+  if (!summary && !chapterVia && !netTaxable) {
+    return <CardSkeleton />;
+  }
 
-// Empty state (API returned but no data)
-if (!summary.length && !chapterVia.length && !netTaxable.length) {
-  return (
-    <div className="flex items-center justify-center py-16 text-center">
-      <div>
-        <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-        <Typography variant="h4">No Tax Summary Available</Typography>
-        <Typography variant="bodySmall">
-          No tax details found for the selected period.
-        </Typography>
-      </div>
-    </div>
-  );
-}
+  // Empty state (API returned but no data)
+  if (!summary.length && !chapterVia.length && !netTaxable.length) {
+    return (
+      <NoDataFound title="No Tax Summary Available" subtitle="No tax details found for the selected period." />
+    );
+  }
 
   return (
     <div className="bg-white border rounded-md overflow-hidden">

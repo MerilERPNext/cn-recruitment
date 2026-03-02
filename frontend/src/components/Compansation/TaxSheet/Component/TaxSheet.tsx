@@ -9,8 +9,8 @@ import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
 import { Card } from "../../../shared/atoms/Card";
 import { Typography } from "../../../shared/atoms/Typography";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
-import { FileText } from "lucide-react";
 
 /* ---------------- Types ---------------- */
 
@@ -87,15 +87,7 @@ export default function TaxSheet() {
 
   if (!payrollPeriods?.length) {
     return (
-      <div className="flex items-center justify-center py-16 text-center">
-        <div>
-          <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-          <Typography variant="h4">No Payroll Periods</Typography>
-          <Typography variant="bodySmall">
-            No payroll periods available for this company.
-          </Typography>
-        </div>
-      </div>
+      <NoDataFound title="No Payroll Periods" subtitle="No payroll periods available for this company." />
     );
   }
 
@@ -103,15 +95,7 @@ export default function TaxSheet() {
 
   if (!taxsheetData || !taxsheetData.months?.length) {
     return (
-      <div className="flex items-center justify-center py-16 text-center">
-        <div>
-          <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-          <Typography variant="h4">No Tax Sheet Records</Typography>
-          <Typography variant="bodySmall">
-            No tax data available for selected payroll period.
-          </Typography>
-        </div>
-      </div>
+      <NoDataFound title="No Tax Sheet Records" subtitle="No tax data available for selected payroll period." />
     );
   }
 
