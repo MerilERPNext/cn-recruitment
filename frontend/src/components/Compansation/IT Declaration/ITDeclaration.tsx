@@ -28,6 +28,8 @@ import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { validateITDeclarationProofs } from "./util/Validation";
+import EditITDeclarationAccess from "./Component/EditITDeclarationAccess";
+import { SquarePen } from "lucide-react";
 
 type PayrollPeriod = {
   name: string;
@@ -61,6 +63,7 @@ const ITDeclarationForm = () => {
   );
   const [groupedCategories, setGroupedCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState("");
+  const [openModal, setOpenModal] = useState(false);
   const [hraData, setHraData] = useState<HRAData | null>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   useEffect(() => {
@@ -413,7 +416,25 @@ const ITDeclarationForm = () => {
             >
               Old Regime
             </button>
+           
+
           </div>
+          <div className="">
+      
+      {/* Open Button */}
+      <button
+        onClick={() => setOpenModal(true)}
+        className=" text-gray-500 rounded-xl"
+      >
+        <SquarePen className="h-5 w-5" />
+      </button>
+
+      {/* Modal */}
+      <EditITDeclarationAccess
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+      />
+    </div>
         </div>
 
         {/* Tabs */}
