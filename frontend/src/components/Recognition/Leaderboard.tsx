@@ -76,8 +76,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
         <button
           onClick={() => setActiveTab("received")}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "received"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-primary text-primary"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           Received
@@ -85,8 +85,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
         <button
           onClick={() => setActiveTab("given")}
           className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "given"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-600 hover:text-gray-900"
+            ? "border-primary text-primary"
+            : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
         >
           Given
@@ -153,10 +153,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           </div>
         ))}
       </div>
-
-      <div className="py-4">
-        <NoDataFound title="No Leaderboard Data" subtitle="No leaderboard entries available yet." />
-      </div>
+      {data.length === 0 && (
+        <div className="py-4">
+          <NoDataFound title="No Leaderboard Data" subtitle="No leaderboard entries available yet." />
+        </div>)}
     </Card>
   );
 };

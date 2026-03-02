@@ -202,21 +202,6 @@ export default function ExtraPayment() {
                       </Typography>
                     </div>
                   </div>
-                  {/* Salary Component + Document ID */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-col gap-1">
-                      <Typography variant="mobileCardLabel">Salary Component</Typography>
-                      <Typography variant="mobileCardValue">
-                        {payment.salary_component}
-                      </Typography>
-                    </div>
-                    <div className="flex flex-col gap-1 text-right">
-                      <Typography variant="mobileCardLabel">Document ID</Typography>
-                      <Typography variant="mobileCardValue">
-                        {payment.invoiceId}
-                      </Typography>
-                    </div>
-                  </div>
 
                   {/* Date + Amount */}
                   <div className="flex items-start justify-between">
