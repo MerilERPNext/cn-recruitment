@@ -78,3 +78,35 @@ export interface RecognitionDashboardData {
   };
   winners: ProgramWinner[];
 }
+
+export interface NomineeForVoting {
+  nomination_name: string;
+  employee: string;
+  employee_name: string;
+  designation: string;
+  department: string;
+  image: string;
+  votes_received: number;
+  already_voted: boolean;
+}
+
+export interface ProgramInteractionContext {
+  success: boolean;
+  award: {
+    name: string;
+    award_name: string;
+    description: string;
+    icon?: string;
+    color?: string;
+    nomination_start_date?: string;
+    nomination_end_date?: string;
+    voting_start_date?: string;
+    voting_end_date?: string;
+  };
+  nomination_open: boolean;
+  voting_open: boolean;
+  can_nominate: boolean;
+  can_vote: boolean;
+  form_schema: any | null;
+  nominees_for_voting: NomineeForVoting[];
+}
