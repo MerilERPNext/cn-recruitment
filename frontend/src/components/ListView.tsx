@@ -14,6 +14,7 @@ import {
   RepeatIcon as RetryIcon,
   SearchIcon,
 } from "lucide-react";
+import { NoDataFound } from "./shared/atoms/NoDataFound";
 import {
   useDoctypeSchema,
   useFrappeInfiniteQuery,
@@ -505,7 +506,7 @@ const FrappeListView = <T extends BaseItem>({
             {isSearch && (
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon size={18} className="text-gray-400" />
+                  <SearchIcon size={18} className="text-gray-400" />
                 </div>
                 <input
                   type="text"
@@ -633,9 +634,7 @@ const FrappeListView = <T extends BaseItem>({
             </div>
           )
         ) : processedData.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <span className="text-gray-500">No records found</span>
-          </div>
+          <NoDataFound />
         ) : (
           <div
             className={
@@ -1020,7 +1019,7 @@ export const StaticListView = <T extends BaseItemStatic>({
           <div className="flex justify-center py-8">Loading…</div>
         )
       ) : paginatedData.length === 0 ? (
-        <div className="py-12 text-center text-gray-500">No items found</div>
+        <NoDataFound />
       ) : (
         <>
           {paginatedData.map((item, index) => {

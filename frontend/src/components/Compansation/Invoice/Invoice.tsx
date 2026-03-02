@@ -21,6 +21,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ShowHideButton from "../ui/ShowHideButton";
 import InvoicePDFview from "./Component/InvoicePDFview";
+import NoDataFound from "../../shared/atoms/NoDataFound";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -141,6 +142,8 @@ export default function Invoice() {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {isLoading ? (
           <CardSkeleton />
+        ) : invoices.length === 0 ? (
+          <NoDataFound title="No Invoices Found" subtitle="No invoice records available." />
         ) : isDesktop ? (
           /* ================= DESKTOP TABLE ================= */
           <CardTable titles={titles} columnWidths={columnWidths}>

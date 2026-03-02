@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { FileText } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +9,7 @@ import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 import TeamProofApprovalCard from "./TeamProofApprovalCard";
 
 const TeamProofSubmissionList = () => {
@@ -46,15 +46,10 @@ const TeamProofSubmissionList = () => {
 
   // ---------------- Empty Screen ----------------
   const noRecordsScreen = () => (
-    <div className="flex items-center justify-center py-16">
-      <div className="text-center">
-        <FileText className="w-10 h-10 mx-auto text-blue-400 mb-3" />
-        <Typography variant="h4">No Proof Requests</Typography>
-        <Typography variant="bodySmall">
-          No proof submission requests available.
-        </Typography>
-      </div>
-    </div>
+    <NoDataFound
+      title="No Proof Requests"
+      subtitle="No proof submission requests available."
+    />
   );
 
   return (

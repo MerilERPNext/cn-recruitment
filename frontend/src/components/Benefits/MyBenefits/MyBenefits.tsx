@@ -18,6 +18,7 @@ import { SkeletonStat } from "./Skeletons";
 import { AccrualItem, StatItem } from "./CommonItems";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { getCurrentPeriod } from "../shared/logic";
@@ -192,11 +193,7 @@ const MyBenefits: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {!components || components.length === 0 ? (
-          <div className="w-full">
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
-              <p className="text-gray-600">No data found</p>
-            </div>
-          </div>
+          <NoDataFound title="No Benefits Found" subtitle="No benefit data is available for the selected period." />
         ) : null}
 
         <main className="w-full pb-10 md:pb-20 space-y-4">

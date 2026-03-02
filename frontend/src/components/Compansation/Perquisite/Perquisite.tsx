@@ -6,11 +6,12 @@ import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { formatCurrency } from "../../../utils/currency";
-import { Card } from "../../shared/atoms/Card";
-import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { formatCurrency } from "../../../utils/currency";
+import StatusBadge from "../../shared/atoms/statusBadge";
 import CardTable from "../../shared/CardTable";
+import { Card } from "../../shared/atoms/Card";
 
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
@@ -80,9 +81,7 @@ export default function PerquisiteList() {
 
           <div className="border bg-white hover:bg-primary/20">
             {filteredPerquisites.length === 0 && (
-              <div className="px-6 py-6 text-sm text-gray-500 text-center">
-                No perquisites found
-              </div>
+              <NoDataFound title="No Perquisites Found" subtitle="No perquisite records available." />
             )}
 
             {filteredPerquisites.map((item: any) => (
@@ -121,9 +120,7 @@ export default function PerquisiteList() {
         /* ================= MOBILE ================= */
         <div className="space-y-4">
           {filteredPerquisites.length === 0 && (
-            <div className="p-4 text-sm text-gray-500 text-center">
-              No perquisites found
-            </div>
+            <NoDataFound title="No Perquisites Found" subtitle="No perquisite records available." />
           )}
 
           {filteredPerquisites.map((item: any) => (
@@ -214,13 +211,12 @@ export default function PerquisiteList() {
                         {key.replace(/([A-Z])/g, " $1")}
                       </span>
                       <span
-                        className={`font-medium ${
-                          typeof value === "boolean"
+                        className={`font-medium ${typeof value === "boolean"
                             ? value
                               ? "bg-success-100 text-success"
                               : "bg-error-100 text-error"
                             : "bg-transparent text-gray-800"
-                        } px-2 py-1 rounded`}
+                          } px-2 py-1 rounded`}
                       >
                         {typeof value === "boolean"
                           ? value

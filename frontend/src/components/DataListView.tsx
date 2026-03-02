@@ -15,6 +15,7 @@ import {
   Search,
   Shield,
 } from "lucide-react";
+import { NoDataFound } from "./shared/atoms/NoDataFound";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
@@ -717,8 +718,8 @@ const DataListView = <T extends BaseItem>({
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >
                 {pageNum}
@@ -863,9 +864,7 @@ const DataListView = <T extends BaseItem>({
 
     return (
       customScreen ?? (
-        <div className="flex items-center justify-center py-12">
-          <span className="text-gray-500">No records found</span>
-        </div>
+        <NoDataFound />
       )
     );
   }, [noRecordsScreen, debouncedFilters]);

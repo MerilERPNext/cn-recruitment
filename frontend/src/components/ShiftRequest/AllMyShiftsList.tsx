@@ -12,6 +12,7 @@ import CardTable from "../shared/CardTable";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 
 const MyShiftRowItem: React.FC<{
@@ -162,9 +163,10 @@ const AllMyShiftsList: React.FC = () => {
                   <MyShiftRowItem key={shift.name} item={shift} index={index} />
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
-                  No shifts found for you.
-                </div>
+                <NoDataFound
+                  title="No Shift Assignments"
+                  subtitle="No shifts found for you."
+                />
               )}
             </CardTable>
           </div>
@@ -179,9 +181,10 @@ const AllMyShiftsList: React.FC = () => {
                 <ShiftAssignmentItem key={shift.name} item={shift} />
               ))
             ) : (
-              <div className="p-6 text-center text-gray-500">
-                No shifts found for you.
-              </div>
+              <NoDataFound
+                title="No Shift Assignments"
+                subtitle="No shifts found for you."
+              />
             )}
           </div>
         </div>

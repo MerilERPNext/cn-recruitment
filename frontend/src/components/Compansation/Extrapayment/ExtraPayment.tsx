@@ -12,6 +12,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+
+
 
 interface Payment {
   salary_component: string;
@@ -100,52 +103,59 @@ export default function ExtraPayment() {
                 />
               </div>
             </div>
-            {filteredPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                style={{
-                  gridTemplateColumns: columnWidths.join(" "),
-                  alignItems: "center",
-                }}
-              >
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
+            {filteredPayments.length > 0 ? (
+              filteredPayments.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+                  style={{
+                    gridTemplateColumns: columnWidths.join(" "),
+                    alignItems: "center",
+                  }}
                 >
-                  {payment.recipient}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.invoiceId}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.recipient}
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.invoiceId}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.salary_component}
-                </Typography>
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.date}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.salary_component}
+                  </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.date}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {payment.amount}
-                </Typography>
-                <div className="flex items-center justify-center">
-                  <StatusBadge status={payment.status} />
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center"
+                  >
+                    {payment.amount}
+                  </Typography>
+                  <div className="flex items-center justify-center">
+                    <StatusBadge status={payment.status} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <NoDataFound
+                title="No Extra Payments"
+                subtitle="No payments found."
+              />
+            )}
           </CardTable>
         </div>
       )}
@@ -153,68 +163,71 @@ export default function ExtraPayment() {
       {/* ---------------------- MOBILE ---------------------- */}
       {!isDesktop && (
         <div className="space-y-4 px-1">
-          {filteredPayments.map((payment) => (
-            <div
-              key={payment.id}
-              className="cursor-pointer border-t-4 border-x border-b 
-                border-x-primary/20 border-b-primary/20 
-                shadow-sm border-primary bg-white rounded-xl"
-            >
-              <div className="p-4 flex flex-col gap-3 w-full">
-                {/* Header: Recipient + Status */}
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">Recipient</Typography>
-                    <Typography variant="mobileCardValue">
-                      {payment.recipient}
-                    </Typography>
+          {filteredPayments.length > 0 ? (
+            filteredPayments.map((payment) => (
+              <div
+                key={payment.id}
+                className="cursor-pointer border-t-4 border-x border-b 
+                  border-x-primary/20 border-b-primary/20 
+                  shadow-sm border-primary bg-white rounded-xl"
+              >
+                <div className="p-4 flex flex-col gap-3 w-full">
+                  {/* Header: Recipient + Status */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel">Recipient</Typography>
+                      <Typography variant="mobileCardValue">
+                        {payment.recipient}
+                      </Typography>
+                    </div>
+                    <StatusBadge status={payment.status} />
                   </div>
-                  <StatusBadge status={payment.status} />
-                </div>
 
-                {/* Salary Component + Document ID */}
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">
-                      Salary Component
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {payment.salary_component}
-                    </Typography>
+                  {/* Salary Component + Document ID */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel">
+                        Salary Component
+                      </Typography>
+                      <Typography variant="mobileCardValue">
+                        {payment.salary_component}
+                      </Typography>
+                    </div>
+                    <div className="flex flex-col gap-1 text-right">
+                      <Typography variant="mobileCardLabel">
+                        Document ID
+                      </Typography>
+                      <Typography variant="mobileCardValue">
+                        {payment.invoiceId}
+                      </Typography>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1 text-right">
-                    <Typography variant="mobileCardLabel">
-                      Document ID
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {payment.invoiceId}
-                    </Typography>
-                  </div>
-                </div>
 
-                {/* Date + Amount */}
-                <div className="flex items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">Date</Typography>
-                    <Typography variant="mobileCardValue">
-                      {payment.date}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-1 text-right">
-                    <Typography variant="mobileCardLabel">Amount</Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatCurrency(payment.amount)}
-                    </Typography>
+                  {/* Date + Amount */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel">Date</Typography>
+                      <Typography variant="mobileCardValue">
+                        {payment.date}
+                      </Typography>
+                    </div>
+                    <div className="flex flex-col gap-1 text-right">
+                      <Typography variant="mobileCardLabel">Amount</Typography>
+                      <Typography variant="mobileCardValue">
+                        {formatCurrency(payment.amount)}
+                      </Typography>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <NoDataFound
+              title="No Extra Payments"
+              subtitle="No payments found."
+            />
+          )}
         </div>
-      )}
-
-      {filteredPayments.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">No payments found.</p>
       )}
     </div>
   );

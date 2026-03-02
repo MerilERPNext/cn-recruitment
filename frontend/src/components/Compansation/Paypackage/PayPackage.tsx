@@ -7,6 +7,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Card } from "../../shared/atoms/Card";
 import { MdErrorOutline } from "react-icons/md";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
@@ -197,9 +198,7 @@ export default function SalaryAssignmentList() {
                 </div>
               ))
             ) : (
-              <div className="p-4 text-center">
-                <Typography variant="bodySmall" color="body2">No records found.</Typography>
-              </div>
+              <NoDataFound title="No Records Found" subtitle="No pay package records available for this period." />
             )}
           </CardTable>
         ) : (
@@ -285,9 +284,7 @@ export default function SalaryAssignmentList() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-10">
-                <Typography variant="bodySmall" color="body2">No records found</Typography>
-              </div>
+              <NoDataFound title="No Records Found" subtitle="No pay package records available for this period." />
             )}
           </div>
         )}

@@ -33,6 +33,7 @@ a {
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
@@ -177,6 +178,7 @@ code {
   font-weight: 500 !important;
   /* aspect-ratio: 1 !important; */
 }
+
 .react-datepicker__day-names {
   display: flex !important;
   width: 100% !important;
@@ -229,6 +231,7 @@ code {
   top: 10px !important;
   left: -4px !important;
 }
+
 .react-datepicker__aria-live {
   display: none !important;
 }
@@ -259,7 +262,8 @@ code {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-direction: row; /* label left, toggle right */
+  flex-direction: row;
+  /* label left, toggle right */
 }
 
 /* Label styling */
@@ -272,7 +276,8 @@ code {
 /* Description text below */
 .custom-halfday-toggle .form-text {
   font-size: 0.75rem;
-  color: #6b7280; /* Tailwind gray-500 */
+  color: #6b7280;
+  /* Tailwind gray-500 */
   margin-top: 0.5rem;
   width: 100%;
 }
@@ -306,12 +311,14 @@ code {
 
 /* Checked state */
 .custom-halfday-toggle input[type="checkbox"]:checked {
-  background-color: #3b82f6; /* Tailwind blue-500 */
+  background-color: #3b82f6;
+  /* Tailwind blue-500 */
 }
 
 .custom-halfday-toggle input[type="checkbox"]:checked::before {
   transform: translateX(1.25rem);
 }
+
 .custom-halfday-toggle input[type="checkbox"] {
   background-image: none !important;
 }
@@ -322,11 +329,15 @@ code {
 
 /* Utility for hiding scrollbars */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer 10+ */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+  display: none;
+  /* Safari and Chrome */
 }
 
 /* custom file upload */
@@ -354,8 +365,9 @@ code {
   color: #333;
   width: 100%;
 }
+
 /* Make collapsible panel title visually match the h4 heading we inject */
-.formio-section-panel > .panel-heading,
+.formio-section-panel>.panel-heading,
 .formio-section-panel .panel-heading {
   display: flex !important;
   align-items: center !important;
@@ -369,8 +381,10 @@ code {
 .formio-section-panel .panel-heading .panel-title,
 .formio-section-panel .panel-heading .panel-title a,
 .formio-section-panel .panel-heading .panel-title span {
-  font-weight: 600 !important; /* make it bold */
-  font-size: 1.1rem !important; /* match your injected h4 */
+  font-weight: 600 !important;
+  /* make it bold */
+  font-size: 1.1rem !important;
+  /* match your injected h4 */
   color: #111 !important;
   margin: 0 !important;
   line-height: 1.2 !important;
@@ -390,21 +404,25 @@ code {
 /* Style the disabled select field */
 .formio-component-select select:disabled,
 .formio-component-select .form-control[disabled] {
-  background-color: #e5e6e8; /* Light gray background */
-  cursor: not-allowed; /* Optional: make it clear that the field is disabled */
+  background-color: #e5e6e8;
+  /* Light gray background */
+  cursor: not-allowed;
+  /* Optional: make it clear that the field is disabled */
 }
 
 /* Style the disabled dropdown */
-.formio-component-select
-  .choices__list--dropdown[aria-expanded="false"]:disabled,
+.formio-component-select .choices__list--dropdown[aria-expanded="false"]:disabled,
 .formio-component-select .choices__item[aria-disabled="true"] {
-  background-color: #e5e6e8; /* Same light gray background */
-  cursor: not-allowed; /* Make it clear that the options are not clickable */
+  background-color: #e5e6e8;
+  /* Same light gray background */
+  cursor: not-allowed;
+  /* Make it clear that the options are not clickable */
 }
 
 /* Make the input area in the dropdown look disabled */
 .formio-component-select .choices__input--cloned[disabled] {
-  background-color: #e5e6e8; /* Light gray */
+  background-color: #e5e6e8;
+  /* Light gray */
   cursor: not-allowed;
 }
 
@@ -432,9 +450,11 @@ code {
   align-items: center;
   margin-right: 1.5rem;
 }
+
 /* Choices.js Dropdown Styling Improvements */
 .choices__list--dropdown {
-  z-index: 1001 !important; /* Ensure it stays above other elements */
+  z-index: 1001 !important;
+  /* Ensure it stays above other elements */
 }
 
 /* HelpDesk Table - Remove vertical cell borders */
@@ -452,6 +472,7 @@ code {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -462,6 +483,7 @@ code {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -489,11 +511,9 @@ code {
 
 /* Progress bar fill */
 .formio-component-file .progress .progress-bar {
-  background: linear-gradient(
-    90deg,
-    var(--primary-color, #5a4bda),
-    var(--secondary-color, #6172f3)
-  ) !important;
+  background: linear-gradient(90deg,
+      var(--primary-color, #5a4bda),
+      var(--secondary-color, #6172f3)) !important;
   border-radius: 99px !important;
   transition: width 0.35s ease !important;
   background-size: 200% 100% !important;
@@ -504,6 +524,7 @@ code {
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
@@ -585,4 +606,52 @@ code {
   padding: 8px 14px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
+}
+
+/*Reset Password page styling*/
+@media (width >=1000px) {
+  .oxygon-bg {
+    background-image: url("/assets/recruitment/webapp/oxygen_background.png");
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+}
+
+/* Keyframes — rendered once via <style> */
+@keyframes ndFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes ndFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ndOrbit {
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.7;
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.3);
+    opacity: 1;
+  }
 }
