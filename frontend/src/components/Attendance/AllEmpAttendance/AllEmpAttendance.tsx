@@ -472,31 +472,28 @@ const AllEmpAttendance = () => {
                 // );
 
                 // Skip weekly offs for modal
-                const shouldOpenModal = statusInfo.status !== "week-off";
 
                 return (
                   <tr
                     key={`${format(date, "yyyy-MM-dd")}-${index}`}
                     onClick={() => {
-                      if (shouldOpenModal) {
-                        setShowDetailsFor({
-                          date: date,
-                          data: record || ({
-                            name: `placeholder-${format(date, "yyyy-MM-dd")}`,
-                            doctype: "Attendance",
-                            start: format(date, "yyyy-MM-dd"),
-                            end: format(date, "yyyy-MM-dd"),
-                            title: "No Data",
-                            status: getStatusDisplay(statusInfo.status),
-                            docstatus: "",
-                            employee: "",
-                          } as AttendanceRecord),
-                          status: statusInfo.status.replace(/-/g, " "),
-                          events: statusInfo.events
-                        });
-                      }
+                      setShowDetailsFor({
+                        date: date,
+                        data: record || ({
+                          name: `placeholder-${format(date, "yyyy-MM-dd")}`,
+                          doctype: "Attendance",
+                          start: format(date, "yyyy-MM-dd"),
+                          end: format(date, "yyyy-MM-dd"),
+                          title: "No Data",
+                          status: getStatusDisplay(statusInfo.status),
+                          docstatus: "",
+                          employee: "",
+                        } as AttendanceRecord),
+                        status: statusInfo.status.replace(/-/g, " "),
+                        events: statusInfo.events
+                      });
                     }}
-                    className={`hover:bg-primary-50 transition-colors cursor-pointer ${!shouldOpenModal ? "cursor-default" : ""}`}
+                    className={`hover:bg-primary-50 transition-colors cursor-pointer`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {format(date, "dd MMM yyyy, EEE")}
