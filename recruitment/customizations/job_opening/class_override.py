@@ -14,5 +14,6 @@ class CustomJobOpening(JobOpening):
                 "label": row.label,
                 "description": row.description
             } for row in (self.custom_jd_details or [])
+            if not isinstance(row, str)
         ]
 
