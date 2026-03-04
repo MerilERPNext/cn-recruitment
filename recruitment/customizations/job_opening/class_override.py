@@ -9,10 +9,4 @@ class CustomJobOpening(JobOpening):
         context.location = self.custom_location
         context.custom_google_map_link = frappe.db.get_value("Branch",self.custom_location, "custom_google_map_link")
 
-        context.jd_details = [
-            {
-                "label": row.label,
-                "description": row.description
-            } for row in self.custom_jd_details
-        ]
-
+        context.jd_details = self.custom_jd_details
