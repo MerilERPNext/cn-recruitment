@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
-import { useOutletContext } from "react-router-dom";
 
 import {
   useITDeclarationTabData,
@@ -30,6 +29,7 @@ import { getActionsEnabled } from "../../../utils/uiPermission";
 import { validateITDeclarationProofs } from "./util/Validation";
 import EditITDeclarationAccess from "./Component/EditITDeclarationAccess";
 import { SquarePen } from "lucide-react";
+import Button from "../../shared/atoms/Button";
 
 type PayrollPeriod = {
   name: string;
@@ -278,23 +278,9 @@ const ITDeclarationForm = () => {
   const parts = message.split(dateRegex);
 
   // Register action button in central SalarySlipApp via ref pattern
-  const { setActionButtonConfig } = useOutletContext<{
-    setActionButtonConfig: (
-      config: { label: string; onClick: () => void; disabled?: boolean } | null
-    ) => void;
-  }>();
 
-  const submitRef = useRef<(() => void) | undefined>(undefined);
-  submitRef.current = handleSubmit;
 
-  useEffect(() => {
-    setActionButtonConfig({
-      label: "Submit",
-      onClick: () => submitRef.current?.(),
-      disabled: PrrofOfITDeclaration?.status === "failed",
-    });
-    return () => setActionButtonConfig(null);
-  }, [setActionButtonConfig, PrrofOfITDeclaration?.status]);
+
 
   return (
     <div className="bg-white min-h-screen">
@@ -364,12 +350,20 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
-              {actionsEnabled.preview && (
+              {(actionsEnabled.preview ?? declarationDoctype === "Employee Tax Exemption Declaration") &&  (
                 <PreviewOfITDeclaration
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
                 />
               )}
+            <Button
+            variant="contain"
+            size="md"
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
             </div>
           ) : (
             /* Mobile: stacked layout for action buttons */
@@ -389,6 +383,12 @@ const ITDeclarationForm = () => {
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
                 />
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
               </div>
             </div>
           )}
@@ -419,7 +419,7 @@ const ITDeclarationForm = () => {
            
 
           </div>
-          <div className="">
+          <div className=" flex gap-2 items-center">
       
       {/* Open Button */}
       <button
@@ -431,9 +431,8 @@ const ITDeclarationForm = () => {
 
       {/* Modal */}
       <EditITDeclarationAccess
-        isOpen={openModal}
-        onClose={() => setOpenModal(false)}
-      />
+              isOpen={openModal}
+              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}      />
     </div>
         </div>
 

@@ -1,38 +1,75 @@
 import { useEffect, useRef, useState } from "react";
 import { FiCalendar, FiChevronDown } from "react-icons/fi";
+import Button from "../../../shared/atoms/Button";
+import {
+  useEditITDeclaration,
+  useEditValueITDeclaration,
+} from "../../../../hooks/payroll/useEditITDeclaration";
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  empdoc_id: string | null;
 };
 
-const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
+type FormState = {
+  status: "Open" | "Closed" | "";
+  declaration_type: string;
+  from_date: string;
+  to_date: string;
+};
+
+const EditITDeclarationAccess = ({
+  isOpen,
+  onClose,
+  empdoc_id,
+}: Props) => {
+  const mutation = useEditITDeclaration();
+  const { data: editValueITDeclaration } =
+    useEditValueITDeclaration(empdoc_id);
+
   const [statusOpen, setStatusOpen] = useState(false);
   const [declarationOpen, setDeclarationOpen] = useState(false);
 
-  const [selectedStatus, setSelectedStatus] = useState("Open");
-  const [selectedDeclaration, setSelectedDeclaration] =
-    useState("IT Declaration");
+  const [formData, setFormData] = useState<FormState>({
+    status: "",
+    declaration_type: "",
+    from_date: "",
+    to_date: "",
+  });
 
   const statusRef = useRef<HTMLDivElement>(null);
   const declarationRef = useRef<HTMLDivElement>(null);
 
-  // ESC key close
+  console.log("editValueITDeclaration", editValueITDeclaration);
+
+  // 🔹 Backend default values
+  useEffect(() => {
+    if (editValueITDeclaration) {
+      setFormData({
+        status: editValueITDeclaration.status || "",
+        declaration_type: editValueITDeclaration.type || "",
+        from_date:
+          editValueITDeclaration.individual_start_date || "",
+        to_date:
+          editValueITDeclaration.individual_end_date || "",
+      });
+    }
+  }, [editValueITDeclaration]);
+
+  // ESC close
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
 
-    if (isOpen) {
-      document.addEventListener("keydown", handleEsc);
-    }
+    if (isOpen) document.addEventListener("keydown", handleEsc);
 
-    return () => {
+    return () =>
       document.removeEventListener("keydown", handleEsc);
-    };
   }, [isOpen, onClose]);
 
-  // Close dropdown on outside click
+  // Close dropdown outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -55,18 +92,42 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const updateField = (field: keyof FormState, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // 🔥 Submit
+  const handleSubmit = async () => {
+    try {
+      await mutation.mutateAsync({
+        empdoc_id: empdoc_id,
+        declaration_type: formData.declaration_type,
+        status: formData.status,
+        from_date: formData.from_date,
+        to_date: formData.to_date,
+      });
+
+      onClose();
+    } catch (error) {
+      console.error("Mutation failed", error);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/20"
         onClick={onClose}
       />
 
-      {/* Popup Card */}
-      <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl p-6 animate-scaleIn">
+      {/* Popup */}
+      <div className="relative max-w-xl bg-white rounded-lg p-6 animate-scaleIn">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
@@ -86,7 +147,7 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           </button>
         </div>
 
-        {/* Select Status */}
+        {/* Status */}
         <div className="mb-4 relative" ref={statusRef}>
           <label className="text-sm text-gray-600 block mb-2">
             Select Status
@@ -94,9 +155,9 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
 
           <div
             onClick={() => setStatusOpen(!statusOpen)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 flex justify-between items-center cursor-pointer"
+            className="w-full border border-gray-200 px-4 py-1.5 bg-gray-50 flex justify-between items-center cursor-pointer"
           >
-            <span>{selectedStatus}</span>
+            <span>{formData.status || "Select Status"}</span>
             <FiChevronDown
               className={`transition-transform ${
                 statusOpen ? "rotate-180" : ""
@@ -105,15 +166,15 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           </div>
 
           {statusOpen && (
-            <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+            <div className="absolute w-full bg-white border border-gray-200 z-10">
               {["Open", "Closed"].map((item) => (
                 <div
                   key={item}
                   onClick={() => {
-                    setSelectedStatus(item);
+                    updateField("status", item);
                     setStatusOpen(false);
                   }}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer text-sm"
+                  className="px-4 py-1.5 hover:bg-gray-100 cursor-pointer text-sm"
                 >
                   {item}
                 </div>
@@ -122,7 +183,7 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           )}
         </div>
 
-        {/* Select Declaration */}
+        {/* Declaration */}
         <div className="mb-6 relative" ref={declarationRef}>
           <label className="text-sm text-gray-600 block mb-2">
             Select Declaration Type
@@ -130,9 +191,11 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
 
           <div
             onClick={() => setDeclarationOpen(!declarationOpen)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 bg-gray-50 flex justify-between items-center cursor-pointer"
+            className="w-full border border-gray-200 px-4 py-1.5 bg-gray-50 flex justify-between items-center cursor-pointer"
           >
-            <span>{selectedDeclaration}</span>
+            <span>
+              {formData.declaration_type || "Select Declaration"}
+            </span>
             <FiChevronDown
               className={`transition-transform ${
                 declarationOpen ? "rotate-180" : ""
@@ -141,19 +204,18 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           </div>
 
           {declarationOpen && (
-            <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10">
+            <div className="absolute w-full bg-white border border-gray-200 z-10">
               {[
-                "IT Declaration",
-                "Proof of Investment (POI)",
-                "Tax Regime",
+                "Employee Tax Exemption Declaration",
+                "Employee Tax Exemption Proof Submission",
               ].map((item) => (
                 <div
                   key={item}
                   onClick={() => {
-                    setSelectedDeclaration(item);
+                    updateField("declaration_type", item);
                     setDeclarationOpen(false);
                   }}
-                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer text-sm"
+                  className="px-4 py-1.5 hover:bg-gray-100 cursor-pointer text-sm"
                 >
                   {item}
                 </div>
@@ -162,9 +224,9 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           )}
         </div>
 
-        {/* Manage Date */}
-        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-6">
-          <div className="flex items-center gap-2 mb-4">
+        {/* Dates */}
+        <div className="bg-gray-50 p-2 border border-gray-100 mb-6">
+          <div className="flex items-center gap-2 mb-1">
             <FiCalendar className="text-gray-500" />
             <span className="text-sm font-semibold text-gray-600 uppercase">
               Manage Date
@@ -174,11 +236,18 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
           <div className="grid grid-cols-2 gap-4">
             <input
               type="text"
-              value="2026-02-27"
+              value={formData.from_date}
               disabled
-              className="border rounded-xl px-4 py-3 bg-gray-100"
+              className="border px-4 py-1.5 bg-white"
             />
-            <input type="date" className="border rounded-xl px-4 py-3" />
+            <input
+              type="date"
+              value={formData.to_date}
+              onChange={(e) =>
+                updateField("to_date", e.target.value)
+              }
+              className="border px-4 py-1.5"
+            />
           </div>
         </div>
 
@@ -186,35 +255,16 @@ const EditITDeclarationAccess = ({ isOpen, onClose }: Props) => {
         <div className="flex justify-end gap-4">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600"
+            className="px-6 py-1.5 rounded-lg border border-gray-200 text-gray-600"
           >
             Cancel
           </button>
 
-          <button className="px-6 py-2.5 rounded-xl bg-orange-500 text-white">
-            SUBMIT
-          </button>
+          <Button variant="contain" size="md" onClick={handleSubmit}>
+            Submit
+          </Button>
         </div>
       </div>
-
-      {/* Animation */}
-      <style>
-        {`
-          .animate-scaleIn {
-            animation: scaleIn 0.2s ease-out;
-          }
-          @keyframes scaleIn {
-            from {
-              opacity: 0;
-              transform: scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-        `}
-      </style>
     </div>
   );
 };

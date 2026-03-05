@@ -117,8 +117,5 @@ export const getLTABrakup = async (employee: string | null) => {
         employee: employee,
     }
   );
-
-console.log("LTA BREAKUP RESPONSE", response);
-
   return response;
 };
