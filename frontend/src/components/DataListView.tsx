@@ -8,7 +8,6 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Filter,
   Loader2,
   RefreshCw,
@@ -31,7 +30,6 @@ import {
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
 import SearchInputWrapper from "./shared/SearchBar";
-import { Typography } from "./shared/atoms/Typography";
 
 interface BaseItem {
   name?: string;
@@ -876,7 +874,7 @@ const DataListView = <T extends BaseItem>({
       {/* Header */}
       <div className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
               <SearchInputWrapper
                 searchTerm={searchTerm}

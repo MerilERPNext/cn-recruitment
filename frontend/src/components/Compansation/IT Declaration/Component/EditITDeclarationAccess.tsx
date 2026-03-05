@@ -237,10 +237,8 @@ const EditITDeclarationAccess = ({
             <input
               type="text"
               value={formData.from_date}
-              onChange={(e) =>
-                updateField("from_date", e.target.value)
-              }
-              className="border px-4 py-1 bg-white"
+              disabled
+              className="border px-4 py-1.5 bg-white"
             />
             <input
               type="date"
@@ -248,7 +246,7 @@ const EditITDeclarationAccess = ({
               onChange={(e) =>
                 updateField("to_date", e.target.value)
               }
-              className="border px-4 py-1"
+              className="border px-4 py-1.5"
             />
           </div>
         </div>
