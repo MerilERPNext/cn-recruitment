@@ -6,7 +6,9 @@ import { useGetRecognitionMetrics } from "../../services/recognitionService";
 import { useGetDepartmentNominationStatus } from "../../services/recognitionService";
 import { useGetLastProgramWinners } from "../../services/recognitionService";
 import { useGetEmployeeRecognitionPoints } from "../../services/recognitionService";
+import { useGetMyRecognitionActivity } from "../../services/recognitionService";
 import { LastProgramWinners } from "./LastProgramWinners";
+import { MyActivitySection } from "./MyActivitySection";
 import { ActivePrograms } from "./ActivePrograms";
 import { OngoingPrograms } from "./OngoingPrograms";
 import { Leaderboard } from "./Leaderboard";
@@ -44,6 +46,8 @@ const RecognitionPage: React.FC = () => {
     useGetLastProgramWinners(3);
   const { data: pointsData, isLoading: pointsLoading } =
     useGetEmployeeRecognitionPoints();
+  const { data: myActivityData, isLoading: myActivityLoading } =
+    useGetMyRecognitionActivity();
 
   const handleAppreciate = () => {
     setShowAppreciateModal(true);
@@ -67,24 +71,20 @@ const RecognitionPage: React.FC = () => {
               success.
             </Typography>
           </div>
-          <div className="flex items-center gap-4">
-            {!pointsLoading && (
-              <div className="flex items-center gap-2">
-                <Typography variant="bodyMedium" className="text-primary font-semibold">
-                  My Points: {pointsData?.points || 0}
-                </Typography>
-              </div>
-            )}
-            <Button
-              size="md"
-              bgColor="primary"
-              onClick={handleAppreciate}
-              icon={<Plus className="size-4" />}
-            >
-              Appreciate
-            </Button>
-          </div>
+          {!pointsLoading && (
+            <div className="flex items-center gap-2">
+              <Typography variant="bodyMedium" className="text-primary font-semibold">
+                My Points: {pointsData?.points || 0}
+              </Typography>
+            </div>
+          )}
         </div>
+
+        {/* My Activity */}
+        <MyActivitySection
+          activity={myActivityData}
+          isLoading={myActivityLoading}
+        />
 
         {/* Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -140,6 +140,7 @@ const RecognitionPage: React.FC = () => {
               departmentData?.overall_approval_percentage || 0
             }
             totalPending={departmentData?.total_pending || 0}
+            departments={departmentData?.departments || []}
             isLoading={departmentLoading}
           />
         </div>

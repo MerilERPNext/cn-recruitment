@@ -29,20 +29,15 @@ export const OngoingPrograms: React.FC<OngoingProgramsProps> = ({
     );
   }
 
-  const calculateProgress = (program: RecognitionProgram) => {
-    const start = new Date(program.start_date);
-    const end = new Date(program.end_date);
-    const now = new Date();
-    const total = end.getTime() - start.getTime();
-    const elapsed = now.getTime() - start.getTime();
-    return Math.min(Math.max((elapsed / total) * 100, 0), 100);
-  };
-
-  const formatDate = (dateString: string) => {
+  const getDateBadge = (dateString: string) => {
     try {
-      return format(new Date(dateString), "MMM dd");
+      const date = new Date(dateString);
+      return {
+        month: format(date, "MMM").toUpperCase(),
+        day: format(date, "dd"),
+      };
     } catch {
-      return dateString;
+      return { month: "---", day: "--" };
     }
   };
 
@@ -55,28 +50,56 @@ export const OngoingPrograms: React.FC<OngoingProgramsProps> = ({
       <div className="space-y-4">
         {programs.length > 0 ? (
           programs.map((program) => {
-            const progress = calculateProgress(program);
+            const dateBadge = getDateBadge(program.start_date);
+            const progress = program.overall_progress ?? 0;
 
             return (
-              <div key={program.id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="text-sm font-medium text-gray-600">
-                      {formatDate(program.start_date)}
-                    </div>
-                    <Typography variant="bodyMedium" className="font-semibold">
-                      {program.name}
-                    </Typography>
-                  </div>
-                  <StatusBadge status={program.status} />
+              <div key={program.id} className="flex items-start gap-3">
+                {/* Date Badge */}
+                <div className="flex flex-col items-center justify-center w-12 h-14 rounded-lg border border-gray-200 bg-white shrink-0">
+                  <span className="text-[10px] font-semibold text-gray-500 leading-tight">
+                    {dateBadge.month}
+                  </span>
+                  <span className="text-lg font-bold text-gray-800 leading-tight">
+                    {dateBadge.day}
+                  </span>
                 </div>
 
-                {/* Progress bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
+                {/* Content */}
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Typography variant="bodyMedium" className="font-semibold truncate">
+                      {program.name}
+                    </Typography>
+                    <StatusBadge status={program.status} />
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-sm h-1.5">
+                    <div
+                      className="h-1.5 rounded-sm transition-all"
+                      style={{
+                        width: `${progress}%`,
+                        backgroundColor: program.color || "#3b82f6",
+                      }}
+                    />
+                  </div>
+
+                  {/* Phase dates */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    {program.nomination_start_date && program.nomination_end_date && (
+                      <span>
+                        Nom: {format(new Date(program.nomination_start_date), "MMM d")} -{" "}
+                        {format(new Date(program.nomination_end_date), "MMM d")}
+                      </span>
+                    )}
+                    {program.voting_start_date && program.voting_end_date && (
+                      <span>
+                        Vote: {format(new Date(program.voting_start_date), "MMM d")} -{" "}
+                        {format(new Date(program.voting_end_date), "MMM d")}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );

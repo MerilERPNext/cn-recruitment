@@ -8,6 +8,7 @@ import type {
   DepartmentStatus,
   ProgramWinner,
   ProgramInteractionContext,
+  MyRecognitionActivity,
 } from "../types/recognition";
 
 const API_BASE = "chatnext_work_connect.chatnext_work_connect.api.recognition";
@@ -317,6 +318,21 @@ export const useAppreciateEmployee = () => {
   });
 };
 
+// Get my recognition activity (nominations, votes, etc.)
+export const useGetMyRecognitionActivity = () => {
+  return useQuery<MyRecognitionActivity>({
+    queryKey: ["recognition", "my-activity"],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        `${API_BASE}.get_my_recognition_activity`
+      );
+      return response as MyRecognitionActivity;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
 // Get program interaction context (nomination/voting state for a specific award)
 export const useGetProgramInteractionContext = (awardName: string | null) => {
   return useQuery<ProgramInteractionContext>({
@@ -355,6 +371,19 @@ export const useCreateNomination = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recognition"] });
+    },
+  });
+};
+
+// Get form session ID for chatnext window (nomination forms)
+export const useGetFormSessionId = () => {
+  return useMutation({
+    mutationFn: async (data: { form_widget_name: string; award_name: string }) => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_form.get_form_session_id",
+        data
+      );
+      return response as { success: boolean; session_id: string };
     },
   });
 };
