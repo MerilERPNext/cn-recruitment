@@ -12,6 +12,12 @@ export interface RecognitionProgram {
   status: string;
   category?: string;
   days_left?: number;
+  nomination_start_date?: string;
+  nomination_end_date?: string;
+  voting_start_date?: string;
+  voting_end_date?: string;
+  current_phase?: string;
+  overall_progress?: number;
 }
 
 export interface LeaderboardEntry {
@@ -102,6 +108,7 @@ export interface ProgramInteractionContext {
     nomination_end_date?: string;
     voting_start_date?: string;
     voting_end_date?: string;
+    nomination_form?: string;
   };
   nomination_open: boolean;
   voting_open: boolean;
@@ -109,4 +116,37 @@ export interface ProgramInteractionContext {
   can_vote: boolean;
   form_schema: any | null;
   nominees_for_voting: NomineeForVoting[];
+  my_nominations_count: number;
+}
+
+export interface MyNominationActivity {
+  nomination_name: string;
+  award: string;
+  award_name: string;
+  icon?: string;
+  color?: string;
+  status: string;
+  votes_received: number;
+}
+
+export interface MySubmittedNomination {
+  nomination_name: string;
+  award_name: string;
+  nominee_name: string;
+  status: string;
+}
+
+export interface PendingVoteProgram {
+  award: string;
+  award_name: string;
+  icon?: string;
+  color?: string;
+  unvoted_count: number;
+}
+
+export interface MyRecognitionActivity {
+  success: boolean;
+  nominated_for: MyNominationActivity[];
+  my_nominations: MySubmittedNomination[];
+  pending_votes: PendingVoteProgram[];
 }

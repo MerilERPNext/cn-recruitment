@@ -3,6 +3,7 @@ import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { RecognitionProgram } from "../../types/recognition";
 import { ArrowRight, Users, Clock, Trophy } from "lucide-react";
+import StatusBadge from "../shared/atoms/statusBadge";
 import { ProgramExpansionPanel } from "./ProgramExpansionPanel";
 
 interface ActiveProgramsProps {
@@ -57,7 +58,15 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
               <div key={program.id}>
                 <div
                   onClick={() => handleCardClick(program.id)}
-                  className="flex items-center gap-4 p-4 rounded-xl border border-gray-200 hover:shadow-md transition-all cursor-pointer group"
+                  className="flex items-center gap-4 p-4 rounded-xl border hover:shadow-md transition-all cursor-pointer group"
+                  style={{
+                    background: program.color
+                      ? `linear-gradient(135deg, ${program.color}08, ${program.color}15)`
+                      : undefined,
+                    borderColor: program.color
+                      ? `${program.color}30`
+                      : "#e5e7eb",
+                  }}
                 >
                   {/* Icon */}
                   <div
@@ -84,18 +93,25 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <Typography
-                      variant="bodyMedium"
-                      className="font-semibold mb-1"
-                    >
-                      {program.name}
-                    </Typography>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Typography
+                        variant="bodyMedium"
+                        className="font-semibold"
+                      >
+                        {program.name}
+                      </Typography>
+                      {program.current_phase && (
+                        <StatusBadge status={program.current_phase} />
+                      )}
+                    </div>
                     <Typography
                       variant="bodySmall"
                       color="body2"
                       className="mb-2 line-clamp-2"
                     >
-                      {program.description || "No description available"}
+                      {program.description
+                        ? new DOMParser().parseFromString(program.description, "text/html").body.textContent || ""
+                        : "No description available"}
                     </Typography>
 
                     {/* Footer info */}
@@ -111,12 +127,20 @@ export const ActivePrograms: React.FC<ActiveProgramsProps> = ({
                     </div>
                   </div>
 
-                  {/* Arrow — rotates when expanded */}
-                  <ArrowRight
-                    className={`size-5 text-gray-400 group-hover:text-primary transition-all shrink-0 ${
-                      isExpanded ? "rotate-90" : ""
-                    }`}
-                  />
+                  {/* CTA */}
+                  <div className="shrink-0">
+                    {!isExpanded && program.current_phase?.toLowerCase() === "nomination open" ? (
+                      <span className="text-xs font-medium text-emerald-700">Nominate →</span>
+                    ) : !isExpanded && program.current_phase?.toLowerCase() === "voting open" ? (
+                      <span className="text-xs font-medium text-blue-700">Vote Now →</span>
+                    ) : (
+                      <ArrowRight
+                        className={`size-5 text-gray-400 group-hover:text-primary transition-all ${
+                          isExpanded ? "rotate-90" : ""
+                        }`}
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {/* Expansion Panel */}
