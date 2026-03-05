@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus, UserLock } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
 import { useTicketStats } from "../../hooks/useHelpDeskTickets";
@@ -45,6 +45,9 @@ const HelpDeskApp: React.FC = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const hasTickets = stats && stats.total > 0;
+  const canRedirectToDesk = currentUser?.roles?.some((role) =>
+    ["Agent", "Agent Manager"].includes(role.role),
+  );
 
   const handleExploreFAQs = () => {
     navigate("/webapp/helpdesk/faq");
@@ -122,10 +125,19 @@ const HelpDeskApp: React.FC = () => {
     <DesktopLayoutWrapper title={viewConfig.title}>
       <div className="flex flex-col h-full bg-white rounded-lg">
         {/* Subtitle */}
-        <div className="px-8 py-4 border-b border-gray-200">
+        <div className="flex justify-between items-center w-full px-8 py-2 border-b border-gray-200">
           <Typography variant="bodySmall" color="body2">
             {viewConfig.subtitle}
           </Typography>
+
+          {isDesktop && canRedirectToDesk && (
+            <a href="/helpdesk/tickets" target="_blank" rel="noopener noreferrer">
+              <Button size="md">
+                <UserLock size={18} />
+                Switch to agent view
+              </Button>
+            </a>
+          )}
         </div>
 
         {/* Content */}

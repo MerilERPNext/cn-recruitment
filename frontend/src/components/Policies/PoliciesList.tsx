@@ -39,6 +39,7 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
     <Card
       padding="sm"
       className="w-full flex justify-between items-center hover:shadow-md my-1"
+      onClick={handleView}
     >
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">
