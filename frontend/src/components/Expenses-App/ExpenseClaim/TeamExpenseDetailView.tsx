@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
-  useExpenseCommentUpdate,
   useExpenseLineItemUpdate,
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -11,7 +10,6 @@ import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
@@ -25,6 +23,8 @@ import {
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import { useCommentAction } from "../../../hooks/useCommentAction";
+import CommentModal from "../../shared/CommentModal";
 
 export function TeamExpenseDetailView({
   documentName,
@@ -42,9 +42,7 @@ export function TeamExpenseDetailView({
 }) {
   const updateMutation = useExpenseLineItemUpdate();
   const mutation = useApprovalListActions();
-  const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: user } = useCurrentUser();
   const { isDesktop } = useScreenSize();
 
   const {
@@ -66,8 +64,17 @@ export function TeamExpenseDetailView({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [showActionWarning, setShowActionWarning] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const [rejectionComment, setRejectionComment] = useState<string>("");
-  const [showCommentModal, setShowCommentModal] = useState(false);
+
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
+
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
 
   const loading = useLoadingOverlay();
 
@@ -151,27 +158,41 @@ export function TeamExpenseDetailView({
 
   const handleAction = useCallback(
     async (action: string) => {
-      if (action.toLowerCase() === "reject" && !rejectionComment.trim()) {
-        setShowCommentModal(true);
-        setPendingAction(action);
-        return;
-      }
-
       if (hasUnsavedChanges) {
         setPendingAction(action);
         setShowActionWarning(true);
         return;
       }
 
-      const actionLoadingShow = ["approve", "reject"].includes(
-        action.toLocaleLowerCase(),
-      )
-        ? action
-        : `Performing Action: ${action}`;
-      loading?.wrap(() => performAction(action), actionLoadingShow);
+      const refType = data?.reference_type || ref?.doctype || "Expense Claim";
+      const refName = ref?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => {
+          const actionLoadingShow = ["approve", "reject"].includes(
+            action.toLocaleLowerCase(),
+          )
+            ? action
+            : `Performing Action: ${action}`;
+          loading?.wrap(() => performAction(action), actionLoadingShow);
+        },
+      );
+
+      setPostCommentCallback(() => () => {
+        const actionLoadingShow = ["approve", "reject"].includes(
+          action.toLocaleLowerCase(),
+        )
+          ? action
+          : `Performing Action: ${action}`;
+        loading?.wrap(() => performAction(action), actionLoadingShow);
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hasUnsavedChanges, rejectionComment],
+    [hasUnsavedChanges, data, ref, requestCommentAction],
   );
 
   const performAction = async (action: string) => {
@@ -227,48 +248,24 @@ export function TeamExpenseDetailView({
     setShowActionWarning(false);
     setHasUnsavedChanges(false);
     if (pendingAction) {
-      performAction(pendingAction);
+      const refType = data?.reference_type || ref?.doctype || "Expense Claim";
+      const refName = ref?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        pendingAction,
+        data,
+        refType,
+        refName,
+        () => performAction(pendingAction),
+      );
+
+      setPostCommentCallback(() => () => performAction(pendingAction));
       setPendingAction(null);
     }
   };
 
   const handleCancelAction = () => {
     setShowActionWarning(false);
-    setPendingAction(null);
-  };
-
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-
-    try {
-      await loading?.wrap(
-        () =>
-          commentMutation.mutateAsync({
-            referenceDoctype: ref?.doctype || "Expense Claim",
-            referenceName: claimId,
-            content: rejectionComment,
-            comment_email: user?.name || "",
-          }),
-        "Saving comment...",
-      );
-
-      setShowCommentModal(false);
-
-      if (pendingAction) {
-        loading?.wrap(() => performAction(pendingAction), "Reject");
-        setPendingAction(null);
-        setRejectionComment("");
-      }
-    } catch (error) {
-      console.error("Failed to save comment", error);
-    }
-  };
-
-  const handleCancelComment = () => {
-    setShowCommentModal(false);
     setPendingAction(null);
   };
 
@@ -408,7 +405,7 @@ export function TeamExpenseDetailView({
                   Due in{" "}
                   {Math.ceil(
                     (new Date(data.due_date).getTime() - Date.now()) /
-                      (1000 * 60 * 60 * 24),
+                    (1000 * 60 * 60 * 24),
                   )}{" "}
                   days
                 </span>
@@ -477,8 +474,8 @@ export function TeamExpenseDetailView({
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
                             item.custom_approval_staus === "Rejected") && (
-                            <StatusBadge status={item.custom_approval_staus} />
-                          )}
+                              <StatusBadge status={item.custom_approval_staus} />
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -733,52 +730,18 @@ export function TeamExpenseDetailView({
 
           {/* Comment modal */}
           {showCommentModal && (
-            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Comment Required
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Please add a comment before rejecting this expense claim.
-                </p>
-                <div className="mb-4">
-                  <label className="text-xs text-gray-500 uppercase mb-1 block">
-                    COMMENT *
-                  </label>
-                  <textarea
-                    value={rejectionComment}
-                    onChange={(e) => setRejectionComment(e.target.value)}
-                    placeholder="Enter your rejection comment..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    rows={4}
-                    autoFocus
-                  />
-                </div>
-                <div className="flex gap-3 justify-end">
-                  <Button
-                    onClick={handleCancelComment}
-                    size="sm"
-                    bgColor="disabled"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveComment}
-                    size="sm"
-                    bgColor="primary"
-                    disabled={
-                      !rejectionComment.trim() || commentMutation.isPending
-                    }
-                  >
-                    {commentMutation.isPending ? (
-                      <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      "Save & Continue"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <CommentModal
+              open={showCommentModal}
+              onSubmit={(comment) => {
+                handleCommentSubmit(comment, () => {
+                  postCommentCallback?.();
+                });
+              }}
+              onCancel={handleCommentCancel}
+              isLoading={isCommentSubmitting}
+              title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+              description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+            />
           )}
 
           {/* Unsaved changes warning */}

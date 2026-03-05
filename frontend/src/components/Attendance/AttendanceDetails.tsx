@@ -18,6 +18,8 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
+import { useCommentAction } from "../../hooks/useCommentAction";
+import CommentModal from "../shared/CommentModal";
 
 export function AttendanceDetailView({
   data: propData,
@@ -58,11 +60,20 @@ export function AttendanceDetailView({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
-  const handleAction = useCallback(
+
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
+
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
+  const performAction = useCallback(
     async (action: string) => {
       await loading?.wrap(async () => {
-        // ⬇️⬇️ EXISTING CODE (UNCHANGED) ⬇️⬇️
-
         setCurrentAction(action);
 
         try {
@@ -74,11 +85,6 @@ export function AttendanceDetailView({
 
           console.log("Action response:", response);
           const responseWithSession = response as unknown as { session?: any };
-          console.log("Session data:", responseWithSession?.session);
-          console.log(
-            "Assistant trigger enabled:",
-            data?.custom_open_chatnext_assistant_on_action,
-          );
 
           if (
             (data?.custom_approval_type === "Approval Matrix" &&
@@ -86,10 +92,6 @@ export function AttendanceDetailView({
             (data?.custom_approval_type === "Multi Actions" &&
               data?.custom_open_chatnext_assistant_on_action)
           ) {
-            console.log(
-              "Opening assistant with session:",
-              responseWithSession?.session,
-            );
             if (window.trigger_chatnext_assistant) {
               window.trigger_chatnext_assistant(
                 true,
@@ -111,11 +113,8 @@ export function AttendanceDetailView({
           toast.error(formattedError);
           console.error("Action failed", error);
         }
-
-        // ⬆️⬆️ EXISTING CODE (UNCHANGED) ⬆️⬆️
       }, "Processing action...");
     },
-
     [
       data?.custom_approval_type,
       data?.custom_open_chatnext_assistant_on_action,
@@ -125,6 +124,24 @@ export function AttendanceDetailView({
       mutation,
       setRefetchAttendance,
     ],
+  );
+
+  const handleAction = useCallback(
+    (action: string) => {
+      const refType = data?.reference_type || "Attendance Request";
+      const refName = data?.reference_document?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => performAction(action),
+      );
+
+      setPostCommentCallback(() => () => performAction(action));
+    },
+    [data, requestCommentAction, performAction],
   );
 
   const actions = data?.custom_doctype_actions
@@ -295,6 +312,20 @@ export function AttendanceDetailView({
             </div>
           )}
       </div>
+      {showCommentModal && (
+        <CommentModal
+          open={showCommentModal}
+          onSubmit={(comment) => {
+            handleCommentSubmit(comment, () => {
+              postCommentCallback?.();
+            });
+          }}
+          onCancel={handleCommentCancel}
+          isLoading={isCommentSubmitting}
+          title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+          description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+        />
+      )}
     </div>
   );
 }

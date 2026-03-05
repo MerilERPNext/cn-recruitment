@@ -1,5 +1,3 @@
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import RequestTimeline from "./RequestDetailsTimeline";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -16,6 +14,7 @@ import { StaticListView } from "../../ListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { extractRolesAndUsers } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import CommentModal from "../../shared/CommentModal";
 
 const titles = [
     "Stage Name",
@@ -33,7 +32,7 @@ interface FlowTableProps {
 const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
     const { isDesktop } = useScreenSize();
     const activeStageIndex = data.approval_status === "Pending" ? data.approval_stages.findIndex((stage) => stage.status === "Pending") : -1;
-    
+
     return (
         <div className="sm:px-7 px-4">
             {isDesktop ? (
@@ -68,20 +67,23 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
         ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
         : [];
 
-    const { handleAction } = useApprovalAction();
+    const { handleAction, showCommentModal, pendingCommentAction, isCommentSubmitting, handleCommentSubmit, handleCommentCancel, postCommentCallback } = useApprovalAction();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const onAction = (action: string, data: any) => {
         handleAction(
             action,
             {
                 todo_id: data.name,
                 custom_approval_type: data.custom_approval_type,
-                custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action)
+                custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action),
+                reference_type: data.reference_type,
+                reference_name: data.reference_name,
             });
     };
     const { data: currentUser } = useCurrentUser();
 
-    const allocatedTo = useMemo( () => extractRolesAndUsers(stage), [stage]); 
+    const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
     const canPerformActions = useMemo(() => {
         if (!isActive) return false;
         let actionPermission = false;
@@ -98,38 +100,48 @@ const StageCard = ({ stage, isActive }: { stage: FlowRequestStage, isActive: boo
     }, [currentUser, isActive, allocatedTo]);
 
     return (
-        <div
-            key={stage.stage_name}
-            className="hover:bg-primary-100 px-6 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
-        >
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {stage.stage_name || "-"}
-            </Typography></div>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                <AllocatedToTooltip position="right" users={allocatedTo.users} roles={allocatedTo.roles}>
-                    <StatusBadge
-                        status={stage.status || "-"}
-                    />
-                </AllocatedToTooltip>
-            </Typography></div>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {formatToIndianDate(stage.todo.date) || "-"}
-            </Typography></div>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">
-                {formatToIndianDate(stage.completion_date || "") || "-"}
-            </Typography></div>
-            <div className="flex items-center justify-center pr-2">  <Typography variant="bodySmall" className="font-medium text-center">
-                {canPerformActions &&
-                    <TeamApprovalActionPill
-                        actions={actions}
-                        status={stage?.todo?.status}
-                        recordId={stage?.todo?.name}
-                        // loadingAction={loadingAction}
-                        onAction={(action) => onAction(action, stage?.todo)}
-                    /> 
-                }
-            </Typography></div>
-        </div>
+        <>
+            <div
+                key={stage.stage_name}
+                className="hover:bg-primary-100 px-6 py-4 text-center grid grid-cols-5 cursor-pointer text-xs w-full border-b"
+            >
+                <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                    {stage.stage_name || "-"}
+                </Typography></div>
+                <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                    <AllocatedToTooltip position="right" users={allocatedTo.users} roles={allocatedTo.roles}>
+                        <StatusBadge
+                            status={stage.status || "-"}
+                        />
+                    </AllocatedToTooltip>
+                </Typography></div>
+                <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                    {formatToIndianDate(stage.todo.date) || "-"}
+                </Typography></div>
+                <div>  <Typography variant="bodySmall" className="font-medium text-center">
+                    {formatToIndianDate(stage.completion_date || "") || "-"}
+                </Typography></div>
+                <div className="flex items-center justify-center pr-2">  <Typography variant="bodySmall" className="font-medium text-center">
+                    {canPerformActions &&
+                        <TeamApprovalActionPill
+                            actions={actions}
+                            status={stage?.todo?.status}
+                            recordId={stage?.todo?.name}
+                            // loadingAction={loadingAction}
+                            onAction={(action) => onAction(action, stage?.todo)}
+                        />
+                    }
+                </Typography></div>
+            </div>
+            <CommentModal
+                open={showCommentModal}
+                onSubmit={(comment) => handleCommentSubmit(comment, () => postCommentCallback?.())}
+                onCancel={handleCommentCancel}
+                isLoading={isCommentSubmitting}
+                title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+                description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+            />
+        </>
     )
 }
 

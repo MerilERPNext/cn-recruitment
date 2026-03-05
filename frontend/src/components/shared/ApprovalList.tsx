@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useCommentAction } from "../../hooks/useCommentAction";
+import CommentModal from "./CommentModal";
 
 type ApprovalListProps = {
   doctype: string;
@@ -113,6 +115,18 @@ const ApprovalList = ({
     isLoading: boolean;
   } | null>(null);
 
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
+
+  // Store callback to execute after comment is submitted
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
 
@@ -187,7 +201,7 @@ const ApprovalList = ({
     }
   };
 
-  const handleAction = useCallback(
+  const performAction = useCallback(
     async (
       action: string,
       data: {
@@ -242,7 +256,6 @@ const ApprovalList = ({
               triggerRefetch();
             }
           } else {
-            // toast.success(`Request ${action} Successfully!`);
             const actionMap: Record<string, string> = {
               Approve: "Approved",
               Reject: "Rejected",
@@ -268,8 +281,28 @@ const ApprovalList = ({
     [mutation, loading, triggerRefetch],
   );
 
+  const handleAction = useCallback(
+    (action: string, data: any) => {
+      const refType = data?.reference_type || doctype;
+      const refName = data?.reference_document?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => performAction(action, data),
+      );
+
+      // Store the callback so the comment modal can call it after submit
+      setPostCommentCallback(() => () => performAction(action, data));
+    },
+    [requestCommentAction, performAction, doctype],
+  );
+
   const batchActionMutation = useActionOnAttendanceRequest();
-  const handleBulkAction = async (action: "Approve" | "Reject") => {
+
+  const performBulkAction = async (action: "Approve" | "Reject") => {
     await loading?.wrap(async () => {
       try {
         setBulkLoading({ action, isLoading: true });
@@ -305,6 +338,27 @@ const ApprovalList = ({
         setBulkLoading(null);
       }
     }, `${action}ing selected requests…`);
+  };
+
+  const handleBulkAction = (action: "Approve" | "Reject") => {
+    // Collect docnames from selected items
+    const selectedRequests = allRequests.filter((req) =>
+      selectedIds.includes(req.todo_id),
+    );
+    const refType = selectedRequests[0]?.reference_type || doctype;
+    const docnames = selectedRequests
+      .map((req) => req.reference_document?.name || req.reference_name)
+      .filter(Boolean);
+
+    requestCommentAction(
+      action,
+      { selectedIds },
+      refType,
+      docnames,
+      () => performBulkAction(action),
+    );
+
+    setPostCommentCallback(() => () => performBulkAction(action));
   };
 
   return (
@@ -380,6 +434,18 @@ const ApprovalList = ({
             onApprovalRefetchComplete();
           }
         }}
+      />
+      <CommentModal
+        open={showCommentModal}
+        onSubmit={(comment) => {
+          handleCommentSubmit(comment, () => {
+            postCommentCallback?.();
+          });
+        }}
+        onCancel={handleCommentCancel}
+        isLoading={isCommentSubmitting}
+        title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+        description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
       />
     </div>
   );

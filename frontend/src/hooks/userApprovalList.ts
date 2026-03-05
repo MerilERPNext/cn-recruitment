@@ -3,7 +3,8 @@ import { approvalListServices } from "../services/approvalListService";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../context/OverlayContext";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { useCommentAction } from "./useCommentAction";
 
 export function useApprovalListActions() {
   const queryClient = useQueryClient();
@@ -46,11 +47,53 @@ export function useRevokeEvent() {
   });
 }
 
+export function useCommentEvent() {
+  // const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      doctype,
+      docname,
+      fieldname,
+      comment
+    }: {
+      doctype: string,
+      docname: string[],
+      fieldname: string,
+      comment: string,
+    }) => approvalListServices.commentEvent(doctype, docname, fieldname, comment),
+    onSuccess: () => {
+      // queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      // queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+    },
+    onError: (err) => {
+      const formatedError = errorResponseFormater(err);
+      toast.error(formatedError);
+      console.log("Errorr Commenting ", err);
+    },
+  });
+}
+
+
+
+
 export function useApprovalAction(triggerRefetch?: () => void) {
 
   const loading = useLoadingOverlay();
   const mutation = useApprovalListActions();
-  const handleAction = useCallback(
+
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
+
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
+
+  const performAction = useCallback(
     async (
       action: string,
       data: {
@@ -106,7 +149,6 @@ export function useApprovalAction(triggerRefetch?: () => void) {
               triggerRefetch?.();
             }
           } else {
-            // toast.success(`Request ${action} Successfully!`);
             const actionMap: Record<string, string> = {
               Approve: "Request Approved Successfully!",
               Reject: "Request Rejected Successfully!",
@@ -131,5 +173,43 @@ export function useApprovalAction(triggerRefetch?: () => void) {
     [mutation, loading, triggerRefetch],
   );
 
-  return { handleAction };
+  const handleAction = useCallback(
+    (
+      action: string,
+      data: {
+        todo_id: string;
+        custom_open_chatnext_assistant_on_action: boolean;
+        custom_approval_type: "Approval Matrix" | "Multi Actions";
+        reference_type?: string;
+        reference_name?: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        reference_document?: any;
+      },
+      custom_action_message?: string
+    ) => {
+      const refType = data?.reference_type || "";
+      const refName = data?.reference_document?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => performAction(action, data, custom_action_message),
+      );
+
+      setPostCommentCallback(() => () => performAction(action, data, custom_action_message));
+    },
+    [requestCommentAction, performAction],
+  );
+
+  return {
+    handleAction,
+    showCommentModal,
+    pendingCommentAction,
+    isCommentSubmitting,
+    handleCommentSubmit,
+    handleCommentCancel,
+    postCommentCallback,
+  };
 }

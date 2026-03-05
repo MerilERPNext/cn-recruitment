@@ -4,10 +4,6 @@ import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import {
-  useIsRejectionReasonMandatory,
-  useUpdateRejectionReason,
-} from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
@@ -21,6 +17,8 @@ import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
+import { useCommentAction } from "../../hooks/useCommentAction";
+import CommentModal from "../shared/CommentModal";
 
 export function LeaveDetailView({
   documentName,
@@ -37,8 +35,6 @@ export function LeaveDetailView({
   label?: string;
 }) {
   const mutation = useApprovalListActions();
-  const updateRejectionReasonMutation = useUpdateRejectionReason();
-  const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
   const { setRefetchAttendance } = useGlobalStore();
 
   const {
@@ -55,20 +51,19 @@ export function LeaveDetailView({
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [rejectionComment, setRejectionComment] = useState("");
-  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
 
-  const handleAction = useCallback(
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
+
+  const performAction = useCallback(
     async (action: string) => {
-      if (action.toLowerCase() === "reject") {
-        const isMandatory = rejectionMandatoryData ?? true;
-        if (isMandatory && !rejectionComment.trim()) {
-          setPendingAction(action);
-          setShowCommentModal(true);
-          return;
-        }
-      }
       setCurrentAction(action);
 
       try {
@@ -108,9 +103,6 @@ export function LeaveDetailView({
         if (onAction) {
           onAction();
         }
-        if (action.toLowerCase() === "reject") {
-          setRejectionComment("");
-        }
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
@@ -118,45 +110,31 @@ export function LeaveDetailView({
         console.error("Action failed", error);
       }
     },
-
     [
       data,
       mutation,
       onAction,
       setRefetchAttendance,
-      rejectionComment,
-      rejectionMandatoryData,
     ],
   );
 
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
+  const handleAction = useCallback(
+    (action: string) => {
+      const refType = data?.reference_type || "Leave Application";
+      const refName = data?.reference_document?.name || data?.reference_name || "";
 
-    try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || data?.reference_name || "",
-        reason: rejectionComment,
-      });
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => performAction(action),
+      );
 
-      setShowCommentModal(false);
-
-      if (pendingAction) {
-        handleAction(pendingAction);
-        setPendingAction(null);
-        setRejectionComment("");
-      }
-    } catch (error) {
-      console.error("Failed to save comment", error);
-    }
-  };
-
-  const handleCancelComment = () => {
-    setShowCommentModal(false);
-    setPendingAction(null);
-  };
+      setPostCommentCallback(() => () => performAction(action));
+    },
+    [data, requestCommentAction, performAction],
+  );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -322,66 +300,18 @@ export function LeaveDetailView({
         )}
       </div>
       {showCommentModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-          onMouseDown={(e) => {
-            e.stopPropagation();
+        <CommentModal
+          open={showCommentModal}
+          onSubmit={(comment) => {
+            handleCommentSubmit(comment, () => {
+              postCommentCallback?.();
+            });
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comment Required
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this leave request.
-            </p>
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 uppercase mb-1 block">
-                REJECTION REASON *
-              </label>
-              <textarea
-                value={rejectionComment}
-                onChange={(e) => setRejectionComment(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                placeholder="Enter rejection reason..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleCancelComment}
-                size="sm"
-                bgColor="disabled"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveComment}
-                size="sm"
-                bgColor="primary"
-                disabled={
-                  !rejectionComment.trim() ||
-                  updateRejectionReasonMutation.isPending
-                }
-              >
-                {updateRejectionReasonMutation.isPending ? (
-                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Save & Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
+          onCancel={handleCommentCancel}
+          isLoading={isCommentSubmitting}
+          title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+          description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+        />
       )}
     </div>
   ) : null;

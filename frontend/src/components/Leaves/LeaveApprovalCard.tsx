@@ -1,20 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import {
-  useIsRejectionReasonMandatory,
-  useUpdateRejectionReason,
-} from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import Button from "../shared/atoms/Button";
+
 import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import { useCommentAction } from "../../hooks/useCommentAction";
+import CommentModal from "../shared/CommentModal";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -40,58 +36,27 @@ const LeaveApprovalCard = ({
   showRejectReason,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
-  const updateRejectionReasonMutation = useUpdateRejectionReason();
-  const { data: rejectionMandatoryData } = useIsRejectionReasonMandatory();
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [rejectionComment, setRejectionComment] = useState("");
-  const [pendingActionData, setPendingActionData] = useState<{
-    action: string;
-    data: any;
-  } | null>(null);
+
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
 
   const handleActionClick = (action: string, actionData: any) => {
-    if (action.toLowerCase() === "reject") {
-      const isMandatory = rejectionMandatoryData ?? true;
-      if (isMandatory && !rejectionComment.trim()) {
-        setPendingActionData({ action, data: actionData });
-        setShowCommentModal(true);
-        return;
-      }
-    }
+    const refType = actionData?.reference_type || "Leave Application";
+    const refName = actionData?.reference_document?.name || actionData?.reference_name || "";
 
-    onAction(action, actionData);
-    if (action.toLowerCase() === "reject") {
-      setRejectionComment("");
-    }
-  };
-
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-
-    try {
-      await updateRejectionReasonMutation.mutateAsync({
-        id: data?.reference_document?.name || "",
-        reason: rejectionComment,
-      });
-
-      setShowCommentModal(false);
-
-      if (pendingActionData) {
-        onAction(pendingActionData.action, pendingActionData.data);
-        setPendingActionData(null);
-        setRejectionComment("");
-      }
-    } catch (error) {
-      console.error("Failed to save comment", error);
-    }
-  };
-
-  const handleCancelComment = () => {
-    setShowCommentModal(false);
-    setPendingActionData(null);
+    requestCommentAction(
+      action,
+      actionData,
+      refType,
+      refName,
+      () => onAction(action, actionData),
+    );
   };
 
   const actions = data?.custom_doctype_actions
@@ -303,66 +268,20 @@ const LeaveApprovalCard = ({
         </div>
       )}
       {showCommentModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-          onMouseDown={(e) => {
-            e.stopPropagation();
+        <CommentModal
+          open={showCommentModal}
+          onSubmit={(comment) => {
+            handleCommentSubmit(comment, () => {
+              if (pendingCommentAction) {
+                onAction(pendingCommentAction.action, pendingCommentAction.todoData);
+              }
+            });
           }}
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-        >
-          <div
-            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Comment Required
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please add a comment before rejecting this leave request.
-            </p>
-            <div className="mb-4">
-              <label className="text-xs text-gray-500 uppercase mb-1 block">
-                REJECTION REASON *
-              </label>
-              <textarea
-                value={rejectionComment}
-                onChange={(e) => setRejectionComment(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                placeholder="Enter rejection reason..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                rows={4}
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                onClick={handleCancelComment}
-                size="sm"
-                bgColor="disabled"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveComment}
-                size="sm"
-                bgColor="primary"
-                disabled={
-                  !rejectionComment.trim() ||
-                  updateRejectionReasonMutation.isPending
-                }
-              >
-                {updateRejectionReasonMutation.isPending ? (
-                  <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Save & Continue"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
+          onCancel={handleCommentCancel}
+          isLoading={isCommentSubmitting}
+          title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+          description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+        />
       )}
     </>
   );

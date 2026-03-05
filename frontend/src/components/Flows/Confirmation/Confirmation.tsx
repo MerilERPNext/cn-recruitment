@@ -16,7 +16,7 @@ import {
 import Button from "../../shared/atoms/Button";
 import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import {  useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -35,6 +35,7 @@ import ViewFormButton from "../ViewFormButton";
 import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { TodoType } from "../../../types/todos";
+import CommentModal from "../../shared/CommentModal";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -58,8 +59,8 @@ const ConfirmationWorkflow = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
+        (item: any) => item?.trigger_category?.name === trigger_category,
+      )
       : [];
   }
 
@@ -179,15 +180,15 @@ const ConfirmationWorkflow = () => {
 
   /** Actions for approver actions */
 
-  const { handleAction } = useApprovalAction();
+  const { handleAction, showCommentModal, pendingCommentAction, isCommentSubmitting, handleCommentSubmit, handleCommentCancel, postCommentCallback } = useApprovalAction();
 
   const handleAct = async (action: { name: string; hasForm: boolean; todo: TodoType }) => {
-      handleAction( action.name, {
-        todo_id: action.todo?.todo_id,
-        custom_open_chatnext_assistant_on_action: action.hasForm,
-        custom_approval_type: action.todo?.custom_approval_type,
-      });
-    }
+    handleAction(action.name, {
+      todo_id: action.todo?.todo_id,
+      custom_open_chatnext_assistant_on_action: action.hasForm,
+      custom_approval_type: action.todo?.custom_approval_type,
+    });
+  }
 
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
@@ -260,14 +261,14 @@ const ConfirmationWorkflow = () => {
       },
       ...(item?.reference_document?.creation
         ? [
-            {
-              label: "Trigger Date",
-              value: formatToIndianDate(item.reference_document.creation),
-              Icon: Clock,
-              bg: "bg-orange-50",
-              text: "text-orange-600",
-            },
-          ]
+          {
+            label: "Trigger Date",
+            value: formatToIndianDate(item.reference_document.creation),
+            Icon: Clock,
+            bg: "bg-orange-50",
+            text: "text-orange-600",
+          },
+        ]
         : []),
       {
         label: "Status",
@@ -357,7 +358,7 @@ const ConfirmationWorkflow = () => {
                 </div>
 
                 <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
-                    {item?.show_view_form_btn && (
+                  {item?.show_view_form_btn && (
                     <ViewFormButton onClick={() => handleShowForm()} />
                   )}
                   {item.show_confirmation_button ? (
@@ -419,6 +420,14 @@ const ConfirmationWorkflow = () => {
           </ReviewForm>,
           document.body,
         )}
+      <CommentModal
+        open={showCommentModal}
+        onSubmit={(comment) => handleCommentSubmit(comment, () => postCommentCallback?.())}
+        onCancel={handleCommentCancel}
+        isLoading={isCommentSubmitting}
+        title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+        description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+      />
     </div>
   );
 };

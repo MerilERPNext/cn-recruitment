@@ -43,4 +43,29 @@ export const approvalListServices = {
       throw error;
     }
   },
+
+  commentEvent: async (
+    doctype: string,
+    docname: string[],
+    fieldname: string,
+    comment: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> => {
+    try {
+      const response = await FrappeAPI.callMethod(
+        "recruitment.api.update_comment.update_comment",
+        {
+          doctype,
+          docnames: docname,
+          fieldname,
+          comment,
+        }
+      );
+      return response;
+    } catch (error) {
+      console.error("📡 Error while revoking event:", error);
+      throw error;
+    }
+  },
 };
+

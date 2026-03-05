@@ -14,6 +14,8 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
+import { useCommentAction } from "../../hooks/useCommentAction";
+import CommentModal from "../shared/CommentModal";
 
 export function ShiftDetailView({
   data: propData,
@@ -45,7 +47,18 @@ export function ShiftDetailView({
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
-  const handleAction = useCallback(
+  const {
+    showCommentModal,
+    pendingAction: pendingCommentAction,
+    isSubmitting: isCommentSubmitting,
+    requestAction: requestCommentAction,
+    handleCommentSubmit,
+    handleCommentCancel,
+  } = useCommentAction();
+
+  const [postCommentCallback, setPostCommentCallback] = useState<(() => void) | null>(null);
+
+  const performAction = useCallback(
     async (action: string) => {
       setCurrentAction(action);
 
@@ -59,11 +72,6 @@ export function ShiftDetailView({
         console.log("Action response:", response);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action,
-        );
 
         if (
           (data?.custom_approval_type === "Approval Matrix" &&
@@ -71,10 +79,6 @@ export function ShiftDetailView({
           (data?.custom_approval_type === "Multi Actions" &&
             data?.custom_open_chatnext_assistant_on_action)
         ) {
-          console.log(
-            "Opening assistant with session:",
-            responseWithSession?.session,
-          );
           if (window.trigger_chatnext_assistant) {
             window.trigger_chatnext_assistant(
               true,
@@ -92,12 +96,29 @@ export function ShiftDetailView({
         setCurrentAction(null);
       } catch (error) {
         setCurrentAction(null);
-
         console.error("Action failed", error);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  );
+
+  const handleAction = useCallback(
+    (action: string) => {
+      const refType = data?.reference_type || "Shift Request";
+      const refName = data?.reference_document?.name || data?.reference_name || "";
+
+      requestCommentAction(
+        action,
+        data,
+        refType,
+        refName,
+        () => performAction(action),
+      );
+
+      setPostCommentCallback(() => () => performAction(action));
+    },
+    [data, requestCommentAction, performAction],
   );
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -266,6 +287,20 @@ export function ShiftDetailView({
           </div>
         )}
       </div>
+      {showCommentModal && (
+        <CommentModal
+          open={showCommentModal}
+          onSubmit={(comment) => {
+            handleCommentSubmit(comment, () => {
+              postCommentCallback?.();
+            });
+          }}
+          onCancel={handleCommentCancel}
+          isLoading={isCommentSubmitting}
+          title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+          description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+        />
+      )}
     </div>
   );
 }

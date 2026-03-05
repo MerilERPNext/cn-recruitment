@@ -9,6 +9,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import CommentModal from "../../shared/CommentModal";
 
 interface FlowDetailsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,7 +88,7 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
   const triggerRefetch = () => {
     // TODO: trigeer refetch after action completed
   };
-  const { handleAction } = useApprovalAction(triggerRefetch);
+  const { handleAction, showCommentModal, pendingCommentAction, isCommentSubmitting, handleCommentSubmit, handleCommentCancel, postCommentCallback } = useApprovalAction(triggerRefetch);
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -117,54 +118,64 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
   }, [stage, data, currentEmployee, currentUser, idx]);
 
   return (
-    <div className="py-4 grid grid-cols-[repeat(7,1fr)_2fr] text-center items-center">
-      <Typography variant="bodyMedium" className="card-subtitle">
-        {idx + 1}
-      </Typography>
-      <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.stage_name || "-"}</div>
-      </Typography>
-      <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{stage?.user || "assigned to user"}</div>
-      </Typography>
-      <Typography variant="bodyMedium" className="card-subtitle">
-        {/* stage?.action_taken_by to be used */}
-        <div>{"-"}</div>
-      </Typography>
+    <>
+      <div className="py-4 grid grid-cols-[repeat(7,1fr)_2fr] text-center items-center">
+        <Typography variant="bodyMedium" className="card-subtitle">
+          {idx + 1}
+        </Typography>
+        <Typography variant="bodyMedium" className="card-subtitle">
+          <div>{stage?.stage_name || "-"}</div>
+        </Typography>
+        <Typography variant="bodyMedium" className="card-subtitle">
+          <div>{stage?.user || "assigned to user"}</div>
+        </Typography>
+        <Typography variant="bodyMedium" className="card-subtitle">
+          {/* stage?.action_taken_by to be used */}
+          <div>{"-"}</div>
+        </Typography>
 
-      <div>
-        <StatusBadge status={stage.status} />
-      </div>
-
-      <Typography variant="bodyMedium" className="card-subtitle">
-        <div>{formatToIndianDate(stage?.approval_time) || "-"}</div>
-      </Typography>
-      <Typography variant="bodyMedium" className="card-subtitle">
-        {/* stage?.due_date to be used below*/}
-        <div>{"-"}</div>
-      </Typography>
-      <Typography variant="bodyMedium" className="card-subtitle">
-        <div className="flex sm:flex-row sm:justify-start gap-2 items-center">
-          {canPerformAction &&
-            actions?.length > 0 &&
-            actions.map((action: string) => (
-              <Button
-                variant="soft"
-                key={action}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAction(action, data);
-                }}
-                fullWidth
-                bgColor={getActionStyles(action).bg}
-              >
-                {action}
-              </Button>
-            ))}
+        <div>
+          <StatusBadge status={stage.status} />
         </div>
-      </Typography>
-    </div>
+
+        <Typography variant="bodyMedium" className="card-subtitle">
+          <div>{formatToIndianDate(stage?.approval_time) || "-"}</div>
+        </Typography>
+        <Typography variant="bodyMedium" className="card-subtitle">
+          {/* stage?.due_date to be used below*/}
+          <div>{"-"}</div>
+        </Typography>
+        <Typography variant="bodyMedium" className="card-subtitle">
+          <div className="flex sm:flex-row sm:justify-start gap-2 items-center">
+            {canPerformAction &&
+              actions?.length > 0 &&
+              actions.map((action: string) => (
+                <Button
+                  variant="soft"
+                  key={action}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAction(action, data);
+                  }}
+                  fullWidth
+                  bgColor={getActionStyles(action).bg}
+                >
+                  {action}
+                </Button>
+              ))}
+          </div>
+        </Typography>
+      </div>
+      <CommentModal
+        open={showCommentModal}
+        onSubmit={(comment) => handleCommentSubmit(comment, () => postCommentCallback?.())}
+        onCancel={handleCommentCancel}
+        isLoading={isCommentSubmitting}
+        title={`Comment for ${pendingCommentAction?.action || "Action"}`}
+        description={`Please add a comment before ${(pendingCommentAction?.action || "performing this action").toLowerCase()}.`}
+      />
+    </>
   );
 };
 
