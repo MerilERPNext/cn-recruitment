@@ -235,7 +235,7 @@ const EditITDeclarationAccess = ({
 
           <div className="grid grid-cols-2 gap-4">
             <input
-              type="text"
+              type="date"
               value={formData.from_date}
               onChange={(e) =>
                 updateField("from_date", e.target.value)
