@@ -383,13 +383,15 @@ const CategoryDeclarationSelectable = ({
         {selectedItems.length === 0 && ( <p className="text-xs text-gray-400">No items selected</p>)}
       </div>
       <div className="relative w-full sm:w-64">
-        <button
-          disabled={isDisabled}
-          onClick={() => setIsOpen((prev) => !prev)}
-          className="w-full flex justify-between items-center border-2 rounded-md border-gray-300 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all">
-          <span className="text-gray-400">Select Items</span>
-          <span className="text-gray-400">▼</span>
-        </button>
+      <button
+  disabled={isDisabled}
+  onClick={() => setIsOpen((prev) => !prev)}
+  className="w-full flex justify-between items-center border-2 rounded-md border-gray-300 px-3 py-1.5 text-xs bg-white 
+  focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all
+  disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-200 disabled:cursor-not-allowed">
+  <span className="text-gray-400">Select Items</span>
+  <span className="text-gray-400">▼</span>
+</button>
         {isOpen && (
           <div className="absolute z-10  w-full bg-white border-2 border-gray-200  shadow-lg max-h-48 overflow-auto">
             {dropdownOptions.map((opt) => (
