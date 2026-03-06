@@ -1,18 +1,19 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import HeaderBar from "../HeaderBar";
+import { useScreenSize } from "../../hooks/useScreenSize";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import formatToIndianDate, {
   formatEndDate,
 } from "../../utils/formatToIndianDate";
-import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
+import HeaderBar from "../HeaderBar";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { User } from "lucide-react";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
+
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -67,39 +68,52 @@ const TeamShiftItemComponent: React.FC<{ item: ApiShiftAssignment }> = ({
   item,
 }) => {
   return (
-    <div className="w-full px-1">
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-4 flex gap-4">
-        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
-          <User size={24} className="text-gray-600" />
-        </div>
-        <div className="flex-1">
-          <div className="flex justify-between items-start">
-            <h2 className="card-title mb-1">
+    <div
+      className="cursor-pointer border-t-4 border-x border-b
+      border-x-primary/20 border-b-primary/20
+      shadow-sm border-primary bg-white rounded-xl mb-4"
+    >
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">
+              {item?.employee_name ? "Employee Name" : "Employee ID"}
+            </Typography>{" "}
+            <Typography variant="mobileCardValue">
               {item.employee_name || item.employee || "N/A"}
-            </h2>
-            <StatusBadge status={item.status} />
+            </Typography>
           </div>
+          <StatusBadge status={item.status} />
+        </div>
 
-          <h3 className="card-title">{item.shift_type}</h3>
-          <div className="flex justify-between text-sm">
-            <div className="flex flex-col gap-1">
-              <span className="card-title">From</span>
-              <span className="card-subtitle">
-                {`${formatToIndianDate(item.start_date)}`}
-              </span>
-            </div>
-            <div className="flex flex-col gap-1 text-center">
-              <span className="card-title">To</span>
-              <span className="card-subtitle">
-                {`${formatEndDate(item.end_date)}`}
-              </span>
-            </div>
-            <div className="flex flex-col text-right gap-1">
-              <span className="card-title">Time</span>
-              <span className="card-subtitle">
-                {`${item.start_time} - ${item.end_time}`}
-              </span>
-            </div>
+        {/* Shift Type */}
+        <div className="flex justify-between w-full">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Shift Type</Typography>
+            <Typography variant="mobileCardValue">{item.shift_type}</Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Shift Time</Typography>
+            <Typography variant="mobileCardValue">
+              {`${item.start_time} - ${item.end_time}`}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Dates */}
+        <div className="flex justify-between w-full">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">From</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.start_date)}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">To</Typography>
+            <Typography variant="mobileCardValue">
+              {formatEndDate(item.end_date)}
+            </Typography>
           </div>
         </div>
       </div>
@@ -124,7 +138,7 @@ const AllTeamShiftsList: React.FC = () => {
             <div className="flex-shrink-0">
               <div className="px-4 py-1 md:py-4">
                 <HeaderBar
-                  title="All Team Shifts"
+                  title="Team Shift Assignments"
                   onBack={() => navigate(-1)}
                   className="shadow"
                 />
@@ -153,9 +167,10 @@ const AllTeamShiftsList: React.FC = () => {
                   />
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
-                  No team shifts found.
-                </div>
+                <NoDataFound
+                  title="No Team Shift Assignments"
+                  subtitle="No team shifts found."
+                />
               )}
             </CardTable>
           </div>
@@ -169,9 +184,10 @@ const AllTeamShiftsList: React.FC = () => {
               <TeamShiftItemComponent key={shift.name} item={shift} />
             ))
           ) : (
-            <div className="p-6 text-center text-gray-500">
-              No team shifts found.
-            </div>
+            <NoDataFound
+              title="No Team Shift Assignments"
+              subtitle="No team shifts found."
+            />
           )}
         </div>
       )}

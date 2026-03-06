@@ -1,12 +1,13 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "CP.#####",
+ "autoname": "CONFFLOW-.#####",
  "creation": "2025-10-16 14:50:53.021360",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "basic_details_tab",
+  "status",
   "policy_title",
   "description",
   "applicability_section",
@@ -236,12 +237,18 @@
    "fieldtype": "Table",
    "label": "Extension Workflow Configurations",
    "options": "Extension Workflow Configuration"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nInactive"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-02-12 14:45:28.256556",
+ "modified": "2026-03-06 10:34:51.035418",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
@@ -263,7 +270,9 @@
  ],
  "row_format": "Dynamic",
  "search_fields": "policy_title",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "policy_title"
 }

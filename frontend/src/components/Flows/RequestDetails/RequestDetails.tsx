@@ -17,7 +17,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-full flex flex-col bg-white">
       <div className="bg-white">
         <div className="sm:px-4">
           <HeaderBar
@@ -65,12 +65,13 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
           </div>
         </div>
       </div>
-
+      <div className="overflow-y-auto flex-1">
       {flowStatusType === "Approval Flow Status" ? (
         <FlowTable data={data} />
       ) : (
         <WorkflowTable data={data} />
       )}
+      </div>
     </div>
   );
 };

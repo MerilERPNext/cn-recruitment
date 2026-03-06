@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 
 const IncomeTaxComputationlist = ({ data }: any) => {
   const payload = data || {};
@@ -16,8 +17,16 @@ const IncomeTaxComputationlist = ({ data }: any) => {
   const formatAmount = (val: any) =>
     typeof val === "number" ? val.toLocaleString("en-IN") : "-";
 
-  if (!summary.length && !chapterVia.length && !netTaxable.length) {
+  // Loading state
+  if (!summary && !chapterVia && !netTaxable) {
     return <CardSkeleton />;
+  }
+
+  // Empty state (API returned but no data)
+  if (!summary.length && !chapterVia.length && !netTaxable.length) {
+    return (
+      <NoDataFound title="No Tax Summary Available" subtitle="No tax details found for the selected period." />
+    );
   }
 
   return (

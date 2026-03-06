@@ -4,6 +4,7 @@ import { useGetCompOffList } from "../../../hooks/useLeaves";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import CardTable from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -86,9 +87,7 @@ const CompensatoryRequest: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <div>
-                <Typography variant="h4">Compensatory Requests</Typography>
-              </div>
+              <span></span>
             )}
             <CustomDropdown
               value={selectedStatus}
@@ -114,9 +113,7 @@ const CompensatoryRequest: React.FC = () => {
           {isLoading || isUserLoading || isEmployeeLoading ? (
             <CardSkeleton />
           ) : filteredData.length === 0 ? (
-            <div className="py-12 text-center text-gray-600">
-              No records found
-            </div>
+            <NoDataFound title="No Records Found" subtitle="No compensatory requests match the selected status." />
           ) : (
             filteredData.map((item) => (
               <CompensatoryRequestCard

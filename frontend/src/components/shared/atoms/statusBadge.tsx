@@ -4,8 +4,12 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Ban,
+  Calendar,
+  CalendarCheck,
   Check,
   Clock,
+  Eye,
+  Vote,
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -100,8 +104,8 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
     case "inactive":
       return {
         label: "Inactive",
-        bgClass: "bg-gray-100",
-        textClass: "text-gray-600",
+        bgClass: "bg-red-100",
+        textClass: "text-red-700",
         icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
@@ -168,6 +172,58 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         bgClass: "bg-blue-100",
         textClass: "text-blue-700",
         icon: <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    /* ---------- Recognition phase statuses ---------- */
+    case "nomination open":
+      return {
+        label: "Nominations Open",
+        bgClass: "bg-emerald-100",
+        textClass: "text-emerald-700",
+        icon: <CalendarCheck className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "voting open":
+      return {
+        label: "Voting Open",
+        bgClass: "bg-blue-100",
+        textClass: "text-blue-700",
+        icon: <Vote className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "reviewing":
+    case "under review":
+      return {
+        label: "Under Review",
+        bgClass: "bg-amber-100",
+        textClass: "text-amber-700",
+        icon: <Eye className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "upcoming nominations":
+    case "upcoming voting":
+      return {
+        label: rawStatus || "Upcoming",
+        bgClass: "bg-purple-100",
+        textClass: "text-purple-700",
+        icon: <Calendar className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "nomination closed":
+    case "voting closed":
+      return {
+        label: rawStatus || "Closed",
+        bgClass: "bg-slate-100",
+        textClass: "text-slate-600",
+        icon: <X className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
+    case "ongoing":
+      return {
+        label: "Ongoing",
+        bgClass: "bg-blue-50",
+        textClass: "text-blue-700",
+        icon: <Clock className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     default:

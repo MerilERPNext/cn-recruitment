@@ -28,6 +28,7 @@ import type {
   EmployeeShiftSummary,
   EmployeeTeamCheckIns,
   IOvertimeLog,
+  OvertimeJournalData,
   PolicyQuestion,
   UserRoles,
   WorkingHoursResponse,
@@ -205,6 +206,18 @@ export const useGetUserRoles = (
     ...defaultQueryOptions,
   });
 };
+
+export const useGetOvertimeJournal = (
+  employee: string,
+  date: string
+): UseQueryResult<OvertimeJournalData, Error> => {
+  return useQuery<OvertimeJournalData, Error>({
+    queryKey: ["overtime-journal", employee, date],
+    queryFn: () => attendanceService.getOvertimeJournal(employee, date),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 export const useGetToDoWithReferenceDoc = (
   todo_id: string
 ): UseQueryResult<any, Error> => {
@@ -319,12 +332,12 @@ export const useGetAllEmployeeRegularize = (
 
 
 export function useMarkBulkAttendance() {
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.markBulkAttendance(body),
 
-     onSuccess: () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
       queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
       queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });

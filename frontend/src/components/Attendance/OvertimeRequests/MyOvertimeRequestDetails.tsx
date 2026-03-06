@@ -27,7 +27,7 @@ export function MyOvertimeDetails({
   data: propData,
   onClose,
   onAction,
-  label = "Planned Overtime Request",
+  label = "Overtime Request",
 }: {
   documentName?: string;
   data?: MyPlannedAttendanceRequest;

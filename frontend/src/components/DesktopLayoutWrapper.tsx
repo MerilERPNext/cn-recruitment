@@ -363,6 +363,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       contentAlign="start"
                       onClick={async () => {
                         await logoutHandler();
+                        sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
                       bgColor="error"

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import HeaderBar from "../../HeaderBar";
 import CardTable from "../../shared/CardTable";
@@ -11,81 +12,65 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
-const getStatusBadgeClasses = (status: string) => {
-  switch (status) {
-    case "Approved":
-      return "bg-green-100 text-green-800";
-    case "Draft":
-      return "bg-yellow-100 text-yellow-800";
-    case "Rejected":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
 const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
   const formattedSanctioned = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
   }).format(item?.total_sanctioned_amount ?? 0);
 
+  const formattedAllocated = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(item?.participant_info?.allocated_amount ?? 0);
+
   const postingDate = item?.posting_date
-    ? new Date(item.posting_date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
+    ? formatToIndianDate(item?.posting_date)
+    : "—";
 
   return (
-    <div className="rounded-xl my-1 border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col gap-2">
-      <div className="flex justify-between items-start">
-        <div className="flex flex-col gap-1">
-          <p className="card-title">Shared by</p>
-          <p className="card-subtitle">{item.employee_name}</p>
+    <div className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl">
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Row 1: Shared by + Status */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Shared by</Typography>
+            <Typography variant="mobileCardValue">
+              {item.employee_name}
+            </Typography>
+          </div>
+          <StatusBadge
+            status={item.status === "Draft" ? "Pending" : item.status}
+          />
         </div>
 
-        <div className="text-right flex flex-col gap-1">
-          <p className="card-title">Sanctioned</p>
-          <p className="card-subtitle">{formattedSanctioned}</p>
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center text-sm text-gray-600">
-        <div className="flex flex-col gap-1">
-          <p>
-            <span className="card-title">Posting:</span>
-            <span className="pl-2">{postingDate}</span>
-          </p>
-          <p>
-            <span className="card-title pr-2">Status:</span>
-            <span
-              className={`px-2 py-1 rounded-2xl text-xs font-medium ${getStatusBadgeClasses(
-                item.status,
-              )}`}
-            >
-              {item.status === "Draft" ? "Pending" : item.status}
-            </span>
-          </p>
+        {/* Row 2: Posting Date + Sanctioned */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Posting Date</Typography>
+            <Typography variant="mobileCardValue">{postingDate}</Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Sanctioned</Typography>
+            <Typography variant="mobileCardValue">
+              {formattedSanctioned}
+            </Typography>
+          </div>
         </div>
 
-        <div className="text-right">
-          <p>
-            <span className="card-title">Share:</span>
-            <span className="pl-2 card-subtitle">
-              {item.participant_info?.percentage ?? "-"}%
-            </span>
-          </p>
-          <p>
-            <span className="card-title">Amount:</span>
-            <span className="pl-2 card-subtitle">
-              {new Intl.NumberFormat("en-IN", {
-                style: "currency",
-                currency: "INR",
-              }).format(item.participant_info?.allocated_amount ?? 0)}
-            </span>
-          </p>
+        {/* Row 3: Share % + Allocated Amount */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Share</Typography>
+            <Typography variant="mobileCardValue">
+              {item.participant_info?.percentage ?? "—"}%
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Allocated Amount</Typography>
+            <Typography variant="mobileCardValue">
+              {formattedAllocated}
+            </Typography>
+          </div>
         </div>
       </div>
     </div>
@@ -166,7 +151,7 @@ const SharedExpenses: React.FC = () => {
   const { data: currentEmployee } = useCurrentEmployee();
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-screen">
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-6 py-1 md:py-4">
@@ -179,61 +164,84 @@ const SharedExpenses: React.FC = () => {
       )}
 
       {!isDesktop && (
-        <div className="flex-shrink-0">
-          <div className="py-1">
-            <HeaderBar
-              title="Shared Expense Claims"
-              onBack={() => navigate(-1)}
-              className="shadow"
-            />
-          </div>
+        <div className="sticky top-0 z-50 bg-white flex-shrink-0">
+          <HeaderBar
+            title="Shared Expense Claims"
+            onBack={() => navigate(-1)}
+            className="shadow"
+          />
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable
-          titles={[
-            "Shared By",
-            "Posting Date",
-            "Expense Date",
-            "Status",
-            "Sanctioned Amount",
-            "% Share",
-            "Allocated Amount",
-          ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
-        >
-          <DataListView
-            queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
-            customAPI={{
-              method:
-                "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
-            }}
-            // Removed click handlers: rows/cards are no longer clickable
-            ItemComponent={(props: { item: any }) => {
-              const row = props.item?.message?.data
-                ? props.item.message.data
-                : props.item;
-              const doc = Array.isArray(row) ? row[0] : row;
-              return isDesktop ? (
-                <SharedExpensesRow item={doc} />
-              ) : (
-                <SharedExpenseCard item={doc} />
-              );
-            }}
-            SkeletonComponent={CardSkeleton}
-            onRefetchComplete={() => setRefetchAttendance(false)}
-            refetchTrigger={refetchAttendance}
-            isSearch={false}
-            isFilter={false}
-            showRefreshButton={false}
-            orderBy="posting_date desc"
-            pageSize={10}
-            infiniteScroll={false}
-            loadMorePagination={false}
-            showPagination={true}
-          />
-        </CardTable>
+      <div className="flex-1 overflow-y-auto pb-5 md:pb-20">
+        {isDesktop ? (
+          <CardTable
+            titles={[
+              "Shared By",
+              "Posting Date",
+              "Expense Date",
+              "Status",
+              "Sanctioned Amount",
+              "% Share",
+              "Allocated Amount",
+            ]}
+            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          >
+            <DataListView
+              queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
+              customAPI={{
+                method:
+                  "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
+              }}
+              ItemComponent={(props: { item: any }) => {
+                const row = props.item?.message?.data
+                  ? props.item.message.data
+                  : props.item;
+                const doc = Array.isArray(row) ? row[0] : row;
+                return <SharedExpensesRow item={doc} />;
+              }}
+              SkeletonComponent={CardSkeleton}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              refetchTrigger={refetchAttendance}
+              isSearch={false}
+              isFilter={false}
+              showRefreshButton={false}
+              orderBy="posting_date desc"
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+            />
+          </CardTable>
+        ) : (
+          <div className="space-y-3 px-3 pt-3">
+            <DataListView
+              queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
+              customAPI={{
+                method:
+                  "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
+              }}
+              ItemComponent={(props: { item: any }) => {
+                const row = props.item?.message?.data
+                  ? props.item.message.data
+                  : props.item;
+                const doc = Array.isArray(row) ? row[0] : row;
+                return <SharedExpenseCard item={doc} />;
+              }}
+              SkeletonComponent={CardSkeleton}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              refetchTrigger={refetchAttendance}
+              isSearch={false}
+              isFilter={false}
+              showRefreshButton={false}
+              orderBy="posting_date desc"
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

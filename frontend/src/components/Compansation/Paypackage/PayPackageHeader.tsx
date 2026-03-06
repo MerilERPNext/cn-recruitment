@@ -28,7 +28,7 @@ export default function SalaryAssignmentHeader({
   return (
     <div className="border-gray-100">
       <div className="md:px-6 py-4">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between  items-center">
           {isDesktop && <div>
             <Typography variant="h4">Pay package</Typography>
             <Typography variant="bodySmall" color="body2">
@@ -36,7 +36,7 @@ export default function SalaryAssignmentHeader({
             </Typography>
           </div>}
 
-          <div className="flex items-center justify-end gap-3 w-full">
+          <div className="flex items-center  justify-end max-sm:justify-between gap-3 max-lg:w-full">
             {/* 👁 Toggle */}
             <ShowHideButton showAmount={showAmount} onToggleAmount={onToggleAmount} />
             <CustomDropdown

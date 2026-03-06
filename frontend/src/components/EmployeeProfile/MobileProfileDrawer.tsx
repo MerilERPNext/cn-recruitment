@@ -62,13 +62,15 @@ const MobileProfileDrawer = () => {
     const { mutateAsync: logout } = useLogout();
     const logoutHandler = async () => {
         try {
-             if (window.isApp) {
+            if (window.isApp) {
                 window.nativeInterface.execute("logout").then(() => {
                     alert("Logged out");
                 })
             } else {
                 await logout();
             }
+            sessionStorage.removeItem("viewed_employee_id");
+
         } catch (error) {
             console.error("Logout failed:", error);
         }

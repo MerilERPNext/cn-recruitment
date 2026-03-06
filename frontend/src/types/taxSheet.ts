@@ -1,11 +1,13 @@
-// types/taxsheet.ts
+import { ReactNode } from "react";
+
 export interface SeriesItem {
     name: string;
     values: number[]; // monthly values (length should match months.length)
     total: number;
-  }
+}
   
   export interface TaxSheetData {
+    current_tax_regime: ReactNode;
     status: string;
     months: string[]; // e.g. ["April-2025", ...]
     earnings: SeriesItem[]; // Example items: "Basic", "House Rent Allowance", "Gross Earnings"

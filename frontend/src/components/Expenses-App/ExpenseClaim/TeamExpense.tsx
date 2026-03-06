@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -44,22 +44,22 @@ const TeamExpense = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Expense Category",
-        "Claimed Amount",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Expense Category",
+      "Claimed Amount",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
@@ -98,25 +98,7 @@ const TeamExpense = () => {
     const message = getEmptyStateMessage();
 
     return (
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="max-w-sm w-full mx-auto text-center p-6">
-          <div className="space-y-5">
-            <div className="flex items-center justify-center">
-              <div className="p-4 bg-blue-50 rounded-full">
-                <FileText className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {message.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {message.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <NoDataFound title={message.title} subtitle={message.description} />
     );
   };
   return (

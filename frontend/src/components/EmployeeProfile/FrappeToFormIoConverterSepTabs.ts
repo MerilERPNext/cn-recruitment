@@ -5,6 +5,19 @@ import { profileService } from "../../services/profileService";
 // Cache for table field metadata to prevent duplicate API calls
 const tableFieldsCache = new Map<string, any[]>();
 
+export const READ_ONLY_FIELDS = [
+  "custom_cxo",
+  "custom_designation_name",
+  "custom_dotted_line_manager",
+  "custom_hrbp",
+  "custom_hod",
+  "reports_to",
+  "company",
+  "department",
+  "designation",
+  "custom_functional_area",
+];
+
 /**
  * Fetches table field metadata with caching
  * @param doctype - The doctype of the table to fetch fields for
@@ -488,23 +501,10 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   }
 
   // Handle read-only fields
-  const readOnlyFields = [
-    "custom_cxo",
-    "custom_designation_name",
-    "custom_dotted_line_manager",
-    "custom_hrbp",
-    "custom_hod",
-    "reports_to",
-    "company",
-    "department",
-    "designation",
-    "custom_functional_area",
-  ];
-
   if (
     field.read_only === 1 ||
     field.read_only === true ||
-    readOnlyFields.includes(field.fieldname)
+    READ_ONLY_FIELDS.includes(field.fieldname)
   ) {
     // Don't disable Table or Table MultiSelect fields - they need to load their data/options
     if (
@@ -1378,6 +1378,7 @@ export interface SimpleTab {
   key: string;
   fields: SimpleField[];
   hidden: boolean;
+  readOnly: boolean;
 }
 
 export interface SimpleTabbedData {
@@ -1411,6 +1412,7 @@ export async function convertFieldsToSimpleTabbedData(
         key: "general",
         fields: [],
         hidden: false,
+        readOnly: false,
       };
       tabs.push(currentTab);
     }
@@ -1442,6 +1444,7 @@ export async function convertFieldsToSimpleTabbedData(
         key: field.fieldname || `tab_${tabs.length + 1}`,
         fields: [],
         hidden: !!field.hidden,
+        readOnly: !!field.read_only,
       };
       tabs.push(currentTab);
     } else if (field.fieldtype === "Section Break") {
@@ -1492,7 +1495,7 @@ export async function convertFieldsToSimpleTabbedData(
         type: simpleType, // simplified type
         hidden: !!field.hidden,
         required: !!field.reqd,
-        readOnly: !!field.read_only,
+        readOnly: !!field.read_only || READ_ONLY_FIELDS.includes(field.fieldname),
       };
 
       if (field.fieldtype === 'Table' && field.options) {

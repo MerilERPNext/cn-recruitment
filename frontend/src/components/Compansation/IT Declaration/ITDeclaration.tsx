@@ -3,7 +3,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
-import { useOutletContext } from "react-router-dom";
 
 import {
   useITDeclarationTabData,
@@ -27,6 +26,10 @@ import Form12B from "./Component/Form12B";
 import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import { validateITDeclarationProofs } from "./util/Validation";
+import EditITDeclarationAccess from "./Component/EditITDeclarationAccess";
+import { SquarePen } from "lucide-react";
+import Button from "../../shared/atoms/Button";
 
 type PayrollPeriod = {
   name: string;
@@ -45,7 +48,6 @@ const ITDeclarationForm = () => {
     ["compare_tax", "form_12b", "preview"],
     "IT Declaration"
   );
-
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
   ) as {
@@ -59,9 +61,9 @@ const ITDeclarationForm = () => {
   const [activeMainTab, setActiveMainTab] = useState<"category" | "hra">(
     "category"
   );
-
   const [groupedCategories, setGroupedCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState("");
+  const [openModal, setOpenModal] = useState(false);
   const [hraData, setHraData] = useState<HRAData | null>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   useEffect(() => {
@@ -74,18 +76,14 @@ const ITDeclarationForm = () => {
       });
     }
   }, [activeMainTab]);
-  console.log("hragggggg", hraData);
-
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
     user?.employee || null,
     user?.company || null,
     selectedPeriod || null
   ).data as any;
-
   const declarationId = newRegimeResponse?.declaration_id;
   const goHeadWithNewRegimeBool = goHeadWithNewRegime === 1;
-
   /* ---------------- IT Declaration API ---------------- */
   const { data: responseData } = useITDeclarationTabData(
     goHeadWithNewRegimeBool,
@@ -104,32 +102,23 @@ const ITDeclarationForm = () => {
     selectedPeriod || null
   ) as { data?: any };
   const { data: LTABreakup } = useLTABrakup(user?.employee || "");
-
-  console.log("ProofOfITDeclaration DATA", groupedCategories);
-
   // Initial payroll period
   useEffect(() => {
     if (!payrollPeriods?.length || selectedPeriod) return;
-
     const today = new Date();
-
     const matchedPeriod = payrollPeriods.find((p) => {
       const start = new Date(p.start_date);
       const end = new Date(p.end_date);
-
       // inclusive range check
       return today >= start && today <= end;
     });
-
     setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
   }, [payrollPeriods, selectedPeriod]);
-
   useEffect(() => {
     if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
       setActiveMainTab("category");
     }
   }, [goHeadWithNewRegimeBool, activeMainTab]);
-
   /* ---------------- Regime flag ---------------- */
   useEffect(() => {
     if (
@@ -139,38 +128,30 @@ const ITDeclarationForm = () => {
       setGoHeadWithNewRegime(newRegimeResponse.go_head_with_new_regime);
     }
   }, [newRegimeResponse]);
-
   /* ---------------- Normalize data ---------------- */
   useEffect(() => {
     if (!responseData) return;
-
     const normalized = normalizeITCategories(responseData);
     setGroupedCategories(normalized);
-
     if (normalized.length) {
       setActiveSection(normalized[0].section);
     }
-
     if (responseData?.hra_exemption) {
       setHraData(responseData.hra_exemption);
     }
   }, [responseData]);
-
   /* ---------------- Derived ---------------- */
   const activeSectionData = groupedCategories.find(
     (sec) => sec.section === activeSection
   );
-
   const sectionCategories = activeSectionData?.categories || [];
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
   };
-
   const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
-
   /* ---------------- Reset ---------------- */
   const resetForm = () => {
     setGroupedCategories((prev) =>
@@ -187,11 +168,15 @@ const ITDeclarationForm = () => {
     );
   };
   /* ---------------- Submit ---------------- */
-
   const LTAData = (hraData as unknown as any[])?.[1];
-  console.log("LTA BREAKUP", LTAData);
-  console.log(LTAData?.items, "LTA items");
   const handleSubmit = () => {
+    const isValid = validateITDeclarationProofs({
+      groupedCategories,
+      hraData,
+      goHeadWithNewRegimeBool,
+      toast
+    });
+      if (!isValid) return;
     const ltaDeclarations = LTAData?.items?.flatMap((cat: any) =>
       cat.items
         .filter((item: any) => Number(item?.amount) > 0)
@@ -254,7 +239,7 @@ const ITDeclarationForm = () => {
 
         pan: goHeadWithNewRegimeBool ? "" : hraData?.pan || "",
 
-        cunstom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
+        custom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
 
         address_title1: goHeadWithNewRegimeBool
           ? ""
@@ -293,23 +278,9 @@ const ITDeclarationForm = () => {
   const parts = message.split(dateRegex);
 
   // Register action button in central SalarySlipApp via ref pattern
-  const { setActionButtonConfig } = useOutletContext<{
-    setActionButtonConfig: (
-      config: { label: string; onClick: () => void; disabled?: boolean } | null
-    ) => void;
-  }>();
 
-  const submitRef = useRef<(() => void) | undefined>(undefined);
-  submitRef.current = handleSubmit;
 
-  useEffect(() => {
-    setActionButtonConfig({
-      label: "Submit",
-      onClick: () => submitRef.current?.(),
-      disabled: PrrofOfITDeclaration?.status === "failed",
-    });
-    return () => setActionButtonConfig(null);
-  }, [setActionButtonConfig, PrrofOfITDeclaration?.status]);
+
 
   return (
     <div className="bg-white min-h-screen">
@@ -379,12 +350,20 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
-              {actionsEnabled.preview && (
+              {(actionsEnabled.preview ?? declarationDoctype === "Employee Tax Exemption Declaration") &&  (
                 <PreviewOfITDeclaration
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
                 />
               )}
+            <Button
+            variant="contain"
+            size="md"
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
             </div>
           ) : (
             /* Mobile: stacked layout for action buttons */
@@ -404,6 +383,12 @@ const ITDeclarationForm = () => {
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
                 />
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
               </div>
             </div>
           )}
@@ -431,7 +416,24 @@ const ITDeclarationForm = () => {
             >
               Old Regime
             </button>
+           
+
           </div>
+          <div className=" flex gap-2 items-center">
+      
+      {/* Open Button */}
+      <button
+        onClick={() => setOpenModal(true)}
+        className=" text-gray-500 rounded-xl"
+      >
+        <SquarePen className="h-5 w-5" />
+      </button>
+
+      {/* Modal */}
+      <EditITDeclarationAccess
+              isOpen={openModal}
+              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}      />
+    </div>
         </div>
 
         {/* Tabs */}

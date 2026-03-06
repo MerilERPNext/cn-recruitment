@@ -18,6 +18,7 @@ interface CustomDropdownProps {
   label?: string;
   contentAlign?: ButtonContentAlign;
   variant?: "contain" | "outline" | "subtle" | "soft";
+  emptyMessage?: string; // ✅ added
 }
 
 const CustomDropdown: React.FC<CustomDropdownProps> = ({
@@ -28,10 +29,11 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
   position = "bottom-left",
   label = "Select",
   contentAlign = "center",
- 
+  emptyMessage = "No options available", // ✅ default value
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
   const positionCss = {
     "top-left": "bottom-[calc(100%+10px)] right-0 ",
     "top-right": "bottom-[calc(100%+10px)] left-0 ",
@@ -80,9 +82,8 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
       >
         <span>{selectedLabel}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -100,19 +101,25 @@ const CustomDropdown: React.FC<CustomDropdownProps> = ({
         <div
           className={`absolute right-0 mt-2 w-fit min-w-[160px] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 ${positionCss[position]} max-h-60 overflow-y-auto`}
         >
-          {options.map((option) => (
-            <Button
-              size="md"
-              variant={value === option.value ? "soft" : "subtle"}
-              bgColor={value === option.value ? "primary" : "disabled"}
-              key={option.value}
-              onClick={() => handleSelect(option.value)}
-              contentAlign={contentAlign}
-              className={`block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors`}
-            >
-              {option.label}
-            </Button>
-          ))}
+          {options.length === 0 ? (
+            <div className="px-4 py-2.5 text-sm text-gray-500 whitespace-nowrap">
+              {emptyMessage}
+            </div>
+          ) : (
+            options.map((option) => (
+              <Button
+                size="md"
+                variant={value === option.value ? "soft" : "subtle"}
+                bgColor={value === option.value ? "primary" : "disabled"}
+                key={option.value}
+                onClick={() => handleSelect(option.value)}
+                contentAlign={contentAlign}
+                className={`block whitespace-nowrap w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors`}
+              >
+                {option.label}
+              </Button>
+            ))
+          )}
         </div>
       )}
     </div>

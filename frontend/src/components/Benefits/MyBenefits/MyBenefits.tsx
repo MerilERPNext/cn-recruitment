@@ -18,6 +18,7 @@ import { SkeletonStat } from "./Skeletons";
 import { AccrualItem, StatItem } from "./CommonItems";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { getCurrentPeriod } from "../shared/logic";
@@ -115,7 +116,7 @@ const MyBenefits: React.FC = () => {
   if (isLoading) {
     const skeletonCount = 4;
     return (
-      <div className="min-h-screen font-sans text-slate-800">
+      <div className="min-h-screen font-sans text-slate-800 p-5">
         <div className="flex flex-col mb-2">
           <Typography variant="h4">
             My Benefits for FY {selectedYear}
@@ -192,11 +193,7 @@ const MyBenefits: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {!components || components.length === 0 ? (
-          <div className="w-full">
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
-              <p className="text-gray-600">No data found</p>
-            </div>
-          </div>
+          <NoDataFound title="No Benefits Found" subtitle="No benefit data is available for the selected period." />
         ) : null}
 
         <main className="w-full pb-10 md:pb-20 space-y-4">
@@ -219,10 +216,10 @@ const MyBenefits: React.FC = () => {
               const filtered = !params.searchTerm
                 ? details
                 : details.filter((r) =>
-                    r.month
-                      .toLowerCase()
-                      .includes(params.searchTerm!.toLowerCase()),
-                  );
+                  r.month
+                    .toLowerCase()
+                    .includes(params.searchTerm!.toLowerCase()),
+                );
 
               const response: FrappePageResponse = {
                 data: filtered,
@@ -236,7 +233,7 @@ const MyBenefits: React.FC = () => {
             return (
               <div
                 key={`${component.salary_component}-${compIdx}`}
-                className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden"
+                className="rounded-xl bg-white shadow-sm border border-gray-50 overflow-hidden"
               >
                 {/* Header */}
                 <div
@@ -255,9 +252,8 @@ const MyBenefits: React.FC = () => {
                       </div>
                     </div>
                     <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${
-                        isExpanded ? "rotate-180 bg-gray-50" : ""
-                      }`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${isExpanded ? "rotate-180 bg-gray-50" : ""
+                        }`}
                     >
                       <ChevronDown className="h-5 w-5 text-slate-500" />
                     </div>
@@ -301,11 +297,11 @@ const MyBenefits: React.FC = () => {
                 </div>
 
                 {/* Divider */}
-                {isExpanded && <div className="h-px w-full bg-gray-100"></div>}
+                {isExpanded && isDesktop && <div className="h-px w-full bg-gray-100"></div>}
 
                 {/* Expanded details (list) */}
                 {isExpanded && (
-                  <div className="bg-gray-100 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="bg-slate-50 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center gap-2 mb-6">
                       <TrendingUp className="h-4 w-4 text-slate-500" />
                       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -327,6 +323,7 @@ const MyBenefits: React.FC = () => {
                       ]}
                       columnWidths={[COLUMN_LAYOUT]}
                     >
+
                       <DataListView<SalaryComponentDetail>
                         queryKey={`accrualData-${component.salary_component}`}
                         fetchFunction={fetchFunction}

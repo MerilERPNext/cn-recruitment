@@ -18,7 +18,7 @@ const titles = [
   "Initiated For",
   "Approval Status",
   "Workflow Status",
-  "Overall Flow Status"
+  "Overall Flow Status",
 ];
 
 const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
@@ -36,12 +36,28 @@ const FlowRequests: React.FC = () => {
     // navigate("/webapp/flow-app/flow-request/" + data?.request_id);
   };
 
-
-  const { data: flowRequests, isLoading: flowRequestsLoading, refetch: refetchFlowRequests } = useGetFlowRequests();
+  const {
+    data: flowRequests,
+    isFetching: flowRequestsLoading,
+    refetch: refetchFlowRequests,
+  } = useGetFlowRequests();
 
   const handleNavigateBack = () => {
     setFlowDetails(null);
-  }
+  };
+
+  // refresh request details page after fetching new flowDetails
+  useEffect(() => {
+    if (!flowDetails || flowRequestsLoading) return;
+    const newDetails = flowRequests?.data.find(
+      (d) => d.request_id === flowDetails.request_id,
+    );
+    if (!newDetails) {
+      setFlowDetails(null);
+    } else {
+      setFlowDetails(newDetails);
+    }
+  }, [flowRequestsLoading, flowRequests, flowDetails]);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -59,19 +75,26 @@ const FlowRequests: React.FC = () => {
   }, [refetchFlowRequests]);
 
   if (flowDetails) {
-    return (isDesktop ?
-      <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
-      : createPortal(
+    return isDesktop ? (
+      <RequestDetails
+        data={flowDetails}
+        handleNavigateBack={handleNavigateBack}
+      />
+    ) : (
+      createPortal(
         <div className="fixed inset-0 z-50">
-          <RequestDetails data={flowDetails} handleNavigateBack={handleNavigateBack} />
+          <RequestDetails
+            data={flowDetails}
+            handleNavigateBack={handleNavigateBack}
+          />
         </div>,
-        document.body
+        document.body,
       )
-    )
+    );
   }
   return (
     <div className="flex flex-col h-full">
-      <div >
+      <div>
         {isDesktop && (
           <div className="flex-shrink-0">
             <div className="px-6 py-1 md:py-4">
@@ -83,14 +106,18 @@ const FlowRequests: React.FC = () => {
           </div>
         )}
 
-
         {/*Flows List*/}
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
           <CardTable titles={titles} columnWidths={columnWidths}>
             <StaticListView
               data={flowRequests?.data || []}
               ItemComponent={(_, item) => {
-                return <FlowRequestCard request={item} handleShowDetails={handleShowDetails} />;
+                return (
+                  <FlowRequestCard
+                    request={item}
+                    handleShowDetails={handleShowDetails}
+                  />
+                );
               }}
               isSearch={true}
               searchFields={["flow_name", "flow_category"]}
@@ -108,4 +135,3 @@ const FlowRequests: React.FC = () => {
 };
 
 export default FlowRequests;
-

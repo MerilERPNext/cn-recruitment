@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { useScreenSize } from "../../../../hooks/useScreenSize";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import Button from "../../../shared/atoms/Button";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import { useCurrentUser } from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
-import WrapperHoverCard from "../../../shared/WrapperHoverCard";
-import { Link } from "react-router-dom";
-import StatusBadge from "../../../shared/atoms/statusBadge";
-import { Typography } from "../../../shared/atoms/Typography";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { getActionStyles } from "../../../../utils/actionButtonStyles";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import Button from "../../../shared/atoms/Button";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../../shared/atoms/Typography";
+import WrapperHoverCard from "../../../shared/WrapperHoverCard";
 
 export type ApprovalRejectionLoanProps = {
   isSelected?: boolean;
@@ -52,12 +53,7 @@ const ApprovalRejectionAdvanceList = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (action: string) => {
-    const a = action.toLowerCase();
-    if (a === "approve") return { bg: "success-100", text: "success" };
-    if (a === "reject") return { bg: "error-50", text: "error" };
-    return { bg: "gray-200", text: "gray-600" };
-  };
+
 
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
@@ -162,8 +158,16 @@ const ApprovalRejectionAdvanceList = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.reference_document?.status === "Draft" ? data?.allocated_to : undefined}
-              roles={data?.reference_document?.status === "Draft" ? data?.allocated_roles : undefined}
+              users={
+                data?.reference_document?.status === "Draft"
+                  ? data?.allocated_to
+                  : undefined
+              }
+              roles={
+                data?.reference_document?.status === "Draft"
+                  ? data?.allocated_roles
+                  : undefined
+              }
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
@@ -185,11 +189,11 @@ const ApprovalRejectionAdvanceList = ({
         {commentOpen && (
           <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
             <div className="bg-white w-full max-w-md rounded-xl p-5">
-              <h3 className="font-semibold mb-2">
+              <Typography variant="h4" className="font-semibold mb-2">
                 {selectedAction === "Reject"
                   ? "Reject Reason"
                   : "Approval Comment"}
-              </h3>
+              </Typography>
 
               <textarea
                 value={comment}
@@ -208,8 +212,8 @@ const ApprovalRejectionAdvanceList = ({
                 </Button>
 
                 <Button
-                  bgColor={getActionStyles(selectedAction!).bg}
-                  className={`text-${getActionStyles(selectedAction!).text}`}
+                  bgColor={getActionStyles(selectedAction!).bgColor}
+                  variant={getActionStyles(selectedAction!).variant}
                   onClick={handleConfirmAction}
                   disabled={commentMutation.isPending || !comment.trim()}
                 >
@@ -227,28 +231,14 @@ const ApprovalRejectionAdvanceList = ({
   return (
     <>
       <div
-        className="bg-white rounded-xl border border-gray-200 p-4 mb-3 shadow-sm"
+        className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
         onClick={() => onClick?.(data)}
       >
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <Link
-              to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`}
-              target="_blank"
-            >
-              <p className="font-semibold text-sm">
-                {data?.reference_document?.employee_name}
-              </p>
-            </Link>
-            <p className="text-xs text-gray-500">
-              {data?.reference_document?.custom_advance_type}
-            </p>
-          </div>
-
+        <div className="p-4 flex items-start gap-3 w-full">
           {isBulkSelectEnabled && (
             <input
               type="checkbox"
-              className="accent-blue-500 mt-1"
+              className="mt-1 accent-blue-500"
               checked={isSelected}
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -259,57 +249,67 @@ const ApprovalRejectionAdvanceList = ({
               }
             />
           )}
-        </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
-          <div>
-            <span className="block text-gray-400">Amount</span>
-            <span className="font-medium text-gray-800">
-              {data?.reference_document?.advance_amount}
-            </span>
+          <div className="w-full flex flex-col gap-3">
+            {/* Header — Employee Name + Status */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Employee Name</Typography>
+                <Link
+                  to={`/webapp/employee-profile?target_user=${data?.reference_document?.custom_employee}`}
+                  target="_blank"
+                >
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.employee_name}
+                  </Typography>
+                </Link>
+              </div>
+              <StatusBadge status={data?.status} />
+            </div>
+
+            {/* Amount & Advance Type */}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Amount</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.advance_amount}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Advance Type</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.custom_advance_type}
+                </Typography>
+              </div>
+            </div>
+
+            {/* Start Date & Posting Date */}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Start Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(
+                    data?.reference_document?.custom_repayment_start_date,
+                  )}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Posting Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.posting_date)}
+                </Typography>
+              </div>
+            </div>
+
+            <TeamApprovalActionPill
+              variant="buttons"
+              actions={actions}
+              status={data?.status || ""}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => handleActionClick(action)}
+            />
           </div>
-
-          <div>
-            <span className="block text-gray-400">Status</span>
-            <StatusBadge status={data?.reference_document?.status} />
-          </div>
-
-          <div>
-            <span className="block text-gray-400">Start Date</span>
-            {formatToIndianDate(
-              data?.reference_document?.custom_repayment_start_date,
-            )}
-          </div>
-
-          <div>
-            <span className="block text-gray-400">Posting Date</span>
-            {formatToIndianDate(data?.reference_document?.posting_date)}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {actions.map((action: string) => (
-            <Button
-              key={action}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleActionClick(action);
-              }}
-              bgColor={getActionStyles(action).bg}
-              className={`text-${getActionStyles(action).text}`}
-              disabled={
-                loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action
-              }
-            >
-              {loadingAction?.id === data?.todo_id &&
-                loadingAction?.action === action ? (
-                <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action
-              )}
-            </Button>
-          ))}
         </div>
       </div>
 
@@ -317,11 +317,11 @@ const ApprovalRejectionAdvanceList = ({
       {commentOpen && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
           <div className="bg-white w-full max-w-md rounded-xl p-5">
-            <h3 className="font-semibold mb-2">
+            <Typography variant="h4" className="font-semibold mb-2">
               {selectedAction === "Reject"
                 ? "Reject Reason"
                 : "Approval Comment"}
-            </h3>
+            </Typography>
 
             <textarea
               value={comment}
@@ -337,8 +337,8 @@ const ApprovalRejectionAdvanceList = ({
               </Button>
 
               <Button
-                bgColor={getActionStyles(selectedAction!).bg}
-                className={`text-${getActionStyles(selectedAction!).text}`}
+                bgColor={getActionStyles(selectedAction!).bgColor}
+                variant={getActionStyles(selectedAction!).variant}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending || !comment.trim()}
               >

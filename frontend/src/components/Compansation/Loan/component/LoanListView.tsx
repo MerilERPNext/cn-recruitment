@@ -1,17 +1,19 @@
 "use client";
 import { useState } from "react";
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { formatCurrency } from "../../../../utils/currency";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import CardTable from "../../../shared/CardTable";
 import { Loan } from "../Type/loan";
 import LoanDetails from "./LoanDetails";
 import LoanInstallments from "./LoanInstallment";
-import CardTable from "../../../shared/CardTable";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import { Typography } from "../../../shared/atoms/Typography";
-import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
-import StatusBadge from "../../../shared/atoms/statusBadge";
-import { formatCurrency } from "../../../../utils/currency";
-import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
-import { Search as SearchIcon } from "lucide-react";
+import SearchInputWrapper from "../../../shared/SearchBar";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+
 
 interface LoanListProps {
   loans: Loan[];
@@ -45,13 +47,14 @@ export default function LoanList({
   }
 
   const titles = [
+    "",
     "Loan Name",
     "Loan Type",
     "Loan Amount",
     "Rate of Interest",
     "Standard Interest",
     "EMI Type",
-    "Installments",
+    "Tenure",
     "Start Date",
     "End Month",
     "Status",
@@ -76,17 +79,11 @@ export default function LoanList({
   return (
     <CardTable titles={titles} columnWidths={columnWidths}>
       {onSearchChange && (
-        <div className="border-b border-gray-100">
-          <div className="relative w-full">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <SearchIcon size={18} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search loans..."
-              value={searchTerm || ""}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-100  w-full"
+        <div className="">
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            <SearchInputWrapper
+              searchTerm={searchTerm || ""}
+              handleSearch={(e) => onSearchChange(e.target.value)}
             />
           </div>
         </div>
@@ -198,10 +195,7 @@ export default function LoanList({
 
               {/* Status + Tooltip */}
               <div className="flex items-center justify-center">
-                <AllocatedToTooltip
-                  users={loan?.employee_name}
-                  position="left"
-                >
+                <AllocatedToTooltip users={loan?.employee_name} position="left">
                   <StatusBadge status={loan.status} />
                 </AllocatedToTooltip>
               </div>
@@ -226,11 +220,12 @@ export default function LoanList({
           </div>
         ))}
         {loans.length === 0 && (
-          <div className="my-empty-state-card py-10 text-center text-gray-500">
-            {searchTerm
+          <NoDataFound
+            title="No Loan Requests"
+            subtitle={searchTerm
               ? "No loans found matching your search criteria."
               : "No loans available."}
-          </div>
+          />
         )}
       </div>
     </CardTable>

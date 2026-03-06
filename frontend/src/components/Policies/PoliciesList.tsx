@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate, Navigate } from "react-router-dom";
-import FrappeListView from "../ListView";
-import { PolicyCardSkeleton } from "./PolicySkeletons";
 import { Download } from "lucide-react";
+import React, { useState } from "react";
 import { FaRegEye } from "react-icons/fa";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
+import FrappeListView from "../ListView";
 import CustomDropdown from "../shared/CustomDropdown";
 import { Card } from "../shared/atoms/Card";
+import { PolicyCardSkeleton } from "./PolicySkeletons";
 
 type PolicyDoc = {
   name: string;
@@ -32,14 +32,14 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
         state: {
           pdfUrl: `${window.location.origin}${item.policy_document}`,
         },
-      }
+      },
     );
 
   return (
     <Card
-      onClick={handleView}
       padding="sm"
       className="w-full flex justify-between items-center hover:shadow-md my-1"
+      onClick={handleView}
     >
       <div className="flex-1 min-w-0">
         <h2 className="text-base font-semibold text-gray-900 truncate">
@@ -49,7 +49,8 @@ const PolicyItem: React.FC<{ item: PolicyDoc }> = ({ item }) => {
       </div>
       <div className="flex items-center gap-2 ml-3">
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (item.policy_document) {
               const link = document.createElement("a");
               link.href = `${window.location.origin}${item.policy_document}`;

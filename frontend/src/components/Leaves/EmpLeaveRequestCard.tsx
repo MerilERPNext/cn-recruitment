@@ -22,14 +22,15 @@ import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
 // Update the interface to include the new prop
 interface EmpLeaveRequestCardProps extends LeaveCardProps {
-  onOpenReplaceModal?: () => void;
   onRevokeApproved?: () => void;
+  showRejectReason?: boolean;
+  onOpenReplaceModal?: () => void;
 }
-
 const EmpLeaveRequestCard = ({
   data,
   buttonStatus,
   onOpenReplaceModal,
+  showRejectReason,
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
@@ -130,7 +131,7 @@ const EmpLeaveRequestCard = ({
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1.5fr 1fr 1fr 1fr" }}
+          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr 1fr" : "1.5fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr" }}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
           <Typography
@@ -168,6 +169,17 @@ const EmpLeaveRequestCard = ({
               <StatusBadge status={data?.reference_document?.status} />
             </AllocatedToTooltip>
           </div>
+          {showRejectReason && (
+            <div className="flex items-center justify-center w-full min-w-0 pr-2">
+              {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+                <Tooltip content={data?.reference_document?.custom_rejection_reason}>
+                  <Typography variant="bodySmall" className="font-medium text-center truncate">
+                    {data?.reference_document?.custom_rejection_reason}
+                  </Typography>
+                </Tooltip>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
               isPending={isPending}
@@ -256,6 +268,15 @@ const EmpLeaveRequestCard = ({
                 </button>
               )}
             </div>
+
+            {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Reject Reason</Typography>
+                <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
+                  {data?.reference_document?.custom_rejection_reason}
+                </Typography>
+              </div>
+            )}
 
             <MyApprovalActionPill
               variant="buttons"

@@ -680,7 +680,7 @@ const ExpenseAdvanceForm: React.FC<{
       </div>
 
       <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 border-t border-gray-200">
-        <div className="max-w-4xl mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
+        <div className="w-full mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
           <Button
             onClick={onClose ? onClose : () => navigate(-1)}
             size="md"

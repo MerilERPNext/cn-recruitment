@@ -1,37 +1,38 @@
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useEmployeeByUserId } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { X } from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-hot-toast";
-import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
+  useCheckAttachmentMandatory,
   useCreateLeaveApplication,
   useEditApprovedLeave,
+  useGetLeaveBalance,
   useGetLeaveReason,
   useGetLeaveRequestFields,
-  useCheckAttachmentMandatory,
 } from "../../hooks/useLeaves";
-import { LeaveFieldFlags } from "../../types/leaves";
-import { useGetLeaveBalance } from "../../hooks/useLeaves";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
-import Button from "../shared/atoms/Button";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
-import DailyConfiguration from "./DailyConfiguration";
-import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
-import AttendanceStatusModal from "./AttendanceStatusModal";
-import { X } from "lucide-react";
-import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { LeaveFieldFlags } from "../../types/leaves";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
+import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
+import Button from "../shared/atoms/Button";
+import AttendanceStatusModal from "./AttendanceStatusModal";
+import DailyConfiguration from "./DailyConfiguration";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -66,7 +67,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { isDesktop } = useScreenSize();
-
+  const location = useLocation();
+  const isRequestRoute = location.pathname === "/webapp/leave-app/request";
+  const navigate = useNavigate();
   const [dailyConfig, setDailyConfig] = useState<
     Record<string, "Full Day" | "First Half" | "Second Half">
   >({});
@@ -86,7 +89,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
+          submission.data.toDate.split("T")[0];
 
       await editLeaveMutation.mutateAsync({
         leave_application: defaults?.leave_application || "",
@@ -241,8 +244,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.leaveType,
   );
 
-  const isAttachmentMandatory =
-    attachmentMandatoryData?.is_mandatory === 1;
+  const isAttachmentMandatory = attachmentMandatoryData?.is_mandatory === 1;
 
   useEffect(() => {
     if (defaults) {
@@ -297,7 +299,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-        submission.data.toDate.split("T")[0];
+          submission.data.toDate.split("T")[0];
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
@@ -350,55 +352,55 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const halfDayComponents = show.half_day
       ? [
-        {
-          type: "columns",
-          key: "halfDayColumns",
-          customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
-          columns: [
-            {
-              width: 6,
-              components: [
+          {
+            type: "columns",
+            key: "halfDayColumns",
+            customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
+            columns: [
+              {
+                width: 6,
+                components: [
+                  {
+                    type: "checkbox",
+                    key: "halfDay",
+                    label: mandatory.half_day
+                      ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
+                      : "Half-Day Leave",
+                    input: true,
+                    labelPosition: "bottom",
+                    defaultValue: defaults?.halfDay,
+                    validate: { required: !!mandatory.half_day },
+                    customClass:
+                      "custom-halfday-toggle border rounded-lg shadow-sm p-2",
+                  },
+                ],
+              },
+              {
+                width: 6,
+                components: [],
+              },
+            ],
+          },
+          ...(show.show_half_day_options
+            ? [
                 {
-                  type: "checkbox",
-                  key: "halfDay",
-                  label: mandatory.half_day
-                    ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
-                    : "Half-Day Leave",
+                  type: "radio",
+                  key: "halfDayOption",
+                  label: "Select Half-Day Option",
                   input: true,
-                  labelPosition: "bottom",
-                  defaultValue: defaults?.halfDay,
-                  validate: { required: !!mandatory.half_day },
-                  customClass:
-                    "custom-halfday-toggle border rounded-lg shadow-sm p-2",
-                },
-              ],
-            },
-            {
-              width: 6,
-              components: [],
-            },
-          ],
-        },
-        ...(show.show_half_day_options
-          ? [
-            {
-              type: "radio",
-              key: "halfDayOption",
-              label: "Select Half-Day Option",
-              input: true,
-              validate: { required: !!mandatory.show_half_day_options },
-              values: [
-                { label: "First Half", value: "First Half" },
-                { label: "Second Half", value: "Second Half" },
-              ],
+                  validate: { required: !!mandatory.show_half_day_options },
+                  values: [
+                    { label: "First Half", value: "First Half" },
+                    { label: "Second Half", value: "Second Half" },
+                  ],
 
-              customConditional: `
+                  customConditional: `
   show = data.halfDay === true && data.fromDate === data.toDate;`,
-              customClass: "px-2 mb-4 ml-4 mt-2",
-            },
-          ]
-          : []),
-      ]
+                  customClass: "px-2 mb-4 ml-4 mt-2",
+                },
+              ]
+            : []),
+        ]
       : [];
 
     const panelComponents = [
@@ -437,67 +439,67 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       ...(defaults?.source !== "holiday"
         ? [
-          {
-            type: "select",
-            key: "custom_reason",
-            label:
-              mandatory?.custom_reason || requiredFieldMap["custom_reason"]
-                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-                : "Reason",
-            errorLabel: "Reason",
-            placeholder: "Select a reason",
-            defaultValue: defaults?.custom_reason ?? "",
-            input: true,
-            validate: {
-              required:
-                !!mandatory.custom_reason ||
-                requiredFieldMap["custom_reason"],
+            {
+              type: "select",
+              key: "custom_reason",
+              label:
+                mandatory?.custom_reason || requiredFieldMap["custom_reason"]
+                  ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+                  : "Reason",
+              errorLabel: "Reason",
+              placeholder: "Select a reason",
+              defaultValue: defaults?.custom_reason ?? "",
+              input: true,
+              validate: {
+                required:
+                  !!mandatory.custom_reason ||
+                  requiredFieldMap["custom_reason"],
+              },
+              data: {
+                values:
+                  reasons?.map((r) => ({
+                    label: r.reason,
+                    value: r.name,
+                  })) ?? [],
+              },
+              customClass: "px-2 mb-4",
+              disabled: isReasonLoading || isReasonError,
             },
-            data: {
-              values:
-                reasons?.map((r) => ({
-                  label: r.reason,
-                  value: r.name,
-                })) ?? [],
-            },
-            customClass: "px-2 mb-4",
-            disabled: isReasonLoading || isReasonError,
-          },
-        ]
+          ]
         : []),
 
       ...(defaults?.source !== "holiday"
         ? [
-          {
-            type: "file",
-            key: "custom_attachment",
-            defaultValue: defaults?.custom_attachment
-              ? [
-                {
-                  name: defaults.custom_attachment,
-                  url: defaults.custom_attachment,
-                  storage: "url",
-                  size: 0,
-                },
-              ]
-              : [],
-            label:
-              fields?.mandatory?.custom_attachment || isAttachmentMandatory
-                ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
-                : "Attachment",
-            errorLabel: "Attachment",
-            input: true,
-            storage: "customBase64",
-            validate: {
-              required:
-                !!mandatory.custom_attachment ||
-                requiredFieldMap["custom_attachment"] ||
-                isAttachmentMandatory,
+            {
+              type: "file",
+              key: "custom_attachment",
+              defaultValue: defaults?.custom_attachment
+                ? [
+                    {
+                      name: defaults.custom_attachment,
+                      url: defaults.custom_attachment,
+                      storage: "url",
+                      size: 0,
+                    },
+                  ]
+                : [],
+              label:
+                fields?.mandatory?.custom_attachment || isAttachmentMandatory
+                  ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+                  : "Attachment",
+              errorLabel: "Attachment",
+              input: true,
+              storage: "customBase64",
+              validate: {
+                required:
+                  !!mandatory.custom_attachment ||
+                  requiredFieldMap["custom_attachment"] ||
+                  isAttachmentMandatory,
+              },
+              filePattern: "*/*",
+              customClass: "px-2 mb-6",
             },
-            filePattern: "*/*",
-            customClass: "px-2 mb-6",
-          },
-        ]
+          ]
         : []),
 
       {
@@ -535,7 +537,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                   !defaults?.isEdit &&
                   defaults?.source !== "other" &&
                   Boolean(defaults?.fromDate),
-
               },
             ],
           },
@@ -564,7 +565,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                   !defaults?.isEdit &&
                   defaults?.source !== "other" &&
                   Boolean(defaults?.toDate),
-
               },
             ],
           },
@@ -604,22 +604,25 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-
-      {isDesktop && <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
         <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
-        {isDesktop && (<button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCancel?.();
-            onSuccess?.();
-          }}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          aria-label="Close"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
+        {isDesktop && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isRequestRoute) {
+                navigate(-1);
+              }
+              onCancel?.();
+              onSuccess?.();
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         )}
-      </div>}
+      </div>
 
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
@@ -716,13 +719,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         )}
       </div>
       <div className="border-gray-200 border-t py-3 px-2 flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-
         {!isDesktop && (
           <Button
             onClick={(e) => {
               e.stopPropagation();
+
               if (onCancel) {
                 onCancel();
+              }
+              if (isRequestRoute) {
+                navigate(-1);
               }
             }}
             size="md"
@@ -755,9 +761,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
           </Button>
         )}
-
       </div>
-
 
       {isAttendanceModalOpen && (
         <AttendanceStatusModal

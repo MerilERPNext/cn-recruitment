@@ -484,3 +484,22 @@ export interface WorkingHoursResponse {
 export interface WorkingHoursProps {
   data: WorkingHoursResponse;
 }
+
+
+export interface KeyValueItem {
+  field?: string;
+  label: string;
+  value: string | number | null;
+}
+
+export interface PolicyItem {
+  policy_attribute: string;
+  status: string;
+  description: string;
+}
+
+export interface OvertimeJournalData {
+  overtime_details?: KeyValueItem[];
+  comp_off_details?: KeyValueItem[];
+  policy_details?: PolicyItem[];
+}

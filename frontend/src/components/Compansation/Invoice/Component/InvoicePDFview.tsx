@@ -12,13 +12,14 @@ type Props = {
   invoiceID: string;
   disabled?: boolean;
   onClick: (invoiceID: string) => void;
+  className?: string;
 };
 
-const InvoicePDFview = ({ invoiceID, disabled = false, onClick }: Props) => {
+const InvoicePDFview = ({ invoiceID, disabled = false, onClick, className }: Props) => {
   const [open, setOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string>("");
 
-console.log(pdfUrl, "pdfUrl in InvoicePDFview");
+  console.log(pdfUrl, "pdfUrl in InvoicePDFview");
   const { mutate, isPending } = useInvoiceSheetViewPDF({
     onSuccess: (data: any) => {
       const fileUrl = data;
@@ -26,11 +27,11 @@ console.log(pdfUrl, "pdfUrl in InvoicePDFview");
         toast.error("File URL not found");
         return;
       }
-    
+
       setPdfUrl(fileUrl);
       setOpen(true);
     }
-  });  
+  });
 
   const handleView = () => {
     if (!invoiceID) {
@@ -38,7 +39,7 @@ console.log(pdfUrl, "pdfUrl in InvoicePDFview");
       return;
     }
 
-    onClick(invoiceID); 
+    onClick(invoiceID);
 
     mutate(invoiceID, {
       onError: () => {
@@ -46,44 +47,44 @@ console.log(pdfUrl, "pdfUrl in InvoicePDFview");
       },
     });
   };
-  
+
 
   return (
     <>
-<Button
-  variant="soft"
-  onClick={handleView}
-  disabled={disabled || isPending}
-  className={`px-4 py-1 text-sm border rounded-xl
+      <Button
+        variant="soft"
+        onClick={handleView}
+        disabled={disabled || isPending}
+        className={`px-4 py-1 text-sm border rounded-xl
     whitespace-nowrap inline-flex items-center gap-2 justify-center
-    ${
-      disabled || isPending
-        ? "bg-gray-300 text-primary cursor-not-allowed"
-        : "bg-primary text-primary-500 hover:bg-blue-700"
-    }
+    ${className}
+    ${disabled || isPending
+            ? "bg-gray-300 text-primary cursor-not-allowed"
+            : "bg-primary text-primary-500 hover:bg-blue-700"
+          }
   `}
->
-  {isPending ? (
-    "Loading..."
-  ) : (
-    <>
-      <FiEye className="text-base" />
-      View PDF
-    </>
-  )}
-</Button>
+      >
+        {isPending ? (
+          "Loading..."
+        ) : (
+          <>
+            <FiEye className="text-base" />
+            View PDF
+          </>
+        )}
+      </Button>
 
 
 
       <SalarySlipPDFModal
         isOpen={open}
         onClose={() => {
-            setOpen(false);
-            if (pdfUrl) {
-              URL.revokeObjectURL(pdfUrl);
-            }
-            setPdfUrl("");
-          }}
+          setOpen(false);
+          if (pdfUrl) {
+            URL.revokeObjectURL(pdfUrl);
+          }
+          setPdfUrl("");
+        }}
         salarySlipName={invoiceID}
         pdfUrl={pdfUrl}
       />

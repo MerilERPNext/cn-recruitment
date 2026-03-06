@@ -161,8 +161,9 @@ export default function EmployeeProfileSections() {
                                     variant="subtle"
                                     icon={<PencilIcon className="h-4 w-4" />}
                                     size="sm"
+                                    disabled={tab.fields.filter(f => !f.hidden).every(f => f.readOnly)}
                                     onClick={() => setEdit({ key: tab.key, label: tab.label })}
-                                    className="font-bold text-primary-600"
+                                    className={`font-bold ${tab.fields.filter(f => !f.hidden).every(f => f.readOnly) ? "text-gray-400 opacity-50 cursor-not-allowed" : "text-primary-600"}`}
                                 >
                                     Edit
                                 </Button>
@@ -184,7 +185,7 @@ export default function EmployeeProfileSections() {
                                                 <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
                                                     {field.label || "-"}
                                                 </Typography>
-                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !isTable && (
+                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly && !isTable && (
                                                     <button
                                                         onClick={() => setEdit({ key: tab.key, label: field.label || tab.label, fieldname: field.key })}
                                                         className="p-1 hover:bg-gray-100 rounded-full transition-colors group/edit"
@@ -203,6 +204,7 @@ export default function EmployeeProfileSections() {
                                                 ) : isTable ? (
                                                     <CardsRenderer
                                                         items={field.value}
+                                                        canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly}
                                                         onEdit={(index) => setEdit({
                                                             key: tab.key,
                                                             label: field.label || tab.label,
@@ -237,7 +239,7 @@ export default function EmployeeProfileSections() {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void }) => {
+const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void, canEdit: boolean }) => {
     if (!Array.isArray(items) || items.length === 0) {
         return <Typography variant="bodySmall" color="secondary" className="italic">No data available</Typography>;
     }
@@ -282,30 +284,32 @@ const CardsRenderer = ({ items, onEdit }: { items: Record<string, any>[], onEdit
         });
 
     return (
-        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-[calc(100vh-350px)] snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+        <div className="flex overflow-x-auto gap-4 pb-2 w-full min-h-fit snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
             {sortedItemsWithOriginalIndex.map(({ item, originalIndex }) => (
-                <div key={item?.id || item?.name || originalIndex} className="min-w-[450px] max-w-[450px] h-fit flex-shrink-0 snap-start">
-                    <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} />
+                <div key={item?.id || item?.name || originalIndex} className="min-w-[100%] max-w-[100%] md:min-w-[400px] md:max-w-[400px] h-fit flex-shrink-0 snap-start">
+                    <GenericCard data={item} onEdit={() => onEdit?.(originalIndex)} canEdit={canEdit} />
                 </div>
             ))}
         </div>
     );
 };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GenericCard = ({ data, onEdit }: { data: Record<string, any>, onEdit?: () => void }) => {
+const GenericCard = ({ data, onEdit, canEdit }: { data: Record<string, any>, onEdit?: () => void, canEdit: boolean }) => {
     if (!data || typeof data !== "object") return null;
     // console.log(data, "data------------------------------------")
     return (
         <Card shadow="none" radius="xl" padding="md" className="bg-gray-50/30 border border-gray-100 hover:border-primary-100 transition-all group/card h-full relative">
-            <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                <button
-                    onClick={onEdit}
-                    className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
-                    title="Edit entry"
-                >
-                    <PencilIcon className="h-3.5 w-3.5" />
-                </button>
-            </div>
+            {canEdit && (
+                <div className="absolute top-3 right-3 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    <button
+                        onClick={onEdit}
+                        className="p-1.5 bg-white border border-gray-100 rounded-lg text-primary-600 hover:text-primary-700 hover:bg-gray-50 shadow-sm transition-all"
+                        title="Edit entry"
+                    >
+                        <PencilIcon className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            )}
             <div className="space-y-4">
                 {Object.entries(data).map(([key, field]) => {
                     const isStructured = field && typeof field === 'object' && 'value' in field;
@@ -319,7 +323,7 @@ const GenericCard = ({ data, onEdit }: { data: Record<string, any>, onEdit?: () 
                             className="flex items-center justify-between gap-6 border-b border-gray-100/50 pb-2 last:border-0 last:pb-0"
                         >
                             {/* Label */}
-                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest">
+                            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest trim line-clamp-1">
                                 {label}
                             </Typography>
 

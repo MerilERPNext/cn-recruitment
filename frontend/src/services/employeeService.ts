@@ -464,11 +464,13 @@ export class EmployeeService {
     fields?: string[],
     filters?: FilterCondition[],
     orFilters?: FilterCondition[],
-    limit?: number
+    limit?: number,
+    limitStart?: number
   ): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
       fields: fields && fields.length > 0 ? fields : ["*"],
       limit: limit,
+      limitStart: limitStart,
       filters: filters,
       orFilters: orFilters,
     });

@@ -8,3 +8,12 @@ export const useCompanyLogo = () => {
     queryFn: CompanyLogoService.getCompanyLogo, // ✅ fixed typo
   });
 };
+
+export const useSingleCompanyLogo = (companyName: string) => {
+  return useQuery<CompanyLogo>({
+    queryKey: ["company-logo", companyName],
+    queryFn: () =>
+      CompanyLogoService.getSingleCompanyLogo(companyName),
+    enabled: !!companyName,
+  });
+};

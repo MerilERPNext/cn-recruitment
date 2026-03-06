@@ -431,6 +431,9 @@ export function useCreateLeaveApplication() {
         queryClient.invalidateQueries({
           queryKey: ["custom-api-infinite"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["leave-buttons-status"],
+        });
       }, 1500);
     },
   });

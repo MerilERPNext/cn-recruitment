@@ -13,6 +13,7 @@ import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
@@ -25,6 +26,7 @@ type LeaveApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled: boolean;
+  showRejectReason?: boolean;
 };
 const LeaveApprovalCard = ({
   isSelected = false,
@@ -35,6 +37,7 @@ const LeaveApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  showRejectReason,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -99,8 +102,8 @@ const LeaveApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? (showRejectReason ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr" : "0.5fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr")
+    : (showRejectReason ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr" : "1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr");
   return (
     <>
       {isDesktop ? (
@@ -170,6 +173,17 @@ const LeaveApprovalCard = ({
               <StatusBadge status={data?.reference_document?.status} />
             </AllocatedToTooltip>
           </div>
+          {showRejectReason && (
+            <div className="flex items-center justify-center w-full min-w-0 pr-2">
+              {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+                <Tooltip content={data?.reference_document?.custom_rejection_reason}>
+                  <Typography variant="bodySmall" className="font-medium text-center truncate">
+                    {data?.reference_document?.custom_rejection_reason}
+                  </Typography>
+                </Tooltip>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
               actions={actions}
@@ -267,6 +281,15 @@ const LeaveApprovalCard = ({
                 </div>
               </div>
 
+              {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+                <div className="flex flex-col gap-1 px-1 pb-3">
+                  <Typography variant="mobileCardLabel">Reject Reason</Typography>
+                  <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
+                    {data?.reference_document?.custom_rejection_reason}
+                  </Typography>
+                </div>
+              )}
+
               <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
@@ -282,13 +305,16 @@ const LeaveApprovalCard = ({
       {showCommentModal && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            handleCancelComment();
           }}
         >
           <div
             className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -304,6 +330,7 @@ const LeaveApprovalCard = ({
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Enter rejection reason..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}

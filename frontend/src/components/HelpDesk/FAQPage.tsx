@@ -2,7 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, ChevronDown } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { useCategories, useCategoryArticles, useSearchArticles } from "../../hooks/useFAQ";
+import {
+  useCategories,
+  useCategoryArticles,
+  useSearchArticles,
+} from "../../hooks/useFAQ";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
@@ -21,7 +25,8 @@ const FAQPage: React.FC = () => {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   // Fetch categories
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useCategories();
 
   // Set default category when categories load
   React.useEffect(() => {
@@ -31,14 +36,15 @@ const FAQPage: React.FC = () => {
   }, [categories, selectedCategory]);
 
   // Fetch articles for selected category
-  const { data: articles = [], isLoading: articlesLoading } = useCategoryArticles(selectedCategory);
+  const { data: articles = [], isLoading: articlesLoading } =
+    useCategoryArticles(selectedCategory);
 
   // Search articles
   const { data: searchResults = [] } = useSearchArticles(searchTerm);
 
   // Get current category info
   const currentCategory = useMemo(() => {
-    return categories.find(c => c.name === selectedCategory);
+    return categories.find((c) => c.name === selectedCategory);
   }, [categories, selectedCategory]);
 
   // Display articles (search results or category articles)
@@ -61,10 +67,14 @@ const FAQPage: React.FC = () => {
     <div className="flex flex-col h-full">
       {/* Header Section */}
       <div className="px-4 md:px-8 py-4 md:py-6">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="flex flex-col md:flex-row lg:items-start lg:justify-between gap-4">
           {/* Title */}
-          <div>
-            <Typography variant="h2" color="primary" className="mb-1">
+          <div className="max-lg:hidden">
+            <Typography
+              variant={isDesktop ? "h2" : "h4"}
+              color="primary"
+              className="mb-1"
+            >
               Frequently Asked Questions
             </Typography>
             <Typography variant="bodySmall" color="body2">
@@ -73,33 +83,37 @@ const FAQPage: React.FC = () => {
           </div>
 
           {/* Search and Category Filter */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row max-lg:w-full gap-3">
             {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="relative max-lg:w-full ml-auto">
+              <Search className="absolute left-3  top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search.."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                className="w-full lg:w-64 pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
               />
             </div>
 
             {/* Category Dropdown */}
-            <div className="relative">
+            <div className="ml-auto relative">
               <button
-                onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                onClick={() =>
+                  setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+                }
                 className="flex items-center justify-between gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm min-w-[160px] hover:bg-primary-700 transition-colors"
               >
                 <span className="truncate">
                   {currentCategory?.category_name || "Select Category"}
                 </span>
-                <ChevronDown className={`w-4 h-4 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${isCategoryDropdownOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {isCategoryDropdownOpen && (
-                <div className="absolute  max-sm:left-0 sm:right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-lg">
+                <div className="absolute  right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white shadow-lg">
                   <ul className="max-h-60 overflow-auto p-1">
                     {categories.map((category) => (
                       <li
@@ -108,10 +122,11 @@ const FAQPage: React.FC = () => {
                           setSelectedCategory(category.name);
                           setIsCategoryDropdownOpen(false);
                         }}
-                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${category.name === selectedCategory
-                          ? "bg-primary-50 text-primary-600 font-medium"
-                          : "text-gray-700 hover:bg-gray-100"
-                          }`}
+                        className={`flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition ${
+                          category.name === selectedCategory
+                            ? "bg-primary-50 text-primary-600 font-medium"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       >
                         {category.category_name} ({category.article_count})
                       </li>
@@ -162,12 +177,13 @@ const FAQPage: React.FC = () => {
       </div>
 
       {/* Footer Buttons - transparent background */}
-      <div className="fixed bottom-4 right-4 flex gap-3 z-50">
+      <div className="max-sm:bg-white max-sm:left-0 right-0 bottom-0 max-sm:px-4 max-sm:pb-4 flex  fixed sm:bottom-4 sm:right-4 flex gap-3 z-50">
         <Button
           variant="outline"
           bgColor="primary"
           size="lg"
           onClick={handleViewRequests}
+          className="max-sm:w-full bg-white"
         >
           View Requests
         </Button>
@@ -176,6 +192,7 @@ const FAQPage: React.FC = () => {
           bgColor="primary"
           size="lg"
           onClick={handleRequestIssue}
+          className="max-sm:w-full"
         >
           <Plus className="w-4 h-4" />
           Request Issue
@@ -188,7 +205,7 @@ const FAQPage: React.FC = () => {
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.relative')) {
+      if (!target.closest(".relative")) {
         setIsCategoryDropdownOpen(false);
       }
     };
@@ -201,7 +218,10 @@ const FAQPage: React.FC = () => {
       <>
         <div className="flex flex-col min-h-screen bg-white">
           <header className="sticky top-0 z-50 bg-white shadow-sm">
-            <HeaderBar title="FAQs" onBack={() => navigate("/webapp/helpdesk")} />
+            <HeaderBar
+              title="FAQs"
+              onBack={() => navigate("/webapp/helpdesk")}
+            />
           </header>
           <main className="flex-1 overflow-y-auto bg-app">
             {renderContent()}
