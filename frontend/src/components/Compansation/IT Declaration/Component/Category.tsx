@@ -118,8 +118,27 @@ const CategoryDeclarationSelectable = ({
     return false;  
   }, [locked80DVariable, categoryVaribale, itemId]);
 
-    useEffect(() =>{
-    },[locked80DVariable])
+  useEffect(() => {
+    if (!categoryVaribale || !locked80DVariable || !setLocked80DVariable) return;
+  
+    const selectedFromAPI = items.some(
+      (item) => item.is_selected === true || Number(item.amount ?? 0) > 0
+    );
+  
+    if (!selectedFromAPI) return;
+  
+    const updatedMap = new Map(locked80DVariable);
+    const group = updatedMap.get(categoryVaribale);
+  
+    if (group && (group.parent === null || group.parent === undefined)) {
+      updatedMap.set(categoryVaribale, {
+        ...group,
+        parent: itemId,
+      });
+  
+      setLocked80DVariable(updatedMap);
+    }
+  }, [items, categoryVaribale, locked80DVariable, itemId, setLocked80DVariable]);
 
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;
@@ -317,7 +336,7 @@ const CategoryDeclarationSelectable = ({
                 )}
               </div>
 
-              {showProofFields && (item.attach_reqd === 1 || item?.approval_needed === "Yes") && (
+              {(showProofFields || item?.approval_needed === "Yes" || item?.attach_reqd === 1) && (
                   <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
                     <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">
@@ -347,7 +366,7 @@ const CategoryDeclarationSelectable = ({
                           file:px-3 file:py-1.5 file:rounded-l-lg"
                       />
 
-                      {(item?.proof_file ?? item?.attach_reqd === 1) && (
+                      {(item?.proof_file || item?.attach_reqd === 1 || item?.approval_needed === "Yes") && (
                         <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded w-full bg-gray-50 overflow-hidden">
                           <span className="text-sm text-gray-700 truncate min-w-0 flex-1">
                             {typeof item?.proof_file === "string"
