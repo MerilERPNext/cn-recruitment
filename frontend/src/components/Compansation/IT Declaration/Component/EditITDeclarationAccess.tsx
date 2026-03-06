@@ -5,6 +5,7 @@ import {
   useEditITDeclaration,
   useEditValueITDeclaration,
 } from "../../../../hooks/payroll/useEditITDeclaration";
+import { Typography } from "../../../shared/atoms/Typography";
 
 type Props = {
   isOpen: boolean;
@@ -127,13 +128,13 @@ const EditITDeclarationAccess = ({
       />
 
       {/* Popup */}
-      <div className="relative max-w-xl bg-white rounded-lg p-6 animate-scaleIn">
+      <div className="relative max-w-xl bg-white rounded-lg p-4 animate-scaleIn">
         {/* Header */}
-        <div className="flex justify-between items-start mb-6">
+        <div className="flex justify-between items-start mb-3">
           <div>
-            <h2 className="text-lg font-semibold text-gray-800">
+            <Typography variant="body" className="mb-1 font-bold ">
               Edit IT Declaration Access
-            </h2>
+            </Typography>
             <p className="text-sm text-gray-500">
               Update configuration and access period for employees.
             </p>
@@ -148,14 +149,14 @@ const EditITDeclarationAccess = ({
         </div>
 
         {/* Status */}
-        <div className="mb-4 relative" ref={statusRef}>
+        <div className="mb-2 relative" ref={statusRef}>
           <label className="text-sm text-gray-600 block mb-2">
             Select Status
           </label>
 
           <div
             onClick={() => setStatusOpen(!statusOpen)}
-            className="w-full border border-gray-200 px-4 py-1.5 bg-gray-50 flex justify-between items-center cursor-pointer"
+            className="w-full border border-gray-200 px-4 py-1 bg-gray-50 flex justify-between items-center cursor-pointer"
           >
             <span>{formData.status || "Select Status"}</span>
             <FiChevronDown
@@ -185,7 +186,7 @@ const EditITDeclarationAccess = ({
 
         {/* Declaration */}
         <div className="mb-6 relative" ref={declarationRef}>
-          <label className="text-sm text-gray-600 block mb-2">
+          <label className="text-sm text-gray-600 block mb-1">
             Select Declaration Type
           </label>
 
@@ -228,7 +229,7 @@ const EditITDeclarationAccess = ({
         <div className="bg-gray-50 p-2 border border-gray-100 mb-6">
           <div className="flex items-center gap-2 mb-1">
             <FiCalendar className="text-gray-500" />
-            <span className="text-sm font-semibold text-gray-600 uppercase">
+            <span className="text-sm font-semibold text-gray-600 ">
               Manage Date
             </span>
           </div>
