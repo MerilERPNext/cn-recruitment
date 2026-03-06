@@ -5,7 +5,78 @@ from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 
+import frappe
+from urllib.parse import urlencode
 
+@frappe.whitelist()
+def send_job_offer(job_offer):
+
+    doc = frappe.get_doc("Job Offer", job_offer)
+
+    # Base onboarding form URL
+    base_onboarding_url = "https://nexus-dev.m.frappe.cloud/onboarding-form/new"
+
+    # Query parameters for onboarding form
+    params = {
+        "job_applicant": doc.applicant_email,
+        "job_offer": doc.name,
+        "date_of_joining": doc.custom_expected_doj or "",
+        "boarding_begins_on": doc.offer_date or ""
+    }
+
+    onboarding_url = f"{base_onboarding_url}?{urlencode(params)}"
+
+    email_message = f"""
+    <div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.6">
+
+        <p>Dear {doc.applicant_name},</p>
+
+        <p>
+        We are delighted to offer you the position of
+        <strong>{doc.designation}</strong> at
+        <strong>{doc.company}</strong>.
+        </p>
+
+        <p>
+        Please find your offer details enclosed/attached for your reference.
+        </p>
+
+        <p>
+        To proceed further, we kindly request you to confirm your acceptance of this offer
+        by or before <strong>{doc.custom_jo_expiry_date}</strong>.
+        </p>
+
+        <p>
+        <a href="{onboarding_url}" style="color:#0b5ed7;">
+        {onboarding_url}
+        </a>
+        </p>
+
+        <p>
+        We are excited about the possibility of you joining our team and contributing to our growth.
+        Should you have any questions or need clarification regarding the offer, please feel free to reach out.
+        </p>
+
+        <p>
+        Looking forward to your positive response.
+        </p>
+
+        <p>
+        Thank You,<br>
+        <strong>{doc.company} Team</strong>
+        </p>
+
+    </div>
+    """
+
+    frappe.sendmail(
+        recipients=[doc.applicant_email],
+        subject=f"Offer of Employment with {doc.company}",
+        message=email_message,
+        now=True
+    )
+
+    return "Email Sent Successfully"
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
@@ -65,49 +136,49 @@ def submit_docs(status, appl,url=None):
 		)
 
 
-@frappe.whitelist()
-def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
-    email_context = {"canditate": candidate, "job_offer_url": job_offer_url,"company":company,"designation":designation}
-    settings = frappe.get_doc("Recruitment Settings")
-    job_offer_temp = settings.job_offer_template
-    jo_name = frappe.db.get_value("Job Offer", {"job_applicant": mail_id})
-    jo_doc = frappe.get_doc("Job Offer", jo_name)
+# @frappe.whitelist()
+# def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
+#     email_context = {"canditate": candidate, "job_offer_url": job_offer_url,"company":company,"designation":designation}
+#     settings = frappe.get_doc("Recruitment Settings")
+#     job_offer_temp = settings.job_offer_template
+#     jo_name = frappe.db.get_value("Job Offer", {"job_applicant": mail_id})
+#     jo_doc = frappe.get_doc("Job Offer", jo_name)
 
-    output_pdf = frappe.get_print(
-        "Job Offer", jo_name, doc=jo_doc, as_pdf=True, output=None
-    )
-    pdf_attachment = {
-        "fname": jo_name + ".pdf",  # Name of the file
-        "fcontent": output_pdf,  # Byte content of the file
-        "content_type": "application/pdf",  # Content type of the file
-    }
-    frappe.sendmail(
-        attachments=[pdf_attachment],
-        recipients=[mail_id],
-        subject=frappe.render_template(
-            frappe.db.get_value("Email Template", job_offer_temp, "subject"),
-			email_context,
-        ),
-        message=frappe.render_template(
-            frappe.db.get_value("Email Template", job_offer_temp, "response"),
-            email_context,
-        ),
-        args=email_context,
-    )
-    communication_doc = frappe.new_doc("Communication")
-    communication_doc.subject = frappe.render_template(
-            frappe.db.get_value("Email Template", job_offer_temp, "subject"),
-			email_context,
-        )
-    communication_doc.content = frappe.render_template(
-            frappe.db.get_value("Email Template", job_offer_temp, "response"),
-            email_context,
-        )
-    communication_doc.reference_doctype = "Job Offer"
-    communication_doc.reference_name = jo_name
-    communication_doc.recipients = mail_id+","
-    communication_doc.save()
-    frappe.db.set_value("Job Applicant",mail_id,"status","Offered")
+#     output_pdf = frappe.get_print(
+#         "Job Offer", jo_name, doc=jo_doc, as_pdf=True, output=None
+#     )
+#     pdf_attachment = {
+#         "fname": jo_name + ".pdf",  # Name of the file
+#         "fcontent": output_pdf,  # Byte content of the file
+#         "content_type": "application/pdf",  # Content type of the file
+#     }
+#     frappe.sendmail(
+#         attachments=[pdf_attachment],
+#         recipients=[mail_id],
+#         subject=frappe.render_template(
+#             frappe.db.get_value("Email Template", job_offer_temp, "subject"),
+# 			email_context,
+#         ),
+#         message=frappe.render_template(
+#             frappe.db.get_value("Email Template", job_offer_temp, "response"),
+#             email_context,
+#         ),
+#         args=email_context,
+#     )
+#     communication_doc = frappe.new_doc("Communication")
+#     communication_doc.subject = frappe.render_template(
+#             frappe.db.get_value("Email Template", job_offer_temp, "subject"),
+# 			email_context,
+#         )
+#     communication_doc.content = frappe.render_template(
+#             frappe.db.get_value("Email Template", job_offer_temp, "response"),
+#             email_context,
+#         )
+#     communication_doc.reference_doctype = "Job Offer"
+#     communication_doc.reference_name = jo_name
+#     communication_doc.recipients = mail_id+","
+#     communication_doc.save()
+#     frappe.db.set_value("Job Applicant",mail_id,"status","Offered")
 
 
 

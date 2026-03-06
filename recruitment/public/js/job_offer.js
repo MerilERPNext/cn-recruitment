@@ -1,4 +1,29 @@
 frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+
+        if (frm.doc.status === "Awaiting Response") {
+
+            frm.add_custom_button(__('Send Job Offer'), function () {
+
+                frappe.call({
+                    method: "recruitment.job_offer_utils.send_job_offer",
+                    args: {
+                        job_offer: frm.doc.name
+                    },
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.msgprint("Job Offer email sent successfully");
+                        }
+                    }
+                });
+
+            });
+
+        }
+    }
+});
+
+frappe.ui.form.on("Job Offer", {
     // refresh: function(frm){
 	// 	if(frm.doc.status=="Awaiting Response"){
 	// 		  frm.add_custom_button(__('Send Job Offer'), function(){
