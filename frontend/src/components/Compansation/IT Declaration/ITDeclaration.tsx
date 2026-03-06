@@ -439,37 +439,47 @@ const ITDeclarationForm = () => {
         {/* Tabs */}
 
         <div className="w-full">
-          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-0">
-            <button
-              ref={(el) => {
-                tabRefs.current["category"] = el;
-              }}
-              onClick={() => setActiveMainTab("category")}
-              className={`px-4 whitespace-nowrap py-2 ${
-                activeMainTab === "category"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-gray-600"
-              }`}
-            >
-              Other Investment Declaration
-            </button>
+        <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-6 mt-4 border-b border-gray-200">
+  <button
+    ref={(el) => {
+      tabRefs.current["category"] = el;
+    }}
+    onClick={() => setActiveMainTab("category")}
+    className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+    ${
+      activeMainTab === "category"
+        ? "text-primary"
+        : "text-gray-500 hover:text-gray-800"
+    }`}
+  >
+    Other Investment Declaration
 
-            {!goHeadWithNewRegimeBool && (
-              <button
-                ref={(el) => {
-                  tabRefs.current["hra"] = el;
-                }}
-                onClick={() => setActiveMainTab("hra")}
-                className={`px-4 whitespace-nowrap py-2 ${
-                  activeMainTab === "hra"
-                    ? "border-b-2 border-primary text-primary"
-                    : "text-gray-600"
-                }`}
-              >
-                HRA & Other (U/S 10)
-              </button>
-            )}
-          </div>
+    {activeMainTab === "category" && (
+      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+    )}
+  </button>
+
+  {!goHeadWithNewRegimeBool && (
+    <button
+      ref={(el) => {
+        tabRefs.current["hra"] = el;
+      }}
+      onClick={() => setActiveMainTab("hra")}
+      className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+      ${
+        activeMainTab === "hra"
+          ? "text-primary"
+          : "text-gray-500 hover:text-gray-800"
+      }`}
+    >
+      HRA & Other (U/S 10)
+
+      {activeMainTab === "hra" && (
+        <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+      )}
+    </button>
+  )}
+</div>
           {activeMainTab === "hra" && hraData && (
             <HRAForm
               hraData={hraData}
@@ -479,21 +489,31 @@ const ITDeclarationForm = () => {
           )}
           {activeMainTab === "category" && (
             <>
-              <div className="flex flex-wrap md:flex-nowrap gap-2 mt-4">
-                {groupedCategories.map((sec) => (
-                  <button
-                    key={sec.section}
-                    onClick={() => setActiveSection(sec.section)}
-                    className={`px-4 py-1 rounded-3xl text-xs ${
-                      activeSection === sec.section
-                        ? "bg-primary text-white"
-                        : "bg-gray-200"
-                    }`}
-                  >
-                    {sec.section}
-                  </button>
-                ))}
-              </div>
+<div className="flex flex-wrap md:flex-nowrap items-center gap-2 mt-4 p-1 bg-gray-100/70 backdrop-blur-sm rounded-xl w-fit">
+  {groupedCategories.map((sec, index) => {
+    const active = activeSection === sec.section;
+
+    return (
+      <div key={sec.section} className="flex items-center">
+        <button
+          onClick={() => setActiveSection(sec.section)}
+          className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200
+          ${
+            active
+              ? "bg-white text-primary shadow-sm"
+              : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
+          }`}
+        >
+          {sec.section}
+        </button>
+
+        {index !== groupedCategories.length - 1 && (
+          <div className="w-px h-5 bg-gray-300 mx-1"></div>
+        )}
+      </div>
+    );
+  })}
+</div>
               <CategorySection
                 sectionCategories={sectionCategories}
                 activeSection={activeSection}
