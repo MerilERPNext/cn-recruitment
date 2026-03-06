@@ -135,37 +135,37 @@
    "fieldname": "scale_yourself_for_productivity",
    "fieldtype": "Select",
    "label": "Scale yourself for productivity Completion of assigned activity on time during probation period",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "scale_yourself_for_quality_of_work_completion",
    "fieldtype": "Select",
    "label": "Scale yourself for Quality of work Completion of assigned activity without minimum error during probation period",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "scale_your_communication_skills",
    "fieldtype": "Select",
    "label": "Scale your communication skills",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "scale_yourself_for_job_knowledge",
    "fieldtype": "Select",
    "label": "Scale yourself for job knowledge",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "select_otj_on_the_job_training_completion_status",
    "fieldtype": "Select",
    "label": "Select OTJ On The Job training completion status",
-   "options": "Completed\nWIP\nNot Started"
+   "options": "\nCompleted\nWIP\nNot Started"
   },
   {
    "fieldname": "do_you_feel_happy_working_with_your_co_team_members",
    "fieldtype": "Select",
    "label": "Do you feel happy working with your Co Team members",
-   "options": "No\nSometimes\nYes"
+   "options": "\nNo\nSometimes\nYes"
   },
   {
    "fieldname": "how_would_you_describe_your_current_performance",
@@ -196,7 +196,7 @@
    "fieldname": "select_final_scale_for_self_evaluation",
    "fieldtype": "Select",
    "label": "Select final scale for self evaluation considering your overall work experience with the organisation",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "on_a_scale_of_1_to_5_how_satisfied_are_you_with_the_hr_team",
@@ -223,7 +223,7 @@
    "fieldname": "are_you_sure_that_you_want_to_extend_members_probation",
    "fieldtype": "Select",
    "label": "Are you sure that you want to extend member's Probation",
-   "options": "Yes\nNo"
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "please_mention_remarks_for_extension_of_member",
@@ -250,55 +250,55 @@
    "fieldname": "rate_member_for_completion_of_assigned_activity",
    "fieldtype": "Select",
    "label": "Rate member for Completion of assigned activity on time during probation period.",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "rate_member_for_quality_of_work_completed",
    "fieldtype": "Select",
    "label": "Rate member for Quality of work Completed with minimum errors during probation period.",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "rate_members_communication_skills",
    "fieldtype": "Select",
    "label": "Rate member's communication skills.",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "was_member_able_to_understand_instructions_and_trainings",
    "fieldtype": "Select",
    "label": "Was member able to understand instructions and trainings while assigning any new activities",
-   "options": "Yes\nNo"
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "select_on_the_job_training_completion_status",
    "fieldtype": "Select",
    "label": "Select On The Job training completion status",
-   "options": "On Going\nCompleted"
+   "options": "\nOn Going\nCompleted"
   },
   {
    "fieldname": "rate_member_for_job_knowledge",
    "fieldtype": "Select",
    "label": "Rate member for job knowledge.",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "rate_member_for_team_coordination_and_communication",
    "fieldtype": "Select",
    "label": "Rate member for Team coordination and Communication.",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "rate_member_for_attendance_punctuality",
    "fieldtype": "Select",
    "label": "Rate member for attendance punctuality",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "has_member_shared_or_implemented_any_process_improvements",
    "fieldtype": "Select",
    "label": "Has member shared or implemented any process improvements",
-   "options": "Yes\nNo"
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "mention_members_area_where_improvement_is_needed",
@@ -309,7 +309,7 @@
    "fieldname": "select_final_rating_for_manager_evaluation",
    "fieldtype": "Select",
    "label": "Select final rating for Manager evaluation considering member overall work experience with the Organization",
-   "options": "Not Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
+   "options": "\nNot Meeting Expectation\nBelow Expectation\nMeet Expectation\nAbove Expectation\nExceed Expectation"
   },
   {
    "fieldname": "share_feedback_or_any_other_remarks_for_member",
@@ -330,7 +330,7 @@
    "fieldname": "are_you_sure_that_you_want_to_initiate_separation",
    "fieldtype": "Select",
    "label": "Are you sure that you want to initiate Separation process for the following member?",
-   "options": "Yes\nNo"
+   "options": "\nYes\nNo"
   },
   {
    "fieldname": "initiator_form",
@@ -343,7 +343,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-26 15:25:00.301237",
+ "modified": "2026-03-06 10:43:39.151574",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",
