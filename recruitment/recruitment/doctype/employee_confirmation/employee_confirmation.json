@@ -111,7 +111,7 @@
    "fieldname": "status",
    "fieldtype": "Select",
    "label": "Status",
-   "options": "Draft\nConfirmed\nProbation Extended\nTerminated"
+   "options": "Draft\nConfirmed\nProbation Extended\nInitiate Separation"
   },
   {
    "fieldname": "confirmation_policy",
@@ -343,7 +343,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-06 10:43:39.151574",
+ "modified": "2026-03-06 12:20:36.792343",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",

@@ -44,11 +44,9 @@ class EmployeeConfirmation(Document):
 			# self.probation_end_date = probation_end_date
 			# self.save()
 			employee.save()
-		elif confirmation_status == "Terminated":
+		elif confirmation_status == "Initiate Separation":
 			employee = frappe.get_doc("Employee", self.employee)
-			employee.custom_employment_status = "Terminated"
-			employee.status = "Suspended"
-			employee.flags.ignore_validate = True
+			employee.custom_employment_status = "Pending Separation"
 			employee.save()
 
 	def validate(self):
