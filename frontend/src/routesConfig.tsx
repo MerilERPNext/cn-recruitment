@@ -958,7 +958,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/employees-directory",
     element: <EmployeesDirectory />,
-    permissionKey: "Employees Directory",
+    permissionKey: "Employee Directory",
   },
   //Leaves routes
   {
