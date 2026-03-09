@@ -1,29 +1,4 @@
 frappe.ui.form.on("Job Applicant", {
-    refresh(frm) {
-
-        if (!frm.doc.email_id) return;
-
-        frm.add_custom_button(__('Send Onboarding Form'), function () {
-
-            frappe.call({
-                method: "recruitment.job_offer_utils.send_onboarding_form",
-                args: {
-                    job_applicant: frm.doc.name
-                },
-                callback: function(r) {
-                    if (!r.exc) {
-                        frappe.msgprint("Onboarding email sent successfully");
-                    }
-                }
-            });
-
-        });
-
-    }
-});
-
-
-frappe.ui.form.on("Job Applicant", {
   refresh: function (frm) {
     // frm.events.create_custom_buttons(frm);
     // frm.remove_custom_button('Interview', 'Create');

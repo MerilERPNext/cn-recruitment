@@ -24,6 +24,37 @@ frappe.ui.form.on("Job Offer", {
 });
 
 frappe.ui.form.on("Job Offer", {
+    refresh(frm) {
+
+        // Show button only when Job Offer is Accepted
+        if (frm.doc.status === "Accepted" && frm.doc.job_applicant) {
+
+            frm.add_custom_button(__('Send Onboarding Form'), function () {
+
+                frappe.call({
+                    method: "recruitment.job_offer_utils.send_onboarding_form",
+                    args: {
+                        job_applicant: frm.doc.job_applicant
+                    },
+                    callback: function(r) {
+                        if (!r.exc) {
+                            frappe.msgprint({
+                                title: __("Success"),
+                                message: __("Onboarding email sent successfully"),
+                                indicator: "green"
+                            });
+                        }
+                    }
+                });
+
+            });
+
+        }
+
+    }
+});
+
+frappe.ui.form.on("Job Offer", {
     // refresh: function(frm){
 	// 	if(frm.doc.status=="Awaiting Response"){
 	// 		  frm.add_custom_button(__('Send Job Offer'), function(){
