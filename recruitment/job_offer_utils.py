@@ -8,79 +8,6 @@ from frappe.utils import cint
 import frappe
 from urllib.parse import urlencode
 
-# @frappe.whitelist()
-# def send_job_offer(job_offer):
-
-#     doc = frappe.get_doc("Job Offer", job_offer)
-
-#     # Base onboarding form URL
-#     base_onboarding_url = "https://nexus-dev.m.frappe.cloud/onboarding-form/new"
-
-#     # Query parameters for onboarding form
-#     params = {
-#         "job_applicant": doc.applicant_email,
-#         "job_offer": doc.name,
-#         "date_of_joining": doc.custom_expected_doj or "",
-#         "boarding_begins_on": doc.offer_date or ""
-#     }
-
-#     onboarding_url = f"{base_onboarding_url}?{urlencode(params)}"
-
-#     email_message = f"""
-#     <div style="font-family: Arial, Helvetica, sans-serif; font-size:14px; line-height:1.6">
-
-#         <p>Dear {doc.applicant_name},</p>
-
-#         <p>
-#         We are delighted to offer you the position of
-#         <strong>{doc.designation}</strong> at
-#         <strong>{doc.company}</strong>.
-#         </p>
-
-#         <p>
-#         Please find your offer details enclosed/attached for your reference.
-#         </p>
-
-#         <p>
-#         To proceed further, we kindly request you to confirm your acceptance of this offer
-#         by or before <strong>{doc.custom_jo_expiry_date}</strong>.
-#         </p>
-
-#         <p>
-#         <a href="{onboarding_url}" style="color:#0b5ed7;">
-#         {onboarding_url}
-#         </a>
-#         </p>
-
-#         <p>
-#         We are excited about the possibility of you joining our team and contributing to our growth.
-#         Should you have any questions or need clarification regarding the offer, please feel free to reach out.
-#         </p>
-
-#         <p>
-#         Looking forward to your positive response.
-#         </p>
-
-#         <p>
-#         Thank You,<br>
-#         <strong>{doc.company} Team</strong>
-#         </p>
-
-#     </div>
-#     """
-
-#     frappe.sendmail(
-#         recipients=[doc.applicant_email],
-#         subject=f"Offer of Employment with {doc.company}",
-#         message=email_message,
-#         now=True
-#     )
-
-#     return "Email Sent Successfully"
-
-import frappe
-from urllib.parse import urlencode
-
 
 @frappe.whitelist()
 def send_job_offer(job_offer):
@@ -158,7 +85,7 @@ def send_onboarding_form(job_applicant):
     doc = frappe.get_doc("Job Applicant", job_applicant)
 
     # Base onboarding form URL
-    base_onboarding_url = "https://nexus-dev.m.frappe.cloud/onboarding-form/new"
+    base_onboarding_url = "https://nexus-dev.m.frappe.cloud/employee-onboarding/new"
 
     params = {
         "job_applicant": doc.email_id,
