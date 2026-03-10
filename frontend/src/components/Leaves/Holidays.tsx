@@ -48,8 +48,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
   const showRequestButton =
     canRequest &&
     !statusLabel &&
-    canApplyPermission &&
-    holiday.leave_type?.toLowerCase() === "optional holiday";
+    canApplyPermission;
 
   return (
     <div
@@ -159,7 +158,7 @@ const Holidays: React.FC = () => {
   );
 
   const { data: leaveBalance, isLoading: isBalanceLoading } =
-    useGetLeaveBalance(employee?.name, selectedYearDate, "Optional Holiday");
+    useGetLeaveBalance(employee?.name, selectedYearDate);
 
   const regularHolidays: Holiday[] = useMemo(() => {
     if (!holidaysData) return [];
@@ -186,8 +185,8 @@ const Holidays: React.FC = () => {
     [regularHolidays, optionalHolidays],
   );
 
-  const optionalBalance = leaveBalance?.leave_balance?.find((b) =>
-    b.type.toLowerCase().includes("optional"),
+  const optionalBalance = leaveBalance?.leave_balance?.find(
+    (b) => b.optional_leave === 1,
   );
 
   const getHolidayStatus = (date: string) => {
@@ -279,6 +278,7 @@ const Holidays: React.FC = () => {
           <NoDataFound title="No Holidays Found" subtitle="There are no holidays available for the selected year." />
         ) : (
           <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+
             {listToShow.map((h) => (
               <HolidayCard
                 key={h.name}
