@@ -350,7 +350,7 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
-              {(actionsEnabled.preview ?? declarationDoctype === "Employee Tax Exemption Declaration") &&  (
+              {(actionsEnabled.preview && declarationDoctype === "Employee Tax Exemption Proof Submission") &&   (
                 <PreviewOfITDeclaration
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
