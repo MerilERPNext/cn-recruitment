@@ -1,0 +1,60 @@
+{
+    "display": "form",
+    "components": [
+      {
+        "type": "select",
+        "key": "status",
+        "label": "Select Status",
+        "placeholder": "Select Status",
+        "input": true,
+        "data": {
+          "values": [
+            { "label": "Open", "value": "Open" },
+            { "label": "Closed", "value": "Closed" }
+          ]
+        }
+      },
+      {
+        "type": "select",
+        "key": "declaration_type",
+        "label": "Select Declaration Type",
+        "input": true,
+        "placeholder": "Select Declaration Type",
+        "data": {
+          "values": [
+            {
+              "label": "Employee Tax Exemption Declaration",
+              "value": "Employee Tax Exemption Declaration"
+            },
+            {
+              "label": "Employee Tax Exemption Proof Submission",
+              "value": "Employee Tax Exemption Proof Submission"
+            }
+          ]
+        }
+      },
+      {
+        "type": "panel",
+        "title": "Manage Date",
+        "key": "date_panel",
+        "components": [
+          {
+            "type": "datetime",
+            "key": "from_date",
+            "label": "From Date",
+            "input": true,
+            "format": "yyyy-MM-dd",
+            "enableTime": false
+          },
+          {
+            "type": "datetime",
+            "key": "to_date",
+            "label": "To Date",
+            "input": true,
+            "format": "yyyy-MM-dd",
+            "enableTime": false
+          }
+        ]
+      }
+    ]
+  }
