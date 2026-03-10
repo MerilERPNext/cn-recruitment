@@ -67,6 +67,13 @@ doctype_js = {
     "Exit Interview": ["public/js/exit_interview.js"],
     "Training Event": ["public/js/training_event.js"],
 }
+
+
+doctype_list_js = {
+    "Job Applicant": "public/js/job_applicant_list.js",
+    "Job Offer": "public/js/job_offer_list.js"
+}
+
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

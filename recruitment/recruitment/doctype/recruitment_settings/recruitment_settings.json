@@ -5,6 +5,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "bulk_operations_section",
+  "allow_bulk_job_offer",
+  "allow_bulk_job_offer_email",
+  "section_break_xbvj",
   "job_offer_template",
   "employee_onboarding_webform",
   "mapping_fields",
@@ -55,12 +59,35 @@
    "fieldname": "interview_settings_section",
    "fieldtype": "Section Break",
    "label": "Interview Settings"
+  },
+  {
+   "default": "0",
+   "description": "Users can create multiple Job Offers directly from the Job Applicant list using the Actions menu.",
+   "fieldname": "allow_bulk_job_offer",
+   "fieldtype": "Check",
+   "label": "Allow Bulk Job Offer Creation"
+  },
+  {
+   "default": "0",
+   "description": "Users can send Job Offer emails to multiple candidates at once from the Job Offer list using the Actions menu.",
+   "fieldname": "allow_bulk_job_offer_email",
+   "fieldtype": "Check",
+   "label": "Allow Bulk Job Offer Email"
+  },
+  {
+   "fieldname": "bulk_operations_section",
+   "fieldtype": "Section Break",
+   "label": "Bulk Operations"
+  },
+  {
+   "fieldname": "section_break_xbvj",
+   "fieldtype": "Section Break"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-04-22 11:56:49.445951",
+ "modified": "2026-03-10 16:19:04.969944",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Recruitment Settings",
@@ -77,6 +104,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
