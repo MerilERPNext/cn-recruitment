@@ -173,14 +173,17 @@ def auto_separate_employees_on_lwd():
         if employee_status == "Left":
             continue
 
-        separation_policy = get_applicable_separation_policy(sep.employee)
+        force_separate = False
+        custom_flow = frappe.db.get_value("Employee Separation", sep.name, "custom_flow")
+        if custom_flow and frappe.db.exists("Flow Config", custom_flow):
+            force_separate = bool(frappe.db.get_value("Flow Config", custom_flow, "force_separate_employee_on_lwd_as_per_notice_period"))
+        if not force_separate:
+            separation_policy = get_applicable_separation_policy(sep.employee)
+            if separation_policy:
+                sp_doc = frappe.get_doc("Separation Policy", separation_policy)
+                force_separate = bool(sp_doc.force_separate_employee_on_lwd_as_per_notice_period)
 
-        if not separation_policy:
-            continue
-
-        sp_doc = frappe.get_doc("Separation Policy", separation_policy)
-
-        if sp_doc.force_separate_employee_on_lwd_as_per_notice_period:
+        if force_separate:
             sep_docstatus = frappe.db.get_value("Employee Separation", sep.name, "docstatus")
 
             if sep_docstatus == 0:  # Draft
