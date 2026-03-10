@@ -13,6 +13,7 @@ import CardTable from "../shared/CardTable";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 const TeamShiftRowItem: React.FC<{
   item: ApiShiftAssignment;
@@ -166,9 +167,10 @@ const AllTeamShiftsList: React.FC = () => {
                   />
                 ))
               ) : (
-                <div className="p-4 text-center text-gray-500">
-                  No team shifts found.
-                </div>
+                <NoDataFound
+                  title="No Team Shift Assignments"
+                  subtitle="No team shifts found."
+                />
               )}
             </CardTable>
           </div>
@@ -182,9 +184,10 @@ const AllTeamShiftsList: React.FC = () => {
               <TeamShiftItemComponent key={shift.name} item={shift} />
             ))
           ) : (
-            <div className="p-6 text-center text-gray-500">
-              No team shifts found.
-            </div>
+            <NoDataFound
+              title="No Team Shift Assignments"
+              subtitle="No team shifts found."
+            />
           )}
         </div>
       )}

@@ -12,8 +12,8 @@ import {
   Loader2,
   Shield,
   RepeatIcon as RetryIcon,
-  SearchIcon,
 } from "lucide-react";
+import { NoDataFound } from "./shared/atoms/NoDataFound";
 import {
   useDoctypeSchema,
   useFrappeInfiniteQuery,
@@ -24,6 +24,7 @@ import {
 import { useLocation } from "react-router";
 import { FilterCondition, FrappePageResponse } from "../types/frappe";
 import { mapFiltersToConditions } from "../utils/helperUtils";
+import SearchInputWrapper from "./shared/SearchBar";
 
 interface BaseItem {
   name: string;
@@ -501,20 +502,12 @@ const FrappeListView = <T extends BaseItem>({
       {/* Header */}
       <div className="border-gray-200">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-1 w-full">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon size={18} className="text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  placeholder="Search..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+              />
             )}
             {isFilter && (
               <button
@@ -633,9 +626,7 @@ const FrappeListView = <T extends BaseItem>({
             </div>
           )
         ) : processedData.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <span className="text-gray-500">No records found</span>
-          </div>
+          <NoDataFound />
         ) : (
           <div
             className={
@@ -1020,7 +1011,7 @@ export const StaticListView = <T extends BaseItemStatic>({
           <div className="flex justify-center py-8">Loading…</div>
         )
       ) : paginatedData.length === 0 ? (
-        <div className="py-12 text-center text-gray-500">No items found</div>
+        <NoDataFound />
       ) : (
         <>
           {paginatedData.map((item, index) => {

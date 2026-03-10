@@ -15,6 +15,7 @@ import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 // -------------------- TYPES --------------------
 interface NotificationLog {
@@ -98,10 +99,9 @@ const NotificationList = () => {
             key={tab}
             onClick={() => setActiveTab(tab as any)}
             className={`px-4 py-2 text-sm font-medium capitalize
-              ${
-                activeTab === tab
-                  ? "border-b-2 border-blue-600 text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+              ${activeTab === tab
+                ? "border-b-2 border-blue-600 text-blue-600"
+                : "text-gray-500 hover:text-gray-700"
               }`}
           >
             {tab}
@@ -114,9 +114,7 @@ const NotificationList = () => {
         {isLoading ? (
           <CardSkeleton />
         ) : filteredNotifications.length === 0 ? (
-          <p className="text-center text-gray-500 text-sm">
-            No notifications found
-          </p>
+          <NoDataFound title="No Notifications" subtitle="You don't have any notifications yet." />
         ) : (
           <div className="space-y-1">
             {filteredNotifications.map((item: NotificationLog) => (

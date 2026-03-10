@@ -12,9 +12,9 @@ import {
   Loader2,
   RefreshCw,
   RepeatIcon as RetryIcon,
-  Search,
   Shield,
 } from "lucide-react";
+import { NoDataFound } from "./shared/atoms/NoDataFound";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
@@ -29,6 +29,7 @@ import {
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
+import SearchInputWrapper from "./shared/SearchBar";
 
 interface BaseItem {
   name?: string;
@@ -717,8 +718,8 @@ const DataListView = <T extends BaseItem>({
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
                 className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
               >
                 {pageNum}
@@ -863,9 +864,7 @@ const DataListView = <T extends BaseItem>({
 
     return (
       customScreen ?? (
-        <div className="flex items-center justify-center py-12">
-          <span className="text-gray-500">No records found</span>
-        </div>
+        <NoDataFound />
       )
     );
   }, [noRecordsScreen, debouncedFilters]);
@@ -875,20 +874,12 @@ const DataListView = <T extends BaseItem>({
       {/* Header */}
       <div className="pb-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  placeholder="Search..."
-                  className="w-full h-12 pl-10 pr-3 text-sm bg-transparent placeholder-gray-400 outline-none border-none focus:outline-none"
-                />
-              </div>
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+              />
             )}
             {isFilter && filterFields.length > 0 && (
               <button

@@ -7,10 +7,15 @@ import type {
   RecognitionMetrics,
   DepartmentStatus,
   ProgramWinner,
+  ProgramInteractionContext,
+  MyRecognitionActivity,
 } from "../types/recognition";
 
 const API_BASE = "chatnext_work_connect.chatnext_work_connect.api.recognition";
 const BADGE_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.badge";
+const AWARD_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.award";
+const NOMINATION_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.nomination";
+const WC_SETTINGS_API_BASE = "chatnext_work_connect.chatnext_work_connect.api.work_connect_settings";
 
 // Recognition Type interface
 export interface RecognitionType {
@@ -288,7 +293,7 @@ export const useGetEmployeeRecognitionPoints = (employee?: string) => {
 // Appreciate an employee (mutation)
 export const useAppreciateEmployee = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (data: {
       employee: string;
@@ -308,6 +313,102 @@ export const useAppreciateEmployee = () => {
     },
     onSuccess: () => {
       // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["recognition"] });
+    },
+  });
+};
+
+// Get my recognition activity (nominations, votes, etc.)
+export const useGetMyRecognitionActivity = () => {
+  return useQuery<MyRecognitionActivity>({
+    queryKey: ["recognition", "my-activity"],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        `${API_BASE}.get_my_recognition_activity`
+      );
+      return response as MyRecognitionActivity;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Get program interaction context (nomination/voting state for a specific award)
+export const useGetProgramInteractionContext = (awardName: string | null) => {
+  return useQuery<ProgramInteractionContext>({
+    queryKey: ["recognition", "program-context", awardName],
+    queryFn: async () => {
+      const response = await FrappeAPI.callMethod(
+        `${AWARD_API_BASE}.get_program_interaction_context`,
+        { award_name: awardName }
+      );
+      return response as ProgramInteractionContext;
+    },
+    enabled: !!awardName,
+    staleTime: 30 * 1000, // 30 seconds
+    gcTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Create a nomination (mutation)
+export const useCreateNomination = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      award: string;
+      form_data: Record<string, any>;
+    }) => {
+      const response = await FrappeAPI.callMethod(
+        `${NOMINATION_API_BASE}.create_nomination`,
+        { nomination_data: data }
+      );
+      return response as {
+        success: boolean;
+        message: string;
+        nomination: string;
+      };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recognition"] });
+    },
+  });
+};
+
+// Get form session ID for chatnext window (nomination forms)
+export const useGetFormSessionId = () => {
+  return useMutation({
+    mutationFn: async (data: { form_widget_name: string; award_name: string }) => {
+      const response = await FrappeAPI.callMethod(
+        "chatnext_work_connect.chatnext_work_connect.api.recognition_form.get_form_session_id",
+        data
+      );
+      return response as { success: boolean; session_id: string };
+    },
+  });
+};
+
+// Submit a vote on a nomination (mutation)
+export const useSubmitVote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: {
+      nomination_name: string;
+      vote_score?: number;
+      vote_comment?: string;
+    }) => {
+      const response = await FrappeAPI.callMethod(
+        `${WC_SETTINGS_API_BASE}.submit_nomination_vote`,
+        data
+      );
+      return response as {
+        success: boolean;
+        message: string;
+        vote: string;
+      };
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recognition"] });
     },
   });

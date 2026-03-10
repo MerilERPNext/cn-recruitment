@@ -14,6 +14,7 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 
 const TeamAttendance = () => {
   const { data: userId } = useLoggedInUser();
@@ -145,7 +146,7 @@ const TeamAttendance = () => {
 
                 navigate(
                   "/webapp/attendance/team-attendance?filters=" +
-                    encodeURIComponent(JSON.stringify(filters)),
+                  encodeURIComponent(JSON.stringify(filters)),
                 );
               }}
               renderDayContents={(day, date) => {
@@ -237,9 +238,7 @@ const TeamAttendance = () => {
                 />
               ))
             ) : (
-              <div className="text-center py-4 text-gray-400">
-                No attendance data found
-              </div>
+              <NoDataFound title="No Attendance Data" subtitle="No attendance records found for the selected date." />
             )}
           </div>
         </Card>

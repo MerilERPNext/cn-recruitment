@@ -51,6 +51,7 @@ export interface LeaveBalance {
     show_carry_forward_expiry_date: number;
   };
   balance_excluding_future_transactions: number;
+  optional_leave?: number;
 }
 
 export interface LeaveTransaction {
@@ -108,6 +109,7 @@ export interface Holiday {
   is_repeated: boolean;
   original_doc_name: string;
   leave_type: string;
+  optional_leave?: number;
 }
 export type HolidayGroupType = "Optional" | "National Holiday" | "Mandatory";
 

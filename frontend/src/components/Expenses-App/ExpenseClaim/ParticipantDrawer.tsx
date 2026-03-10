@@ -414,7 +414,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         onClick={onClose}
       />
       <aside
-        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-[50vw] xl:max-w-[40vw] 2xl:max-w-[35vw] transform transition-transform duration-300 ease-out bg-white shadow-2xl overflow-hidden flex flex-col"
+        className="fixed right-0 top-0 h-full z-50 w-full lg:max-w-[60vw] xl:max-w-[50vw] 2xl:max-w-[45vw] transform transition-transform duration-300 ease-out bg-white shadow-2xl overflow-hidden flex flex-col"
         role="dialog"
         aria-modal="true"
       >
@@ -503,7 +503,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 
           {/* Participants Table Grid */}
           <div className="w-full overflow-x-auto">
-            <div className="min-w-[580px]">
+            <div className="min-w-[750px]">
               <div className="grid grid-cols-[30px_140px_1fr_80px_110px_60px] gap-4 mb-4 px-2">
                 <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">#</div>
                 <div className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider">Employee Type</div>
@@ -632,7 +632,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                           <button
                             type="button"
                             onClick={() => removeRow(i)}
-                            className="p-2 rounded-lg text-red-100 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="p-2 rounded-lg text-red-400 hover:text-red-500 bg-red-50 hover:bg-red-100 transition-all"
                             title="Remove Participant"
                           >
                             <Trash2 className="w-5 h-5" />

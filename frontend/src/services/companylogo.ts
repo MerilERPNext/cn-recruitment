@@ -10,4 +10,15 @@ export const CompanyLogoService = {
 
     return response.data as CompanyLogo[];
   },
+
+  getSingleCompanyLogo: async (
+    companyName: string
+  ): Promise<CompanyLogo> => {
+    const response = await FrappeAPI.getDocument(
+      "Company",
+      companyName,
+    );
+
+    return response as CompanyLogo;
+  },
 };

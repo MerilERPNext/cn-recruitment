@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
-import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import {
@@ -11,22 +11,25 @@ import {
 } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
+import InvoicePDFview from "./Component/InvoicePDFview";
+import Button from "../../shared/atoms/Button";
+import CardTable from "../../shared/CardTable";
+import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import CardTable from "../../shared/CardTable";
-import Button from "../../shared/atoms/Button";
-import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ShowHideButton from "../ui/ShowHideButton";
-import InvoicePDFview from "./Component/InvoicePDFview";
+import SearchInputWrapper from "../../shared/SearchBar";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { isDesktop } = useScreenSize();
 
@@ -37,17 +40,28 @@ export default function Invoice() {
 
   const { data: invoiceData, isLoading } = useInvoiceSalarySlip(
     user?.employee || "",
-    user?.company || "",
+    user?.company || ""
   );
 
   const invoices = Array.isArray(invoiceData) ? invoiceData : [];
+
+  const filteredInvoices = invoices.filter((inv: any) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      inv.name?.toLowerCase().includes(term) ||
+      inv.employee_name?.toLowerCase().includes(term) ||
+      inv.invoice_status?.toLowerCase().includes(term)
+    );
+  });
+
+  const hasSearchData = filteredInvoices.length > 0;
+  console.log("Fetched invoices:", hasSearchData);
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
   const handleInvoiceClick = (invoiceID: string) => {
     console.log("Clicked invoiceID:", invoiceID);
   };
 
-  // 🔥 Upload → Salary Slip update
   const handleUploadAndAttach = (file: File | null, invoiceName: string) => {
     if (!file) return;
 
@@ -76,7 +90,6 @@ export default function Invoice() {
           },
         );
       },
-
       onError(err) {
         console.error(err);
         toast.error("File upload failed");
@@ -114,7 +127,6 @@ export default function Invoice() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex-shrink-0 max-sm:mb-2">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
@@ -129,27 +141,34 @@ export default function Invoice() {
               <span></span>
             )}
 
-            <ShowHideButton
-              showAmount={hideAmount}
-              onToggleAmount={() => setHideAmount((prev) => !prev)}
-            />
+            <div className="flex items-center gap-3">
+              <ShowHideButton
+                showAmount={hideAmount}
+                onToggleAmount={() => setHideAmount((prev) => !prev)}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {isLoading ? (
           <CardSkeleton />
         ) : isDesktop ? (
-          /* ================= DESKTOP TABLE ================= */
           <CardTable titles={titles} columnWidths={columnWidths}>
+            <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
             {invoices.length === 0 ? (
-              <div className="py-10 text-center text-gray-500 col-span-full">
-                No invoices found
-              </div>
+              <NoDataFound title="No Invoices Found" subtitle="No invoice records available." />
+            ) : filteredInvoices.length === 0 ? (
+              <NoDataFound title="No Matching Invoices" subtitle="No matching invoice found for your search." />
             ) : (
-              invoices.map((inv: any, idx: number) => {
+              filteredInvoices.map((inv: any, idx: number) => {
                 const invoiceNo = inv.name;
 
                 return (
@@ -192,7 +211,6 @@ export default function Invoice() {
                       {formatINR(inv.net_pay || 0)}
                     </Typography>
 
-                    {/* Upload */}
                     <div className="flex justify-center">
                       <input
                         ref={(el) => {
@@ -203,30 +221,33 @@ export default function Invoice() {
                         onChange={(e) => {
                           handleUploadAndAttach(
                             e.target.files?.[0] || null,
-                            invoiceNo,
+                            invoiceNo
                           );
                           e.target.value = "";
                         }}
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={<Upload className="w-3.5 h-3.5" />}
-                        onClick={() =>
-                          fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
-                        }
-                      >
-                        Upload
-                      </Button>
+                      {inv?.custom_attach ? (
+                        <InvoicePDFview
+                          invoiceID={invoiceNo}
+                          disabled={false}
+                          onClick={handleInvoiceClick}
+                        />
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={<Upload className="w-3.5 h-3.5" />}
+                          onClick={() =>
+                            fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
+                          }
+                        >
+                          Upload
+                        </Button>
+                      )}
                     </div>
 
-                    {/* View */}
                     <div className="flex justify-center">
-                      <InvoicePDFview
-                        invoiceID={invoiceNo}
-                        disabled={false}
-                        onClick={handleInvoiceClick}
-                      />
+
                     </div>
                   </div>
                 );
@@ -234,14 +255,11 @@ export default function Invoice() {
             )}
           </CardTable>
         ) : (
-          /* ================= MOBILE CARDS ================= */
           <div className="space-y-3 px-1">
-            {invoices.length === 0 ? (
-              <div className="py-10 text-center text-gray-500">
-                No invoices found
-              </div>
+            {!hasSearchData && searchTerm ? (
+              <NoDataFound title="No Matching Invoices" subtitle="No matching invoice found for your search." />
             ) : (
-              invoices.map((inv: any, idx: number) => {
+              filteredInvoices.map((inv: any, idx: number) => {
                 const invoiceNo = inv.name;
 
                 return (
@@ -252,7 +270,6 @@ export default function Invoice() {
                     shadow-sm border-primary bg-white rounded-xl"
                   >
                     <div className="p-4 flex flex-col gap-3 w-full">
-                      {/* Row 1: Invoice No + Status */}
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-1">
                           <Typography variant="mobileCardLabel">
@@ -270,7 +287,6 @@ export default function Invoice() {
                         </div>
                       </div>
 
-                      {/* Row 2: Customer + Due Date */}
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-1">
                           <Typography variant="mobileCardLabel">
@@ -290,7 +306,6 @@ export default function Invoice() {
                         </div>
                       </div>
 
-                      {/* Row 3: Sub Total + Total Amount */}
                       <div className="flex items-start justify-between">
                         <div className="flex flex-col gap-1">
                           <Typography variant="mobileCardLabel">
@@ -316,7 +331,6 @@ export default function Invoice() {
                         </div>
                       </div>
 
-                      {/* Footer: Upload + View */}
                       <div className="flex gap-3 pt-2 border-t border-primary/10">
                         <input
                           ref={(el) => {
@@ -327,31 +341,33 @@ export default function Invoice() {
                           onChange={(e) => {
                             handleUploadAndAttach(
                               e.target.files?.[0] || null,
-                              invoiceNo,
+                              invoiceNo
                             );
                             e.target.value = "";
                           }}
                         />
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          fullWidth
-                          icon={<Upload className="w-3.5 h-3.5" />}
-                          onClick={() =>
-                            fileInputRefs.current[
-                              `mobile-${invoiceNo}`
-                            ]?.click()
-                          }
-                          className=""
-                        >
-                          Upload Proof
-                        </Button>
-                        <InvoicePDFview
-                          invoiceID={invoiceNo}
-                          disabled={false}
-                          onClick={handleInvoiceClick}
-                          className="w-full"
-                        />
+                        {inv?.custom_attach ? (
+                          <InvoicePDFview
+                            invoiceID={invoiceNo}
+                            disabled={false}
+                            onClick={handleInvoiceClick}
+                            className="w-full"
+                          />
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            fullWidth
+                            icon={<Upload className="w-3.5 h-3.5" />}
+                            onClick={() =>
+                              fileInputRefs.current[
+                                `mobile-${invoiceNo}`
+                              ]?.click()
+                            }
+                          >
+                            Upload Proof
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

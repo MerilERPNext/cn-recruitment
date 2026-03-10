@@ -23,6 +23,7 @@ import type {
   ShiftLocationT,
   UserRoles,
   WeeklyOff,
+  WeeklyOffDoc,
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
@@ -450,7 +451,7 @@ export const attendanceService = {
   ): Promise<string> => {
     try {
       const response = await FrappeAPI.callMethod(
-        `cn_leave_shift_managment.api._get_policy_for_date`,
+        `cn_leave_shift_managment.api._get_policy_for_dates`,
         filters
       );
       return response as string;
@@ -458,6 +459,16 @@ export const attendanceService = {
       console.error("📡 Error while setting device id:", error);
       throw error;
     }
+  },
+  getWeeklyOff: async (
+    filters?: FilterCondition[]
+  ): Promise<WeeklyOffDoc[]> => {
+    const response = await FrappeAPI.getDocumentList("Week Off", {
+      fields: ["*"],
+      filters: filters,
+      orderBy: "creation desc",
+    });
+    return response.data as WeeklyOffDoc[];
   },
 
 

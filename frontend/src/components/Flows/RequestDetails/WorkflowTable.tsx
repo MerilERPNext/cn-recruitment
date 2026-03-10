@@ -1,17 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { FlowRequestItem, WorkflowStage } from "../../../types/flows";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
-import { Check, Clock, User, X } from "lucide-react";
+import { Check, Clock, User, X, Info } from "lucide-react";
 import { extractRolesAndUsers } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -23,15 +25,17 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const { isDesktop } = useScreenSize();
   const EmptyState = () => {
     return (
-      <div className="py-14 text-center text-sm font-medium text-gray-500">
-        No Records Found
-      </div>
+      <NoDataFound
+        title="No Records Found"
+        subtitle="No workflow records available."
+      />
     );
   };
 
-  const activeStageIndex = data?.workflow_status === "Pending" ? data.workflow_stages.findIndex(
-    (stage) => stage.status === "Pending",
-  ) : -1;
+  const activeStageIndex =
+    data?.workflow_status === "Pending"
+      ? data.workflow_stages.findIndex((stage) => stage.status === "Pending")
+      : -1;
 
   return (
     <div className="sm:px-7 px-4">
@@ -91,12 +95,19 @@ const WorkflowCard = ({
     ? JSON.parse(stage?.todo?.custom_doctype_actions)
     : [];
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
-    ? JSON.parse(stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'))
+    ? JSON.parse(
+        stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+      )
     : [];
 
   const { isDesktop } = useScreenSize();
 
-  const { handleAction } = useApprovalAction();
+  const queryClient = useQueryClient();
+  const triggerRefetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+  }, [queryClient]);
+
+  const { handleAction } = useApprovalAction(triggerRefetch);
 
   const onAction = (action: string, data: any) => {
     handleAction(
@@ -105,7 +116,7 @@ const WorkflowCard = ({
         todo_id: data.name,
         custom_approval_type: data.custom_approval_type,
         custom_open_chatnext_assistant_on_action:
-          actionsWithForm.includes(action),
+          !actionsWithForm.includes(action),
       },
       "Action Performed Successfully",
     );
@@ -222,10 +233,12 @@ const WorkflowCard = ({
           )}
           <div
             className={`z-10 rounded-full p-2.5 shadow-md flex items-center justify-center ${getBgColor(
-              canPerformActions ? "In Progress" : (stage.status || "Pending")
+              canPerformActions ? "In Progress" : stage.status || "Pending",
             )}`}
           >
-            {getIcon(canPerformActions ? "In Progress" : (stage.status || "Pending"))}
+            {getIcon(
+              canPerformActions ? "In Progress" : stage.status || "Pending",
+            )}
           </div>
         </div>
       </div>
@@ -235,7 +248,10 @@ const WorkflowCard = ({
         <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all">
           <div className="flex justify-between items-start gap-3 mb-3">
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block text-gray-500 uppercase tracking-wide">
+              <Typography
+                variant="mobileCardLabel"
+                className="block text-gray-500 uppercase tracking-wide"
+              >
                 Stage {idx + 1}
               </Typography>
               <Typography variant="mobileCardTitle" className="break-words">
@@ -250,32 +266,90 @@ const WorkflowCard = ({
           <div className="h-px bg-gray-100 w-full mb-3" />
 
           <div className="space-y-2.5">
-            <div className="flex justify-between items-start text-sm gap-4">
-              <Typography variant="mobileCardLabel" className="block text-gray-500 shrink-0 mt-0.5">
-                Assigned To
-              </Typography>
-              <div className="flex-1 min-w-0 flex justify-end">
+            {/* Assign To Users */}
+            {allocatedTo.users.length > 0 && (
+              <div className="flex justify-between items-start text-sm gap-4">
+                <Typography
+                  variant="mobileCardLabel"
+                  className="block text-gray-500 shrink-0 mt-0.5"
+                >
+                  Assign To Users
+                </Typography>
+                <div className="flex-1 min-w-0 flex justify-end">
+                  <AllocatedToTooltip
+                    users={allocatedTo.users}
+                    roles={allocatedTo.roles}
+                    position="bottom"
+                  >
+                    <div className="flex items-center gap-1 cursor-pointer">
+                      <Typography
+                        variant="mobileCardValue"
+                        className="text-right truncate mt-0.5"
+                      >
+                        {`${allocatedTo.users[0]}${allocatedTo.users.length > 1 ? ` (+${allocatedTo.users.length - 1})` : ""}`}
+                      </Typography>
+                      <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+                    </div>
+                  </AllocatedToTooltip>
+                </div>
+              </div>
+            )}
+
+            {/* Assign To Roles */}
+            {allocatedTo.roles.length > 0 && (
+              <div className="flex justify-between items-start text-sm gap-4">
+                <Typography
+                  variant="mobileCardLabel"
+                  className="block text-gray-500 shrink-0 mt-0.5"
+                >
+                  Assign To Roles
+                </Typography>
                 <AllocatedToTooltip
                   users={allocatedTo.users}
                   roles={allocatedTo.roles}
                   position="bottom"
                 >
-                  <Typography variant="mobileCardValue" className="text-right truncate cursor-pointer mt-0.5">
-                    {allocatedTo.users.length > 0
-                      ? `${allocatedTo.users[0]}${allocatedTo.users.length > 1 ? ` (+${allocatedTo.users.length - 1})` : ""}`
-                      : allocatedTo.roles.length > 0
-                        ? `${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`
-                        : "-"}
+                  <Typography
+                    variant="mobileCardValue"
+                    className="text-right flex-1 min-w-0 truncate mt-0.5 flex items-center gap-1"
+                  >
+                    {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
+                    <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
                   </Typography>
                 </AllocatedToTooltip>
               </div>
-            </div>
+            )}
+
+            {/* Fallback if neither users nor roles */}
+            {allocatedTo.users.length === 0 &&
+              allocatedTo.roles.length === 0 && (
+                <div className="flex justify-between items-start text-sm gap-4">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="block text-gray-500 shrink-0 mt-0.5"
+                  >
+                    Assigned To
+                  </Typography>
+                  <Typography
+                    variant="mobileCardValue"
+                    className="text-right flex-1 min-w-0 mt-0.5"
+                  >
+                    -
+                  </Typography>
+                </div>
+              )}
 
             <div className="flex justify-between items-start text-sm gap-4">
-              <Typography variant="mobileCardLabel" className="block text-gray-500 shrink-0 mt-0.5">
+              <Typography
+                variant="mobileCardLabel"
+                className="block text-gray-500 shrink-0 mt-0.5"
+              >
                 Date
               </Typography>
-              <Typography variant="mobileCardValue" className="text-right flex-1 min-w-0 mt-0.5">
+              <Typography
+                variant="mobileCardValue"
+                className="text-right flex-1 min-w-0 mt-0.5"
+              >
                 {formatToIndianDate(stage.todo?.date) || "-"}
               </Typography>
             </div>

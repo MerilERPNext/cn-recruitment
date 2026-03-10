@@ -4,6 +4,7 @@ import { useGenerateSalarySlip } from "../../hooks/useCTC";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 import ShowHideButton from "./ui/ShowHideButton";
 
@@ -266,13 +267,12 @@ const CTCSalaryUI = () => {
                             </td>
                             <td className="py-4 px-4 border-none">
                               <span
-                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                                  component.type === "Deduction"
+                                className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
                                     ? "bg-red-50 text-red-700 border border-red-200"
                                     : component.type === "Reimbursement"
                                       ? "bg-orange-50 text-orange-700 border border-orange-200"
                                       : "bg-blue-50 text-blue-700 border border-blue-200"
-                                }`}
+                                  }`}
                               >
                                 {component.type}
                               </span>
@@ -305,13 +305,12 @@ const CTCSalaryUI = () => {
                             </h4>
                           </div>
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              component.type === "Deduction"
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${component.type === "Deduction"
                                 ? "bg-red-50 text-red-700 border border-red-200"
                                 : component.type === "Reimbursement"
                                   ? "bg-orange-50 text-orange-700 border border-orange-200"
                                   : "bg-blue-50 text-blue-700 border border-blue-200"
-                            }`}
+                              }`}
                           >
                             {component.type}
                           </span>
@@ -342,10 +341,11 @@ const CTCSalaryUI = () => {
 
               {(!salarySlip?.component_part_of_ctc ||
                 salarySlip.component_part_of_ctc.length === 0) && (
-                <div className="text-center py-8 text-gray-400">
-                  <p>No component breakdown available</p>
-                </div>
-              )}
+                  <NoDataFound
+                    title="No Breakdown Available"
+                    subtitle="No component breakdown available."
+                  />
+                )}
             </div>
           </div>
         </div>

@@ -7,10 +7,10 @@ import {
   useGetEmployeeShift,
   useGetQuickAttendanceSummary,
   useHomeSummaryDetails,
-} from "../hooks/useAttendance";
-import { useCompanyLogo } from "../hooks/useCompanyLogo";
-import { useCurrentUser } from "../hooks/useCurrentUser";
-import { useGetUserNotices } from "../hooks/useNotices";
+} from "../../hooks/useAttendance";
+import { useCompanyLogo } from "../../hooks/useCompanyLogo";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useGetUserNotices } from "../../hooks/useNotices";
 
 import {
   compareAsc,
@@ -25,37 +25,39 @@ import {
 } from "date-fns";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import defaultProfile from "../assets/face-rec.png";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import defaultProfile from "../../assets/face-rec.png";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useEmployeeWithFallback } from "../../hooks/useEmployeeWithFallback";
 import {
   Coordinates,
   formatTimeSafe,
   formatTo24HourTime,
   getDeviceLocation,
-} from "../utils/helperUtils";
-import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
-import EmployeeFallback from "./EmployeeFallback";
-import MobileProfileDrawer from "./EmployeeProfile/MobileProfileDrawer";
-import NotificationBell from "./Notification/NotificationBell";
-import Requests from "./Requests";
-import Button from "./shared/atoms/Button";
-import { Typography } from "./shared/atoms/Typography";
-import { ViewAll } from "./shared/atoms/ViewAll";
-import Badge from "./shared/Badge";
-import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
-import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import MobileDashboardSkeleton from "./shared/molecules/Skeletons/MobileDashboardSkeletom";
-import SearchMembers from "./shared/SearchMembers";
-import SideDrawer from "./shared/SideDrawer";
-import ViewingAsBanner from "./ViewingAsBanner";
-import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+} from "../../utils/helperUtils";
+import TasksAwaiting from "../../components/DashboardComponent/TasksAwaiting";
+import EmployeeFallback from "../../components/EmployeeFallback";
+import MobileProfileDrawer from "../../components/EmployeeProfile/MobileProfileDrawer";
+import NotificationBell from "../../components/Notification/NotificationBell";
+import Requests from "../../components/Requests";
+import Button from "../../components/shared/atoms/Button";
+import { Typography } from "../../components/shared/atoms/Typography";
+import { ViewAll } from "../../components/shared/atoms/ViewAll";
+import Badge from "../../components/shared/Badge";
+import Carousel, { CarouselSlide } from "../../components/shared/molecules/Carousel";
+import { NoticeSlide } from "../../components/shared/molecules/NoticeSlide";
+import MobileDashboardSkeleton from "../../components/shared/molecules/Skeletons/MobileDashboardSkeletom";
+import SearchMembers from "../../components/shared/SearchMembers";
+import SideDrawer from "../../components/shared/SideDrawer";
+import ViewingAsBanner from "../../components/ViewingAsBanner";
+import MicroAppInDashboard from "../../components/DashboardComponent/MicroAppInDashboard";
+import GeoLocationModal from "./GeoLocationModal";
 
 const MobileDashboard: React.FC = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [geoLocationModal, setGeoLocationModal] = useState(false);
   const navigate = useNavigate();
   const fetchLocation = async () => {
     setIsLocationLoading(true);
@@ -131,11 +133,11 @@ const MobileDashboard: React.FC = () => {
   const currentEmployeeCompany = currentEmployee?.company;
   const matchedCompany =
     Array.isArray(CompanyLogo) &&
-    CompanyLogo.length > 0 &&
-    currentEmployeeCompany
+      CompanyLogo.length > 0 &&
+      currentEmployeeCompany
       ? CompanyLogo.find(
-          (company) => company.company_name === currentEmployeeCompany,
-        )
+        (company) => company.company_name === currentEmployeeCompany,
+      )
       : CompanyLogo?.[0];
 
   const logoToShow = matchedCompany?.company_logo || "logo not found";
@@ -154,30 +156,30 @@ const MobileDashboard: React.FC = () => {
   const [profileDrawer, setProfileDrawer] = useState(false);
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-        compareAsc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareAsc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+      compareDesc(
+        parseISO(a.time.replace(" ", "T")),
+        parseISO(b.time.replace(" ", "T")),
+      ),
+    )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-          compareDesc(
-            parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T")),
-          ),
-        )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T")),
+        ),
+      )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -597,9 +599,7 @@ const MobileDashboard: React.FC = () => {
                   fullWidth
                   size="lg"
                   onClick={() =>
-                    handleCheckInOut(
-                      isCurrentlyCheckedIn ? "checkOut" : "checkIn",
-                    )
+                    setGeoLocationModal(true)
                   }
                   disabled={
                     checkInCheckOutPending ||
@@ -790,6 +790,19 @@ const MobileDashboard: React.FC = () => {
       >
         <MobileProfileDrawer />
       </SideDrawer>
+      <GeoLocationModal
+        label={isCurrentlyCheckedIn ? "Check Out" : "Check In"}
+        open={geoLocationModal}
+        onClose={() => setGeoLocationModal(false)}
+        location={location}
+        onSubmit={() => {
+          handleCheckInOut(
+            isCurrentlyCheckedIn ? "checkOut" : "checkIn",
+          )
+          setGeoLocationModal(false)
+        }
+        }
+      />
     </div>
   );
 };

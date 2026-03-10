@@ -14,13 +14,15 @@ import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import toast from "react-hot-toast";
+import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -54,17 +56,11 @@ const Separation = () => {
   const { data: definitionName } = useDifinitaionNameForSeparation();
 
   const { data: userUiPermission } = useGetUiPermission("HR Process");
-
-  const enabledActions = useMemo(() => {
-    let actions = [];
-    const initiateFlowPage = userUiPermission?.[0]?.pages?.find(
-      (item) => item.page_name === "Separation",
-    );
-    actions = initiateFlowPage?.actions?.filter(
-      action => action.enabled,
-    ).map(action => action.action_name) ?? [];
-    return actions;
-  }, [userUiPermission]);
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    ["view_workflow", "initiate_separation", "terminate"],
+    "Separation",
+  );
 
   const {
     data: confirmationCreationData,
@@ -74,30 +70,59 @@ const Separation = () => {
   const item = confirmationCreationData?.[0];
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
-  function getFunnelData(trigger_category: string) {
-    return Array.isArray(definitionName)
-      ? definitionName.filter(
-        (item: any) => item?.trigger_category?.name === trigger_category,
-      )
-      : [];
+  function getFunnelData() {
+    const result: any = {
+      termination: null,
+      separation: null,
+    };
+
+    if (!Array.isArray(definitionName)) return result;
+
+    definitionName.forEach((item: any) => {
+      const category = item?.trigger_category?.name;
+
+      if (category === "Termination") result.termination = item;
+      if (category === "Separation") result.separation = item;
+    });
+
+    return result;
   }
 
-  const separationData = getFunnelData("Separation");
-  const definition_name = separationData?.[0]?.name || "";
+  const { termination_funnel_data, separation_funnel_data } = getFunnelData();
+
   const l = "true";
 
   useEffect(() => {
     refetchSeparation();
   }, [refetchSeparation, isViewingOtherUser]);
 
-  const { data } = useChatAssistant(
+  const { data: separationChatAssist } = useChatAssistant(
     doctype_name,
     document_name,
-    definition_name,
+    separation_funnel_data?.name,
     l,
   );
 
-  const handleTriggerChat = () => {
+  const { data: terminationChatAssist } = useChatAssistant(
+    doctype_name,
+    document_name,
+    termination_funnel_data?.name,
+    l,
+  );
+
+  const handleTriggerChat = (For: "Separation" | "Termination") => {
+    if (For === "Separation" && !separationChatAssist?.session) {
+      toast.error(
+        "Error Opening Chatnext : Separation ChatAssist session not found. ",
+      );
+      return;
+    }
+    if (For === "Termination" && !terminationChatAssist?.session) {
+      toast.error(
+        "Error Opening Chatnext : Termination ChatAssist session not found. ",
+      );
+      return;
+    }
     const maxAttempts = 50; // 5 seconds max (50 * 100ms)
     let attempts = 0;
     setIsTriggeringChat(true);
@@ -107,7 +132,16 @@ const Separation = () => {
         typeof window !== "undefined" &&
         typeof window.trigger_chatnext_assistant === "function"
       ) {
-        window.trigger_chatnext_assistant(true, data?.session);
+        if (For === "Separation")
+          window.trigger_chatnext_assistant(
+            true,
+            separationChatAssist?.session,
+          );
+        else if (For === "Termination")
+          window.trigger_chatnext_assistant(
+            true,
+            terminationChatAssist?.session,
+          );
         setIsTriggeringChat(false);
         return;
       }
@@ -183,7 +217,7 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
-        {separationWorkflow?.show_workflow && enabledActions.includes("view_workflow") && (
+        {separationWorkflow?.show_workflow && enabledActions.view_workflow && (
           <Button
             onClick={handleShowWorkflow}
             size="md"
@@ -233,33 +267,32 @@ const Separation = () => {
             </div>
           </div>
           {/* Button */}
-          {definition_name && (
-            <div className="flex items-center py-6 gap-2 flex-col">
-              {enabledActions?.includes("initiate_separation") && (
-                <Button
-                  onClick={handleTriggerChat}
-                  size="md"
-                  bgColor="blue-500"
-                  className="hover:bg-blue-600 text-white"
-                  loading={isTriggeringChat}
-                  disabled={isTriggeringChat}
-                >
-                  Initiate Separation
-                </Button>
-              )}
-              {enabledActions?.includes("terminate") && (
-                <Button
-                  size="md"
-                  bgColor="black"
-                  className="hover:bg-gray-900 text-white"
-                  loading={isTriggeringChat}
-                  disabled={isTriggeringChat}
-                >
-                  Terminate
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex items-center py-6 gap-2 flex-col">
+            {enabledActions.initiate_separation && (
+              <Button
+                onClick={() => handleTriggerChat("Separation")}
+                size="md"
+                bgColor="blue-500"
+                className="hover:bg-blue-600 text-white"
+                loading={isTriggeringChat}
+                disabled={isTriggeringChat}
+              >
+                Initiate Separation
+              </Button>
+            )}
+            {enabledActions.terminate && (
+              <Button
+                onClick={() => handleTriggerChat("Termination")}
+                size="md"
+                bgColor="black"
+                className="hover:bg-gray-900 text-white"
+                loading={isTriggeringChat}
+                disabled={isTriggeringChat}
+              >
+                Terminate
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </div>

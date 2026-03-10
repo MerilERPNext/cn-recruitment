@@ -20,6 +20,7 @@ import BalanceDetailsDrawer from "./LeaveBalance/BalanceDetailsDrawer";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { Typography } from "../shared/atoms/Typography";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 type LeaveTransactionEntry = {
   type: string;
@@ -177,17 +178,11 @@ const LeaveBalance: React.FC = () => {
 
   if (!data || !data.leave_balance || data.leave_balance.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <div className="max-w-md mx-auto">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
-            No Leave Data Found
-          </h3>
-          <p className="text-gray-500 mb-6">
-            No leave balance information is available for your account at this
-            time.
-          </p>
-          <div className="w-full"></div>
-        </div>
+      <div className="p-8">
+        <NoDataFound
+          title="No Leave Data Found"
+          subtitle="No leave balance information is available for your account at this time."
+        />
       </div>
     );
   }
@@ -324,87 +319,87 @@ const LeaveBalance: React.FC = () => {
                 </h3>
                 <p className="text-sm text-gray-500">Balances as of today</p>
               </div>
+              {leaveBalance.length < 5 ? <NoDataFound title="No Leave Balance Available" subtitle="There's no leave balance to show here right now." /> :
+                <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(20rem,1fr))] ">
+                  {leaveBalance.map((leave) => (
+                    <div
+                      key={leave?.type}
+                      className="border border-primary/20 rounded-2xl p-4 flex items-start gap-4 bg-white"
+                      onClick={() => toggleTransactions(leave.type)}
+                    >
+                      <div className="bg-primary/10 rounded-lg p-3">
+                        <Briefcase className="text-primary-600" size={20} />
+                      </div>
 
-              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(20rem,1fr))] ">
-                {leaveBalance.map((leave) => (
-                  <div
-                    key={leave?.type}
-                    className="border border-primary/20 rounded-2xl p-4 flex items-start gap-4 bg-white"
-                    onClick={() => toggleTransactions(leave.type)}
-                  >
-                    <div className="bg-primary/10 rounded-lg p-3">
-                      <Briefcase className="text-primary-600" size={20} />
-                    </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <Typography variant="subheading">
+                              {leave.entitled}
+                            </Typography>
 
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <Typography variant="subheading">
-                            {leave.entitled}
-                          </Typography>
+                            <p className="text-sm text-gray-600">{leave.type}</p>
+                          </div>
+                          {leave?.visibility_flags?.show_carry_over && (
+                            <Typography
+                              variant="bodySmall"
+                              className="ml-auto mr-2.5 text-primary"
+                            >
+                              <span className="font-semibold">
+                                {leave.carry_over}
+                              </span>{" "}
+                              Carry Forwarded
+                            </Typography>
+                          )}
+                          {canRequestLeave && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openModal({
+                                  source: "balances",
+                                  leaveType: leave?.type,
+                                });
+                              }}
+                              className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
+                            >
+                              <Plus size={18} />
+                            </button>
+                          )}
 
-                          <p className="text-sm text-gray-600">{leave.type}</p>
-                        </div>
-                        {leave?.visibility_flags?.show_carry_over && (
-                          <Typography
-                            variant="bodySmall"
-                            className="ml-auto mr-2.5 text-primary"
-                          >
-                            <span className="font-semibold">
-                              {leave.carry_over}
-                            </span>{" "}
-                            Carry Forwarded
-                          </Typography>
-                        )}
-                        {canRequestLeave && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              openModal({
-                                source: "balances",
-                                leaveType: leave?.type,
-                              });
+                              handleOpenDrawer(leave);
                             }}
-                            className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"
+                            className="text-[#98A9CD] hover:text-[#98b1e6]"
                           >
-                            <Plus size={18} />
+                            <ScrollText size={18} />
                           </button>
-                        )}
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDrawer(leave);
-                          }}
-                          className="text-[#98A9CD] hover:text-[#98b1e6]"
-                        >
-                          <ScrollText size={18} />
-                        </button>
-                      </div>
-
-                      <div className="my-3 h-px bg-primary/20" />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {leave.availed}
-                          </p>
-                          <p className="text-xs text-gray-600">Already taken</p>
                         </div>
 
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">
-                            {leave.balance}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Remaining balance
-                          </p>
+                        <div className="my-3 h-px bg-primary/20" />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {leave.availed}
+                            </p>
+                            <p className="text-xs text-gray-600">Already taken</p>
+                          </div>
+
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">
+                              {leave.balance}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Remaining balance
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>}
             </div>
           </div>
         </>

@@ -1,7 +1,7 @@
 import { Calendar, Clock, Shield, Timer, Users } from "lucide-react";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest } from "../../../../hooks/useAttendance";
+import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "../../../shared/atoms/Typography";
@@ -22,6 +22,9 @@ const ViewPolicies = () => {
     );
     const { data: employeeShift } = useGetEmployeeShift(
         currentEmployee?.user_id || ""
+    );
+    const { data: weeklyOff } = useWeeklyOff(
+        [["name", "=", currentEmployee?.custom_weekly_off]]
     );
     const { data: employeeOvertimePolicy } = useReqValidationsForOvertimeRequest(
         currentEmployee?.employee || ""
@@ -68,7 +71,7 @@ const ViewPolicies = () => {
             color: "text-indigo-500",
             background: "bg-indigo-50",
             title: "Week Off",
-            details: [currentEmployee?.custom_weekly_off || ""],
+            details: [weeklyOff?.[0] ? [weeklyOff?.[0].weekly_off, weeklyOff?.[0]?.name] : []]
         },
         {
             icon: Timer,
@@ -79,8 +82,14 @@ const ViewPolicies = () => {
         },
     ];
 
-    const getNavigatableSettingsButton = (settingType: string, data?: string) => {
+
+    const getNavigatableSettingsButton = (
+        settingType: string,
+        data?: string | string[],
+    ) => {
         if (!data) return null;
+        const displayLabel = Array.isArray(data) ? data[0] : data;
+        const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
         const drawerSettings: Record<
             string,
@@ -106,13 +115,13 @@ const ViewPolicies = () => {
                             doctypeName,
                             targetDoctype: useEmployeeAsTarget
                                 ? currentEmployee?.employee || ""
-                                : data,
+                                : redirectId,
                         });
                         setOpenPolicyDrawer(true);
                     }}
                     className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
                 >
-                    {data}
+                    {displayLabel}
                 </Typography>
             );
         }
@@ -121,11 +130,11 @@ const ViewPolicies = () => {
 
         switch (settingType) {
             case "Attendance Policy":
-                path = `/webapp/attendance/attendance-policies?policy=${data}`;
+                path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
                 break;
 
             case "Overtime Policy":
-                path = `/webapp/attendance/overtime-policies?policy=${data}`;
+                path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
                 break;
 
             default:
@@ -138,7 +147,7 @@ const ViewPolicies = () => {
                 onClick={() => navigate(path!)}
                 className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
             >
-                {data}
+                {displayLabel}
             </Typography>
         );
     };

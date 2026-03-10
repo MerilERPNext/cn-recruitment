@@ -60,7 +60,7 @@ def trigger_confirmation_todos():
             confirmation_date = getdate(employee.final_confirmation_date)
             days_until_confirmation = (confirmation_date - current_date).days
   
-            if 0 <= days_until_confirmation <= trigger_days:
+            if days_until_confirmation <= trigger_days:
 
                 if todo_type == "extension":
                     todo_subject = "Extension Confirmation Pending"
@@ -153,11 +153,14 @@ def auto_separate_employees_on_lwd():
   
     current_date = getdate(today())
 
+    auto_terminate_employees(current_date)
+
     separations = frappe.get_all(
         "Employee Separation",
         filters={
             "custom_actual_last_working_date": ["<=", current_date],
-            "docstatus": ["!=", 2]  # Not cancelled
+            "docstatus": ["!=", 2],
+            "custom_resignaion_type": ["!=", "Termination"]
         },
         fields=["name", "employee", "custom_actual_last_working_date"]
     )
@@ -170,14 +173,17 @@ def auto_separate_employees_on_lwd():
         if employee_status == "Left":
             continue
 
-        separation_policy = get_applicable_separation_policy(sep.employee)
+        force_separate = False
+        custom_flow = frappe.db.get_value("Employee Separation", sep.name, "custom_flow")
+        if custom_flow and frappe.db.exists("Flow Config", custom_flow):
+            force_separate = bool(frappe.db.get_value("Flow Config", custom_flow, "force_separate_employee_on_lwd_as_per_notice_period"))
+        if not force_separate:
+            separation_policy = get_applicable_separation_policy(sep.employee)
+            if separation_policy:
+                sp_doc = frappe.get_doc("Separation Policy", separation_policy)
+                force_separate = bool(sp_doc.force_separate_employee_on_lwd_as_per_notice_period)
 
-        if not separation_policy:
-            continue
-
-        sp_doc = frappe.get_doc("Separation Policy", separation_policy)
-
-        if sp_doc.force_separate_employee_on_lwd_as_per_notice_period:
+        if force_separate:
             sep_docstatus = frappe.db.get_value("Employee Separation", sep.name, "docstatus")
 
             if sep_docstatus == 0:  # Draft
@@ -199,6 +205,41 @@ def auto_separate_employees_on_lwd():
             )
 
     frappe.db.commit()
+
+
+def auto_terminate_employees(current_date):
+    termination_seps = frappe.get_all(
+        "Employee Separation",
+        filters={
+            "custom_resignaion_type": "Termination",
+            "custom_date_of_exit": ["<=", current_date],
+            "custom_marked_employee_as_terminated": 0,
+            "docstatus": ["!=", 2]
+        },
+        fields=["name", "employee", "custom_date_of_exit"]
+    )
+
+    for sep in termination_seps:
+        if not sep.employee:
+            continue
+
+        employee_status = frappe.db.get_value("Employee", sep.employee, "status")
+        if employee_status == "Left":
+            continue
+
+        frappe.db.set_value("Employee", sep.employee, {
+            "status": "Suspended",
+            "custom_employment_status": "Terminated",
+        })
+
+        frappe.db.set_value("Employee Separation", sep.name, "custom_marked_employee_as_terminated", 1)
+
+        employee_name = frappe.db.get_value("Employee", sep.employee, "employee_name")
+
+        frappe.log_error(
+            message=f"Auto-terminated employee {employee_name} ({sep.employee}) on exit date {sep.custom_date_of_exit}. Employee Separation {sep.name}.",
+            title="Auto Termination Executed"
+        )
 
 
 def get_applicable_separation_policy(employee_id):

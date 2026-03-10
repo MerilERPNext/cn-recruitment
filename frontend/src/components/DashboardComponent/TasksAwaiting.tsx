@@ -11,6 +11,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import CustomDropdown from "../shared/CustomDropdown";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 interface ToDo {
   priority: string;
@@ -178,8 +179,8 @@ const TasksAwaiting: React.FC = () => {
           <button
             onClick={() => setActiveCategory("All")}
             className={`px-4 py-2 rounded-2xl whitespace-nowrap h-fit text-sm font-semibold shadow ${activeCategory === "All"
-                ? "bg-primary text-white scale-105"
-                : "bg-primary-100 text-primary-700 hover:bg-primary-300"
+              ? "bg-primary text-white scale-105"
+              : "bg-primary-100 text-primary-700 hover:bg-primary-300"
               } transition-all`}
           >
             All Tasks ({totalCount})
@@ -201,8 +202,8 @@ const TasksAwaiting: React.FC = () => {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2 rounded-2xl text-sm whitespace-nowrap font-semibold shadow transition-all ${isActive
-                    ? `scale-105 ring-2 ${colors}`
-                    : `${colors} opacity-70 hover:opacity-100`
+                  ? `scale-105 ring-2 ${colors}`
+                  : `${colors} opacity-70 hover:opacity-100`
                   } `}
               >
                 {cat} ({count})
@@ -253,15 +254,10 @@ const TasksAwaiting: React.FC = () => {
             .slice(0, 3)
             .map((item) => <MyToDoItem key={item.name} item={item} />)
         ) : (
-          <div className="flex flex-col items-center justify-center py-10 text-center opacity-70">
-            <ClipboardList className="w-10 h-10 mb-3 text-gray-400" />
-            <Typography variant="bodyMedium" className="font-medium">
-              You're all caught up 🎉
-            </Typography>
-            <Typography variant="bodySmall" color="body2">
-              No pending tasks right now.
-            </Typography>
-          </div>
+          <NoDataFound
+            title="You're all caught up 🎉"
+            subtitle="No pending tasks right now."
+          />
         )}
       </div>
     </Card>

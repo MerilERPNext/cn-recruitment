@@ -31,6 +31,7 @@ import type {
   OvertimeJournalData,
   PolicyQuestion,
   UserRoles,
+  WeeklyOffDoc,
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
@@ -191,6 +192,20 @@ export const useAllAttendanceRequests = (
     queryKey: ["attendance", "all", filters],
     queryFn: () =>
       attendanceService.getAllAttendanceRequests(pageSize, filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+    ...options,
+  });
+};
+export const useWeeklyOff = (
+  filters?: FilterCondition[],
+  options?: any
+): UseQueryResult<WeeklyOffDoc[], Error> => {
+  return useQuery<WeeklyOffDoc[], Error>({
+    enabled: !!filters,
+    queryKey: ["weekly-off", "all", filters],
+    queryFn: () =>
+      attendanceService.getWeeklyOff(filters),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
     ...options,

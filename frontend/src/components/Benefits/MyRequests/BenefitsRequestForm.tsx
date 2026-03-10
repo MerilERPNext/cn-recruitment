@@ -164,8 +164,7 @@ export default function BenefitRequestForm({
 
       const submissionData = {
         employee: currentEmployee?.employee,
-        // claim_date: new Date().toISOString().split("T")[0],
-        claim_date: formatToIndianDate(new Date()),
+        claim_date: new Date().toISOString().split("T")[0],
         earning_component: submission.data.earning_component,
         custom_note_by_employee: submission.data.custom_note_by_employee,
         claimed_amount: submission.data.claimed_amount,

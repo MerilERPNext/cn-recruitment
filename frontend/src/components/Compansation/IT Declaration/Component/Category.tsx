@@ -83,26 +83,29 @@ const CategoryDeclarationSelectable = ({
     } 
     return false;  
   }, [locked80DVariable, categoryVaribale, itemId]);
-// set default value in parent 
-useEffect(() => {
-  if (!locked80DVariable || !categoryVaribale || !setLocked80DVariable) return;
-  const group = locked80DVariable.get(categoryVaribale);
-  if (!group) return;
-  if (group.parent !== null && group.parent !== undefined) return;
-  const hasSelected = items.some(
-    (item) =>
-      item?.is_selected === true ||
-      Number(item?.amount ?? 0) > 0
-  );
-  if (hasSelected) {
+
+  useEffect(() => {
+    if (!categoryVaribale || !locked80DVariable || !setLocked80DVariable) return;
+  
+    const selectedFromAPI = items.some(
+      (item) => item.is_selected === true || Number(item.amount ?? 0) > 0
+    );
+  
+    if (!selectedFromAPI) return;
+  
     const updatedMap = new Map(locked80DVariable);
-    updatedMap.set(categoryVaribale, {
-      ...group,
-      parent: itemId,
-    });
-    setLocked80DVariable(updatedMap);
-  }
-}, [items, locked80DVariable, categoryVaribale, itemId, setLocked80DVariable]);
+    const group = updatedMap.get(categoryVaribale);
+  
+    if (group && (group.parent === null || group.parent === undefined)) {
+      updatedMap.set(categoryVaribale, {
+        ...group,
+        parent: itemId,
+      });
+  
+      setLocked80DVariable(updatedMap);
+    }
+  }, [items, categoryVaribale, locked80DVariable, itemId, setLocked80DVariable]);
+
   const handleProofFileUpload = (key: string, file: File | null) => {
     if (!file) return;
     uploadMutation.mutate(file, {
@@ -262,7 +265,8 @@ useEffect(() => {
                   </p>
                 )}
               </div>
-              {showProofFields && (item.attach_reqd === 1 ) || item?.approval_needed === "Yes" && (
+
+              {(showProofFields || item?.approval_needed === "Yes" || item?.attach_reqd === 1) && (
                   <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
                     <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">
@@ -290,8 +294,10 @@ useEffect(() => {
                         className="border border-gray-300 rounded-lg pr-3 text-xs w-full max-w-full transition-all truncate
                           file:text-xs file:border-0
                           file:bg-primary file:text-white
-                          file:px-3 file:py-1.5 file:rounded-l-lg"/>
-                      {(item?.proof_file ?? item?.attach_reqd === 1) && (
+                          file:px-3 file:py-1.5 file:rounded-l-lg"
+                      />
+
+                      {(item?.proof_file || item?.attach_reqd === 1 || item?.approval_needed === "Yes") && (
                         <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded w-full bg-gray-50 overflow-hidden">
                           <span className="text-sm text-gray-700 truncate min-w-0 flex-1">
                             {typeof item?.proof_file === "string"
@@ -377,13 +383,15 @@ useEffect(() => {
         {selectedItems.length === 0 && ( <p className="text-xs text-gray-400">No items selected</p>)}
       </div>
       <div className="relative w-full sm:w-64">
-        <button
-          disabled={isDisabled}
-          onClick={() => setIsOpen((prev) => !prev)}
-          className="w-full flex justify-between items-center border-2 rounded-md border-gray-300 px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all">
-          <span className="text-gray-400">Select Items</span>
-          <span className="text-gray-400">▼</span>
-        </button>
+      <button
+  disabled={isDisabled}
+  onClick={() => setIsOpen((prev) => !prev)}
+  className="w-full flex justify-between items-center border-1 rounded-md border-gray-300 px-3 py-1.5 text-xs bg-white 
+  focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 transition-all
+  disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-200 disabled:cursor-not-allowed">
+  <span className="text-gray-400">Select Items</span>
+  <span className="text-gray-400">▼</span>
+</button>
         {isOpen && (
           <div className="absolute z-10  w-full bg-white border-2 border-gray-200  shadow-lg max-h-48 overflow-auto">
             {dropdownOptions.map((opt) => (

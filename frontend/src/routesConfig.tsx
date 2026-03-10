@@ -463,6 +463,14 @@ const RecognitionPage = lazyWithRetry(
   () => import("./components/Recognition/RecognitionPage"),
   "RecognitionPage",
 );
+const HallOfFamePage = lazyWithRetry(
+  () => import("./components/Recognition/HallOfFamePage"),
+  "HallOfFamePage",
+);
+const LeaderboardPage = lazyWithRetry(
+  () => import("./components/Recognition/LeaderboardPage"),
+  "LeaderboardPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -1176,6 +1184,16 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/recognition",
     element: <RecognitionPage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/hall-of-fame",
+    element: <HallOfFamePage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/leaderboard",
+    element: <LeaderboardPage />,
     permissionKey: "Recognition",
   },
 ];

@@ -361,7 +361,7 @@ export default function ThreeLevelOrgChart() {
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
-          maxZoom={2}
+          maxZoom={0.7}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
           // zoomOnScroll={false}
           // zoomOnPinch={false}
