@@ -85,6 +85,22 @@ export interface MyAttendanceRequest {
   ];
 }
 
+export interface WeeklyOffDoc {
+  assignment_type: string;
+  company: string;
+  consider_as_halfday: number;
+  creation: string;
+  description: string;
+  docstatus: number;
+  idx: number;
+  modified: string;
+  modified_by: string;
+  name: string;
+  owner: string;
+  weekly_off: string;
+  weekly_off_code: string;
+}
+
 export type OvertimeDetail = {
   name: string;
   owner: string;
