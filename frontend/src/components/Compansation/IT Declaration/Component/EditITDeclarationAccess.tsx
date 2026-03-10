@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import Button from "../../../shared/atoms/Button";
 import { Typography } from "../../../shared/atoms/Typography";
