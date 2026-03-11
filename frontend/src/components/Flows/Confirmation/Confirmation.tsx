@@ -4,7 +4,7 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistant,
+  useChatAssistantLazy,
   useDifinitaionNameForSeparation,
   useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
@@ -104,12 +104,8 @@ const ConfirmationWorkflow = () => {
     loadingCurrentEmployee ||
     loadingConfirmationClosed;
 
-  const { data } = useChatAssistant(
-    doctype_name,
-    document_name,
-    definition_name,
-    l,
-  );
+  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
   const selfInitFormAndAns = useMemo(
@@ -152,30 +148,45 @@ const ConfirmationWorkflow = () => {
     setShowSelfInitForm(true);
   };
 
-  const handleInitiateConfirmation = () => {
-    const maxAttempts = 500; // 50 seconds max (500 * 100ms)
-    let attempts = 0;
+  const handleInitiateConfirmation = async () => {
+    setIsTriggeringChat(true);
+    try {
+      const data = await fetchChatAssistantData({
+        doctype_name,
+        document_name,
+        definition_name,
+        l,
+      });
 
-    const checkAndTrigger = () => {
-      if (
-        typeof window !== "undefined" &&
-        typeof window.trigger_chatnext_assistant === "function"
-      ) {
-        window.trigger_chatnext_assistant(true, data?.session);
-        return;
-      }
+      const maxAttempts = 500; // 50 seconds max (500 * 100ms)
+      let attempts = 0;
 
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(checkAndTrigger, 100);
-      } else {
-        console.warn(
-          "⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.",
-        );
-      }
-    };
+      const checkAndTrigger = () => {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.trigger_chatnext_assistant === "function"
+        ) {
+          window.trigger_chatnext_assistant(true, data?.session);
+          setIsTriggeringChat(false);
+          return;
+        }
 
-    checkAndTrigger();
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkAndTrigger, 100);
+        } else {
+          console.warn(
+            "⚠️ trigger_chatnext_assistant is not available on window after 50 seconds.",
+          );
+          setIsTriggeringChat(false);
+        }
+      };
+
+      checkAndTrigger();
+    } catch (error) {
+      console.error("Failed to trigger chat assistant:", error);
+      setIsTriggeringChat(false);
+    }
   };
 
   /** Actions for approver actions */

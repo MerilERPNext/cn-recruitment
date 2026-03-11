@@ -6,7 +6,7 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistant,
+  useChatAssistantLazy,
   useDifinitaionNameForSeparation,
   useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
@@ -90,60 +90,57 @@ const Separation = () => {
 
   const l = "true";
 
-  useEffect(() => {
-    refetchSeparation();
-  }, [refetchSeparation, isViewingOtherUser]);
+  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
 
-  const { data: separationChatAssist } = useChatAssistant(
-    doctype_name,
-    document_name,
-    separation_funnel_data?.name,
-    l,
-  );
-
-  const { data: terminationChatAssist } = useChatAssistant(
-    doctype_name,
-    document_name,
-    termination_funnel_data?.name,
-    l,
-  );
-
-  const handleTriggerChat = (For: "Separation" | "Termination") => {
-    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
-    let attempts = 0;
+  const handleTriggerChat = async (For: "Separation" | "Termination") => {
     setIsTriggeringChat(true);
 
-    const checkAndTrigger = () => {
-      if (
-        typeof window !== "undefined" &&
-        typeof window.trigger_chatnext_assistant === "function"
-      ) {
-        if (For === "Separation")
-          window.trigger_chatnext_assistant(
-            true,
-            separationChatAssist?.session,
-          );
-        else if (For === "Termination")
-          window.trigger_chatnext_assistant(
-            true,
-            terminationChatAssist?.session,
-          );
-        setIsTriggeringChat(false);
-        return;
+    try {
+      const definition_name =
+        For === "Separation"
+          ? separation_funnel_data?.name
+          : termination_funnel_data?.name;
+
+      if (!definition_name) {
+        throw new Error("Missing funnel data for " + For);
       }
 
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(checkAndTrigger, 100);
-      } else {
-        console.warn(
-          "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
-        );
-        setIsTriggeringChat(false);
-      }
-    };
+      const data = await fetchChatAssistantData({
+        doctype_name,
+        document_name,
+        definition_name,
+        l,
+      });
 
-    checkAndTrigger();
+      const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+      let attempts = 0;
+
+      const checkAndTrigger = () => {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.trigger_chatnext_assistant === "function"
+        ) {
+          window.trigger_chatnext_assistant(true, data?.session);
+          setIsTriggeringChat(false);
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkAndTrigger, 100);
+        } else {
+          console.warn(
+            "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
+          );
+          setIsTriggeringChat(false);
+        }
+      };
+
+      checkAndTrigger();
+    } catch (e) {
+      console.error("Failed to trigger chat:", e);
+      setIsTriggeringChat(false);
+    }
   };
 
   useEffect(() => {
@@ -154,20 +151,18 @@ const Separation = () => {
       "separation_funnel_data keys:",
       separation_funnel_data ? Object.keys(separation_funnel_data) : null,
     );
-    console.log("separationChatAssist:", separationChatAssist);
     console.log("enabledActions:", enabledActions);
     console.groupEnd();
   }, [
     definitionName,
     separation_funnel_data,
-    separationChatAssist,
     enabledActions,
   ]);
 
   const showTerminationButton =
-    terminationChatAssist?.session && enabledActions.terminate;
+    !!termination_funnel_data?.name && enabledActions.terminate;
   const showSeparationButton =
-    separationChatAssist?.session && enabledActions.initiate_separation;
+    !!separation_funnel_data?.name && enabledActions.initiate_separation;
 
   const cardData: cardDataType[] = [
     {

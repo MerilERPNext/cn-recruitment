@@ -69,6 +69,23 @@ export const useChatAssistant = (
   });
 };
 
+export const useChatAssistantLazy = () => {
+  return useMutation({
+    mutationFn: ({
+      doctype_name,
+      document_name,
+      definition_name,
+      l,
+    }: {
+      doctype_name: string;
+      document_name: string;
+      definition_name: string;
+      l: string;
+    }) =>
+      getChatAssistantData(doctype_name, document_name, definition_name, l),
+  });
+};
+
 export const useChatAssistantFlowInitiateData = () => {
   return useMutation({
     mutationFn: ({
