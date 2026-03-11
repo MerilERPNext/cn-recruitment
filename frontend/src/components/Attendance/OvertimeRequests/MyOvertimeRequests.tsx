@@ -32,7 +32,7 @@ const MyOvertimeRequests = () => {
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    currentEmployee?.employee || "",
+    effectiveEmployeeId || "",
   );
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canRequestAttendance = isActionEnabled(

@@ -319,7 +319,7 @@ const LeaveBalance: React.FC = () => {
                 </h3>
                 <p className="text-sm text-gray-500">Balances as of today</p>
               </div>
-              {leaveBalance.length < 5 ? <NoDataFound title="No Leave Balance Available" subtitle="There's no leave balance to show here right now." /> :
+              {leaveBalance.length < 1 ? <NoDataFound title="No Leave Balance Available" subtitle="There's no leave balance to show here right now." /> :
                 <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(20rem,1fr))] ">
                   {leaveBalance.map((leave) => (
                     <div

@@ -266,7 +266,7 @@ const CategoryDeclarationSelectable = ({
                 )}
               </div>
 
-              {(showProofFields || item?.approval_needed === "Yes" || item?.attach_reqd === 1) && (
+              {((showProofFields && item?.approval_needed === "Yes") || item?.attach_reqd === 1) && (
                   <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
                     <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">

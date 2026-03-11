@@ -19,6 +19,7 @@ import CircularLoader from "../../../shared/atoms/CircularLoader";
 import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import { useSearchParams } from "react-router-dom";
 import { format, isValid, parseISO } from "date-fns";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const RegularizeDrawer = () => {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,7 @@ const RegularizeDrawer = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
   );
+  const { targetEmployeeId } = useTargetUser();
 
   const monthOptions: MonthOption[] = generateMonthOptions(1);
   const { frm_date, to_date } = getMonthDateRange(
@@ -51,7 +53,7 @@ const RegularizeDrawer = () => {
     refetch,
   } = useGetAllEmployeeRegularize(
     {
-      employee: currentEmployee?.employee,
+      employee: targetEmployeeId || currentEmployee?.employee,
       from_date: frm_date,
       to_date: to_date,
       exclude_holidays: 1,

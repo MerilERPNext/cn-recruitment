@@ -20,6 +20,7 @@ import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -66,11 +67,12 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
   );
+  const { targetEmployeeId } = useTargetUser();
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
-    usePlannedOvertimeRequestAttachments(currentEmployee?.employee || "");
+    usePlannedOvertimeRequestAttachments(targetEmployeeId || currentEmployee?.employee || "");
 
   /** Memoized initial value to avoid rerender resets */
   const initialSubmissionData = useMemo(

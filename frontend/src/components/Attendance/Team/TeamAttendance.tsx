@@ -15,6 +15,7 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const TeamAttendance = () => {
   const { data: userId } = useLoggedInUser();
@@ -23,12 +24,13 @@ const TeamAttendance = () => {
   const [selectedReporties, setSelectedReporties] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const { targetEmployeeId } = useTargetUser();
 
   const {
     data: employeeAttendanceDetails,
     isLoading: isEmployeeAttendanceLoading,
     isError: isEmployeeAttendanceError,
-  } = useDataOfAttendance(user?.employee || "");
+  } = useDataOfAttendance(targetEmployeeId || user?.employee || "");
 
   const {
     data: attendanceData,

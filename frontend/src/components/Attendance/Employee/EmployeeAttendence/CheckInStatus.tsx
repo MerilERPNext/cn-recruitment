@@ -10,6 +10,7 @@ import { endOfMonth, parse, startOfMonth } from "date-fns";
 import { Select } from "../../../shared/atoms/Select";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { useSearchParams } from "react-router-dom";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const getMonthDateRange = (monthValue: string) => {
     const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
@@ -34,6 +35,7 @@ const CheckInStatus = () => {
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
     );
+    const { targetEmployeeId } = useTargetUser();
 
     const monthOptions: MonthOption[] = generateMonthOptions(12);
 
@@ -47,7 +49,7 @@ const CheckInStatus = () => {
         isError,
         error,
     } = useGetAllEmployeeCheckin({
-        employee: currentEmployee?.employee,
+        employee: targetEmployeeId || currentEmployee?.employee,
         frm_date,
         to_date,
     });

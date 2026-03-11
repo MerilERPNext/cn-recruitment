@@ -8,9 +8,11 @@ import { Typography } from "../../../shared/atoms/Typography";
 import PolicyDrawer from "../../PolicyDrawer";
 import { useState } from "react";
 import { PolicyDrawerConfig } from "../../AttendanceSummary";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const ViewPolicies = () => {
     const navigate = useNavigate()
+    const { targetEmployeeId } = useTargetUser();
     const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
 
     const [policyDrawerConfig, setPolicyDrawerConfig] =
@@ -18,7 +20,8 @@ const ViewPolicies = () => {
 
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string
+        currentUser?.name as string,
+        targetEmployeeId || ""
     );
     const { data: employeeShift } = useGetEmployeeShift(
         currentEmployee?.user_id || ""

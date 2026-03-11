@@ -4,14 +4,16 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { IOvertimeLog } from "../../../../types/attendance";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const OvertimeLog = () => {
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
     );
+    const { targetEmployeeId } = useTargetUser();
     const { data: overtimeLog, isError, isLoading, error } = useGetAllEmployeeOvertimeLog({
-        employee: currentEmployee?.name as string,
+        employee: targetEmployeeId || currentEmployee?.name as string,
     });
 
     if (isLoading) {
