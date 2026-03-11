@@ -35,6 +35,7 @@ import ViewFormButton from "../ViewFormButton";
 import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { TodoType } from "../../../types/todos";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -58,8 +59,8 @@ const ConfirmationWorkflow = () => {
   function getFunnelData(trigger_category: string) {
     return Array.isArray(definitionName)
       ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
+        (item: any) => item?.trigger_category?.name === trigger_category,
+      )
       : [];
   }
 
@@ -106,6 +107,15 @@ const ConfirmationWorkflow = () => {
 
   const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
+  const loading = useLoadingOverlay();
+
+  useEffect(() => {
+    if (isTriggeringChat) {
+      loading.show("Loading confirmation form...");
+    } else {
+      loading.hide();
+    }
+  }, [isTriggeringChat, loading]);
 
   const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
   const selfInitFormAndAns = useMemo(
@@ -275,14 +285,14 @@ const ConfirmationWorkflow = () => {
       },
       ...(item?.reference_document?.creation
         ? [
-            {
-              label: "Trigger Date",
-              value: formatToIndianDate(item.reference_document.creation),
-              Icon: Clock,
-              bg: "bg-orange-50",
-              text: "text-orange-600",
-            },
-          ]
+          {
+            label: "Trigger Date",
+            value: formatToIndianDate(item.reference_document.creation),
+            Icon: Clock,
+            bg: "bg-orange-50",
+            text: "text-orange-600",
+          },
+        ]
         : []),
       {
         label: "Status",
@@ -380,6 +390,8 @@ const ConfirmationWorkflow = () => {
                       variant="contain"
                       size="md"
                       onClick={handleInitiateConfirmation}
+                      loading={isTriggeringChat}
+                      disabled={isTriggeringChat}
                     >
                       {item.self_confirmation_btn_name}
                     </Button>
@@ -413,6 +425,8 @@ const ConfirmationWorkflow = () => {
             variant="contain"
             size="md"
             onClick={handleInitiateConfirmation}
+            loading={isTriggeringChat}
+            disabled={isTriggeringChat}
           >
             Initiate Confirmation
           </Button>
