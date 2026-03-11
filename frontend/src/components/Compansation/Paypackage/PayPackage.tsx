@@ -23,6 +23,7 @@ type CTCComponentItem = {
   component?: string;
   type?: string;
   amount?: number;
+  annual_amount?: number;
 };
 
 type PayrollPeriod = {
@@ -353,53 +354,120 @@ export default function SalaryAssignmentList() {
                 </Card>
 
                 <div className="space-y-6">
-                  <Typography variant="bodyMedium" color="body1" className="font-semibold">Salary Components</Typography>
 
-                  <Card className="space-y-3 border border-gray-200 rounded p-4">
-                    {selected.component_part_of_ctc?.map(
-                      (item: CTCComponentItem, index: number) => (
-                        <div
-                          key={item.component ?? index}
-                          className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
-                        >
-                          <div className="flex items-baseline gap-1 min-w-0">
-                            <Typography
-                              variant="bodySmall"
-                              className="font-medium"
-                            >
-                              {item.component}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="body2"
-                            >
-                              ({item.type})
-                            </Typography>
-                          </div>
+{/* Salary Components */}
+<Typography variant="bodyMedium" color="body1" className="font-semibold">
+  Salary Components
+</Typography>
 
-                          <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
-                            <Typography
-                              variant="bodySmall"
-                              className="font-medium whitespace-nowrap"
-                            >
-                              Annual: {renderAmount(item.amount)}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="body2"
-                              className="whitespace-nowrap"
-                            >
-                              Monthly:{" "}
-                              {renderAmount(
-                                item.amount ? item.amount / 12 : undefined,
-                              )}
-                            </Typography>
-                          </div>
-                        </div>
-                      ),
-                    )}
-                  </Card>
-                </div>
+<Card className="space-y-3 border border-gray-200 rounded p-4">
+  {selected.component_part_of_ctc?.map(
+    (item: CTCComponentItem, index: number) => (
+      <div
+        key={item.component ?? index}
+        className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
+      >
+        <div className="flex items-baseline gap-1 min-w-0">
+          <Typography variant="bodySmall" className="font-medium">
+            {item.component}
+          </Typography>
+          <Typography variant="caption" color="body2">
+            ({item.type})
+          </Typography>
+        </div>
+
+        <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
+          <Typography variant="bodySmall" className="font-medium whitespace-nowrap">
+            Annual: {renderAmount(item.amount)}
+          </Typography>
+          <Typography variant="caption" color="body2" className="whitespace-nowrap">
+            Monthly: {renderAmount(item.amount ? item.amount / 12 : undefined)}
+          </Typography>
+        </div>
+      </div>
+    )
+  )}
+</Card>
+
+
+{/* Variable Pay Include CTC */}
+{selected.variable_pay_include_ctc?.length > 0 && (
+  <>
+    <Typography variant="bodyMedium" color="body1" className="font-semibold">
+      Variable Pay (Included in CTC)
+    </Typography>
+
+    <Card className="space-y-3 border border-gray-200 rounded p-4">
+      {selected.variable_pay_include_ctc.map(
+        (item: any, index: number) => (
+          <div
+            key={`include-${item.component ?? index}`}
+            className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
+          >
+            <div className="flex items-baseline gap-1 min-w-0">
+              <Typography variant="bodySmall" className="font-medium">
+                {item.component}
+              </Typography>
+              <Typography variant="caption" color="body2">
+                ({item.type})
+              </Typography>
+            </div>
+
+            <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
+              <Typography variant="bodySmall" className="font-medium whitespace-nowrap">
+                Annual: {renderAmount(item.annual_amount)}
+              </Typography>
+              <Typography variant="caption" color="body2" className="whitespace-nowrap">
+                Monthly: {renderAmount(item.annual_amount ? item.annual_amount / 12 : undefined)}
+              </Typography>
+            </div>
+          </div>
+        )
+      )}
+    </Card>
+  </>
+)}
+
+
+{/* Variable Pay Exclude CTC */}
+{selected.variable_pay_exclude_ctc?.length > 0 && (
+  <>
+    <Typography variant="bodyMedium" color="body1" className="font-semibold">
+      Variable Pay (Excluded from CTC)
+    </Typography>
+
+    <Card className="space-y-3 border border-gray-200 rounded p-4">
+      {selected.variable_pay_exclude_ctc.map(
+        (item: any, index: number) => (
+          <div
+            key={`exclude-${item.component ?? index}`}
+            className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-2 pb-3 border-b border-gray-100 last:border-b-0 last:pb-0"
+          >
+            <div className="flex items-baseline gap-1 min-w-0">
+              <Typography variant="bodySmall" className="font-medium">
+                {item.component}
+              </Typography>
+              <Typography variant="caption" color="body2">
+                ({item.type})
+              </Typography>
+            </div>
+
+            <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
+              <Typography variant="bodySmall" className="font-medium whitespace-nowrap">
+                Annual: {renderAmount(item.annual_amount)}
+              </Typography>
+              <Typography variant="caption" color="body2" className="whitespace-nowrap">
+                Monthly: {renderAmount(item.annual_amount ? item.annual_amount / 12 : undefined)}
+              </Typography>
+            </div>
+          </div>
+        )
+      )}
+    </Card>
+  </>
+)}
+
+</div>
               </div>
             </div>
           </div>
