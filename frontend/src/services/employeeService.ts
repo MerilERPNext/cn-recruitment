@@ -271,14 +271,15 @@ export class EmployeeService {
     }
   }
   static async getCurrentEmployeeAllDetails(
-    user_id: string
+    user_id: string,
+    name?: string,
   ): Promise<Employee | null> {
     try {
       logger.info("Fetching employee details for user_id", { user_id });
 
       const result = await FrappeAPI.getDocumentList("Employee", {
         fields: ["*"],
-        filters: [["user_id", "=", user_id]],
+        filters: name ? [["name", "=", name]] : [["user_id", "=", user_id]],
       });
 
       // Debug the API response
@@ -365,6 +366,100 @@ export class EmployeeService {
       return employeeData;
     } catch (error) {
       logger.employeeError("getCurrentEmployeeAllDetails", user_id, error);
+      return null;
+    }
+  }
+  static async getCurrentEmployeeAllDetailsWithParams(
+    filters: FilterCondition[]
+  ): Promise<Employee | null> {
+    try {
+      logger.info("Fetching employee details for filters", { filters });
+
+      const result = await FrappeAPI.getDocumentList("Employee", {
+        fields: ["*"],
+        filters: filters,
+      });
+
+      // Debug the API response
+      debugEmployeeData(
+        result,
+        `getCurrentEmployeeAllDetails API response for filters: ${filters}`
+      );
+
+      // Handle different response structures
+      let employeeDataArray: unknown[] = [];
+
+      if (result && "data" in result && Array.isArray(result.data)) {
+        // Standard Frappe API response structure
+        employeeDataArray = result.data;
+      } else if (Array.isArray(result)) {
+        // Direct array response
+        employeeDataArray = result;
+      } else if (result && typeof result === "object") {
+        // Single object response
+        employeeDataArray = [result];
+      } else {
+        logger.warn("Unexpected API response structure", {
+          resultExists: !!result,
+          resultType: typeof result,
+          hasDataProperty: result && "data" in result,
+          dataIsArray:
+            result &&
+            typeof result === "object" &&
+            "data" in result &&
+            Array.isArray((result as { data?: unknown }).data),
+        });
+        return null;
+      }
+
+      // Check if any employee records were found
+      if (employeeDataArray.length === 0) {
+        logger.warn("No employee found for user_id");
+        return null;
+      }
+
+      const employeeData = employeeDataArray[0];
+
+      // Debug employee data validation
+      const validation = validateEmployeeFields(employeeData);
+      logger.debug("Employee validation result", validation);
+
+      // Validate the employee data
+      if (!isEmployee(employeeData)) {
+        logger.error(
+          "getCurrentEmployeeAllDetails validation failed",
+          {
+            missingFields: validation.missingFields,
+            invalidFields: validation.invalidFields,
+            receivedData: employeeData,
+          }
+        );
+
+        // Try to provide helpful suggestions
+        if (
+          validation.missingFields.includes("name") &&
+          employeeData &&
+          typeof employeeData === "object"
+        ) {
+          const emp = employeeData as Record<string, unknown>;
+          logger.debug("Potential name fields found", {
+            potentialFields: Object.keys(emp)
+              .filter(
+                (key) =>
+                  key.toLowerCase().includes("name") ||
+                  key.toLowerCase().includes("id")
+              )
+              .map((key) => ({ key, value: emp[key] })),
+          });
+        }
+
+        return null;
+      }
+
+      logger.info("Employee data validated successfully");
+      return employeeData;
+    } catch (error) {
+      logger.error("getCurrentEmployeeAllDetails", error);
       return null;
     }
   }

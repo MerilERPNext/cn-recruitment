@@ -46,6 +46,7 @@ import { Attendance } from "../../types/attendance";
 // import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
 // import AttendanceSummaryCards from "./AttendanceSummaryCards";
 import AttendanceChart from "../AttendanceChart";
+import { useTargetUser } from "../../context/ViewedUserContext";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -55,6 +56,8 @@ export interface PolicyDrawerConfig {
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
+  const { targetEmployeeId } = useTargetUser();
+
   const { isDesktop } = useScreenSize();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -64,8 +67,9 @@ const AttendanceSummary = () => {
     useState<PolicyDrawerConfig | null>(null);
 
   const { data: currentUser } = useCurrentUser();
+
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
+    currentUser?.name || "", targetEmployeeId || ""
   );
 
   const { data: employeeShift } = useGetEmployeeShift(

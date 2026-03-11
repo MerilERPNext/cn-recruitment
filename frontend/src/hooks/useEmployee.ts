@@ -74,9 +74,13 @@ export const useCurrentEmployee = (): UseQueryResult<
 };
 
 // Hook to get current logged-in user's All Details
-export const useCurrentEmployeeAllDetails = (user_id: string) => {
+
+/**
+ * Here we pass the user_id if we want to fetch the current user but if we want to fetch the target user details then we pass the name as well in which we pass the targetEmployeeId.
+ */
+export const useCurrentEmployeeAllDetails = (user_id: string, name?: string) => {
   return useQuery<Employee | null, Error>({
-    queryKey: ["currentEmployeeAllDetails", user_id],
+    queryKey: ["currentEmployeeAllDetails", user_id, name],
     queryFn: async () => {
       if (!user_id || typeof user_id !== "string" || user_id.trim() === "") {
         console.warn(
@@ -85,12 +89,34 @@ export const useCurrentEmployeeAllDetails = (user_id: string) => {
         );
         return null;
       }
-      return EmployeeService.getCurrentEmployeeAllDetails(user_id);
+      return EmployeeService.getCurrentEmployeeAllDetails(user_id, name);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
     retry: 2, // Increased retry count
     enabled: !!user_id && typeof user_id === "string" && user_id.trim() !== "",
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+  });
+};
+
+// Hook to get current logged-in user's All Details
+export const useCurrentEmployeeAllDetailsWithParams = (filters: FilterCondition[]) => {
+  return useQuery<Employee | null, Error>({
+    queryKey: ["currentEmployeeAllDetails", filters],
+    queryFn: async () => {
+      if (!filters || filters.length === 0) {
+        console.warn(
+          "useCurrentEmployeeAllDetailsWithParams: Invalid filters provided:",
+          filters
+        );
+        return null;
+      }
+      return EmployeeService.getCurrentEmployeeAllDetailsWithParams(filters);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 2, // Increased retry count
+    enabled: !!filters && filters.length > 0,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 };
