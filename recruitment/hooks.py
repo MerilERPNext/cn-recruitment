@@ -231,6 +231,7 @@ scheduler_events = {
         ],
         "0 6 * * *": [
             "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
+            "recruitment.recruitment.scheduled_jobs.create_extension_confirmations",
         ],
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
