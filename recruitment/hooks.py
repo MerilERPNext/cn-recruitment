@@ -205,6 +205,9 @@ doc_events = {
     "Employee Separation": {
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
     },
+    "Job Offer": {
+        "on_update_after_submit": "recruitment.api.bulk_job_offer.sync_applicant_status"
+    }
 }
 
 # apps/recruitment/recruitment/recruitment/hooks.py
