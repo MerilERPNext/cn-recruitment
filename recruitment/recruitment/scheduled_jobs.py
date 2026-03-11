@@ -149,6 +149,74 @@ def create_confirmation_todo(employee, policy_doc, todo_type="confirmation"):
     frappe.db.commit()
 
 
+def create_extension_confirmations():
+
+    current_date = getdate(today())
+
+    policies = frappe.get_all(
+        "Confirmation Policy",
+        fields=["name"]
+    )
+
+    for policy in policies:
+        policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+        applicable_employees = get_applicable_employees(policy_doc)
+
+        if not applicable_employees:
+            continue
+
+        for emp_name in applicable_employees:
+            employee = frappe.get_doc("Employee", emp_name)
+
+            if employee.status != "Active":
+                continue
+
+            if employee.custom_employment_status != "Probation Extended":
+                continue
+
+            if not employee.final_confirmation_date:
+                continue
+
+            if getdate(employee.final_confirmation_date) > current_date:
+                continue
+
+            existing = frappe.db.exists(
+                "Employee Confirmation",
+                {
+                    "employee": emp_name,
+                    "docstatus": 0,
+                }
+            )
+            if existing:
+                continue
+
+            extension_count = frappe.db.count(
+                "Employee Confirmation",
+                {
+                    "employee": emp_name,
+                    "docstatus": 1,
+                    "status": "Probation Extended",
+                }
+            )
+
+            extension_workflow = None
+            for config in policy_doc.extension_workflow_configurations:
+                if config.extension_number == extension_count:
+                    extension_workflow = config.extension_workflow
+                    break
+
+            doc = frappe.new_doc("Employee Confirmation")
+            doc.employee = emp_name
+            doc.confirmation_policy = policy.name
+            doc.probation_end_date = employee.final_confirmation_date
+            doc.is_extension_confirmation = 1
+            doc.extension_workflow = extension_workflow
+            doc.flags.ignore_permissions = True
+            doc.insert()
+
+    frappe.db.commit()
+
+
 def auto_separate_employees_on_lwd():
   
     current_date = getdate(today())
@@ -325,7 +393,7 @@ def should_show_confirmation_button():
 
         button_visible_from_date = add_days(confirmation_date, -trigger_days)
 
-        if 0 <= days_until_confirmation <= trigger_days:
+        if days_until_confirmation <= trigger_days:
             return {
                 "show_button": True,
                 "days_until_confirmation": days_until_confirmation,

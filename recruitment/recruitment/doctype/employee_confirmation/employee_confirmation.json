@@ -38,6 +38,7 @@
   "are_you_sure_that_you_want_to_extend_members_probation",
   "please_mention_remarks_for_extension_of_member",
   "number_of_days_of_probation_to_extended",
+  "extension_probation_period",
   "confirmation_column",
   "date_managers_review",
   "rate_member_for_completion_of_assigned_activity",
@@ -54,7 +55,9 @@
   "share_feedback_or_any_other_remarks_for_member",
   "separation_column",
   "date_separation",
-  "are_you_sure_that_you_want_to_initiate_separation"
+  "are_you_sure_that_you_want_to_initiate_separation",
+  "is_extension_confirmation",
+  "extension_workflow"
  ],
  "fields": [
   {
@@ -234,7 +237,7 @@
    "fieldname": "number_of_days_of_probation_to_extended",
    "fieldtype": "Select",
    "label": "Number of days of probation to extended",
-   "options": "30 Days\n60 Days\n90 Days"
+   "options": "\n0 Days\n30 Days\n60 Days\n90 Days"
   },
   {
    "fieldname": "date_managers_review",
@@ -337,13 +340,33 @@
    "fieldtype": "JSON",
    "label": "Initiator Form",
    "read_only": 1
+  },
+  {
+   "fieldname": "extension_probation_period",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Extension Probation Period",
+   "options": "Probation Period"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_extension_confirmation",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Is Extension Confirmation"
+  },
+  {
+   "fieldname": "extension_workflow",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Extension Workflow"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-06 12:20:36.792343",
+ "modified": "2026-03-11 19:38:34.249498",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Employee Confirmation",
