@@ -67,7 +67,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
           <p className="text-xs sm:text-sm text-gray-500 truncate">
             {weekday}
             {showOptionalLabel &&
-              holiday?.leave_type.toLowerCase() === "optional holiday"
+              holiday?.type === "Optional"
               ? " | Optional Holiday"
               : ""}
           </p>
