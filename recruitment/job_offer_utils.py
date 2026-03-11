@@ -85,6 +85,7 @@ def send_onboarding_form(job_applicant):
     doc = frappe.get_doc("Job Applicant", job_applicant)
 
     job_offer = frappe.db.get_value("Job Offer", {"job_applicant": doc.name}, "name")
+    company = frappe.db.get_value("Job Offer", {"job_applicant": doc.name}, "company")
 
     # Base onboarding form URL
     base_onboarding_url = "https://nexus-dev.m.frappe.cloud/employee-onboarding/new"
@@ -104,7 +105,7 @@ def send_onboarding_form(job_applicant):
     <p>Hello <strong>{doc.applicant_name.upper()}</strong>,</p>
 
     <p>
-    We hope you're doing great! As part of our continued onboarding process at WikiWorks Technologies Private Limited, we need a few more essential details from you.
+    We hope you're doing great! As part of our continued onboarding process at {company}, we need a few more essential details from you.
     To make this as simple as possible, we've set up a secure online form where you can submit all the required information.
     </p>
 
