@@ -195,8 +195,6 @@ Link - <a href="{offer_url}">Click here to view your offer letter</a>
 We look forward to welcoming you onboard and wish you a successful internship with us.
 </p>
 
-<br>
-
 <p>
 Warm regards,<br>
 Team HR
