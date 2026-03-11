@@ -24,27 +24,12 @@ app_include_js = ["/assets/recruitment/js/teams_utils.js"]
 # webform_include_js = {"doctype": "public/js/doctype.js"}
 # webform_include_css = {"doctype": "public/css/doctype.css"}
 fixtures = [
-    #         "doctype": "Custom HTML Block"
-    #     },
-    # {
-    #         "doctype": "Role",
-    #         "filters": [["Role", "name", "IN", ["Job Recruiter","Recruitment User","Recruiter Admin","Hiring Manager"]]],
-    #     },
-    #     {
-    #         "doctype": "Funnel Node"
-    #     }
-    #     ,{
-    #         "doctype": "Email Template"
-    #     },
-    #     {
-    #         "doctype": "Recruitment Settings"
-    #     },{
-    #         "doctype": "Property Setter"
-    #     },
-    #     {
-    #         "doctype": "Workspace",
-    #         "filters": [["Workspace", "name", "=", "Recruitment"]],
-    #     },
+    {
+        "doctype": "Custom Field",
+        "filters": [
+            ["module", "=", "Recruitment"]
+        ]
+    }
 ]
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
