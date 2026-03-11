@@ -208,6 +208,7 @@ const MobileDashboard: React.FC = () => {
         {
           onSuccess: () => {
             refetchHomeSummary();
+            setGeoLocationModal(false)
           },
           onError: (e: CustomError) => {
             toast.error(
@@ -795,11 +796,11 @@ const MobileDashboard: React.FC = () => {
         open={geoLocationModal}
         onClose={() => setGeoLocationModal(false)}
         location={location}
+        isLoading={checkInCheckOutPending}
         onSubmit={() => {
           handleCheckInOut(
             isCurrentlyCheckedIn ? "checkOut" : "checkIn",
           )
-          setGeoLocationModal(false)
         }
         }
       />

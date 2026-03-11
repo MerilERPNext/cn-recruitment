@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Coordinates, getLocationName } from "../../utils/helperUtils";
 import SideDrawer from "../shared/SideDrawer";
 import Button from "../shared/atoms/Button";
+import CircularLoader from "../shared/atoms/CircularLoader";
 
 const GeoLocationModal = ({
     open,
@@ -9,11 +10,13 @@ const GeoLocationModal = ({
     onSubmit,
     location,
     label,
+    isLoading,
 }: {
     label: string;
     open: boolean;
     onClose: () => void;
     onSubmit: () => void;
+    isLoading: boolean;
     location: Coordinates | null;
 }) => {
     const [locationName, setLocationName] = useState("Loading location...");
@@ -89,7 +92,7 @@ const GeoLocationModal = ({
                         fullWidth
                         onClick={onSubmit}
                     >
-                        Submit
+                        {isLoading ? <CircularLoader size={"md"} color="white" /> : "Submit"}
                     </Button>
                 </div>
             </div>
