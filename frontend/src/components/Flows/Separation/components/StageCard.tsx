@@ -16,7 +16,7 @@ import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
 
 interface CardStagesProps {
-  data: ApprovalStage;
+  stage: ApprovalStage;
   actions: { name: string; hasForm: boolean }[];
   todoId: string;
   isActive: boolean;
@@ -28,7 +28,7 @@ interface CardStagesProps {
 }
 
 const CardStages = ({
-  data,
+  stage,
   actions,
   todoId,
   isActive,
@@ -128,23 +128,48 @@ const CardStages = ({
     [mutation],
   );
 
+  console.log({
+    isActive,
+    assignedTo,
+  });
   const canPerformActions = useMemo(() => {
     if (!isActive) return false;
 
-    // Case 1: employee name matches assigned emp_id
-    if (currentEmployee?.name === assignedTo?.emp_id) return true;
+    // 1) exact user match (assigned to specific user)
+    if (stage?.user_id != null && currentUser?.name != null) {
+      // use loose inequality only to allow number/string mismatches if intended;
+      // change to === if types are guaranteed
+      if (stage.user_id === currentUser.name) return true;
+    }
 
-    // Case 2: user has a role matching assigned role
+    // 2) user has the role required by the stage
+    if (stage?.role && Array.isArray(currentUser?.roles)) {
+      if (currentUser.roles.some((r) => r && r.role === stage.role))
+        return true;
+    }
+
+    // 3) employee name matches assigned employee id
     if (
-      currentUser?.roles &&
-      currentUser.roles.some(
-        (role) => assignedTo?.roles.includes(role.role) || role.role == data?.role,
-      )
-    )
+      currentEmployee?.name != null &&
+      assignedTo?.emp_id != null &&
+      currentEmployee.name === assignedTo.emp_id
+    ) {
       return true;
+    }
 
+    // 4) user has any role that is in assignedTo.roles
+    if (Array.isArray(currentUser?.roles) && Array.isArray(assignedTo?.roles)) {
+      // assignedTo.roles expected to be array of role names (strings)
+      if (
+        currentUser.roles.some((r) => r && assignedTo.roles.includes(r.role))
+      ) {
+        return true;
+      }
+    }
+
+    // fallback: no permission found
     return false;
-  }, [currentEmployee, assignedTo, isActive, currentUser, data]);
+  }, [currentEmployee, assignedTo, isActive, currentUser, stage]);
 
   const mapStatusTimeline = (status: string) => {
     if (isActive) return "action_required";
@@ -166,11 +191,11 @@ const CardStages = ({
   };
 
   const approverPerfix =
-    data?.status == "Pending"
+    stage?.status == "Pending"
       ? "Process yet to be trigger for"
-      : data?.status == "Approved"
+      : stage?.status == "Approved"
         ? "Approved by "
-        : data?.status == "Rejected"
+        : stage?.status == "Rejected"
           ? "Rejected by"
           : "Pending inputs from ";
 
@@ -179,28 +204,29 @@ const CardStages = ({
       <StatusTimelineRow
         timelineData={{
           isLast: isLastStage,
-          status: mapStatusTimeline(data?.status),
+          status: mapStatusTimeline(stage?.status),
         }}
       >
         <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
           <div className="ml-4 flex flex-col">
-            <Typography variant="bodyMedium">{data?.stage_name}</Typography>
+            <Typography variant="bodyMedium">{stage?.stage_name}</Typography>
             <Typography variant="bodySmall">
-              {approverPerfix} {data?.role || data?.user}
+              {approverPerfix} {stage?.role || stage?.user}
             </Typography>
-
           </div>
 
           <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
             <div className="flex gap-3">
-            {data?.approval_response_data && data?.status != "Pending" && (
-             <ViewFormButton onClick={() =>
-                  handleShowForm(
-                    data?.form_json?.components,
-                    data?.approval_response_data,
-                  )
-                }/>
-            )}
+              {stage?.approval_response_data && stage?.status != "Pending" && (
+                <ViewFormButton
+                  onClick={() =>
+                    handleShowForm(
+                      stage?.form_json?.components,
+                      stage?.approval_response_data,
+                    )
+                  }
+                />
+              )}
               {canPerformActions &&
                 actions.map((action) => (
                   <Button
@@ -215,7 +241,7 @@ const CardStages = ({
             <div>
               {status == "action_required"
                 ? "In Progress"
-                : formatToIndianDate(data?.approval_time)}
+                : formatToIndianDate(stage?.approval_time)}
             </div>
           </div>
         </div>

@@ -77,12 +77,13 @@ interface RequestDetailCardProps {
   isActive: boolean;
 }
 
-const RequestDetailCard = ({
+export const RequestDetailCard = ({
   stage,
   index,
   stages,
   isActive,
 }: RequestDetailCardProps) => {
+  console.log("is active", isActive);
   const isCompleted =
     stage.status === "Completed" || stage.status === "Approved";
   const nextStage = stages[index + 1];
@@ -138,7 +139,7 @@ const RequestDetailCard = ({
   return (
     <div
       key={`${stage.stage_name}-${index}`}
-      className="relative flex gap-4 w-full last:mb-0 mb-10"
+      className={`relative flex gap-4 w-full ${index + 1 === stages.length ? "mb-0" : "mb-6"} `}
     >
       {/* RequestDetailsCard Left Column */}
       <div className="relative flex flex-col items-center">
@@ -147,7 +148,7 @@ const RequestDetailCard = ({
           <div
             className={`absolute top-5 left-1/2 -translate-x-1/2 w-0.5 ${lineColor}`}
             style={{
-              height: "calc(100% + 2.5rem)",
+              height: "calc(100% + 2rem)",
               zIndex: 0,
             }}
           ></div>
@@ -155,7 +156,7 @@ const RequestDetailCard = ({
 
         {/* Circle Icon */}
         <div className="relative flex items-center justify-center">
-          {canPerformActions && (
+          {isActive && (
             <>
               <span className="absolute w-10 h-10 rounded-full bg-yellow-400/40 animate-pulse-wave"></span>
               <span className="absolute w-10 h-10 rounded-full bg-yellow-400/30 animate-pulse-wave delay-500"></span>
@@ -163,10 +164,10 @@ const RequestDetailCard = ({
           )}
           <div
             className={`z-10 rounded-full p-2.5 shadow-md flex items-center justify-center ${getBgColor(
-              canPerformActions ? "In Progress" : stage.status,
+              isActive ? "In Progress" : stage.status,
             )}`}
           >
-            {getIcon(canPerformActions ? "In Progress" : stage.status)}
+            {getIcon(isActive ? "In Progress" : stage.status)}
           </div>
         </div>
       </div>

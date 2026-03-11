@@ -21,7 +21,6 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import toast from "react-hot-toast";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type cardDataType = {
@@ -72,17 +71,16 @@ const Separation = () => {
 
   function getFunnelData() {
     const result: any = {
-      termination: null,
-      separation: null,
+      termination_funnel_data: null,
+      separation_funnel_data: null,
     };
 
     if (!Array.isArray(definitionName)) return result;
 
     definitionName.forEach((item: any) => {
       const category = item?.trigger_category?.name;
-
-      if (category === "Termination") result.termination = item;
-      if (category === "Separation") result.separation = item;
+      if (category === "Termination") result.termination_funnel_data = item;
+      if (category === "Separation") result.separation_funnel_data = item;
     });
 
     return result;
@@ -111,18 +109,6 @@ const Separation = () => {
   );
 
   const handleTriggerChat = (For: "Separation" | "Termination") => {
-    if (For === "Separation" && !separationChatAssist?.session) {
-      toast.error(
-        "Error Opening Chatnext : Separation ChatAssist session not found. ",
-      );
-      return;
-    }
-    if (For === "Termination" && !terminationChatAssist?.session) {
-      toast.error(
-        "Error Opening Chatnext : Termination ChatAssist session not found. ",
-      );
-      return;
-    }
     const maxAttempts = 50; // 5 seconds max (50 * 100ms)
     let attempts = 0;
     setIsTriggeringChat(true);
@@ -159,6 +145,29 @@ const Separation = () => {
 
     checkAndTrigger();
   };
+
+  useEffect(() => {
+    console.group("Separation debug");
+    console.log("definitionName:", definitionName);
+    console.log("separation_funnel_data:", separation_funnel_data);
+    console.log(
+      "separation_funnel_data keys:",
+      separation_funnel_data ? Object.keys(separation_funnel_data) : null,
+    );
+    console.log("separationChatAssist:", separationChatAssist);
+    console.log("enabledActions:", enabledActions);
+    console.groupEnd();
+  }, [
+    definitionName,
+    separation_funnel_data,
+    separationChatAssist,
+    enabledActions,
+  ]);
+
+  const showTerminationButton =
+    terminationChatAssist?.session && enabledActions.terminate;
+  const showSeparationButton =
+    separationChatAssist?.session && enabledActions.initiate_separation;
 
   const cardData: cardDataType[] = [
     {
@@ -268,7 +277,7 @@ const Separation = () => {
           </div>
           {/* Button */}
           <div className="flex items-center py-6 gap-2 flex-col">
-            {enabledActions.initiate_separation && (
+            {showSeparationButton && (
               <Button
                 onClick={() => handleTriggerChat("Separation")}
                 size="md"
@@ -280,7 +289,7 @@ const Separation = () => {
                 Initiate Separation
               </Button>
             )}
-            {enabledActions.terminate && (
+            {showTerminationButton && (
               <Button
                 onClick={() => handleTriggerChat("Termination")}
                 size="md"

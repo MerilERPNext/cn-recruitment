@@ -16,7 +16,7 @@ import {
 import Button from "../../shared/atoms/Button";
 import { Calendar, CalendarCheck, Clock, FileText } from "lucide-react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import {  useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Typography } from "../../shared/atoms/Typography";
 import { Card } from "../../shared/atoms/Card";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -117,7 +117,8 @@ const ConfirmationWorkflow = () => {
       item?.reference_document?.initiator_form
         ? JSON.parse(item?.reference_document?.initiator_form)
         : null,
-    [item]);
+    [item],
+  );
 
   const [formSchema, setFormSchema] = useState();
   const handleShowForm = () => {
@@ -181,13 +182,17 @@ const ConfirmationWorkflow = () => {
 
   const { handleAction } = useApprovalAction();
 
-  const handleAct = async (action: { name: string; hasForm: boolean; todo: TodoType }) => {
-      handleAction( action.name, {
-        todo_id: action.todo?.todo_id,
-        custom_open_chatnext_assistant_on_action: action.hasForm,
-        custom_approval_type: action.todo?.custom_approval_type,
-      });
-    }
+  const handleAct = async (action: {
+    name: string;
+    hasForm: boolean;
+    todo: TodoType;
+  }) => {
+    handleAction(action.name, {
+      todo_id: action.todo?.todo_id,
+      custom_open_chatnext_assistant_on_action: action.hasForm,
+      custom_approval_type: action.todo?.custom_approval_type,
+    });
+  };
 
   const allStagesComplted = useMemo(() => {
     return item?.approval_stages_status?.every(
@@ -199,10 +204,9 @@ const ConfirmationWorkflow = () => {
 
   const canInitiateConfirmation =
     enabledActions.initiate_confirmation &&
-    (!postStagesStarted ||
-      (allStagesComplted &&
-        item?.reference_document?.status !== "Confirmed")) &&
-    showConfirmationButton?.show_button;
+    (!postStagesStarted || allStagesComplted) &&
+    showConfirmationButton?.show_button &&
+    (!item || item?.status !== "Draft");
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
@@ -357,7 +361,7 @@ const ConfirmationWorkflow = () => {
                 </div>
 
                 <div className="flex justify-between max-lg:flex-row-reverse items-start px-4 pt-1 pb-3">
-                    {item?.show_view_form_btn && (
+                  {item?.show_view_form_btn && (
                     <ViewFormButton onClick={() => handleShowForm()} />
                   )}
                   {item.show_confirmation_button ? (
