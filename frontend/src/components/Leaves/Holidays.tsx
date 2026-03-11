@@ -285,9 +285,9 @@ const Holidays: React.FC = () => {
                 holiday={h}
                 statusLabel={getHolidayStatus(h.date)}
                 showOptionalLabel={
-                  h?.leave_type?.toLowerCase() === "optional holiday"
+                  h?.type === "Optional"
                 }
-                canRequest={h?.leave_type?.toLowerCase() === "optional holiday"}
+                canRequest={h?.type === "Optional"}
               />
             ))}
           </div>
