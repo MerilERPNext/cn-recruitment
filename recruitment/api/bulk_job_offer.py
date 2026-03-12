@@ -44,6 +44,7 @@ def create_bulk_job_offer(applicants):
 
             job_offer.insert(ignore_permissions=True)
             job_offer.submit()
+            frappe.db.set_value("Job Applicant", applicant.name, "status", "Offer to be Sent")
 
             created += 1
 
@@ -85,7 +86,7 @@ def send_bulk_job_offer(job_offers):
             applicant = frappe.get_doc("Job Applicant", job_offer.job_applicant)
 
             # Skip if offer already processed
-            if applicant.status in ["Approvals", "Accepted", "Rejected"]:
+            if applicant.status in ["Offered", "Offer Accepted", "Offer Rejected"]:
                 skipped += 1
                 continue
 
@@ -139,7 +140,7 @@ Team HR
             )
 
             # Update applicant status
-            applicant.status = "Approvals"
+            applicant.status = "Offered"
             applicant.save(ignore_permissions=True)
 
             sent += 1
@@ -164,10 +165,10 @@ def sync_applicant_status(doc, method):
     applicant = frappe.get_doc("Job Applicant", doc.job_applicant)
 
     if doc.status == "Accepted":
-        applicant.status = "Accepted"
+        applicant.status = "Offer Accepted"
 
     elif doc.status == "Rejected":
-        applicant.status = "Rejected"
+        applicant.status = "Offer Rejected"
 
     elif doc.status == "Cancelled":
         applicant.status = "Hold"

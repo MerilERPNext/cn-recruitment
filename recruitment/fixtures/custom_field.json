@@ -982,6 +982,44 @@
   "width": null
  },
  {
+  "doctype": "Custom Field",
+  "name": "Job Offer-custom_ctc",
+  "dt": "Job Offer",
+  "fieldname": "custom_ctc",
+  "fieldtype": "Currency",
+  "label": "CTC",
+  "insert_after": "applicant_name",
+  "hidden": 1
+ },
+ {
+ "doctype": "Custom Field",
+ "name": "Job Applicant-custom_ctc",
+ "dt": "Job Applicant",
+ "fieldname": "custom_ctc",
+ "fieldtype": "Currency",
+ "label": "CTC",
+ "insert_after": "custom_team_head",
+ "hidden": 1
+},
+{
+ "doctype": "Custom Field",
+ "name": "Interview Feedback-custom_ctc",
+ "dt": "Interview Feedback",
+ "fieldname": "custom_ctc",
+ "fieldtype": "Currency",
+ "label": "CTC",
+ "hidden": 1
+},
+{
+ "doctype": "Custom Field",
+ "name": "Interview-custom_bond_",
+ "dt": "Interview",
+ "fieldname": "custom_bond_",
+ "fieldtype": "Data",
+ "label": "Bond",
+ "hidden": 1
+},
+ {
   "allow_in_quick_entry": 0,
   "allow_on_submit": 0,
   "bold": 0,
