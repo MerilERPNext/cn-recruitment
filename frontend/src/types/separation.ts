@@ -19,6 +19,7 @@ export interface FunnelActivityLog {
     parentfield: string;
     parenttype: string;
     doctype: string;
+    isLast?: boolean;
 }
 
 interface FunnelActivity {

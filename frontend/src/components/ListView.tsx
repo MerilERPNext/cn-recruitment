@@ -895,39 +895,69 @@ export const StaticListView = <T extends BaseItemStatic>({
   const renderPagination = () =>
     infiniteScroll ? null : loadMorePagination ? (
       paginatedData.length < filteredData.length && (
-        <div className="flex justify-center py-4">
+        <div className="flex items-center justify-center px-4 py-6">
           <button
             onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-4 py-2 text-sm border rounded-md bg-white hover:bg-gray-100"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Load More
           </button>
         </div>
       )
     ) : (
-      <div className="flex justify-between items-center p-4">
-        <span className="text-sm text-gray-600">
-          Showing{" "}
-          {filteredData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} –{" "}
-          {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
-          {filteredData.length}
-        </span>
+      <div className="flex flex-wrap items-center justify-between px-4 py-3 bg-white border-t border-gray-200">
+        <div className="flex items-center text-sm text-gray-700">
+          <span>
+            Showing{" "}
+            {filteredData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}{" "}
+            to {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
+            {filteredData.length} results
+          </span>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center space-x-2">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => p - 1)}
+            className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {/* ChevronLeft */}‹
+            <ChevronLeft className="h-5 w-5" />
           </button>
 
-          <span className="text-sm">{currentPage}</span>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum;
+
+            if (totalPages <= 5) {
+              pageNum = i + 1;
+            } else if (currentPage <= 3) {
+              pageNum = i + 1;
+            } else if (currentPage >= totalPages - 2) {
+              pageNum = totalPages - 4 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
+
+            return (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
 
           <button
             disabled={currentPage >= totalPages}
             onClick={() => setCurrentPage((p) => p + 1)}
+            className="relative inline-flex items-center px-2 py-2 text-gray-400 bg-white border border-gray-300 text-sm font-medium rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {/* ChevronRight */}›
+            <ChevronRight className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -1076,7 +1106,7 @@ export const StaticListView = <T extends BaseItemStatic>({
       )}
 
       {/* PAGINATION */}
-      {renderPagination()}
+      {data?.length > pageSize && renderPagination()}
     </div>
   );
 };

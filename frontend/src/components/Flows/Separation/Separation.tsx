@@ -62,11 +62,17 @@ const Separation = () => {
   );
 
   const {
-    data: confirmationCreationData,
-    isLoading,
+    data: separationCreationData,
+    isLoading: isLoadingOpeded,
     refetch: refetchSeparation,
-  } = useSeparation(doctype);
-  const item = confirmationCreationData?.[0];
+  } = useSeparation(doctype, "Open");
+  const {
+    data: separationCreationDataClosed,
+    isLoading: isLoadingClosed,
+    refetch: refetchSeparationClosed,
+  } = useSeparation(doctype, "Closed");
+  const item = separationCreationData?.[0] || separationCreationDataClosed?.[0];
+  const isLoading = isLoadingOpeded || isLoadingClosed;
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   function getFunnelData() {
@@ -143,18 +149,6 @@ const Separation = () => {
     }
   };
 
-  useEffect(() => {
-    console.group("Separation debug");
-    console.log("definitionName:", definitionName);
-    console.log("separation_funnel_data:", separation_funnel_data);
-    console.log(
-      "separation_funnel_data keys:",
-      separation_funnel_data ? Object.keys(separation_funnel_data) : null,
-    );
-    console.log("enabledActions:", enabledActions);
-    console.groupEnd();
-  }, [definitionName, separation_funnel_data, enabledActions]);
-
   const showTerminationButton =
     isViewingOtherUser &&
     !!termination_funnel_data?.name &&
@@ -178,6 +172,7 @@ const Separation = () => {
   useEffect(() => {
     const handleChatClose = () => {
       refetchSeparation();
+      refetchSeparationClosed();
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -188,7 +183,7 @@ const Separation = () => {
         handleChatClose,
       );
     };
-  }, [refetchSeparation]);
+  }, [refetchSeparation, refetchSeparationClosed]);
 
   const showInitiatePage = !item;
 
@@ -211,7 +206,7 @@ const Separation = () => {
   /* ---------------------------------------------------------- */
 
   return (
-    <div className="min-h-screen md:p-4 md:gap-4 md:bg-blue-50">
+    <div className="min-h-screen md:p-4 md:gap-4">
       <div className="flex items-baseline">
         <div className="flex flex-col md:mb-4 max-md:px-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
@@ -224,7 +219,7 @@ const Separation = () => {
             onClick={handleShowWorkflow}
             size="md"
             bgColor="primary"
-            className="hover:bg-primary my-2 text-white ml-auto"
+            className="hover:bg-primary my-2 text-white ml-auto mr-4"
           >
             View Wrokflow
           </Button>

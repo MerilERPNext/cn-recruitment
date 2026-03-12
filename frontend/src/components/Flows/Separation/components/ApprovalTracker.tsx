@@ -23,30 +23,6 @@ export interface ApprovalStage {
   };
 }
 
-interface ReferenceDocument {
-  name: string;
-  employee_name: string;
-  designation: string;
-  department: string;
-  date_of_joining: string;
-  [key: string]: any;
-}
-
-export interface ApprovalData {
-  allocated_to: string;
-  allocated_to_emp_id: string;
-  todo_id: string;
-  reference_type: string;
-  reference_name: string;
-  description: string;
-  due_date: string;
-  todo_status: string;
-  role: string;
-  approval_stages_status: ApprovalStage[];
-  reference_document: ReferenceDocument;
-  custom_doctype_actions: string;
-}
-
 interface ApprovalTrackerProps {
   data: TodoType;
   For: "Employee Separation";
