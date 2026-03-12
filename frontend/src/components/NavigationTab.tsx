@@ -4,6 +4,7 @@ import Button, { ButtonColor, ButtonVariant } from "./shared/atoms/Button";
 export interface Tab {
   key: string;
   label: string;
+  permissionKey?: string;
 }
 
 interface NavigationProps {

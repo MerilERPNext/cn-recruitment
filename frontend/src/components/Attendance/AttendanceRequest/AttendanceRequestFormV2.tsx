@@ -32,6 +32,8 @@ import {
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -159,7 +161,13 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
 
+  const canCreateAttendanceRequestForOthers = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request_for_others",
+    "Attendance Summary",
+  );
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fromDateChanged, setFromDateChanged] = useState<string>("");
@@ -970,7 +978,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {userRoles?.roles["Employee Direct Manager"] && canCreateAttendanceRequestForOthers ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <Button
                 size="md"
@@ -980,14 +988,14 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               >
                 Self
               </Button>
-              <Button
+              {<Button
                 size="md"
                 fullWidth
                 variant={!isForOthers ? "subtle" : "contain"}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
-              </Button>
+              </Button>}
             </div>
           ) : null}
           <Form

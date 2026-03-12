@@ -91,6 +91,11 @@ const AllEmpAttendance = () => {
     "regularize_attendance",
     "My Attendance"
   );
+  const canEditAttendance = isActionEnabled(
+    userUiPermission,
+    "edit_attendance",
+    "My Attendance"
+  );
 
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -414,9 +419,9 @@ const AllEmpAttendance = () => {
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Check Out
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                {canEditAttendance && <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Actions
-                </th>
+                </th>}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -531,7 +536,7 @@ const AllEmpAttendance = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {record?.doctype === "Attendance" ? formatTimeSafe(record.out_time) : "-"}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {canEditAttendance && <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       <Button
                         variant="subtle"
                         size="sm"
@@ -550,7 +555,7 @@ const AllEmpAttendance = () => {
                           <Edit size={16} />
                         </Tooltip>
                       </Button>
-                    </td>
+                    </td>}
                   </tr>
                 );
               })}

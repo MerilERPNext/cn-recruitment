@@ -47,6 +47,8 @@ import { Attendance } from "../../types/attendance";
 // import AttendanceSummaryCards from "./AttendanceSummaryCards";
 import AttendanceChart from "../AttendanceChart";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -70,6 +72,18 @@ const AttendanceSummary = () => {
 
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || "", targetEmployeeId || ""
+  );
+
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canCreateOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "My Overtime",
+  );
+  const canCreateAttendanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary",
   );
 
   const { data: employeeShift } = useGetEmployeeShift(
@@ -190,6 +204,7 @@ const AttendanceSummary = () => {
             {
               label: "+ New Request",
               type: "primary",
+              disabled: !canCreateAttendanceRequest,
               onClick: () => setShowAttendanceRequestModal(true),
             },
           ],
@@ -227,6 +242,7 @@ const AttendanceSummary = () => {
             {
               label: "+ Log Overtime",
               type: "primary",
+              disabled: !canCreateOvertimeRequest,
               onClick: () => setShowOvertimeRequest(true),
             },
           ],

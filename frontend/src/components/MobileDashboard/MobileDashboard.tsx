@@ -688,7 +688,7 @@ const MobileDashboard: React.FC = () => {
           <div className="grid grid-cols-4 gap-2">
             {/* Present */}
             <div
-              onClick={() => navigate("/webapp/attendance/summary")}
+              onClick={() => navigate("/webapp/attendance/emp-attendance")}
               className="bg-green-50 border border-green-100 
                rounded-xl py-3 px-1 
                flex flex-col items-center justify-center 
@@ -745,7 +745,7 @@ const MobileDashboard: React.FC = () => {
 
             {/* Weekoffs */}
             <div
-              onClick={() => navigate("/webapp/leave-app/leaves/leave-balance")}
+              onClick={() => navigate("/webapp/attendance/emp-attendance")}
               className="bg-pink-50 border border-pink-100 
                rounded-xl py-3 px-1 
                flex flex-col items-center justify-center 

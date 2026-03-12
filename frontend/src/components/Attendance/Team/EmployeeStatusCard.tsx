@@ -11,6 +11,8 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import Button from "../../shared/atoms/Button";
 import { Link } from "react-router-dom";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 
 export interface EmployeeStatusItem {
   reports_to: string | undefined;
@@ -35,8 +37,13 @@ const EmployeeStatusCard = ({
   const { isDesktop } = useScreenSize();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editAttendance, setEditAttendance] = useState(false);
-  console.log("EmployeeStatusCard data", data);
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
 
+  const canEditAttendance = isActionEnabled(
+    userUiPermission,
+    "edit_attendance_team",
+    "Team Attendance"
+  );
   const desktopButtonRef = useRef<HTMLButtonElement>(null);
   const mobileButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -181,7 +188,7 @@ const EmployeeStatusCard = ({
             </Typography>
           </div>
 
-          {!isDesktop && data?.attendance_name && (
+          {!isDesktop && data?.attendance_name && canEditAttendance && (
             <Button
               ref={mobileButtonRef}
               variant="subtle"
@@ -248,7 +255,7 @@ const EmployeeStatusCard = ({
             </div>
           </div>
 
-          {isDesktop && data?.attendance_name && (
+          {isDesktop && data?.attendance_name && canEditAttendance && (
             <Button
               ref={desktopButtonRef}
               variant="subtle"
@@ -275,7 +282,7 @@ const EmployeeStatusCard = ({
         onRefetchData={onRefetchData}
       />
 
-      <ContextualPopup
+      {canEditAttendance && <ContextualPopup
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         triggerRef={isDesktop ? desktopButtonRef : mobileButtonRef}
@@ -293,7 +300,7 @@ const EmployeeStatusCard = ({
           <Edit size={16} />
           Edit
         </Button>
-      </ContextualPopup>
+      </ContextualPopup>}
     </div>
   );
 };
