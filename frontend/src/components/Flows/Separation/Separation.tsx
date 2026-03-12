@@ -153,14 +153,12 @@ const Separation = () => {
     );
     console.log("enabledActions:", enabledActions);
     console.groupEnd();
-  }, [
-    definitionName,
-    separation_funnel_data,
-    enabledActions,
-  ]);
+  }, [definitionName, separation_funnel_data, enabledActions]);
 
   const showTerminationButton =
-    !!termination_funnel_data?.name && enabledActions.terminate;
+    isViewingOtherUser &&
+    !!termination_funnel_data?.name &&
+    enabledActions.terminate;
   const showSeparationButton =
     !!separation_funnel_data?.name && enabledActions.initiate_separation;
 
