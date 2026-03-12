@@ -87,6 +87,12 @@ doctype_js = {
    "Salary Structure Assignment":["public/js/salary_structure_assignment/salary_structure_assignment.js"],
    "HR Settings":["public/js/hr_settings.js"]
 }
+
+doctype_list_js = {
+    "Job Applicant": "public/js/job_applicant_list.js",
+    "Job Offer": "public/js/job_offer_list.js"
+}
+
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -223,6 +229,9 @@ doc_events = {
     },
      "Employee Separation": {
         "on_submit": "recruitment.customizations.employee_separation.employee_separation.update_employee_relieving_date"
+    },
+     "Job Offer": {
+        "on_update_after_submit": "recruitment.api.bulk_job_offer.sync_applicant_status"
     }
       
 }
