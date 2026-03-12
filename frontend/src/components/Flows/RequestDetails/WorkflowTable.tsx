@@ -219,13 +219,15 @@ const WorkflowCard = ({
         {/* Connector Line */}
         {!isLast && (
           <div
-            className={`absolute top-5 left-1/2 -translate-x-1/2 w-0.5 bg-gray-300`}
+            className={`absolute top-5 left-1/2 -translate-x-1/2 w-0.5 bg-gray-300  ${getBgColor(
+              isActive ? "In Progress" : stage.status || "Pending",
+            )}`}
             style={{ height: "calc(100% + 2.5rem)", zIndex: 0 }}
           ></div>
         )}
 
         <div className="relative flex items-center justify-center">
-          {canPerformActions && (
+          {isActive && (
             <>
               <span className="absolute w-10 h-10 rounded-full bg-yellow-400/40 animate-pulse-wave"></span>
               <span className="absolute w-10 h-10 rounded-full bg-yellow-400/30 animate-pulse-wave delay-500"></span>
@@ -233,12 +235,10 @@ const WorkflowCard = ({
           )}
           <div
             className={`z-10 rounded-full p-2.5 shadow-md flex items-center justify-center ${getBgColor(
-              canPerformActions ? "In Progress" : stage.status || "Pending",
+              isActive ? "In Progress" : stage.status || "Pending",
             )}`}
           >
-            {getIcon(
-              canPerformActions ? "In Progress" : stage.status || "Pending",
-            )}
+            {getIcon(isActive ? "In Progress" : stage.status || "Pending")}
           </div>
         </div>
       </div>

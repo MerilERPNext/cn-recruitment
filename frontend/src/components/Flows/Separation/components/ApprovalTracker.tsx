@@ -183,7 +183,8 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
               return (
                 <CardStages
-                  data={item as ApprovalStage}
+                  key={item?.stage_name ?? "" + idx}
+                  stage={item as ApprovalStage}
                   assignedTo={{
                     emp_id: data?.allocated_to_emp_id,
                     roles: data?.allocated_roles,

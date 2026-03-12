@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import RequestTimeline from "./RequestDetailsTimeline";
+import { RequestDetailCard } from "./RequestDetailsTimeline";
 import CardTable from "../../shared/CardTable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 
@@ -38,29 +38,29 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
 
   return (
     <div className="sm:px-7 px-4">
-      {isDesktop ? (
-        <CardTable titles={titles}>
-          <StaticListView
-            data={data.approval_stages}
-            ItemComponent={(index, item) => (
+      <CardTable titles={titles}>
+        <StaticListView
+          data={data.approval_stages}
+          ItemComponent={(index, item) =>
+            isDesktop ? (
               <StageCard stage={item} isActive={index === activeStageIndex} />
-            )}
-            isSearch={true}
-            searchFields={["stage_name", "role", "status"]}
-            getItemKey={(stage, index) => stage?.stage_name + index}
-            pageSize={20}
-            SkeletonComponent={CardSkeleton}
-            loadMorePagination={true}
-          />
-        </CardTable>
-      ) : (
-        <div className="pb-10 overflow-y-auto">
-          <RequestTimeline
-            stages={data.approval_stages}
-            activeStageIndex={activeStageIndex}
-          />
-        </div>
-      )}
+            ) : (
+              <RequestDetailCard
+                stage={item}
+                index={index}
+                stages={data?.approval_stages}
+                isActive={index === activeStageIndex}
+              />
+            )
+          }
+          isSearch={isDesktop}
+          searchFields={["stage_name", "role", "status"]}
+          getItemKey={(stage, index) => stage?.stage_name + index}
+          pageSize={20}
+          SkeletonComponent={CardSkeleton}
+          loadMorePagination={true}
+        />
+      </CardTable>
     </div>
   );
 };

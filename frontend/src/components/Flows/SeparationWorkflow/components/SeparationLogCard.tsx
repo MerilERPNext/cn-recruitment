@@ -27,13 +27,19 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
       return [];
     }
   }, [data?.action_options]);
+
   const { data: currentUser, isLoading: loadingUser } = useCurrentUser();
 
   const canPerformActions = useMemo(() => {
     if (!isActive || loadingUser || !currentUser) return false;
 
     // Check current User name
-    if (data?.target_type === "User" && data?.target === currentUser?.name)
+    if (
+      data?.target_type &&
+      data?.target &&
+      data?.target_type === "User" &&
+      data?.target === currentUser?.name
+    )
       return true;
 
     // Check current User Role
@@ -46,7 +52,6 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
     return false;
   }, [currentUser, data, loadingUser, isActive]);
 
-
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
@@ -58,9 +63,7 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
         {data?.idx}
       </Typography>
       <div className="inline-flex justify-center self-center">
-        <StatusBadge
-          status={data?.status}
-        />
+        <StatusBadge status={data?.status} />
       </div>
       <Typography variant="bodySmall" className="font-semibold tracking-tight">
         {data?.target}
@@ -89,9 +92,7 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
           <Typography variant="bodyMedium">{data?.idx}</Typography>
         </div>
 
-        <StatusBadge
-          status={data?.status}
-        />
+        <StatusBadge status={data?.status} />
       </div>
 
       {/* User */}
