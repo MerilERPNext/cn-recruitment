@@ -2,19 +2,31 @@ import { Typography } from "../../shared/atoms/Typography";
 import { ScrollTabs } from "../../shared/molecules/ScrollTabs";
 import TwoLevelOrgChart from "../../ORGChart/OrgnazationChartForTwoLavel";
 import ProfileSummary from "./ProfileSummary";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 const Overview = () => {
 
+    const { data: userUiPermission } = useGetUiPermission("Profile");
 
     const tabs = [
-        { key: "personal-summary", label: "Personal Summary" },
-        { key: "org-chart", label: "Organizational Chart" },
+        { key: "personal-summary", label: "Personal Summary", permissionKey: "show_personal_summary" },
+        { key: "org-chart", label: "Organizational Chart", permissionKey: "show_org_chart" },
     ];
     const tabeContent = {
         "personal-summary": <ProfileSummary />,
         "org-chart": <TwoLevelOrgChart />,
     }
-
+    const permittedTabs = tabs?.filter((tab) => {
+        if (tab.permissionKey) {
+            return isActionEnabled(
+                userUiPermission,
+                tab.permissionKey,
+                "Employee Profile",
+            );
+        }
+        return true;
+    })
     return (
         <div>
             {/* Header */}
@@ -28,7 +40,7 @@ const Overview = () => {
             </div>
 
             <ScrollTabs
-                tabs={tabs}
+                tabs={permittedTabs}
                 renderSection={(tab: { key: string, label: string }) => (
                     <>
                         {tabeContent[tab.key as keyof typeof tabeContent]}
