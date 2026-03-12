@@ -260,7 +260,7 @@ const FrappeListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
-    0
+      0
     : countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -369,10 +369,11 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                }`}
               >
                 {pageNum}
               </button>
@@ -512,8 +513,9 @@ const FrappeListView = <T extends BaseItem>({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""
-                  }`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  showFilters ? "bg-gray-100" : ""
+                }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -578,8 +580,8 @@ const FrappeListView = <T extends BaseItem>({
                       </button>
                       <button
                         onClick={() =>
-                        (window.location.href =
-                          "/login?redirect-to=" + window.location.pathname)
+                          (window.location.href =
+                            "/login?redirect-to=" + window.location.pathname)
                         }
                         className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
@@ -645,8 +647,9 @@ const FrappeListView = <T extends BaseItem>({
                   onClick={() => {
                     onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer" : ""
-                    }`}
+                  className={`mb-2 md:mb-0 ${
+                    onItemClick ? "cursor-pointer" : ""
+                  }`}
                 >
                   <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
@@ -698,14 +701,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-  | "Select"
-  | "Link"
-  | "Data"
-  | "Int"
-  | "Float"
-  | "Check"
-  | "Date"
-  | "Datetime";
+    | "Select"
+    | "Link"
+    | "Data"
+    | "Int"
+    | "Float"
+    | "Check"
+    | "Date"
+    | "Datetime";
   options?: string[];
 }
 
@@ -713,14 +716,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-  | "Select"
-  | "Link"
-  | "Data"
-  | "Int"
-  | "Float"
-  | "Check"
-  | "Date"
-  | "Datetime";
+    | "Select"
+    | "Link"
+    | "Data"
+    | "Int"
+    | "Float"
+    | "Check"
+    | "Date"
+    | "Datetime";
   options?: string[];
 }
 
@@ -788,7 +791,9 @@ export const StaticListView = <T extends BaseItemStatic>({
 
   // Create a stable key for each item (used for dedupe)
   const itemKeyForDedupe = (item: T, index: number) =>
-    getItemKey ? getItemKey(item, index) : (item.id ?? item.name ?? `idx_${index}`).toString();
+    getItemKey
+      ? getItemKey(item, index)
+      : (item.id ?? item.name ?? `idx_${index}`).toString();
 
   // Deduplicate incoming data (prevents parent mistakes from showing duplicates)
   const dedupedData = useMemo(() => {
@@ -814,8 +819,8 @@ export const StaticListView = <T extends BaseItemStatic>({
       const s = debouncedSearch.toLowerCase();
       result = result.filter((item) =>
         searchFields.some((field) =>
-          (item as any)[field]?.toString().toLowerCase().includes(s)
-        )
+          (item as any)[field]?.toString().toLowerCase().includes(s),
+        ),
       );
     }
 
@@ -873,7 +878,7 @@ export const StaticListView = <T extends BaseItemStatic>({
           setCurrentPage((p) => p + 1);
         }
       },
-      { root: null, rootMargin: "200px", threshold: 0.1 }
+      { root: null, rootMargin: "200px", threshold: 0.1 },
     );
 
     observerRef.current.observe(node);
@@ -883,7 +888,7 @@ export const StaticListView = <T extends BaseItemStatic>({
       observerRef.current = null;
     };
     // we intentionally depend on the node reference and infiniteScroll
-  }, [infiniteScroll, /* sentinelRef is stable */]);
+  }, [infiniteScroll /* sentinelRef is stable */]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
@@ -902,21 +907,27 @@ export const StaticListView = <T extends BaseItemStatic>({
     ) : (
       <div className="flex justify-between items-center p-4">
         <span className="text-sm text-gray-600">
-          Showing {filteredData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} –{" "}
-          {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length}
+          Showing{" "}
+          {filteredData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} –{" "}
+          {Math.min(currentPage * pageSize, filteredData.length)} of{" "}
+          {filteredData.length}
         </span>
 
         <div className="flex items-center gap-2">
-          <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => p - 1)}>
-            {/* ChevronLeft */}
-            ‹
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            {/* ChevronLeft */}‹
           </button>
 
           <span className="text-sm">{currentPage}</span>
 
-          <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>
-            {/* ChevronRight */}
-            ›
+          <button
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            {/* ChevronRight */}›
           </button>
         </div>
       </div>
@@ -942,14 +953,21 @@ export const StaticListView = <T extends BaseItemStatic>({
         )}
 
         {isFilter && filterFields.length > 0 && (
-          <button onClick={() => setShowFilters(true)} className="px-3 py-2 border rounded-md bg-white">
+          <button
+            onClick={() => setShowFilters(true)}
+            className="px-3 py-2 border rounded-md bg-white"
+          >
             {/* Filter icon */}
             Filters
           </button>
         )}
 
         {showRefreshButton && (
-          <button disabled={isLoading} onClick={() => onRefresh?.()} className="px-3 py-2 border rounded-md bg-white">
+          <button
+            disabled={isLoading}
+            onClick={() => onRefresh?.()}
+            className="px-3 py-2 border rounded-md bg-white"
+          >
             {/* Refresh icon */}
             {isLoading ? "Refreshing..." : "Refresh"}
           </button>
@@ -966,7 +984,9 @@ export const StaticListView = <T extends BaseItemStatic>({
               {f.fieldtype === "Select" ? (
                 <select
                   value={filters[f.fieldname] || ""}
-                  onChange={(e) => setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))}
+                  onChange={(e) =>
+                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
+                  }
                   className="w-full border px-3 py-2 rounded-md"
                 >
                   <option value="">All</option>
@@ -980,14 +1000,19 @@ export const StaticListView = <T extends BaseItemStatic>({
                 <input
                   type="text"
                   value={filters[f.fieldname] || ""}
-                  onChange={(e) => setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))}
+                  onChange={(e) =>
+                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
+                  }
                   className="w-full border px-3 py-2 rounded-md"
                 />
               )}
             </div>
           ))}
 
-          <button onClick={() => setShowFilters(false)} className="w-full py-2 bg-blue-600 text-white rounded-md">
+          <button
+            onClick={() => setShowFilters(false)}
+            className="w-full py-2 bg-blue-600 text-white rounded-md"
+          >
             Apply Filters
           </button>
         </div>
@@ -1019,16 +1044,24 @@ export const StaticListView = <T extends BaseItemStatic>({
             const isLast = index === paginatedData.length - 1;
             const key =
               getItemKey?.(item, index) ??
-              (item.id ?? item.name ?? `item-${JSON.stringify(item).slice(0, 50)}-${index}`);
+              item.id ??
+              item.name ??
+              `item-${JSON.stringify(item).slice(0, 50)}-${index}`;
 
             return (
-              <div key={key} onClick={() => onItemClick?.(item)} className={onItemClick ? "cursor-pointer" : ""}>
+              <div
+                key={key}
+                onClick={() => onItemClick?.(item)}
+                className={onItemClick ? "cursor-pointer" : ""}
+              >
                 {ItemComponent(index, item, isLast)}
               </div>
             );
           })}
 
-          {infiniteScroll && <div id="static-listview-sentinel" ref={sentinelRef} />}
+          {infiniteScroll && (
+            <div id="static-listview-sentinel" ref={sentinelRef} />
+          )}
         </>
       )}
 
@@ -1047,6 +1080,5 @@ export const StaticListView = <T extends BaseItemStatic>({
     </div>
   );
 };
-
 
 export default FrappeListView;

@@ -6,7 +6,7 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistant,
+  useChatAssistantLazy,
   useDifinitaionNameForSeparation,
   useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
@@ -21,7 +21,6 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import toast from "react-hot-toast";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type cardDataType = {
@@ -72,17 +71,16 @@ const Separation = () => {
 
   function getFunnelData() {
     const result: any = {
-      termination: null,
-      separation: null,
+      termination_funnel_data: null,
+      separation_funnel_data: null,
     };
 
     if (!Array.isArray(definitionName)) return result;
 
     definitionName.forEach((item: any) => {
       const category = item?.trigger_category?.name;
-
-      if (category === "Termination") result.termination = item;
-      if (category === "Separation") result.separation = item;
+      if (category === "Termination") result.termination_funnel_data = item;
+      if (category === "Separation") result.separation_funnel_data = item;
     });
 
     return result;
@@ -92,73 +90,77 @@ const Separation = () => {
 
   const l = "true";
 
-  useEffect(() => {
-    refetchSeparation();
-  }, [refetchSeparation, isViewingOtherUser]);
+  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
 
-  const { data: separationChatAssist } = useChatAssistant(
-    doctype_name,
-    document_name,
-    separation_funnel_data?.name,
-    l,
-  );
-
-  const { data: terminationChatAssist } = useChatAssistant(
-    doctype_name,
-    document_name,
-    termination_funnel_data?.name,
-    l,
-  );
-
-  const handleTriggerChat = (For: "Separation" | "Termination") => {
-    if (For === "Separation" && !separationChatAssist?.session) {
-      toast.error(
-        "Error Opening Chatnext : Separation ChatAssist session not found. ",
-      );
-      return;
-    }
-    if (For === "Termination" && !terminationChatAssist?.session) {
-      toast.error(
-        "Error Opening Chatnext : Termination ChatAssist session not found. ",
-      );
-      return;
-    }
-    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
-    let attempts = 0;
+  const handleTriggerChat = async (For: "Separation" | "Termination") => {
     setIsTriggeringChat(true);
 
-    const checkAndTrigger = () => {
-      if (
-        typeof window !== "undefined" &&
-        typeof window.trigger_chatnext_assistant === "function"
-      ) {
-        if (For === "Separation")
-          window.trigger_chatnext_assistant(
-            true,
-            separationChatAssist?.session,
-          );
-        else if (For === "Termination")
-          window.trigger_chatnext_assistant(
-            true,
-            terminationChatAssist?.session,
-          );
-        setIsTriggeringChat(false);
-        return;
+    try {
+      const definition_name =
+        For === "Separation"
+          ? separation_funnel_data?.name
+          : termination_funnel_data?.name;
+
+      if (!definition_name) {
+        throw new Error("Missing funnel data for " + For);
       }
 
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(checkAndTrigger, 100);
-      } else {
-        console.warn(
-          "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
-        );
-        setIsTriggeringChat(false);
-      }
-    };
+      const data = await fetchChatAssistantData({
+        doctype_name,
+        document_name,
+        definition_name,
+        l,
+      });
 
-    checkAndTrigger();
+      const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+      let attempts = 0;
+
+      const checkAndTrigger = () => {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.trigger_chatnext_assistant === "function"
+        ) {
+          window.trigger_chatnext_assistant(true, data?.session);
+          setIsTriggeringChat(false);
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkAndTrigger, 100);
+        } else {
+          console.warn(
+            "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
+          );
+          setIsTriggeringChat(false);
+        }
+      };
+
+      checkAndTrigger();
+    } catch (e) {
+      console.error("Failed to trigger chat:", e);
+      setIsTriggeringChat(false);
+    }
   };
+
+  useEffect(() => {
+    console.group("Separation debug");
+    console.log("definitionName:", definitionName);
+    console.log("separation_funnel_data:", separation_funnel_data);
+    console.log(
+      "separation_funnel_data keys:",
+      separation_funnel_data ? Object.keys(separation_funnel_data) : null,
+    );
+    console.log("enabledActions:", enabledActions);
+    console.groupEnd();
+  }, [definitionName, separation_funnel_data, enabledActions]);
+
+  const showTerminationButton =
+    isViewingOtherUser &&
+    !!termination_funnel_data?.name &&
+    enabledActions.terminate;
+  const showSeparationButton =
+    !!separation_funnel_data?.name && enabledActions.initiate_separation;
 
   const cardData: cardDataType[] = [
     {
@@ -268,7 +270,7 @@ const Separation = () => {
           </div>
           {/* Button */}
           <div className="flex items-center py-6 gap-2 flex-col">
-            {enabledActions.initiate_separation && (
+            {showSeparationButton && (
               <Button
                 onClick={() => handleTriggerChat("Separation")}
                 size="md"
@@ -280,7 +282,7 @@ const Separation = () => {
                 Initiate Separation
               </Button>
             )}
-            {enabledActions.terminate && (
+            {showTerminationButton && (
               <Button
                 onClick={() => handleTriggerChat("Termination")}
                 size="md"
