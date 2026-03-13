@@ -72,7 +72,7 @@ const ChangeProbationPeriod: React.FC<ChangeProbationPeriodProps> = ({ isOpen, o
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
                     <h2 className="text-xl font-bold text-gray-900">
-                        Update HRBP Role
+                        Update Probation Period
                     </h2>
                     <button
                         onClick={onClose}
