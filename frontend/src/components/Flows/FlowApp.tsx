@@ -81,7 +81,8 @@ const FlowApp: React.FC = () => {
   );
   const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
-  const showInitiateButton = activeTab === "Flow Requests" && !seprateRoute && canInitiateFlow;
+  const showInitiateButton =
+    activeTab === "Flow Requests" && !seprateRoute && canInitiateFlow;
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -132,7 +133,10 @@ const FlowApp: React.FC = () => {
       <header className="sticky top-0 z-50 bg-white shadow-sm">
         {!seprateRoute && (
           <>
-            <HeaderBar title={"Flows"} onBack={() => navigate("/webapp")} />
+            <HeaderBar
+              title={"HR Process"}
+              onBack={() => navigate("/webapp")}
+            />
             <NavigationTabs
               tabs={tabs}
               activeTab={activeTab}

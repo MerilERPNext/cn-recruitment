@@ -9,7 +9,7 @@ import CardTable from "../../shared/CardTable";
 import { StaticListView } from "../../ListView";
 import SeparationLogCard from "./components/SeparationLogCard";
 import HeaderBar from "../../HeaderBar";
-import { Typography } from "../../shared/atoms/Typography";
+import NoDataFound from "../../shared/atoms/NoDataFound";
 
 const SeparationWorkflow: React.FC = () => {
   console.log("Sepration workflow");
@@ -62,8 +62,12 @@ const SeparationWorkflow: React.FC = () => {
   const gtc = "1fr 1fr 1fr 1fr 1fr";
   return (
     <div>
-      <HeaderBar title="Separation Workflow" onBack={() => navigate(-1)} />
-      <div className="p-8">
+      <HeaderBar
+        title="Separation Workflow"
+        onBack={() => navigate(-1)}
+        className="md:!z-[60]"
+      />
+      <div className="sm:p-8 p-4">
         <div className="lg:mt-6"></div>
         <CardTable
           titles={[
@@ -83,7 +87,7 @@ const SeparationWorkflow: React.FC = () => {
                     separationFunnelData?.custom_funnel_task &&
                     item?.funnel_task &&
                     separationFunnelData.custom_funnel_task ===
-                      item.funnel_task &&
+                    item.funnel_task &&
                     item?.status === "Pending" &&
                     (idx === 0 || logs[idx - 1]?.status !== "Pending")
                   );
@@ -92,7 +96,7 @@ const SeparationWorkflow: React.FC = () => {
                       key={item.idx}
                       onClickAction={handleAction}
                       gtc={gtc}
-                      data={item}
+                      data={{ ...item, isLast: idx === logs.length - 1 }}
                       isActive={isActive}
                     />
                   );
@@ -101,11 +105,7 @@ const SeparationWorkflow: React.FC = () => {
                 loadMorePagination={true}
               />
             ) : (
-              <div className="text-center text-gray-500 py-16">
-                <Typography variant="bodyMedium" color="body2">
-                  No pending approvals found.
-                </Typography>
-              </div>
+              <NoDataFound title="No pending workflow found." />
             )}
           </div>
         </CardTable>

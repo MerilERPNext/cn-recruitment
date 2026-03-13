@@ -37,7 +37,7 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
       : -1;
 
   return (
-    <div className="sm:px-7 px-4">
+    <div className="sm:px-7 px-4 max-sm:pb-8">
       <CardTable titles={titles}>
         <StaticListView
           data={data.approval_stages}

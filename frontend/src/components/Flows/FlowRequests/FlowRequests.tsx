@@ -74,8 +74,8 @@ const FlowRequests: React.FC = () => {
     };
   }, [refetchFlowRequests]);
 
-  if (flowDetails) {
-    return isDesktop ? (
+  const FlowDetailComponent = flowDetails ? (
+    isDesktop ? (
       <RequestDetails
         data={flowDetails}
         handleNavigateBack={handleNavigateBack}
@@ -90,47 +90,54 @@ const FlowRequests: React.FC = () => {
         </div>,
         document.body,
       )
-    );
-  }
-  return (
-    <div className="flex flex-col h-full">
-      <div>
-        {isDesktop && (
-          <div className="flex-shrink-0">
-            <div className="px-6 py-1 md:py-4">
-              <Typography variant="h4">Flow Requests</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Manage your Flows
-              </Typography>
-            </div>
-          </div>
-        )}
+    )
+  ) : null;
 
-        {/*Flows List*/}
-        <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-          <CardTable titles={titles} columnWidths={columnWidths}>
-            <StaticListView
-              data={flowRequests?.data || []}
-              ItemComponent={(_, item) => {
-                return (
-                  <FlowRequestCard
-                    request={item}
-                    handleShowDetails={handleShowDetails}
-                  />
-                );
-              }}
-              isSearch={true}
-              searchFields={["flow_name", "flow_category"]}
-              getItemKey={(item) => item.request_id}
-              pageSize={20}
-              SkeletonComponent={CardSkeleton}
-              isLoading={flowRequestsLoading}
-              loadMorePagination={true}
-            />
-          </CardTable>
+  return (
+    <>
+      {FlowDetailComponent}
+      <div
+        className="flex flex-col h-full"
+        style={{ visibility: flowDetails ? "hidden" : "visible" }}
+      >
+        <div>
+          {isDesktop && (
+            <div className="flex-shrink-0">
+              <div className="px-6 py-1 md:py-4">
+                <Typography variant="h4">Flow Requests</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Manage your Flows
+                </Typography>
+              </div>
+            </div>
+          )}
+
+          {/*Flows List*/}
+          <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+            <CardTable titles={titles} columnWidths={columnWidths}>
+              <StaticListView
+                data={flowRequests?.data || []}
+                ItemComponent={(_, item) => {
+                  return (
+                    <FlowRequestCard
+                      request={item}
+                      handleShowDetails={handleShowDetails}
+                    />
+                  );
+                }}
+                isSearch={true}
+                searchFields={["flow_name", "flow_category"]}
+                getItemKey={(item) => item.request_id}
+                pageSize={10}
+                SkeletonComponent={CardSkeleton}
+                isLoading={flowRequestsLoading}
+              // loadMorePagination={true}
+              />
+            </CardTable>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
