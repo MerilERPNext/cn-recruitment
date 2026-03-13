@@ -47,6 +47,7 @@ export interface ShiftType {
   name: string;
   start_time: string;
   end_time: string;
+  custom_shift_name: string;
 }
 
 export interface ShiftTypeResponse {

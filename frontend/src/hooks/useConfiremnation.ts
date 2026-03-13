@@ -10,10 +10,10 @@ export const useConfirmation = (doctype: string, todo_status: "Open" | "Closed")
   });
 };
 
-export const useSeparation = (doctype: string) => {
+export const useSeparation = (doctype: string, todo_status: "Open" | "Closed") => {
   return useQuery<TodoType[], Error>({
-    queryKey: ["separation", doctype],
-    queryFn: () => ConfirmationService(doctype, "Open"),
+    queryKey: ["separation", todo_status, doctype],
+    queryFn: () => ConfirmationService(doctype, todo_status),
     enabled: !!doctype,
   });
 };

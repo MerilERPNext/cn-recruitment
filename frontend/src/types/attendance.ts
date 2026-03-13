@@ -326,6 +326,7 @@ export type UserRoles = {
 
 export type Policy = {
   name: string;
+  policy_name: string;
 };
 
 export type WeeklyOff = {

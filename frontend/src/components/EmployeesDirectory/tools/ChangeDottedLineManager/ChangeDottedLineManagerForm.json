@@ -17,7 +17,7 @@
                 "url": "/api/resource/Employee?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.employee_name || item.name }}</span>",
+            "template": "<span>{{ item.employee_name }} ({{item.name}})</span>",
             "selectValues": "data",
             "lazyLoad": false,
             "validate": {

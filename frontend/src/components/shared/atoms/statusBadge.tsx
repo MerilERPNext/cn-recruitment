@@ -67,6 +67,14 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
+    case "submitted":
+      return {
+        label: "Submitted",
+        bgClass: "bg-emerald-100",
+        textClass: "text-emerald-700",
+        icon: <Check className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+
     /* ---------- Timeline statuses ---------- */
     case "current":
       return {

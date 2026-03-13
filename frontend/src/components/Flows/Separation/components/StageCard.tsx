@@ -14,6 +14,7 @@ import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
+import { useLoadingOverlay } from "../../../../context/OverlayContext";
 
 interface CardStagesProps {
   stage: ApprovalStage;
@@ -73,10 +74,12 @@ const CardStages = ({
     currentUser?.name || "",
   );
   const mutation = useApprovalListActions();
+  const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
 
   const handleAction = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async (action: { name: string; hasForm: boolean }, data: any) => {
+      showOverlay("Performing Action " + action?.name);
       try {
         if (mutation?.isPending) return;
         setLoadingActions(true);
@@ -104,7 +107,7 @@ const CardStages = ({
         }
 
         if (!action.hasForm) {
-          queryClient.invalidateQueries({ queryKey: ["separation-todo"] });
+          queryClient.invalidateQueries({ queryKey: ["separation"] });
         }
 
         if (action.name.toLowerCase() !== "approve") {
@@ -123,9 +126,10 @@ const CardStages = ({
         toast.error(errMessage);
       } finally {
         setLoadingActions(false);
+        hideOverlay();
       }
     },
-    [mutation],
+    [mutation, hideOverlay, showOverlay],
   );
 
   console.log({

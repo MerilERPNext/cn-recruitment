@@ -329,82 +329,117 @@ def get_applicable_separation_policy(employee_id):
 
 @frappe.whitelist()
 def should_show_confirmation_button():
+    import json
 
     user = frappe.session.user
 
-    employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
-    if not employee:
-        return {"show_button": False}
-
-    employee_doc = frappe.get_doc("Employee", employee)
-
-    if employee_doc.status != "Active":
-        return {"show_button": False}
-
-    if not employee_doc.final_confirmation_date:
-        return {"show_button": False}
-
-    confirmation_date = getdate(employee_doc.final_confirmation_date)
-    current_date = getdate(today())
-    days_until_confirmation = (confirmation_date - current_date).days
+    user_employee = frappe.db.get_value("Employee", {"user_id": user}, "name")
+    user_roles = frappe.get_roles(user)
 
     policies = frappe.get_all(
         "Confirmation Policy",
-        fields=[
-            "name",
-            "triggered_number_of_days_before_confirmation"
-        ]
+        fields=["name", "triggered_number_of_days_before_confirmation", "initiator"]
     )
+
+    current_date = getdate(today())
 
     for policy in policies:
         policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
-
-        if employee not in get_applicable_employees(policy_doc):
+        applicable_employees = get_applicable_employees(policy_doc)
+        if not applicable_employees:
             continue
 
-        extension_count = frappe.db.count(
-            "Employee Confirmation",
-            {
-                "employee": employee,
-                "docstatus": 1,
-                "status": "Probation Extended"
-            }
-        )
+        initiator_cfg = {}
+        try:
+            initiator_cfg = json.loads(policy_doc.initiator or "{}")
+        except Exception:
+            pass
 
-        trigger_days = None
-        confirmation_type = "confirmation"
+        has_self = initiator_cfg.get("self", False)
+        cfg_roles = initiator_cfg.get("roles", [])
+        cfg_users = initiator_cfg.get("users", [])
+        cfg_fields = initiator_cfg.get("employee_fields", [])
+        no_initiator_configured = not has_self and not cfg_roles and not cfg_users and not cfg_fields
 
-        if extension_count > 0:
-            if policy_doc.extension_workflow_configurations:
-                for row in policy_doc.extension_workflow_configurations:
-                    if row.extension_number == extension_count:
-                        trigger_days = row.trigger_days_before_extension or 0
-                        break
+        target_employees = []
+
+        if no_initiator_configured or has_self:
+            if user_employee and user_employee in applicable_employees:
+                target_employees.append(user_employee)
+
+        if cfg_roles:
+            if any(r in user_roles for r in cfg_roles):
+                target_employees.extend(applicable_employees)
+
+        if cfg_users:
+            if user in cfg_users:
+                target_employees.extend(applicable_employees)
+
+        if cfg_fields and user_employee:
+            for emp_id in applicable_employees:
+                for f in cfg_fields:
+                    field_name = f.get("field", "")
+                    if not field_name:
+                        continue
+                    val = frappe.db.get_value("Employee", emp_id, field_name)
+                    if val == user_employee:
+                        target_employees.append(emp_id)
+
+        target_employees = list(set(target_employees))
+        if not target_employees:
+            continue
+
+        for emp_id in target_employees:
+            emp_doc = frappe.get_doc("Employee", emp_id)
+
+            if emp_doc.status != "Active":
+                continue
+            if not emp_doc.final_confirmation_date:
+                continue
+
+            confirmation_date = getdate(emp_doc.final_confirmation_date)
+            days_until_confirmation = (confirmation_date - current_date).days
+
+            extension_count = frappe.db.count(
+                "Employee Confirmation",
+                {
+                    "employee": emp_id,
+                    "docstatus": 1,
+                    "status": "Probation Extended"
+                }
+            )
+
+            trigger_days = None
+            confirmation_type = "confirmation"
+
+            if extension_count > 0:
+                if policy_doc.extension_workflow_configurations:
+                    for row in policy_doc.extension_workflow_configurations:
+                        if row.extension_number == extension_count:
+                            trigger_days = row.trigger_days_before_extension or 0
+                            break
+                if not trigger_days:
+                    continue
+                confirmation_type = "extension"
+            else:
+                trigger_days = policy_doc.triggered_number_of_days_before_confirmation
 
             if not trigger_days:
-                return
+                continue
 
-            confirmation_type = "extension"
-        else:
-            trigger_days = policy_doc.triggered_number_of_days_before_confirmation
+            if days_until_confirmation <= trigger_days:
+                is_self = (emp_id == user_employee)
+                return {
+                    "show_button": True,
+                    "employee": emp_id,
+                    "employee_name": emp_doc.employee_name,
+                    "is_self": is_self,
+                    "days_until_confirmation": days_until_confirmation,
+                    "trigger_days": trigger_days,
+                    "confirmation_date": str(confirmation_date),
+                    "button_visible_from_date": str(add_days(confirmation_date, -trigger_days)),
+                    "confirmation_type": confirmation_type,
+                    "extension_count": extension_count
+                }
 
-        if not trigger_days:
-            continue
-
-        button_visible_from_date = add_days(confirmation_date, -trigger_days)
-
-        if days_until_confirmation <= trigger_days:
-            return {
-                "show_button": True,
-                "days_until_confirmation": days_until_confirmation,
-                "trigger_days": trigger_days,
-                "confirmation_date": str(confirmation_date),
-                "button_visible_from_date": str(button_visible_from_date),
-                "confirmation_type": confirmation_type,
-                "extension_count": extension_count
-            }
-
-    return {
-        "show_button": False,
-        "days_until_confirmation": days_until_confirmation if 'days_until_confirmation' in dir() else None
-    }
+    return {"show_button": False}

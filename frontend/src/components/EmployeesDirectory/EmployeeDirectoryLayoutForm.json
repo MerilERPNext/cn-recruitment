@@ -68,10 +68,10 @@
             "placeholder": "Select Employee Type",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Employment Type"
+                "url": "/api/resource/Employment Type?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{item.employee_type_name}} ({{ item.name }})</span>",
             "selectValues": "data",
             "lazyLoad": false
         },
@@ -84,10 +84,10 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Branch"
+                "url": "/api/resource/Branch?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{item.branch}} ({{ item.name }})</span>",
             "selectValues": "data",
             "lazyLoad": false
         },
@@ -100,10 +100,10 @@
             "customClass": "mb-4",
             "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Business Unit"
+                "url": "/api/resource/Business Unit?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{ item.business_unit }} ({{item.name}})</span>",
             "selectValues": "data",
             "lazyLoad": false
         }
