@@ -17,7 +17,7 @@
                 "url": "/api/resource/Probation Period?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{item.probation_name}} ({{ item.name }})</span>",
             "selectValues": "data",
             "lazyLoad": false,
             "validate": {

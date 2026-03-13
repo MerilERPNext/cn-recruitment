@@ -59,7 +59,6 @@ const AttendanceAssignments = ({
   const { data: geoFencingRestrictions } = useAllShiftLocations();
   const { data: allShiftBlocks } = useAllShiftBlocks();
   const mutation = useAddAttendanceAssignment();
-
   const overtimeForm = {
     // ... (rest of the form schema remains the same, skipping for brevity but keeping structure)
     display: "form",
@@ -151,7 +150,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 shiftList?.data?.shifts?.map((item) => ({
-                  label: `${item.name}`,
+                  label: item?.custom_shift_name ? `${item?.custom_shift_name} (${item.name})` : `${item.name}`,
                   value: item.name,
                 })) || [],
             },
@@ -185,7 +184,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 weekOffs?.data?.map((item) => ({
-                  label: `${item.name}`,
+                  label: `${item?.weekly_off} (${item.name})`,
                   value: item.name,
                 })) || [],
             },
@@ -202,7 +201,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 attendancePolicy?.data?.policies?.map((item) => ({
-                  label: `${item.name}`,
+                  label: `${item?.policy_name} (${item.name})`,
                   value: item.name,
                 })) || [],
             },
