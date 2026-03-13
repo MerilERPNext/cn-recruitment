@@ -32,7 +32,7 @@
                 "required": true
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.employee_name || item.name }}</span>",
+            "template": "<span>{{ item.weekly_off }} ({{ item.name }})</span>",
             "selectValues": "data",
             "lazyLoad": false
         },
