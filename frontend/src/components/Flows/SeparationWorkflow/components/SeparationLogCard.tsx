@@ -105,16 +105,21 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
             </>
           )}
           <div
-            className={`z-10 w-8 h-8 rounded-full flex items-center justify-center ${isActive
-              ? "bg-yellow-500"
-              : ["Completed", "Approved", "Submitted"].includes(data?.status || "")
-                ? "bg-green-500"
-                : ["Failed", "Rejected"].includes(data?.status || "")
-                  ? "bg-red-500"
-                  : "bg-gray-400"
-              }`}
+            className={`z-10 w-8 h-8 rounded-full flex items-center justify-center ${
+              isActive
+                ? "bg-yellow-500"
+                : ["Completed", "Approved", "Submitted"].includes(
+                      data?.status || "",
+                    )
+                  ? "bg-green-500"
+                  : ["Failed", "Rejected"].includes(data?.status || "")
+                    ? "bg-red-500"
+                    : "bg-gray-400"
+            }`}
           >
-            {(["Completed", "Approved", "Submitted"].includes(data?.status || "")) ? (
+            {["Completed", "Approved", "Submitted"].includes(
+              data?.status || "",
+            ) ? (
               <Check size={14} strokeWidth={3} className="text-white" />
             ) : isActive || data?.status === "Pending" ? (
               <Clock size={14} strokeWidth={3} className="text-white" />
@@ -128,10 +133,13 @@ const SeparationLogCard: React.FC<SeparationLogCardProps> = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all">
+        <div className="bg-white rounded-2xl border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all">
           {/* Header: Stage & Status */}
           <div className="flex justify-between items-center gap-2 mb-3 w-full">
-            <Typography variant="mobileCardTitle" className="text-gray-500 font-medium">
+            <Typography
+              variant="mobileCardTitle"
+              className="text-gray-500 font-medium"
+            >
               Stage {data?.idx}
             </Typography>
             <StatusBadge status={data?.status} />

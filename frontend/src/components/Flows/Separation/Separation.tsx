@@ -63,7 +63,7 @@ const Separation = () => {
 
   const {
     data: separationCreationData,
-    isLoading: isLoadingOpeded,
+    isLoading: isLoadingOpened,
     refetch: refetchSeparation,
   } = useSeparation(doctype, "Open");
   const {
@@ -72,7 +72,7 @@ const Separation = () => {
     refetch: refetchSeparationClosed,
   } = useSeparation(doctype, "Closed");
   const item = separationCreationData?.[0] || separationCreationDataClosed?.[0];
-  const isLoading = isLoadingOpeded || isLoadingClosed;
+  const isLoading = isLoadingOpened || isLoadingClosed;
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   function getFunnelData() {
@@ -221,7 +221,7 @@ const Separation = () => {
             bgColor="primary"
             className="hover:bg-primary my-2 text-white ml-auto mr-4"
           >
-            View Wrokflow
+            View Workflow
           </Button>
         )}
       </div>
