@@ -327,6 +327,36 @@ def get_applicable_separation_policy(employee_id):
     return None
 
 
+def mark_relieved_employees_as_left():
+    current_date = getdate(today())
+
+    employees = frappe.get_all(
+        "Employee",
+        filters={
+            "relieving_date": ["<=", current_date],
+            "status": ["!=", "Left"],
+        },
+        fields=["name", "employee_name", "user_id", "relieving_date"],
+    )
+
+    for emp in employees:
+        frappe.db.set_value("Employee", emp.name, {
+            "status": "Left",
+            "custom_employment_status": "Left",
+        })
+
+        if emp.user_id:
+            frappe.db.set_value("User", emp.user_id, "enabled", 0)
+
+        frappe.log_error(
+            message=f"Marked employee {emp.employee_name} ({emp.name}) as Left on relieving date {emp.relieving_date}. User {emp.user_id or 'N/A'} disabled.",
+            title="Employee Marked as Left",
+        )
+
+    if employees:
+        frappe.db.commit()
+
+
 @frappe.whitelist()
 def should_show_confirmation_button():
     import json
