@@ -1,11 +1,11 @@
 import { ClipboardList } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { useTodoList } from "../../hooks/useTodo";
+import type { ToDo } from "../../services/todoService";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
 import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
-import FrappeListView from "../ListView";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
 import { ViewAll } from "../shared/atoms/ViewAll";
@@ -13,27 +13,12 @@ import CustomDropdown from "../shared/CustomDropdown";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
 
-interface ToDo {
-  priority: string;
-  custom_due_datetime: string;
-  name: string;
-  description?: string;
-  owner?: string;
-  status?: string;
-  reference_type?: string;
-  custom_todo_type?: string;
-  reference_name?: string;
-  date?: string;
-  due_date?: string;
-  custom_redirect_url?: string;
-}
-
-const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
+const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (item.custom_redirect_url) {
-      navigate(item.custom_redirect_url);
+    if (item.custom_dynamic_route) {
+      navigate(item.custom_dynamic_route);
     } else {
       navigate(`/webapp/todo-app#/${item.name}`);
     }
@@ -43,8 +28,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
 
   return (
     <div
-      // onClick={handleClick}
-      key={item.name} // Assuming item.name is unique
+      key={item.name}
       className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
       <div className="flex items-center gap-3">
@@ -60,8 +44,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
           </Typography>
 
           <Typography variant="label" color="body2">
-            {item.due_date
-              ? `Due on ${formatDateDDMonthYYYY(item.due_date)}`
+            {item.custom_due_datetime
+              ? `Due on ${formatDateDDMonthYYYY(item.custom_due_datetime)}`
               : item.date
                 ? `Due on ${formatDateDDMonthYYYY(item.date)}`
                 : "No due date"}
@@ -79,11 +63,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
 };
 
 const TasksAwaiting: React.FC = () => {
-  const [fullData, setFullData] = useState<ToDo[]>([]);
+  const { data: fullData = [], isLoading } = useTodoList();
   const [activeCategory, setActiveCategory] = useState("All");
-  const { data: currentEmployee } = useCurrentUser();
-  const currentEmployeeId = currentEmployee?.name;
-  const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -104,10 +85,6 @@ const TasksAwaiting: React.FC = () => {
     return colors[index % colors.length];
   };
 
-  const handleDataLoad = (items: ToDo[]) => {
-    setFullData(items);
-    setIsLoading(false);
-  };
 
   const filtered = useMemo(() => {
     if (activeCategory === "All") return fullData;
@@ -123,10 +100,8 @@ const TasksAwaiting: React.FC = () => {
     const grouped: Record<string, number> = {};
 
     fullData.forEach((item) => {
-      if (item.status === "Open") {
-        const cat = item.custom_todo_type || "Uncategorized";
-        grouped[cat] = (grouped[cat] || 0) + 1;
-      }
+      const cat = item.custom_todo_type || "Uncategorized";
+      grouped[cat] = (grouped[cat] || 0) + 1;
     });
 
     return grouped;
@@ -213,39 +188,8 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {currentEmployeeId && fullData.length === 0 && (
-        <div className="hidden">
 
-          <FrappeListView
-            doctype="ToDo"
-            ItemComponent={() => null}
-            isSearch={false}
-            pageSize={1000}
-            orderBy="modified desc"
-            onDataLoad={handleDataLoad}
-            defaultFilters={{
-              status: "Open",
-              allocated_to: currentEmployeeId,
-            }}
-            defaultFields={[
-              "name",
-              "modified",
-              "description",
-              "owner",
-              "status",
-              "reference_type",
-              "reference_name",
-              "date",
-              "priority",
-              "allocated_to",
-              "custom_redirect_url",
-              "custom_todo_type",
-            ]}
-            showPagination={false}
-            SkeletonComponent={() => <CardSkeleton rows={2} />}
-          />
-        </div>
-      )}
+      {/* Show only latest 3 items for the active category */}
       <div className="flex-1">
         {isLoading ? (
           <CardSkeleton rows={2} />
