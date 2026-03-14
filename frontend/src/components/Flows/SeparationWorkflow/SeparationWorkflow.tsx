@@ -3,6 +3,7 @@ import { useGetSeparationWorkflow as useGetSeparationWorkflowData } from "../../
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import WorkflowTable from "../RequestDetails/WorkflowTable";
+import NoDataFound from "../../shared/atoms/NoDataFound";
 
 const SeparationWorkflow: React.FC = () => {
   const { data: separationWorkflowDat, refetch: refetchSeparationWorkflow } =
@@ -39,9 +40,16 @@ const SeparationWorkflow: React.FC = () => {
         onBack={() => navigate(-1)}
         className="md:!z-[60]"
       />
-      {separationWorkflowDat?.data?.[0] && (
-        <WorkflowTable data={separationWorkflowDat?.data?.[0]} />
-      )}
+      <div className="pt-8 pb-12">
+        {separationWorkflowDat?.data?.[0] ? (
+          <WorkflowTable data={separationWorkflowDat?.data?.[0]} />
+        ) : (
+          <NoDataFound
+            title="No Records Found"
+            subtitle="No workflow records available."
+          />
+        )}
+      </div>
     </div>
   );
 };

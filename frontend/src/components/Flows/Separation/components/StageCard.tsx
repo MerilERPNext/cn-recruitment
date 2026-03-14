@@ -108,6 +108,7 @@ const CardStages = ({
 
         if (!action.hasForm) {
           queryClient.invalidateQueries({ queryKey: ["separation"] });
+          queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
         }
 
         if (action.name.toLowerCase() !== "approve") {
