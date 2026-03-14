@@ -112,8 +112,9 @@ const EmployeeSidebarForm = ({
                     Object.assign(fixed, recursiveFixFileData(fixed, col.components));
                 });
             } else {
-                // Use the shared formatter for all fields
-                fixed[key] = formatValueForFormio(fixed[key], comp);
+                // Use the shared formatter for all fields, passing display value if available
+                const displayValue = data[`${key}_display`];
+                fixed[key] = formatValueForFormio(fixed[key], comp, displayValue);
             }
         });
 
@@ -131,7 +132,8 @@ const EmployeeSidebarForm = ({
                 data = recursiveFixFileData(row, component?.components || []);
             } else {
                 const val = (employee as any)[edit.fieldname];
-                data = { [edit.fieldname]: formatValueForFormio(val, component) };
+                const displayVal = (employee as any)[`${edit.fieldname}_display`];
+                data = { [edit.fieldname]: formatValueForFormio(val, component, displayVal) };
             }
         } else {
             data = recursiveFixFileData(employee, schema.components || []);
@@ -207,6 +209,14 @@ const EmployeeSidebarForm = ({
                         }
                     }
                     return cleansed;
+                }
+
+                // Extract original value if it's in "displayValue (value)" format
+                if (typeof data === 'string') {
+                    const match = data.match(/^(.+?)\s\((.+?)\)$/);
+                    if (match) {
+                        return match[2];
+                    }
                 }
 
                 return data;

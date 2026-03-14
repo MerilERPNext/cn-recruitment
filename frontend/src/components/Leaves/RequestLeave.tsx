@@ -153,8 +153,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     return leaveBalanceData.leave_balance
       .filter((entry) => entry.dont_show_in_frontend === 0)
       .map((entry) => ({
-        label: entry.type,
-        value: entry.type,
+        label: `${entry.type} (${entry.leave_id})`,
+        value: entry.leave_id,
       }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveBalanceData, defaults?.leaveType]);

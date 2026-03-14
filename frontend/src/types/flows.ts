@@ -92,6 +92,8 @@ export type FlowRequestStage = {
     custom_doctype_actions: string;
     custom_doctype_actions_with_form: string;
     custom_approval_type: string;
+    role: string;
+    allocated_to: string;
     custom_allocated_to_users: Array<{
       name: string;
       owner: string;
@@ -158,6 +160,8 @@ export type WorkflowStage = {
     custom_subject: string;
     status: string;
     priority: string;
+    role: string;
+    allocated_to: string;
     custom_allocated_to_users: Array<{
       name: string;
       owner: string;

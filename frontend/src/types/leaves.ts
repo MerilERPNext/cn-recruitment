@@ -35,6 +35,7 @@ export interface TeamLeaveRequest {
 }
 
 export interface LeaveBalance {
+  leave_id: string;
   type: string;
   annual_allocation: number;
   dont_show_in_frontend: number;

@@ -32,10 +32,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
     );
   };
 
-  const activeStageIndex =
-    data?.workflow_status === "Pending"
-      ? data.workflow_stages.findIndex((stage) => stage.status === "Pending")
-      : -1;
+  const workflowPending = data?.workflow_status === "Pending";
 
   return (
     <div className="sm:px-7 px-4">
@@ -49,7 +46,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
                     key={idx}
                     stage={stage}
                     idx={idx}
-                    isActive={idx === activeStageIndex}
+                    isActive={workflowPending && stage.status === "Pending"}
                     isLast={idx === data.workflow_stages.length - 1}
                   />
                 ))
@@ -66,7 +63,7 @@ const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
                   key={idx}
                   stage={stage}
                   idx={idx}
-                  isActive={idx === activeStageIndex}
+                  isActive={workflowPending && stage.status === "Pending"}
                   isLast={idx === data.workflow_stages.length - 1}
                 />
               ))
@@ -105,6 +102,7 @@ const WorkflowCard = ({
   const queryClient = useQueryClient();
   const triggerRefetch = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["employee-flow-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["separation-employee"] });
   }, [queryClient]);
 
   const { handleAction } = useApprovalAction(triggerRefetch);
@@ -124,6 +122,7 @@ const WorkflowCard = ({
   const { data: currentUser } = useCurrentUser();
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
+
   const canPerformActions = useMemo(() => {
     if (!isActive) return false;
     let actionPermission = false;

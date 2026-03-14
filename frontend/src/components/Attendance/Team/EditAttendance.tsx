@@ -60,7 +60,7 @@ export const EditAttendance = ({
     if (!data?.[0] || isActuallyLoading) return undefined;
 
     const normalizeTimeValue = (val?: string | null) => {
-      if (!val) return undefined;
+      if (!val || typeof val !== "string") return undefined;
       // If it's already a full datetime string, parse it
       if (val.includes(" ") || val.includes("T")) {
         const d = new Date(val.replace(" ", "T"));

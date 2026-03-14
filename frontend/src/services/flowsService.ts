@@ -86,14 +86,14 @@ export const getSeparationWorkflow = async (
 export const getSeparationFunnelData = async (
   docname: string
 ) => {
-  const response = FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
+  const response = await FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
     {
       doctype: "Employee Separation",
       docname
     },
   );
 
-  return response as any;
+  return response ?? [] as any;
 };
 
 export const postSelectEventFromOptions = async (
