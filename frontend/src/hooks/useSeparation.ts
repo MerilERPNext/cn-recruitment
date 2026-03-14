@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { SeparationEmployeeService } from "../services/SeparationService";
+import { getSeparationWorkflow, SeparationEmployeeService } from "../services/SeparationService";
 
 export const useSeparationEmployee = () => {
     return useQuery({
@@ -7,3 +7,10 @@ export const useSeparationEmployee = () => {
       queryFn: SeparationEmployeeService,
     });
   };
+
+export const useGetSeparationWorkflow = () => {
+  return useQuery({
+    queryKey: ["separation-employee"],
+    queryFn: getSeparationWorkflow,
+  });
+};

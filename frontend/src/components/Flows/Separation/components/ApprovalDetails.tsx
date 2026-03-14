@@ -18,7 +18,7 @@ export default function ApprovalDetails({
   title,
 }: ApprovalDetailsProps) {
   const doc = data.reference_document;
-
+  console.log({ isPending });
   const detailsFields = useMemo(() => {
     const fields = [
       { label: "Employee ID", value: doc.employee },

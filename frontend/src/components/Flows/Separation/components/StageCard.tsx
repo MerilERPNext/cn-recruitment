@@ -132,10 +132,6 @@ const CardStages = ({
     [mutation, hideOverlay, showOverlay],
   );
 
-  console.log({
-    isActive,
-    assignedTo,
-  });
   const canPerformActions = useMemo(() => {
     if (!isActive) return false;
 
