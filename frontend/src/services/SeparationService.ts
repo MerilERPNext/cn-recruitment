@@ -8,3 +8,15 @@ export const SeparationEmployeeService = async () => {
       data: res.data,
     };
   };
+
+
+  export const getSeparationWorkflow = async (
+  ) => {
+    const response = await FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
+      {
+        doctype: "Employee Separation"
+      },
+    );
+  
+    return response as any;
+  };
