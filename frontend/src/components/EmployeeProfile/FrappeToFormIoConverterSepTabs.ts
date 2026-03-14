@@ -275,15 +275,15 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         const data = item?.item || {};
 
         const name = data.name || "";
-
-        const secondary =
-          data.employee_name ||
-          data.title ||
-          data.label ||
-          data.full_name ||
-          data.fullname ||
-          data.first_name ||
-          "";
+        const label = data?.reference_name || ""
+        // const secondary =
+        //   data.employee_name ||
+        //   data.title ||
+        //   data.label ||
+        //   data.full_name ||
+        //   data.fullname ||
+        //   data.first_name ||
+        //   "";
 
         const designation = data.custom_designation_name || "";
         const branch = data.branch || "";
@@ -296,8 +296,8 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         return `
           <div class="formio-select-item">
             <div class="formio-select-item-main">
-              <span class="primary">${name}</span>
-              ${secondary ? `<span class="secondary">(${secondary})</span>` : ""}
+              <span class="primary">${label}</span>
+              ${name ? `<span class="secondary">(${name})</span>` : ""}
             </div>
 
             ${infoText
@@ -537,7 +537,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
 /**
  * Formats a raw backend value into a Form.io compatible structure based on component type.
  */
-export function formatValueForFormio(value: any, component: any): any {
+export function formatValueForFormio(value: any, component: any, displayValue?: any): any {
   if (value === null || value === undefined) {
     return component?.multiple || component?.type === 'file' || component?.type === 'datagrid' ? [] : "";
   }
@@ -580,7 +580,9 @@ export function formatValueForFormio(value: any, component: any): any {
         const newRow = { ...row };
         if (component.components) {
           component.components.forEach((childComp: any) => {
-            newRow[childComp.key] = formatValueForFormio(newRow[childComp.key], childComp);
+            const childValue = newRow[childComp.key];
+            const childDisplayValue = newRow[`${childComp.key}_display`];
+            newRow[childComp.key] = formatValueForFormio(childValue, childComp, childDisplayValue);
           });
         }
         return newRow;
@@ -594,6 +596,11 @@ export function formatValueForFormio(value: any, component: any): any {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string' && value.trim() !== '') return [value];
     return [];
+  }
+
+  // Combine value and displayValue if they differ and it's not a complex type
+  if (displayValue !== undefined && displayValue !== null && displayValue !== "" && displayValue !== value) {
+    return `${displayValue} (${value})`;
   }
 
   return value;
@@ -780,7 +787,11 @@ export async function convertToFormioWithTabMetadata(
 
 
     } else {
-      const fieldValue = employeeData[field?.fieldname] || "";
+      const value = employeeData[field?.fieldname];
+      const displayValue = employeeData[`${field?.fieldname}_display`];
+      const fieldValue = (displayValue !== undefined && displayValue !== null && displayValue !== "" && displayValue !== value)
+        ? `${displayValue} (${value})`
+        : (value || "");
       let mapped: any = null;
 
       if (field.fieldtype === "Table") {

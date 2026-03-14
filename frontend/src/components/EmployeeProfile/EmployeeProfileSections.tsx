@@ -49,7 +49,6 @@ export default function EmployeeProfileSections() {
         detailed: 1,
         include_breaks: 1,
     });
-
     const [tabs, setTabs] = useState<SimpleTab[]>([]);
     const [activeTab, setActiveTab] = useState<string>("");
     const [edit, setEdit] = useState<EditableField | null>(null);
