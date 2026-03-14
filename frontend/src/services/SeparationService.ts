@@ -12,7 +12,7 @@ export const SeparationEmployeeService = async () => {
 
   export const getSeparationWorkflow = async (
   ) => {
-    const response = FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
+    const response = await FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
       {
         doctype: "Employee Separation"
       },
