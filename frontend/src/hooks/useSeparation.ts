@@ -10,7 +10,7 @@ export const useSeparationEmployee = () => {
 
 export const useGetSeparationWorkflow = () => {
   return useQuery({
-    queryKey: ["separation-employee"],
+    queryKey: ["separation-workflow"],
     queryFn: getSeparationWorkflow,
   });
 };
