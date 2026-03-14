@@ -207,6 +207,7 @@ const LeaveBalance: React.FC = () => {
           onClose={handleCloseDrawer}
           leaveType={selectedLeave.type}
           leaveData={selectedLeave}
+          leaveId={selectedLeave?.leave_id}
         />
       )}
 
@@ -338,7 +339,7 @@ const LeaveBalance: React.FC = () => {
                               {leave.entitled}
                             </Typography>
 
-                            <p className="text-sm text-gray-600">{leave.type}</p>
+                            <p className="text-sm text-gray-600">{`${leave.type} (${leave?.leave_id})`}</p>
                           </div>
                           {leave?.visibility_flags?.show_carry_over && (
                             <Typography
