@@ -236,6 +236,7 @@ scheduler_events = {
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
             "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
+            "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ]
     }
 }
