@@ -66,6 +66,7 @@ const EmpAttendanceRequestCard = ({
     const fromDate = startOfDay(parse(from_date, format, new Date()));
     const toDate = startOfDay(parse(to_date, format, new Date()));
 
+
     const diff = differenceInCalendarDays(toDate, fromDate);
 
     return diff + 1; // inclusive
@@ -76,7 +77,7 @@ const EmpAttendanceRequestCard = ({
   );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
-  const duration = getDays(formattedToDate, formattedFromDate);
+  const duration = getDays(formattedFromDate, formattedToDate);
   const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
