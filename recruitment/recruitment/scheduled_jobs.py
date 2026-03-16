@@ -332,10 +332,11 @@ def mark_relieved_employees_as_left():
 
     employees = frappe.get_all(
         "Employee",
-        filters={
-            "relieving_date": ["<=", current_date],
-            "status": ["!=", "Left"],
-        },
+        filters=[
+            ["relieving_date", "is", "set"],
+            ["relieving_date", "<=", current_date],
+            ["status", "!=", "Left"],
+        ],
         fields=["name", "employee_name", "user_id", "relieving_date"],
     )
 
@@ -355,6 +356,64 @@ def mark_relieved_employees_as_left():
 
     if employees:
         frappe.db.commit()
+
+
+def auto_confirm_employees_without_policy():
+    current_date = getdate(today())
+
+    employees = frappe.get_all(
+        "Employee",
+        filters=[
+            ["status", "=", "Active"],
+            ["custom_employment_status", "in", ["On Probation", "Probation Extended"]],
+            ["final_confirmation_date", "is", "set"],
+            ["final_confirmation_date", "<=", current_date],
+        ],
+        fields=["name", "employee_name", "final_confirmation_date"],
+    )
+
+    all_policy_employees = set()
+    policies = frappe.get_all("Confirmation Policy", fields=["name"])
+    for policy in policies:
+        policy_doc = frappe.get_doc("Confirmation Policy", policy.name)
+        applicable = get_applicable_employees(policy_doc)
+        all_policy_employees.update(applicable)
+
+    for emp in employees:
+        if emp.name in all_policy_employees:
+            continue
+
+        existing = frappe.db.exists("Employee Confirmation", {
+            "employee": emp.name,
+            "docstatus": ["!=", 2],
+        })
+        if existing:
+            continue
+
+        try:
+            confirmation_doc = frappe.get_doc({
+                "doctype": "Employee Confirmation",
+                "employee": emp.name,
+                "status": "Confirmed",
+            })
+            confirmation_doc.insert(ignore_permissions=True, ignore_mandatory=True)
+            confirmation_doc.submit()
+
+            frappe.db.set_value("Employee", emp.name, {
+                "custom_employment_status": "Confirmed",
+            })
+
+            frappe.log_error(
+                message=f"Auto-confirmed employee {emp.employee_name} ({emp.name}) - no confirmation policy assigned. Confirmation date: {emp.final_confirmation_date}",
+                title="Auto Confirmation Executed",
+            )
+        except Exception as e:
+            frappe.log_error(
+                message=f"Failed to auto-confirm {emp.employee_name} ({emp.name}): {str(e)}",
+                title="Auto Confirmation Failed",
+            )
+
+    frappe.db.commit()
 
 
 @frappe.whitelist()
