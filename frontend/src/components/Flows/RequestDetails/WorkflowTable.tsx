@@ -244,16 +244,16 @@ const WorkflowCard = ({
 
       {/* Stage Card */}
       <div className="flex-1 min-w-0 pr-2 pb-2">
-        <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all">
+        <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all overflow-hidden">
           <div className="flex justify-between items-start gap-3 mb-3">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
               <Typography
                 variant="mobileCardLabel"
                 className="block text-gray-500 uppercase tracking-wide"
               >
                 Stage {idx + 1}
               </Typography>
-              <Typography variant="mobileCardTitle" className="break-words">
+              <Typography variant="mobileCardTitle" className="truncate">
                 {stage.target_name || stage.target || "-"}
               </Typography>
             </div>
@@ -267,26 +267,23 @@ const WorkflowCard = ({
           <div className="space-y-2.5">
             {/* Assign To Users */}
             {allocatedTo.users.length > 0 && (
-              <div className="flex justify-between items-start text-sm gap-4">
+              <div className="flex items-start text-sm gap-2">
                 <Typography
                   variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
+                  className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
                 >
                   Assign To Users
                 </Typography>
-                <div className="flex-1 min-w-0 flex justify-end">
+                <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
                   <AllocatedToTooltip
                     users={allocatedTo.users}
                     roles={allocatedTo.roles}
                     position="bottom"
                   >
-                    <div className="flex items-center gap-1 cursor-pointer">
-                      <Typography
-                        variant="mobileCardValue"
-                        className="text-right truncate mt-0.5"
-                      >
+                    <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
+                      <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
                         {`${allocatedTo.users[0]}${allocatedTo.users.length > 1 ? ` (+${allocatedTo.users.length - 1})` : ""}`}
-                      </Typography>
+                      </span>
                       <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
                     </div>
                   </AllocatedToTooltip>
@@ -296,26 +293,27 @@ const WorkflowCard = ({
 
             {/* Assign To Roles */}
             {allocatedTo.roles.length > 0 && (
-              <div className="flex justify-between items-start text-sm gap-4">
+              <div className="flex items-start text-sm gap-2">
                 <Typography
                   variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
+                  className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
                 >
                   Assign To Roles
                 </Typography>
-                <AllocatedToTooltip
-                  users={allocatedTo.users}
-                  roles={allocatedTo.roles}
-                  position="bottom"
-                >
-                  <Typography
-                    variant="mobileCardValue"
-                    className="text-right flex-1 min-w-0 truncate mt-0.5 flex items-center gap-1"
+                <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
+                  <AllocatedToTooltip
+                    users={allocatedTo.users}
+                    roles={allocatedTo.roles}
+                    position="bottom"
                   >
-                    {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
-                    <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
-                  </Typography>
-                </AllocatedToTooltip>
+                    <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
+                      <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
+                        {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
+                      </span>
+                      <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+                    </div>
+                  </AllocatedToTooltip>
+                </div>
               </div>
             )}
 

@@ -86,6 +86,9 @@ const PolicySignOff: React.FC = () => {
           queryClient.invalidateQueries({
             queryKey: ["document-count", "Policy Details"],
           });
+          queryClient.invalidateQueries({
+            queryKey: ["mandatory-policies-pending"],
+          });
           navigate("/webapp/policies-enforced");
         })
         .catch((error) => {
@@ -113,6 +116,9 @@ const PolicySignOff: React.FC = () => {
         queryClient.invalidateQueries({
           queryKey: ["document-count", "Policy Details"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["mandatory-policies-pending"],
+        });
         navigate("/webapp/policies-enforced");
       })
       .catch((error) => {
@@ -136,6 +142,9 @@ const PolicySignOff: React.FC = () => {
         });
         queryClient.invalidateQueries({
           queryKey: ["document-count", "Policy Details"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["mandatory-policies-pending"],
         });
         navigate("/webapp/policies-enforced");
       })

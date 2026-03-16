@@ -905,8 +905,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ? normalizeTime(latestCheckout)
       : normalizeTime(latestInAndOutTime?.out_time);
 
-    const finalCheckin = normalizedCheckin || shiftStart;
-    const finalCheckout = normalizedCheckout || shiftEnd;
+    const finalCheckin = normalizedCheckin || normalizeTime(shiftStart);
+    const finalCheckout = normalizedCheckout || normalizeTime(shiftEnd);
 
     let changed = false;
     if (checkinComp && finalCheckin) {

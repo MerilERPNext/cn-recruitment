@@ -26,7 +26,7 @@ import { statusConfig } from "./constants";
 import ConfirmationStateCard from "./components/ConfirmationStateCard";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { ConfirmationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { Form } from "@tsed/react-formio";
 import ReviewForm from "../Separation/components/ReviewForm";
@@ -329,9 +329,9 @@ const ConfirmationWorkflow = () => {
     },
   ];
 
-  /* -------------------- LOADING Spinner -------------------- */
+  /* -------------------- LOADING Skeleton -------------------- */
   if (isLoading) {
-    return <DashboardContentSkeleton />;
+    return <ConfirmationSkeleton />;
   }
   /* ---------------------------------------------------------- */
 

@@ -61,3 +61,26 @@ export const usePolicyCountsByCategory = (employeeId?: string) => {
     enabled: !!employeeId,
   });
 };
+
+export const useMandatoryPoliciesPending = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["mandatory-policies-pending", employeeId],
+    queryFn: async () => {
+      if (!employeeId) return false;
+      
+      try {
+        const result = await frappeService.getDocumentList("Policy Details", {
+          fields: ["name", "status", "policy", "sign_off_mandatory", "due_date"],
+          filters: [["status", "=", "Pending"], ["employee_id", "=", employeeId], ["sign_off_mandatory", "=", 1]],
+          limit_page_length: 1
+        });
+        
+        return Array.isArray(result) && result.length > 0;
+      } catch (error) {
+        console.warn("⚠️ Failed to check mandatory policies pending:", error);
+        return false;
+      }
+    },
+    enabled: !!employeeId,
+  });
+};
