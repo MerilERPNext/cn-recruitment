@@ -36,6 +36,7 @@ import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { TodoType } from "../../../types/todos";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { buildFormFromSchemaAndAnswer } from "../../../utils/flowUtils";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -134,25 +135,8 @@ const ConfirmationWorkflow = () => {
     setFormSchema((prev: any) => {
       if (!schema) return prev;
 
-      const updatedSchema = schema
-        .filter((comp) => comp.key !== "submit")
-        .map((component) => {
-          const key = component.key;
-
-          if (key && answer[key] !== undefined) {
-            return {
-              ...component,
-              defaultValue: answer[key],
-            };
-          }
-
-          return component;
-        });
-
-      return {
-        display: "form",
-        components: updatedSchema,
-      };
+      const updatedSchema = buildFormFromSchemaAndAnswer(schema, answer);
+      return updatedSchema;
     });
 
     setShowSelfInitForm(true);

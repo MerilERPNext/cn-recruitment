@@ -10,6 +10,7 @@ import { ApprovalStage } from "../../../types/todos";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ViewFormButton from "../ViewFormButton";
+import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../utils/flowUtils";
 
 type handleActPropsType = {
   name: string;
@@ -68,35 +69,22 @@ const StageCard: React.FC<StageCardProps> = ({
     return actionPermission;
   }, [stage, currentUser, item, showActButton]);
 
-  const [formSchema, setFormSchema] = useState(null);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
-    approval_response_data: string,
+    approval_response_data: string
   ) => {
-    const data = JSON.parse(approval_response_data);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setFormSchema((prev: any) => {
-      if (!schema) return prev;
+    if (!schema) return;
 
-      const updatedSchema = schema.map((component) => {
-        const key = component.key;
+    let data: Record<string, any> = {};
+    try {
+      data = JSON.parse(approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
 
-        if (key && data[key] !== undefined) {
-          return {
-            ...component,
-            defaultValue: data[key],
-          };
-        }
-
-        return component;
-      });
-
-      return {
-        display: "form",
-        components: updatedSchema,
-      };
-    });
+    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShow(true);
   };
 
