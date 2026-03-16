@@ -20,7 +20,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { DashboardContentSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 
 type cardDataType = {
@@ -199,9 +199,9 @@ const Separation = () => {
   };
 
   const { isDesktop } = useScreenSize();
-  /* -------------------- LOADING Spinner -------------------- */
+  /* -------------------- LOADING Skeleton -------------------- */
   if (isLoading) {
-    return <DashboardContentSkeleton />;
+    return <SeparationSkeleton />;
   }
   /* ---------------------------------------------------------- */
 

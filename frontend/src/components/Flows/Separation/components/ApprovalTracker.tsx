@@ -10,6 +10,12 @@ import { TodoType } from "../../../../types/todos";
 import { Typography } from "../../../shared/atoms/Typography";
 import { format, parse } from "date-fns";
 import { Card } from "../../../shared/atoms/Card";
+import { createPortal } from "react-dom";
+import ReviewForm from "./ReviewForm";
+import { Form } from "@tsed/react-formio";
+import ViewFormButton from "../../ViewFormButton";
+import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
 export interface ApprovalStage {
   approval_time: string;
   approval_response_data: string;
@@ -30,6 +36,47 @@ interface ApprovalTrackerProps {
 
 export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
+  const [formSchema, setFormSchema] = useState<any>();
+
+  const selfInitFormAndAns = useMemo(
+    () =>
+      data?.reference_document?.initiator_form
+        ? JSON.parse(data?.reference_document?.initiator_form)
+        : null,
+    [data],
+  );
+
+  const handleShowForm = () => {
+    const schema: FormIOComponent[] = selfInitFormAndAns?.form?.components;
+    const answer = selfInitFormAndAns?.answer;
+
+    setFormSchema((prev: any) => {
+      if (!schema) return prev;
+
+      const updatedSchema = schema
+        .filter((comp) => comp.key !== "submit")
+        .map((component) => {
+          const key = component.key;
+
+          if (key && answer[key] !== undefined) {
+            return {
+              ...component,
+              defaultValue: answer[key],
+            };
+          }
+
+          return component;
+        });
+
+      return {
+        display: "form",
+        components: updatedSchema,
+      };
+    });
+
+    setShowSelfInitForm(true);
+  };
 
   const actions: { name: string; hasForm: boolean }[] = useMemo(() => {
     const withForm: string[] = data?.custom_doctype_actions_with_form
@@ -149,6 +196,38 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             Separation Workflow Timeline
           </Typography>
           <div className="flex flex-col pt-1">
+            {selfInitFormAndAns && (
+              <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
+                <StatusTimelineRow
+                  timelineData={{
+                    isLast: false,
+                    status: "completed",
+                  }}
+                >
+                  <div className="grid lg:grid-cols-2 grid-cols-1 py-2">
+                    <div className="ml-4 flex flex-col">
+                      <Typography variant="bodyMedium">
+                        Employee Self Form Submission
+                      </Typography>
+                      <Typography variant="bodySmall">
+                        Self form details submitted
+                      </Typography>
+                    </div>
+
+                    <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
+                      <div className="flex gap-3">
+                        <ViewFormButton onClick={handleShowForm} />
+                      </div>
+                      <div>
+                        {formatToIndianDate(
+                          data?.reference_document?.creation || "",
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </StatusTimelineRow>
+              </div>
+            )}
             {data?.approval_stages_status.map((item, idx) => {
               const isActive =
                 item.status === "Pending" &&
@@ -184,6 +263,22 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
           data={data}
         />
       )}
+      
+      {formSchema &&
+        showSelfInitForm &&
+        createPortal(
+          <ReviewForm onClose={() => setShowSelfInitForm(false)}>
+            <Form
+              form={formSchema}
+              options={{
+                readOnly: true,
+                viewAsHtml: false,
+              }}
+              submit={false}
+            />
+          </ReviewForm>,
+          document.body,
+        )}
     </div>
   );
 }

@@ -4,17 +4,16 @@ import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import WorkflowTable from "../RequestDetails/WorkflowTable";
 import NoDataFound from "../../shared/atoms/NoDataFound";
+import SeparationWorkflowSkeleton from "./components/SeparationWorkflowSkeleton";
 
 const SeparationWorkflow: React.FC = () => {
-  const { data: separationWorkflowDat, refetch: refetchSeparationWorkflow } =
-    useGetSeparationWorkflowData();
-  console.log({ separationWorkflowDat });
-  // const { id } = useParams();
-  // const { data: separationWorkflow, refetch: refetchSeparationWorkflow } =
-  //   useGetSeparationWorkflow("Employee Separation", id || "");
-  // const { data: separationFunnelData } = useGetSeparationFunnelData(id || "");
-  // const { mutateAsync: getSessionForChatnextAction } =
-  //   usePostSelectEventFromOptions();
+  const {
+    data: separationWorkflowDat,
+    refetch: refetchSeparationWorkflow,
+    isLoading,
+  } = useGetSeparationWorkflowData();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -31,17 +30,17 @@ const SeparationWorkflow: React.FC = () => {
     };
   }, [refetchSeparationWorkflow]);
 
-  const navigate = useNavigate();
-
   return (
     <div>
       <HeaderBar
         title="Separation Workflow"
         onBack={() => navigate(-1)}
-        className="md:!z-[60]"
       />
+
       <div className="pt-8 pb-12">
-        {separationWorkflowDat?.data?.[0] ? (
+        {isLoading ? (
+          <SeparationWorkflowSkeleton rows={5} />
+        ) : separationWorkflowDat?.data?.[0] ? (
           <WorkflowTable data={separationWorkflowDat?.data?.[0]} />
         ) : (
           <NoDataFound

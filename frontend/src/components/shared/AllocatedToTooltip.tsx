@@ -35,48 +35,60 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     const triggerRef = useRef<HTMLDivElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isTouchRef = useRef(false);
 
     const calculatePosition = useCallback(() => {
         if (!triggerRef.current || !tooltipRef.current) return;
+        // getBoundingClientRect() is already viewport-relative.
+        // Since the tooltip is position:fixed we must NOT add scrollY/scrollX.
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const tooltipRect = tooltipRef.current.getBoundingClientRect();
-        const scrollY = window.scrollY;
-        const scrollX = window.scrollX;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const PADDING = 8;
 
         let top = 0;
         let left = 0;
 
-        switch (position) {
+        // Centre horizontally on the trigger
+        left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+
+        // Auto-flip: prefer the requested side, but flip if it would clip
+        const spaceBelow = vh - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
+        const fits = (side: "top" | "bottom") =>
+            side === "bottom"
+                ? spaceBelow >= tooltipRect.height + PADDING
+                : spaceAbove >= tooltipRect.height + PADDING;
+
+        let resolvedPosition = position;
+        if ((position === "bottom" || position === "top") && !fits(position as "top" | "bottom")) {
+            // flip to the other side if current side doesn't fit
+            resolvedPosition = position === "bottom" ? "top" : "bottom";
+        }
+
+        switch (resolvedPosition) {
             case "bottom":
-                top = triggerRect.bottom + scrollY + 10;
-                left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
+                top = triggerRect.bottom + PADDING;
                 break;
             case "left":
-                top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
-                left = triggerRect.left + scrollX - tooltipRect.width - 10;
+                top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+                left = triggerRect.left - tooltipRect.width - PADDING;
                 break;
             case "right":
-                top = triggerRect.top + scrollY + triggerRect.height / 2 - tooltipRect.height / 2;
-                left = triggerRect.right + scrollX + 10;
+                top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+                left = triggerRect.right + PADDING;
                 break;
             case "top":
             default:
-                top = triggerRect.top + scrollY - tooltipRect.height - 10;
-                left = triggerRect.left + scrollX + triggerRect.width / 2 - tooltipRect.width / 2;
+                top = triggerRect.top - tooltipRect.height - PADDING;
                 break;
         }
 
-        // Apply viewport constraints
-        const PADDING = 10; // offset from window edges
-        const maxLeft = window.innerWidth - tooltipRect.width - PADDING + scrollX;
-        const minLeft = PADDING + scrollX;
-
-        // Clamp left coordinate
-        if (left < minLeft) {
-            left = minLeft;
-        } else if (left > maxLeft) {
-            left = maxLeft;
-        }
+        // Clamp horizontal so tooltip never overflows left/right edge
+        left = Math.max(PADDING, Math.min(left, vw - tooltipRect.width - PADDING));
+        // Clamp vertical so tooltip never overflows top/bottom edge
+        top = Math.max(PADDING, Math.min(top, vh - tooltipRect.height - PADDING));
 
         setCoords({ top, left });
     }, [position]);
@@ -105,6 +117,31 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         setIsVisible(false);
     };
+
+    const toggle = (e: React.MouseEvent | React.TouchEvent) => {
+        e.stopPropagation();
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setIsVisible((v) => !v);
+    };
+
+    // Dismiss on outside click/tap
+    useEffect(() => {
+        if (!isVisible) return;
+        const handleOutside = (e: MouseEvent | TouchEvent) => {
+            if (
+                triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+                tooltipRef.current && !tooltipRef.current.contains(e.target as Node)
+            ) {
+                setIsVisible(false);
+            }
+        };
+        document.addEventListener("mousedown", handleOutside);
+        document.addEventListener("touchstart", handleOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleOutside);
+            document.removeEventListener("touchstart", handleOutside);
+        };
+    }, [isVisible]);
 
     const getArrowClasses = () => {
         switch (position) {
@@ -136,7 +173,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
           bg-white rounded-xl shadow-xl
           border border-primary-100
           min-w-[200px] max-w-[320px]
-          overflow-hidden
+          max-h-[60vh] overflow-y-auto
         "
             >
                 {/* Header */}
@@ -227,10 +264,12 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             <div
                 ref={triggerRef}
                 className="inline-block"
-                onMouseEnter={show}
-                onMouseLeave={hide}
+                onMouseEnter={() => { if (!isTouchRef.current) show(); }}
+                onMouseLeave={() => { if (!isTouchRef.current) hide(); }}
                 onFocus={show}
                 onBlur={hide}
+                onTouchStart={() => { isTouchRef.current = true; }}
+                onClick={toggle}
             >
                 {children}
             </div>

@@ -208,3 +208,180 @@ export const LibraryTableSkeleton = () => {
     </tbody>
   );
 };
+
+/* ─────────────────────────────────────────────────────────────
+   SeparationSkeleton
+   Mirrors: Separation.tsx ApprovalTracker layout
+   (Header stats card + Workflow Timeline card)
+───────────────────────────────────────────────────────────── */
+export const SeparationSkeleton: React.FC = () => {
+  return (
+    <div className="min-h-screen px-4 md:p-4 animate-pulse space-y-6">
+      {/* Title + subtitle */}
+      <div className="space-y-2 mb-4 md:mb-6">
+        <div className="h-6 w-32 bg-gray-200 rounded" />
+        <div className="h-3 w-48 bg-gray-200 rounded" />
+      </div>
+
+      {/* Header ApprovalDetails Card */}
+      <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 border border-slate-200">
+        <div className="flex flex-col gap-4">
+          {/* Status Header */}
+          <div className="flex justify-between items-start">
+            <div className="space-y-2">
+              <div className="h-3 w-24 bg-gray-200 rounded" />
+              <div className="h-4 w-32 bg-gray-200 rounded" />
+            </div>
+            <div className="space-y-2 text-right">
+              <div className="h-3 w-20 bg-gray-200 ml-auto rounded" />
+              <div className="h-4 w-24 bg-gray-200 rounded" />
+            </div>
+          </div>
+
+          {/* Details Grid (Employee details) */}
+          <div className="bg-blue-50 md:bg-white border-0 md:border md:border-slate-200 rounded-lg p-4 md:p-6 mt-2">
+            <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-3 w-20 bg-gray-200 rounded" />
+                  <div className="h-4 w-32 bg-gray-200 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Workflow Timeline Card */}
+      <div className="bg-white rounded-lg shadow-sm p-4 md:p-6 space-y-4">
+        <div className="h-5 w-56 bg-gray-200 rounded mb-6" />
+
+        {/* Timeline rows */}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="grid grid-cols-[30px_1fr] sm:grid-cols-[80px_1fr] gap-3 py-2">
+            {/* Icon column */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-6 w-6 bg-gray-200 rounded-full" />
+              {i < 3 && <div className="w-0.5 h-12 bg-gray-200" />}
+            </div>
+            {/* Content body */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+              <div className="space-y-2 ml-2 md:ml-4">
+                <div className="h-4 w-32 bg-gray-200 rounded" />
+                <div className="h-3 w-48 bg-gray-200 rounded" />
+              </div>
+              <div className="flex justify-start md:justify-end items-start px-2 md:px-4">
+                <div className="h-8 w-24 bg-gray-200 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   ConfirmationSkeleton
+   Mirrors: Confirmation.tsx — stat tiles grid + workflow timeline
+───────────────────────────────────────────────────────────── */
+export const ConfirmationSkeleton: React.FC = () => {
+  const { isDesktop } = useScreenSize();
+
+  if (!isDesktop) {
+    return (
+      <div className="min-h-screen px-4 pt-4 animate-pulse space-y-4">
+        {/* Subtitle */}
+        <div className="h-3 w-48 bg-gray-200 rounded" />
+
+        {/* Stat tiles — 2×2 grid */}
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="rounded-lg bg-gray-100 p-3 space-y-2"
+              >
+                <div className="h-6 w-6 bg-gray-200 rounded-md" />
+                <div className="h-3 w-3/4 bg-gray-200 rounded" />
+                <div className="h-4 w-1/2 bg-gray-200 rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Timeline card */}
+        <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+          {/* Section title */}
+          <div className="h-4 w-48 bg-gray-200 rounded" />
+
+          {/* Timeline rows */}
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="grid grid-cols-[30px_1fr] gap-3 py-2">
+              {/* Icon column */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="h-5 w-5 bg-gray-200 rounded-full" />
+                {i < 3 && <div className="w-0.5 h-8 bg-gray-200" />}
+              </div>
+              {/* Content */}
+              <div className="space-y-2">
+                <div className="h-3 w-1/2 bg-gray-200 rounded" />
+                <div className="h-3 w-3/4 bg-gray-200 rounded" />
+                <div className="h-8 w-32 bg-gray-200 rounded-lg" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* Desktop */
+  return (
+    <div className="min-h-screen bg-blue-50 p-4 animate-pulse space-y-4">
+      {/* Title + subtitle */}
+      <div className="space-y-2 p-2">
+        <div className="h-6 w-32 bg-gray-200 rounded" />
+        <div className="h-3 w-48 bg-gray-200 rounded" />
+      </div>
+
+      {/* Stat cards — 4 columns */}
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-lg bg-gray-100 p-4 space-y-3">
+              <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+              <div className="h-3 w-3/4 bg-gray-200 rounded" />
+              <div className="h-4 w-1/2 bg-gray-200 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Timeline card */}
+      <div className="bg-white rounded-xl shadow-sm p-6 mt-4 space-y-4">
+        <div className="h-5 w-56 bg-gray-200 rounded" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="grid grid-cols-[80px_1fr] gap-3 py-2">
+            {/* Icon column */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="h-6 w-6 bg-gray-200 rounded-full" />
+              {i < 3 && <div className="w-0.5 h-10 bg-gray-200" />}
+            </div>
+            {/* Content */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                <div className="h-3 w-3/4 bg-gray-200 rounded" />
+              </div>
+              <div className="flex justify-end">
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};

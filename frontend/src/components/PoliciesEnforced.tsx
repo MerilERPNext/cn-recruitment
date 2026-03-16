@@ -11,6 +11,7 @@ import {
   IoInformationCircleOutline,
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
+import { useMandatoryPoliciesPending } from "../hooks/usePolicy";
 
 // Skeleton component for loading states
 const PolicyItemSkeleton: React.FC = () => {
@@ -146,17 +147,11 @@ const PoliciesEnforced: React.FC = () => {
     useState(true);
   const [completedPoliciesExpanded, setCompletedPoliciesExpanded] =
     useState(false);
-  const [hasMandatoryPolicies, setHasMandatoryPolicies] = useState(false);
-  const [mandatoryDataLoaded, setMandatoryDataLoaded] = useState(false);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
     useCurrentEmployee();
+  const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } = 
+    useMandatoryPoliciesPending(currentEmployee?.name);
   const { isMobile } = useScreenSize();
-
-  const handleMandatoryDataLoad = (data: any[]) => {
-    const hasMandatory = data.some((item) => item.sign_off_mandatory);
-    setHasMandatoryPolicies(hasMandatory);
-    setMandatoryDataLoaded(true);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50/50 pb-10">
@@ -175,7 +170,7 @@ const PoliciesEnforced: React.FC = () => {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
         {/* Action Required Alert - only show when there are mandatory policies */}
-        {mandatoryDataLoaded && hasMandatoryPolicies && (
+        {!isMandatoryCheckLoading && hasMandatoryPolicies && (
           <div className="bg-white rounded-xl shadow-lg border-l-4 border-l-red-500 p-5 mb-8 animate-fadeIn">
             <div className="flex items-start">
               <div className="flex-shrink-0 bg-red-50 p-2 rounded-full">
@@ -272,7 +267,6 @@ const PoliciesEnforced: React.FC = () => {
                 isSearch={true}
                 isFilter={false}
                 pageSize={10}
-                onDataLoad={handleMandatoryDataLoad}
               />
             </div>
           )}

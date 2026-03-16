@@ -9,7 +9,7 @@ interface ReviewFormProps {
 const ReviewForm = ({ onClose, children }: ReviewFormProps) => {
   return (
     <div
-      className="fixed inset-0 top-[-30px] z-50 flex items-center justify-center bg-black bg-opacity-50"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -31,7 +31,7 @@ const ReviewForm = ({ onClose, children }: ReviewFormProps) => {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-2 pb-32 md:pb-6 px-4">
           {children}
         </div>
       </div>
