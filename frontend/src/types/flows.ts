@@ -87,6 +87,7 @@ export type FlowRequestStage = {
   form_json?: {
     components: any[];
   };
+  approval_response_data: string;
   todo: {
     name: string;
     custom_doctype_actions: string;
@@ -140,6 +141,12 @@ export type FlowRequestItem = {
   overall_flow_status: string;
   approval_stages: FlowRequestStage[];
   workflow_stages: WorkflowStage[];
+  initiator_forms: {
+    form_data: string;
+    status: string;
+    target: string;
+    target_name: string;
+  }[];
 };
 
 
@@ -149,6 +156,7 @@ export type WorkflowStage = {
   target: string;
   target_name: string;
   action_options: string;
+  form_data: string;
   todo: {
     name: string;
     owner: string;

@@ -8,14 +8,18 @@ import { Typography } from "../../shared/atoms/Typography";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { FlowRequestItem, FlowRequestStage } from "../../../types/flows";
 import { StaticListView } from "../../ListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
-import { extractRolesAndUsers } from "../../../utils/flowUtils";
+import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { useQueryClient } from "@tanstack/react-query";
+import { Form } from "@tsed/react-formio";
+import ReviewForm from "../Separation/components/ReviewForm";
+import { createPortal } from "react-dom";
+import Button from "../../shared/atoms/Button";
 
 const titles = [
   "Stage Name",
@@ -77,8 +81,8 @@ const StageCard = ({
     : [];
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
     ? JSON.parse(
-        stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-      )
+      stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+    )
     : [];
 
   const queryClient = useQueryClient();
@@ -113,6 +117,28 @@ const StageCard = ({
 
     return actionPermission;
   }, [currentUser, isActive, allocatedTo]);
+
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const handleShowForm = () => {
+    if (!stage?.form_json?.components) return;
+
+    const schema = stage.form_json.components;
+
+    let data: Record<string, any> = {};
+
+    try {
+      data = stage?.approval_response_data
+        ? JSON.parse(stage.approval_response_data)
+        : {};
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+      data = {};
+    }
+
+    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setShowForm(true);
+  };
 
   return (
     <div
@@ -152,17 +178,40 @@ const StageCard = ({
       <div className="flex items-center justify-center pr-2">
         {" "}
         <Typography variant="bodySmall" className="font-medium text-center">
-          {canPerformActions && (
-            <TeamApprovalActionPill
-              actions={actions}
-              status={stage?.status}
-              recordId={stage?.todo?.name}
-              // loadingAction={loadingAction}
-              onAction={(action) => onAction(action, stage?.todo)}
-            />
-          )}
+          <>
+            {stage?.approval_response_data && (
+              <Button
+                variant="outline"
+                onClick={handleShowForm}
+              >
+                Review Form
+              </Button>
+            )}
+            {canPerformActions && (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={stage?.status}
+                recordId={stage?.todo?.name}
+                // loadingAction={loadingAction}
+                onAction={(action) => onAction(action, stage?.todo)}
+              />
+            )}
+          </>
         </Typography>
       </div>
+      {formSchema && showForm && createPortal(
+        <ReviewForm onClose={() => setShowForm(false)}>
+          <Form
+            form={formSchema}
+            options={{
+              readOnly: true, // This makes the entire form read-only
+              viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
+            }}
+            submit={false}
+          />
+        </ReviewForm>,
+        document.body,
+      )}
     </div>
   );
 };

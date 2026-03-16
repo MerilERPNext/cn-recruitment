@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Check, Clock, X, User, Info } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { FlowRequestStage } from "../../../types/flows";
@@ -7,10 +7,14 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
-import { extractRolesAndUsers } from "../../../utils/flowUtils";
+import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { Typography } from "../../shared/atoms/Typography";
 import { useQueryClient } from "@tanstack/react-query";
+import Button from "../../shared/atoms/Button";
+import { createPortal } from "react-dom";
+import ReviewForm from "../Separation/components/ReviewForm";
+import { Form } from "@tsed/react-formio";
 
 const getIcon = (status: string) => {
   const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -83,7 +87,6 @@ export const RequestDetailCard = ({
   stages,
   isActive,
 }: RequestDetailCardProps) => {
-  console.log("is active", isActive);
   const isCompleted =
     stage.status === "Completed" || stage.status === "Approved";
   const nextStage = stages[index + 1];
@@ -93,8 +96,8 @@ export const RequestDetailCard = ({
     : [];
   const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
     ? JSON.parse(
-        stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-      )
+      stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+    )
     : [];
 
   const queryClient = useQueryClient();
@@ -131,10 +134,25 @@ export const RequestDetailCard = ({
 
   const lineColor =
     isCompleted &&
-    nextStage?.status !== "Failed" &&
-    nextStage?.status !== "Rejected"
+      nextStage?.status !== "Failed" &&
+      nextStage?.status !== "Rejected"
       ? "bg-green-500"
       : "bg-gray-300";
+
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const handleShowForm = () => {
+    const schema = stage?.form_json?.components;
+    let data: Record<string, any> = {};
+    try {
+      data = JSON.parse(stage?.approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
+    if (!schema) return;
+    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setShowForm(true);
+  }
 
   return (
     <div
@@ -173,7 +191,7 @@ export const RequestDetailCard = ({
       </div>
       {/* Stage Card */}
       <div className="flex-1 min-w-0">
-        <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all">
+        <div className="bg-white rounded-2xl border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary px-4 py-4 transition-all overflow-hidden">
           {/* Header: Stage Info & Status */}
           <div className="flex justify-between items-start gap-3 mb-3">
             <div className="flex flex-col gap-1">
@@ -199,26 +217,23 @@ export const RequestDetailCard = ({
           <div className="space-y-2.5">
             {/* Assign To Users */}
             {allocatedTo.users.length > 0 && (
-              <div className="flex justify-between items-start text-sm gap-4">
+              <div className="flex items-start text-sm gap-2">
                 <Typography
                   variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
+                  className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
                 >
                   Assign To Users
                 </Typography>
-                <div className="flex-1 min-w-0 flex justify-end">
+                <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
                   <AllocatedToTooltip
                     users={allocatedTo.users}
                     roles={allocatedTo.roles}
                     position="bottom"
                   >
-                    <div className="flex items-center gap-1 cursor-pointer">
-                      <Typography
-                        variant="mobileCardValue"
-                        className="text-right truncate mt-0.5"
-                      >
+                    <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
+                      <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
                         {`${allocatedTo.users[0]}${allocatedTo.users.length > 1 ? ` (+${allocatedTo.users.length - 1})` : ""}`}
-                      </Typography>
+                      </span>
                       <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
                     </div>
                   </AllocatedToTooltip>
@@ -228,26 +243,27 @@ export const RequestDetailCard = ({
 
             {/* Assign To Roles */}
             {allocatedTo.roles.length > 0 && (
-              <div className="flex justify-between items-start text-sm gap-4">
+              <div className="flex items-start text-sm gap-2">
                 <Typography
                   variant="mobileCardLabel"
-                  className="block text-gray-500 shrink-0 mt-0.5"
+                  className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
                 >
                   Assign To Roles
                 </Typography>
-                <AllocatedToTooltip
-                  users={allocatedTo.users}
-                  roles={allocatedTo.roles}
-                  position="bottom"
-                >
-                  <Typography
-                    variant="mobileCardValue"
-                    className="text-right flex-1 min-w-0 truncate mt-0.5 flex items-center gap-1"
+                <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
+                  <AllocatedToTooltip
+                    users={allocatedTo.users}
+                    roles={allocatedTo.roles}
+                    position="bottom"
                   >
-                    {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
-                    <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
-                  </Typography>
-                </AllocatedToTooltip>
+                    <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
+                      <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
+                        {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
+                      </span>
+                      <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
+                    </div>
+                  </AllocatedToTooltip>
+                </div>
               </div>
             )}
 
@@ -303,6 +319,15 @@ export const RequestDetailCard = ({
             )}
           </div>
         </div>
+        {stage?.approval_response_data && (
+          <Button
+            onClick={handleShowForm}
+            className="mt-2 w-full"
+            variant="outline"
+          >
+            Review Form
+          </Button>
+        )}
         {canPerformActions && (
           <TeamApprovalActionPill
             actions={actions}
@@ -314,6 +339,19 @@ export const RequestDetailCard = ({
           />
         )}
       </div>
+      {formSchema && showForm && createPortal(
+        <ReviewForm onClose={() => setShowForm(false)}>
+          <Form
+            form={formSchema}
+            options={{
+              readOnly: true, // This makes the entire form read-only
+              viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
+            }}
+            submit={false}
+          />
+        </ReviewForm>,
+        document.body,
+      )}
     </div>
   );
 };
