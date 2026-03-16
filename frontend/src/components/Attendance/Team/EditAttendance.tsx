@@ -79,8 +79,9 @@ export const EditAttendance = ({
         employee: employeeName || employeeId || "",
         attendance_date: data[0].attendance_date,
         shift: data[0].shift || shiftData?.shift || "",
-        in_time: normalizeTimeValue(data[0].in_time || shiftData?.start_time),
-        out_time: normalizeTimeValue(data[0].out_time || shiftData?.end_time),
+
+        in_time: normalizeTimeValue(data[0].in_time) || normalizeTimeValue(shiftData?.start_time),
+        out_time: normalizeTimeValue(data[0].out_time) || normalizeTimeValue(shiftData?.end_time),
         status: data[0].status || "",
         working_hours: data[0].working_hours || 0,
         department: data[0].department || "",
