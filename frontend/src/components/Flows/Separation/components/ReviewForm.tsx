@@ -4,9 +4,10 @@ import React from "react";
 interface ReviewFormProps {
   onClose: () => void;
   children: React.ReactNode;
+  title?: string;
 }
 
-const ReviewForm = ({ onClose, children }: ReviewFormProps) => {
+const ReviewForm = ({ onClose, children, title = "Review Form" }: ReviewFormProps) => {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -20,7 +21,7 @@ const ReviewForm = ({ onClose, children }: ReviewFormProps) => {
       <div className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <h2 className="text-lg font-semibold text-gray-800">Review Form</h2>
+          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
