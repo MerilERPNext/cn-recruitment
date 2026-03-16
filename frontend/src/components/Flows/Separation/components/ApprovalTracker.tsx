@@ -40,10 +40,17 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
   const [formSchema, setFormSchema] = useState<any>();
 
   const selfInitFormAndAns = useMemo(
-    () =>
-      data?.reference_document?.initiator_form
-        ? JSON.parse(data?.reference_document?.initiator_form)
-        : null,
+    () => {
+      if (!data?.reference_document?.initiator_form) {
+        return null;
+      }
+      try {
+        return JSON.parse(data.reference_document.initiator_form);
+      } catch (error) {
+        console.error("Failed to parse initiator_form JSON:", error);
+        return null;
+      }
+    },
     [data],
   );
 
@@ -263,7 +270,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
           data={data}
         />
       )}
-      
+
       {formSchema &&
         showSelfInitForm &&
         createPortal(
