@@ -143,7 +143,12 @@ export const RequestDetailCard = ({
   const [showForm, setShowForm] = useState(false);
   const handleShowForm = () => {
     const schema = stage?.form_json?.components;
-    const data = JSON.parse(stage?.approval_response_data);
+    let data: Record<string, any> = {};
+    try {
+      data = JSON.parse(stage?.approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShowForm(true);

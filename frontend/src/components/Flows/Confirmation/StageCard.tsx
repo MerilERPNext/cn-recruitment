@@ -77,7 +77,12 @@ const StageCard: React.FC<StageCardProps> = ({
   ) => {
     if (!schema) return;
 
-    const data = JSON.parse(approval_response_data);
+    let data: Record<string, any> = {};
+    try {
+      data = JSON.parse(approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
 
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShow(true);

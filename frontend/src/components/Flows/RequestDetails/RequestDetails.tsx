@@ -26,7 +26,13 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const handleShowSelfForm = () => {
-    const formData = JSON.parse(data?.initiator_forms?.[0]?.form_data);
+    let formData: any = {};
+    try {
+      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data);
+    } catch (error) {
+      console.error("Invalid initiator_forms form_data JSON:", error);
+      return;
+    }
     const schema = formData?.form?.components;
     const answer = formData?.answer;
     if (!schema) return;

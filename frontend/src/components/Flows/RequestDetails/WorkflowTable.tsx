@@ -193,7 +193,6 @@ const WorkflowCard = ({
     // 3️⃣ Extract submitted values
     const data = formData?.submission_data ?? {};
 
-    console.log({ schema, data })
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShowForm(true);
