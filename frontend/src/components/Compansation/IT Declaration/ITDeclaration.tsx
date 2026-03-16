@@ -65,6 +65,7 @@ const ITDeclarationForm = () => {
   const [activeSection, setActiveSection] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [hraData, setHraData] = useState<HRAData | null>(null);
+  console.log(hraData, "hraData-------");
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   useEffect(() => {
     const el = tabRefs.current[activeMainTab];
@@ -264,7 +265,7 @@ const ITDeclarationForm = () => {
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
-        window.location.reload();
+        // window.location.reload();
       },
       onError: () => toast.error("Submission failed"),
     });
