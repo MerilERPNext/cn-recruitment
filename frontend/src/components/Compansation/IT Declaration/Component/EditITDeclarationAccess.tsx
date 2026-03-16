@@ -80,12 +80,11 @@ const EditITDeclarationAccess = ({
       <div className="relative bg-white rounded-lg  max-w-xl p-4">
 
         {/* Header */}
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-between mb-4 items-start">
           <div>
             <Typography variant="body" className="font-bold">
               Edit IT Declaration Access
             </Typography>
-
             <p className="text-sm text-gray-500">
               Update configuration and access period for employees.
             </p>
@@ -93,7 +92,7 @@ const EditITDeclarationAccess = ({
 
           <button
             onClick={onClose}
-            className="text-gray-400 text-xl"
+            className="text-gray-600 text-xl"
           >
             ✕
           </button>

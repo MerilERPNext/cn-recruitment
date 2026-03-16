@@ -417,9 +417,6 @@ export default function SalaryAssignmentList() {
               <Typography variant="bodySmall" className="font-medium whitespace-nowrap">
                 Annual: {renderAmount(item.annual_amount)}
               </Typography>
-              <Typography variant="caption" color="body2" className="whitespace-nowrap">
-                Monthly: {renderAmount(item.annual_amount ? item.annual_amount / 12 : undefined)}
-              </Typography>
             </div>
           </div>
         )
@@ -455,9 +452,6 @@ export default function SalaryAssignmentList() {
             <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
               <Typography variant="bodySmall" className="font-medium whitespace-nowrap">
                 Annual: {renderAmount(item.annual_amount)}
-              </Typography>
-              <Typography variant="caption" color="body2" className="whitespace-nowrap">
-                Monthly: {renderAmount(item.annual_amount ? item.annual_amount / 12 : undefined)}
               </Typography>
             </div>
           </div>

@@ -39,6 +39,7 @@ type Props = {
   setLocked80DVariable?: Dispatch<SetStateAction<Map<string, any> | undefined>>;
 };
 import StatusBadge from "../../ui/StatusBadge";
+import { IoMdCloudUpload } from "react-icons/io";
 const CategoryDeclarationSelectable = ({
   categoryName,
   max_amount,
@@ -56,6 +57,7 @@ const CategoryDeclarationSelectable = ({
   const uploadMutation = useFileUpload();
   const isMultipleSelect = selectable === "Select Multiple";
   const { mutateAsync: deleteDoc } = useDeleteDocument();
+  const [fileName, setFileName] = useState("");
   /* ---------------- Dropdown Options ---------------- */
   const dropdownOptions = useMemo(() => {
     const normalized = items.map((item) => ({
@@ -123,36 +125,39 @@ const CategoryDeclarationSelectable = ({
     });
   };
   const handleRemoveProof = async (
-    id: string | number | undefined,
+    itemIdx: number,
     proofFile?: string | File
   ) => {
     if (!proofFile) return;
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this proof file?"
-    );
-    if (!confirmDelete) return;
+  
+    if (!window.confirm("Delete this file?")) return;
+  
     try {
-      // ✅ Agar backend me uploaded file hai (string URL)
       if (typeof proofFile === "string") {
         const parts = proofFile.split("/");
         let fileName = parts[parts.length - 1];
         fileName = decodeURIComponent(fileName);
+  
         await deleteDoc({
           doctype: "File",
           name: fileName,
         });
       }
-      // ✅ UI se remove karo
-      const updated = items.map((item) =>
-        item.id === id
-          ? { ...item, proof_file: undefined, proof_comment: "" }
-          : item
-      );
+  
+      const updated = [...items];
+  
+      updated[itemIdx] = {
+        ...updated[itemIdx],
+        proof_file: undefined,
+        proof_comment: "",
+      };
+  
       onChange(updated);
-      toast.success("Proof deleted successfully ✅");
+  
+      setFileName(""); // optional
     } catch (err) {
-      console.error("Delete failed:", err);
-      toast.error("Failed to delete proof");
+      console.error(err);
+      toast.error("Delete failed");
     }
   };
   /* ---------------- Select Item ---------------- */
@@ -266,36 +271,50 @@ const CategoryDeclarationSelectable = ({
                 )}
               </div>
 
-              {((showProofFields && item?.approval_needed === "Yes") || item?.attach_reqd === 1) && (
+              {((showProofFields && item?.attach_reqd === 1 )  || item?.approval_needed === "Yes") && (
                   <div className="flex flex-col sm:flex-row gap-2 pb-1 bg-white w-full">
                     <div className="flex flex-col gap-1 w-full min-w-0">
                       <label className="text-xs text-gray-700 font-medium">
                         Attachment
                       </label>
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                          required={
-                           item.attach_reqd === 1 ||
-                           item.approval_needed === "Yes"
-                            }
-                          onChange={(e) => {
-                          const file = e.target.files?.[0] || null;
-                          if (file && file.type !== "application/pdf") {
-                            toast.error("Please upload only PDF file");
-                            e.target.value = ""; // reset input
-                            return;
-                          }
-                          handleProofFileUpload(
-                            item.exemption_sub_category,
-                            file
-                          );
-                        }}
-                        className="border border-gray-300 rounded-lg pr-3 text-xs w-full max-w-full transition-all truncate
-                          file:text-xs file:border-0
-                          file:bg-primary file:text-white
-                          file:px-3 file:py-1.5 file:rounded-l-lg"
-                      />
+                      <div className="w-full">
+      <label className="flex items-center gap-2 border-2 border-dashed border-gray-300 px-3 py-2 w-full">
+      <span className="text-gray-500 text-xl">
+    <IoMdCloudUpload />
+  </span>
+        <span
+    title={fileName}
+    className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-ellipsis text-sm text-gray-800"
+  >
+    {fileName || "Upload PDF file or Browse "}
+  </span>
+
+        <input
+          type="file"
+          accept="application/pdf"
+          required={
+            item.attach_reqd === 1 ||
+            item.approval_needed === "Yes"
+          }
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+
+            if (file && file.type !== "application/pdf") {
+              toast.error("Please upload only PDF file");
+              e.target.value = "";
+              return;
+            }
+
+            setFileName(file?.name || "");
+            handleProofFileUpload(
+              item.exemption_sub_category,
+              file
+            );
+          }}
+        />
+      </label>
+    </div>
 
                       {(item?.proof_file || item?.attach_reqd === 1 || item?.approval_needed === "Yes") && (
                         <div className="flex items-center justify-between gap-2 px-3 py-1 border rounded w-full bg-gray-50 overflow-hidden">
@@ -310,10 +329,11 @@ const CategoryDeclarationSelectable = ({
                           <button
                             type="button"
                             onClick={() =>
-                            handleRemoveProof(item.id, item.proof_file)}
+                            handleRemoveProof(Number(item.idx), item.proof_file)}
                             className="text-gray-500 hover:text-red-600 transition disabled:opacity-50 shrink-0"
                             title="Remove file"
                           >
+                            {/* <RiDeleteBinLine size={16} /> */}
                           </button>
                         </div>
                       )}
