@@ -151,12 +151,12 @@ export const useGetLeaveRequestFields = (
   return useQuery<LeaveFieldResponse>({
     queryKey: ["leave-request-fields", leaveType, fromDate, toDate],
     queryFn: () => {
-      if (!leaveType || !fromDate || !toDate) {
-        throw new Error("leaveType, fromDate, and toDate are required");
+      if (!leaveType) {
+        throw new Error("leaveType is required");
       }
       return leaveService.getLeaveRequestFields(leaveType, fromDate, toDate);
     },
-    enabled: !!leaveType && !!fromDate && !!toDate,
+    enabled: !!leaveType,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -434,6 +434,8 @@ export function useCreateLeaveApplication() {
         queryClient.invalidateQueries({
           queryKey: ["leave-buttons-status"],
         });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       }, 1500);
     },
   });

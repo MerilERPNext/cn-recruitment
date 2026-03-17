@@ -13,7 +13,7 @@ import {
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { endOfDay, format, isValid, startOfDay } from "date-fns";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useAttendanceFieldReasonAndMessagePermissions, useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
@@ -187,6 +187,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
   );
+  const { data: attendanceFieldReasonAndMessagePermissions } = useAttendanceFieldReasonAndMessagePermissions();
   const { data: userRoles } = useGetUserRoles();
 
   const shiftFilters = useMemo(
@@ -231,8 +232,24 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     requiredFields.fields.forEach((f) => {
       if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
     });
+
+    if (attendanceFieldReasonAndMessagePermissions) {
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_attendance_message_optional ===
+        false
+      ) {
+        map["explanation"] = true;
+      }
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_reason_non_mandate ===
+        false
+      ) {
+        map["custom__request_reason"] = true;
+      }
+    }
+
     return map;
-  }, [requiredFields]);
+  }, [requiredFields, attendanceFieldReasonAndMessagePermissions]);
 
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {

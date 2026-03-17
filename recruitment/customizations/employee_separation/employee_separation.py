@@ -16,6 +16,14 @@ def update_employee_relieving_date(doc, method=None):
             frappe.utils.getdate(doc.custom_actual_last_working_date)
         )
 
+    if doc.custom_resignaion_type == "Termination" and doc.employee:
+        emp = frappe.get_doc("Employee", doc.employee)
+        emp.custom_employment_status = "Terminated"
+        emp.status = "Suspended"
+        emp.save(ignore_permissions=True)
+        if emp.user_id:
+            frappe.db.set_value("User", emp.user_id, "enabled", 0)
+
 
 def calculate_lwd_from_notice_period(doc, method=None):
    
