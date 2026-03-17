@@ -138,7 +138,7 @@ const EmpLeaveRequestCard = ({
             variant="bodySmall"
             className="font-medium text-center truncate"
           >
-            {data?.reference_document?.leave_type}
+            {data?.reference_document?.custom_leave_type_name}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document.from_date)}
