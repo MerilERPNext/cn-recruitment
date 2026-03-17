@@ -11,10 +11,13 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
+import AttachmentPreview from "../../RequestDetails/AttachmentPreview";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
 import { useLoadingOverlay } from "../../../../context/OverlayContext";
+import { Attachment } from "../../../../types/flows";
+
 
 interface CardStagesProps {
   stage: ApprovalStage;
@@ -39,11 +42,24 @@ const CardStages = ({
   const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
   const [show, setShow] = useState(false);
   const [loadingActions, setLoadingActions] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
     approval_response_data: string,
+    parsedData?: Record<string, unknown>
   ) => {
-    const data = JSON.parse(approval_response_data);
+    let data: Record<string, unknown> = parsedData || {};
+
+
+    if (!data) {
+      try {
+        data = JSON.parse(approval_response_data);
+      } catch (error) {
+        console.error("Invalid approval_response_data JSON:", error);
+        data = {};
+      }
+    }
 
     setFormSchema((prev) => {
       if (!schema) return prev;
@@ -68,6 +84,21 @@ const CardStages = ({
     });
     setShow(true);
   };
+
+  const handleShowFormWithResponse = (
+    schema: FormIOComponent[] | undefined,
+    approval_response_data: string,
+  ) => {
+    let data = null;
+    try {
+      data = JSON.parse(approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
+    setResponseData(data);
+    handleShowForm(schema, approval_response_data, data);
+  };
+
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -221,7 +252,7 @@ const CardStages = ({
               {stage?.approval_response_data && stage?.status != "Pending" && (
                 <ViewFormButton
                   onClick={() =>
-                    handleShowForm(
+                    handleShowFormWithResponse(
                       stage?.form_json?.components,
                       stage?.approval_response_data,
                     )
@@ -260,6 +291,7 @@ const CardStages = ({
               }}
               submit={false}
             />
+            <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
         )}

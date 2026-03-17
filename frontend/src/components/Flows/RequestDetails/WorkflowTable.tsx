@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useState } from "react";
-import { FlowRequestItem, WorkflowStage } from "../../../types/flows";
+import { Attachment, FlowRequestItem, WorkflowStage } from "../../../types/flows";
+
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -17,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Form } from "@tsed/react-formio";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
+import AttachmentPreview from "./AttachmentPreview";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -177,8 +179,10 @@ const WorkflowCard = ({
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = () => {
-    let formData: any = {};
+    let formData: Record<string, unknown> = {};
 
     // 1️⃣ Safely parse JSON
     try {
@@ -188,15 +192,18 @@ const WorkflowCard = ({
       return { display: "form", components: [] };
     }
     // 2️⃣ Extract schema
-    const schema = formData?.form?.components ?? [];
+    const schema = (formData as any)?.form?.components ?? [];
 
     // 3️⃣ Extract submitted values
-    const data = formData?.submission_data ?? {};
+    const data = (formData as any)?.submission_data ?? {};
 
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   }
+
+
 
   return <>
     {isDesktop ? (
@@ -420,6 +427,7 @@ const WorkflowCard = ({
           }}
           submit={false}
         />
+        <AttachmentPreview attachments={responseData?.addAttachment || []} />
       </ReviewForm>,
       document.body,
     )}
