@@ -2,7 +2,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Check, Clock, X, User, Info } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { FlowRequestStage } from "../../../types/flows";
+import { Attachment, FlowRequestStage } from "../../../types/flows";
+
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -15,6 +16,7 @@ import Button from "../../shared/atoms/Button";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { Form } from "@tsed/react-formio";
+import AttachmentPreview from "./AttachmentPreview";
 
 const getIcon = (status: string) => {
   const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -141,9 +143,11 @@ export const RequestDetailCard = ({
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = () => {
     const schema = stage?.form_json?.components;
-    let data: Record<string, any> = {};
+    let data: Record<string, unknown> = {};
     try {
       data = JSON.parse(stage?.approval_response_data);
     } catch (error) {
@@ -151,8 +155,11 @@ export const RequestDetailCard = ({
     }
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   }
+
+
 
   return (
     <div
@@ -349,6 +356,7 @@ export const RequestDetailCard = ({
             }}
             submit={false}
           />
+          <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,
         document.body,
       )}

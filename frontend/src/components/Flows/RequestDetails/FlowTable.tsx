@@ -10,7 +10,8 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCallback, useMemo, useState } from "react";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
-import { FlowRequestItem, FlowRequestStage } from "../../../types/flows";
+import { Attachment, FlowRequestItem, FlowRequestStage } from "../../../types/flows";
+
 import { StaticListView } from "../../ListView";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
@@ -20,6 +21,7 @@ import { Form } from "@tsed/react-formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import Button from "../../shared/atoms/Button";
+import AttachmentPreview from "./AttachmentPreview";
 
 const titles = [
   "Stage Name",
@@ -120,25 +122,30 @@ const StageCard = ({
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = () => {
     if (!stage?.form_json?.components) return;
 
     const schema = stage.form_json.components;
 
-    let data: Record<string, any> = {};
+    let data: Record<string, unknown> = {};
 
     try {
       data = stage?.approval_response_data
         ? JSON.parse(stage.approval_response_data)
         : {};
     } catch (error) {
+
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
     }
-
+    console.log({ data })
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   };
+
 
   return (
     <div
@@ -209,6 +216,7 @@ const StageCard = ({
             }}
             submit={false}
           />
+          <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,
         document.body,
       )}

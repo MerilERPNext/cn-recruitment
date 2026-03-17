@@ -35,9 +35,21 @@ export type ApprovalStageStatus = {
   };
 };
 
-export type Attachment = {
-  file_url: string;
-};
+export interface Attachment {
+  storage: string;
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+  originalName: string;
+  data?: {
+    message?: {
+      file_url?: string;
+    };
+    baseUrl?: string;
+  };
+}
+
 
 export type TodoItem = {
   reference_document: any;

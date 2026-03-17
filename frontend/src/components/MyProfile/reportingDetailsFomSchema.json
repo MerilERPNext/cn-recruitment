@@ -55,6 +55,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
+                    "searchField": "q",
                     "customDefaultValue": "value = data.defaultReportsTo ? data.defaultReportsTo : null;"
                 },
                 {
@@ -75,6 +76,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
+                    "searchField": "q",
                     "customDefaultValue": "value = data.defaultDottedLineManager ? data.defaultDottedLineManager : null;"
                 },
                 {
@@ -95,6 +97,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
+                    "searchField": "q",
                     "customDefaultValue": "value = data.defaultHOD ? data.defaultHOD : null;"
                 },
                 {
@@ -115,6 +118,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
+                    "searchField": "q",
                     "customDefaultValue": "value = data.defaultCXO ? data.defaultCXO : null;"
                 },
                 {
@@ -135,6 +139,7 @@
                     "refreshOn": "isForOthers",
                     "clearOnRefresh": false,
                     "lazyLoad": false,
+                    "searchField": "q",
                     "customDefaultValue": "value = data.defaultHRBP ? data.defaultHRBP : null;"
                 },
                 {

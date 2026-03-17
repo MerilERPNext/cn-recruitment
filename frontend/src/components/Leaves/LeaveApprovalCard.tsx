@@ -146,7 +146,7 @@ const LeaveApprovalCard = ({
           </Link>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.leave_type}
+            {data?.reference_document?.custom_leave_type_name}
           </Typography>
 
           <Typography variant="bodySmall" className="font-medium text-center">
