@@ -434,6 +434,8 @@ export function useCreateLeaveApplication() {
         queryClient.invalidateQueries({
           queryKey: ["leave-buttons-status"],
         });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       }, 1500);
     },
   });
