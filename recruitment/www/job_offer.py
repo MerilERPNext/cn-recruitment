@@ -26,12 +26,12 @@ def get_context(context):
             context.doc = job_offers[0]["name"]
             context.print = frappe.get_print('Job Offer', context.doc)
 
-            # Fetch Job Offer fields for sidebar
-            jo_fields = frappe.db.get_value('Job Offer', context.doc,
-                ['designation', 'company', 'applicant_name', 'offer_date',
-                 'custom_jo_expiry_date', 'custom_ctc_per_annum', 'job_applicant'],
-                as_dict=True
-            )
+            # Fetch Job Offer fields for sidebar (only fields that exist)
+            jo_meta = frappe.get_meta('Job Offer')
+            jo_wanted = ['designation', 'company', 'applicant_name', 'offer_date',
+                         'custom_jo_expiry_date', 'custom_ctc_per_annum', 'job_applicant']
+            jo_existing = [f for f in jo_wanted if jo_meta.has_field(f)]
+            jo_fields = frappe.db.get_value('Job Offer', context.doc, jo_existing, as_dict=True) or {}
 
             context.expiry_date = jo_fields.get('custom_jo_expiry_date')
             context.designation = jo_fields.get('designation') or ''
@@ -54,10 +54,12 @@ def get_context(context):
 
             # Job Applicant fields (sidebar: duration, stipend, expected_doj, region)
             ja_id = jo_fields.get('job_applicant') or appl
-            ja_fields = frappe.db.get_value('Job Applicant', ja_id,
-                ['custom_expected_doj', 'duration', 'stipend', 'region', 'manager_name'],
-                as_dict=True
-            ) or {}
+            ja_meta = frappe.get_meta('Job Applicant')
+            ja_wanted = ['custom_expected_doj', 'duration', 'stipend', 'region', 'manager_name']
+            ja_existing = [f for f in ja_wanted if ja_meta.has_field(f)]
+            ja_fields = {}
+            if ja_existing:
+                ja_fields = frappe.db.get_value('Job Applicant', ja_id, ja_existing, as_dict=True) or {}
 
             context.expected_doj = ja_fields.get('custom_expected_doj')
             context.expected_doj_display = formatdate(context.expected_doj) if context.expected_doj else ''
