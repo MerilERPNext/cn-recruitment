@@ -382,7 +382,7 @@ const EmployeeAttendanceDetails = ({
   );
 
   const renderAbsentMessage = () => {
-    if (status !== "absent") return null;
+    if (status !== "absent" || !!leaveDetails) return null;
 
     return (
       <Typography
