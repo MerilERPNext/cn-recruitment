@@ -217,3 +217,8 @@ export interface IGetEmpDesignationHierarchyCurrentDetails {
     start_date: string
   }
 }
+
+export interface AttendanceFieldPermissions {
+  make_attendance_message_optional: boolean;
+  make_reason_non_mandate: boolean;
+}

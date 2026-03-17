@@ -11,6 +11,7 @@ import {
   EmployeeListItem,
   EmployeeNode,
   Award,
+  AttendanceFieldPermissions,
 } from "../types/employee";
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
@@ -42,6 +43,14 @@ export const useSearchEmployees = (
     queryKey: ["employee", "search", filters],
     queryFn: () => EmployeeService.getSearchMembers(filters, limit),
     enabled: !!filters,
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
+export const useAttendanceFieldReasonAndMessagePermissions = (): UseQueryResult<AttendanceFieldPermissions, Error> => {
+  return useQuery<AttendanceFieldPermissions, Error>({
+    queryKey: ["reason-message-permissions-in-attendance-request-form"],
+    queryFn: () => EmployeeService.getAttendanceFieldReasonAndMessagePermissions(),
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
