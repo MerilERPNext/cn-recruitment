@@ -11,6 +11,7 @@ import ReviewForm from "../Separation/components/ReviewForm";
 import { Form } from "@tsed/react-formio";
 import { Eye } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import AttachmentPreview from "./AttachmentPreview";
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 
@@ -25,6 +26,8 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   );
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+
+  const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
   const handleShowSelfForm = () => {
     let formData: any = {};
     try {
@@ -34,11 +37,22 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
       return;
     }
     const schema = formData?.form?.components;
-    const answer = formData?.answer;
+    const answer = formData?.submission_data;
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, answer));
+    setResponseData(answer);
     setShowSelfForm(true);
   }
+
+  const [responseData, setResponseData] = useState<any>(null);
+
+
+  const tabs = [
+    { label: "Approval Flow Status", value: "Approval Flow Status" },
+    ...(data?.workflow_stages && data.workflow_stages.length > 0
+      ? [{ label: "Workflow Status", value: "Workflow Status" }]
+      : []),
+  ];
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -48,23 +62,21 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
             title={data.flow_name}
             onBack={handleNavigateBack}
             rightSlot={
-              <Button
-                variant="outline"
-                onClick={handleShowSelfForm}
-                className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? 'px-3' : 'px-2'}`}
-              >
-                <Eye size={16} className="text-primary-600" />
-                {isDesktop && <span>Self Initiation Form</span>}
-              </Button>
+              haveInitiatorForm ?
+                <Button
+                  variant="outline"
+                  onClick={handleShowSelfForm}
+                  className={`flex items-center gap-2 py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50 transition-all rounded-md shadow-sm ${isDesktop ? 'px-3' : 'px-2'}`}
+                >
+                  <Eye size={16} className="text-primary-600" />
+                  {isDesktop && <span>Initiation Form</span>}
+                </Button> : null
             }
           />
         </div>
         <div className="px-8 flex items-center justify-between mb-4 flex-wrap gap-4">
           <div className="flex w-full sm:w-fit border border-gray-200 rounded-sm overflow-hidden shadow-sm">
-            {[
-              { label: "Approval Flow Status", value: "Approval Flow Status" },
-              { label: "Workflow Status", value: "Workflow Status" },
-            ].map((btn, index) => {
+            {tabs.map((btn, index) => {
               const isActive = flowStatusType === btn.value;
               return (
                 <button
@@ -108,7 +120,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
         createPortal(
           <ReviewForm
             onClose={() => setShowSelfForm(false)}
-            title="Self Initiation Form"
+            title="Initiation Form"
           >
             <Form
               form={formSchema}
@@ -118,6 +130,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
               }}
               submit={false}
             />
+            <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
         )}

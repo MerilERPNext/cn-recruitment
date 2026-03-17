@@ -11,6 +11,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import ViewFormButton from "../ViewFormButton";
 import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../utils/flowUtils";
+import AttachmentPreview from "../RequestDetails/AttachmentPreview";
 
 type handleActPropsType = {
   name: string;
@@ -88,6 +89,17 @@ const StageCard: React.FC<StageCardProps> = ({
     setShow(true);
   };
 
+  const [responseData, setResponseData] = useState<any>(null);
+
+  const handleShowFormWithResponse = (
+    schema: FormIOComponent[] | undefined,
+    approval_response_data: string
+  ) => {
+    const data = JSON.parse(approval_response_data);
+    setResponseData(data);
+    handleShowForm(schema, approval_response_data);
+  }
+
   const approverPerfix =
     status == "pending"
       ? "Process yet to be trigger for"
@@ -111,7 +123,7 @@ const StageCard: React.FC<StageCardProps> = ({
           {stage?.approval_response_data && stage?.status != "pending" && (
             <ViewFormButton
               onClick={() =>
-                handleShowForm(
+                handleShowFormWithResponse(
                   stage?.form_json?.components,
                   stage?.approval_response_data,
                 )
@@ -153,6 +165,7 @@ const StageCard: React.FC<StageCardProps> = ({
               }}
               submit={false}
             />
+            <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
         )}

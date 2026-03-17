@@ -20,6 +20,7 @@ import { Form } from "@tsed/react-formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import Button from "../../shared/atoms/Button";
+import AttachmentPreview from "./AttachmentPreview";
 
 const titles = [
   "Stage Name",
@@ -135,10 +136,13 @@ const StageCard = ({
       console.error("Invalid approval_response_data JSON:", error);
       data = {};
     }
-
+    console.log({ data })
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   };
+
+  const [responseData, setResponseData] = useState<any>(null);
 
   return (
     <div
@@ -209,6 +213,7 @@ const StageCard = ({
             }}
             submit={false}
           />
+          <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,
         document.body,
       )}

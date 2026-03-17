@@ -15,6 +15,7 @@ import Button from "../../shared/atoms/Button";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { Form } from "@tsed/react-formio";
+import AttachmentPreview from "./AttachmentPreview";
 
 const getIcon = (status: string) => {
   const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };
@@ -151,8 +152,11 @@ export const RequestDetailCard = ({
     }
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   }
+
+  const [responseData, setResponseData] = useState<any>(null);
 
   return (
     <div
@@ -349,6 +353,7 @@ export const RequestDetailCard = ({
             }}
             submit={false}
           />
+          <AttachmentPreview attachments={responseData?.addAttachment || []} />
         </ReviewForm>,
         document.body,
       )}

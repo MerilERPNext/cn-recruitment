@@ -11,6 +11,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import ReviewForm from "./ReviewForm";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
+import AttachmentPreview from "../../RequestDetails/AttachmentPreview";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
@@ -67,6 +68,17 @@ const CardStages = ({
       };
     });
     setShow(true);
+  };
+
+  const [responseData, setResponseData] = useState<any>(null);
+
+  const handleShowFormWithResponse = (
+    schema: FormIOComponent[] | undefined,
+    approval_response_data: string,
+  ) => {
+    const data = JSON.parse(approval_response_data);
+    setResponseData(data);
+    handleShowForm(schema, approval_response_data);
   };
 
   const { data: currentUser } = useCurrentUser();
@@ -221,7 +233,7 @@ const CardStages = ({
               {stage?.approval_response_data && stage?.status != "Pending" && (
                 <ViewFormButton
                   onClick={() =>
-                    handleShowForm(
+                    handleShowFormWithResponse(
                       stage?.form_json?.components,
                       stage?.approval_response_data,
                     )
@@ -260,6 +272,7 @@ const CardStages = ({
               }}
               submit={false}
             />
+            <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
         )}

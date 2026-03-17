@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Form } from "@tsed/react-formio";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
+import AttachmentPreview from "./AttachmentPreview";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -195,8 +196,11 @@ const WorkflowCard = ({
 
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
+    setResponseData(data);
     setShowForm(true);
   }
+
+  const [responseData, setResponseData] = useState<any>(null);
 
   return <>
     {isDesktop ? (
@@ -420,6 +424,7 @@ const WorkflowCard = ({
           }}
           submit={false}
         />
+        <AttachmentPreview attachments={responseData?.addAttachment || []} />
       </ReviewForm>,
       document.body,
     )}
