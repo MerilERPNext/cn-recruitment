@@ -2,7 +2,8 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Check, Clock, X, User, Info } from "lucide-react";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { FlowRequestStage } from "../../../types/flows";
+import { Attachment, FlowRequestStage } from "../../../types/flows";
+
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -142,9 +143,11 @@ export const RequestDetailCard = ({
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = () => {
     const schema = stage?.form_json?.components;
-    let data: Record<string, any> = {};
+    let data: Record<string, unknown> = {};
     try {
       data = JSON.parse(stage?.approval_response_data);
     } catch (error) {
@@ -156,7 +159,7 @@ export const RequestDetailCard = ({
     setShowForm(true);
   }
 
-  const [responseData, setResponseData] = useState<any>(null);
+
 
   return (
     <div

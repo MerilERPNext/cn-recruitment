@@ -1,6 +1,7 @@
 import { useState } from "react";
 import HeaderBar from "../../HeaderBar";
-import { FlowRequestItem } from "../../../types/flows";
+import { Attachment, FlowRequestItem } from "../../../types/flows";
+
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
@@ -26,25 +27,27 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   );
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
 
   const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
+
   const handleShowSelfForm = () => {
-    let formData: any = {};
+    let formData: Record<string, any> = {};
     try {
       formData = JSON.parse(data?.initiator_forms?.[0]?.form_data);
     } catch (error) {
       console.error("Invalid initiator_forms form_data JSON:", error);
       return;
     }
-    const schema = formData?.form?.components;
-    const answer = formData?.submission_data;
+    const schema = (formData as any)?.form?.components;
+    const answer = (formData as any)?.submission_data;
+
     if (!schema) return;
     setFormSchema(buildFormFromSchemaAndAnswer(schema, answer));
     setResponseData(answer);
     setShowSelfForm(true);
   }
 
-  const [responseData, setResponseData] = useState<any>(null);
 
 
   const tabs = [

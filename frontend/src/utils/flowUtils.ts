@@ -28,8 +28,9 @@ export interface FormIOForm {
 
 export const buildFormFromSchemaAndAnswer = (
   schema?: FormIOComponent[],
-  answer?: Record<string, any>
+  answer?: Record<string, unknown>
 ): FormIOForm => {
+
   if (!schema) return { display: "form", components: [] };
 
   const components = schema

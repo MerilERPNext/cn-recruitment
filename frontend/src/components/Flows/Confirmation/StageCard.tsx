@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { Attachment } from "../../../types/flows";
+
 import { FormIOComponent } from "../../../types/formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -72,33 +74,45 @@ const StageCard: React.FC<StageCardProps> = ({
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
-    approval_response_data: string
+    approval_response_data: string,
+    parsedData?: Record<string, unknown>
   ) => {
     if (!schema) return;
 
-    let data: Record<string, any> = {};
-    try {
-      data = JSON.parse(approval_response_data);
-    } catch (error) {
-      console.error("Invalid approval_response_data JSON:", error);
+    let data: Record<string, unknown> = parsedData || {};
+
+
+    if (!data) {
+      try {
+        data = JSON.parse(approval_response_data);
+      } catch (error) {
+        console.error("Invalid approval_response_data JSON:", error);
+        data = {};
+      }
     }
 
     setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShow(true);
   };
 
-  const [responseData, setResponseData] = useState<any>(null);
-
   const handleShowFormWithResponse = (
     schema: FormIOComponent[] | undefined,
     approval_response_data: string
   ) => {
-    const data = JSON.parse(approval_response_data);
+    let data = null;
+    try {
+      data = JSON.parse(approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
     setResponseData(data);
-    handleShowForm(schema, approval_response_data);
+    handleShowForm(schema, approval_response_data, data);
   }
+
 
   const approverPerfix =
     status == "pending"
