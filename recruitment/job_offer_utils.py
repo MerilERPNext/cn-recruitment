@@ -1,5 +1,4 @@
 import frappe
-from nextai.funnel.custom_trigger import trigger_event
 import json
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
@@ -14,7 +13,7 @@ def get_job_offer_status(appl):
     status = frappe.db.get_value("Job Offer", jo_id, "status")
     return {"status": status}
 @frappe.whitelist(allow_guest=True)
-def job_offer_update(status, appl):
+def job_offer_update(status, appl, reason=None, message=None):
     frappe.set_user('Administrator')
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     settings = frappe.get_doc("Recruitment Settings")
@@ -27,18 +26,24 @@ def job_offer_update(status, appl):
         appl_doc.save()
         # frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
         # frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
-        
+
         # trigger_event(doc=jo_doc, event_name="accept_jo")
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
+        # Store rejection feedback
+        if reason:
+            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
+        if message:
+            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
     frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
         # trigger_event(doc=jo_doc, event_name="reject_jo")
-    
+
     return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
+    from nextai.funnel.custom_trigger import trigger_event
     doc_data = frappe.get_doc("Job Applicant",jo_id)
     trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
 

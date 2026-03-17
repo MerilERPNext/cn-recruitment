@@ -1,129 +1,1083 @@
-<head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-</head>
+<style>
+    /* ── Reset Frappe chrome ── */
+    .page-header, .action-banner, .web-footer { display: none !important; }
+    .main-section { padding-top: 0 !important; }
 
-{% if doc %}
-    {% if expiry_date and expiry_date.strftime('%Y-%m-%d') < frappe.utils.today() %}
-        <div>
-            <center>
-                <h1>Your Offer Letter Has Expired. Please Contact the HR Department.</h1>
-            </center>
+    /* ── Variables ── */
+    :root {
+        --jo-navy: #1a2332;
+        --jo-green: #00b48a;
+        --jo-green-hover: #009e78;
+        --jo-red: #dc3545;
+        --jo-red-hover: #c82333;
+        --jo-sidebar-bg: #eaf4fb;
+        --jo-badge-orange: #fff3cd;
+        --jo-badge-orange-text: #856404;
+        --jo-badge-muted: #e8edf5;
+        --jo-badge-muted-text: #3d4f7c;
+        --jo-border: #e2e8f0;
+        --jo-text: #334155;
+        --jo-text-light: #64748b;
+        --jo-bg: #ffffff;
+        --jo-page-bg: #f8fafc;
+    }
+
+    .jo-page {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        color: var(--jo-text);
+        background: var(--jo-page-bg);
+        min-height: 100vh;
+    }
+
+    /* ── Badges ── */
+    .jo-badge {
+        display: inline-block;
+        padding: 4px 14px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+    }
+    .jo-badge-expiry {
+        background: var(--jo-badge-orange);
+        color: var(--jo-badge-orange-text);
+    }
+    .jo-badge-phase {
+        background: var(--jo-badge-muted);
+        color: var(--jo-badge-muted-text);
+    }
+    .jo-badge-completed {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    /* ── Main offer layout ── */
+    .jo-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+    .jo-title {
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: var(--jo-navy);
+        margin: 12px 0 8px;
+        line-height: 1.15;
+    }
+    .jo-subtitle {
+        font-size: 1rem;
+        color: var(--jo-text-light);
+        margin-bottom: 28px;
+        font-style: italic;
+    }
+    .jo-two-col {
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
+    }
+    .jo-main-col {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .jo-sidebar-col {
+        width: 340px;
+        flex-shrink: 0;
+    }
+
+    /* ── Sidebar card ── */
+    .jo-sidebar {
+        position: sticky;
+        top: 24px;
+        background: var(--jo-bg);
+        border: 1px solid var(--jo-border);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .jo-sidebar-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--jo-border);
+    }
+    .jo-company-logo {
+        width: 48px;
+        height: 48px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: #f1f5f9;
+        padding: 4px;
+    }
+    .jo-company-logo-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        background: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: var(--jo-text-light);
+        text-align: center;
+        line-height: 1.1;
+    }
+    .jo-company-name {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--jo-navy);
+    }
+    .jo-company-sub {
+        font-size: 0.8rem;
+        color: var(--jo-text-light);
+    }
+
+    /* ── Sidebar summary rows ── */
+    .jo-summary {
+        background: var(--jo-sidebar-bg);
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--jo-border);
+    }
+    .jo-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+    }
+    .jo-summary-label {
+        font-size: 0.85rem;
+        color: var(--jo-text-light);
+    }
+    .jo-summary-value {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--jo-navy);
+        text-align: right;
+    }
+
+    /* ── Sidebar actions ── */
+    .jo-sidebar-actions {
+        padding: 20px;
+    }
+    .jo-terms-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 0.82rem;
+        color: var(--jo-text);
+        cursor: pointer;
+        line-height: 1.45;
+        margin-bottom: 16px;
+        background: #fff8e1;
+        border: 1px solid #ffe0b2;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .jo-terms-label input[type="checkbox"] {
+        margin-top: 3px;
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        accent-color: var(--jo-navy);
+    }
+    .jo-btn-accept {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        background: var(--jo-green);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-bottom: 10px;
+    }
+    .jo-btn-accept:hover:not(:disabled) {
+        background: var(--jo-green-hover);
+    }
+    .jo-btn-accept:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .jo-btn-decline {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        color: var(--jo-red);
+        border: 2px solid var(--jo-red);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+    }
+    .jo-btn-decline:hover {
+        background: rgba(220, 53, 69, 0.06);
+    }
+
+    .jo-legal-text {
+        font-size: 0.75rem;
+        color: var(--jo-text-light);
+        margin-top: 16px;
+        line-height: 1.5;
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .jo-legal-text svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+    .jo-concierge-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--jo-navy);
+        margin-top: 14px;
+        text-decoration: none;
+    }
+    .jo-concierge-link:hover {
+        text-decoration: underline;
+    }
+
+    /* ── Print format container ── */
+    .jo-print-content {
+        background: var(--jo-bg);
+        border: 1px solid var(--jo-border);
+        border-radius: 12px;
+        padding: 32px;
+        overflow-x: auto;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .jo-print-content table {
+        max-width: 100% !important;
+    }
+    .jo-print-content img {
+        max-width: 100%;
+        height: auto;
+    }
+    /* Override Frappe print format styles to prevent overlap */
+    .jo-print-content .print-format-gutter {
+        background: none;
+        padding: 0;
+    }
+    .jo-print-content .print-format {
+        max-width: 100% !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    .jo-print-content .page-break {
+        border-bottom: none;
+    }
+
+    /* ── Rejection flow ── */
+    .jo-reject-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 60px 20px;
+    }
+    .jo-reject-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--jo-navy);
+        margin: 16px 0 8px;
+    }
+    .jo-reject-title span {
+        color: var(--jo-navy);
+    }
+    .jo-reject-subtitle {
+        font-size: 0.95rem;
+        color: var(--jo-text-light);
+        margin-bottom: 28px;
+    }
+    .jo-reject-card {
+        background: var(--jo-bg);
+        border: 1px solid var(--jo-border);
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .jo-reject-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--jo-navy);
+        margin-bottom: 20px;
+    }
+    .jo-reject-card-header svg {
+        color: var(--jo-red);
+    }
+    .jo-reject-select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--jo-border);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: var(--jo-text);
+        background: var(--jo-bg);
+        appearance: auto;
+        margin-bottom: 20px;
+    }
+    .jo-reject-select:focus {
+        outline: none;
+        border-color: var(--jo-navy);
+        box-shadow: 0 0 0 2px rgba(26,35,50,0.1);
+    }
+    .jo-reject-textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--jo-border);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: var(--jo-text);
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+    }
+    .jo-reject-textarea:focus {
+        outline: none;
+        border-color: var(--jo-navy);
+        box-shadow: 0 0 0 2px rgba(26,35,50,0.1);
+    }
+    .jo-reject-textarea::placeholder {
+        color: #94a3b8;
+    }
+    .jo-reject-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+    }
+    .jo-btn-cancel {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--jo-navy);
+        background: none;
+        border: 1px solid var(--jo-border);
+        border-radius: 8px;
+        cursor: pointer;
+        padding: 12px 32px;
+    }
+    .jo-btn-cancel:hover {
+        background: var(--jo-page-bg);
+    }
+    .jo-btn-confirm-reject {
+        padding: 12px 32px;
+        background: var(--jo-red);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .jo-btn-confirm-reject:hover:not(:disabled) {
+        background: var(--jo-red-hover);
+    }
+    .jo-btn-confirm-reject:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    /* ── Accepted confirmation ── */
+    .jo-accepted-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 60px 20px;
+        text-align: center;
+    }
+    .jo-check-wrapper {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 30px;
+    }
+    .jo-check-circle {
+        width: 120px;
+        height: 120px;
+        background: #4caf50;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 40px auto 0;
+        box-shadow: 0 8px 32px rgba(76,175,80,0.3);
+        animation: jo-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .jo-check-circle svg {
+        width: 56px;
+        height: 56px;
+        color: white;
+    }
+    .jo-check-bg {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, rgba(240,244,255,1) 0%, rgba(248,250,252,0) 70%);
+        border-radius: 50%;
+        z-index: -1;
+    }
+    @keyframes jo-pop {
+        0% { transform: scale(0.3); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .jo-accepted-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--jo-navy);
+        margin: 12px 0 16px;
+    }
+    .jo-accepted-msg {
+        font-size: 1rem;
+        color: var(--jo-text-light);
+        max-width: 500px;
+        margin: 0 auto 32px;
+        line-height: 1.6;
+    }
+    .jo-next-steps {
+        background: var(--jo-bg);
+        border: 1px solid var(--jo-border);
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 520px;
+        margin: 0 auto 20px;
+        text-align: left;
+    }
+    .jo-next-steps-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: var(--jo-navy);
+        margin-bottom: 6px;
+    }
+    .jo-next-steps-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--jo-navy);
+        margin-bottom: 6px;
+    }
+    .jo-next-steps-desc {
+        font-size: 0.85rem;
+        color: var(--jo-text-light);
+        margin-bottom: 0;
+    }
+    .jo-next-steps-grid {
+        display: flex;
+        gap: 16px;
+        max-width: 520px;
+        margin: 0 auto 28px;
+    }
+    .jo-next-step-card {
+        flex: 1;
+        background: var(--jo-bg);
+        border: 1px solid var(--jo-border);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: left;
+    }
+    .jo-next-step-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        background: var(--jo-sidebar-bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        color: var(--jo-navy);
+    }
+    .jo-next-step-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: var(--jo-text-light);
+        margin-bottom: 4px;
+    }
+    .jo-next-step-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--jo-navy);
+    }
+    .jo-btn-onboarding {
+        display: inline-block;
+        padding: 14px 36px;
+        background: var(--jo-green);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-decoration: none;
+        margin-bottom: 16px;
+    }
+    .jo-btn-onboarding:hover {
+        background: var(--jo-green-hover);
+        color: #fff;
+        text-decoration: none;
+    }
+    .jo-redirect-msg {
+        font-size: 0.85rem;
+        color: var(--jo-text-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .jo-redirect-msg::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--jo-green);
+        display: inline-block;
+    }
+
+    /* ── Processed / Expired states ── */
+    .jo-message-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 100px 20px;
+        text-align: center;
+    }
+    .jo-message-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--jo-sidebar-bg);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+    }
+    .jo-message-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--jo-navy);
+        margin-bottom: 12px;
+    }
+    .jo-message-text {
+        font-size: 0.95rem;
+        color: var(--jo-text-light);
+        line-height: 1.6;
+    }
+
+    /* ── Loading spinner for buttons ── */
+    .jo-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: jo-spin 0.6s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+    }
+    @keyframes jo-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 991px) {
+        .jo-two-col {
+            flex-direction: column;
+        }
+        .jo-sidebar-col {
+            width: 100%;
+            order: -1;
+        }
+        .jo-sidebar {
+            position: static;
+        }
+        .jo-title {
+            font-size: 1.8rem;
+        }
+    }
+    @media (max-width: 576px) {
+        .jo-container {
+            padding: 20px 14px;
+        }
+        .jo-print-content {
+            padding: 16px;
+        }
+        .jo-next-steps-grid {
+            flex-direction: column;
+        }
+        .jo-reject-actions {
+            flex-direction: column-reverse;
+            gap: 12px;
+        }
+        .jo-btn-confirm-reject {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Jinja: Set initial state variable for JS -->
+<script>
+    var JO_INITIAL_STATE = "{% if not doc %}processed{% elif is_expired %}expired{% else %}main{% endif %}";
+    var JO_APPL = "{{ frappe.request.args.get('appl', '') }}";
+    var JO_EXPIRY = "{{ expiry_date.strftime('%Y-%m-%dT23:59:59') if expiry_date else '' }}";
+    var JO_WEBFORM_URL = "";
+</script>
+
+<div class="jo-page">
+
+    <!-- ═══════════════ STATE: MAIN OFFER ═══════════════ -->
+    <div id="state-main" style="display:none;">
+        <div class="jo-container">
+            {% if hours_remaining is defined and hours_remaining > 0 %}
+            <div style="margin-bottom: 4px;">
+                <span class="jo-badge jo-badge-expiry">
+                    OFFER EXPIRES IN {{ hours_remaining }} HOURS
+                </span>
+            </div>
+            {% endif %}
+
+            <h1 class="jo-title">{{ designation }}</h1>
+            <p class="jo-subtitle">Terms and conditions of service for your internship with {{ company }}.</p>
+
+            <div class="jo-two-col">
+                <!-- Left: Offer content -->
+                <div class="jo-main-col">
+                    <div class="jo-print-content">
+                        {{ print }}
+                    </div>
+                </div>
+
+                <!-- Right: Sidebar -->
+                <div class="jo-sidebar-col">
+                    <div class="jo-sidebar">
+                        <!-- Company header -->
+                        <div class="jo-sidebar-header">
+                            {% if company_logo %}
+                                <img src="{{ company_logo }}" alt="{{ company }}" class="jo-company-logo">
+                            {% else %}
+                                <div class="jo-company-logo-placeholder">Comp<br>Logo</div>
+                            {% endif %}
+                            <div>
+                                <div class="jo-company-name">{{ company }}</div>
+                                <div class="jo-company-sub">Housing Finance</div>
+                            </div>
+                        </div>
+
+                        <!-- Summary heading -->
+                        <div style="font-size:1.1rem; font-weight:700; color:var(--jo-navy); padding:16px 20px 0;">Offer Summary</div>
+
+                        <!-- Summary rows -->
+                        <div class="jo-summary">
+                            <div class="jo-summary-row">
+                                <span class="jo-summary-label">Role</span>
+                                <span class="jo-summary-value">{{ designation or 'Intern' }}</span>
+                            </div>
+                            {% if duration %}
+                            <div class="jo-summary-row">
+                                <span class="jo-summary-label">Duration</span>
+                                <span class="jo-summary-value">{{ duration }}</span>
+                            </div>
+                            {% endif %}
+                            {% if expected_doj_display %}
+                            <div class="jo-summary-row">
+                                <span class="jo-summary-label">Joining Date</span>
+                                <span class="jo-summary-value">{{ expected_doj_display }}</span>
+                            </div>
+                            {% endif %}
+                            {% if stipend_display %}
+                            <div class="jo-summary-row">
+                                <span class="jo-summary-label">Amount</span>
+                                <span class="jo-summary-value">{{ stipend_display }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="jo-sidebar-actions">
+                            <!-- Terms checkbox -->
+                            <label class="jo-terms-label">
+                                <input type="checkbox" id="terms-checkbox">
+                                <span>I declare that I have read and understood the entire offer letter and agree to the terms and conditions outlined above.</span>
+                            </label>
+
+                            <!-- Accept button -->
+                            <button id="btn-accept" class="jo-btn-accept" disabled>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Accept Offer
+                            </button>
+
+                            <!-- Decline button -->
+                            <button id="btn-decline" class="jo-btn-decline">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Reject Offer
+                            </button>
+
+                            <!-- Legal text -->
+                            <div class="jo-legal-text">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span>This is a legally binding electronic offer. Finalizing requires a digital signature via the onboarding portal.</span>
+                            </div>
+
+                            <!-- Concierge link -->
+                            <a href="#" class="jo-concierge-link">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                                Speak with your Concierge
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% else %}
-        <center>
-            <div id="operations" style="padding-top:20px">
-                <button type="button" class="btn btn-warning" id="reject" onclick="rejectoffer()">Reject</button>
-                <button type="button" class="btn btn-primary" id="accept" onclick="accept()">Accept</button>
-            </div><br>
-        </center>
-        <div>{{ print }}</div>
-    {% endif %}
-{% else %}
-    <div>
-        <center>
-            <h1>You have already accepted or rejected the Offer Letter.</h1>
-        </center>
     </div>
-{% endif %}
+
+    <!-- ═══════════════ STATE: REJECTION FLOW ═══════════════ -->
+    <div id="state-rejection" style="display:none;">
+        <div class="jo-reject-container">
+            <h1 class="jo-reject-title">Reject Offer</h1>
+            <p class="jo-reject-subtitle">We're sorry to see you go. Please let us know why you are declining this offer.</p>
+
+            <div class="jo-reject-card">
+                <div class="jo-reject-card-header">
+                    Reason for rejection <span style="color:var(--jo-red);">*</span>
+                </div>
+
+                <select id="rejection-reason" class="jo-reject-select">
+                    <option value="">Select a reason...</option>
+                    {% for r in rejection_reasons or [] %}
+                    <option value="{{ r.name }}">{{ r.reason }}</option>
+                    {% endfor %}
+                </select>
+
+                <label style="font-size:0.9rem;font-weight:600;color:var(--jo-navy);display:block;margin-bottom:8px;">Additional comments</label>
+                <textarea id="rejection-message" class="jo-reject-textarea" placeholder="Share any additional feedback..." rows="5"></textarea>
+
+                <div class="jo-reject-actions">
+                    <button id="btn-cancel-reject" class="jo-btn-cancel">Cancel</button>
+                    <button id="btn-confirm-reject" class="jo-btn-confirm-reject">Confirm Rejection</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ STATE: ACCEPTED CONFIRMATION ═══════════════ -->
+    <div id="state-accepted" style="display:none;">
+        <div class="jo-accepted-container">
+            <!-- Checkmark icon -->
+            <div class="jo-check-wrapper">
+                <div class="jo-check-bg"></div>
+                <div class="jo-check-circle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+            </div>
+
+            <span class="jo-badge jo-badge-completed">OFFER ACCEPTED</span>
+            <h1 class="jo-accepted-title">Welcome to the team, {{ applicant_name }}!</h1>
+            <p class="jo-accepted-msg">
+                We are absolutely thrilled to have you join {{ company }}.
+                Your offer has been successfully accepted.
+            </p>
+
+            <!-- Next Steps card -->
+            <div class="jo-next-steps">
+                <div class="jo-next-steps-header">WHAT HAPPENS NEXT?</div>
+                <div class="jo-next-steps-title">Here's what to expect</div>
+                <div style="margin:0; color:var(--jo-text-light); font-size:0.85rem; line-height:1.8;">
+                    <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                        <svg style="flex-shrink:0; margin-top:2px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                        <div><strong style="color:var(--jo-text);">Check your email</strong><br>We've sent a copy of the signed offer letter for your records.</div>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                        <svg style="flex-shrink:0; margin-top:2px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                        <div><strong style="color:var(--jo-text);">IT Setup</strong><br>Our IT team will reach out shortly to arrange your equipment delivery.</div>
+                    </div>
+                    <div style="display:flex; align-items:flex-start; gap:10px;">
+                        <svg style="flex-shrink:0; margin-top:2px;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                        <div><strong style="color:var(--jo-text);">Day One Details</strong><br>Expect an onboarding schedule closer to your start date.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start date + location cards -->
+            <div class="jo-next-steps-grid">
+                <div class="jo-next-step-card">
+                    <div class="jo-next-step-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </div>
+                    <div class="jo-next-step-label">START DATE</div>
+                    <div class="jo-next-step-value">{{ expected_doj_display or 'To be confirmed' }}</div>
+                </div>
+                <div class="jo-next-step-card">
+                    <div class="jo-next-step-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="jo-next-step-label">OFFICE LOCATION</div>
+                    <div class="jo-next-step-value">{{ region or 'To be confirmed' }}</div>
+                </div>
+            </div>
+
+            <!-- Continue button -->
+            <a href="#" id="btn-onboarding" class="jo-btn-onboarding">Continue to Onboarding</a>
+
+            <p class="jo-redirect-msg">Check your email for the official welcome packet</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════ STATE: ALREADY PROCESSED ═══════════════ -->
+    <div id="state-processed" style="display:none;">
+        <div class="jo-message-container">
+            <div class="jo-message-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <h2 class="jo-message-title">You have already accepted or rejected the Offer Letter.</h2>
+            <p class="jo-message-text">If you believe this is an error, please contact our HR department for assistance.</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════ STATE: EXPIRED ═══════════════ -->
+    <div id="state-expired" style="display:none;">
+        <div class="jo-message-container">
+            <div class="jo-message-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h2 class="jo-message-title">Your Offer Letter Has Expired</h2>
+            <p class="jo-message-text">Please contact the HR department for assistance.</p>
+        </div>
+    </div>
+
+</div>
 
 <script>
-    $(".action-banner").hide();
+(function() {
+    var STATES = ['main', 'rejection', 'accepted', 'processed', 'expired'];
+
+    function showState(name) {
+        STATES.forEach(function(s) {
+            var el = document.getElementById('state-' + s);
+            if (el) el.style.display = (s === name) ? 'block' : 'none';
+        });
+    }
+
+    function setButtonLoading(btn, loading, text) {
+        if (loading) {
+            btn.disabled = true;
+            btn.dataset.originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="jo-spinner"></span>' + (text || 'Processing...');
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = btn.dataset.originalHtml || btn.innerHTML;
+        }
+    }
 
     async function getJobOfferStatus() {
-        let queryParams = new URLSearchParams(window.location.search);
-        let appl = queryParams.get('appl');
-
         try {
-            let response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.get_job_offer_status?appl=' + appl);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            let data = await response.json();
-            return data.message.status; // Expected to return 'Accepted' or 'Rejected'
+            var response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.get_job_offer_status?appl=' + encodeURIComponent(JO_APPL));
+            if (!response.ok) throw new Error('Network response was not ok');
+            var data = await response.json();
+            return data.message.status;
         } catch (error) {
             console.error('Error fetching job offer status:', error);
             return null;
         }
     }
 
-    async function rejectoffer() {
-        let status = await getJobOfferStatus();
-        if (status === "Accepted" || status === "Rejected") {
-            showAlreadyProcessedMessage();
+    // ── Initialize on DOM ready ──
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Hide Frappe default elements
+        var banner = document.querySelector('.action-banner');
+        if (banner) banner.style.display = 'none';
+        var pageHeader = document.querySelector('.page-header');
+        if (pageHeader) pageHeader.style.display = 'none';
+
+        // If server already determined expired or processed
+        if (JO_INITIAL_STATE === 'processed' || JO_INITIAL_STATE === 'expired') {
+            showState(JO_INITIAL_STATE);
             return;
         }
 
-        let text = "Are you sure you want to reject this job offer?";
-        if (confirm(text)) {
-            let queryParams = new URLSearchParams(window.location.search);
-            let appl = queryParams.get('appl');
-
-            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Rejected&appl=' + appl, {
-                method: 'POST',
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                alert("Thank you for considering us, and we wish you the best in your future endeavors.");
-                showAlreadyProcessedMessage();
-                fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl=' + appl, {
-                    method: 'POST',
-                });
-            })
-            .catch(error => {
-                console.error('There was a problem with your fetch operation:', error);
-            });
-        }
-    }
-
-    async function accept() {
-        let status = await getJobOfferStatus();
-        if (status === "Accepted" || status === "Rejected") {
-            showAlreadyProcessedMessage();
+        // Double-check status via API (handles race conditions)
+        var status = await getJobOfferStatus();
+        if (status === 'Accepted' || status === 'Rejected') {
+            showState('processed');
             return;
         }
 
-        let queryParams = new URLSearchParams(window.location.search);
-        let appl = queryParams.get('appl');
+        showState('main');
 
-        fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl=' + appl, {
-            method: 'POST',
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+        // ── Real-time expiry countdown ──
+        if (JO_EXPIRY) {
+            var expiryBadge = document.querySelector('.jo-badge-expiry');
+            if (expiryBadge) {
+                var expiryInterval = setInterval(function() {
+                    var now = new Date();
+                    var expiry = new Date(JO_EXPIRY);
+                    var hoursLeft = Math.max(0, Math.floor((expiry - now) / 3600000));
+                    if (hoursLeft <= 0) {
+                        clearInterval(expiryInterval);
+                        showState('expired');
+                    } else {
+                        expiryBadge.textContent = 'OFFER EXPIRES IN ' + hoursLeft + ' HOURS';
+                    }
+                }, 60000); // update every minute
             }
-            return response.json();
-        })
-        .then(data => {
-            window.location.href = window.location.origin + "/" + data.message.webform + "/new?job_offer=" + data.message.jo_id + "&job_applicant=" + appl;
-
-            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl=' + appl + "&url=" + window.location.origin, {
-                method: 'POST',
-            });
-            window.location.href = window.location.origin + "/thank_you";
-        })
-        .catch(error => {
-            console.error('There was a problem with your fetch operation:', error);
-        });
-    }
-
-    function showAlreadyProcessedMessage() {
-        document.getElementById("operations").style.display = "none";
-        document.body.innerHTML = '<center><h1>You have already accepted or rejected the Offer Letter.</h1></center>';
-    }
-
-    // Check status on page load and update UI accordingly
-    window.onload = async function () {
-        let status = await getJobOfferStatus();
-        if (status === "Accepted" || status === "Rejected") {
-            showAlreadyProcessedMessage();
         }
-    };
+    });
+
+    // ── Terms checkbox ──
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'terms-checkbox') {
+            var btn = document.getElementById('btn-accept');
+            if (btn) btn.disabled = !e.target.checked;
+        }
+    });
+
+    // ── Decline → show rejection form ──
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'btn-decline' || e.target.closest('#btn-decline'))) {
+            showState('rejection');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // ── Cancel rejection → back to main ──
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'btn-cancel-reject' || e.target.closest('#btn-cancel-reject'))) {
+            showState('main');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    });
+
+    // ── Confirm Rejection ──
+    document.addEventListener('click', async function(e) {
+        var btn = e.target && (e.target.id === 'btn-confirm-reject' ? e.target : e.target.closest('#btn-confirm-reject'));
+        if (!btn || btn.disabled) return;
+
+        // Disable immediately to prevent double-click race
+        setButtonLoading(btn, true, 'Confirming...');
+
+        // Prevent double-submit
+        var status = await getJobOfferStatus();
+        if (status === 'Accepted' || status === 'Rejected') {
+            showState('processed');
+            return;
+        }
+
+        var reason = document.getElementById('rejection-reason').value || '';
+        var message = document.getElementById('rejection-message').value || '';
+
+        try {
+            var params = new URLSearchParams({
+                status: 'Rejected',
+                appl: JO_APPL,
+                reason: reason,
+                message: message
+            });
+
+            var response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?' + params.toString(), {
+                method: 'POST',
+                headers: {
+                    'X-Frappe-CSRF-Token': (window.frappe && frappe.csrf_token) || ''
+                }
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            // Submit docs (fire and forget)
+            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Rejected&appl=' + encodeURIComponent(JO_APPL), {
+                method: 'POST',
+                headers: {
+                    'X-Frappe-CSRF-Token': (window.frappe && frappe.csrf_token) || ''
+                }
+            });
+
+            showState('processed');
+        } catch (error) {
+            console.error('Error rejecting offer:', error);
+            setButtonLoading(btn, false);
+            alert('An error occurred. Please try again.');
+        }
+    });
+
+    // ── Accept Offer ──
+    document.addEventListener('click', async function(e) {
+        var btn = e.target && (e.target.id === 'btn-accept' ? e.target : e.target.closest('#btn-accept'));
+        if (!btn || btn.disabled) return;
+
+        // Disable immediately to prevent double-click race
+        setButtonLoading(btn, true, 'Accepting...');
+
+        // Prevent double-submit
+        var status = await getJobOfferStatus();
+        if (status === 'Accepted' || status === 'Rejected') {
+            showState('processed');
+            return;
+        }
+
+        try {
+            var response = await fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.job_offer_update?status=Accepted&appl=' + encodeURIComponent(JO_APPL), {
+                method: 'POST',
+                headers: {
+                    'X-Frappe-CSRF-Token': (window.frappe && frappe.csrf_token) || ''
+                }
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+            var data = await response.json();
+
+            // Store webform URL for the manual button
+            if (data.message && data.message.webform) {
+                JO_WEBFORM_URL = window.location.origin + '/' + data.message.webform + '/new?job_offer=' + data.message.jo_id + '&job_applicant=' + encodeURIComponent(JO_APPL);
+                var onboardingBtn = document.getElementById('btn-onboarding');
+                if (onboardingBtn) onboardingBtn.href = JO_WEBFORM_URL;
+            }
+
+            // Submit docs (fire and forget)
+            fetch(window.location.origin + '/api/method/recruitment.job_offer_utils.submit_docs?status=Accepted&appl=' + encodeURIComponent(JO_APPL) + '&url=' + encodeURIComponent(window.location.origin), {
+                method: 'POST',
+                headers: {
+                    'X-Frappe-CSRF-Token': (window.frappe && frappe.csrf_token) || ''
+                }
+            });
+
+            showState('accepted');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (error) {
+            console.error('Error accepting offer:', error);
+            setButtonLoading(btn, false);
+            alert('An error occurred. Please try again.');
+        }
+    });
+
+    // ── Continue to Onboarding button ──
+    document.addEventListener('click', function(e) {
+        var btn = e.target && (e.target.id === 'btn-onboarding' ? e.target : e.target.closest('#btn-onboarding'));
+        if (!btn) return;
+        if (JO_WEBFORM_URL) {
+            e.preventDefault();
+            window.location.href = JO_WEBFORM_URL;
+        }
+    });
+
+})();
 </script>
