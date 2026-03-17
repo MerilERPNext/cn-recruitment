@@ -240,9 +240,9 @@ const ReportingDetails = () => {
                         name={item.reporting_employee_name}
                         startDate={item.start_date}
                         endDate={item.end_date}
-                        department={item.department}
+                        department={item.department_name}
                         id={item.records}
-                        location={item.branch}
+                        location={item.branch_name}
                       />
                     </div>
                   ))}
