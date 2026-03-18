@@ -90,7 +90,12 @@ const GeoLocationModal = ({
                     <Button
                         size="md"
                         fullWidth
-                        onClick={onSubmit}
+                        disabled={isLoading}
+                        onClick={() => {
+                            if (!isLoading) {
+                                onSubmit();
+                            }
+                        }}
                     >
                         {isLoading ? <CircularLoader size={"md"} color="white" /> : "Submit"}
                     </Button>
