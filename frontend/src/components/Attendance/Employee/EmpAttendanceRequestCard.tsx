@@ -15,6 +15,7 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
@@ -159,12 +160,13 @@ const EmpAttendanceRequestCard = ({
           <div className="p-4 flex flex-col gap-4 w-full">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue">
-                  {data?.username || data?.allocated_to}
-                </Typography>
-              </div>
+              <MobileAllocatedTo
+                users={data?.username ? [data.username] : []}
+                roles={data?.allocated_roles}
+                username={data?.username}
+                allocated_to={data?.allocated_to}
+                hasPendingStatus={type === "pending"}
+              />
 
               <StatusBadge status={data?.reference_document?.custom_status} />
             </div>

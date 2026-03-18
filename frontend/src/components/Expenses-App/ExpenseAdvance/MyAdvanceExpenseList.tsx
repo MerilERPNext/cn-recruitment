@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -10,6 +9,7 @@ import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
@@ -104,18 +104,13 @@ const MyAdvanceExpenseList = () => {
         <div className="p-4 flex flex-col gap-3 w-full">
           {/* Header */}
           <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Allocated To</Typography>
-
-              <Link
-                to={`/webapp/employee-profile?target_user=${doc?.allocated_to_emp_id}`}
-                target="_blank"
-              >
-                <Typography variant="mobileCardValue">
-                  {item?.username}
-                </Typography>
-              </Link>
-            </div>
+            <MobileAllocatedTo
+              users={item?.username ? [item.username] : []}
+              roles={item?.allocated_roles}
+              username={item?.username}
+              allocated_to={item?.allocated_to}
+              hasPendingStatus={doc?.status === "Draft"}
+            />
             <AllocatedToTooltip
               users={doc?.status === "Draft" ? item?.allocated_to : undefined}
               roles={

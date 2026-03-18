@@ -2,6 +2,7 @@ import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
@@ -83,14 +84,13 @@ export function MyRequestCard({
             <div className="w-full">
               {/* Header */}
               <div className="flex items-start justify-between p-1">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Allocated To
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {request?.username || request?.allocated_to}
-                  </Typography>
-                </div>
+                <MobileAllocatedTo
+                  users={request?.username ? [request.username] : []}
+                  roles={request?.allocated_roles}
+                  username={request?.username}
+                  allocated_to={request?.allocated_to}
+                  hasPendingStatus={request?.status === "Open"}
+                />
 
                 <StatusBadge status={request?.status} />
               </div>

@@ -7,6 +7,7 @@ import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
@@ -262,6 +263,15 @@ const ExpenseApprovalCard = ({
                   </Typography>
                 </div>
               </div>
+
+              {/* Allocated To */}
+              <MobileAllocatedTo
+                users={data?.username ? [data.username] : []}
+                roles={data?.allocated_roles}
+                username={data?.username}
+                allocated_to={data?.allocated_to}
+                hasPendingStatus={data?.status === "Pending"}
+              />
 
               <TeamApprovalActionPill
                 variant="buttons"
