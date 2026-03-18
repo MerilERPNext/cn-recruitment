@@ -133,9 +133,7 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                  defaultFilters={{
-                    status: "Pending",
-                  }}
+                  defaultFilters={{}}
                 />
               ) : (
                 <></>

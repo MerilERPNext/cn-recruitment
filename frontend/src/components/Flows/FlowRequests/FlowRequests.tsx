@@ -126,11 +126,32 @@ const FlowRequests: React.FC = () => {
                   );
                 }}
                 isSearch={true}
-                searchFields={["flow_name", "flow_category"]}
+                searchFields={["flow_name", "flow_category", "initiated_by"]}
                 getItemKey={(item) => item.request_id}
                 pageSize={10}
                 SkeletonComponent={CardSkeleton}
                 isLoading={flowRequestsLoading}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "approval_status",
+                    label: "Approval Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Approved", "Rejected"],
+                  },
+                  {
+                    fieldname: "workflow_status",
+                    label: "Workflow Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Completed", "NA"],
+                  },
+                  {
+                    fieldname: "overall_flow_status",
+                    label: "Overall Flow Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Completed"],
+                  },
+                ]}
               // loadMorePagination={true}
               />
             </CardTable>

@@ -2,8 +2,8 @@
 import type React from "react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import {
-  Search,
   Filter,
   ChevronLeft,
   ChevronRight,
@@ -25,6 +25,7 @@ import { useLocation } from "react-router";
 import { FilterCondition, FrappePageResponse } from "../types/frappe";
 import { mapFiltersToConditions } from "../utils/helperUtils";
 import SearchInputWrapper from "./shared/SearchBar";
+import { useScreenSize } from "../hooks/useScreenSize";
 
 interface BaseItem {
   name: string;
@@ -752,6 +753,10 @@ interface StaticListViewProps<T extends BaseItemStatic> {
   onRefresh?: () => void;
 
   getItemKey?: (item: T, index: number) => string;
+  /** When true, filters are staged and only applied when the Apply button is clicked. */
+  requireApplyButton?: boolean;
+  /** When true, the drawer closes automatically when a Select value is chosen (single-pick UX). */
+  closeOnSelect?: boolean;
 }
 
 export const StaticListView = <T extends BaseItemStatic>({
@@ -776,12 +781,17 @@ export const StaticListView = <T extends BaseItemStatic>({
   showRefreshButton = false,
   onRefresh,
   getItemKey,
+  requireApplyButton = false,
+  closeOnSelect = false,
 }: StaticListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, any>>({});
+  // Draft state — used when requireApplyButton is true; staged until Apply is clicked
+  const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const { isDesktop } = useScreenSize();
 
   // Debounce search input
   useEffect(() => {
@@ -963,90 +973,162 @@ export const StaticListView = <T extends BaseItemStatic>({
       </div>
     );
 
+  const handleFilterChange = (fieldname: string, value: string) => {
+    if (requireApplyButton) {
+      // Stage the change — only apply when Apply is clicked
+      setPendingFilters((p) => ({ ...p, [fieldname]: value }));
+    } else {
+      // Instant-apply
+      setFilters((p: Record<string, any>) => ({ ...p, [fieldname]: value }));
+      if (closeOnSelect) setShowFilters(false);
+    }
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(pendingFilters);
+    setShowFilters(false);
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setPendingFilters({});
+    setSearchTerm("");
+    setDebouncedSearch("");
+  };
+
   return (
     <div>
-      {/* HEADER */}
-      <div className="flex gap-2 mb-3">
-        {isSearch && (
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              placeholder="Search..."
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      {/* HEADER — matches DataListView */}
+      <div className="pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            {isSearch && (
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={(e) => setSearchTerm(e.target.value)}
+              />
+            )}
+
+            {isFilter && filterFields.length > 0 && (
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${
+                  showFilters ? "bg-gray-100" : ""
+                }`}
+              >
+                <Filter className="h-4 w-4" />
+              </button>
+            )}
+
+            {showRefreshButton && (
+              <button
+                disabled={isLoading}
+                onClick={() => onRefresh?.()}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+            )}
           </div>
-        )}
-
-        {isFilter && filterFields.length > 0 && (
-          <button
-            onClick={() => setShowFilters(true)}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            {/* Filter icon */}
-            Filters
-          </button>
-        )}
-
-        {showRefreshButton && (
-          <button
-            disabled={isLoading}
-            onClick={() => onRefresh?.()}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            {/* Refresh icon */}
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </button>
-        )}
+        </div>
       </div>
 
-      {/* FILTERS PANEL */}
-      {showFilters && (
-        <div className="p-4 rounded-md border bg-gray-50 mb-4">
-          {filterFields.map((f) => (
-            <div key={f.fieldname} className="mb-3">
-              <label className="block text-sm mb-1">{f.label}</label>
+      {/* FILTERS DRAWER — right sidebar on desktop, portal to body on mobile */}
+      {isFilter && showFilters && filterFields.length > 0 && (() => {
+        const drawerContent = (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-40 z-[9999]"
+              onClick={() => setShowFilters(false)}
+            />
 
-              {f.fieldtype === "Select" ? (
-                <select
-                  value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
-                  className="w-full border px-3 py-2 rounded-md"
+            {/* Right-side drawer */}
+            <div
+              className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000]
+                transform transition-transform duration-300 ease-in-out
+                ${showFilters ? "translate-x-0" : "translate-x-full"}`}
+            >
+              {/* Drawer header */}
+              <div className="px-6 py-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-400 hover:text-gray-600"
                 >
-                  <option value="">All</option>
-                  {f.options?.map((op) => (
-                    <option key={op} value={op}>
-                      {op}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
-                  className="w-full border px-3 py-2 rounded-md"
-                />
-              )}
-            </div>
-          ))}
+                  ✕
+                </button>
+              </div>
 
-          <button
-            onClick={() => setShowFilters(false)}
-            className="w-full py-2 bg-blue-600 text-white rounded-md"
-          >
-            Apply Filters
-          </button>
-        </div>
-      )}
+              {/* Filters content */}
+              <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
+                {filterFields.map((f) => (
+                  <div key={f.fieldname}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {f.label}
+                    </label>
+
+                    {f.fieldtype === "Select" ? (
+                      <select
+                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        onChange={(e) =>
+                          handleFilterChange(f.fieldname, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select</option>
+                        {f.options?.map((op) => (
+                          <option key={op} value={op}>
+                            {op}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        onChange={(e) =>
+                          handleFilterChange(f.fieldname, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer actions */}
+              <div className="px-6 py-4 flex gap-3 border-t">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 px-4 py-2 border rounded-md text-gray-700 bg-white hover:bg-gray-100"
+                >
+                  Clear
+                </button>
+                {requireApplyButton ? (
+                  <button
+                    onClick={handleApplyFilters}
+                    className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Apply
+                  </button>
+                ) : (
+                  !isDesktop && (
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      Close
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </>
+        );
+
+        return isDesktop ? drawerContent : createPortal(drawerContent, document.body);
+      })()}
 
       {/* PRE-LIST */}
       {PreListComponent && (
