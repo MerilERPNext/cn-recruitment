@@ -165,6 +165,7 @@ const MyLeaveRequests = ({
                 onFiltersChange={(filters) => {
                   setActiveStatus(filters.status || "Open");
                 }}
+                defaultFilters={{}}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[
@@ -179,9 +180,7 @@ const MyLeaveRequests = ({
                     ],
                   },
                 ]}
-                defaultFilters={{
-                  status: "Open",
-                }}
+
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}
