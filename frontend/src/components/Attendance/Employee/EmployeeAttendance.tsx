@@ -306,7 +306,6 @@ const EmployeeAttendance = () => {
               "1fr",
               "1fr",
               "1fr",
-              "1fr",
             ]}
             titles={[
               "Request Type",
@@ -314,7 +313,6 @@ const EmployeeAttendance = () => {
               "To Date",
               "Due Date",
               "Duration",
-              "Allocated To",
               "Status",
               "ACTIONS",
             ]}

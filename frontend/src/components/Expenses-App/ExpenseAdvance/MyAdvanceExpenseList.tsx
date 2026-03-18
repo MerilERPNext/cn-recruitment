@@ -11,7 +11,6 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -43,21 +42,8 @@ const MyAdvanceExpenseList = () => {
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Link
-          to={`/webapp/employee-profile?target_user=${item?.allocated_to_emp_id}`}
-          target="_blank"
-        >
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center truncate"
-          >
-            <WrapperHoverCard employeeId={item?.allocated_to_emp_id}>
-              {item?.username}
-            </WrapperHoverCard>
-          </Typography>
-        </Link>
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -230,14 +216,13 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Allocated To",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
             "Advance Amount",
             "Status",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
