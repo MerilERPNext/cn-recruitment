@@ -126,7 +126,7 @@ const NotificationList = () => {
     }
 
     return (
-      <div className="flex-shrink-0 flex gap-4 items-center justify-between px-4 py-3 border-t bg-white">
+      <div className="flex-shrink-0 flex gap-4 items-center justify-between  overflow-x-scroll px-4 py-3 border-t bg-white">
         <p className="text-sm text-gray-500 whitespace-nowrap">
           {filteredNotifications.length === 0
             ? "No results"
