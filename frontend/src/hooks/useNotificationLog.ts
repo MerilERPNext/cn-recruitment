@@ -13,12 +13,9 @@ export const useMarkAsRead = () => {
     mutationFn: (id: string) => NotificationService.markAsRead(id),
 
     onSuccess: () => {
-      // 🔥 This must match useNotifications queryKey
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-
       toast.success("Marked as read");
     },
-
     onError: () => {
       toast.error("Failed to update notification");
     },
@@ -28,10 +25,12 @@ export const useMarkAsRead = () => {
 
 
 
-export const useNotifications = () => {
+export const useNotifications = (limit = 100, offset = 0) => {
   return useQuery<NotificationLog[]>({
-    queryKey: ["notifications"],
-    queryFn: NotificationAlertService.getNotifications,
-    refetchInterval: 10000,
+    queryKey: ["notifications", limit, offset],
+    queryFn: () =>
+      NotificationAlertService.getNotifications(limit, offset),
+    refetchInterval: 30000,
+    staleTime: Infinity,
   });
 };
