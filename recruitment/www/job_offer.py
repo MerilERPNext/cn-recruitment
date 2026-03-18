@@ -46,11 +46,14 @@ def get_context(context):
             else:
                 context.ctc_display = ''
 
-            # Company logo
+            # Company logo — try Company doctype first, fall back to Website Settings
+            context.company_logo = ''
             if context.company:
                 context.company_logo = frappe.db.get_value('Company', context.company, 'company_logo') or ''
-            else:
-                context.company_logo = ''
+            if not context.company_logo:
+                context.company_logo = frappe.db.get_single_value('Website Settings', 'app_logo') or ''
+            if not context.company_logo:
+                context.company_logo = frappe.db.get_single_value('Website Settings', 'banner_image') or ''
 
             # Job Applicant fields (sidebar: duration, stipend, expected_doj, region)
             ja_id = jo_fields.get('job_applicant') or appl

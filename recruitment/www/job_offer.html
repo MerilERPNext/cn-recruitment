@@ -58,18 +58,23 @@
         margin: 0 auto;
         padding: 30px 20px;
     }
+    .jo-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+    }
     .jo-title {
-        font-size: 2.4rem;
+        font-size: 1.6rem;
         font-weight: 800;
         color: var(--jo-navy);
         margin: 12px 0 8px;
         line-height: 1.15;
     }
-    .jo-subtitle {
-        font-size: 1rem;
-        color: var(--jo-text-light);
-        margin-bottom: 28px;
-        font-style: italic;
+    .jo-header-logo {
+        height: 80px;
+        width: auto;
+        object-fit: contain;
     }
     .jo-two-col {
         display: flex;
@@ -95,49 +100,14 @@
         border-radius: 12px;
         overflow: hidden;
     }
-    .jo-sidebar-header {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 20px 20px 16px;
-        border-bottom: 1px solid var(--jo-border);
-    }
-    .jo-company-logo {
-        width: 48px;
-        height: 48px;
-        object-fit: contain;
-        border-radius: 8px;
-        background: #f1f5f9;
-        padding: 4px;
-    }
-    .jo-company-logo-placeholder {
-        width: 48px;
-        height: 48px;
-        border-radius: 8px;
-        background: #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        color: var(--jo-text-light);
-        text-align: center;
-        line-height: 1.1;
-    }
-    .jo-company-name {
-        font-weight: 700;
-        font-size: 1rem;
-        color: var(--jo-navy);
-    }
-    .jo-company-sub {
-        font-size: 0.8rem;
-        color: var(--jo-text-light);
-    }
 
     /* ── Sidebar summary rows ── */
     .jo-summary {
         background: var(--jo-sidebar-bg);
         padding: 16px 20px;
-        border-bottom: 1px solid var(--jo-border);
+        border: 1px solid var(--jo-border);
+        border-radius: 8px;
+        margin: 0 20px 16px;
     }
     .jo-summary-row {
         display: flex;
@@ -228,32 +198,7 @@
         background: rgba(220, 53, 69, 0.06);
     }
 
-    .jo-legal-text {
-        font-size: 0.75rem;
-        color: var(--jo-text-light);
-        margin-top: 16px;
-        line-height: 1.5;
-        display: flex;
-        align-items: flex-start;
-        gap: 6px;
-    }
-    .jo-legal-text svg {
-        flex-shrink: 0;
-        margin-top: 1px;
-    }
-    .jo-concierge-link {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--jo-navy);
-        margin-top: 14px;
-        text-decoration: none;
-    }
-    .jo-concierge-link:hover {
-        text-decoration: underline;
-    }
+
 
     /* ── Print format container ── */
     .jo-print-content {
@@ -284,6 +229,42 @@
     }
     .jo-print-content .page-break {
         border-bottom: none;
+    }
+
+    /* ── Mobile PDF actions (hidden on desktop) ── */
+    .jo-pdf-actions {
+        display: none;
+    }
+    .jo-pdf-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 14px;
+        background: var(--jo-navy);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        text-decoration: none;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .jo-pdf-btn:hover {
+        opacity: 0.9;
+        color: #fff;
+        text-decoration: none;
+    }
+    .jo-pdf-btn-outline {
+        background: transparent;
+        color: var(--jo-navy);
+        border: 2px solid var(--jo-navy);
+    }
+    .jo-pdf-btn-outline:hover {
+        background: rgba(26, 35, 50, 0.04);
+        color: var(--jo-navy);
     }
 
     /* ── Rejection flow ── */
@@ -615,7 +596,13 @@
             position: static;
         }
         .jo-title {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
+        }
+        .jo-print-content {
+            display: none;
+        }
+        .jo-pdf-actions {
+            display: block;
         }
     }
     @media (max-width: 576px) {
@@ -659,8 +646,10 @@
             </div>
             {% endif %}
 
-            <h1 class="jo-title">{{ designation }}</h1>
-            <p class="jo-subtitle">Terms and conditions of service for your internship with {{ company }}.</p>
+            <div class="jo-header-row">
+                <h1 class="jo-title">Offer of Employment</h1>
+                <img src="/assets/recruitment/images/homefirst-logo.png" alt="HomeFirst" class="jo-header-logo">
+            </div>
 
             <div class="jo-two-col">
                 <!-- Left: Offer content -->
@@ -668,26 +657,23 @@
                     <div class="jo-print-content">
                         {{ print }}
                     </div>
+                    <div class="jo-pdf-actions">
+                        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Job%20Offer&name={{ doc }}" target="_blank" class="jo-pdf-btn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Open PDF in New Tab
+                        </a>
+                        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Job%20Offer&name={{ doc }}" download class="jo-pdf-btn jo-pdf-btn-outline">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download PDF
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Right: Sidebar -->
                 <div class="jo-sidebar-col">
                     <div class="jo-sidebar">
-                        <!-- Company header -->
-                        <div class="jo-sidebar-header">
-                            {% if company_logo %}
-                                <img src="{{ company_logo }}" alt="{{ company }}" class="jo-company-logo">
-                            {% else %}
-                                <div class="jo-company-logo-placeholder">Comp<br>Logo</div>
-                            {% endif %}
-                            <div>
-                                <div class="jo-company-name">{{ company }}</div>
-                                <div class="jo-company-sub">Housing Finance</div>
-                            </div>
-                        </div>
-
                         <!-- Summary heading -->
-                        <div style="font-size:1.1rem; font-weight:700; color:var(--jo-navy); padding:16px 20px 0;">Offer Summary</div>
+                        <div style="font-size:1.1rem; font-weight:700; color:var(--jo-navy); padding:16px 20px 10px;">Offer Summary</div>
 
                         <!-- Summary rows -->
                         <div class="jo-summary">
@@ -735,11 +721,6 @@
                                 Reject Offer
                             </button>
 
-                            <!-- Legal text -->
-                            <div class="jo-legal-text">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <span>This is a legally binding electronic offer. Finalizing requires a digital signature via the onboarding portal.</span>
-                            </div>
 
                         </div>
                     </div>
