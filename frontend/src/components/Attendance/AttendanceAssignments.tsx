@@ -102,7 +102,7 @@ const AttendanceAssignments = ({
             input: true,
             placeholder: "Select Ip Restriction",
             customClass: "mb-4",
-            validate: { required: true },
+            // validate: { required: true },
             multiple: true,
             data: {
               values:

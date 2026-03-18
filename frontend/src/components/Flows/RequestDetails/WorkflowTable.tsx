@@ -14,6 +14,7 @@ import Button from "../../shared/atoms/Button";
 import { Check, Clock, User, X, Info } from "lucide-react";
 import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import Tooltip from "../../shared/Tooltip";
 import { useQueryClient } from "@tanstack/react-query";
 import { Form } from "@tsed/react-formio";
 import { createPortal } from "react-dom";
@@ -24,7 +25,7 @@ interface WorkflowTableProps {
   data: FlowRequestItem;
 }
 
-const titles = ["Stage No.", "Status", "Due Date", "Actions"];
+const titles = ["Stage Name", "Status", "Due Date", "Actions"];
 
 const WorkflowTable: React.FC<WorkflowTableProps> = ({ data }) => {
   const { isDesktop } = useScreenSize();
@@ -211,10 +212,12 @@ const WorkflowCard = ({
         key={idx}
         className="hover:bg-primary-100  py-4 text-center grid grid-cols-4 cursor-pointer text-xs w-full border-b"
       >
+
+
         <div>
           {" "}
           <Typography variant="bodySmall" className="font-medium text-center">
-            {idx + 1}
+            {stage.trigger_title}
           </Typography>
         </div>
 
@@ -296,8 +299,10 @@ const WorkflowCard = ({
                 >
                   Stage {idx + 1}
                 </Typography>
-                <Typography variant="mobileCardTitle" className="truncate">
-                  {stage.target_name || stage.target || "-"}
+                <Typography variant="mobileCardTitle" className="cursor-pointer max-w-[240px] block">
+                  <Tooltip content={stage.trigger_title || "-"} position="bottom">
+                    {stage.trigger_title || "-"}
+                  </Tooltip>
                 </Typography>
               </div>
               <div className="flex-shrink-0">

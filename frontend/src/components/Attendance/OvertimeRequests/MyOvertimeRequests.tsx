@@ -128,7 +128,7 @@ const MyOvertimeRequests = () => {
                   ],
                 },
               ]}
-              defaultFilters={{ status: "Open" }}
+              defaultFilters={{}}
               SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}

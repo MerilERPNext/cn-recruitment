@@ -5,9 +5,12 @@ import HeaderBar from "../../HeaderBar";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useFlowConfigSelfTriggerList, useFlowConfigOthersTriggerList } from "../../../hooks/useFlows";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useGetUserRoles } from "../../../hooks/useAttendance";
 import Button from "../../shared/atoms/Button";
 import EmployeeSelect from "../../shared/EmployeeSelect";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { useEmployee } from "../../../hooks/useEmployee";
+import { getActionsEnabled } from "../../../utils/uiPermission";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
 
 interface InitiateFlowProps {
   handleCloseModel?: () => void;
@@ -53,6 +56,13 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
     }
   };
 
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    ["for_others"],
+    "Flow Requests",
+  );
+
   useEffect(() => {
     const handleChatClose = () => {
       handleCloseModel();
@@ -68,23 +78,28 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
     };
   }, [handleCloseModel]);
 
+  const { targetEmployeeId: impersonatedEmployeeId, isViewingOtherUser } = useTargetUser();
+  const { data: impersonatedEmployee } = useEmployee(isViewingOtherUser ? impersonatedEmployeeId : null);
+
   const [isForOthers, setIsForOthers] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
 
-  // Fetch user roles to determine if Self/Others tabs should show
-  const { data: userRoles } = useGetUserRoles();
-
+  // When impersonating, force "For Others" mode with the impersonated employee
+  const effectiveIsForOthers = isViewingOtherUser ? true : isForOthers;
+  const effectiveSelectedEmployee = isViewingOtherUser
+    ? (impersonatedEmployeeId ?? "")
+    : selectedEmployee;
 
 
   // Self trigger list
   const { data: selfTriggerList, isLoading: isSelfLoading } = useFlowConfigSelfTriggerList();
 
   // Others trigger list (only fetched when an employee is selected)
-  const { data: othersTriggerList, isLoading: isOthersLoading } = useFlowConfigOthersTriggerList(selectedEmployee);
+  const { data: othersTriggerList, isLoading: isOthersLoading } = useFlowConfigOthersTriggerList(effectiveSelectedEmployee);
 
   // Determine active trigger list and loading state
-  const triggerList = isForOthers ? othersTriggerList : selfTriggerList;
-  const isLoading = isForOthers ? (isOthersLoading || (!selectedEmployee)) : isSelfLoading;
+  const triggerList = effectiveIsForOthers ? othersTriggerList : selfTriggerList;
+  const isLoading = effectiveIsForOthers ? (isOthersLoading || (!effectiveSelectedEmployee)) : isSelfLoading;
 
   const [inputSearch, setInputSearch] = useState<string>("");
 
@@ -103,7 +118,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
   const { isDesktop } = useScreenSize();
 
   const EmptyStateComponent = useMemo(() => {
-    if (isForOthers && !selectedEmployee) {
+    if (effectiveIsForOthers && !effectiveSelectedEmployee) {
       return (
         <div className="flex items-center justify-center text-center text-gray-500">
           Please select an employee to view available actions.
@@ -123,7 +138,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
         </div>
       );
     return null;
-  }, [triggerList, filteredTriggerList, isForOthers, selectedEmployee]);
+  }, [triggerList, filteredTriggerList, effectiveIsForOthers, effectiveSelectedEmployee]);
 
   return (
     <div
@@ -154,7 +169,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
 
         <div className="sm:px-8 px-4 sm:min-h-96 sm:max-h-96 flex flex-col">
           {/* Self / Others Tabs */}
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {!isViewingOtherUser && enabledActions.for_others ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <Button
                 size="md"
@@ -181,8 +196,24 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
             </div>
           ) : null}
 
+          {/* Employee info banner when impersonating */}
+          {isViewingOtherUser && impersonatedEmployee && (
+            <div className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-sm text-blue-900">
+                  Showing actions for{" "}
+                  <span className="font-semibold">
+                   {impersonatedEmployee.employee_name || impersonatedEmployee.name}
+                 </span>
+                {impersonatedEmployee.employee_name && (
+                  <span className="text-blue-600 ml-1">({impersonatedEmployee.name})</span>
+                )}
+              </span>
+            </div>
+          )}
+
           {/* Employee Selector (shown only for Others tab) */}
-          {isForOthers && (
+          {effectiveIsForOthers && !isViewingOtherUser && (
             <div className="mt-3">
               <EmployeeSelect
                 value={selectedEmployee}
@@ -192,14 +223,14 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
             </div>
           )}
 
-          {isLoading && selectedEmployee ? (
+          {isLoading && effectiveSelectedEmployee ? (
             <>
               <SearchSkeleton />
               <div className="mt-6">
                 <CardsSkeletonGrid />
               </div>
             </>
-          ) : !isForOthers && isSelfLoading ? (
+          ) : !effectiveIsForOthers && isSelfLoading ? (
             <>
               <SearchSkeleton />
               <div className="mt-6">
@@ -228,7 +259,7 @@ const InitiateFlow: React.FC<InitiateFlowProps> = ({
                     <RequestTypeCard
                       key={t.name}
                       data={t}
-                      targetEmployeeId={isForOthers ? selectedEmployee : undefined}
+                      targetEmployeeId={effectiveIsForOthers ? effectiveSelectedEmployee : undefined}
                     />
                   ))}
                 </div>

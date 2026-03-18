@@ -15,6 +15,6 @@ export const useGetUnreadNotificationCount = (
       return data;
     },
     enabled: !!userEmail,
-    staleTime: 60 * 1000, // 1 minute
+     // 1 minute
   });
 };

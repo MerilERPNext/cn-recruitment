@@ -99,14 +99,18 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
             })}
           </div>
 
-          <div className="flex flex-row sm:items-center justify-between max-lg:w-full gap-2 sm:gap-6 text-sm py-1">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px]">Initiated By</span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 italic"> {data.initiated_by} </span>
+          <div className="flex flex-row sm:items-center justify-between w-full gap-4 sm:gap-6 text-sm py-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2 min-w-0">
+              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">Initiated By</span>
+              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 italic truncate max-w-[140px] sm:max-w-none">
+                {data.initiated_by}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px]">Initiated On</span>
-              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100"> {formatToIndianDate(data.initiated_on)} </span>
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-2 min-w-0">
+              <span className="font-semibold text-gray-500 uppercase tracking-wider text-[10px] whitespace-nowrap">Initiated On</span>
+              <span className="text-gray-900 font-medium bg-gray-50 px-2 py-0.5 rounded border border-gray-100 whitespace-nowrap">
+                {formatToIndianDate(data.initiated_on)}
+              </span>
             </div>
           </div>
         </div>
