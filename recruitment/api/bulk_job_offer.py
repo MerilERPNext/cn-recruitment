@@ -43,7 +43,6 @@ def create_bulk_job_offer(applicants):
             job_offer.offer_date = frappe.utils.today()
 
             job_offer.insert(ignore_permissions=True)
-            job_offer.submit()
             frappe.db.set_value("Job Applicant", applicant.name, "status", "Offer to be Sent")
 
             created += 1
@@ -75,7 +74,7 @@ def send_bulk_job_offer(job_offers):
             job_offer = frappe.get_doc("Job Offer", jo)
 
             # Only allow submitted job offers
-            if job_offer.docstatus != 1:
+            if job_offer.docstatus == 2:
                 skipped += 1
                 continue
 
