@@ -37,7 +37,7 @@ const NotificationList = () => {
   const [activeTab, setActiveTab] =
     useState<"all" | "read" | "unread">("all");
 
-  const LIMIT = 100;
+  const LIMIT = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [pageCache, setPageCache] = useState<Record<number, NotificationLog[]>>({});
 
@@ -57,15 +57,15 @@ const NotificationList = () => {
     if (!apiNotifications.length) return;
 
     setPageCache((prev: Record<number, NotificationLog[]>) => ({
-          ...prev,
-          [currentPage]: apiNotifications,
-        }));
+      ...prev,
+      [currentPage]: apiNotifications,
+    }));
   }, [apiNotifications, currentPage]);
 
-  
   const currentNotifications: NotificationLog[] =
     pageCache[currentPage] ?? [];
 
+  // ✅ Filter
   const filteredNotifications = useMemo(() => {
     if (activeTab === "read") {
       return currentNotifications.filter((n) => n.read === 1);
@@ -76,12 +76,13 @@ const NotificationList = () => {
     return currentNotifications;
   }, [currentNotifications, activeTab]);
 
+  // ✅ Pagination logic
   const hasNextPage = apiNotifications.length === LIMIT;
   const totalPages = hasNextPage ? currentPage + 1 : currentPage;
 
+  // ✅ Handlers
   const handleItemClick = async (item: NotificationLog) => {
     setSelectedNotification(item);
-
     if (item.read === 0) {
       try {
         await markAsRead.mutateAsync(item.name);
@@ -94,13 +95,13 @@ const NotificationList = () => {
   const handleDrawerClose = () => {
     if (selectedNotification && selectedNotification.read === 0) {
       setPageCache((prev: Record<number, NotificationLog[]>) => ({
-              ...prev,
-              [currentPage]: (prev[currentPage] ?? []).map((n) =>
-                n.name === selectedNotification.name
-                  ? { ...n, read: 1 }
-                  : n
-              ),
-            }));
+        ...prev,
+        [currentPage]: (prev[currentPage] ?? []).map((n) =>
+          n.name === selectedNotification.name
+            ? { ...n, read: 1 }
+            : n
+        ),
+      }));
     }
     setSelectedNotification(null);
   };
@@ -110,13 +111,14 @@ const NotificationList = () => {
     setCurrentPage(page);
   };
 
-
   const startItem =
     filteredNotifications.length === 0
       ? 0
       : (currentPage - 1) * LIMIT + 1;
-  const endItem = (currentPage - 1) * LIMIT + filteredNotifications.length;
+  const endItem =
+    (currentPage - 1) * LIMIT + filteredNotifications.length;
 
+  // ✅ Pagination Bar — sticky bottom
   const PaginationBar = () => {
     const pageNumbers: number[] = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -124,8 +126,8 @@ const NotificationList = () => {
     }
 
     return (
-      <div className="flex  gap-4 items-center justify-between px-4 py-3 border-t overflow-x-scroll bg-white">
-        <p className="text-sm text-gray-500 whitespace-nowrap ">
+      <div className="flex-shrink-0 flex gap-4 items-center justify-between px-4 py-3 border-t bg-white">
+        <p className="text-sm text-gray-500 whitespace-nowrap">
           {filteredNotifications.length === 0
             ? "No results"
             : `Showing ${startItem} to ${endItem} results`}
@@ -143,11 +145,10 @@ const NotificationList = () => {
                   : "text-gray-600 border-gray-300 hover:bg-gray-100"
               }`}
           >
-           
-           <ChevronLeft />
+            <ChevronLeft size={16} />
           </button>
 
-       
+          {/* Page Numbers */}
           {pageNumbers.map((page) => (
             <button
               key={page}
@@ -163,6 +164,7 @@ const NotificationList = () => {
             </button>
           ))}
 
+          {/* Next */}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={!hasNextPage}
@@ -173,22 +175,26 @@ const NotificationList = () => {
                   : "text-gray-600 border-gray-300 hover:bg-gray-100"
               }`}
           >
-          <ChevronRight />
+            <ChevronRight size={16} />
           </button>
         </div>
       </div>
     );
   };
 
+  // ✅ Layout — h-screen overflow-hidden for sticky header/footer + scrollable list
   const layout = (
-    <div className="flex flex-col h-full">
-      <HeaderBar
-        title="Notification Log"
-        onBack={() => navigate(-1)}
-      />
+    <div className="flex flex-col h-screen overflow-hidden">
+      {/* ✅ Sticky Header */}
+      <div className="flex-shrink-0">
+        <HeaderBar
+          title="Notification Log"
+          onBack={() => navigate(-1)}
+        />
+      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b">
+      {/* ✅ Sticky Tabs */}
+      <div className="flex-shrink-0 flex border-b bg-white">
         {["all", "read", "unread"].map((tab) => (
           <button
             key={tab}
@@ -196,7 +202,7 @@ const NotificationList = () => {
             className={`px-4 py-2 text-sm font-medium capitalize
               ${
                 activeTab === tab
-                  ? "border-b-2 border-blue-600 text-blue-600"
+                  ? "border-b-2 border-primary text-primary"
                   : "text-gray-500 hover:text-gray-700"
               }`}
           >
@@ -205,8 +211,8 @@ const NotificationList = () => {
         ))}
       </div>
 
-      {/* List */}
-      <div className="flex-1 p-2 overflow-y-auto">
+      {/* ✅ Scrollable List — min-h-0 is key for flex scroll */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-2">
         {isLoading && currentNotifications.length === 0 ? (
           <CardSkeleton />
         ) : filteredNotifications.length === 0 ? (
@@ -227,8 +233,10 @@ const NotificationList = () => {
         )}
       </div>
 
+      {/* ✅ Sticky Pagination Footer */}
       <PaginationBar />
 
+      {/* Drawer */}
       {selectedNotification && (
         <div className="fixed inset-0 z-50 flex">
           <div
@@ -297,6 +305,9 @@ const NotificationList = () => {
 
 export default NotificationList;
 
+// ==================================================
+// ITEM COMPONENT
+// ==================================================
 const NotificationItem: React.FC<{
   item: NotificationLog;
   onClick: () => void;
