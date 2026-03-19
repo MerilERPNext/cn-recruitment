@@ -163,9 +163,13 @@ const MyLeaveRequests = ({
                   />
                 )}
                 onFiltersChange={(filters) => {
-                  setActiveStatus(filters.status || "Open");
+                  setActiveStatus(
+                    typeof filters.status === "string"
+                      ? filters.status
+                      : "All",
+                  );
                 }}
-                defaultFilters={{}}
+                defaultFilters={{ status: ["!=", "Cancelled"] }}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[

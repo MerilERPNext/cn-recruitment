@@ -263,21 +263,22 @@ const DataListView = <T extends BaseItem>({
     if (!customAPI) return customAPI;
 
     const currentStatus = debouncedFilters?.status;
-    const isPending =
-      !currentStatus ||
+
+    // Only add todo_status when user explicitly selects a pending-like status
+    const isExplicitPending =
       currentStatus === "Pending" ||
       currentStatus === "Open" ||
       currentStatus === "Draft";
 
-    if (isPending) {
-      // Add todo_status: "Open" by default for pending/no-filter state
+    if (isExplicitPending) {
+      // Add todo_status: "Open" only for explicit pending filter selection
       return {
         ...customAPI,
         params: { ...customAPI.params, todo_status: "Open" },
       };
     }
 
-    // Strip todo_status for non-pending filters
+    // Strip todo_status for non-pending filters or when no filter is selected
     if (customAPI.params?.todo_status) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { todo_status, ...restParams } = customAPI.params as Record<
