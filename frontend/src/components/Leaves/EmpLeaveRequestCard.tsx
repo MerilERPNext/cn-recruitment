@@ -210,7 +210,6 @@ const EmpLeaveRequestCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={isPending}
               />
 
               <StatusBadge status={data?.reference_document?.status} />

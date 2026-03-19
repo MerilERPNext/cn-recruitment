@@ -150,7 +150,6 @@ const EmpAttendanceRequestCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={type === "pending"}
               />
 
               <StatusBadge status={data?.reference_document?.custom_status} />

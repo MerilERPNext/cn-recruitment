@@ -96,7 +96,6 @@ const MyAdvanceExpenseList = () => {
               roles={item?.allocated_roles}
               username={item?.username}
               allocated_to={item?.allocated_to}
-              hasPendingStatus={doc?.status === "Draft"}
             />
             <AllocatedToTooltip
               users={doc?.status === "Draft" ? item?.allocated_to : undefined}

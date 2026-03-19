@@ -101,7 +101,6 @@ const LoantItem: React.FC<{
         {/* Allocated To */}
         <MobileAllocatedTo
           username={item.employee_name}
-          hasPendingStatus={item.status === "Open"}
         />
 
         {/* Amount rows */}

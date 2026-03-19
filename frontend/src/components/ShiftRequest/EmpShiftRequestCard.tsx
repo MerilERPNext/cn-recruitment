@@ -135,7 +135,6 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 roles={data?.allocated_roles}
                 username={data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={isDraft}
               />
 
               <StatusBadge status={data?.reference_document?.status} />

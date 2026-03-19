@@ -199,7 +199,6 @@ export function AttendanceDetailView({
                 roles={data?.allocated_roles}
                 username={data?.allocated_to_name || data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={data?.status === "Pending" || data?.status === "Open"}
               />
             </div>
             <div className="flex justify-between w-full">

@@ -257,7 +257,6 @@ const LeaveApprovalCard = ({
                       roles={data?.allocated_roles}
                       username={data?.username}
                       allocated_to={data?.allocated_to}
-                      hasPendingStatus={data?.reference_document?.status === "Open"}
                       align="right"
                     />
                   </div>

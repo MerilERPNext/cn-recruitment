@@ -184,7 +184,6 @@ const ApprovalCard = ({
                     roles={data?.allocated_roles}
                     username={data?.username}
                     allocated_to={data?.allocated_to}
-                    hasPendingStatus={data?.status === "Pending"}
                   />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>

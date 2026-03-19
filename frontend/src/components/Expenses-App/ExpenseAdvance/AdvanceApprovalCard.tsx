@@ -204,7 +204,6 @@ const AdvanceApprovalCard = ({
                 roles={data?.allocated_roles}
                 username={data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={data?.status === "Pending"}
               />
 
               <TeamApprovalActionPill

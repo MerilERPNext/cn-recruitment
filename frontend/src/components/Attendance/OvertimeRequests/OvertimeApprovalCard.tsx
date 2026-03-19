@@ -177,7 +177,6 @@ const OvertimeApprovalCard = ({
                     roles={data?.allocated_roles}
                     username={data?.username}
                     allocated_to={data?.allocated_to}
-                    hasPendingStatus={data?.status === "Open"}
                   />
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">

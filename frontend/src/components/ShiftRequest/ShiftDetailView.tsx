@@ -168,7 +168,6 @@ export function ShiftDetailView({
                 roles={data?.allocated_roles}
                 username={data?.allocated_to_name || data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={data?.status === "Draft"}
               />
             </div>
             <div className="flex justify-between w-full">

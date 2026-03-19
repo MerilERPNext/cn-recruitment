@@ -12,8 +12,6 @@ interface MobileAllocatedToProps {
     username?: string;
     /** Fallback: single allocated_to string (used when users array is empty) */
     allocated_to?: string;
-    /** When true, shows a pulsing amber dot to signal the item is tappable/pending */
-    hasPendingStatus?: boolean;
     /** Text alignment for label + value — matches the card column position. Default: "left" */
     align?: "left" | "right";
 }
@@ -24,7 +22,6 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     roles = [],
     username,
     allocated_to,
-    hasPendingStatus = false,
     align = "left",
 }) => {
     // Build de-duplicated user list.

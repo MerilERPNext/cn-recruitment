@@ -226,7 +226,6 @@ export function LeaveDetailView({
                 roles={data?.allocated_roles}
                 username={data?.allocated_to_name || data?.username}
                 allocated_to={data?.allocated_to}
-                hasPendingStatus={data?.reference_document?.status === "Open"}
               />
             </div>
             <div className="flex justify-between w-full">

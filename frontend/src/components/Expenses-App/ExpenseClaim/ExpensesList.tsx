@@ -140,7 +140,6 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           roles={item?.allocated_roles}
           username={item?.username}
           allocated_to={item?.allocated_to}
-          hasPendingStatus={item?.status === "Draft"}
         />
 
         <MyApprovalActionPill

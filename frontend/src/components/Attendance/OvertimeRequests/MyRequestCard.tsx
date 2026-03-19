@@ -75,7 +75,6 @@ export function MyRequestCard({
                   roles={request?.allocated_roles}
                   username={request?.username}
                   allocated_to={request?.allocated_to}
-                  hasPendingStatus={request?.status === "Open"}
                 />
 
                 <StatusBadge status={request?.status} />
