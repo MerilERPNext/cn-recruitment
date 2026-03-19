@@ -13,6 +13,7 @@ import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 
@@ -250,13 +251,14 @@ const LeaveApprovalCard = ({
                     </Typography>
                   </div>
 
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Allocated To
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.username || data?.allocated_to}
-                    </Typography>
+                  <div className="flex flex-col gap-2 items-end">
+                    <MobileAllocatedTo
+                      users={data?.username ? [data.username] : []}
+                      roles={data?.allocated_roles}
+                      username={data?.username}
+                      allocated_to={data?.allocated_to}
+                      align="right"
+                    />
                   </div>
                 </div>
 

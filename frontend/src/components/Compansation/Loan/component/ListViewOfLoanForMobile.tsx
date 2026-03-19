@@ -10,6 +10,7 @@ import CreateLoanDialog from "./CreateLoanDailog";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
@@ -96,6 +97,11 @@ const LoantItem: React.FC<{
           </div>
           <StatusBadge status={item.status} />
         </div>
+
+        {/* Allocated To */}
+        <MobileAllocatedTo
+          username={item.employee_name}
+        />
 
         {/* Amount rows */}
         <div className="flex items-start justify-between">

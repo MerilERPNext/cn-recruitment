@@ -85,7 +85,7 @@ const AllMyShiftRequestsList = () => {
                   ],
                 },
               ]}
-              defaultFilters={{}}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}

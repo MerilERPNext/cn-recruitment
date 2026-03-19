@@ -66,7 +66,6 @@ const AttendanceRequest = ({
                 "1fr",
                 "1fr",
                 "1fr",
-                "1fr",
               ]}
               titles={[
                 "Request Type",
@@ -74,7 +73,6 @@ const AttendanceRequest = ({
                 "To Date",
                 "Due Date",
                 "Duration",
-                "Allocated To",
                 "Status",
                 "ACTIONS",
               ]}
@@ -133,7 +131,7 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                  defaultFilters={{}}
+                  defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>

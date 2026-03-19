@@ -1,7 +1,7 @@
 export interface LeaveRequest {
   name: string;
   leave_type: string;
-  custom_leave_type_name:string;
+  custom_leave_type_name: string;
   from_date: string;
   to_date: string;
   status: "Approved" | "Open" | "Rejected" | "Cancelled" | "Pending";
@@ -146,6 +146,9 @@ export interface CompOffResponse {
   custom_status: string;
   pay_button_required: boolean;
   docstatus: number;
+  allocated_to?: string[];
+  allocated_roles?: string[];
+  allocated_to_user: string;
 }
 
 export interface LeaveFieldFlags {

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -10,8 +9,8 @@ import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -43,21 +42,9 @@ const MyAdvanceExpenseList = () => {
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Link
-          to={`/webapp/employee-profile?target_user=${item?.allocated_to_emp_id}`}
-          target="_blank"
-        >
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center truncate"
-          >
-            <WrapperHoverCard employeeId={item?.allocated_to_emp_id}>
-              {item?.username}
-            </WrapperHoverCard>
-          </Typography>
-        </Link>
+
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -104,18 +91,12 @@ const MyAdvanceExpenseList = () => {
         <div className="p-4 flex flex-col gap-3 w-full">
           {/* Header */}
           <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Allocated To</Typography>
-
-              <Link
-                to={`/webapp/employee-profile?target_user=${doc?.allocated_to_emp_id}`}
-                target="_blank"
-              >
-                <Typography variant="mobileCardValue">
-                  {item?.username}
-                </Typography>
-              </Link>
-            </div>
+            <MobileAllocatedTo
+              users={item?.username ? [item.username] : []}
+              roles={item?.allocated_roles}
+              username={item?.username}
+              allocated_to={item?.allocated_to}
+            />
             <AllocatedToTooltip
               users={doc?.status === "Draft" ? item?.allocated_to : undefined}
               roles={
@@ -230,14 +211,13 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Allocated To",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
             "Advance Amount",
             "Status",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
@@ -250,6 +230,7 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
+              status: ["!=", "Cancelled"],
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}

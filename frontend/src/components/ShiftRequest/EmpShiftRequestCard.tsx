@@ -9,6 +9,7 @@ import { MyShiftRequest } from "../../types/shift";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
 import StatusBadge from "../shared/atoms/statusBadge";
@@ -129,12 +130,12 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
           <div className="p-4 flex flex-col gap-4 w-full">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue">
-                  {data?.username || data?.allocated_to}
-                </Typography>
-              </div>
+              <MobileAllocatedTo
+                users={data?.username ? [data.username] : []}
+                roles={data?.allocated_roles}
+                username={data?.username}
+                allocated_to={data?.allocated_to}
+              />
 
               <StatusBadge status={data?.reference_document?.status} />
             </div>

@@ -14,6 +14,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
@@ -132,6 +133,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
         </div>
+
+        {/* Allocated To */}
+        <MobileAllocatedTo
+          users={item?.username ? [item.username] : []}
+          roles={item?.allocated_roles}
+          username={item?.username}
+          allocated_to={item?.allocated_to}
+        />
 
         <MyApprovalActionPill
           variant="buttons"
@@ -469,7 +478,7 @@ const ExpensesList: React.FC = () => {
                   ],
                 },
               ]}
-              defaultFilters={{}}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}

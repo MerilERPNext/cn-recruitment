@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import TableSkeleton from "../../shared/molecules/Skeletons/TableSkeleton";
 import SideDrawer from "../../shared/SideDrawer";
@@ -35,8 +36,8 @@ const OvertimeJournal = ({
     const renderKeyValueTable = (rows?: KeyValueItem[]) => {
         if (!rows || rows.length === 0) {
             return (
-                <div className="text-sm text-gray-500 p-4">
-                    No data available.
+                <div className="p-4 flex justify-center">
+                    <NoDataFound title="No data available" subtitle="There are no details to show." />
                 </div>
             );
         }
@@ -64,8 +65,8 @@ const OvertimeJournal = ({
     const renderPolicyTable = (rows?: PolicyItem[]) => {
         if (!rows || rows.length === 0) {
             return (
-                <div className="text-sm text-gray-500 p-4">
-                    No policy data available.
+                <div className="p-4 flex justify-center">
+                    <NoDataFound title="No policy data available" subtitle="There are no policy details to show." />
                 </div>
             );
         }
@@ -191,8 +192,8 @@ const OvertimeJournal = ({
                     )}
 
                     {!isLoading && !isError && !data && (
-                        <div className="p-6 text-sm text-gray-500">
-                            No data available.
+                        <div className="p-6 flex justify-center">
+                            <NoDataFound title="No data available" subtitle="We couldn't find any overtime journal data." />
                         </div>
                     )}
                 </div>

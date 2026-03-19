@@ -9,6 +9,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
@@ -178,14 +179,12 @@ const ApprovalCard = ({
               {/* Info Section */}
               <div className="flex flex-col mt-2 p-1 gap-3">
                 <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">
-                      Allocated To
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.username || data?.allocated_to}
-                    </Typography>
-                  </div>
+                  <MobileAllocatedTo
+                    users={data?.username ? [data.username] : []}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                    allocated_to={data?.allocated_to}
+                  />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">

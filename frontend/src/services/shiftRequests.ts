@@ -51,13 +51,26 @@ export const ShiftRequestService = {
 };
 
 export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
-  const res = await FrappeAPI.getDocumentList("Shift Type", {
-    fields: ["name", "start_time", "end_time"],
-    orderBy: "creation desc",
-  });
-  return {
-    data: res.data as ShiftType[],
-  };
+  const PAGE_SIZE = 100;
+  const allData: ShiftType[] = [];
+  let limitStart = 0;
+
+  while (true) {
+    const res = await FrappeAPI.getDocumentList("Shift Type", {
+      fields: ["name", "custom_shift_name", "start_time", "end_time"],
+      orderBy: "creation desc",
+      limit: PAGE_SIZE,
+      limitStart,
+    });
+
+    const page = res.data as ShiftType[];
+    allData.push(...page);
+
+    if (page.length < PAGE_SIZE) break; // last page reached
+    limitStart += PAGE_SIZE;
+  }
+
+  return { data: allData };
 };
 
 

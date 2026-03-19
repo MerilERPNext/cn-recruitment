@@ -46,6 +46,7 @@ const MyOvertimeRequests = () => {
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
     setRefetchAttendance(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -83,12 +84,11 @@ const MyOvertimeRequests = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
-          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1.5fr", "1fr", "1fr", "1fr"]}
           titles={[
             "Description",
             "Creation",
             "Due Date",
-            "Allocated To",
             "Status",
           ]}
         >
@@ -128,7 +128,7 @@ const MyOvertimeRequests = () => {
                   ],
                 },
               ]}
-              defaultFilters={{}}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}
