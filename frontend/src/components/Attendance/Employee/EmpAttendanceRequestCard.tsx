@@ -2,7 +2,6 @@ import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
@@ -17,7 +16,6 @@ import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
@@ -79,7 +77,7 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const duration = getDays(formattedFromDate, formattedToDate);
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -116,20 +114,7 @@ const EmpAttendanceRequestCard = ({
             {duration > 1 ? duration + " Days" : duration + " Day"}
           </Typography>
 
-          <Link
-            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              {" "}
-              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-                {data?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           {/* Status */}
           <div className="flex items-center justify-center">
             <AllocatedToTooltip

@@ -479,7 +479,7 @@ const ExpensesList: React.FC = () => {
                   ],
                 },
               ]}
-              defaultFilters={{}}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}

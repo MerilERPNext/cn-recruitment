@@ -18,15 +18,7 @@ interface MobileAllocatedToProps {
     align?: "left" | "right";
 }
 
-/**
- * Renders the "Allocated To" field for mobile card views.
- *
- * – Shows the first assignee (user 👤 or role 🛡️) with an icon.
- * – If there are more assignees, appends a (+N) badge.
- * – Wraps everything in AllocatedToTooltip so tapping/hovering reveals the full list.
- * – When hasPendingStatus is true, shows a small pulsing amber dot (CSS only).
- * – align="right" mirrors the layout for right-side card columns (items-end, flex-row-reverse).
- */
+
 const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     users = [],
     roles = [],
@@ -70,7 +62,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
                 </Typography>
             ) : (
                 // When right-aligned, reverse the icon→name→badge order so it reads right-to-left naturally
-                <div className={`flex items-center gap-1 flex-wrap`}>
+                <div className={`flex items-center gap-1 `}>
                     {/* Icon */}
                     <span className={`flex items-center justify-center w-5 h-5 rounded-md shrink-0 ${firstIsUser ? "bg-primary-50" : "bg-secondary-50"}`}>
                         {firstIsUser
@@ -99,14 +91,22 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
         </div>
     );
 
+    const wrapperClass = `flex ${isRight ? "justify-end ml-auto" : "justify-start"}`;
+
     if (totalCount === 0) {
-        return labelEl;
+        return (
+            <div className={wrapperClass}>
+                {labelEl}
+            </div>
+        );
     }
 
     return (
-        <AllocatedToTooltip users={allUsers} roles={allRoles} position="top">
-            {labelEl}
-        </AllocatedToTooltip>
+        <div className={wrapperClass}>
+            <AllocatedToTooltip users={allUsers} roles={allRoles} position="top">
+                {labelEl}
+            </AllocatedToTooltip>
+        </div>
     );
 };
 

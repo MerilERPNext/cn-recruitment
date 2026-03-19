@@ -202,6 +202,7 @@ const AllMyShiftRequestsList = () => {
               refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={4}
               showRefreshButton={false}
               orderBy="from_date desc"

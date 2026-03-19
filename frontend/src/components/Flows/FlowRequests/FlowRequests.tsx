@@ -143,7 +143,7 @@ const FlowRequests: React.FC = () => {
                     fieldname: "workflow_status",
                     label: "Workflow Status",
                     fieldtype: "Select",
-                    options: ["Pending", "Completed", "NA"],
+                    options: ["Pending", "Completed", "N/A"],
                   },
                   {
                     fieldname: "overall_flow_status",

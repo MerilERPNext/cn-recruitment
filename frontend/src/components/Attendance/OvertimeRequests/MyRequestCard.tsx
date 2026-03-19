@@ -4,9 +4,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
-import { Link } from "react-router-dom";
 import {
   sanitizeToPlainText,
   truncateByChars,
@@ -27,7 +25,7 @@ export function MyRequestCard({
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
 
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -50,19 +48,7 @@ export function MyRequestCard({
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(request?.due_date)}
           </Typography>
-          <Link
-            to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-                {request?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={request?.status === "Open" ? request?.allocated_to : undefined}
