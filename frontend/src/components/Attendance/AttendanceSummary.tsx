@@ -338,7 +338,7 @@ const AttendanceSummary = () => {
     settingType: string,
     data?: string | string[],
   ) => {
-    if (!data) return null;
+    if (!data) return "N/A";
     const displayLabel = Array.isArray(data) ? data[0] : data;
     const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
@@ -541,7 +541,7 @@ const AttendanceSummary = () => {
                                 variant="bodySmall"
                                 className="font-medium text-gray-600 block"
                               >
-                                {detail}
+                                {detail || "N/A"}
                               </Typography>
                             ),
                         )}

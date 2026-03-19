@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef, useMemo, useState, useEffect } from "react";
+import { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import "../../../formio.custom.css";
 import {
   useCreatePlannedOvertimeRequest,
@@ -56,6 +56,54 @@ interface FormSchema {
   components: SchemaComponent[];
 }
 
+const transformSchemaWithRequired = (
+  baseSchema: FormSchema,
+  requiredMap: Record<string, boolean>,
+): FormSchema => {
+  if (!baseSchema) return baseSchema;
+  const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
+
+  const applyToComponents = (components?: SchemaComponent[]) => {
+    if (!components) return;
+    components.forEach((comp: SchemaComponent) => {
+      const key = comp.key;
+      if (key && requiredMap[key]) {
+        if (!comp.validate) comp.validate = {};
+        comp.validate.required = true;
+
+        if (typeof comp.label === "string") {
+          const asteriskHtml =
+            "<span style='color:red;margin-left:3px;'> *</span>";
+          if (!comp.label.includes(asteriskHtml)) {
+            comp.label = `${comp.label} ${asteriskHtml}`;
+          }
+        }
+      }
+
+      if (key === "start_date" || key === "end_date") {
+        if (!comp.datePicker) comp.datePicker = {};
+        comp.datePicker.minDate = format(new Date(), "yyyy-MM-dd");
+      }
+      // recurse into nested components (like panels, columns, containers)
+      if (comp.components && Array.isArray(comp.components)) {
+        applyToComponents(comp.components);
+      }
+      // some schema use nested components in 'columns' or 'rows' etc - handle common cases
+      if (comp.columns && Array.isArray(comp.columns)) {
+        comp.columns.forEach((col: any) => applyToComponents(col.components));
+      }
+      if (comp.rows && Array.isArray(comp.rows)) {
+        comp.rows.forEach((row: any[]) =>
+          row.forEach((cell: any) => applyToComponents(cell.components)),
+        );
+      }
+    });
+  };
+
+  applyToComponents(cloned.components);
+  return cloned;
+};
+
 const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
@@ -72,7 +120,9 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   const mutation = useCreatePlannedOvertimeRequest();
   const { data: plannedOvertimeRequestAttachments } =
-    usePlannedOvertimeRequestAttachments(targetEmployeeId || currentEmployee?.employee || "");
+    usePlannedOvertimeRequestAttachments(
+      targetEmployeeId || currentEmployee?.employee || "",
+    );
 
   /** Memoized initial value to avoid rerender resets */
   const initialSubmissionData = useMemo(
@@ -131,54 +181,6 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   ]);
 
   console.log("requiredFieldMap", requiredFieldMap);
-
-  const transformSchemaWithRequired = (
-    baseSchema: FormSchema,
-    requiredMap: Record<string, boolean>,
-  ): FormSchema => {
-    if (!baseSchema) return baseSchema;
-    const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
-
-    const applyToComponents = (components?: SchemaComponent[]) => {
-      if (!components) return;
-      components.forEach((comp) => {
-        const key = comp.key;
-        if (key && requiredMap[key]) {
-          if (!comp.validate) comp.validate = {};
-          comp.validate.required = true;
-
-          if (typeof comp.label === "string") {
-            const asteriskHtml =
-              "<span style='color:red;margin-left:3px;'> *</span>";
-            if (!comp.label.includes(asteriskHtml)) {
-              comp.label = `${comp.label} ${asteriskHtml}`;
-            }
-          }
-        }
-
-        if (key === "start_date" || key === "end_date") {
-          if (!comp.datePicker) comp.datePicker = {};
-          comp.datePicker.minDate = format(new Date(), "yyyy-MM-dd");
-        }
-        // recurse into nested components (like panels, columns, containers)
-        if (comp.components && Array.isArray(comp.components)) {
-          applyToComponents(comp.components);
-        }
-        // some schema use nested components in 'columns' or 'rows' etc - handle common cases
-        if (comp.columns && Array.isArray(comp.columns)) {
-          comp.columns.forEach((col: any) => applyToComponents(col.components));
-        }
-        if (comp.rows && Array.isArray(comp.rows)) {
-          comp.rows.forEach((row: any[]) =>
-            row.forEach((cell: any) => applyToComponents(cell.components)),
-          );
-        }
-      });
-    };
-
-    applyToComponents(cloned.components);
-    return cloned;
-  };
 
   const loading = useLoadingOverlay();
   const handleSubmit = async () => {
@@ -302,35 +304,42 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
           <Form
-            form={transformSchemaWithRequired(
-              overtimeRequestSchema,
-              requiredFieldMap,
+            form={useMemo(
+              () =>
+                transformSchemaWithRequired(
+                  overtimeRequestSchema,
+                  requiredFieldMap,
+                ),
+              [requiredFieldMap],
             )}
-            onChange={(submission: any) => {
-              const changed = submission?.changed;
-              if (changed?.component?.key === "attachment") {
-                setAttachments(submission?.data?.attachment || []);
-              }
-
-              // Auto-populate end_date from start_date
-              if (
-                changed?.component?.key === "start_date" &&
-                changed?.value &&
-                changed?.instance?.rowIndex !== undefined
-              ) {
-                const rowIndex = changed.instance.rowIndex;
-                // Get the grid component
-                const grid =
-                  formInstance.current?.getComponent("overtime_details");
-
-                // Check if grid and row exist, then set value
-                if (grid?.rows?.[rowIndex]?.end_date) {
-                  // Use setValue with noUpdateEvent to avoid triggering another change loop if possible
-                  // or just setValue. Formio usually handles this well.
-                  grid.rows[rowIndex].end_date.setValue(changed.value);
+            onChange={useCallback(
+              (submission: any) => {
+                const changed = submission?.changed;
+                if (changed?.component?.key === "attachment") {
+                  setAttachments(submission?.data?.attachment || []);
                 }
-              }
-            }}
+
+                // Auto-populate end_date from start_date
+                if (
+                  changed?.component?.key === "start_date" &&
+                  changed?.value &&
+                  changed?.instance?.rowIndex !== undefined
+                ) {
+                  const rowIndex = changed.instance.rowIndex;
+                  // Get the grid component
+                  const grid =
+                    formInstance.current?.getComponent("overtime_details");
+
+                  // Check if grid and row exist, then set value
+                  if (grid?.rows?.[rowIndex]?.end_date) {
+                    // Use setValue with noUpdateEvent to avoid triggering another change loop if possible
+                    // or just setValue. Formio usually handles this well.
+                    grid.rows[rowIndex].end_date.setValue(changed.value);
+                  }
+                }
+              },
+              [onCancel, setRefetchAttendance, setAttachments],
+            )}
             /** CRITICAL FIX: Do NOT pass submission prop */
             onFormReady={(instance: any) => {
               formInstance.current = instance;
