@@ -563,10 +563,21 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => ({
-      ...prev,
-      [fieldname]: value,
-    }));
+    setFilters((prev: Record<string, any>) => {
+      if (value === "") {
+        const newFilters = { ...prev };
+        if (defaultFilters && defaultFilters[fieldname] !== undefined) {
+          newFilters[fieldname] = defaultFilters[fieldname];
+        } else {
+          delete newFilters[fieldname];
+        }
+        return newFilters;
+      }
+      return {
+        ...prev,
+        [fieldname]: value,
+      };
+    });
 
     setShowFilters(false);
   };
