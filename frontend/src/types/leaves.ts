@@ -58,6 +58,7 @@ export interface LeaveBalance {
 
 export interface LeaveTransaction {
   type: string;
+  name?: string;
   total: number;
   monthly: number[];
   dont_show_in_frontend: number;

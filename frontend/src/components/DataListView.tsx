@@ -263,21 +263,22 @@ const DataListView = <T extends BaseItem>({
     if (!customAPI) return customAPI;
 
     const currentStatus = debouncedFilters?.status;
-    const isPending =
-      !currentStatus ||
+
+    // Only add todo_status when user explicitly selects a pending-like status
+    const isExplicitPending =
       currentStatus === "Pending" ||
       currentStatus === "Open" ||
       currentStatus === "Draft";
 
-    if (isPending) {
-      // Add todo_status: "Open" by default for pending/no-filter state
+    if (isExplicitPending) {
+      // Add todo_status: "Open" only for explicit pending filter selection
       return {
         ...customAPI,
         params: { ...customAPI.params, todo_status: "Open" },
       };
     }
 
-    // Strip todo_status for non-pending filters
+    // Strip todo_status for non-pending filters or when no filter is selected
     if (customAPI.params?.todo_status) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { todo_status, ...restParams } = customAPI.params as Record<
@@ -562,10 +563,21 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => ({
-      ...prev,
-      [fieldname]: value,
-    }));
+    setFilters((prev: Record<string, any>) => {
+      if (value === "") {
+        const newFilters = { ...prev };
+        if (defaultFilters && defaultFilters[fieldname] !== undefined) {
+          newFilters[fieldname] = defaultFilters[fieldname];
+        } else {
+          delete newFilters[fieldname];
+        }
+        return newFilters;
+      }
+      return {
+        ...prev,
+        [fieldname]: value,
+      };
+    });
 
     setShowFilters(false);
   };
@@ -746,13 +758,13 @@ const DataListView = <T extends BaseItem>({
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          className="fixed inset-0 bg-black bg-opacity-40 z-[9999]"
           onClick={() => setShowFilters(false)}
         />
 
         {/* Right Side Drawer */}
         <div
-          className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50
+          className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000]
         transform transition-transform duration-300 ease-in-out
         ${showFilters ? "translate-x-0" : "translate-x-full"}`}
         >

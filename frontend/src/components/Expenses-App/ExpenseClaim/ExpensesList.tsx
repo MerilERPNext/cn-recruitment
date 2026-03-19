@@ -277,9 +277,7 @@ const ExpensesList: React.FC = () => {
 
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
-  >({
-    status: "Draft",
-  });
+  >({});
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -481,9 +479,7 @@ const ExpensesList: React.FC = () => {
                   ],
                 },
               ]}
-              defaultFilters={{
-                status: "Draft",
-              }}
+              defaultFilters={{}}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}

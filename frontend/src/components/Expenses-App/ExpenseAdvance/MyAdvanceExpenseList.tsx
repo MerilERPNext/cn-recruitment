@@ -245,7 +245,6 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
-              status: "Pending",
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
