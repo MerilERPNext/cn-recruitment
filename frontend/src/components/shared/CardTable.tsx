@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useRef, useEffect, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "./atoms/Typography";
 
@@ -12,6 +12,24 @@ const CardTable = ({
   children: ReactNode;
 }) => {
   const { isDesktop } = useScreenSize();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollContainerWidth, setScrollContainerWidth] = useState<number>(0);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      setScrollContainerWidth(el.clientWidth);
+    };
+
+    updateWidth();
+
+    const ro = new ResizeObserver(() => updateWidth());
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
 
   const gridTemplateColumns = columnWidths?.length
     ? columnWidths.join(" ")
@@ -21,10 +39,18 @@ const CardTable = ({
     <div className="bg-white rounded-lg shadow-sm md:border border-gray-100 flex flex-col max-h-full">
       {/* Desktop horizontal scroll container */}
       <div
+        ref={scrollRef}
         className={
           isDesktop
             ? "overflow-x-auto rounded-lg bg-white shadow-sm flex flex-col h-full"
             : "flex flex-col h-full"
+        }
+        style={
+          scrollContainerWidth
+            ? ({
+                "--card-table-visible-width": `${scrollContainerWidth}px`,
+              } as React.CSSProperties)
+            : undefined
         }
       >
         {/* Width holder ONLY on desktop */}
@@ -47,8 +73,8 @@ const CardTable = ({
             </div>
           )}
 
-          {/* Scrollable Content Area */}
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          {/* Content Area */}
+          <div className="flex-1">{children}</div>
         </div>
       </div>
     </div>

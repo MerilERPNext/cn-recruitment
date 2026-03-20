@@ -180,10 +180,10 @@ const ApprovalRejectionLoanList = ({
 
               {/* Allocated To */}
               <MobileAllocatedTo
-                users={data?.username ? [data.username] : []}
+                users={data?.allocated_to}
                 roles={data?.allocated_roles}
+                role={data?.role}
                 username={data?.username}
-                allocated_to={data?.allocated_to}
               />
 
               <TeamApprovalActionPill
@@ -312,16 +312,10 @@ const ApprovalRejectionLoanList = ({
 
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
-            users={
-              data?.reference_document?.status === "Open"
-                ? data?.allocated_to
-                : undefined
-            }
-            roles={
-              data?.reference_document?.status === "Open"
-                ? data?.allocated_roles
-                : undefined
-            }
+            users={data?.allocated_to}
+            roles={data?.allocated_roles}
+            allocated_to_user={data?.username}
+            role={data?.role}
             position="left"
           >
             <StatusBadge status={data?.reference_document?.status} />

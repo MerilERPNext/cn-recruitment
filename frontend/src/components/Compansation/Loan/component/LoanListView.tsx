@@ -195,7 +195,11 @@ export default function LoanList({
 
               {/* Status + Tooltip */}
               <div className="flex items-center justify-center">
-                <AllocatedToTooltip users={loan?.employee_name} position="left">
+                <AllocatedToTooltip
+                  users={loan?.allocated_to}
+                  roles={loan?.allocated_to_roles}
+                  allocated_to_user={loan?.allocated_to_user}
+                  position="left">
                   <StatusBadge status={loan.status} />
                 </AllocatedToTooltip>
               </div>

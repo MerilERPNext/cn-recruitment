@@ -3,31 +3,57 @@ import { createPortal } from "react-dom";
 import { User, Shield } from "lucide-react";
 
 interface AllocatedToTooltipProps {
+    /** User names — string or string[] */
     users?: string | string[];
+    /** Fallback user identifier (single or array) */
+    allocated_to_user?: string | string[] | null;
+    /** Fallback username (single string) */
+    username?: string;
+    /** Fallback allocated_to (single or array) */
+    allocated_to?: string | string[] | null;
+    /** Role names array */
     roles?: string[];
+    /** Single role fallback */
+    role?: string;
     children: ReactNode;
     position?: "top" | "bottom" | "left" | "right";
 }
 
 const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     users,
+    allocated_to_user,
+    username,
+    allocated_to,
     roles,
+    role,
     children,
     position = "top",
 }) => {
-    // normalize users to an array (handles string or string[] or CSV string)
+    /** Merge all user sources → deduped array */
     const usersArray: string[] = React.useMemo(() => {
-        if (!users && users !== "") return [];
-        if (Array.isArray(users)) return users.filter(Boolean).map(u => String(u));
-        // users is a string: allow comma-separated values or single value
-        return String(users)
-            .split(",")
-            .map(u => u.trim())
-            .filter(Boolean);
-    }, [users]);
+        const normalize = (value?: string | string[] | null): string[] => {
+            if (!value && value !== "") return [];
+            if (Array.isArray(value)) return value.filter(Boolean).map(v => String(v));
+            return [String(value).trim()].filter(Boolean);
+        };
+
+        return Array.from(new Set([
+            ...normalize(users),
+            ...normalize(allocated_to_user),
+            ...normalize(username),
+            ...normalize(allocated_to),
+        ]));
+    }, [users, allocated_to_user, username, allocated_to]);
+
+    /** Merge roles + role → deduped array */
+    const rolesArray: string[] = React.useMemo(() => {
+        const base = (roles ?? []).filter(Boolean);
+        if (typeof role === "string" && role) base.push(role);
+        return [...new Set(base)];
+    }, [roles, role]);
 
     const hasUsers = usersArray.length > 0;
-    const hasRoles = !!(roles && roles.length > 0);
+    const hasRoles = rolesArray.length > 0;
     const hasContent = hasUsers || hasRoles;
 
     const [isVisible, setIsVisible] = useState(false);
@@ -157,10 +183,6 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         }
     };
 
-    if (!hasContent) {
-        return <>{children}</>;
-    }
-
     const tooltipEl = isVisible && (
         <div
             ref={tooltipRef}
@@ -184,6 +206,15 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-2.5 p-3.5">
+                    {/* Fallback Section */}
+                    {!hasContent && (
+                        <div className="flex items-center gap-2.5">
+                            <span className="text-[11px] font-brand font-medium italic text-gray-500">
+                                Not Allocated
+                            </span>
+                        </div>
+                    )}
+
                     {/* Users Section (now badges) */}
                     {hasUsers && (
                         <div className="flex items-start gap-2.5">
@@ -227,12 +258,12 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                             </div>
                             <div className="flex flex-col gap-1 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
-                                    {roles!.length > 1 ? "Roles" : "Role"}
+                                    {rolesArray.length > 1 ? "Roles" : "Role"}
                                 </span>
                                 <div className="flex flex-wrap gap-1">
-                                    {roles!.map((role, idx) => (
+                                    {rolesArray.map((r, idx) => (
                                         <span
-                                            key={`role-${idx}-${role}`}
+                                            key={`role-${idx}-${r}`}
                                             className="
                         inline-flex items-center
                         text-[11px] font-brand font-medium
@@ -241,7 +272,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                         px-2 py-0.5 rounded-md
                       "
                                         >
-                                            {role}
+                                            {r}
                                         </span>
                                     ))}
                                 </div>

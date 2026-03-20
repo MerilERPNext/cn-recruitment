@@ -200,10 +200,9 @@ const AdvanceApprovalCard = ({
 
               {/* Allocated To */}
               <MobileAllocatedTo
-                users={data?.username ? [data.username] : []}
+                users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-                allocated_to={data?.allocated_to}
               />
 
               <TeamApprovalActionPill

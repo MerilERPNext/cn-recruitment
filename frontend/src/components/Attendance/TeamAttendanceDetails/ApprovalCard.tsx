@@ -117,8 +117,10 @@ const ApprovalCard = ({
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.status === "Pending" ? data?.allocated_to : undefined}
-              roles={data?.status === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -180,10 +182,10 @@ const ApprovalCard = ({
               <div className="flex flex-col mt-2 p-1 gap-3">
                 <div className="flex justify-between w-full">
                   <MobileAllocatedTo
-                    users={data?.username ? [data.username] : []}
+                    users={data?.allocated_to}
                     roles={data?.allocated_roles}
                     username={data?.username}
-                    allocated_to={data?.allocated_to}
+                    role={data?.role}
                   />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>

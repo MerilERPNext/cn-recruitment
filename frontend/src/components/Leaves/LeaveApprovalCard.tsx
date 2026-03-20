@@ -167,8 +167,10 @@ const LeaveApprovalCard = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.reference_document?.status === "Open" ? data?.allocated_to : undefined}
-              roles={data?.reference_document?.status === "Open" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
@@ -253,10 +255,10 @@ const LeaveApprovalCard = ({
 
                   <div className="flex flex-col gap-2 items-end">
                     <MobileAllocatedTo
-                      users={data?.username ? [data.username] : []}
+                      users={data?.allocated_to}
                       roles={data?.allocated_roles}
                       username={data?.username}
-                      allocated_to={data?.allocated_to}
+                      role={data?.role}
                       align="right"
                     />
                   </div>
