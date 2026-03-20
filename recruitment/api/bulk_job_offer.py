@@ -73,7 +73,7 @@ def send_bulk_job_offer(job_offers):
 
             job_offer = frappe.get_doc("Job Offer", jo)
 
-            # Only allow submitted job offers (docstatus=1)
+            # Only allow submitted job offers
             if job_offer.docstatus != 1:
                 skipped += 1
                 continue
