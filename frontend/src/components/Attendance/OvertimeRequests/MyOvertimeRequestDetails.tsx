@@ -20,7 +20,6 @@ import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function MyOvertimeDetails({
@@ -176,14 +175,6 @@ export function MyOvertimeDetails({
           </div>
 
           <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-            <div className="flex justify-between w-full">
-              <MobileAllocatedTo
-                users={(data?.allocated_to_name || data?.username) ? [(data?.allocated_to_name || data?.username)] : []}
-                roles={data?.allocated_roles}
-                username={data?.allocated_to_name || data?.username}
-                allocated_to={data?.allocated_to}
-              />
-            </div>
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">

@@ -18,7 +18,6 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 
 export function AttendanceDetailView({
   data: propData,
@@ -193,14 +192,6 @@ export function AttendanceDetailView({
 
           {/* Dates Section */}
           <div className="flex flex-col gap-3">
-            <div className="flex justify-between w-full">
-              <MobileAllocatedTo
-                users={(data?.allocated_to_name || data?.username) ? [(data?.allocated_to_name || data?.username)] : []}
-                roles={data?.allocated_roles}
-                username={data?.allocated_to_name || data?.username}
-                allocated_to={data?.allocated_to}
-              />
-            </div>
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">From Date</Typography>
