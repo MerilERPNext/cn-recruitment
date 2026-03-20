@@ -80,7 +80,7 @@ export type FormioSubmission<T> = {
 export interface MyShiftRequest {
   reference_document: ShiftRequest;
   reference_type: string;
-  allocated_to: string;
+  allocated_to: string[];
   allocated_roles?: string[];
   custom_allow_revoke: boolean;
   todo_id: string;

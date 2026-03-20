@@ -9,6 +9,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
@@ -116,8 +117,10 @@ const ApprovalCard = ({
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.status === "Pending" ? data?.allocated_to : undefined}
-              roles={data?.status === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -178,14 +181,12 @@ const ApprovalCard = ({
               {/* Info Section */}
               <div className="flex flex-col mt-2 p-1 gap-3">
                 <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-1">
-                    <Typography variant="mobileCardLabel">
-                      Allocated To
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.username || data?.allocated_to}
-                    </Typography>
-                  </div>
+                  <MobileAllocatedTo
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                    role={data?.role}
+                  />
                   <div className="flex flex-col gap-1 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">

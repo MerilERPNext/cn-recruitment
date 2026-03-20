@@ -58,7 +58,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   ];
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="flex flex-col bg-white">
       <div className="bg-white">
         <div className="sm:px-4">
           <HeaderBar

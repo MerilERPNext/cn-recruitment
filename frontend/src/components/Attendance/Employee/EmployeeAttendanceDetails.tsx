@@ -537,6 +537,7 @@ const EmployeeAttendanceDetails = ({
         createPortal(
           <AttendanceRequestFormV2
             onClose={() => setShowReqAttendanceCorrection(false)}
+            isFromCalView
             selectedDate={validDate || new Date()}
             latestInAndOutTime={
               empCheckIns && empCheckIns?.length > 0

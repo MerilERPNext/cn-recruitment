@@ -22,6 +22,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
   } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
+  const leaveId = leaveData?.leave_id || "";
 
   const [selectedCycle, setSelectedCycle] = useState<string>("");
 
@@ -29,7 +30,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
     data: metadata,
     isLoading: isMetadataLoading,
     isError: isMetadataError,
-  } = useGetLeavePassbookMetadata(employeeId ?? "", leaveType);
+  } = useGetLeavePassbookMetadata(employeeId ?? "", leaveId);
 
   const {
     data: transactions,
@@ -37,7 +38,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
     isError: isTransactionsError,
   } = useGetLeavePassbookTransaction(
     employeeId ?? "",
-    leaveType,
+    leaveId,
     selectedCycle
   );
 
@@ -161,7 +162,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
       <div className="p-4">
         <NoDataFound
           title="No Passbook Data"
-          subtitle={`There are no cycles available for ${leaveType}`}
+          subtitle={`There are no cycles available for ${leaveType} (${leaveId})`}
         />
       </div>
     );

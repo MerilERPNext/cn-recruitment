@@ -28,12 +28,14 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function TeamExpenseDetailView({
   documentName,
+  referenceName,
   data: propsData,
   onClose,
   onAction,
   label = "Expense Claim",
 }: {
   documentName?: string;
+  referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   onClose: () => void;
@@ -51,9 +53,9 @@ export function TeamExpenseDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-  const data = documentName ? fetchedData : propsData;
+  const data = (documentName || referenceName) ? fetchedData : propsData;
   const ref = data?.reference_document || {};
 
   const claimId = ref?.name || data?.reference_name || "";
@@ -365,7 +367,7 @@ export function TeamExpenseDetailView({
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  if (!data?.todo_id) return null;
+  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
 
   return (
     <>

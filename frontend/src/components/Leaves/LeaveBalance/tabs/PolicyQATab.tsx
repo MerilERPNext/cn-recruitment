@@ -14,11 +14,11 @@ const PolicyQATab: React.FC<PolicyQATabProps> = ({ leaveData }) => {
   const [isPolicyOpen, setIsPolicyOpen] = useState(true);
 
   const doctypeName = "Leave Type";
-  const targetDoctype = leaveData?.type || "";
+  const leaveId = leaveData?.leave_id || "";
 
   const { data, isLoading, isError } = useGetPolicyQuestions(
     doctypeName,
-    targetDoctype
+    leaveId
   );
 
   const policyQuestions = useMemo(() => {
@@ -47,16 +47,14 @@ const PolicyQATab: React.FC<PolicyQATabProps> = ({ leaveData }) => {
         >
           <Typography className="font-semibold">Policy</Typography>
           <ChevronUp
-            className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${
-              isPolicyOpen ? "rotate-0" : "rotate-180"
-            }`}
+            className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${isPolicyOpen ? "rotate-0" : "rotate-180"
+              }`}
           />
         </button>
 
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${
-            isPolicyOpen ? "max-h-auto opacity-100" : "max-h-0 opacity-0"
-          }`}
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${isPolicyOpen ? "max-h-auto opacity-100" : "max-h-0 opacity-0"
+            }`}
         >
           <div className="px-6 pb-6 pt-2 border-t border-gray-100">
             <Typography className="font-semibold mb-4">

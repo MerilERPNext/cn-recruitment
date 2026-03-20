@@ -10,6 +10,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
@@ -103,8 +104,9 @@ const OvertimeApprovalCard = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.status === "Open" ? data?.allocated_to : undefined}
-              roles={data?.status === "Open" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -171,14 +173,11 @@ const OvertimeApprovalCard = ({
 
               <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
                 <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Allocated To
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.username || data?.allocated_to}
-                    </Typography>
-                  </div>
+                  <MobileAllocatedTo
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                  />
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">
                       Due Date

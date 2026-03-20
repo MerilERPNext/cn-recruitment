@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 
 import {
   useGetAllEventsAndAttendance,
@@ -84,6 +84,22 @@ const EmployeeAttendance = () => {
   const [showLeaveRequest, setShowLeaveRequest] = useState<boolean>(false);
 
   const [openDrawer, setOpenDrawer] = useState<boolean>(false);
+
+  const handleCloseAttendanceRequest = useCallback(() => {
+    setShowReqAttendanceCorrection(false);
+  }, []);
+
+  const handleCancelLeaveRequest = useCallback(() => {
+    setShowLeaveRequest(false);
+  }, []);
+
+  const handleCancelOvertimeRequest = useCallback(() => {
+    setShowOvertimeRequest(false);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => {
+    setShowDetailsFor(null);
+  }, []);
 
   type Status =
     | "present"
@@ -247,9 +263,8 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex h-full overflow-y-auto min-h-0`}>
       <div
-        className={`flex p-0 md:p-2 flex-col ${
-          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-        }`}
+        className={`flex p-0 md:p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+          }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -306,7 +321,6 @@ const EmployeeAttendance = () => {
               "1fr",
               "1fr",
               "1fr",
-              "1fr",
             ]}
             titles={[
               "Request Type",
@@ -314,7 +328,6 @@ const EmployeeAttendance = () => {
               "To Date",
               "Due Date",
               "Duration",
-              "Allocated To",
               "Status",
               "ACTIONS",
             ]}
@@ -331,25 +344,13 @@ const EmployeeAttendance = () => {
           </CardTable>
         </Card>
         {showReqAttendanceCorrection && (
-          <AttendanceRequestFormV2
-            onClose={() => {
-              setShowReqAttendanceCorrection(false);
-            }}
-          />
+          <AttendanceRequestFormV2 onClose={handleCloseAttendanceRequest} />
         )}
         {showLeaveRequest && (
-          <LeaveRequest
-            onCancel={() => {
-              setShowLeaveRequest(false);
-            }}
-          />
+          <LeaveRequest onCancel={handleCancelLeaveRequest} />
         )}
         {showOvertimeRequest && (
-          <CreateOvertimeRequest
-            onCancel={() => {
-              setShowOvertimeRequest(false);
-            }}
-          />
+          <CreateOvertimeRequest onCancel={handleCancelOvertimeRequest} />
         )}
         <BottomDrowerForAttendance
           setShowLeaveRequest={setShowLeaveRequest}
@@ -369,24 +370,20 @@ const EmployeeAttendance = () => {
             events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
-            onClose={() => setShowDetailsFor(null)}
+            onClose={handleCloseDetails}
           />
         </div>
       )}
 
       {/* Modal for mobile devices */}
       {showDetailsFor && !isDesktop && (
-        <Modal
-          isOpen={true}
-          onClose={() => setShowDetailsFor(null)}
-          size="full"
-        >
+        <Modal isOpen={true} onClose={handleCloseDetails} size="full">
           <EmployeeAttendanceDetails
             data={showDetailsFor?.data}
             events={showDetailsFor?.events}
             date={showDetailsFor.date}
             status={showDetailsFor.status}
-            onClose={() => setShowDetailsFor(null)}
+            onClose={handleCloseDetails}
           />
         </Modal>
       )}

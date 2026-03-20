@@ -24,6 +24,7 @@ import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 type LeaveTransactionEntry = {
   type: string;
+  name?: string;
   total: number;
   monthly: number[];
 };
@@ -60,7 +61,7 @@ const LeaveTransactionCard: React.FC<{
 
   return (
     <div className="max-w-md md:max-w-full mx-auto pb-8">
-      {data.map((entry, idx) => (
+      {data?.map((entry, idx) => (
         <div
           key={`${entry.type}-${idx}`}
           className="rounded-xl mb-2 hover:shadow-md"
@@ -77,7 +78,7 @@ const LeaveTransactionCard: React.FC<{
               color="title"
               className="font-medium"
             >
-              {entry.type}
+              {entry.name || entry.type}
             </Typography>
 
             <div className="flex items-center gap-2 text-gray-600">
@@ -191,15 +192,24 @@ const LeaveBalance: React.FC = () => {
     (leave) => leave.dont_show_in_frontend !== 1,
   );
 
-  const visibleTypes = leaveBalance.map((l) => l.type);
+  const visibleTypes = leaveBalance.map((l) => l.leave_id);
 
-  const transactions = (data?.leave_transactions ?? []).filter((t) =>
-    visibleTypes.includes(t.type),
-  );
+  // Build a leave_id → leave type name mapping
+  const leaveIdToName: Record<string, string> = {};
+  leaveBalance.forEach((l) => {
+    leaveIdToName[l.leave_id] = l.type;
+  });
+
+  const transactions = (data?.leave_transactions ?? [])
+    .filter((t) => visibleTypes.includes(t.type))
+    .map((t) => ({
+      ...t,
+      name: leaveIdToName[t.type] ? `${leaveIdToName[t.type]} (${t.type})` : t.type,
+    }));
 
   return (
     <div className="pb-4 relative">
-      <LeaveTransactionsChart data={data?.leave_transactions} />
+      <LeaveTransactionsChart data={transactions} />
 
       {selectedLeave && (
         <BalanceDetailsDrawer

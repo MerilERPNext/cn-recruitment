@@ -263,21 +263,22 @@ const DataListView = <T extends BaseItem>({
     if (!customAPI) return customAPI;
 
     const currentStatus = debouncedFilters?.status;
-    const isPending =
-      !currentStatus ||
+
+    // Only add todo_status when user explicitly selects a pending-like status
+    const isExplicitPending =
       currentStatus === "Pending" ||
       currentStatus === "Open" ||
       currentStatus === "Draft";
 
-    if (isPending) {
-      // Add todo_status: "Open" by default for pending/no-filter state
+    if (isExplicitPending) {
+      // Add todo_status: "Open" only for explicit pending filter selection
       return {
         ...customAPI,
         params: { ...customAPI.params, todo_status: "Open" },
       };
     }
 
-    // Strip todo_status for non-pending filters
+    // Strip todo_status for non-pending filters or when no filter is selected
     if (customAPI.params?.todo_status) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { todo_status, ...restParams } = customAPI.params as Record<
@@ -562,10 +563,21 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => ({
-      ...prev,
-      [fieldname]: value,
-    }));
+    setFilters((prev: Record<string, any>) => {
+      if (value === "") {
+        const newFilters = { ...prev };
+        if (defaultFilters && defaultFilters[fieldname] !== undefined) {
+          newFilters[fieldname] = defaultFilters[fieldname];
+        } else {
+          delete newFilters[fieldname];
+        }
+        return newFilters;
+      }
+      return {
+        ...prev,
+        [fieldname]: value,
+      };
+    });
 
     setShowFilters(false);
   };
@@ -870,9 +882,12 @@ const DataListView = <T extends BaseItem>({
   }, [noRecordsScreen, debouncedFilters]);
 
   return (
-    <>
-      {/* Header */}
-      <div className="pb-2">
+    <div>
+      {/* Header — sticky top, constrained to visible width */}
+      <div
+        className="sticky top-0 left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
@@ -1040,13 +1055,19 @@ const DataListView = <T extends BaseItem>({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — sticky bottom */}
       {showPagination &&
         !isListLoading &&
         !error &&
-        processedData.length > 0 &&
-        renderPagination()}
-    </>
+        processedData.length > 0 && (
+          <div
+            className="lg:sticky bottom-0 left-0 z-10 bg-white"
+            style={{ width: 'var(--card-table-visible-width, 100%)' }}
+          >
+            {renderPagination()}
+          </div>
+        )}
+    </div>
   );
 };
 

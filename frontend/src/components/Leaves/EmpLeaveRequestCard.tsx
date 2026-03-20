@@ -17,6 +17,7 @@ import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
@@ -99,25 +100,6 @@ const EmpLeaveRequestCard = ({
     });
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-    if (status === "open")
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
-    if (status === "approved")
-      return {
-        label: "Approved",
-        statusColor: "bg-success/10 text-success",
-      };
-
-    if (status === "rejected")
-      return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
-    return {
-      label: rawStatus || "Unknown",
-      statusColor: "bg-gray-100 text-gray-800",
-    };
-  };
-
-  const status = getStatus(data?.reference_document?.status);
 
   const cleanDescription = sanitizeToPlainText(
     data?.reference_document?.description,
@@ -162,8 +144,10 @@ const EmpLeaveRequestCard = ({
           </Typography>
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={status?.label === "Pending" ? data?.allocated_to : undefined}
-              roles={status?.label === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
@@ -204,12 +188,12 @@ const EmpLeaveRequestCard = ({
           <div className="p-4 flex flex-col gap-3 w-full">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue">
-                  {data?.username || data?.allocated_to}
-                </Typography>
-              </div>
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                allocated_to={data?.username}
+                role={data?.role}
+              />
 
               <StatusBadge status={data?.reference_document?.status} />
             </div>

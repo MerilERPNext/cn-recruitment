@@ -21,6 +21,7 @@ const TeamAttendanceDetails = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -28,8 +29,8 @@ const TeamAttendanceDetails = () => {
 
   const handleRequestClick = useCallback(
     (request: MyAttendanceRequest) => {
-      if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+      if (request?.todo_id || request?.reference_name) {
+        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
       }
     },
     [setSearchParams],
@@ -46,24 +47,24 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -125,9 +126,10 @@ const TeamAttendanceDetails = () => {
           ) : null}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <AttendanceDetailView
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />

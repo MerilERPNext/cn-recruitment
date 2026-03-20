@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
@@ -196,6 +197,13 @@ const AdvanceApprovalCard = ({
                   </Typography>
                 </div>
               </div>
+
+              {/* Allocated To */}
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                username={data?.username}
+              />
 
               <TeamApprovalActionPill
                 variant="buttons"

@@ -610,11 +610,12 @@ export const attendanceService = {
     return response as OvertimeJournalData;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getToDoWithReferenceDoc: async (todo_id?: string): Promise<any> => {
+  getToDoWithReferenceDoc: async (todo_id?: string, reference_name?: string): Promise<any> => {
     const response = await FrappeAPI.callMethod(
       "cn_hrms_core.api.get_reference_doc",
       {
-        todo_id: todo_id,
+        todo_id: todo_id || undefined,
+        reference_name: reference_name || undefined,
       }
     );
     return response;

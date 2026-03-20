@@ -23,11 +23,15 @@ const TeamExpense = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request?.reference_document?.name || "",
+        });
       }
     },
     [setSearchParams],
@@ -159,9 +163,10 @@ const TeamExpense = () => {
           ) : null}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <TeamExpenseDetailView
-          documentName={requestId}
+          documentName={requestId || undefined}
+          referenceName={referenceName || undefined}
           label="Expense Claim"
           onClose={handleCloseModal}
           onAction={handleActionComplete}

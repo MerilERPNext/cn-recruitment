@@ -22,6 +22,7 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 export function AttendanceDetailView({
   data: propData,
   documentName,
+  referenceName,
   onClose,
   onAction,
   label = "Attendance Request",
@@ -29,6 +30,7 @@ export function AttendanceDetailView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   documentName?: string;
+  referenceName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
@@ -38,17 +40,17 @@ export function AttendanceDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   // Use fetched data if documentName is provided, otherwise use prop data
-  const data = documentName ? fetchedData : propData;
+  const data = documentName || referenceName ? fetchedData : propData;
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
 
   // Don't render anything if neither documentName nor data is provided
   // When documentName is provided, we should render even if data isn't loaded yet
-  const shouldRender = !!documentName || !!data?.todo_id;
+  const shouldRender = !!documentName || !!data?.todo_id || !!referenceName;
 
   const cleanDescription = sanitizeToPlainText(data?.description || "");
   const cleanExplaination = sanitizeToPlainText(
@@ -192,24 +194,6 @@ export function AttendanceDetailView({
 
           {/* Dates Section */}
           <div className="flex flex-col gap-3">
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to_name}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To Email
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to}
-                </Typography>
-              </div>
-            </div>
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">From Date</Typography>

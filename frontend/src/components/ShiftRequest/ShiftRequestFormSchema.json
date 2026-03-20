@@ -21,8 +21,7 @@
                             "enableDate": true,
                             "enableTime": false,
                             "defaultValue": "",
-                            "validate": {
-                            }
+                            "validate": {}
                         }
                     ]
                 },
@@ -38,8 +37,7 @@
                             "enableDate": true,
                             "enableTime": false,
                             "defaultValue": "",
-                            "validate": {
-                            }
+                            "validate": {}
                         }
                     ]
                 }
@@ -52,15 +50,10 @@
             "errorLabel": "Shift Type",
             "input": true,
             "placeholder": "Select shift type",
-            "dataSrc": "url",
             "data": {
-                "url": "/api/resource/Shift Type?fields=[\"name\"]&order_by=creation desc"
+                "values": []
             },
-            "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
-            "selectValues": "data",
-            "validate": {
-            },
+            "validate": {},
             "defaultValue": ""
         },
         {
@@ -70,8 +63,7 @@
             "errorLabel": "Reason",
             "placeholder": "Enter reason",
             "input": true,
-            "validate": {
-            }
+            "validate": {}
         }
     ]
 }

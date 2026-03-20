@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -10,12 +9,14 @@ import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useSearchParams } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -27,15 +28,36 @@ const MyAdvanceExpenseList = () => {
   const { data: currentEmployee } = useCurrentEmployee();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRequestId = searchParams.get("requestId");
+  const urlReferenceName = searchParams.get("reference_name");
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    urlRequestId || undefined,
+    urlReferenceName || undefined
+  );
+
   const openDetailModal = (id: string, stages: ApprovalStage[]) => {
     setSelectedStages(stages);
-    setTimeout(() => setSelectedAdvanceId(id), 0);
+    setTimeout(() => {
+      setSelectedAdvanceId(id);
+      setSearchParams({ reference_name: id });
+    }, 0);
   };
 
   const closeDetailModal = () => {
     setSelectedAdvanceId(null);
     setSelectedStages([]);
+    if (urlRequestId || urlReferenceName) {
+      setSearchParams({});
+    }
   };
+
+  const documentIdToOpen =
+    selectedAdvanceId ||
+    urlReferenceName ||
+    todoData?.reference_name ||
+    todoData?.reference_document?.name;
 
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
@@ -43,21 +65,9 @@ const MyAdvanceExpenseList = () => {
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Link
-          to={`/webapp/employee-profile?target_user=${item?.allocated_to_emp_id}`}
-          target="_blank"
-        >
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center truncate"
-          >
-            <WrapperHoverCard employeeId={item?.allocated_to_emp_id}>
-              {item?.username}
-            </WrapperHoverCard>
-          </Typography>
-        </Link>
+
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -73,16 +83,9 @@ const MyAdvanceExpenseList = () => {
         </Typography>
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
-            users={
-              item?.reference_document?.status === "Draft"
-                ? item?.allocated_to
-                : undefined
-            }
-            roles={
-              item?.reference_document?.status === "Draft"
-                ? item?.allocated_roles
-                : undefined
-            }
+            users={item?.allocated_to}
+            roles={item?.allocated_roles}
+            allocated_to_user={item?.allocated_to_user}
             position="left"
           >
             <StatusBadge status={item?.reference_document?.status} />
@@ -104,27 +107,26 @@ const MyAdvanceExpenseList = () => {
         <div className="p-4 flex flex-col gap-3 w-full">
           {/* Header */}
           <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel">Allocated To</Typography>
-
-              <Link
-                to={`/webapp/employee-profile?target_user=${doc?.allocated_to_emp_id}`}
-                target="_blank"
+            {isDesktop ?
+              <AllocatedToTooltip
+                users={item?.allocated_to}
+                roles={item?.allocated_roles}
+                allocated_to_user={item?.username}
+                role={item?.role}
+                position="left"
               >
-                <Typography variant="mobileCardValue">
-                  {item?.username}
-                </Typography>
-              </Link>
-            </div>
-            <AllocatedToTooltip
-              users={doc?.status === "Draft" ? item?.allocated_to : undefined}
-              roles={
-                doc?.status === "Draft" ? item?.allocated_roles : undefined
-              }
-              position="left"
-            >
-              <StatusBadge status={doc?.status} />
-            </AllocatedToTooltip>
+                <StatusBadge status={doc?.status} />
+              </AllocatedToTooltip> :
+              <>
+                <MobileAllocatedTo
+                  users={item?.allocated_to}
+                  roles={item?.allocated_roles}
+                  username={item?.username}
+                  role={item?.role}
+                  align="left"
+                />
+                <StatusBadge status={doc?.status} />
+              </>}
           </div>
 
           {/* Amount & Department */}
@@ -230,14 +232,13 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Allocated To",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
             "Advance Amount",
             "Status",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
@@ -250,6 +251,7 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
+              status: ["!=", "Cancelled"],
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
@@ -276,9 +278,9 @@ const MyAdvanceExpenseList = () => {
         </CardTable>
       </div>
 
-      {selectedAdvanceId && (
+      {documentIdToOpen && (
         <AdvanceDetailModal
-          id={selectedAdvanceId}
+          id={documentIdToOpen}
           onClose={closeDetailModal}
           selectedStages={selectedStages}
         />

@@ -124,9 +124,8 @@ const MyRequests: React.FC = () => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
-          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-        }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+          }`}
       >
         {data?.message}
       </div>

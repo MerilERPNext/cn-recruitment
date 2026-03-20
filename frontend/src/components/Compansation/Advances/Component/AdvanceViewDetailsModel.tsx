@@ -28,7 +28,7 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
   if (!open || !item) return null;
   const { isDesktop } = useScreenSize();
   const data = item.data;
-  const ref = data?.reference_document;
+  const ref = data?.reference_document || item.data;
   const loadingAction = item.loadingAction;
 
   const actions = data?.custom_doctype_actions
