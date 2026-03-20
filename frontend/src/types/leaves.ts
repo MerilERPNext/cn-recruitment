@@ -189,8 +189,9 @@ export interface LeaveReason {
 //Leave requestType
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
-  allocated_to: string;
+  allocated_to: string[];
   allocated_roles?: string[];
+  role: string;
   reference_type: string;
   custom_allow_revoke: boolean;
   todo_id: string;

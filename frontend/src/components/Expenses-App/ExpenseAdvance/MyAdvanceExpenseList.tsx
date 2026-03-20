@@ -60,16 +60,9 @@ const MyAdvanceExpenseList = () => {
         </Typography>
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
-            users={
-              item?.reference_document?.status === "Draft"
-                ? item?.allocated_to
-                : undefined
-            }
-            roles={
-              item?.reference_document?.status === "Draft"
-                ? item?.allocated_roles
-                : undefined
-            }
+            users={item?.allocated_to}
+            roles={item?.allocated_roles}
+            allocated_to_user={item?.allocated_to_user}
             position="left"
           >
             <StatusBadge status={item?.reference_document?.status} />
@@ -91,21 +84,26 @@ const MyAdvanceExpenseList = () => {
         <div className="p-4 flex flex-col gap-3 w-full">
           {/* Header */}
           <div className="flex items-start justify-between">
-            <MobileAllocatedTo
-              users={item?.username ? [item.username] : []}
-              roles={item?.allocated_roles}
-              username={item?.username}
-              allocated_to={item?.allocated_to}
-            />
-            <AllocatedToTooltip
-              users={doc?.status === "Draft" ? item?.allocated_to : undefined}
-              roles={
-                doc?.status === "Draft" ? item?.allocated_roles : undefined
-              }
-              position="left"
-            >
-              <StatusBadge status={doc?.status} />
-            </AllocatedToTooltip>
+            {isDesktop ?
+              <AllocatedToTooltip
+                users={item?.allocated_to}
+                roles={item?.allocated_roles}
+                allocated_to_user={item?.username}
+                role={item?.role}
+                position="left"
+              >
+                <StatusBadge status={doc?.status} />
+              </AllocatedToTooltip> :
+              <>
+                <MobileAllocatedTo
+                  users={item?.allocated_to}
+                  roles={item?.allocated_roles}
+                  username={item?.username}
+                  role={item?.role}
+                  align="left"
+                />
+                <StatusBadge status={doc?.status} />
+              </>}
           </div>
 
           {/* Amount & Department */}

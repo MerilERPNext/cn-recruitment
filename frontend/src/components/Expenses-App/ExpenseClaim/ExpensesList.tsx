@@ -136,10 +136,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
         {/* Allocated To */}
         <MobileAllocatedTo
-          users={item?.username ? [item.username] : []}
-          roles={item?.allocated_roles}
+          users={item?.allocated_to}
+          roles={item?.allocated_to_roles}
+          role={item?.role}
           username={item?.username}
-          allocated_to={item?.allocated_to}
         />
 
         <MyApprovalActionPill
@@ -230,8 +230,10 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       </Typography>
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
-          users={item?.status === "Draft" ? item?.allocated_to : undefined}
-          roles={item?.status === "Draft" ? item?.allocated_roles : undefined}
+          users={item?.allocated_to}
+          roles={item?.allocated_roles}
+          allocated_to_user={item?.username}
+          role={item?.role}
           position="left"
         >
           <StatusBadge status={item?.status} />

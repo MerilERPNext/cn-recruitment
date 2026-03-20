@@ -100,25 +100,6 @@ const EmpLeaveRequestCard = ({
     });
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-    if (status === "open")
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
-    if (status === "approved")
-      return {
-        label: "Approved",
-        statusColor: "bg-success/10 text-success",
-      };
-
-    if (status === "rejected")
-      return { label: "Rejected", statusColor: "bg-red-500/10 text-red-500" };
-    return {
-      label: rawStatus || "Unknown",
-      statusColor: "bg-gray-100 text-gray-800",
-    };
-  };
-
-  const status = getStatus(data?.reference_document?.status);
 
   const cleanDescription = sanitizeToPlainText(
     data?.reference_document?.description,
@@ -163,8 +144,10 @@ const EmpLeaveRequestCard = ({
           </Typography>
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={status?.label === "Pending" ? data?.allocated_to : undefined}
-              roles={status?.label === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
@@ -206,10 +189,10 @@ const EmpLeaveRequestCard = ({
             {/* Header */}
             <div className="flex items-start justify-between">
               <MobileAllocatedTo
-                users={data?.username ? [data.username] : []}
+                users={data?.allocated_to}
                 roles={data?.allocated_roles}
-                username={data?.username}
-                allocated_to={data?.allocated_to}
+                allocated_to={data?.username}
+                role={data?.role}
               />
 
               <StatusBadge status={data?.reference_document?.status} />

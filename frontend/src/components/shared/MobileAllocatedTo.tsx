@@ -4,79 +4,53 @@ import AllocatedToTooltip from "./AllocatedToTooltip";
 import { Typography } from "./atoms/Typography";
 
 interface MobileAllocatedToProps {
-    /** Full list of user display names (already de-duplicated by caller) */
-    users?: string[];
-
-    /** Full list of role names */
-    roles?: string[];
-
-    /**
-     * Fallback: single username string
-     * Used ONLY when both users[] and roles[] are empty
-     */
+    /** User names — string or string[] */
+    users?: string | string[];
+    /** Fallback user identifier (single or array) */
+    allocated_to_user?: string | string[] | null;
+    /** Fallback username (single string) */
     username?: string;
-
-    /**
-     * Fallback: allocated_to can be:
-     * - string (single user)
-     * - string[] (multiple users)
-     * Used ONLY when both users[] and roles[] are empty
-     */
-    allocated_to?: string | string[];
-
-    /** Text alignment for label + value — matches the card column position. Default: "left" */
+    /** Fallback allocated_to (single or array) */
+    allocated_to?: string | string[] | null;
+    /** Role names array */
+    roles?: string[];
+    /** Single role fallback */
+    role?: string;
+    /** Text alignment — matches the card column position. Default: "left" */
     align?: "left" | "right";
 }
 
 const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
-    users = [],
-    roles = [],
+    users,
+    allocated_to_user,
     username,
     allocated_to,
+    roles,
+    role,
     align = "left",
 }) => {
-    /**
-     * Build de-duplicated user list.
-     *
-     * Priority:
-     * 1. If users[] exists → use it directly
-     * 2. If roles exist → DO NOT fallback to allocated_to/username
-     *    (because this is a role-based assignment)
-     * 3. If no users & no roles:
-     *    - Use username
-     *    - Use allocated_to (supports string OR string[])
-     */
+    /** Merge all user sources → deduped array (same logic as AllocatedToTooltip) */
     const allUsers: string[] = React.useMemo(() => {
-        // Case 1: users[] already provided
-        if (users.length > 0) {
-            return [...new Set(users.filter(Boolean))];
-        }
+        const normalize = (value?: string | string[] | null): string[] => {
+            if (!value && value !== "") return [];
+            if (Array.isArray(value)) return value.filter(Boolean).map(v => String(v));
+            return [String(value).trim()].filter(Boolean);
+        };
 
-        const hasRoles = (roles ?? []).filter(Boolean).length > 0;
+        return Array.from(new Set([
+            ...normalize(users),
+            ...normalize(allocated_to_user),
+            ...normalize(username),
+            ...normalize(allocated_to),
+        ]));
+    }, [users, allocated_to_user, username, allocated_to]);
 
-        // Case 2: No users AND no roles → fallback
-        if (!hasRoles) {
-            // Normalize allocated_to → always array
-            const allocatedList = Array.isArray(allocated_to)
-                ? allocated_to
-                : [allocated_to];
-
-            // Combine username + allocated_to
-            const base = [username, ...allocatedList].filter(Boolean) as string[];
-
-            return [...new Set(base)];
-        }
-
-        // Case 3: Roles exist → no users
-        return [];
-    }, [users, roles, username, allocated_to]);
-
-    /**
-     * Build de-duplicated role list
-     */
+    /** Merge roles + role → deduped array (same logic as AllocatedToTooltip) */
     const allRoles: string[] = React.useMemo(() => {
-        return [...new Set((roles ?? []).filter(Boolean))];
-    }, [roles]);
+        const base = (roles ?? []).filter(Boolean);
+        if (typeof role === "string" && role) base.push(role);
+        return [...new Set(base)];
+    }, [roles, role]);
 
     const totalCount = allUsers.length + allRoles.length;
 
@@ -131,11 +105,6 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     );
 
     const wrapperClass = `flex ${isRight ? "justify-end ml-auto" : "justify-start"}`;
-
-    // No tooltip if nothing to show
-    if (totalCount === 0) {
-        return <div className={wrapperClass}>{labelEl}</div>;
-    }
 
     return (
         <div className={wrapperClass}>

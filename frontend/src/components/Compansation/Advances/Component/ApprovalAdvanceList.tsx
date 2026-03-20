@@ -158,16 +158,10 @@ const ApprovalRejectionAdvanceList = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={
-                data?.reference_document?.status === "Draft"
-                  ? data?.allocated_to
-                  : undefined
-              }
-              roles={
-                data?.reference_document?.status === "Draft"
-                  ? data?.allocated_roles
-                  : undefined
-              }
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />

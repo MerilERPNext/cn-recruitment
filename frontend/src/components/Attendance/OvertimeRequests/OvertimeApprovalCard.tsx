@@ -104,8 +104,9 @@ const OvertimeApprovalCard = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.status === "Open" ? data?.allocated_to : undefined}
-              roles={data?.status === "Open" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -173,10 +174,9 @@ const OvertimeApprovalCard = ({
               <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
                 <div className="flex justify-between w-full">
                   <MobileAllocatedTo
-                    users={data?.username ? [data.username] : []}
+                    users={data?.allocated_to}
                     roles={data?.allocated_roles}
                     username={data?.username}
-                    allocated_to={data?.allocated_to}
                   />
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel" className="block">

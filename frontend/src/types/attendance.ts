@@ -69,7 +69,7 @@ export interface MyAttendanceRequest {
   due_date: string;
   reference_document: AttendanceRequest;
   reference_type: string;
-  allocated_to: string;
+  allocated_to: string[];
   allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
@@ -148,7 +148,7 @@ export interface MyPlannedAttendanceRequest {
   custom_open_chatnext_assistant_on_action: boolean;
   custom_approval_type: string;
   reference_type: string;
-  allocated_to: string;
+  allocated_to: string[];
   allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;

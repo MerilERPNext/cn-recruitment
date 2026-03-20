@@ -118,8 +118,9 @@ const EmpAttendanceRequestCard = ({
           {/* Status */}
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.reference_document?.custom_status === "Pending" ? data?.allocated_to : undefined}
-              roles={data?.reference_document?.custom_status === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.custom_status} />
@@ -146,10 +147,9 @@ const EmpAttendanceRequestCard = ({
             {/* Header */}
             <div className="flex items-start justify-between">
               <MobileAllocatedTo
-                users={data?.username ? [data.username] : []}
+                users={data?.allocated_to}
                 roles={data?.allocated_roles}
                 username={data?.username}
-                allocated_to={data?.allocated_to}
               />
 
               <StatusBadge status={data?.reference_document?.custom_status} />

@@ -51,8 +51,9 @@ export function MyRequestCard({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={request?.status === "Open" ? request?.allocated_to : undefined}
-              roles={request?.status === "Open" ? request?.allocated_roles : undefined}
+              users={request?.allocated_to}
+              roles={request?.allocated_roles}
+              allocated_to_user={request?.username}
               position="left"
             >
               <StatusBadge status={request?.status} />
@@ -71,10 +72,9 @@ export function MyRequestCard({
               {/* Header */}
               <div className="flex items-start justify-between p-1">
                 <MobileAllocatedTo
-                  users={request?.username ? [request.username] : []}
+                  users={request?.allocated_to}
                   roles={request?.allocated_roles}
                   username={request?.username}
-                  allocated_to={request?.allocated_to}
                 />
 
                 <StatusBadge status={request?.status} />

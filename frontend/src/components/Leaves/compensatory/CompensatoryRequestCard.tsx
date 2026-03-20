@@ -185,7 +185,6 @@ const CompensatoryRequestCard = ({
           <MobileAllocatedTo
             users={item?.allocated_to}
             roles={item?.allocated_roles}
-            username={item?.allocated_to_user}
             align="right"
           />
         </div>

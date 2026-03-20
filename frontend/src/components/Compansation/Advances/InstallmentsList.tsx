@@ -9,7 +9,6 @@ import { Installment, UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import HeaderBar from "../../HeaderBar";
-import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
 import { Typography } from "../../shared/atoms/Typography";
@@ -71,12 +70,7 @@ const InstallmentsList: React.FC<InstallmentsListProps> = ({
               <div>
                 <span className="text-gray-600">Status:</span>
                 <br />
-                <AllocatedToTooltip
-                  users={advance.employee_name}
-                  position="left"
-                >
-                  <StatusBadge status={advance.advanceStatus} />
-                </AllocatedToTooltip>
+                <StatusBadge status={advance.advanceStatus} />
               </div>
               <div>
                 <span className="text-gray-600">Total Installments:</span>

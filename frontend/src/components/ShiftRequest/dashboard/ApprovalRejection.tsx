@@ -106,8 +106,10 @@ const ApprovalRejectionQueue = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data.reference_document.status === "Draft" ? data?.allocated_to : undefined}
-              roles={data.reference_document.status === "Draft" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.allocated_to_user}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data.reference_document.status} />
@@ -208,10 +210,10 @@ const ApprovalRejectionQueue = ({
 
                 <div className="flex justify-between w-full mt-1">
                   <MobileAllocatedTo
-                    users={data?.reference_document?.status === "Draft" ? data?.allocated_to : undefined}
-                    roles={data?.reference_document?.status === "Draft" ? data?.allocated_roles : undefined}
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
                     username={data?.username}
-                    allocated_to={data?.allocated_to}
+                    role={data?.role}
                     align="left"
                   />
                 </div>

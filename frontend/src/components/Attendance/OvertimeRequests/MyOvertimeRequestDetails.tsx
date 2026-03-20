@@ -311,7 +311,7 @@ export function MyOvertimeDetails({
           )}
         </div>
         {actions?.length > 0 &&
-          data?.status === "Open" &&
+          data?.status === "Open" && typeof data?.allocated_to === "string" &&
           data?.allocated_to === currentEmployee?.user_id && (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill

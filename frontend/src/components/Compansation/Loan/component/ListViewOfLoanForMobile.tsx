@@ -98,10 +98,6 @@ const LoantItem: React.FC<{
           <StatusBadge status={item.status} />
         </div>
 
-        {/* Allocated To */}
-        <MobileAllocatedTo
-          username={item.employee_name}
-        />
 
         {/* Amount rows */}
         <div className="flex items-start justify-between">
@@ -152,6 +148,13 @@ const LoantItem: React.FC<{
             </Typography>
           </div>
         </div>
+
+        {/* Allocated To */}
+        <MobileAllocatedTo
+          users={item.allocated_to}
+          roles={item.allocated_to_roles}
+          allocated_to={item.allocated_to_user}
+        />
 
         <MyApprovalActionPill
           variant="buttons"
