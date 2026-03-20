@@ -800,7 +800,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "unread",
         element: <NoticesTab tab="unread" />,
-        permissionKey: "Dashboard",
+        permissionKey: "Notices Dashboard",
       },
       // { path: 'archived', element: <NoticesTab tab="archived" /> },
     ],
