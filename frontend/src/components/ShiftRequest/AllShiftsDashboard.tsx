@@ -225,11 +225,15 @@ export default function AllShiftsDashboard() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
-      if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+      if (request?.todo_id || request?.reference_name) {
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request.reference_name,
+        });
       }
     },
     [setSearchParams],
@@ -316,6 +320,7 @@ export default function AllShiftsDashboard() {
             {requestId && (
               <ShiftDetailView
                 documentName={requestId}
+                referenceName={referenceName || undefined}
                 onClose={handleCloseModal}
                 onAction={handleActionComplete}
               />
