@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
@@ -9,12 +9,15 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const { isDesktop } = useScreenSize();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -22,7 +25,52 @@ const TeamAdvanceRequest = () => {
 
   const handleRequestClick = useCallback((item: any) => {
     setSelectedItem(item);
-  }, []);
+    const todo_id = item?.data?.todo_id || item?.data?.name;
+    const document_id = item?.data?.reference_document?.name ;
+    navigate(`?todo_id=${todo_id}&document_name=${document_id}`);
+  }, [navigate]);
+
+useEffect(() => {
+  const todo_id = searchParams.get("todo_id");
+  const document_name = searchParams.get("document_name"); 
+  const doctype = "Employee Advance";
+
+  if (todo_id) {
+    handleRequestClick({
+      data: {
+        name: todo_id,
+        reference_document: {
+          name: document_name,
+        },
+      },
+      onAction: () => {},
+      loadingAction: false,
+    });
+    return;
+  }
+
+  if (document_name) {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`/api/resource/${doctype}/${document_name}`);
+        const data = await res.json();
+
+        setSelectedItem(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchData();
+  }
+}, [searchParams]);
+
+
+
+const handleClose = () => {
+  setSelectedItem(null);
+  navigate("");
+};
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -110,7 +158,7 @@ const TeamAdvanceRequest = () => {
       <AdvanceDetailsModal
         open={!!selectedItem}
         item={selectedItem}
-        onClose={() => setSelectedItem(null)}
+        onClose={handleClose}
       />
     </div>
   );
