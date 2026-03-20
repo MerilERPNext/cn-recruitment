@@ -9,6 +9,7 @@
 "allow_bulk_job_offer",
 "allow_bulk_job_offer_email",
 "section_break_xbvj",
+"job_offer_print_format",
 "job_offer_template",
 "employee_onboarding_webform",
 "mapping_fields",
@@ -40,6 +41,13 @@
 {
 "fieldname": "section_break_xbvj",
 "fieldtype": "Section Break"
+},
+{
+"description": "Print Format used for the candidate-facing Job Offer page and PDF download.",
+"fieldname": "job_offer_print_format",
+"fieldtype": "Link",
+"label": "Job Offer Print Format",
+"options": "Print Format"
 },
 {
 "fieldname": "job_offer_template",
@@ -102,6 +110,15 @@
 "role": "System Manager",
 "share": 1,
 "write": 1
+},
+{
+"read": 1,
+"role": "HR Manager",
+"write": 1
+},
+{
+"read": 1,
+"role": "HR User"
 }
 ],
 "row_format": "Dynamic",

@@ -1,6 +1,9 @@
 import frappe
 from frappe.utils import add_days, getdate, date_diff, now_datetime, time_diff_in_hours, formatdate, fmt_money
 
+no_cache = 1
+allow_guest = True
+
 def get_context(context):
     original_user = frappe.session.user
     frappe.set_user("Administrator")
@@ -24,7 +27,9 @@ def get_context(context):
 
         if job_offers:
             context.doc = job_offers[0]["name"]
-            context.print = frappe.get_print('Job Offer', context.doc)
+            settings = frappe.get_doc("Recruitment Settings")
+            pf = getattr(settings, "job_offer_print_format", None) or None
+            context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
 
             # Fetch Job Offer fields for sidebar (only fields that exist)
             jo_meta = frappe.get_meta('Job Offer')

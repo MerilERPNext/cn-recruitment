@@ -6,6 +6,37 @@ from frappe.utils import cint
 
 
 @frappe.whitelist(allow_guest=True)
+def download_job_offer_pdf(appl):
+    """Download Job Offer PDF for a given applicant — guest-accessible."""
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+
+    original_user = frappe.session.user
+    frappe.set_user("Administrator")
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {
+            "job_applicant": appl,
+            "docstatus": ["!=", 2],
+            "status": "Awaiting Response"
+        })
+        if not jo_id:
+            frappe.throw("No active Job Offer found")
+
+        jo_doc = frappe.get_doc("Job Offer", jo_id)
+        settings = frappe.get_doc("Recruitment Settings")
+        pf = getattr(settings, "job_offer_print_format", None) or None
+        pdf_content = frappe.get_print(
+            "Job Offer", jo_id, doc=jo_doc,
+            print_format=pf, as_pdf=True
+        )
+
+        frappe.local.response.filename = f"{jo_id}.pdf"
+        frappe.local.response.filecontent = pdf_content
+        frappe.local.response.type = "pdf"
+    finally:
+        frappe.set_user(original_user)
+
+@frappe.whitelist(allow_guest=True)
 def get_job_offer_status(appl):
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
     if not jo_id:
@@ -72,14 +103,20 @@ def submit_docs(status, appl,url=None):
 
 @frappe.whitelist()
 def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
-    email_context = {"canditate": candidate, "job_offer_url": job_offer_url,"company":company,"designation":designation}
-    settings = frappe.get_doc("Recruitment Settings")
-    job_offer_temp = settings.job_offer_template
     jo_name = frappe.db.get_value("Job Offer", {"job_applicant": mail_id})
     jo_doc = frappe.get_doc("Job Offer", jo_name)
 
+    # Only allow sending if the Job Offer is submitted (docstatus=1)
+    if jo_doc.docstatus != 1:
+        frappe.throw("Job Offer must be submitted before sending.")
+
+    email_context = {"canditate": candidate, "job_offer_url": job_offer_url,"company":company,"designation":designation}
+    settings = frappe.get_doc("Recruitment Settings")
+    job_offer_temp = settings.job_offer_template
+
+    pf = getattr(settings, "job_offer_print_format", None) or None
     output_pdf = frappe.get_print(
-        "Job Offer", jo_name, doc=jo_doc, as_pdf=True, output=None
+        "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True, output=None
     )
     pdf_attachment = {
         "fname": jo_name + ".pdf",  # Name of the file
