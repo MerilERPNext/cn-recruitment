@@ -25,12 +25,14 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function LeaveDetailView({
   documentName,
+  referenceName,
   data: propsData,
   onClose,
   onAction,
   label = "Leave Request",
 }: {
   documentName?: string;
+  referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   onClose: () => void;
@@ -46,9 +48,9 @@ export function LeaveDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-  const data = documentName ? fetchedData : propsData;
+  const data = (documentName || referenceName) ? fetchedData : propsData;
   console.log(data)
   const { isDesktop } = useScreenSize();
 
@@ -162,14 +164,14 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  if (isLoading && documentName) {
+  if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
   }
-  if (error && documentName) {
+  if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return data?.todo_id ? (
+  return (data?.todo_id || data?.name || data?.reference_document?.name) ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
