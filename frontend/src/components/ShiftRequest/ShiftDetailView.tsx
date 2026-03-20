@@ -18,6 +18,7 @@ import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 export function ShiftDetailView({
   data: propData,
   documentName,
+  referenceName,
   onClose,
   onAction,
   label = "Team Shift Request",
@@ -25,6 +26,7 @@ export function ShiftDetailView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   documentName: string;
+  referenceName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
@@ -36,7 +38,7 @@ export function ShiftDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName);
 
   const data = documentName ? fetchedData : propData;
   const shouldRender = !!documentName || !!data?.todo_id;
