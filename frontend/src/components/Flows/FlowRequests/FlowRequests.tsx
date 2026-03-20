@@ -97,8 +97,8 @@ const FlowRequests: React.FC = () => {
     <>
       {FlowDetailComponent}
       <div
-        className="flex flex-col h-full"
-        style={{ visibility: flowDetails ? "hidden" : "visible" }}
+        className="flex flex-col h-full overflow-auto"
+        style={{ display: flowDetails ? "none" : "flex" }}
       >
         <div>
           {isDesktop && (

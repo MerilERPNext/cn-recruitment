@@ -261,7 +261,7 @@ const FrappeListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
-      0
+    0
     : countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -370,11 +370,10 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -500,9 +499,12 @@ const FrappeListView = <T extends BaseItem>({
   const error = queryResult.error;
 
   return (
-    <>
-      {/* Header */}
-      <div className="border-gray-200">
+    <div>
+      {/* Header — sticky top, constrained to visible width */}
+      <div
+        className="sticky top-0 left-0 z-10 bg-white border-gray-200"
+        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
@@ -514,9 +516,8 @@ const FrappeListView = <T extends BaseItem>({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  showFilters ? "bg-gray-100" : ""
-                }`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""
+                  }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -540,7 +541,7 @@ const FrappeListView = <T extends BaseItem>({
       {renderFilters()}
 
       {/* Content */}
-      <div className="min-h-full">
+      <div>
         {PreListComponent && (
           <PreListComponent
             doctype={doctype}
@@ -581,8 +582,8 @@ const FrappeListView = <T extends BaseItem>({
                       </button>
                       <button
                         onClick={() =>
-                          (window.location.href =
-                            "/login?redirect-to=" + window.location.pathname)
+                        (window.location.href =
+                          "/login?redirect-to=" + window.location.pathname)
                         }
                         className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
@@ -648,9 +649,8 @@ const FrappeListView = <T extends BaseItem>({
                   onClick={() => {
                     onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer" : ""
+                    }`}
                 >
                   <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
@@ -682,13 +682,19 @@ const FrappeListView = <T extends BaseItem>({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — sticky bottom */}
       {showPagination &&
         !isListLoading &&
         !error &&
-        processedData.length > 0 &&
-        renderPagination()}
-    </>
+        processedData.length > 0 && (
+          <div
+            className="sticky bottom-0 left-0 z-10 bg-white"
+            style={{ width: 'var(--card-table-visible-width, 100%)' }}
+          >
+            {renderPagination()}
+          </div>
+        )}
+    </div>
   );
 };
 
@@ -702,14 +708,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   options?: string[];
 }
 
@@ -717,14 +723,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   options?: string[];
 }
 
@@ -849,9 +855,11 @@ export const StaticListView = <T extends BaseItemStatic>({
   }, [dedupedData, debouncedSearch, filters, searchFields]);
 
   // Reset page when data/search/filters change to avoid showing old pages
+  // Use dedupedData.length instead of dedupedData reference to avoid resetting
+  // pagination when parent re-renders with the same data (e.g. opening/closing details).
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, JSON.stringify(filters), dedupedData, pageSize]);
+  }, [debouncedSearch, JSON.stringify(filters), dedupedData.length, pageSize]);
 
   // Pagination output
   const paginatedData = useMemo(() => {
@@ -951,11 +959,10 @@ export const StaticListView = <T extends BaseItemStatic>({
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -998,8 +1005,11 @@ export const StaticListView = <T extends BaseItemStatic>({
 
   return (
     <div>
-      {/* HEADER — matches DataListView */}
-      <div className="pb-2">
+      {/* HEADER — sticky top, constrained to visible width */}
+      <div
+        className="sticky top-0 left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
@@ -1012,9 +1022,8 @@ export const StaticListView = <T extends BaseItemStatic>({
             {isFilter && filterFields.length > 0 && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${
-                  showFilters ? "bg-gray-100" : ""
-                }`}
+                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""
+                  }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -1130,67 +1139,78 @@ export const StaticListView = <T extends BaseItemStatic>({
         return isDesktop ? drawerContent : createPortal(drawerContent, document.body);
       })()}
 
-      {/* PRE-LIST */}
-      {PreListComponent && (
-        <PreListComponent
-          data={paginatedData}
-          filteredData={filteredData}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-      )}
-
       {/* LIST */}
-      {isLoading ? (
-        SkeletonComponent ? (
-          <SkeletonComponent />
+      <div>
+        {/* PRE-LIST */}
+        {PreListComponent && (
+          <PreListComponent
+            data={paginatedData}
+            filteredData={filteredData}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
+        )}
+
+        {/* LIST */}
+        {isLoading ? (
+          SkeletonComponent ? (
+            <SkeletonComponent />
+          ) : (
+            <div className="flex justify-center py-8">Loading…</div>
+          )
+        ) : paginatedData.length === 0 ? (
+          <NoDataFound />
         ) : (
-          <div className="flex justify-center py-8">Loading…</div>
-        )
-      ) : paginatedData.length === 0 ? (
-        <NoDataFound />
-      ) : (
-        <>
-          {paginatedData.map((item, index) => {
-            // compute isLast relative to the currently rendered list
-            const isLast = index === paginatedData.length - 1;
-            const key =
-              getItemKey?.(item, index) ??
-              item.id ??
-              item.name ??
-              `item-${JSON.stringify(item).slice(0, 50)}-${index}`;
+          <>
+            {paginatedData.map((item, index) => {
+              // compute isLast relative to the currently rendered list
+              const isLast = index === paginatedData.length - 1;
+              const key =
+                getItemKey?.(item, index) ??
+                item.id ??
+                item.name ??
+                `item-${JSON.stringify(item).slice(0, 50)}-${index}`;
 
-            return (
-              <div
-                key={key}
-                onClick={() => onItemClick?.(item)}
-                className={onItemClick ? "cursor-pointer" : ""}
-              >
-                {ItemComponent(index, item, isLast)}
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={key}
+                  onClick={() => onItemClick?.(item)}
+                  className={onItemClick ? "cursor-pointer" : ""}
+                >
+                  {ItemComponent(index, item, isLast)}
+                </div>
+              );
+            })}
 
-          {infiniteScroll && (
-            <div id="static-listview-sentinel" ref={sentinelRef} />
-          )}
-        </>
+            {infiniteScroll && (
+              <div id="static-listview-sentinel" ref={sentinelRef} />
+            )}
+          </>
+        )}
+
+        {/* POST-LIST */}
+        {PostListComponent && (
+          <PostListComponent
+            data={paginatedData}
+            filteredData={filteredData}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
+        )}
+      </div>
+
+      {/* PAGINATION — sticky bottom */}
+      {data?.length > pageSize && (
+        <div
+          className="lg:sticky bottom-0 left-0 z-10 bg-white"
+          style={{ width: 'var(--card-table-visible-width, 100%)' }}
+        >
+          {renderPagination()}
+        </div>
       )}
-
-      {/* POST-LIST */}
-      {PostListComponent && (
-        <PostListComponent
-          data={paginatedData}
-          filteredData={filteredData}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-      )}
-
-      {/* PAGINATION */}
-      {data?.length > pageSize && renderPagination()}
     </div>
   );
 };
+
 
 export default FrappeListView;
