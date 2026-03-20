@@ -790,12 +790,12 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/notices",
     element: <NoticesLayout />,
-    permissionKey: "Dashboard",
+    permissionKey: "Notices Dashboard",
     children: [
       {
         path: "all",
         element: <NoticesTab tab="all" />,
-        permissionKey: "Dashboard",
+        permissionKey: "Notices Dashboard",
       },
       {
         path: "unread",
@@ -809,7 +809,7 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/notices/:id",
     element: <NoticeDetails />,
-    permissionKey: "Dashboard",
+    permissionKey: "Notices Dashboard",
   },
 
   {

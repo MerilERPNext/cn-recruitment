@@ -11,6 +11,8 @@ import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
 import CircularLoader from "../shared/atoms/CircularLoader";
+import useCurrentUser from "../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 
 
 
@@ -18,6 +20,12 @@ const NoticeDetails = () => {
     const { isDesktop } = useScreenSize();
     const params = useParams()
     const noticeId = params?.id as string
+    const { data: currentUser } = useCurrentUser();
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
+        currentUser?.name as string,
+    );
+    console.log("-----------------------------", currentUser)
+
     const {
         data: notice,
         isLoading,
@@ -25,7 +33,7 @@ const NoticeDetails = () => {
         error,
 
     } = useGetNoticeById(noticeId as string);
-    const { data: isReadOrAcknowledged, refetch: refetchIsReadOrAcknowledged } = useCheckIfNoticeIsReadOrAcknowledged(noticeId as string);
+    const { data: isReadOrAcknowledged, refetch: refetchIsReadOrAcknowledged } = useCheckIfNoticeIsReadOrAcknowledged(noticeId as string, currentEmployee?.user_id as string);
     const isRead = isReadOrAcknowledged?.some((item) => item.read_at);
     const isAcknowledged = isReadOrAcknowledged?.some((item) => item.acknowledged_at);
 
@@ -129,7 +137,7 @@ const NoticeDetails = () => {
                 </div>
                 <Typography variant="h3" className="text-black">Notice Not Found</Typography>
                 <Typography variant="body" className="text-gray-600">The notice you're looking for doesn't exist or has been removed.</Typography>
-                 <Button
+                <Button
                     onClick={() => {
                         navigate(-1)
                     }}
@@ -198,10 +206,10 @@ const NoticeDetails = () => {
                         <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <CheckCircle className="w-4 h-4" /> Status
                         </Typography>
-                         <Typography variant="body" className="font-semibold text-gray-900 capitalize">{notice?.status}</Typography>
+                        <Typography variant="body" className="font-semibold text-gray-900 capitalize">{notice?.status}</Typography>
                     </div>
                     <div className="p-4 sm:p-6">
-                         <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
+                        <Typography variant="label" className="text-gray-500 font-medium mb-1 flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" /> Priority
                         </Typography>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize mt-1 ${getPriorityColor(notice?.priority || '')}`}>
@@ -249,7 +257,7 @@ const NoticeDetails = () => {
                     disabled={actionLoading?.markAsRead || isRead}
                     icon={isRead ? <CheckCircle className="w-5 h-5" /> : undefined}
                 >
-                     {actionLoading.markAsRead ? (
+                    {actionLoading.markAsRead ? (
                         <CircularLoader size="sm" color={isRead ? "blue-500" : "white"} />
                     ) : (
                         isRead ? "Marked as Read" : "Mark as Read"
@@ -257,16 +265,16 @@ const NoticeDetails = () => {
                 </Button>
 
                 <Button
-                     fullWidth
-                     size="lg"
+                    fullWidth
+                    size="lg"
                     variant={isAcknowledged ? "soft" : "outline"}
                     bgColor={isAcknowledged ? "success" : "disabled"}
                     className={!isAcknowledged ? "border-gray-300 text-gray-700 hover:bg-gray-50" : ""}
                     onClick={() => handleActionClick("markAsAcknowledge")}
                     disabled={actionLoading?.markAsAcknowledge || isAcknowledged}
-                     icon={<CheckCircle className="w-5 h-5" />}
+                    icon={<CheckCircle className="w-5 h-5" />}
                 >
-                     {actionLoading?.markAsAcknowledge ? (
+                    {actionLoading?.markAsAcknowledge ? (
                         <CircularLoader size="sm" color={isAcknowledged ? "gray-700" : "gray-700"} />
                     ) : (
                         isAcknowledged ? "Acknowledged" : "Acknowledge Notice"
