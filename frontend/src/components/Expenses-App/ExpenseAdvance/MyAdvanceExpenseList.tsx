@@ -15,6 +15,8 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useSearchParams } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -26,15 +28,36 @@ const MyAdvanceExpenseList = () => {
   const { data: currentEmployee } = useCurrentEmployee();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRequestId = searchParams.get("requestId");
+  const urlReferenceName = searchParams.get("reference_name");
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    urlRequestId || undefined,
+    urlReferenceName || undefined
+  );
+
   const openDetailModal = (id: string, stages: ApprovalStage[]) => {
     setSelectedStages(stages);
-    setTimeout(() => setSelectedAdvanceId(id), 0);
+    setTimeout(() => {
+      setSelectedAdvanceId(id);
+      setSearchParams({ reference_name: id });
+    }, 0);
   };
 
   const closeDetailModal = () => {
     setSelectedAdvanceId(null);
     setSelectedStages([]);
+    if (urlRequestId || urlReferenceName) {
+      setSearchParams({});
+    }
   };
+
+  const documentIdToOpen =
+    selectedAdvanceId ||
+    urlReferenceName ||
+    todoData?.reference_name ||
+    todoData?.reference_document?.name;
 
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
@@ -257,9 +280,9 @@ const MyAdvanceExpenseList = () => {
         </CardTable>
       </div>
 
-      {selectedAdvanceId && (
+      {documentIdToOpen && (
         <AdvanceDetailModal
-          id={selectedAdvanceId}
+          id={documentIdToOpen}
           onClose={closeDetailModal}
           selectedStages={selectedStages}
         />

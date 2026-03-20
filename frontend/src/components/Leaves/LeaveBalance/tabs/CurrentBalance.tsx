@@ -16,7 +16,7 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
   const [selectedDate, setSelectedDate] = useState(today);
   const [isMoreDetailsOpen, setIsMoreDetailsOpen] = useState(false);
 
-  
+
 
   const {
     data: currentEmployee,
@@ -24,13 +24,13 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
     isError: isEmployeeError,
   } = useCurrentEmployee();
 
-  const leaveType = leaveData?.type || "";
+  const leaveId = leaveData?.leave_id || "";
 
   const {
     data: balanceData,
     isLoading: isBalanceLoading,
     isError: isBalanceError,
-  } = useGetLeaveBalance(currentEmployee?.name, selectedDate, leaveType);
+  } = useGetLeaveBalance(currentEmployee?.name, selectedDate, leaveId);
 
   const displayData = balanceData?.leave_balance?.[0];
 
@@ -266,9 +266,8 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                 >
                   <span>More Details</span>
                   <svg
-                    className={`w-5 h-5 transition-transform duration-300 ${
-                      isMoreDetailsOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-5 h-5 transition-transform duration-300 ${isMoreDetailsOpen ? "rotate-180" : ""
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -283,11 +282,10 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
                 </button>
 
                 <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isMoreDetailsOpen
-                      ? "max-h-96 opacity-100 mt-4"
-                      : "max-h-0 opacity-0"
-                  }`}
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${isMoreDetailsOpen
+                    ? "max-h-96 opacity-100 mt-4"
+                    : "max-h-0 opacity-0"
+                    }`}
                 >
                   {displayData?.balance_excluding_future_transactions && (
                     <div className="bg-gray-50 rounded-lg p-4 space-y-3">

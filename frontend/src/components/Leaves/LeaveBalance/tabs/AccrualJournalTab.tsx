@@ -23,6 +23,8 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
   } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
+  const leaveId = leaveData?.leave_id || "";
+
 
   const [selectedPeriod, setSelectedPeriod] = React.useState<number | null>(
     null
@@ -32,13 +34,13 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
     data: metadata,
     isLoading: isMetadataLoading,
     isError: isMetadataError,
-  } = useGetAccrualJournalMetadata(employeeId ?? "", leaveType);
+  } = useGetAccrualJournalMetadata(employeeId ?? "", leaveId);
 
   const {
     data: accrualEntries,
     isLoading: isEntriesLoading,
     isError: isEntriesError,
-  } = useGetAccrualJournalEntries(employeeId ?? "", leaveType, selectedPeriod);
+  } = useGetAccrualJournalEntries(employeeId ?? "", leaveId, selectedPeriod);
 
   const formioValues = useMemo(() => {
     if (!metadata?.period_options) return [];
@@ -161,7 +163,7 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
       <div className="p-4 md:p-6">
         <NoDataFound
           title="No Accrual Data"
-          subtitle={`There are no accrual periods available for ${leaveType}`}
+          subtitle={`There are no accrual periods available for ${leaveType} (${leaveId})`}
         />
       </div>
     );

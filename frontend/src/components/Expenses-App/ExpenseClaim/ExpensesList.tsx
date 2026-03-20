@@ -24,6 +24,8 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useSearchParams } from "react-router-dom";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -258,6 +260,14 @@ const ExpensesList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRequestId = searchParams.get("requestId");
+  const urlReferenceName = searchParams.get("reference_name");
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    urlRequestId || undefined,
+    urlReferenceName || undefined
+  );
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
@@ -298,7 +308,10 @@ const ExpensesList: React.FC = () => {
     canEdit: boolean,
   ) => {
     setSelectedStages(stages);
-    setTimeout(() => setSelectedId(id), 0);
+    setTimeout(() => {
+      setSelectedId(id);
+      setSearchParams({ reference_name: id });
+    }, 0);
     setSelectedSendBackUser(sendBackUser);
     setSelectedCanEdit(canEdit);
   };
@@ -308,7 +321,16 @@ const ExpensesList: React.FC = () => {
     setSelectedStages([]);
     setSelectedSendBackUser(null);
     setSelectedCanEdit(false);
+    if (urlRequestId || urlReferenceName) {
+      setSearchParams({});
+    }
   };
+
+  const documentIdToOpen =
+    selectedId ||
+    urlReferenceName ||
+    todoData?.reference_name ||
+    todoData?.reference_document?.name;
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
@@ -495,9 +517,9 @@ const ExpensesList: React.FC = () => {
         )}
       </div>
 
-      {selectedId && (
+      {documentIdToOpen && (
         <ExpenseClaimDetailsModal
-          id={selectedId}
+          id={documentIdToOpen}
           onClose={closeModal}
           getStatusBadgeClasses={getStatusBadgeClasses}
           selectedStages={selectedStages}
