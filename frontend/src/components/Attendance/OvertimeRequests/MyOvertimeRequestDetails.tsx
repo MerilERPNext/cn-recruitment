@@ -25,12 +25,14 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function MyOvertimeDetails({
   documentName,
+  referenceName,
   data: propData,
   onClose,
   onAction,
   label = "Overtime Request",
 }: {
   documentName?: string;
+  referenceName?: string;
   data?: MyPlannedAttendanceRequest;
   onClose: () => void;
   label?: string;
@@ -41,7 +43,7 @@ export function MyOvertimeDetails({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -52,7 +54,7 @@ export function MyOvertimeDetails({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const data = (
-    documentName ? fetchedData : propData
+    documentName || referenceName ? fetchedData : propData
   ) as MyPlannedAttendanceRequest;
   const handleAction = useCallback(
     async (action: string) => {
@@ -115,16 +117,16 @@ export function MyOvertimeDetails({
   const doc = data?.reference_document;
 
   // Loading state
-  if (isLoading && documentName) {
+  if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
-  if (error && documentName) {
+  if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return data?.allocated_to ? (
+  return data?.todo_id ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}

@@ -51,11 +51,12 @@ const MyOvertimeRequests = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
       }
     },
     [setSearchParams],
@@ -161,9 +162,10 @@ const MyOvertimeRequests = () => {
           </div>
         </div>
       )}
-      {requestId && (
+      {(requestId || referenceName) && (
         <MyOvertimeDetails
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />
