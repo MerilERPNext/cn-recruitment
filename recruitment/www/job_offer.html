@@ -62,7 +62,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 28px;
+        margin-bottom: 0px;
     }
     .jo-title {
         font-size: 1.6rem;
@@ -71,6 +71,9 @@
         margin: 12px 0 15px;
         line-height: 1.15;
         text-align: center;
+    }
+    .jo-summary-title{
+        display: none;
     }
     .jo-header-logo {
         height: 200px;
@@ -657,6 +660,20 @@
         .jo-title {
             font-size: 1.4rem;
         }
+        .jo-summary-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--jo-navy);
+            margin: 12px 0 15px;
+            line-height: 1.15;
+            text-align: center;
+            display: block;
+        }
+        .jo-header-logo {
+            height: 120px;
+            width: auto;
+            object-fit: contain;
+        }
         .jo-print-content {
             display: none;
         }
@@ -670,6 +687,9 @@
         }
         .jo-print-content {
             padding: 16px;
+        }
+        .jo-main-col{
+            display: none;
         }
         .jo-next-steps-grid {
             flex-direction: column;
@@ -728,6 +748,7 @@
                 <!-- Right: Sidebar -->
                 <div class="jo-sidebar-col">
                     <h1 class="jo-title">&nbsp;</h1>
+                    <h1 class="jo-summary-title">Offer of Employment</h1>
                     <div class="jo-sidebar">
                    
                         <!-- Summary heading -->
@@ -867,7 +888,7 @@
             <div style="margin-top:28px;">
                 <span style="font-size:1.2rem; font-weight:700; color:#00b48a;">Stay Tuned!</span>
                 <p style="font-size: 12px; color: gray; text-align: center;">
-                    You can cross this browser window
+                    You can close this browser window
                   </p>
             </div>
         </div>
