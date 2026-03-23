@@ -14,12 +14,28 @@ export const useScreenSize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
       
-      setScreenSize({
-        width,
-        height,
-        isMobile: width < 768,
-        isTablet: width >= 768 && width < 1024,
-        isDesktop: width >= 1024,
+      setScreenSize((prev) => {
+        const isMobile = width < 768;
+        const isTablet = width >= 768 && width < 1024;
+        const isDesktop = width >= 1024;
+
+        // Skip update if only height changed (e.g., mobile keyboard open)
+        if (
+          prev.width === width &&
+          prev.isMobile === isMobile &&
+          prev.isTablet === isTablet &&
+          prev.isDesktop === isDesktop
+        ) {
+          return prev;
+        }
+
+        return {
+          width,
+          height,
+          isMobile,
+          isTablet,
+          isDesktop,
+        };
       });
     };
 
