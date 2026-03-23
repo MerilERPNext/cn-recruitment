@@ -707,8 +707,8 @@
             <div class="jo-header-row">
                 <img src="/assets/recruitment/images/homefirst-logo.png" alt="HomeFirst" class="jo-header-logo">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div style="width:40px; height:40px; border-radius:50%; background:var(--jo-navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700;">{{ (applicant_name or 'U')[0] | upper }}</div>
-                    <span style="font-size:0.95rem; font-weight:600; color:var(--jo-navy);">{{ applicant_name or '' }}</span>
+                    <div style="width:40px; height:40px; border-radius:50%; background:var(--jo-navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700;">{{ (full_name or applicant_name or 'U')[0] | upper }}</div>
+                    <span style="font-size:0.95rem; font-weight:600; color:var(--jo-navy);">{{ full_name or applicant_name or '' }}</span>
                 </div>
             </div>
             <h1 class="jo-title">Offer of Employment</h1>
@@ -1010,6 +1010,13 @@
         var btn = e.target && (e.target.id === 'btn-confirm-reject' ? e.target : e.target.closest('#btn-confirm-reject'));
         if (!btn || btn.disabled) return;
 
+        // Validate rejection reason is selected
+        var reason = document.getElementById('rejection-reason').value || '';
+        if (!reason) {
+            frappe.toast({ message: 'Please select a reason for rejection.', indicator: 'red' });
+            return;
+        }
+
         // Disable immediately to prevent double-click race
         setButtonLoading(btn, true, 'Confirming...');
 
@@ -1020,7 +1027,6 @@
             return;
         }
 
-        var reason = document.getElementById('rejection-reason').value || '';
         var message = document.getElementById('rejection-message').value || '';
 
         try {
