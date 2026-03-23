@@ -24,15 +24,11 @@ def download_job_offer_pdf(appl):
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
 
-        # 1st priority: "HomeFirst Job Offer" print format if it exists
         pf = None
-        if frappe.db.exists("Print Format", "HomeFirst Job Offer"):
-            pf = "HomeFirst Job Offer"
-        else:
-            try:
-                pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
-            except Exception:
-                pf = None
+        try:
+            pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
+        except Exception:
+            pf = None
 
         pdf_content = frappe.get_print(
             "Job Offer", jo_id, doc=jo_doc,
@@ -119,12 +115,7 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    # 1st priority: "HomeFirst Job Offer" print format if it exists
-    pf = None
-    if frappe.db.exists("Print Format", "HomeFirst Job Offer"):
-        pf = "HomeFirst Job Offer"
-    else:
-        pf = getattr(settings, "job_offer_print_format", None) or None
+    pf = getattr(settings, "job_offer_print_format", None) or None
 
     output_pdf = frappe.get_print(
         "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True, output=None
