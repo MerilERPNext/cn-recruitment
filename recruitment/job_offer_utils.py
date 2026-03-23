@@ -61,12 +61,12 @@ def job_offer_update(status, appl, reason=None, message=None):
         offer_doc.status="Accepted"
         offer_doc.save()
         appl_doc=frappe.get_doc("Job Applicant",appl)
-        appl_doc.status="Offer Accepted"
+        appl_doc.status="Accepted"
         appl_doc.save()
 
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
-        frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
+        frappe.db.set_value("Job Applicant",appl,"status","Rejected")
         # Store rejection feedback
         if reason:
             frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
