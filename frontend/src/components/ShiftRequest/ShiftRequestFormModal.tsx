@@ -43,7 +43,7 @@ type FormSchema = typeof defaultFormSchema;
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   className = "",
   onClose,
-  isOpen = true,
+  isOpen = false,
   defaultShiftRequestData,
   schema: propSchema,
   forActionType,
