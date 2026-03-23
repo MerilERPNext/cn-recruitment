@@ -35,6 +35,7 @@ interface ShiftRequestFormModalProps {
   defaultShiftRequestData?: ShiftRequest;
   forActionType?: "create" | "edit";
   className?: string;
+  isOpen?: boolean;
 }
 
 type FormSchema = typeof defaultFormSchema;
@@ -42,6 +43,7 @@ type FormSchema = typeof defaultFormSchema;
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   className = "",
   onClose,
+  isOpen = false,
   defaultShiftRequestData,
   schema: propSchema,
   forActionType,
@@ -274,6 +276,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const validatedSchema = useMemo(() => {
     return transformSchemaWithRequired(schemaWithShiftTypes, requiredFieldMap);
   }, [schemaWithShiftTypes, requiredFieldMap]);
+  if (!isOpen) return null;
 
   if (employeeLoading || targetEmployeeLoading || shiftTypesLoading || requiredFieldsLoading) {
     return (

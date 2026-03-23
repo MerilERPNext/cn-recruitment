@@ -18,7 +18,6 @@ import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import HeaderBar from "./HeaderBar";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
@@ -157,17 +156,12 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
         onClose={() => setIsLoanDialogOpen(false)}
       />
 
-      <ExpenseFormModal
-        forMbileScreen={true}
+
+      <ShiftRequestFormModal
+        className="h-full"
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
-        title="Request Shift Change"
-      >
-        <ShiftRequestFormModal
-          className="h-full"
-          onClose={handleCloseShiftModal}
-        />
-      </ExpenseFormModal>
+      />
 
       {showAdvanceForm && (
         <Modal onClose={handleCloseAdvanceModal}>
