@@ -68,11 +68,12 @@
         font-size: 1.6rem;
         font-weight: 800;
         color: var(--jo-navy);
-        margin: 12px 0 8px;
+        margin: 12px 0 15px;
         line-height: 1.15;
+        text-align: center;
     }
     .jo-header-logo {
-        height: 110px;
+        height: 200px;
         width: auto;
         object-fit: contain;
     }
@@ -711,29 +712,24 @@
                     <span style="font-size:0.95rem; font-weight:600; color:var(--jo-navy);">{{ full_name or applicant_name or '' }}</span>
                 </div>
             </div>
-            <h1 class="jo-title">Offer of Employment</h1>
+           
 
             <div class="jo-two-col">
                 <!-- Left: Offer content -->
+                
                 <div class="jo-main-col">
+                    <h1 class="jo-title">Offer of Employment</h1>
                     <div class="jo-print-content">
                         {{ print }}
                     </div>
-                    <div class="jo-pdf-actions">
-                        <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-pdf-btn">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                            Open PDF in New Tab
-                        </a>
-                        <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-pdf-btn jo-pdf-btn-outline">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download PDF
-                        </a>
-                    </div>
+
                 </div>
 
                 <!-- Right: Sidebar -->
                 <div class="jo-sidebar-col">
+                    <h1 class="jo-title">&nbsp;</h1>
                     <div class="jo-sidebar">
+                   
                         <!-- Summary heading -->
                         <div style="font-size:1.1rem; font-weight:700; color:var(--jo-navy); padding:16px 20px 10px;">Offer Summary</div>
 
@@ -856,15 +852,23 @@
             <!-- Email updates info box -->
             <div class="jo-next-steps">
                 <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6;">
-                    Keep checking your email for further updates on your onboarding and LMS journey.<br>
-                    <span style="font-weight:600; color:var(--jo-navy);">Talent Team</span> &mdash;
-                    <a href="mailto:Talent@homefirstindia.com" style="color:#2563eb; text-decoration:none;">Talent@homefirstindia.com</a>
+                    <ul>
+                        <li>
+                          Keep checking your email
+                          <ul>
+                            <li>for further updates on your onboarding and LMS journey.</li>
+                          </ul>
+                        </li>
+                      </ul>
                 </div>
             </div>
 
             <!-- Stay Tuned -->
             <div style="margin-top:28px;">
                 <span style="font-size:1.2rem; font-weight:700; color:#00b48a;">Stay Tuned!</span>
+                <p style="font-size: 12px; color: gray; text-align: center;">
+                    You can cross this browser window
+                  </p>
             </div>
         </div>
     </div>
@@ -875,9 +879,8 @@
             <div style="width:56px; height:56px; border-radius:50%; background:#e8edf5; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3d4f7c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
-            <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:16px;">Offer Declined</h2>
+            <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:16px;">Offer Rejected</h2>
             <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:32px; line-height:1.7;">Thank you for letting us know. We appreciate the time and effort you invested in our interview process. We wish you the very best in your future endeavors.</p>
-            <button id="btn-close-declined-popup" style="width:100%; padding:14px; background:#5c5cd6; color:#fff; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer;">Return to Portal</button>
         </div>
     </div>
 
