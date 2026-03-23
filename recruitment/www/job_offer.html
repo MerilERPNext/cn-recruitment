@@ -60,7 +60,7 @@
     }
     .jo-header-row {
         display: flex;
-        align-items: center;
+        align-items: start;
         justify-content: space-between;
         margin-bottom: 0px;
     }
@@ -76,7 +76,8 @@
         display: none;
     }
     .jo-header-logo {
-        height: 200px;
+        height: 65px;
+        max-width: 100%;
         width: auto;
         object-fit: contain;
     }
@@ -670,7 +671,8 @@
             display: block;
         }
         .jo-header-logo {
-            height: 120px;
+            height: 50px;
+            max-width: 100%;
             width: auto;
             object-fit: contain;
         }
@@ -726,8 +728,9 @@
             {% endif %}
 
             <div class="jo-header-row">
-                <img src="/assets/recruitment/images/homefirst-logo.png" alt="HomeFirst" class="jo-header-logo">
-                <div style="display:flex; align-items:center; gap:10px;">
+                <img src="/assets/recruitment/images/homefirst-logo-rectangle.png" alt="HomeFirst" class="jo-header-logo">
+    
+                <div style="display:flex; align-items:center; gap:10px; padding-right: 10px;">
                     <div style="width:40px; height:40px; border-radius:50%; background:var(--jo-navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700;">{{ (full_name or applicant_name or 'U')[0] | upper }}</div>
                     <span style="font-size:0.95rem; font-weight:600; color:var(--jo-navy);">{{ full_name or applicant_name or '' }}</span>
                 </div>
@@ -799,7 +802,7 @@
                             <!-- Download Offer Letter (web) -->
                             <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-btn-download-web">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                Download Offer Letter
+                                Download / Preview Offer Letter
                             </a>
 
                             <!-- Accept button -->
