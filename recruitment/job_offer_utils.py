@@ -23,8 +23,17 @@ def download_job_offer_pdf(appl):
             frappe.throw("No active Job Offer found")
 
         jo_doc = frappe.get_doc("Job Offer", jo_id)
-        settings = frappe.get_doc("Recruitment Settings")
-        pf = getattr(settings, "job_offer_print_format", None) or None
+
+        # 1st priority: "HomeFirst Job Offer" print format if it exists
+        pf = None
+        if frappe.db.exists("Print Format", "HomeFirst Job Offer"):
+            pf = "HomeFirst Job Offer"
+        else:
+            try:
+                pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
+            except Exception:
+                pf = None
+
         pdf_content = frappe.get_print(
             "Job Offer", jo_id, doc=jo_doc,
             print_format=pf, as_pdf=True
@@ -47,7 +56,6 @@ def get_job_offer_status(appl):
 def job_offer_update(status, appl, reason=None, message=None):
     frappe.set_user('Administrator')
     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    settings = frappe.get_doc("Recruitment Settings")
     if status == "Accepted":
         offer_doc=frappe.get_doc("Job Offer",jo_id)
         offer_doc.status="Accepted"
@@ -55,10 +63,7 @@ def job_offer_update(status, appl, reason=None, message=None):
         appl_doc=frappe.get_doc("Job Applicant",appl)
         appl_doc.status="Offer Accepted"
         appl_doc.save()
-        # frappe.db.set_value("Job Offer",jo_id,"status","Accepted")
-        # frappe.db.set_value("Job Applicant",appl,"status","Offer Accepted")
 
-        # trigger_event(doc=jo_doc, event_name="accept_jo")
     if status == "Rejected":
         frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
         frappe.db.set_value("Job Applicant",appl,"status","Offer Rejected")
@@ -68,9 +73,9 @@ def job_offer_update(status, appl, reason=None, message=None):
         if message:
             frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
     frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
-        # trigger_event(doc=jo_doc, event_name="reject_jo")
 
-    return {"jo_id": jo_id, "webform": settings.employee_onboarding_webform}
+    webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
+    return {"jo_id": jo_id, "webform": webform}
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
@@ -82,10 +87,10 @@ def request_for_offer(jo_id):
 @frappe.whitelist(allow_guest=True)
 def submit_docs(status, appl,url=None):
 	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-	settings = frappe.get_doc("Recruitment Settings")
+	onboarding_webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
 	if status == "Accepted":
-		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
+		wf_url = url+"/"+onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
 		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
 		frappe.sendmail(
 			recipients=[job_applicant],
@@ -114,7 +119,13 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     settings = frappe.get_doc("Recruitment Settings")
     job_offer_temp = settings.job_offer_template
 
-    pf = getattr(settings, "job_offer_print_format", None) or None
+    # 1st priority: "HomeFirst Job Offer" print format if it exists
+    pf = None
+    if frappe.db.exists("Print Format", "HomeFirst Job Offer"):
+        pf = "HomeFirst Job Offer"
+    else:
+        pf = getattr(settings, "job_offer_print_format", None) or None
+
     output_pdf = frappe.get_print(
         "Job Offer", jo_name, doc=jo_doc, print_format=pf, as_pdf=True, output=None
     )

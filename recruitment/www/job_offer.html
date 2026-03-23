@@ -72,7 +72,7 @@
         line-height: 1.15;
     }
     .jo-header-logo {
-        height: 80px;
+        height: 110px;
         width: auto;
         object-fit: contain;
     }
@@ -856,28 +856,28 @@
             <!-- Email updates info box -->
             <div class="jo-next-steps">
                 <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6;">
-                    Keep checking your email for further updates on your onboarding and LMS journey.
+                    Keep checking your email for further updates on your onboarding and LMS journey.<br>
+                    <span style="font-weight:600; color:var(--jo-navy);">Talent Team</span> &mdash;
+                    <a href="mailto:Talent@homefirstindia.com" style="color:#2563eb; text-decoration:none;">Talent@homefirstindia.com</a>
                 </div>
             </div>
 
-            <!-- Stay Tuned button -->
+            <!-- Stay Tuned -->
             <div style="margin-top:28px;">
-                <span class="jo-btn-onboarding" style="cursor:default; opacity:0.9;">Stay Tuned!</span>
+                <span style="font-size:1.2rem; font-weight:700; color:#00b48a;">Stay Tuned!</span>
             </div>
-
-            <p class="jo-redirect-msg">Check your email for the official welcome packet</p>
         </div>
     </div>
 
     <!-- ═══════════════ POPUP: OFFER DECLINED ═══════════════ -->
-    <div id="popup-declined" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#fff; border-radius:16px; padding:40px 32px; max-width:420px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-            <div style="width:64px; height:64px; border-radius:50%; background:#fef2f2; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div id="popup-declined" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.12); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:48px 36px 36px; max-width:420px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.10);">
+            <div style="width:56px; height:56px; border-radius:50%; background:#e8edf5; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3d4f7c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
-            <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:8px;">Offer Declined</h2>
-            <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:24px;">Your feedback has been recorded. Thank you for your time.</p>
-            <button id="btn-close-declined-popup" style="padding:12px 36px; background:var(--jo-navy); color:#fff; border:none; border-radius:8px; font-size:0.95rem; font-weight:600; cursor:pointer;">OK</button>
+            <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:16px;">Offer Declined</h2>
+            <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:32px; line-height:1.7;">Thank you for letting us know. We appreciate the time and effort you invested in our interview process. We wish you the very best in your future endeavors.</p>
+            <button id="btn-close-declined-popup" style="width:100%; padding:14px; background:#5c5cd6; color:#fff; border:none; border-radius:10px; font-size:1rem; font-weight:600; cursor:pointer;">Return to Portal</button>
         </div>
     </div>
 

@@ -27,8 +27,18 @@ def get_context(context):
 
         if job_offers:
             context.doc = job_offers[0]["name"]
-            settings = frappe.get_doc("Recruitment Settings")
-            pf = getattr(settings, "job_offer_print_format", None) or None
+
+            # 1st priority: "HomeFirst Job Offer" print format if it exists
+            pf = None
+            if frappe.db.exists("Print Format", "HomeFirst Job Offer"):
+                pf = "HomeFirst Job Offer"
+            else:
+                # Fallback to Recruitment Settings
+                try:
+                    pf = frappe.db.get_single_value("Recruitment Settings", "job_offer_print_format") or None
+                except Exception:
+                    pf = None
+
             context.print = frappe.get_print('Job Offer', context.doc, print_format=pf)
 
             # Fetch Job Offer fields for sidebar (only fields that exist)
