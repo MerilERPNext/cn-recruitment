@@ -16,9 +16,9 @@ frappe.ui.form.on("Employee Separation", {
             });
         }
     },
-    custom_actual_last_working_date: async function (frm) {
-        if (frm.doc.custom_actual_last_working_date) {
-            let boardingDate = frappe.datetime.add_days(frm.doc.custom_actual_last_working_date, -2);
+    custom_final_last_working_day: async function (frm) {
+        if (frm.doc.custom_final_last_working_day) {
+            let boardingDate = frappe.datetime.add_days(frm.doc.custom_final_last_working_day, -2);
 
             if (frm.doc.employee) {
                 // Call Frappe API to check holidays
@@ -44,7 +44,7 @@ frappe.ui.form.on("Employee Separation", {
                 callback: function (r) {
                     if (r.message) {
                         console.log(r.message)
-                        frm.set_value("custom_actual_last_working_date", r.message.relieving_date);
+                        frm.set_value("custom_final_last_working_day", r.message.relieving_date);
                         frm.set_value("custom_number_days_served", r.message.days_served);
                         frm.set_value("custom_exceeding_noof_days", r.message.days_exceeded === 0 ? "" : r.message.days_exceeded);
                         frm.set_value("custom_notice_period_served_", r.message.custom_notice_period_served);
@@ -52,7 +52,7 @@ frappe.ui.form.on("Employee Separation", {
                 }
             })
         } else {
-            frm.set_value("custom_actual_last_working_date", frm.doc.custom_last_working_date);
+            frm.set_value("custom_final_last_working_day", frm.doc.custom_last_working_date);
             frm.set_value("custom_number_days_served", "");
             frm.set_value("custom_exceeding_noof_days", "");
             frm.set_value("custom_notice_period_served_","");
@@ -80,7 +80,7 @@ frappe.ui.form.on("Employee Separation", {
         await set_actual_last_working_date(frm);
     },
     before_save: async function(frm) {
-        if (!frm.doc.custom_actual_last_working_date) {
+        if (!frm.doc.custom_final_last_working_day) {
             await set_actual_last_working_date(frm);
         }
     }
@@ -100,7 +100,7 @@ async function set_actual_last_working_date(frm) {
     });
 
     if (r && r.message) {
-        await frm.set_value("custom_actual_last_working_date", r.message);
+        await frm.set_value("custom_final_last_working_day", r.message);
     }
 }
 

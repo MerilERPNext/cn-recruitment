@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import HeaderBar from "../../HeaderBar";
 import { Attachment, FlowRequestItem } from "../../../types/flows";
@@ -58,7 +59,7 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
   ];
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col bg-white h-full">
       <div className="bg-white">
         <div className="sm:px-4">
           <HeaderBar

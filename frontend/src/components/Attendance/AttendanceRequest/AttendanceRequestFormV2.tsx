@@ -1095,6 +1095,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     ],
   );
 
+  const formOptions = useMemo(
+    () => ({
+      builder: { styles: false },
+      submitButton: false,
+      noAlerts: true,
+      clearOnSubmit: false,
+      keepAlive: true,
+      shiftData: shiftData,
+      shiftRedraw: shiftData?.shift,
+    }),
+    [shiftData],
+  );
+
   if (isSchemaLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -1156,15 +1169,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           <Form
             form={formSchema}
             onSubmit={handleSubmit}
-            options={{
-              builder: { styles: false },
-              submitButton: false,
-              noAlerts: true,
-              clearOnSubmit: false,
-              keepAlive: true,
-              shiftData: shiftData,
-              shiftRedraw: shiftData?.shift,
-            }}
+            options={formOptions}
             onChange={handleFormChange}
             onFormReady={onFormReady}
             className="formio-no-border address-form-container mt-4"
@@ -1205,4 +1210,4 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   );
 };
 
-export default AttendanceRequestFormV2;
+export default React.memo(AttendanceRequestFormV2);
