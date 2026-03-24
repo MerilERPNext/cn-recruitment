@@ -1,8 +1,10 @@
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { FlowRequestItem } from "../../../types/flows";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { truncateByChars } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
+import Tooltip from "../../shared/Tooltip";
 
 
 interface FlowRequestCardProps {
@@ -92,12 +94,12 @@ const FlowRequestCard: React.FC<FlowRequestCardProps> = ({
     }
 
     return (
-        <div className="px-4 py-4 grid grid-cols-8 gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
-            <div>  <Typography variant="bodySmall" className="font-medium text-center">{request.flow_name}</Typography></div>
-            <div><Typography variant="bodySmall" className="font-medium text-center">{request.category}</Typography></div>
+        <div className="px-4 py-4 grid grid-cols-[1fr_1fr_150px_150px_150px_150px_150px_150px] gap-4 text-center cursor-pointer hover:bg-blue-50" onClick={() => handleShowDetails(request)}>
+            <div>  <Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.flow_name}>{truncateByChars(request.flow_name, 40)}</Tooltip></Typography></div>
+            <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.category}>{truncateByChars(request.category, 40)}</Tooltip></Typography></div>
             <div><Typography variant="bodySmall" className="font-medium text-center">{formatToIndianDate(request.initiated_on)}</Typography></div>
-            <div><Typography variant="bodySmall" className="font-medium text-center">{request.initiated_by}</Typography></div>
-            <div><Typography variant="bodySmall" className="font-medium text-center">{request.initiated_for}</Typography></div>
+            <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.initiated_by}>{truncateByChars(request.initiated_by, 15)}</Tooltip></Typography></div>
+            <div><Typography variant="bodySmall" className="font-medium text-center"><Tooltip content={request.initiated_for}>{truncateByChars(request.initiated_for, 15)}</Tooltip></Typography></div>
             <div> <StatusBadge status={request.approval_status} /></div>
             <div><StatusBadge status={request.workflow_status} /></div>
             <div><StatusBadge status={request.overall_flow_status} /></div>

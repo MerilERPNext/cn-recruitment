@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import { Employee } from "../../../types/employee";
 import SearchableSelect from "../../shared/SearchableSelect";
 import { searchEmployeesByQuery } from "../../../utils/searchEmployees";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+
 
 export interface ParticipantRow {
   employee_type?: string;
@@ -48,6 +50,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 }) => {
   const [mode, setMode] = useState<"percentage" | "amount">("percentage");
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const { isDesktop } = useScreenSize();
   const computeAllocations = (
     rowsIn?: ParticipantRow[],
     m?: "percentage" | "amount"
@@ -665,7 +668,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
           >
             <span className="text-lg leading-none">+</span>
-            <span>Add Participant</span>
+            <span>{isDesktop ? "Add Participant" : "Participant"}</span>
           </button>
 
           <div className="flex items-center gap-4">

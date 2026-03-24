@@ -229,6 +229,7 @@ const MobileDashboard: React.FC = () => {
         {
           onSuccess: () => {
             refetchHomeSummary();
+            setGeoLocationModal(false)
           },
           onError: (e: CustomError) => {
             toast.error(

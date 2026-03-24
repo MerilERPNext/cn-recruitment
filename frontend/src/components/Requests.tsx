@@ -21,15 +21,37 @@ import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import HeaderBar from "./HeaderBar";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
+import { isActionEnabled } from "../utils/uiPermission";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 interface RequestsProps {
   limitCards?: number;
 }
 
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
+  const { targetEmployeeId } = useTargetUser();
+
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
 
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    effectiveEmployeeId || "",
+  );
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary",
+  );
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Attendance Summary",
+  );
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
@@ -103,7 +125,18 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const requestsCards = () => (
     <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
       <div className="grid grid-cols-4 gap-3 justify-center">
-        {(limitCards ? cards.slice(0, limitCards) : cards).map(
+        {(limitCards ? cards.filter((action) => {
+          if (action.label === "Planned Overtime") {
+            return canRequestOvertime && plannedOvertimAllowed;
+          }
+          if (action.label === "Attendance Request") {
+            return canRequestAttendance;
+          }
+          return true;
+        })
+          .slice(0, limitCards)
+          : cards
+        ).map(
           (card, index) => (
             <div
               key={index}

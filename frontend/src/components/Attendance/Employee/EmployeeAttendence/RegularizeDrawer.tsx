@@ -207,7 +207,7 @@ const RegularizeDrawer = () => {
           )}
         </div>
         {selectedDates.length > 0 && (
-          <div className="sticky w-full px-8 bottom-14 z-10 bg-white left-0 border-t border-gray-200 rounded-lg shadow-lg  py-3 flex items-center justify-between">
+          <div className="w-full px-8 bottom-14 z-10 bg-white left-0 border-t border-gray-200 rounded-lg shadow-lg  py-3 flex items-center justify-between">
             <span className="text-sm text-gray-600">
               Selected: {selectedDates.length}
             </span>
@@ -220,7 +220,7 @@ const RegularizeDrawer = () => {
               {isMarkBulkAttendancePending ? (
                 <CircularLoader color="white" />
               ) : (
-                "Submit"
+                "Mark as Present"
               )}
             </Button>
           </div>

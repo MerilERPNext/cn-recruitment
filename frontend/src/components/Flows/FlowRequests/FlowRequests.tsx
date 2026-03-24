@@ -21,7 +21,7 @@ const titles = [
   "Overall Flow Status",
 ];
 
-const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
+const columnWidths = ["1fr 1fr 150px 150px 150px 150px 150px 150px"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();

@@ -1097,7 +1097,7 @@ export const routesConfig: AppRoute[] = [
         permissionKey: "Separation",
       },
       {
-        path: "separation-workflow/:id",
+        path: "separation-workflow",
         element: <SeparationWorkflow />,
         permissionKey: "Separation",
       },

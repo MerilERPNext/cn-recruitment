@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
@@ -9,69 +8,47 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-  const handleRequestClick = useCallback((item: any) => {
-    setSelectedItem(item);
-    const todo_id = item?.data?.todo_id || item?.data?.name;
-    const document_id = item?.data?.reference_document?.name ;
-    navigate(`?todo_id=${todo_id}&document_name=${document_id}`);
-  }, [navigate]);
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      const data = request?.data || request;
+      const todoId = data?.todo_id || request?.todo_id;
+      const refName = data?.reference_name || request?.reference_name;
 
-useEffect(() => {
-  const todo_id = searchParams.get("todo_id");
-  const document_name = searchParams.get("document_name"); 
-  const doctype = "Employee Advance";
-
-  if (todo_id) {
-    handleRequestClick({
-      data: {
-        name: todo_id,
-        reference_document: {
-          name: document_name,
-        },
-      },
-      onAction: () => {},
-      loadingAction: false,
-    });
-    return;
-  }
-
-  if (document_name) {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/resource/${doctype}/${document_name}`);
-        const data = await res.json();
-
-        setSelectedItem(data);
-      } catch (err) {
-        console.error(err);
+      if (todoId || refName) {
+        setSearchParams({
+          ...(todoId ? { requestId: todoId } : {}),
+          ...(refName ? { reference_name: refName } : {}),
+        });
+        setSelectedItem(request);
       }
-    };
+    },
+    [setSearchParams],
+  );
 
-    fetchData();
-  }
-}, [searchParams]);
+  // 👉 Close: clear URL params AND selectedItem
+  const handleClose = useCallback(() => {
+    setSelectedItem(null);
+    setSearchParams({});
+  }, [setSearchParams]);
 
-
-
-const handleClose = () => {
-  setSelectedItem(null);
-  navigate("");
-};
-
+  // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
+  const isModalOpen = !!selectedItem || !!(requestId || referenceName);
+  console.log({ requestId, referenceName, isModalOpen, selectedItem }, "URL Params and Modal State");
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -156,8 +133,10 @@ const handleClose = () => {
       </div>
 
       <AdvanceDetailsModal
-        open={!!selectedItem}
-        item={selectedItem}
+        documentName={requestId || ""}
+        referenceName={referenceName || ""}
+        open={isModalOpen}
+        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
       />
     </div>

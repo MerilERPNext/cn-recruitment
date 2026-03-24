@@ -3,7 +3,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
@@ -17,19 +17,41 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { useGetToDoWithReferenceDoc } from "../../../../hooks/useAttendance";
 
 type Props = {
   open: boolean;
-  item: any;
+  item: any | null;          // null when opened via direct URL
+  documentName?: string;
+  referenceName?: string;
   onClose: () => void;
 };
 
-const LoanDetailsModal = ({ open, item, onClose }: Props) => {
-  if (!open || !item) return null;
-  const {isDesktop} = useScreenSize()
-  const data = item.data;
-  const ref = data?.reference_document || item.data;
-  const loadingAction = item.loadingAction;
+const LoanDetailsModal = ({
+  documentName,
+  referenceName,
+  open,
+  item,
+  onClose,
+}: Props) => {
+  if (!open) return null;
+
+  // Always call the hook (Rules of Hooks) — skip fetch when item already has data
+  const {
+    data: fetchedData,
+    isLoading,
+    error,
+  } = useGetToDoWithReferenceDoc(
+    documentName || "",
+    referenceName || "",
+  );
+
+  const { isDesktop } = useScreenSize();
+
+  // Prefer item.data (row-click path); fall back to fetchedData (direct-URL path)
+  const data = item?.data || fetchedData;
+  const ref = data?.reference_document;
+  const loadingAction = item?.loadingAction;
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data.custom_doctype_actions)
@@ -44,14 +66,31 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
   );
 
   const [form, setForm] = useState({
-    loan_amount: ref?.loan_amount || "",
-    rate_of_interest: ref?.rate_of_interest || "",
-    loan_tenure: ref?.repayment_periods || "",
-    monthly_repayment_amount: ref?.repayment_amount || "",
-    start_date: ref?.custom_repayment_start_date || "",
-    custom_defered_date: ref?.custom_defered_date || "",
-    repayment_method: ref?.repayment_method || "",
+    loan_amount: "",
+    rate_of_interest: "",
+    loan_tenure: "",
+    monthly_repayment_amount: "",
+    start_date: "",
+    custom_defered_date: "",
+    repayment_method: "",
   });
+
+  // ✅ FIX: sync form with API data
+  useEffect(() => {
+    if (ref) {
+      setForm({
+        loan_amount: ref.loan_amount || "",
+        rate_of_interest: ref.rate_of_interest || "",
+        loan_tenure: ref.repayment_periods || "",
+        monthly_repayment_amount: ref.repayment_amount || "",
+        start_date: ref.custom_repayment_start_date?.slice(0, 10) || "",
+        custom_defered_date: ref.custom_defered_date?.slice(0, 10) || "",
+        repayment_method: ref.repayment_method || "",
+      });
+
+      setRepaymentType(ref.repayment_method || "");
+    }
+  }, [ref]);
 
   const [commentOpen, setCommentOpen] = useState(false);
   const [comment, setComment] = useState("");
@@ -77,17 +116,19 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
     }
 
     const referenceDoctype = ref?.doctype || "Loan Application";
-    const referenceName = ref?.name || data?.reference_name;
+    // Use ref name, or fall back to URL param referenceName
+    const refDocName = ref?.name || data?.reference_name || referenceName;
 
     try {
       await commentMutation.mutateAsync({
         referenceDoctype,
-        referenceName,
+        referenceName: refDocName,
         content: comment,
         comment_email: user?.name || "",
       });
+
       const payload: LoanApplicationUpdatePayload = {
-        docname: referenceName,
+        docname: refDocName,
         data: {
           loan_amount: Number(form.loan_amount),
           rate_of_interest: Number(form.rate_of_interest),
@@ -108,7 +149,8 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
 
       await loanFormUpdate.mutateAsync(payload);
 
-      if (item.onAction) {
+      // Only call onAction if item was passed (row-click path)
+      if (item?.onAction) {
         item.onAction(selectedAction, {
           ...data,
           reference_document: {
@@ -128,6 +170,32 @@ const LoanDetailsModal = ({ open, item, onClose }: Props) => {
       toast.error("Failed to save comment or update loan");
     }
   };
+
+  // Show loader only in direct-URL path (item is null and fetch is in progress)
+  if (!item && isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8">
+          <Typography variant="bodySmall">Loading...</Typography>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item && error) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8 flex flex-col gap-4">
+          <Typography variant="bodySmall" color="body2">
+            Error loading loan details.
+          </Typography>
+          <Button bgColor="gray-200" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

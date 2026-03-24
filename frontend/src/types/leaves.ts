@@ -96,6 +96,7 @@ export interface LeaveApplication {
   to_date: string;
   status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
   description?: string;
+  custom_leave_type_name?: string;
 }
 
 export interface Holiday {
