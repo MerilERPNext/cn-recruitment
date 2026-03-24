@@ -1,5 +1,6 @@
 import frappe
 import json
+from frappe.utils import validate_email_address
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
@@ -57,6 +58,126 @@ def create_bulk_job_offer(applicants):
         "failed": failed
     }
 
+# @frappe.whitelist()
+# def send_bulk_job_offer(job_offers):
+
+#     if isinstance(job_offers, str):
+#         job_offers = json.loads(job_offers)
+
+#     sent = 0
+#     skipped = 0
+#     failed = 0
+
+#     for jo in job_offers:
+
+#         try:
+
+#             job_offer = frappe.get_doc("Job Offer", jo)
+
+#             # Only allow submitted job offers
+#             if job_offer.docstatus != 1:
+#                 skipped += 1
+#                 continue
+
+#             if not job_offer.job_applicant:
+#                 failed += 1
+
+#                 job_offer.db_set({
+#                     "email_status": "Failed",
+#                     "email_error": "Missing Job Applicant"
+#                 })
+
+#                 continue
+
+#             applicant = frappe.get_doc("Job Applicant", job_offer.job_applicant)
+
+#             # Skip if offer already processed
+#             if applicant.status in ["Accepted", "Rejected"]:
+#                 skipped += 1
+#                 continue
+
+#             email = applicant.email_id
+
+#             if not email:
+#                 failed += 1
+
+#                 job_offer.db_set({
+#                     "email_status": "Failed",
+#                     "email_error": "Missing Email ID"
+#                 })
+
+#                 continue
+
+#             site_url = frappe.utils.get_url()
+#             offer_url = f"{site_url}/job_offer?appl={applicant.name}"
+
+#             first_name = (job_offer.applicant_name or "").split(" ")[0]
+
+#             subject = "Internship Offer Letter – HomeFirst Finance"
+
+#             message = f"""
+# <p>Dear {first_name},</p>
+
+# <p>
+# We are pleased to inform you that you have been selected for an internship with
+# HomeFirst Finance Company India Ltd.
+# </p>
+
+# <p>
+# Please find your offer letter attached. Kindly review the offer letter and click on the below link to accept the offer.
+# </p>
+
+# <p>
+# Link - <a href="{offer_url}">Click here to view your offer letter</a>
+# </p>
+
+# <p>
+# We look forward to welcoming you onboard and wish you a successful internship with us.
+# </p>
+
+# <p>
+# Warm regards,<br>
+# Team HR
+# </p>
+# """
+
+#             frappe.sendmail(
+#                 recipients=[email],
+#                 subject=subject,
+#                 message=message,
+#                 reference_doctype="Job Offer",
+#                 reference_name=job_offer.name,
+#                 now=True
+#             )
+
+#             job_offer.db_set({
+#                 "email_status": "Sent",
+#                 "email_error": "",
+#                 "email_sent_on": frappe.utils.now()
+#             })
+
+#             # Update applicant status
+#             applicant.status = "Offered"
+#             applicant.save(ignore_permissions=True)
+
+#             sent += 1
+
+#         except Exception as e:
+#             failed += 1
+
+#             frappe.db.set_value("Job Offer", jo, {
+#                 "email_status": "Failed",
+#                 "email_error": str(e)
+#             })
+
+#             frappe.log_error(frappe.get_traceback(), "Bulk Job Offer Email Error")
+
+#     return {
+#         "sent": sent,
+#         "skipped": skipped,
+#         "failed": failed
+#     }
+
 @frappe.whitelist()
 def send_bulk_job_offer(job_offers):
 
@@ -80,17 +201,14 @@ def send_bulk_job_offer(job_offers):
 
             if not job_offer.job_applicant:
                 failed += 1
-
                 job_offer.db_set({
                     "email_status": "Failed",
                     "email_error": "Missing Job Applicant"
                 })
-
                 continue
 
             applicant = frappe.get_doc("Job Applicant", job_offer.job_applicant)
 
-            # Skip if offer already processed
             if applicant.status in ["Accepted", "Rejected"]:
                 skipped += 1
                 continue
@@ -99,18 +217,24 @@ def send_bulk_job_offer(job_offers):
 
             if not email:
                 failed += 1
-
                 job_offer.db_set({
                     "email_status": "Failed",
                     "email_error": "Missing Email ID"
                 })
+                continue
 
+            if not validate_email_address(email, throw=False):
+                failed += 1
+                job_offer.db_set({
+                    "email_status": "Failed",
+                    "email_error": "Invalid Email Format"
+                })
                 continue
 
             site_url = frappe.utils.get_url()
             offer_url = f"{site_url}/job_offer?appl={applicant.name}"
 
-            first_name = (job_offer.applicant_name or "").split(" ")[0]
+            first_name = (job_offer.applicant_name or "Candidate").split(" ")[0]
 
             subject = "Internship Offer Letter – HomeFirst Finance"
 
@@ -140,14 +264,44 @@ Team HR
 </p>
 """
 
-            frappe.sendmail(
-                recipients=[email],
-                subject=subject,
-                message=message,
-                reference_doctype="Job Offer",
-                reference_name=job_offer.name,
-                now=True
+            try:
+                frappe.sendmail(
+                    recipients=[email],
+                    subject=subject,
+                    message=message,
+                    reference_doctype="Job Offer",
+                    reference_name=job_offer.name,
+                    now=True
+                )
+            except Exception as mail_error:
+                failed += 1
+                job_offer.db_set({
+                    "email_status": "Failed",
+                    "email_error": f"Send Failed: {str(mail_error)}"
+                })
+                frappe.log_error(frappe.get_traceback(), "Email Send Failure")
+                continue
+
+            email_queue = frappe.get_all(
+                "Email Queue",
+                filters={
+                    "reference_doctype": "Job Offer",
+                    "reference_name": job_offer.name
+                },
+                fields=["status"],
+                order_by="creation desc",
+                limit=1
             )
+
+            queue_status = email_queue[0].status if email_queue else None
+
+            if queue_status == "Error":
+                failed += 1
+                job_offer.db_set({
+                    "email_status": "Failed",
+                    "email_error": "Email Queue Failed"
+                })
+                continue
 
             job_offer.db_set({
                 "email_status": "Sent",
@@ -155,7 +309,7 @@ Team HR
                 "email_sent_on": frappe.utils.now()
             })
 
-            # Update applicant status
+            applicant.flags.ignore_notify = True
             applicant.status = "Offered"
             applicant.save(ignore_permissions=True)
 
@@ -176,6 +330,33 @@ Team HR
         "skipped": skipped,
         "failed": failed
     }
+
+
+def check_email_bounce():
+    communications = frappe.get_all(
+        "Communication",
+        filters={
+            "communication_medium": "Email",
+            "sent_or_received": "Received"
+        },
+        fields=["name", "reference_doctype", "reference_name", "subject", "content"],
+        order_by="creation desc",
+        limit=50
+    )
+
+    for comm in communications:
+
+        if comm.reference_doctype != "Job Offer" or not comm.reference_name:
+            continue
+
+        content = (comm.content or "").lower()
+
+        if any(keyword in content for keyword in ["failed", "undelivered", "bounce"]):
+
+            frappe.db.set_value("Job Offer", comm.reference_name, {
+                "email_status": "Failed", 
+                "email_error": "Email bounced (delivery failed)"
+            })
 
 
 def sync_applicant_status(doc, method):

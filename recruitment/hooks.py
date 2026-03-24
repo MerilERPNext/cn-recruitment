@@ -246,6 +246,11 @@ scheduler_events = {
             "recruitment.customizations.employee_separation.task_reassignment.reassign_employee_separation_tasks",
             "recruitment.customizations.employee_onboarding.overide_class.reassign_tasks" 
         ]
+    },
+    "cron": {
+        "*/10 * * * *": [
+            "recruitment.api.bulk_job_offer.check_email_bounce"
+        ]
     }
 }
 
