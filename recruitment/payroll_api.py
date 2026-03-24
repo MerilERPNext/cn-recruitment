@@ -106,6 +106,29 @@ def generate_salary_slip(employee):
         gross_pay = slip.gross_pay or 0
         # total_deduction = slip.total_deduction or 0
 
+
+        # 🔵 VARIABLE PAY (ONLY PART OF CTC)
+        if hasattr(assignment_doc, "custom_variable_pay_components"):
+
+            for v in assignment_doc.custom_variable_pay_components:
+
+                
+
+                amount = round(v.amount or 0)
+
+                variable_data = {
+                    "component": v.variable_name,
+                    "amount": 0,  # 🔥 monthly = 0
+                    "annual_amount": amount,
+                    "type": "Variable Pay"
+                }
+
+                # ✅ Add into main CTC component list
+                component_part_of_ctc.append(variable_data)
+
+                if v.part_of_ctc == 1:
+                    annual_ctc += amount
+
         return {
             "component_part_of_ctc": component_part_of_ctc,
             "total_reimbursement_amount": assignment_doc.custom_total_reimbursement_amount,
