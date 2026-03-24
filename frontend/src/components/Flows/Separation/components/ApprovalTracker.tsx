@@ -1,20 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import ApprovalDetails from "./ApprovalDetails";
-import ApprovalModal from "./ApprovalModel";
 import { FormIOComponent } from "../../../../types/formio";
 import CardStages from "./StageCard";
-import { TodoType } from "../../../../types/todos";
 import { Typography } from "../../../shared/atoms/Typography";
-import { format, parse } from "date-fns";
 import { Card } from "../../../shared/atoms/Card";
 import { createPortal } from "react-dom";
 import ReviewForm from "./ReviewForm";
 import { Form } from "@tsed/react-formio";
 import ViewFormButton from "../../ViewFormButton";
 import StatusTimelineRow from "../../Confirmation/components/StatusTimelineRow";
+import { FlowRequestItem } from "../../../../types/flows";
+import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../../utils/flowUtils";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 export interface ApprovalStage {
   approval_time: string;
@@ -30,89 +29,34 @@ export interface ApprovalStage {
 }
 
 interface ApprovalTrackerProps {
-  data: TodoType;
+  data: FlowRequestItem;
   For: "Employee Separation";
 }
 
 export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showSelfInitForm, setShowSelfInitForm] = useState<boolean>(false);
-  const [formSchema, setFormSchema] = useState<any>();
 
-  const selfInitFormAndAns = useMemo(
-    () => {
-      if (!data?.reference_document?.initiator_form) {
-        return null;
-      }
-      try {
-        return JSON.parse(data.reference_document.initiator_form);
-      } catch (error) {
-        console.error("Failed to parse initiator_form JSON:", error);
-        return null;
-      }
-    },
-    [data],
-  );
+  const [showSelfForm, setShowSelfForm] = useState(false);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
 
-  const handleShowForm = () => {
-    const schema: FormIOComponent[] = selfInitFormAndAns?.form?.components;
-    const answer = selfInitFormAndAns?.answer;
 
-    setFormSchema((prev: any) => {
-      if (!schema) return prev;
+  const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
 
-      const updatedSchema = schema
-        .filter((comp) => comp.key !== "submit")
-        .map((component) => {
-          const key = component.key;
+  const handleShowSelfForm = () => {
+    let formData: Record<string, any> = {};
+    try {
+      formData = JSON.parse(data?.initiator_forms?.[0]?.form_data);
+    } catch (error) {
+      console.error("Invalid initiator_forms form_data JSON:", error);
+      return;
+    }
+    const schema = (formData as any)?.form?.components;
+    const answer = (formData as any)?.submission_data;
 
-          if (key && answer[key] !== undefined) {
-            return {
-              ...component,
-              defaultValue: answer[key],
-            };
-          }
+    if (!schema) return;
+    setFormSchema(buildFormFromSchemaAndAnswer(schema, answer));
+    setShowSelfForm(true);
+  }
 
-          return component;
-        });
-
-      return {
-        display: "form",
-        components: updatedSchema,
-      };
-    });
-
-    setShowSelfInitForm(true);
-  };
-
-  const actions: { name: string; hasForm: boolean }[] = useMemo(() => {
-    const withForm: string[] = data?.custom_doctype_actions_with_form
-      ? JSON.parse(data.custom_doctype_actions_with_form.replace(/'/g, '"'))
-      : [];
-
-    const withoutForm: string[] = data?.custom_doctype_actions
-      ? JSON.parse(data.custom_doctype_actions.replace(/'/g, '"'))
-      : [];
-
-    const map = new Map<string, { name: string; hasForm: boolean }>();
-
-    // First add actions without form
-    withoutForm.forEach((action) => {
-      map.set(action, { name: action, hasForm: false });
-    });
-
-    // Then override with actions that have form
-    withForm.forEach((action) => {
-      map.set(action, { name: action, hasForm: true });
-    });
-
-    return Array.from(map.values());
-  }, [data]);
-
-  const formatDateToDDMMYYYY = (dateStr: string) => {
-    const parsedDate = parse(dateStr, "dd-MM-yyyy", new Date());
-    return format(parsedDate, "dd/MM/yyyy");
-  };
 
   if (!data) {
     return (
@@ -122,19 +66,6 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
       </div>
     );
   }
-  const allStagesComplete =
-    data?.approval_stages_status?.every(
-      (stage) => stage.status === "Approved",
-    ) ?? false;
-
-  const Rejected =
-    data?.approval_stages_status?.some(
-      (stage) => stage.status === "Rejected",
-    ) ?? false;
-
-  const pendingCount =
-    data?.approval_stages_status?.filter((s) => s.status === "Pending")
-      .length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -146,31 +77,11 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             <div className="flex items-baseline gap-2 flex-wrap">
               <Typography variant="bodySmall"> Overall Stauts :</Typography>
               <div className="flex items-center gap-2">
-                {allStagesComplete ? (
-                  <Typography variant="bodyMedium" color="success">
-                    Completed
-                  </Typography>
-                ) : Rejected ? (
-                  <Typography variant="bodyMedium" color="error">
-                    Rejected
-                  </Typography>
-                ) : (
-                  <Typography variant="bodyMedium" color="warning">
-                    Pending - {pendingCount} approvals
-                  </Typography>
-                )}
+                {data?.approval_status}
               </div>
             </div>
-            <div className="flex flex-wrap ml-auto">
-              <Typography variant="bodySmall" color="body2" className="mr-2">
-                Due Date:
-              </Typography>
-              <Typography variant="bodySmall" color="body1">
-                {formatDateToDDMMYYYY(data.due_date)}
-              </Typography>
-            </div>
           </div>
-          {allStagesComplete && (
+          {data?.approval_status === "Completed" && (
             <div className="flex items-center gap-2 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="w-5 h-5 text-green-600 flex-shrink-0">
                 <svg fill="currentColor" viewBox="0 0 20 20">
@@ -191,8 +102,6 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
           )}
 
           <ApprovalDetails
-            isPending={!allStagesComplete || !Rejected}
-            data={data}
             title={For}
           />
         </div>
@@ -203,7 +112,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
             Separation Workflow Timeline
           </Typography>
           <div className="flex flex-col pt-1">
-            {selfInitFormAndAns && (
+            {haveInitiatorForm && (
               <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
                 <StatusTimelineRow
                   timelineData={{
@@ -223,37 +132,29 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
 
                     <div className="flex justify-between max-sm:flex-row-reverse items-start px-4 pt-1 pb-3">
                       <div className="flex gap-3">
-                        <ViewFormButton onClick={handleShowForm} />
+                        <ViewFormButton onClick={handleShowSelfForm} />
                       </div>
                       <div>
-                        {formatToIndianDate(
-                          data?.reference_document?.creation || "",
-                        )}
+                        {formatToIndianDate(data?.initiated_on)}
                       </div>
                     </div>
                   </div>
                 </StatusTimelineRow>
               </div>
             )}
-            {data?.approval_stages_status.map((item, idx) => {
+            {data?.approval_stages.map((item, idx) => {
               const isActive =
                 item.status === "Pending" &&
                 (idx == 0 ||
-                  data?.approval_stages_status[idx - 1].status != "Pending");
+                  data?.approval_stages[idx - 1].status != "Pending");
               const isLastStage =
-                idx == data?.approval_stages_status.length - 1;
+                idx == data?.approval_stages.length - 1;
 
               return (
                 <CardStages
                   key={item?.stage_name ?? "" + idx}
-                  stage={item as ApprovalStage}
-                  assignedTo={{
-                    emp_id: data?.allocated_to_emp_id,
-                    roles: data?.allocated_roles,
-                  }}
-                  actions={actions}
+                  stage={item}
                   isActive={isActive}
-                  todoId={data.todo_id}
                   isLastStage={isLastStage}
                 />
               );
@@ -262,24 +163,19 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
         </div>
       </Card>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <ApprovalModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          data={data}
-        />
-      )}
 
       {formSchema &&
-        showSelfInitForm &&
+        showSelfForm &&
         createPortal(
-          <ReviewForm onClose={() => setShowSelfInitForm(false)}>
+          <ReviewForm
+            onClose={() => setShowSelfForm(false)}
+            title="Initiation Form"
+          >
             <Form
               form={formSchema}
               options={{
-                readOnly: true,
-                viewAsHtml: false,
+                readOnly: true, // This makes the entire form read-only
+                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
               }}
               submit={false}
             />

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import image from "../../../assets/welcome-sep.svg";
-import { useSeparation } from "../../../hooks/useConfiremnation";
 import {
   useCurrentEmployeeAllDetails,
   useEmployee,
@@ -8,13 +7,12 @@ import {
 import {
   useChatAssistantLazy,
   useDifinitaionNameForSeparation,
-  useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -22,6 +20,8 @@ import { SeparationSvgs } from "./consts";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -47,7 +47,6 @@ const Separation = () => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
-  const doctype = "Employee Separation";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
@@ -61,18 +60,17 @@ const Separation = () => {
     "Separation",
   );
 
+
   const {
-    data: separationCreationData,
-    isLoading: isLoadingOpened,
-    refetch: refetchSeparation,
-  } = useSeparation(doctype, "Open");
-  const {
-    data: separationCreationDataClosed,
-    isLoading: isLoadingClosed,
-    refetch: refetchSeparationClosed,
-  } = useSeparation(doctype, "Closed");
-  const item = separationCreationData?.[0] || separationCreationDataClosed?.[0];
-  const isLoading = isLoadingOpened || isLoadingClosed;
+    data: separationFunnelDetails,
+    refetch: refetchSeparationFunnelDetails,
+    isLoading: isLoadingSeparationFunnelDetails,
+  } = useGetSeparationFunnelDetails();
+
+
+
+  const item = separationFunnelDetails?.data?.[0];
+  const isLoading = isLoadingSeparationFunnelDetails;
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
   function getFunnelData() {
@@ -168,11 +166,12 @@ const Separation = () => {
       value: `We'll process your full & final settlement soon`,
     },
   ];
-
+  const queryClient = useQueryClient();
   useEffect(() => {
     const handleChatClose = () => {
-      refetchSeparation();
-      refetchSeparationClosed();
+      refetchSeparationFunnelDetails()
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["employee", activeEmployee?.name] });
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -183,20 +182,23 @@ const Separation = () => {
         handleChatClose,
       );
     };
-  }, [refetchSeparation, refetchSeparationClosed]);
+  }, [refetchSeparationFunnelDetails, queryClient, activeEmployee?.name]);
 
   const showInitiatePage = !item;
 
-  const { data: separationWorkflow } = useGetSeparationWorkflow(
-    doctype,
-    item?.reference_document?.name || "",
-  );
   const navigate = useNavigate();
   const handleShowWorkflow = () => {
     navigate(
-      "/webapp/flow-app/separation-workflow/" + item?.reference_document?.name,
+      "/webapp/flow-app/separation-workflow",
     );
   };
+
+  const canViewWorkflow = useMemo(() => {
+    if (!separationFunnelDetails?.data?.[0]) return false;
+    if (separationFunnelDetails?.data?.[0].workflow_stages?.length === 0) return false;
+    if (!enabledActions.view_workflow) return false;
+    return true;
+  }, [separationFunnelDetails, enabledActions])
 
   const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Skeleton -------------------- */
@@ -214,7 +216,7 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
-        {separationWorkflow?.show_workflow && enabledActions.view_workflow && (
+        {canViewWorkflow && (
           <Button
             onClick={handleShowWorkflow}
             size="md"
