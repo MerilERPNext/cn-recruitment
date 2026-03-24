@@ -24,46 +24,46 @@ const TeamAdvanceRequest = () => {
   }, []);
 
   const handleRequestClick = useCallback((item: any) => {
-    setSelectedItem(item);
-    const todo_id = item?.data?.todo_id || item?.data?.name;
-    const document_id = item?.data?.reference_document?.name ;
-    navigate(`?todo_id=${todo_id}&document_name=${document_id}`);
+    const todo_id = item?.data?.todo_id ;
+    const document_name = item?.data?.reference_document?.name ;
+    navigate(`?todo_id=${todo_id}&document_name=${document_name}`);
   }, [navigate]);
+  
 
-useEffect(() => {
-  const todo_id = searchParams.get("todo_id");
-  const document_name = searchParams.get("document_name"); 
-  const doctype = "Employee Advance";
-
-  if (todo_id) {
-    handleRequestClick({
-      data: {
-        name: todo_id,
-        reference_document: {
-          name: document_name,
-        },
-      },
-      onAction: () => {},
-      loadingAction: false,
-    });
-    return;
-  }
-
-  if (document_name) {
+  useEffect(() => {
+    const todo_id = searchParams.get("todo_id");
+    const document_name = searchParams.get("document_name");
+  
+    if (!todo_id && !document_name) return;
+  
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/resource/${doctype}/${document_name}`);
-        const data = await res.json();
-
-        setSelectedItem(data);
+        if (document_name) {
+          const res = await fetch(`/api/method/cn_hrms_core.api.get_reference_doc?todo_id=${undefined}&reference_name=${document_name}`);
+          const data = await res.json();
+  
+          setSelectedItem({
+            data: data.data,
+            onAction: () => {},
+            loadingAction: false,
+          });
+        }
+        else if (todo_id) {
+          const res = await fetch(`/api/method/cn_hrms_core.api.get_reference_doc?todo_id=${todo_id}&reference_name=${undefined}`);
+          const data = await res.json();
+          setSelectedItem({
+            data: data.message,
+            onAction: () => {},
+            loadingAction: false,
+          });
+        }
       } catch (err) {
         console.error(err);
       }
     };
-
+  
     fetchData();
-  }
-}, [searchParams]);
+  }, [searchParams]);
 
 
 

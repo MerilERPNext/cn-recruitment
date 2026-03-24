@@ -24,46 +24,22 @@ const TeamLoanRequest = () => {
   }, []);
 
 const handleRequestClick = useCallback((item: any) => {
-  setSelectedItem(item);
   const todo_id = item?.data?.todo_id || item?.data?.name;
-  const document_id = item?.data?.reference_document?.name ;
-  navigate(`?todo_id=${todo_id}&document_name=${document_id}`);
+  const document_name = item?.data?.reference_document?.name || item?.data?.name || "";
+  navigate(`?todo_id=${todo_id}&document_name=${document_name}`);
 }, [navigate]);
 
 
 useEffect(() => {
   const todo_id = searchParams.get("todo_id");
-  const document_name = searchParams.get("document_name"); 
-  const doctype = "Loan Application";
+  const document_name = searchParams.get("document_name");
 
-  if (todo_id) {
-    handleRequestClick({
-      data: {
-        name: todo_id,
-        reference_document: {
-          name: document_name,
-        },
-      },
-      onAction: () => {},
-      loadingAction: false,
-    });
-    return;
-  }
+  if (!todo_id && !document_name) return;
 
-  if (document_name) {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/resource/${doctype}/${document_name}`);
-        const data = await res.json();
-
-        setSelectedItem(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchData();
-  }
+  setSelectedItem({
+    todo_id,
+    document_name,
+  });
 }, [searchParams]);
 
 
