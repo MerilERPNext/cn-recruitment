@@ -124,33 +124,37 @@ const PoliciesList: React.FC = () => {
 
   return (
     <div className="w-full rounded-xl p-2">
-      {isDesktop ? (
-        <HeaderBar
-          title="Policies List"
-          onBack={() => navigate(-1)}
-          rightSlot={<FilterDropdown />}
-          className="md:mb-4"
-          bgColor="primary/10"
+      <div className="relative z-20">
+        {isDesktop ? (
+          <HeaderBar
+            title="Policies List"
+            onBack={() => navigate(-1)}
+            rightSlot={<FilterDropdown />}
+            className="md:mb-4"
+            bgColor="primary/10"
+          />
+        ) : (
+          <FilterDropdown />
+        )}
+      </div>
+      <div className="relative z-10">
+        <FrappeListView<PolicyDoc>
+          doctype="Policy Details"
+          defaultFilters={{
+            policy_category: categoryName,
+            employee_id: employeeId,
+            status: selectedStatus,
+          }}
+          pageSize={20}
+          isSearch={true}
+          showRefereshButton={true}
+          searchFields={["name"]}
+          defaultFields={["name", "policy", "policy_document", "status"]}
+          ItemComponent={PolicyItem}
+          infiniteScroll={true}
+          SkeletonComponent={PolicyCardSkeleton}
         />
-      ) : (
-        <FilterDropdown />
-      )}
-      <FrappeListView<PolicyDoc>
-        doctype="Policy Details"
-        defaultFilters={{
-          policy_category: categoryName,
-          employee_id: employeeId,
-          status: selectedStatus,
-        }}
-        pageSize={20}
-        isSearch={true}
-        showRefereshButton={true}
-        searchFields={["name"]}
-        defaultFields={["name", "policy", "policy_document", "status"]}
-        ItemComponent={PolicyItem}
-        infiniteScroll={true}
-        SkeletonComponent={PolicyCardSkeleton}
-      />
+      </div>
     </div>
   );
 };
