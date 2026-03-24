@@ -190,7 +190,7 @@ const CardStages = ({
                 />
               )}
               {canPerformActions &&
-                actions.map((action: any) => (
+                actions.map((action: string) => (
                   <Button
                     onClick={() => onAction(action, stage?.todo)}
                   >

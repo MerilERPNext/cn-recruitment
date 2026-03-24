@@ -1,3 +1,4 @@
+import { SeparationFunnelDetails } from "../types/flows";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const SeparationEmployeeService = async () => {
@@ -18,5 +19,5 @@ export const getSeparationFunnelDetails = async (
     },
   );
 
-  return response as any;
+  return response as SeparationFunnelDetails;
 };
