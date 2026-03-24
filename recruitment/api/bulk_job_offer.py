@@ -339,7 +339,7 @@ def check_email_bounce():
             "communication_medium": "Email",
             "sent_or_received": "Received"
         },
-        fields=["name", "reference_doctype", "reference_name", "subject", "content"],
+        fields=["name", "reference_doctype", "reference_name", "subject", "content", "text_content"],
         order_by="creation desc",
         limit=50
     )
@@ -349,15 +349,23 @@ def check_email_bounce():
         if comm.reference_doctype != "Job Offer" or not comm.reference_name:
             continue
 
-        content = (comm.content or "").lower()
+        content = ((comm.content or "") + " " + (comm.text_content or "")).lower()
 
-        if any(keyword in content for keyword in ["failed", "undelivered", "bounce"]):
+        if any(keyword in content for keyword in [
+            "failed",
+            "undelivered",
+            "bounce",
+            "address not found",
+            "does not exist",
+            "550 5.1.1",
+            "no such user",
+            "mail delivery subsystem"
+        ]):
 
             frappe.db.set_value("Job Offer", comm.reference_name, {
-                "email_status": "Failed", 
+                "email_status": "Failed",
                 "email_error": "Email bounced (delivery failed)"
             })
-
 
 def sync_applicant_status(doc, method):
 
