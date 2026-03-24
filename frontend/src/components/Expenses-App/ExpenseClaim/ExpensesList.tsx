@@ -97,7 +97,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             <Typography variant="mobileCardLabel">Expense Category</Typography>
 
             <Typography variant="mobileCardValue">
-              {expense?.custom_expense_category || "--"}
+              {expense?.custom_expense_category_name} ({expense?.custom_expense_category})
             </Typography>
           </div>
 
@@ -209,7 +209,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         variant="bodySmall"
         className="font-medium text-center truncate"
       >
-        {expenseClaim?.custom_expense_category}
+        {expenseClaim?.custom_expense_category_name} ({expenseClaim?.custom_expense_category})
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}

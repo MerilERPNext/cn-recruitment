@@ -48,9 +48,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const formatINR = (value?: number | null) =>
     typeof value === "number"
       ? new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(value)
+        style: "currency",
+        currency: "INR",
+      }).format(value)
       : "—";
 
   if (!id) return null;
@@ -411,7 +411,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     Expense Category
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.custom_expense_category ?? "—"}
+                    {data?.custom_expense_category_name} ({data?.custom_expense_category ?? "—"})
                   </Typography>
                 </div>
                 <div>
@@ -483,7 +483,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   Participants
                 </Typography>
                 {Array.isArray(data?.custom_participants) &&
-                data.custom_participants.length > 0 ? (
+                  data.custom_participants.length > 0 ? (
                   isDesktop ? (
                     DesktopParticipants
                   ) : (

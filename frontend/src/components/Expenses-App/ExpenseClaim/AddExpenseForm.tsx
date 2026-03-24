@@ -312,7 +312,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.name }}</span>",
+                  template: "<span>{{ item.expense_type }} ({{ item.name }})</span>",
                   refreshOn: "expenseCategory",
                   clearOnRefresh: true,
                   clearOnHide: true,
