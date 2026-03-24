@@ -1,9 +1,7 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
@@ -17,19 +15,36 @@ import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
+import { useGetToDoWithReferenceDoc } from "../../../../hooks/useAttendance";
 
 type Props = {
   open: boolean;
   item: any;
+  documentName: string | null;
+  referenceName: string | null;
   onClose: () => void;
 };
 
-const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
-  if (!open || !item) return null;
+const AdvanceDetailsModal = ({ 
+  documentName,
+  referenceName,
+  open,
+  item,
+  onClose,
+}: Props) => {
   const { isDesktop } = useScreenSize();
-  const data = item.data;
-  const ref = data?.reference_document || item.data;
-  const loadingAction = item.loadingAction;
+    const {
+      data: fetchedData,
+      isLoading,
+      error,
+    } = useGetToDoWithReferenceDoc(
+      documentName || "",
+      referenceName || "",
+    );
+
+  const data = item?.data || fetchedData;
+  const ref = data?.reference_document || item?.data;
+  const loadingAction = item?.loadingAction;
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -37,14 +52,24 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
   const advanceFormUpdate = useEmployeeAdvanceUpdate();
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
-
-  /* Editable fields */
   const [form, setForm] = useState({
     advance_amount: ref?.advance_amount || "",
     purpose: ref?.purpose || "",
     start_date: ref?.custom_repayment_start_date || "",
     posting_date: ref?.posting_date || "",
   });
+
+    useEffect(() => {
+      if (ref) {
+        setForm({
+          advance_amount: ref?.advance_amount || "",
+          purpose: ref?.purpose || "",
+          posting_date: ref?.posting_date || "",
+          start_date: ref?.custom_repayment_start_date || "",
+        });
+
+      }
+    }, [ref]);
 
   /* Comment modal */
   const [commentOpen, setCommentOpen] = useState(false);
@@ -117,6 +142,31 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
       toast.error("Failed to save comment or update advance");
     }
   };
+  if (!open) return null;
+  if (!item && isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8">
+          <Typography variant="bodySmall">Loading...</Typography>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item && error) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8 flex flex-col gap-4">
+          <Typography variant="bodySmall" color="body2">
+            Error loading loan details.
+          </Typography>
+          <Button bgColor="gray-200" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -316,7 +316,7 @@ const ApprovalList = ({
           method: "cn_leave_shift_managment.api.get_open_approval_todos",
           params: {
             doctype: doctype,
-            include_allocated_todos: true,
+            include_allocated_todos: true, 
             fields: ["*"],
             // status: status,
             // ...activeFilters,
