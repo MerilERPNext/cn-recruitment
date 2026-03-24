@@ -120,7 +120,7 @@ const EmpLeaveRequestCard = ({
             variant="bodySmall"
             className="font-medium text-center truncate"
           >
-            {data?.reference_document?.custom_leave_type_name}
+            {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document.from_date)}
@@ -202,7 +202,7 @@ const EmpLeaveRequestCard = ({
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Leave Type</Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.leave_type}
+                  {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
                 </Typography>
               </div>
               <div className="flex flex-col gap-1 text-right">

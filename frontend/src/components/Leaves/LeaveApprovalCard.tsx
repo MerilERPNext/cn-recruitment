@@ -147,7 +147,7 @@ const LeaveApprovalCard = ({
           </Link>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.custom_leave_type_name}
+            {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
           </Typography>
 
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -249,7 +249,7 @@ const LeaveApprovalCard = ({
                       Leave Type
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.reference_document?.leave_type}
+                      {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
                     </Typography>
                   </div>
 
