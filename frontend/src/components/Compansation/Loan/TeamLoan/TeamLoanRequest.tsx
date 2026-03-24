@@ -1,53 +1,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import LoanDetailsModal from "./LoanDetailsView";
+import { useSearchParams } from "react-router-dom";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
+  // Read from URL
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
+
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
+
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-const handleRequestClick = useCallback((item: any) => {
-  const todo_id = item?.data?.todo_id || item?.data?.name;
-  const document_name = item?.data?.reference_document?.name || item?.data?.name || "";
-  navigate(`?todo_id=${todo_id}&document_name=${document_name}`);
-}, [navigate]);
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      const data = request?.data || request;
+      const todoId = data?.todo_id || request?.todo_id;
+      const refName = data?.reference_name || request?.reference_name;
 
+      if (todoId || refName) {
+        setSearchParams({
+          ...(todoId ? { requestId: todoId } : {}),
+          ...(refName ? { reference_name: refName } : {}),
+        });
+        setSelectedItem(request);
+      }
+    },
+    [setSearchParams],
+  );
 
-useEffect(() => {
-  const todo_id = searchParams.get("todo_id");
-  const document_name = searchParams.get("document_name");
+  // 👉 Close: clear URL params AND selectedItem
+  const handleClose = useCallback(() => {
+    setSelectedItem(null);
+    setSearchParams({});
+  }, [setSearchParams]);
 
-  if (!todo_id && !document_name) return;
-
-  setSelectedItem({
-    todo_id,
-    document_name,
-  });
-}, [searchParams]);
-
-
-
-const handleClose = () => {
-  setSelectedItem(null);
-  navigate("");
-};
+  // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
+  const isModalOpen = !!selectedItem || !!(requestId || referenceName);
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -74,8 +76,8 @@ const handleClose = () => {
         "ACTIONS",
       ];
 
-      const tableColumnWidths = isBulkSelectEnabled
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+  const tableColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
@@ -135,10 +137,12 @@ const handleClose = () => {
         </CardTable>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL — opens on row click OR direct URL */}
       <LoanDetailsModal
-        open={!!selectedItem}
-        item={selectedItem}
+        documentName={requestId || ""}
+        referenceName={referenceName || ""}
+        open={isModalOpen}
+        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
       />
     </div>
