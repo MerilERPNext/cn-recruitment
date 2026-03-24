@@ -209,3 +209,5 @@ export type WorkflowStage = {
 export type FlowRequestResponse = {
   data: FlowRequestItem[];
 };
+
+export type SeparationFunnelDetails = FlowRequestResponse;

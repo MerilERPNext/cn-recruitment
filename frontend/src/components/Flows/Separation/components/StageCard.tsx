@@ -1,12 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createPortal } from "react-dom";
 import { Form } from "@tsed/react-formio";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { useApprovalListActions } from "../../../../hooks/userApprovalList";
+import { useApprovalAction } from "../../../../hooks/userApprovalList";
 import { FormIOComponent, FormIOSchema } from "../../../../types/formio";
 import { useCallback, useMemo, useState } from "react";
-import { ApprovalStage } from "./ApprovalTracker";
-import toast from "react-hot-toast";
-import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
 import ReviewForm from "./ReviewForm";
@@ -15,33 +13,23 @@ import AttachmentPreview from "../../RequestDetails/AttachmentPreview";
 import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
-import { useLoadingOverlay } from "../../../../context/OverlayContext";
-import { Attachment } from "../../../../types/flows";
+import { Attachment, FlowRequestStage } from "../../../../types/flows";
+import { extractRolesAndUsers } from "../../../../utils/flowUtils";
 
 
 interface CardStagesProps {
-  stage: ApprovalStage;
-  actions: { name: string; hasForm: boolean }[];
-  todoId: string;
+  stage: FlowRequestStage;
   isActive: boolean;
-  assignedTo: {
-    emp_id: string;
-    roles: string[];
-  };
   isLastStage: boolean;
 }
 
 const CardStages = ({
   stage,
-  actions,
-  todoId,
   isActive,
-  assignedTo,
   isLastStage,
 }: CardStagesProps) => {
   const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
   const [show, setShow] = useState(false);
-  const [loadingActions, setLoadingActions] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
 
   const handleShowForm = (
@@ -101,107 +89,49 @@ const CardStages = ({
 
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-  );
-  const mutation = useApprovalListActions();
-  const { show: showOverlay, hide: hideOverlay } = useLoadingOverlay();
 
-  const handleAction = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async (action: { name: string; hasForm: boolean }, data: any) => {
-      showOverlay("Performing Action " + action?.name);
-      try {
-        if (mutation?.isPending) return;
-        setLoadingActions(true);
-        const response = await mutation?.mutateAsync({
-          action: action.name,
-          name: data?.todo_id || "",
-        });
+  const actions = stage?.todo?.custom_doctype_actions
+    ? JSON.parse(stage?.todo?.custom_doctype_actions)
+    : [];
+  const actionsWithForm = stage?.todo?.custom_doctype_actions_with_form
+    ? JSON.parse(
+      stage?.todo?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+    )
+    : [];
 
-        console.log("Action response:", response);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const responseWithSession = response as unknown as { session?: any };
-        console.log("Session data:", responseWithSession?.session);
-        console.log(
-          "Assistant trigger enabled:",
-          data?.custom_open_chatnext_assistant_on_action,
-        );
+  const triggerRefetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["separation"] });
+    queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+  }, []);
 
-        console.log(
-          "Opening assistant with session:",
-          responseWithSession?.session,
-        );
+  const { handleAction } = useApprovalAction(triggerRefetch);
 
-        if (window.trigger_chatnext_assistant && action.hasForm) {
-          window.trigger_chatnext_assistant(true, responseWithSession?.session);
-        }
+  const onAction = (action: string, data: any) => {
+    handleAction(action, {
+      todo_id: data.name,
+      custom_approval_type: data.custom_approval_type,
+      custom_open_chatnext_assistant_on_action:
+        actionsWithForm.includes(action),
+    });
+  };
 
-        if (!action.hasForm) {
-          queryClient.invalidateQueries({ queryKey: ["separation"] });
-          queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
-        }
 
-        if (action.name.toLowerCase() !== "approve") {
-          // triggerRefetch();
-        }
-
-        // Query invalidation now handled by Frappe realtime events
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        const exceptions = error?.response?.data?.exception?.split(":");
-        const errMessage =
-          exceptions?.length > 1
-            ? exceptions[1] + " " + exceptions[2]
-            : exceptions[1];
-        console.error("Action failed", error);
-        toast.error(errMessage);
-      } finally {
-        setLoadingActions(false);
-        hideOverlay();
-      }
-    },
-    [mutation, hideOverlay, showOverlay],
-  );
-
+  const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const canPerformActions = useMemo(() => {
     if (!isActive) return false;
+    let actionPermission = false;
 
-    // 1) exact user match (assigned to specific user)
-    if (stage?.user_id != null && currentUser?.name != null) {
-      // use loose inequality only to allow number/string mismatches if intended;
-      // change to === if types are guaranteed
-      if (stage.user_id === currentUser.name) return true;
-    }
+    if (allocatedTo?.users && currentUser?.name)
+      actionPermission = allocatedTo.users.includes(currentUser?.name);
 
-    // 2) user has the role required by the stage
-    if (stage?.role && Array.isArray(currentUser?.roles)) {
-      if (currentUser.roles.some((r) => r && r.role === stage.role))
-        return true;
-    }
+    if (currentUser?.roles && allocatedTo?.roles)
+      actionPermission ||= currentUser.roles.some((role) =>
+        allocatedTo.roles.includes(role.role),
+      );
 
-    // 3) employee name matches assigned employee id
-    if (
-      currentEmployee?.name != null &&
-      assignedTo?.emp_id != null &&
-      currentEmployee.name === assignedTo.emp_id
-    ) {
-      return true;
-    }
+    return actionPermission;
+  }, [currentUser, isActive, allocatedTo]);
 
-    // 4) user has any role that is in assignedTo.roles
-    if (Array.isArray(currentUser?.roles) && Array.isArray(assignedTo?.roles)) {
-      // assignedTo.roles expected to be array of role names (strings)
-      if (
-        currentUser.roles.some((r) => r && assignedTo.roles.includes(r.role))
-      ) {
-        return true;
-      }
-    }
-
-    // fallback: no permission found
-    return false;
-  }, [currentEmployee, assignedTo, isActive, currentUser, stage]);
 
   const mapStatusTimeline = (status: string) => {
     if (isActive) return "action_required";
@@ -260,20 +190,18 @@ const CardStages = ({
                 />
               )}
               {canPerformActions &&
-                actions.map((action) => (
+                actions.map((action: any) => (
                   <Button
-                    onClick={() => handleAction(action, { todo_id: todoId })}
-                    loading={loadingActions}
-                    disabled={loadingActions}
+                    onClick={() => onAction(action, stage?.todo)}
                   >
-                    {action.name}
+                    {action}
                   </Button>
                 ))}
             </div>
             <div>
               {status == "action_required"
                 ? "In Progress"
-                : formatToIndianDate(stage?.approval_time)}
+                : formatToIndianDate(stage?.approval_time || "")}
             </div>
           </div>
         </div>

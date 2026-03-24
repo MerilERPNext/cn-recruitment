@@ -27,8 +27,8 @@ const RequestDetails: React.FC<RequestDetailsProps> = ({ data, handleNavigateBac
     "Approval Flow Status",
   );
   const [showSelfForm, setShowSelfForm] = useState(false);
-  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
 
   const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
 
