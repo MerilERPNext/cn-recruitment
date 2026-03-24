@@ -789,7 +789,7 @@
                             <div class="jo-mobile-download">
                                 <a href="/api/method/recruitment.job_offer_utils.download_job_offer_pdf?appl={{ frappe.request.args.get('appl', '') }}" target="_blank" class="jo-btn-download-mobile">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    Download Offer Letter
+                                    Download / Preview Offer Letter
                                 </a>
                             </div>
 
@@ -876,14 +876,8 @@
             <!-- Email updates info box -->
             <div class="jo-next-steps">
                 <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6;">
-                    <ul style="list-style-type: none; padding-left: 0; margin: 0;">
-                        <li>
-                          Keep checking your email
-                          <ul style="list-style-type: none; padding-left: 0;">
-                            <li>for further updates on your onboarding and LMS journey.</li>
-                          </ul>
-                        </li>
-                      </ul>
+                          Keep checking your email for further updates on your onboarding and LMS journey.    
+                </p>
                 </div>
             </div>
 
@@ -899,7 +893,10 @@
 
     <!-- ═══════════════ POPUP: OFFER DECLINED ═══════════════ -->
     <div id="popup-declined" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.12); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#fff; border-radius:20px; padding:48px 36px 36px; max-width:420px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.10);">
+        <div style="position:relative; background:#fff; border-radius:20px; padding:48px 36px 36px; max-width:420px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.10);">
+            <button id="btn-close-declined-popup" style="position:absolute; top:16px; right:16px; background:transparent; border:none; cursor:pointer; color:#64748b;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div style="width:56px; height:56px; border-radius:50%; background:#e8edf5; display:flex; align-items:center; justify-content:center; margin:0 auto 24px;">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3d4f7c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
@@ -1110,12 +1107,12 @@
         }
     });
 
-    // ── Close Declined Popup → go to processed ──
+    // ── Close Declined Popup → reload page ──
     document.addEventListener('click', function(e) {
-        if (e.target && e.target.id === 'btn-close-declined-popup') {
+        if (e.target && (e.target.id === 'btn-close-declined-popup' || e.target.closest('#btn-close-declined-popup'))) {
             var popup = document.getElementById('popup-declined');
             if (popup) popup.style.display = 'none';
-            showState('processed');
+            window.location.reload();
         }
     });
 
