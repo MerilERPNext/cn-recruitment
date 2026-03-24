@@ -48,7 +48,6 @@ import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "./EmployeeFallback";
 import Events from "./Events/Events";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import NotificationBell from "./Notification/NotificationBell";
 import Button from "./shared/atoms/Button";
@@ -976,13 +975,11 @@ export default function DesktopDashboard() {
           </div>
         </div>
       )}
-      <ExpenseFormModal
+      <ShiftRequestFormModal
+        className="h-full"
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
-        title="R"
-      >
-        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      </ExpenseFormModal>
+      />
     </div>
   );
 }
