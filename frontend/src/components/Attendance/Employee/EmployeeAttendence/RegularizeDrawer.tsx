@@ -125,7 +125,7 @@ const RegularizeDrawer = () => {
         open={open}
         onClose={() => setOpen(false)}
         side="right"
-        title="Attendance Update "
+        title="Attendance Update"
         size="xxl"
       >
         <div className="mb-30">
