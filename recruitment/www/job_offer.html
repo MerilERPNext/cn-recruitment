@@ -76,7 +76,7 @@
         display: none;
     }
     .jo-header-logo {
-        height: 65px;
+        height: 60px;
         max-width: 100%;
         width: auto;
         object-fit: contain;
@@ -876,10 +876,10 @@
             <!-- Email updates info box -->
             <div class="jo-next-steps">
                 <div style="font-size:0.95rem; color:var(--jo-text); line-height:1.6;">
-                    <ul>
+                    <ul style="list-style-type: none; padding-left: 0; margin: 0;">
                         <li>
                           Keep checking your email
-                          <ul>
+                          <ul style="list-style-type: none; padding-left: 0;">
                             <li>for further updates on your onboarding and LMS journey.</li>
                           </ul>
                         </li>
@@ -905,6 +905,18 @@
             </div>
             <h2 style="font-size:1.5rem; font-weight:700; color:var(--jo-navy); margin-bottom:16px;">Offer Rejected</h2>
             <p style="font-size:0.9rem; color:var(--jo-text-light); margin-bottom:32px; line-height:1.7;">Thank you for letting us know. We appreciate the time and effort you invested in our interview process. We wish you the very best in your future endeavors.</p>
+        </div>
+    </div>
+
+    <!-- ═══════════════ POPUP: MISSING REASON ═══════════════ -->
+    <div id="popup-missing-reason" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:20px; padding:36px; max-width:400px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.15);">
+            <div style="width:56px; height:56px; border-radius:50%; background:#fff3cd; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#856404" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--jo-navy); margin-bottom:12px;">Reason Required</h2>
+            <p style="font-size:0.95rem; color:var(--jo-text-light); margin-bottom:24px; line-height:1.6;">Please select a rejection reason to proceed.</p>
+            <button id="btn-close-missing-reason" style="background:var(--jo-navy); color:#fff; border:none; padding:10px 24px; border-radius:8px; font-weight:600; cursor:pointer;">OK</button>
         </div>
     </div>
 
@@ -1032,6 +1044,13 @@
         }
     });
 
+    // ── Close Missing Reason Popup ──
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'btn-close-missing-reason' || e.target.closest('#btn-close-missing-reason'))) {
+            document.getElementById('popup-missing-reason').style.display = 'none';
+        }
+    });
+
     // ── Confirm Rejection ──
     document.addEventListener('click', async function(e) {
         var btn = e.target && (e.target.id === 'btn-confirm-reject' ? e.target : e.target.closest('#btn-confirm-reject'));
@@ -1040,7 +1059,7 @@
         // Validate rejection reason is selected
         var reason = document.getElementById('rejection-reason').value || '';
         if (!reason) {
-            frappe.toast({ message: 'Please select a reason for rejection.', indicator: 'red' });
+            document.getElementById('popup-missing-reason').style.display = 'flex';
             return;
         }
 
