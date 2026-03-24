@@ -31,6 +31,7 @@ import {
   useClockInOutService,
   useGetEmployeeShift,
   useHomeSummaryDetails,
+  usePlannedOvertimeAllowed,
 } from "../hooks/useAttendance";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
@@ -62,6 +63,8 @@ import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { isActionEnabled } from "../utils/uiPermission";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -74,7 +77,7 @@ export default function DesktopDashboard() {
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
-  const { clearTargetEmployee } = useTargetUser();
+  const { clearTargetEmployee, targetEmployeeId } = useTargetUser();
   const { openModal } = useRequestLeaveModal();
 
   const handleCloseShiftModal = () => {
@@ -342,6 +345,19 @@ export default function DesktopDashboard() {
 
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role,
+  );
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    effectiveEmployeeId || "",
+  );
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Attendance Summary",
   );
 
   return (
@@ -927,7 +943,7 @@ export default function DesktopDashboard() {
                       color: "success",
                       onClick: handleShiftForm,
                     },
-                  ].map((action, idx) => (
+                  ].filter((action) => (canRequestOvertime && plannedOvertimAllowed) || action.label !== "Planned Overtime").map((action, idx) => (
                     <div
                       key={idx}
                       className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"

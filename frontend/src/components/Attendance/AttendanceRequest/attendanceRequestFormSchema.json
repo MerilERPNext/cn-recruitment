@@ -162,22 +162,25 @@
           "input": true,
           "widget": {
             "type": "calendar",
-            "minDate": "allowed_from_date",
+            "minDate": "from_date",
             "maxDate": "allowed_to_date"
           },
           "datePicker": {
-            "minDate": "allowed_from_date",
+            "minDate": "from_date",
             "maxDate": "allowed_to_date"
           },
           "format": "dd-MM-yyyy",
           "placeholder": "dd-mm-yyyy",
           "customClass": "mb-4",
           "enableTime": false,
-          "validate": {},
+          "validate": {
+            "custom": "valid = !data.from_date || !input || new Date(input) >= new Date(data.from_date);",
+            "customMessage": "To Date cannot be earlier than From Date"
+          },
           "customConditional": "show = !['Clockin'].includes(data.request_type || '');",
-          "calculateValue": "value = data.request_type === 'Short Attendance Request' ? data.from_date : value",
+          "calculateValue": "value = (data.request_type === 'Short Attendance Request' && !value) ? data.from_date : value",
           "disabled": false,
-          "redrawOn": "allowed_to_date"
+          "redrawOn": "from_date"
         },
         {
           "label": "Check-In Time <span style='color:red'>*</span>",
@@ -194,16 +197,8 @@
           "enableTime": true,
           "format": "HH:mm",
           "placeholder": "HH:mm",
-          "hourStep": 1,
-          "minuteStep": 1,
           "widget": {
-            "type": "calendar",
-            "noCalendar": true,
-            "enableTime": true,
-            "time_24hr": true,
-            "dateFormat": "H:i",
-            "minuteIncrement": 1,
-            "allowInput": true
+            "type": "input"
           },
           "customClass": "mb-4"
         },
@@ -218,8 +213,6 @@
           "enableTime": true,
           "format": "HH:mm",
           "placeholder": "HH:mm",
-          "hourStep": 1,
-          "minuteStep": 1,
           "customClass": "mb-4",
           "validate": {
             "customMessage": "To Time is required",
@@ -227,13 +220,7 @@
           },
           "customConditional": "show = ['Attendance Adjustment', 'Short Attendance Request'].includes(data.request_type || '');",
           "widget": {
-            "type": "calendar",
-            "noCalendar": true,
-            "enableTime": true,
-            "time_24hr": true,
-            "dateFormat": "H:i",
-            "minuteIncrement": 1,
-            "allowInput": true
+            "type": "input"
           }
         },
         {

@@ -46,6 +46,11 @@ const AttendanceLayoutContent: React.FC = () => {
     "create_attendance_request",
     "Attendance Summary",
   );
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Attendance Summary",
+  );
 
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -223,7 +228,7 @@ const AttendanceLayoutContent: React.FC = () => {
             // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
             variant="contain"
             onClick={() => {
-              if (isOvertimePage && plannedOvertimAllowed) {
+              if (isOvertimePage && plannedOvertimAllowed && canRequestOvertime) {
                 setShowOvertimeRequest(true);
               } else {
                 setShowAttendanceRequest(true);
@@ -231,7 +236,7 @@ const AttendanceLayoutContent: React.FC = () => {
             }}
             size="lg"
           >
-            {isOvertimePage && plannedOvertimAllowed
+            {isOvertimePage && plannedOvertimAllowed && canRequestOvertime
               ? "+ Overtime Request"
               : "+ Attendance Request"}
             {/* <ChevronDown

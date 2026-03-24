@@ -163,7 +163,7 @@ const EmpAttendanceRequestCard = ({
                 </Typography>
               </div>
               <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">Leave Days</Typography>
+                <Typography variant="mobileCardLabel">Days</Typography>
                 <Typography variant="mobileCardValue">
                   {duration > 1 ? duration + " Days" : duration + " Day"}
                 </Typography>
