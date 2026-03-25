@@ -408,9 +408,6 @@ export default function SalaryAssignmentList() {
               <Typography variant="bodySmall" className="font-medium">
                 {item.component}
               </Typography>
-              <Typography variant="caption" color="body2">
-                ({item.type})
-              </Typography>
             </div>
 
             <div className="flex items-center gap-3 sm:flex-col sm:items-end sm:gap-0">
@@ -443,9 +440,6 @@ export default function SalaryAssignmentList() {
             <div className="flex items-baseline gap-1 min-w-0">
               <Typography variant="bodySmall" className="font-medium">
                 {item.component}
-              </Typography>
-              <Typography variant="caption" color="body2">
-                ({item.type})
               </Typography>
             </div>
 
