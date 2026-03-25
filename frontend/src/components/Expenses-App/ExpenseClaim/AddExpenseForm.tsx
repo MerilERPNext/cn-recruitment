@@ -196,18 +196,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       setDynamicFormData({});
       setCalcParams(undefined);
       setVehicleType(null);
-      setFormKey((k) => k + 1);
-
-      if (
-        dynamicFormRef.current &&
-        typeof dynamicFormRef.current.reset === "function"
-      ) {
-        try {
-          dynamicFormRef.current.reset();
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      // Note: Do NOT increment formKey here. The dynamic form uses its own
+      // key based on expenseTypeValue, so it will re-mount automatically.
+      // Incrementing formKey here caused a double re-mount race condition
+      // that made the dynamic form fail to render on mobile.
     }
   }, [mainFormData?.expenseType, mainFormData?.expense_type, editingExpenseId, isEditActive]);
 
@@ -944,7 +936,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               },
             }}
             onChange={(change: any) => {
+              // Guard: skip onChange processing during hydration (edit mode init)
               if (isEditActive) return;
+              if (hydrationRef.current) return;
+
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
               const newExpenseType = change.data.expenseType;
@@ -966,15 +961,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setVehicleType(null);
                 setSelectedCategoryType(newCategoryType);
                 setMainFormData({ ...change.data });
-                setFormKey((k) => k + 1);
-
-                try {
-                  if (dynamicFormRef.current?.reset) {
-                    dynamicFormRef.current.reset();
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
+                // Note: Removed setFormKey increment here. Formio handles
+                // cascading updates via refreshOn/clearOnRefresh. Re-keying
+                // the form on every selection change caused re-mount loops
+                // that prevented the dynamic form from rendering on mobile.
                 return;
               }
 
@@ -985,8 +975,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setDynamicFields([]);
                 setVehicleType(null);
                 setMainFormData({ ...change.data });
-
-                setFormKey((k) => k + 1);
                 return;
               }
 
@@ -997,14 +985,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setVehicleType(null);
                 setPreviousCategory(newCategory);
                 setMainFormData({ ...change.data });
-                setFormKey((k) => k + 1);
-
-                try {
-                  dynamicFormRef.current?.reset();
-                } catch (e) {
-                  console.error(e);
-                }
-
                 return;
               }
 
@@ -1028,14 +1008,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           />
         )}
 
-        {expenseTypeValue && isFetchingFields && (
+        {expenseTypeValue && (isFetchingFields || dynamicFields.length === 0) && (
           <ExpenseFieldSkeleton columns={isMobile ? 1 : 2} />
         )}
 
         {dynamicFields.length > 0 && !isFetchingFields && (
           <div className="mt-4">
             <Form
-              key={`dynamic-${formKey}`}
+              key={`dynamic-${expenseTypeValue}-${formKey}`}
               ref={dynamicFormRef}
               submission={{ data: dynamicFormData }}
               form={{
