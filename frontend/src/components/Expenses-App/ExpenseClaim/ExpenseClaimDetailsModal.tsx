@@ -201,8 +201,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   key={item.name}
                   className="bg-white hover:bg-gray-50 transition-colors duration-150"
                 >
-                  <td className="px-4 py-3 text-gray-800">
-                    {item.expense_type ?? "—"}
+                  <td className="px-4 py-3 text-gray-800 truncate">
+                    {item?.custom_claim_type_name}
                   </td>
                   <td className="px-4 py-3 text-gray-800">
                     {formatToIndianDate(item.expense_date)}
@@ -210,7 +210,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                   <td className="px-4 py-3">
                     <div className="flex justify-center">
-                      <StatusBadge status={item.custom_approval_staus} />
+                      <StatusBadge status={item?.custom_approval_staus} />
                     </div>
                   </td>
 
@@ -219,7 +219,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   </td>
 
                   <td className="px-4 py-3 text-gray-800">
-                    {formatINR(item.sanctioned_amount)}
+                    {data?.approval_status === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
                   </td>
                   <td className="px-4 py-3 flex justify-center">
                     {item.custom_attach_receipt ? (
@@ -291,8 +291,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <Typography variant="mobileCardLabel" className="block">
                     Expense Type
                   </Typography>
-                  <Typography variant="mobileCardValue">
-                    {item.expense_type ?? "—"}
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {item?.custom_claim_type_name}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -316,7 +316,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     Sanctioned Amount
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {formatINR(item.sanctioned_amount)}
+                    {data?.approval_status === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
                   </Typography>
                 </div>
               </div>
@@ -411,7 +411,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     Expense Category
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.custom_expense_category_name} ({data?.custom_expense_category ?? "—"})
+                    {data?.custom_expense_category_name}
                   </Typography>
                 </div>
                 <div>
@@ -435,7 +435,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       Sanctioned Amount
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {formatINR(data?.total_sanctioned_amount)}
+                      {data?.approval_status === "Approved" ? formatINR(data?.total_sanctioned_amount) : "—"}
                     </Typography>
                   </div>
                 </div>

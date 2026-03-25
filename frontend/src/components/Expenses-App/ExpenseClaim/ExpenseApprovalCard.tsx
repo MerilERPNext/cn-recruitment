@@ -148,8 +148,8 @@ const ExpenseApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.custom_expense_category}
+          <Typography variant="bodySmall" className="font-medium text-center truncate">
+            {data?.reference_document?.custom_expense_category_name} ({data?.reference_document?.custom_expense_category})
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}

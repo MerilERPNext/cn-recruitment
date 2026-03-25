@@ -29,6 +29,10 @@
             {
               "label": "Employee Tax Exemption Proof Submission",
               "value": "Employee Tax Exemption Proof Submission"
+            },
+            {
+              "label": "Tax Regime",
+              "value": "Tax Regime"
             }
           ]
         }
