@@ -26,6 +26,10 @@ import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useSearchParams } from "react-router-dom";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -46,7 +50,38 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   const expense = item?.reference_document;
   const { data: currentUser } = useCurrentUser();
   const { data: userUiPermission } = useGetUiPermission("Expenses");
+  const { setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
+
+  const handleRevokeClick = () => {
+    if (item?.todo_id) {
+      loading?.show("Revoking Expense Claim...");
+      revokeEventMutation.mutate(
+        {
+          docname: item?.reference_name,
+          doctype: item?.reference_type,
+          todo: item?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
+            toast.success("Expense Claim Revoked Successfully!");
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
+      );
+    }
+  };
 
   const canEditExpense = isActionEnabled(
     userUiPermission,
@@ -165,6 +200,9 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
+          canRevoke={!!item?.custom_allow_revoke}
+          revokeLoading={revokeEventMutation.isPending}
+          onRevoke={handleRevokeClick}
         />
       </div>
     </div>
@@ -176,6 +214,39 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   isPaidFilter,
 }) => {
   const { data: currentUser } = useCurrentUser();
+  const { setRefetchAttendance } = useGlobalStore();
+  const navigate = useNavigate();
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
+
+  const handleRevokeClick = () => {
+    if (item?.todo_id) {
+      loading?.show("Revoking Expense Claim...");
+      revokeEventMutation.mutate(
+        {
+          docname: item?.reference_name,
+          doctype: item?.reference_type,
+          todo: item?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
+            toast.success("Expense Claim Revoked Successfully!");
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
+      );
+    }
+  };
+
   const formattedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -198,7 +269,6 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     "Expense Claims",
   );
 
-  const navigate = useNavigate();
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -277,6 +347,9 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.can_edit
           }
           onEdit={handleEditClick}
+          canRevoke={!!item?.custom_allow_revoke}
+          revokeLoading={revokeEventMutation.isPending}
+          onRevoke={handleRevokeClick}
         />
       </div>
     </div>
