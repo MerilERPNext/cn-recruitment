@@ -289,8 +289,8 @@ const ITDeclarationForm = () => {
         <div
           className={`p-2 mb-2 rounded ${
             PrrofOfITDeclaration?.status === "failed"
-              ? "bg-red-100 text-error"
-              : "bg-green-100 text-success"
+              ? "bg-error-50 text-error"
+              : "bg-success-50 text-success"
           }`}
         >
           <Typography variant="bodySmall">
