@@ -11,6 +11,8 @@ import {
   useUpdateExpense,
   useGetExpenseCategoryTypes,
   useValidateExpense,
+  useGetApplicableExpenseCategoriesMutation,
+  useGetExpenseTypesByCategoryMutation,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -129,6 +131,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
+  const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
+  const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
 
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
@@ -286,7 +290,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.category_name }}</span>",
+                  template: "<span>{{ item.category_name }} ({{item.name}})</span>",
                   validate: {
                     required: true,
                     customMessage: "Expense Category is required",
@@ -1255,9 +1259,29 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 const attachment =
                   combinedData.attach_receipt?.[0]?.url || null;
 
+                let custom_expense_category_name = combinedData.expenseCategory;
+                let custom_expense_type = combinedData.expenseType;
+                try {
+                  const employee = currentEmployee?.name || "";
+                  const categoryTypeReq = combinedData.categoryType || "General";
+                  const expenseCategoryReq = combinedData.expenseCategory;
+
+                  const catRes = await fetchApplicableCategories(categoryTypeReq);
+                  const catMatch = Array.isArray(catRes) ? catRes.find((c: any) => c.name === combinedData.expenseCategory) : undefined;
+                  if (catMatch && catMatch.category_name) custom_expense_category_name = catMatch.category_name;
+
+                  const typeRes = await fetchExpenseTypesByCategory({ employee, reimbursementCategory: expenseCategoryReq });
+                  const typeMatch = Array.isArray(typeRes) ? typeRes.find((t: any) => t.name === combinedData.expenseType) : undefined;
+                  if (typeMatch && typeMatch.expense_type) custom_expense_type = typeMatch.expense_type;
+                } catch (e) {
+                  console.error("Failed to fetch display names for expense table", e);
+                }
+
                 const newExpense: Expense = {
                   uid: editingExpenseId ?? Date.now().toString(),
                   ...combinedData,
+                  custom_expense_category_name,
+                  custom_expense_type,
                   attach_receipt: attachment,
                   amount: amountFromApi ?? combinedData.amount ?? undefined,
                 };
@@ -1551,7 +1575,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               </td>
                               <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
                                 <div className="flex items-center gap-2">
-                                  {expense.expenseCategory}
+                                  {expense.custom_expense_category_name
+                                    ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
+                                    : expense.expenseCategory}
                                   {isFailed && (
                                     <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
                                       FAILED
@@ -1559,7 +1585,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                {expense.custom_expense_type
+                                  ? `${expense.custom_expense_type} (${expense.expenseType})`
+                                  : expense.expenseType}
+                              </td>
                               <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)
@@ -1712,7 +1742,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               </td>
                               <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
                                 <div className="flex items-center gap-2">
-                                  {expense.expenseCategory}
+                                  {expense.custom_expense_category_name
+                                    ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
+                                    : expense.expenseCategory}
                                   {isFailed && (
                                     <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
                                       FAILED
@@ -1720,7 +1752,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                {expense.custom_expense_type
+                                  ? `${expense.custom_expense_type} (${expense.expenseType})`
+                                  : expense.expenseType}
+                              </td>
                               <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)

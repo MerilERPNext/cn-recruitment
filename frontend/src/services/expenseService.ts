@@ -279,13 +279,26 @@ export const expenseService = {
     }
   },
 
-  //get Expense type general/relocation
   getExpenseCategoryTypes: async (): Promise<ExpenseCategoryType[]> => {
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.fiter_category_types"
     );
 
     return Array.isArray(response) ? response : [];
+  },
+
+  getApplicableExpenseCategories: async (categoryType: string): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
+      { category_type: categoryType }
+    );
+  },
+
+  getExpenseTypesByCategory: async (employee: string, reimbursementCategory: string): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_expense_types_by_category",
+      { employee, reimbursement_category: reimbursementCategory }
+    );
   },
 
   getExpensePolicyQuestions: async (
