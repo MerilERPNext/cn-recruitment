@@ -1777,8 +1777,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     </tbody>
                   </table>
                 </div>
-                <div className="flex justify-end mt-4 gap-2">
-                  <Button variant="outline" size="md" className="font-semibold" onClick={() => {
+                <div className="flex flex-col md:flex-row md:justify-end mt-4 gap-2">
+                  <Button variant="outline" size="md" className="font-semibold w-full md:w-auto" onClick={() => {
                     setShowCategoryAndType(true);
                     setEditingExpenseId(null);
                     setMainFormData({ categoryType: "General" });
@@ -1802,25 +1802,26 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   >
                     Add More
                   </Button>
-
-                  <Button
-                    bgColor="primary"
-                    size="md"
-                    onClick={() => handleInitialSubmit("General")}
-                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
-                    className="font-semibold shadow-sm"
-                  >
-                    Submit Selected
-                  </Button>
-                  <Button
-                    bgColor="error"
-                    size="md"
-                    onClick={handleDeleteSelected}
-                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
-                    className="font-semibold shadow-sm"
-                  >
-                    Delete Selected
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      bgColor="primary"
+                      size="md"
+                      onClick={() => handleInitialSubmit("General")}
+                      disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                      className="font-semibold shadow-sm flex-1 md:flex-none"
+                    >
+                      Submit Selected
+                    </Button>
+                    <Button
+                      bgColor="error"
+                      size="md"
+                      onClick={handleDeleteSelected}
+                      disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                      className="font-semibold shadow-sm flex-1 md:flex-none"
+                    >
+                      Delete Selected
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
