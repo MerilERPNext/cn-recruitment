@@ -308,28 +308,45 @@ export default function Invoice() {
 
                     {/* Footer: Upload + View */}
                     <div className="flex gap-3 pt-2 border-t border-primary/10">
-                      <input
-                        ref={(el) => { fileInputRefs.current[`mobile-${invoiceNo}`] = el; }}
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          handleUploadAndAttach(
-                            e.target.files?.[0] || null,
-                            invoiceNo,
-                          );
-                          e.target.value = "";
-                        }}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        fullWidth
-                        icon={<Upload className="w-3.5 h-3.5" />}
-                        onClick={() => fileInputRefs.current[`mobile-${invoiceNo}`]?.click()}
-                        className=""
-                      >
-                        Upload Proof
-                      </Button>
+                    {inv?.custom_attach ? (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full"
+    onClick={() => {
+      window.open(inv.custom_attach, "_blank"); // PDF new tab me open
+    }}
+  >
+    View PDF
+  </Button>
+) : (
+  <>
+    <input
+      ref={(el) => {
+        fileInputRefs.current[`desktop-${invoiceNo}`] = el;
+      }}
+      type="file"
+      className="hidden"
+      accept="application/pdf"
+      onChange={(e) => {
+        handleUploadAndAttach(
+          e.target.files?.[0] || null,
+          invoiceNo
+        );
+        e.target.value = "";
+      }}
+    />
+
+    <button
+      className="flex  w-full justify-center items-center gap-1 px-3 py-1 rounded-md border-2 border-dashed border-gray-200 text-gray-600 text-sm hover:bg-primary/10"
+      onClick={() =>
+        fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
+      }
+    >
+     <Upload className="w-3.5 h-3.5" /> Upload
+    </button>
+  </>
+)}
                       <InvoicePDFview
                         invoiceID={invoiceNo}
                         disabled={false}
