@@ -26,6 +26,7 @@ import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useSearchParams } from "react-router-dom";
+import Tooltip from "../../shared/Tooltip";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -205,12 +206,14 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           : "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
       }}
     >
-      <Typography
-        variant="bodySmall"
-        className="font-medium text-center truncate"
-      >
-        {expenseClaim?.custom_expense_category_name} ({expenseClaim?.custom_expense_category})
-      </Typography>
+      <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""} (${expenseClaim?.custom_expense_category})`}>
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          {expenseClaim?.custom_expense_category_name} ({expenseClaim?.custom_expense_category})
+        </Typography>
+      </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}
       </Typography>
