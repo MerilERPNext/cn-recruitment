@@ -53,7 +53,7 @@ const RejectedSeparationRequest = () => {
   const { data: separationFunnelDetails, isLoading, isError } = useGetSeparationFunnelDetails();
   const navigate = useNavigate();
 
-  const RejectedSeparationRequest = useMemo(() => {
+  const rejectedSeparationRequest = useMemo(() => {
     if (!separationFunnelDetails?.data
       || separationFunnelDetails?.data?.length === 0
       || separationFunnelDetails?.data[0]?.approval_status !== "Rejected"
@@ -95,7 +95,7 @@ const RejectedSeparationRequest = () => {
     )
   }
 
-  if (!RejectedSeparationRequest) {
+  if (!rejectedSeparationRequest) {
     return (
       <div className="min-h-screen bg-gray-50/50 flex flex-col">
         <HeaderBar
@@ -120,7 +120,7 @@ const RejectedSeparationRequest = () => {
       />
       <main className="min-h-full mb-2 p-4">
         <div className="max-w-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <ApprovalTracker For="Employee Separation" data={RejectedSeparationRequest} />
+          <ApprovalTracker For="Employee Separation" data={rejectedSeparationRequest} />
         </div>
       </main>
     </div>
