@@ -1207,31 +1207,31 @@ frappe.ui.form.on('Job Applicant', {
 
 
 
-frappe.ui.form.on('Job Applicant', {
-    refresh: function(frm) {
-        // Only fetch if custom_job_offer field is empty
-        if (!frm.doc.custom_job_offer && frm.doc.name) {
-            frappe.call({
-                method: "frappe.client.get_value",
-                args: {
-                    doctype: "Job Offer",
-                    filters: {
-                        job_applicant: frm.doc.name  // Check for this Job Applicant
-                    },
-                    fieldname: "name"
-                },
-                callback: function(r) {
-                    if (r.message && r.message.name) {
-                        // Set the field silently if Job Offer found
-                        frm.set_value('custom_job_offer', r.message.name);
-                        frm.save();
-                    }
-                    // No error or message if not found
-                }
-            });
-        }
-    }
-});
+// frappe.ui.form.on('Job Applicant', {
+//     refresh: function(frm) {
+//         // Only fetch if custom_job_offer field is empty
+//         if (!frm.doc.custom_job_offer && frm.doc.name) {
+//             frappe.call({
+//                 method: "frappe.client.get_value",
+//                 args: {
+//                     doctype: "Job Offer",
+//                     filters: {
+//                         job_applicant: frm.doc.name  // Check for this Job Applicant
+//                     },
+//                     fieldname: "name"
+//                 },
+//                 callback: function(r) {
+//                     if (r.message && r.message.name) {
+//                         // Set the field silently if Job Offer found
+//                         frm.set_value('custom_job_offer', r.message.name);
+//                         frm.save();
+//                     }
+//                     // No error or message if not found
+//                 }
+//             });
+//         }
+//     }
+// });
 
 
 frappe.ui.form.on('Job Applicant', {
