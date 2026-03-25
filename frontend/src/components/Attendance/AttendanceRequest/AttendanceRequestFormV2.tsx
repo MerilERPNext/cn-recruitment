@@ -220,8 +220,9 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { data: attendanceRequestAttachmentsMandatory } =
     useAttendanceRequestAttachments(
       activeEmployeeId,
-      fromDateChanged ||
-      format(selectedDate ? new Date(selectedDate) : new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      // fromDateChanged ||
+      // format(selectedDate ? new Date(selectedDate) : new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
