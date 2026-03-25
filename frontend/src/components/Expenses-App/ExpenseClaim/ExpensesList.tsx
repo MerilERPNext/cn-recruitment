@@ -94,14 +94,30 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Expense Category</Typography>
-
+            <Typography variant="mobileCardLabel">Expense ID</Typography>
             <Typography variant="mobileCardValue">
-              {expense?.custom_expense_category_name} ({expense?.custom_expense_category})
+              {expense?.name}
             </Typography>
           </div>
 
           <StatusBadge status={item?.status} />
+        </div>
+
+        {/* Categories / Types */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Category</Typography>
+            <Typography variant="mobileCardValue">
+              {expense?.custom_expense_category_name}
+            </Typography>
+          </div>
+
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Expense Type</Typography>
+            <Typography variant="mobileCardValue">
+              {expense?.expenses?.[0]?.custom_claim_type_name}
+            </Typography>
+          </div>
         </div>
 
         {/* Amounts */}
@@ -201,15 +217,24 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{
         gridTemplateColumns: isPaidFilter
-          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+          ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+          : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
       }}
     >
       <Typography
         variant="bodySmall"
         className="font-medium text-center truncate"
       >
-        {expenseClaim?.custom_expense_category_name} ({expenseClaim?.custom_expense_category})
+        {expenseClaim?.name}
+      </Typography>
+      <Typography
+        variant="bodySmall"
+        className="font-medium text-center truncate"
+      >
+        {expenseClaim?.custom_expense_category_name}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {expenseClaim?.expenses[0]?.custom_claim_type_name}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}
@@ -407,7 +432,9 @@ const ExpensesList: React.FC = () => {
   };
 
   const tableTitles = [
+    "Expense ID",
     "Expense Category",
+    "Expense Type",
     "Claimed Amount",
     "Sanctioned Amount",
     ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
@@ -418,6 +445,8 @@ const ExpensesList: React.FC = () => {
   ];
 
   const tableColumnWidths = [
+    "1fr",
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
