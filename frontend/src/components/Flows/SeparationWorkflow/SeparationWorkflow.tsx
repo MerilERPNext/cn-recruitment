@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useGetSeparationWorkflow as useGetSeparationWorkflowData } from "../../../hooks/useSeparation";
+import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
 import { useNavigate } from "react-router-dom";
 import HeaderBar from "../../HeaderBar";
 import WorkflowTable from "../RequestDetails/WorkflowTable";
@@ -8,10 +8,10 @@ import SeparationWorkflowSkeleton from "./components/SeparationWorkflowSkeleton"
 
 const SeparationWorkflow: React.FC = () => {
   const {
-    data: separationWorkflowDat,
+    data: separationFunnelDetails,
     refetch: refetchSeparationWorkflow,
     isLoading,
-  } = useGetSeparationWorkflowData();
+  } = useGetSeparationFunnelDetails();
 
   const navigate = useNavigate();
 
@@ -40,8 +40,8 @@ const SeparationWorkflow: React.FC = () => {
       <div className="pt-8 pb-12">
         {isLoading ? (
           <SeparationWorkflowSkeleton rows={5} />
-        ) : separationWorkflowDat?.data?.[0] ? (
-          <WorkflowTable data={separationWorkflowDat?.data?.[0]} />
+        ) : separationFunnelDetails?.data?.[0] ? (
+          <WorkflowTable data={separationFunnelDetails?.data?.[0]} />
         ) : (
           <NoDataFound
             title="No Records Found"

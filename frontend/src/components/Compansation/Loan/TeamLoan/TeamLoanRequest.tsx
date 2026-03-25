@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
 import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import ApprovalList from "../../../shared/ApprovalList";
@@ -9,23 +7,49 @@ import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import LoanDetailsModal from "./LoanDetailsView";
+import { useSearchParams } from "react-router-dom";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
-  // 👉 FULL ITEM store karo (data + onAction + loadingAction)
+  // Read from URL
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
+
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-  // 👉 list row click
-  const handleRequestClick = useCallback((item: any) => {
-    setSelectedItem(item);
-  }, []);
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      const data = request?.data || request;
+      const todoId = data?.todo_id || request?.todo_id;
+      const refName = data?.reference_name || request?.reference_name;
+
+      if (todoId || refName) {
+        setSearchParams({
+          ...(todoId ? { requestId: todoId } : {}),
+          ...(refName ? { reference_name: refName } : {}),
+        });
+        setSelectedItem(request);
+      }
+    },
+    [setSearchParams],
+  );
+
+  // 👉 Close: clear URL params AND selectedItem
+  const handleClose = useCallback(() => {
+    setSelectedItem(null);
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
+  const isModalOpen = !!selectedItem || !!(requestId || referenceName);
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -113,11 +137,13 @@ const TeamLoanRequest = () => {
         </CardTable>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL — opens on row click OR direct URL */}
       <LoanDetailsModal
-        open={!!selectedItem}
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
+        documentName={requestId || ""}
+        referenceName={referenceName || ""}
+        open={isModalOpen}
+        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
+        onClose={handleClose}
       />
     </div>
   );

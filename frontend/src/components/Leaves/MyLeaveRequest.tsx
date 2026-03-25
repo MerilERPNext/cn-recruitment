@@ -163,8 +163,13 @@ const MyLeaveRequests = ({
                   />
                 )}
                 onFiltersChange={(filters) => {
-                  setActiveStatus(filters.status || "Open");
+                  setActiveStatus(
+                    typeof filters.status === "string"
+                      ? filters.status
+                      : "All",
+                  );
                 }}
+                defaultFilters={{ status: ["!=", "Cancelled"] }}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[
@@ -179,9 +184,7 @@ const MyLeaveRequests = ({
                     ],
                   },
                 ]}
-                defaultFilters={{
-                  status: "Open",
-                }}
+
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}

@@ -11,6 +11,8 @@ import {
   useUpdateExpense,
   useGetExpenseCategoryTypes,
   useValidateExpense,
+  useGetApplicableExpenseCategoriesMutation,
+  useGetExpenseTypesByCategoryMutation,
 } from "../../../hooks/useExpense";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -129,6 +131,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
+  const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
+  const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
 
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
@@ -192,18 +196,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       setDynamicFormData({});
       setCalcParams(undefined);
       setVehicleType(null);
-      setFormKey((k) => k + 1);
-
-      if (
-        dynamicFormRef.current &&
-        typeof dynamicFormRef.current.reset === "function"
-      ) {
-        try {
-          dynamicFormRef.current.reset();
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      // Note: Do NOT increment formKey here. The dynamic form uses its own
+      // key based on expenseTypeValue, so it will re-mount automatically.
+      // Incrementing formKey here caused a double re-mount race condition
+      // that made the dynamic form fail to render on mobile.
     }
   }, [mainFormData?.expenseType, mainFormData?.expense_type, editingExpenseId, isEditActive]);
 
@@ -286,7 +282,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.category_name }}</span>",
+                  template: "<span>{{ item.category_name }} ({{item.name}})</span>",
                   validate: {
                     required: true,
                     customMessage: "Expense Category is required",
@@ -312,7 +308,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.name }}</span>",
+                  template: "<span>{{ item.expense_type }} ({{ item.name }})</span>",
                   refreshOn: "expenseCategory",
                   clearOnRefresh: true,
                   clearOnHide: true,
@@ -940,7 +936,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               },
             }}
             onChange={(change: any) => {
+              // Guard: skip onChange processing during hydration (edit mode init)
               if (isEditActive) return;
+              if (hydrationRef.current) return;
+
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
               const newExpenseType = change.data.expenseType;
@@ -962,15 +961,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setVehicleType(null);
                 setSelectedCategoryType(newCategoryType);
                 setMainFormData({ ...change.data });
-                setFormKey((k) => k + 1);
-
-                try {
-                  if (dynamicFormRef.current?.reset) {
-                    dynamicFormRef.current.reset();
-                  }
-                } catch (e) {
-                  console.error(e);
-                }
+                // Note: Removed setFormKey increment here. Formio handles
+                // cascading updates via refreshOn/clearOnRefresh. Re-keying
+                // the form on every selection change caused re-mount loops
+                // that prevented the dynamic form from rendering on mobile.
                 return;
               }
 
@@ -981,8 +975,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setDynamicFields([]);
                 setVehicleType(null);
                 setMainFormData({ ...change.data });
-
-                setFormKey((k) => k + 1);
                 return;
               }
 
@@ -993,14 +985,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setVehicleType(null);
                 setPreviousCategory(newCategory);
                 setMainFormData({ ...change.data });
-                setFormKey((k) => k + 1);
-
-                try {
-                  dynamicFormRef.current?.reset();
-                } catch (e) {
-                  console.error(e);
-                }
-
                 return;
               }
 
@@ -1024,14 +1008,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
           />
         )}
 
-        {expenseTypeValue && isFetchingFields && (
+        {expenseTypeValue && (isFetchingFields || dynamicFields.length === 0) && (
           <ExpenseFieldSkeleton columns={isMobile ? 1 : 2} />
         )}
 
         {dynamicFields.length > 0 && !isFetchingFields && (
           <div className="mt-4">
             <Form
-              key={`dynamic-${formKey}`}
+              key={`dynamic-${expenseTypeValue}-${formKey}`}
               ref={dynamicFormRef}
               submission={{ data: dynamicFormData }}
               form={{
@@ -1255,9 +1239,29 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 const attachment =
                   combinedData.attach_receipt?.[0]?.url || null;
 
+                let custom_expense_category_name = combinedData.expenseCategory;
+                let custom_expense_type = combinedData.expenseType;
+                try {
+                  const employee = currentEmployee?.name || "";
+                  const categoryTypeReq = combinedData.categoryType || "General";
+                  const expenseCategoryReq = combinedData.expenseCategory;
+
+                  const catRes = await fetchApplicableCategories(categoryTypeReq);
+                  const catMatch = Array.isArray(catRes) ? catRes.find((c: any) => c.name === combinedData.expenseCategory) : undefined;
+                  if (catMatch && catMatch.category_name) custom_expense_category_name = catMatch.category_name;
+
+                  const typeRes = await fetchExpenseTypesByCategory({ employee, reimbursementCategory: expenseCategoryReq });
+                  const typeMatch = Array.isArray(typeRes) ? typeRes.find((t: any) => t.name === combinedData.expenseType) : undefined;
+                  if (typeMatch && typeMatch.expense_type) custom_expense_type = typeMatch.expense_type;
+                } catch (e) {
+                  console.error("Failed to fetch display names for expense table", e);
+                }
+
                 const newExpense: Expense = {
                   uid: editingExpenseId ?? Date.now().toString(),
                   ...combinedData,
+                  custom_expense_category_name,
+                  custom_expense_type,
                   attach_receipt: attachment,
                   amount: amountFromApi ?? combinedData.amount ?? undefined,
                 };
@@ -1551,7 +1555,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               </td>
                               <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
                                 <div className="flex items-center gap-2">
-                                  {expense.expenseCategory}
+                                  {expense.custom_expense_category_name
+                                    ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
+                                    : expense.expenseCategory}
                                   {isFailed && (
                                     <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
                                       FAILED
@@ -1559,7 +1565,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                {expense.custom_expense_type
+                                  ? `${expense.custom_expense_type} (${expense.expenseType})`
+                                  : expense.expenseType}
+                              </td>
                               <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)
@@ -1712,7 +1722,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               </td>
                               <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
                                 <div className="flex items-center gap-2">
-                                  {expense.expenseCategory}
+                                  {expense.custom_expense_category_name
+                                    ? `${expense.custom_expense_category_name} (${expense.expenseCategory})`
+                                    : expense.expenseCategory}
                                   {isFailed && (
                                     <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold text-red-600 bg-red-100 rounded-full">
                                       FAILED
@@ -1720,7 +1732,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">{expense.expenseType}</td>
+                              <td className="px-5 py-4 text-sm text-gray-700 border-r border-gray-200">
+                                {expense.custom_expense_type
+                                  ? `${expense.custom_expense_type} (${expense.expenseType})`
+                                  : expense.expenseType}
+                              </td>
                               <td className="px-5 py-4 text-sm text-gray-600 border-r border-gray-200 whitespace-nowrap">
                                 {expense.expense_date
                                   ? formatToIndianDate(expense.expense_date)
@@ -1761,8 +1777,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     </tbody>
                   </table>
                 </div>
-                <div className="flex justify-end mt-4 gap-2">
-                  <Button variant="outline" size="md" className="font-semibold" onClick={() => {
+                <div className="flex flex-col md:flex-row md:justify-end mt-4 gap-2">
+                  <Button variant="outline" size="md" className="font-semibold w-full md:w-auto" onClick={() => {
                     setShowCategoryAndType(true);
                     setEditingExpenseId(null);
                     setMainFormData({ categoryType: "General" });
@@ -1786,25 +1802,26 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   >
                     Add More
                   </Button>
-
-                  <Button
-                    bgColor="primary"
-                    size="md"
-                    onClick={() => handleInitialSubmit("General")}
-                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
-                    className="font-semibold shadow-sm"
-                  >
-                    Submit Selected
-                  </Button>
-                  <Button
-                    bgColor="error"
-                    size="md"
-                    onClick={handleDeleteSelected}
-                    disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
-                    className="font-semibold shadow-sm"
-                  >
-                    Delete Selected
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      bgColor="primary"
+                      size="md"
+                      onClick={() => handleInitialSubmit("General")}
+                      disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                      className="font-semibold shadow-sm flex-1 md:flex-none"
+                    >
+                      Submit Selected
+                    </Button>
+                    <Button
+                      bgColor="error"
+                      size="md"
+                      onClick={handleDeleteSelected}
+                      disabled={!expenses.some(e => (e.categoryType || "General") === "General" && selectedExpenses.includes(e.uid))}
+                      className="font-semibold shadow-sm flex-1 md:flex-none"
+                    >
+                      Delete Selected
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

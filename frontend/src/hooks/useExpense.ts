@@ -374,3 +374,22 @@ export const useGetExpensePolicyQuestions = (categoryName?: string) => {
     retry: 1,
   });
 };
+
+export function useGetApplicableExpenseCategoriesMutation() {
+  return useMutation({
+    mutationFn: (categoryType: string) =>
+      expenseService.getApplicableExpenseCategories(categoryType),
+  });
+}
+
+export function useGetExpenseTypesByCategoryMutation() {
+  return useMutation({
+    mutationFn: ({
+      employee,
+      reimbursementCategory,
+    }: {
+      employee: string;
+      reimbursementCategory: string;
+    }) => expenseService.getExpenseTypesByCategory(employee, reimbursementCategory),
+  });
+}

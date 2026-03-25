@@ -1,7 +1,7 @@
 export interface LeaveRequest {
   name: string;
   leave_type: string;
-  custom_leave_type_name:string;
+  custom_leave_type_name: string;
   from_date: string;
   to_date: string;
   status: "Approved" | "Open" | "Rejected" | "Cancelled" | "Pending";
@@ -58,6 +58,7 @@ export interface LeaveBalance {
 
 export interface LeaveTransaction {
   type: string;
+  name?: string;
   total: number;
   monthly: number[];
   dont_show_in_frontend: number;
@@ -95,6 +96,7 @@ export interface LeaveApplication {
   to_date: string;
   status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
   description?: string;
+  custom_leave_type_name?: string;
 }
 
 export interface Holiday {
@@ -145,6 +147,9 @@ export interface CompOffResponse {
   custom_status: string;
   pay_button_required: boolean;
   docstatus: number;
+  allocated_to?: string[];
+  allocated_roles?: string[];
+  allocated_to_user: string;
 }
 
 export interface LeaveFieldFlags {
@@ -185,8 +190,9 @@ export interface LeaveReason {
 //Leave requestType
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
-  allocated_to: string;
+  allocated_to: string[];
   allocated_roles?: string[];
+  role: string;
   reference_type: string;
   custom_allow_revoke: boolean;
   todo_id: string;

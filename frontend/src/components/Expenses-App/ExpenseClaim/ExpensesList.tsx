@@ -14,6 +14,7 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
 import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
@@ -23,6 +24,8 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import { useSearchParams } from "react-router-dom";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -94,7 +97,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             <Typography variant="mobileCardLabel">Expense Category</Typography>
 
             <Typography variant="mobileCardValue">
-              {expense?.custom_expense_category || "--"}
+              {expense?.custom_expense_category_name} ({expense?.custom_expense_category})
             </Typography>
           </div>
 
@@ -132,6 +135,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
         </div>
+
+        {/* Allocated To */}
+        <MobileAllocatedTo
+          users={item?.allocated_to}
+          roles={item?.allocated_to_roles}
+          role={item?.role}
+          username={item?.username}
+        />
 
         <MyApprovalActionPill
           variant="buttons"
@@ -198,7 +209,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         variant="bodySmall"
         className="font-medium text-center truncate"
       >
-        {expenseClaim?.custom_expense_category}
+        {expenseClaim?.custom_expense_category_name} ({expenseClaim?.custom_expense_category})
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}
@@ -221,8 +232,10 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       </Typography>
       <div className="flex items-center justify-center">
         <AllocatedToTooltip
-          users={item?.status === "Draft" ? item?.allocated_to : undefined}
-          roles={item?.status === "Draft" ? item?.allocated_roles : undefined}
+          users={item?.allocated_to}
+          roles={item?.allocated_roles}
+          allocated_to_user={item?.username}
+          role={item?.role}
           position="left"
         >
           <StatusBadge status={item?.status} />
@@ -249,6 +262,14 @@ const ExpensesList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRequestId = searchParams.get("requestId");
+  const urlReferenceName = searchParams.get("reference_name");
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    urlRequestId || undefined,
+    urlReferenceName || undefined
+  );
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
@@ -267,9 +288,7 @@ const ExpensesList: React.FC = () => {
 
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
-  >({
-    status: "Draft",
-  });
+  >({});
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -291,7 +310,10 @@ const ExpensesList: React.FC = () => {
     canEdit: boolean,
   ) => {
     setSelectedStages(stages);
-    setTimeout(() => setSelectedId(id), 0);
+    setTimeout(() => {
+      setSelectedId(id);
+      setSearchParams({ reference_name: id });
+    }, 0);
     setSelectedSendBackUser(sendBackUser);
     setSelectedCanEdit(canEdit);
   };
@@ -301,7 +323,16 @@ const ExpensesList: React.FC = () => {
     setSelectedStages([]);
     setSelectedSendBackUser(null);
     setSelectedCanEdit(false);
+    if (urlRequestId || urlReferenceName) {
+      setSearchParams({});
+    }
   };
+
+  const documentIdToOpen =
+    selectedId ||
+    urlReferenceName ||
+    todoData?.reference_name ||
+    todoData?.reference_document?.name;
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
@@ -471,9 +502,7 @@ const ExpensesList: React.FC = () => {
                   ],
                 },
               ]}
-              defaultFilters={{
-                status: "Draft",
-              }}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
@@ -490,9 +519,9 @@ const ExpensesList: React.FC = () => {
         )}
       </div>
 
-      {selectedId && (
+      {documentIdToOpen && (
         <ExpenseClaimDetailsModal
-          id={selectedId}
+          id={documentIdToOpen}
           onClose={closeModal}
           getStatusBadgeClasses={getStatusBadgeClasses}
           selectedStages={selectedStages}

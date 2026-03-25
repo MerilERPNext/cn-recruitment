@@ -169,6 +169,7 @@ export type WorkflowStage = {
   target_name: string;
   action_options: string;
   form_data: string;
+  trigger_title: string;
   todo: {
     name: string;
     owner: string;
@@ -208,3 +209,5 @@ export type WorkflowStage = {
 export type FlowRequestResponse = {
   data: FlowRequestItem[];
 };
+
+export type SeparationFunnelDetails = FlowRequestResponse;

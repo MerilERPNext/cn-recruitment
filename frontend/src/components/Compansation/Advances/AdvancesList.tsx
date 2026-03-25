@@ -13,7 +13,6 @@ import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import CardTable from "../../shared/CardTable";
-import Tooltip from "../../shared/Tooltip";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -24,6 +23,8 @@ import InstallmentsList from "./InstallmentsList";
 import Modal from "./commonModal";
 import ShowHideButton from "../ui/ShowHideButton";
 import SearchInputWrapper from "../../shared/SearchBar";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 
 
 const AdvancesList: React.FC = () => {
@@ -95,6 +96,9 @@ const AdvancesList: React.FC = () => {
       name: a.advance_type,
       docname: a.name,
       can_edit: a.can_edit,
+      allocated_to: a.allocated_to,
+      allocated_to_roles: a.allocated_to_roles,
+      allocated_to_user: a.allocated_to_user,
       amount: a.total_advance_amount,
       numberOfDeductions: a.total_paid_amount,
       startDate: a.start_date,
@@ -245,9 +249,13 @@ const AdvancesList: React.FC = () => {
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip content={advance.employee_name}>
+            <AllocatedToTooltip
+              users={advance.allocated_to}
+              roles={advance.allocated_to_roles}
+            >
               <StatusBadge status={advance.advanceStatus} />
-            </Tooltip>
+            </AllocatedToTooltip>
+
           </div>
 
           <div className="flex items-center justify-center">
@@ -312,7 +320,10 @@ const AdvancesList: React.FC = () => {
                 </Typography>
               </div>
             </div>
-
+            <MobileAllocatedTo
+              users={advance.allocated_to}
+              roles={advance.allocated_to_roles}
+            />
             <MyApprovalActionPill
               variant="buttons"
               isPending={advance.advanceStatus === "Pending"}

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAuditReport } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -44,8 +45,8 @@ const AuditReport = () => {
     /* ===================== No Data ===================== */
     if (!auditReports) {
         return (
-            <div className="p-4 text-sm text-gray-500">
-                No audit data available.
+            <div className="p-4 flex justify-center">
+                <NoDataFound title="No Audit Data" subtitle="No audit data available." />
             </div>
         );
     }
@@ -101,8 +102,8 @@ const AuditReport = () => {
                                 )
                             ) :
                                 <tr className="hover:bg-gray-50">
-                                    <td colSpan={4} className="text-center whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
-                                        No data available
+                                    <td colSpan={4} className="text-center p-8">
+                                        <NoDataFound title="No Data Available" subtitle="There are no shift & policy audits." />
                                     </td>
                                 </tr>
                             }
@@ -156,8 +157,8 @@ const AuditReport = () => {
                                 )
                             ) :
                                 <tr>
-                                    <td colSpan={4} className="text-center whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
-                                        No data available
+                                    <td colSpan={4} className="text-center p-8">
+                                        <NoDataFound title="No Data Available" subtitle="There are no attendance policy audits." />
                                     </td>
                                 </tr>
                             }
@@ -205,8 +206,8 @@ const AuditReport = () => {
                                 )
                             ) :
                                 <tr>
-                                    <td colSpan={4} className="text-center whitespace-nowrap border-r border-gray-100 px-4 py-3 text-sm text-gray-700">
-                                        No data available
+                                    <td colSpan={3} className="text-center p-8">
+                                        <NoDataFound title="No Data Available" subtitle="There are no week off audits." />
                                     </td>
                                 </tr>
                             }

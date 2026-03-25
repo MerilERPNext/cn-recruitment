@@ -24,12 +24,14 @@ import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function MyOvertimeDetails({
   documentName,
+  referenceName,
   data: propData,
   onClose,
   onAction,
   label = "Overtime Request",
 }: {
   documentName?: string;
+  referenceName?: string;
   data?: MyPlannedAttendanceRequest;
   onClose: () => void;
   label?: string;
@@ -40,7 +42,7 @@ export function MyOvertimeDetails({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -51,7 +53,7 @@ export function MyOvertimeDetails({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const data = (
-    documentName ? fetchedData : propData
+    documentName || referenceName ? fetchedData : propData
   ) as MyPlannedAttendanceRequest;
   const handleAction = useCallback(
     async (action: string) => {
@@ -114,16 +116,16 @@ export function MyOvertimeDetails({
   const doc = data?.reference_document;
 
   // Loading state
-  if (isLoading && documentName) {
+  if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
-  if (error && documentName) {
+  if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return data?.allocated_to ? (
+  return data?.todo_id ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -175,24 +177,6 @@ export function MyOvertimeDetails({
           </div>
 
           <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to_name}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To Email
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to}
-                </Typography>
-              </div>
-            </div>
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -329,7 +313,7 @@ export function MyOvertimeDetails({
           )}
         </div>
         {actions?.length > 0 &&
-          data?.status === "Open" &&
+          data?.status === "Open" && typeof data?.allocated_to === "string" &&
           data?.allocated_to === currentEmployee?.user_id && (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill

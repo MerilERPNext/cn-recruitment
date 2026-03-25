@@ -80,17 +80,17 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
 const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
   const postingDate = item?.posting_date
     ? new Date(item.posting_date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : " - ";
   const expenseDate = item?.expenses[0]?.expense_date
     ? new Date(item.posting_date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : " - ";
 
   return (

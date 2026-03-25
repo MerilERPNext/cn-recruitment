@@ -10,6 +10,7 @@ import CreateLoanDialog from "./CreateLoanDailog";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
@@ -97,6 +98,7 @@ const LoantItem: React.FC<{
           <StatusBadge status={item.status} />
         </div>
 
+
         {/* Amount rows */}
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
@@ -146,6 +148,13 @@ const LoantItem: React.FC<{
             </Typography>
           </div>
         </div>
+
+        {/* Allocated To */}
+        <MobileAllocatedTo
+          users={item.allocated_to}
+          roles={item.allocated_to_roles}
+          allocated_to={item.allocated_to_user}
+        />
 
         <MyApprovalActionPill
           variant="buttons"

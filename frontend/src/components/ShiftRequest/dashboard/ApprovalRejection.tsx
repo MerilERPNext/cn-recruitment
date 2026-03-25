@@ -6,6 +6,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 // Props type
@@ -105,8 +106,10 @@ const ApprovalRejectionQueue = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data.reference_document.status === "Draft" ? data?.allocated_to : undefined}
-              roles={data.reference_document.status === "Draft" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.allocated_to_user}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data.reference_document.status} />
@@ -203,6 +206,16 @@ const ApprovalRejectionQueue = ({
                       {formatToIndianDate(data?.reference_document?.to_date)}
                     </Typography>
                   </div>
+                </div>
+
+                <div className="flex justify-between w-full mt-1">
+                  <MobileAllocatedTo
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                    role={data?.role}
+                    align="left"
+                  />
                 </div>
               </div>
 

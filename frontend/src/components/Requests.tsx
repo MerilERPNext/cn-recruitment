@@ -6,10 +6,8 @@ import {
   ReceiptIndianRupeeIcon,
   Timer,
   Wallet,
-  Workflow,
 } from "lucide-react";
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { useLoggedInUser } from "../hooks/useLoggedInUser";
@@ -20,20 +18,40 @@ import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
 import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
-import InitiateFlow from "./Flows/Initiate/InitiateFlow";
 import HeaderBar from "./HeaderBar";
 import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
+import { isActionEnabled } from "../utils/uiPermission";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { useTargetUser } from "../context/ViewedUserContext";
 
 interface RequestsProps {
   limitCards?: number;
 }
 
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
+  const { targetEmployeeId } = useTargetUser();
+
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
 
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    effectiveEmployeeId || "",
+  );
+  const canRequestAttendance = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary",
+  );
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Attendance Summary",
+  );
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
@@ -43,7 +61,6 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-  const [showInitiateModel, setShowInitiateModel] = useState(false);
 
   const handleShiftForm = () => setShowShiftRequestModal(true);
   const handleCloseShiftModal = () => setShowShiftRequestModal(false);
@@ -100,12 +117,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
       bg: "bg-amber-100",
       onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
     },
-    {
-      label: "Create Flow Request",
-      icon: <Workflow className="w-5 h-5 text-purple-600" />,
-      bg: "bg-purple-100",
-      onClick: () => setShowInitiateModel(true),
-    },
+
   ];
 
   /* ---------- Requests Cards UI ---------- */
@@ -113,7 +125,18 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const requestsCards = () => (
     <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
       <div className="grid grid-cols-4 gap-3 justify-center">
-        {(limitCards ? cards.slice(0, limitCards) : cards).map(
+        {(limitCards ? cards.filter((action) => {
+          if (action.label === "Planned Overtime") {
+            return canRequestOvertime && plannedOvertimAllowed;
+          }
+          if (action.label === "Attendance Request") {
+            return canRequestAttendance;
+          }
+          return true;
+        })
+          .slice(0, limitCards)
+          : cards
+        ).map(
           (card, index) => (
             <div
               key={index}
@@ -166,23 +189,12 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
         onClose={() => setIsLoanDialogOpen(false)}
       />
 
-      <ExpenseFormModal
-        forMbileScreen={true}
+
+      <ShiftRequestFormModal
+        className="h-full"
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
-        title="Request Shift Change"
-      >
-        <ShiftRequestFormModal
-          className="h-full"
-          onClose={handleCloseShiftModal}
-        />
-      </ExpenseFormModal>
-
-      {showInitiateModel &&
-        createPortal(
-          <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />,
-          document.body,
-        )}
+      />
 
       {showAdvanceForm && (
         <Modal onClose={handleCloseAdvanceModal}>

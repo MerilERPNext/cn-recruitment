@@ -2,7 +2,6 @@ import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
-import { Link } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
@@ -15,8 +14,8 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
@@ -78,7 +77,7 @@ const EmpAttendanceRequestCard = ({
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
   const duration = getDays(formattedFromDate, formattedToDate);
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -115,25 +114,13 @@ const EmpAttendanceRequestCard = ({
             {duration > 1 ? duration + " Days" : duration + " Day"}
           </Typography>
 
-          <Link
-            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              {" "}
-              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-                {data?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           {/* Status */}
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.reference_document?.custom_status === "Pending" ? data?.allocated_to : undefined}
-              roles={data?.reference_document?.custom_status === "Pending" ? data?.allocated_roles : undefined}
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
               position="left"
             >
               <StatusBadge status={data?.reference_document?.custom_status} />
@@ -159,12 +146,11 @@ const EmpAttendanceRequestCard = ({
           <div className="p-4 flex flex-col gap-4 w-full">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Allocated To</Typography>
-                <Typography variant="mobileCardValue">
-                  {data?.username || data?.allocated_to}
-                </Typography>
-              </div>
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                username={data?.username}
+              />
 
               <StatusBadge status={data?.reference_document?.custom_status} />
             </div>
@@ -177,7 +163,7 @@ const EmpAttendanceRequestCard = ({
                 </Typography>
               </div>
               <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">Leave Days</Typography>
+                <Typography variant="mobileCardLabel">Days</Typography>
                 <Typography variant="mobileCardValue">
                   {duration > 1 ? duration + " Days" : duration + " Day"}
                 </Typography>

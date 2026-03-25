@@ -125,6 +125,7 @@ export interface ExpenseClaim {
   custom_day_of_month: number;
   custom_day_of_week: string;
   custom_expense_category: string;
+  custom_expense_category_name?: string;
   custom_is_shared_expense: number;
   expense_approver: string;
   approval_status: string;

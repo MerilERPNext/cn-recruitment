@@ -16,7 +16,8 @@ import {
 } from "../../shared/DetailViewErrorLoadingWrapper";
 
 type TeamAdvanceDetailViewProps = {
-  documentName: string;
+  documentName?: string;
+  referenceName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
@@ -29,13 +30,14 @@ const formatINR = (amount: number | undefined | null) =>
 
 export default function TeamAdvanceDetailView({
   documentName,
+  referenceName,
   onClose,
   onAction,
   label = "Employee Advance",
 }: TeamAdvanceDetailViewProps) {
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data, isLoading, error } = useGetToDoWithReferenceDoc(documentName);
+  const { data, isLoading, error } = useGetToDoWithReferenceDoc(documentName, referenceName);
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -64,7 +66,7 @@ export default function TeamAdvanceDetailView({
 
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
   if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
-  if (!data?.reference_document) return null;
+  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
 
   const ref = data.reference_document;
   const actions = (() => {

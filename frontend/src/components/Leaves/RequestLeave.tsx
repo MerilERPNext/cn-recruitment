@@ -220,8 +220,8 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   const { data: fields } = useGetLeaveRequestFields(
     formData.leaveType,
-    formData.fromDate || "",
-    formData.toDate || "",
+    formData.fromDate || undefined,
+    formData.toDate || undefined,
   );
 
   const { data: requiredFields } = useRequiredFields("Leave Application");

@@ -7,6 +7,7 @@ import { useExpenseCommentUpdate } from "../../../hooks/useExpense";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
@@ -147,8 +148,8 @@ const ExpenseApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.custom_expense_category}
+          <Typography variant="bodySmall" className="font-medium text-center truncate">
+            {data?.reference_document?.custom_expense_category_name} ({data?.reference_document?.custom_expense_category})
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
@@ -160,10 +161,10 @@ const ExpenseApprovalCard = ({
 
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={data?.status === "Draft" ? data?.allocated_to : undefined}
-              roles={
-                data?.status === "Draft" ? data?.allocated_roles : undefined
-              }
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
               position="left"
             >
               <StatusBadge status={data?.status} />
@@ -262,6 +263,14 @@ const ExpenseApprovalCard = ({
                   </Typography>
                 </div>
               </div>
+
+              {/* Allocated To */}
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                username={data?.username}
+                role={data?.role}
+              />
 
               <TeamApprovalActionPill
                 variant="buttons"

@@ -67,7 +67,7 @@ export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
       {/* Content */}
       <div>
         {data.leave_type && (
-          <Row label="Leave Type" value={data.leave_type} />
+          <Row label="Leave Type" value={`${data?.custom_leave_type_name || ""} (${data.leave_type})`} />
         )}
 
         <Row

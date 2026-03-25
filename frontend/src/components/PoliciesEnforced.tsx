@@ -98,7 +98,7 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
             </span>
             {item.due_date && !isComplete && (
               <Typography variant="caption" className="text-gray-500">
-                Due: {item.due_date}
+                Due: {item.due_date.includes('-') ? item.due_date.split('-').reverse().join('-') : item.due_date}
               </Typography>
             )}
           </div>

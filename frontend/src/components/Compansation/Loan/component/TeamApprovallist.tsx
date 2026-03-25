@@ -8,6 +8,7 @@ import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { getActionStyles } from "../../../../utils/actionButtonStyles";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
 import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
@@ -177,6 +178,14 @@ const ApprovalRejectionLoanList = ({
                 </div>
               </div>
 
+              {/* Allocated To */}
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                role={data?.role}
+                username={data?.username}
+              />
+
               <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
@@ -235,7 +244,7 @@ const ApprovalRejectionLoanList = ({
   return (
     <>
       <div
-        className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+        className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
         style={{ gridTemplateColumns }}
         onClick={() => onClick?.(data)}
       >
@@ -303,16 +312,10 @@ const ApprovalRejectionLoanList = ({
 
         <div className="flex items-center justify-center">
           <AllocatedToTooltip
-            users={
-              data?.reference_document?.status === "Open"
-                ? data?.allocated_to
-                : undefined
-            }
-            roles={
-              data?.reference_document?.status === "Open"
-                ? data?.allocated_roles
-                : undefined
-            }
+            users={data?.allocated_to}
+            roles={data?.allocated_roles}
+            allocated_to_user={data?.username}
+            role={data?.role}
             position="left"
           >
             <StatusBadge status={data?.reference_document?.status} />

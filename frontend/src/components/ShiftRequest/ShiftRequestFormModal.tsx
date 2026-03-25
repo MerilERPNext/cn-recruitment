@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import {
   useCreateShiftRequest,
   useUpdateShiftRequest,
+  useShiftTypes,
 } from "../../hooks/useShift";
 import {
   useCurrentEmployee,
@@ -34,6 +35,7 @@ interface ShiftRequestFormModalProps {
   defaultShiftRequestData?: ShiftRequest;
   forActionType?: "create" | "edit";
   className?: string;
+  isOpen?: boolean;
 }
 
 type FormSchema = typeof defaultFormSchema;
@@ -41,6 +43,7 @@ type FormSchema = typeof defaultFormSchema;
 const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   className = "",
   onClose,
+  isOpen = false,
   defaultShiftRequestData,
   schema: propSchema,
   forActionType,
@@ -54,6 +57,8 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
+  const { data: shiftTypesData, isLoading: shiftTypesLoading } = useShiftTypes();
+
   const {
     data: employeeDetails,
     isLoading: employeeLoading,
@@ -164,7 +169,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     }, "Submitting shift request…"); // overlay message
   };
 
-  const { data: requiredFields } = useRequiredFields("Shift Request");
+  const { data: requiredFields, isLoading: requiredFieldsLoading } = useRequiredFields("Shift Request");
   const requiredFieldMap = useMemo(() => {
     if (!requiredFields?.fields) return {};
     const map: Record<string, boolean> = {};
@@ -234,11 +239,46 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     }
   }, [propSchema]);
 
-  const validatedSchema = useMemo(() => {
-    return transformSchemaWithRequired(formSchema, requiredFieldMap);
-  }, [formSchema, requiredFieldMap]);
+  // Build static shift type options from the fetched list
+  const shiftTypeValues = useMemo(() => {
+    if (!shiftTypesData?.data) return [];
+    const fmtTime = (t: string) => {
+      const parts = t?.split(":");
+      return parts?.length >= 2 ? `${parts[0]}:${parts[1]}` : (t ?? "");
+    };
+    return shiftTypesData.data.map((st) => {
+      const displayName = st.custom_shift_name || st.name;
+      const start = fmtTime(st.start_time);
+      const end = fmtTime(st.end_time);
+      return {
+        label: start && end ? `${displayName} (${start} - ${end})` : displayName,
+        value: st.name,
+        displayName,
+        time: start && end ? `${start} - ${end}` : "",
+      };
+    });
+  }, [shiftTypesData]);
 
-  if (employeeLoading || targetEmployeeLoading) {
+  // Inject static shift type values + custom template into the schema
+  const schemaWithShiftTypes = useMemo(() => {
+    const cloned = JSON.parse(JSON.stringify(formSchema));
+    const shiftTypeComp = cloned.components?.find(
+      (c: { key: string }) => c.key === "shiftType",
+    );
+    if (shiftTypeComp) {
+      shiftTypeComp.data = { values: shiftTypeValues };
+      shiftTypeComp.template =
+        `<span>{{ item.displayName || item.label }}<span style="font-size:0.78em;color:#6b7280;margin-left:4px;">{{ item.time }}</span></span>`;
+    }
+    return cloned;
+  }, [formSchema, shiftTypeValues]);
+
+  const validatedSchema = useMemo(() => {
+    return transformSchemaWithRequired(schemaWithShiftTypes, requiredFieldMap);
+  }, [schemaWithShiftTypes, requiredFieldMap]);
+  if (!isOpen) return null;
+
+  if (employeeLoading || targetEmployeeLoading || shiftTypesLoading || requiredFieldsLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
         <div className="bg-white p-6 rounded-lg">
@@ -283,16 +323,17 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             onFormReady={(instance: Formio) => {
               formRef.current = instance;
             }}
-            submission={{
-              data: {
-                fromDate:
-                  defaultShiftRequestData?.from_date ||
-                  new Date().toISOString(),
-                toDate:
-                  defaultShiftRequestData?.to_date || new Date().toISOString(),
-                shiftType: defaultShiftRequestData?.shift_type || "",
-              },
-            }}
+            {...(defaultShiftRequestData
+              ? {
+                submission: {
+                  data: {
+                    fromDate: defaultShiftRequestData.from_date || new Date().toISOString(),
+                    toDate: defaultShiftRequestData.to_date || new Date().toISOString(),
+                    shiftType: defaultShiftRequestData.shift_type || "",
+                  },
+                },
+              }
+              : {})}
             options={{
               builder: { styles: false },
               submitButton: false,

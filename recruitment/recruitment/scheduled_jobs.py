@@ -226,11 +226,11 @@ def auto_separate_employees_on_lwd():
     separations = frappe.get_all(
         "Employee Separation",
         filters={
-            "custom_actual_last_working_date": ["<=", current_date],
+            "custom_final_last_working_day": ["<=", current_date],
             "docstatus": ["!=", 2],
             "custom_resignaion_type": ["!=", "Termination"]
         },
-        fields=["name", "employee", "custom_actual_last_working_date"]
+        fields=["name", "employee", "custom_final_last_working_day"]
     )
 
     for sep in separations:
@@ -262,13 +262,13 @@ def auto_separate_employees_on_lwd():
             frappe.db.set_value("Employee", sep.employee, {
                 "status": "Left",
                 "custom_employment_status": "Separated",
-                "relieving_date": sep.custom_actual_last_working_date
+                "relieving_date": sep.custom_final_last_working_day
             })
 
             employee_name = frappe.db.get_value("Employee", sep.employee, "employee_name")
 
             frappe.log_error(
-                message=f"Auto-separated employee {employee_name} ({sep.employee}) on LWD {sep.custom_actual_last_working_date}. Employee Separation {sep.name} submitted.",
+                message=f"Auto-separated employee {employee_name} ({sep.employee}) on LWD {sep.custom_final_last_working_day}. Employee Separation {sep.name} submitted.",
                 title="Auto Separation Executed"
             )
 

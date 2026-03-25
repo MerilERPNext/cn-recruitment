@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 
 def update_employee_relieving_date(doc, method=None):
-    if not doc.custom_actual_last_working_date or not doc.employee_name:
+    if not doc.custom_final_last_working_day or not doc.employee_name:
         return
 
     employee_doc = frappe.get_doc("Employee", {"employee_name": doc.employee_name})
@@ -13,8 +13,16 @@ def update_employee_relieving_date(doc, method=None):
             "Employee",
             employee_doc.name,
             "relieving_date",
-            frappe.utils.getdate(doc.custom_actual_last_working_date)
+            frappe.utils.getdate(doc.custom_final_last_working_day)
         )
+
+    if doc.custom_resignaion_type == "Termination" and doc.employee:
+        emp = frappe.get_doc("Employee", doc.employee)
+        emp.custom_employment_status = "Terminated"
+        emp.status = "Suspended"
+        emp.save(ignore_permissions=True)
+        if emp.user_id:
+            frappe.db.set_value("User", emp.user_id, "enabled", 0)
 
 
 def calculate_lwd_from_notice_period(doc, method=None):
@@ -22,7 +30,7 @@ def calculate_lwd_from_notice_period(doc, method=None):
     if not doc.employee:
         return
 
-    if doc.custom_actual_last_working_date:
+    if doc.custom_final_last_working_day:
         return
 
     employee = frappe.get_doc("Employee", doc.employee)
@@ -50,7 +58,7 @@ def calculate_lwd_from_notice_period(doc, method=None):
     if notice_days > 0:
         resignation_date = getdate(doc.custom_resignation_date) if doc.custom_resignation_date else getdate(today())
         lwd = get_lwd_skipping_holidays(doc.employee, resignation_date, cint(notice_days))
-        doc.custom_actual_last_working_date = lwd
+        doc.custom_final_last_working_day = lwd
         doc.custom_notice_period_days = notice_days
 
 

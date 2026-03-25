@@ -10,6 +10,8 @@ import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { Typography } from "../../shared/atoms/Typography";
 import Tooltip from "../../shared/Tooltip";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 export type CompensatoryRequestItem = {
   name: string;
   leave_type: string;
@@ -19,6 +21,9 @@ export type CompensatoryRequestItem = {
   reason?: string;
   pay_button_required: boolean;
   docstatus: number;
+  allocated_to?: string[];
+  allocated_roles?: string[];
+  allocated_to_user: string;
 };
 
 type CompensatoryRequestCardProps = {
@@ -106,9 +111,16 @@ const CompensatoryRequestCard = ({
       </Tooltip>
 
       <div className="flex items-center justify-center">
-        <StatusBadge
-          status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
-        />
+        <AllocatedToTooltip
+          users={item?.allocated_to}
+          roles={item?.allocated_roles}
+          position="left"
+        >
+          <StatusBadge
+            status={resolveCompOffStatus(item?.custom_status, item?.docstatus)}
+          />
+        </AllocatedToTooltip>
+
       </div>
 
       <div className="flex items-center justify-center">
@@ -158,17 +170,24 @@ const CompensatoryRequestCard = ({
           </div>
         </div>
 
-        {/* Reason */}
-        {cleanReason && (
-          <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Reason</Typography>
 
-            <Typography variant="mobileCardValue">
-              {truncateByChars(cleanReason, 60)}
-            </Typography>
-          </div>
-        )}
+        <div className="flex justify-between w-full">
+          {/* Reason */}
+          {cleanReason && (
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Reason</Typography>
 
+              <Typography variant="mobileCardValue">
+                {truncateByChars(cleanReason, 60)}
+              </Typography>
+            </div>
+          )}
+          <MobileAllocatedTo
+            users={item?.allocated_to}
+            roles={item?.allocated_roles}
+            align="right"
+          />
+        </div>
         {/* Pay Button */}
 
         <MyApprovalActionPill

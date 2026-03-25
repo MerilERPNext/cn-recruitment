@@ -1,5 +1,6 @@
 import { format, isValid, parseISO } from "date-fns";
 import { useState } from "react";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAllEmployeeCheckin } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -88,8 +89,8 @@ const CheckInStatus = () => {
 
             {/* ================= Empty State ================= */}
             {!checkins || checkins.length === 0 ? (
-                <div className="p-4 text-sm text-gray-500">
-                    No check-ins found for the selected month.
+                <div className="p-8 flex items-center justify-center">
+                    <NoDataFound title="No Check-ins Found" subtitle="No check-ins found for the selected month." />
                 </div>
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200">

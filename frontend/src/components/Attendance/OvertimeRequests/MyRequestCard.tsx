@@ -2,10 +2,9 @@ import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
-import { Link } from "react-router-dom";
 import {
   sanitizeToPlainText,
   truncateByChars,
@@ -26,7 +25,7 @@ export function MyRequestCard({
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
 
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr";
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -49,23 +48,12 @@ export function MyRequestCard({
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(request?.due_date)}
           </Typography>
-          <Link
-            to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-                {request?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
-              users={request?.status === "Open" ? request?.allocated_to : undefined}
-              roles={request?.status === "Open" ? request?.allocated_roles : undefined}
+              users={request?.allocated_to}
+              roles={request?.allocated_roles}
+              allocated_to_user={request?.username}
               position="left"
             >
               <StatusBadge status={request?.status} />
@@ -83,14 +71,11 @@ export function MyRequestCard({
             <div className="w-full">
               {/* Header */}
               <div className="flex items-start justify-between p-1">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Allocated To
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {request?.username || request?.allocated_to}
-                  </Typography>
-                </div>
+                <MobileAllocatedTo
+                  users={request?.allocated_to}
+                  roles={request?.allocated_roles}
+                  username={request?.username}
+                />
 
                 <StatusBadge status={request?.status} />
               </div>

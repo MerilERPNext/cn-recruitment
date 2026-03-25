@@ -199,19 +199,14 @@ const ConfirmationWorkflow = () => {
     });
   };
 
-  const allStagesComplted = useMemo(() => {
-    return item?.approval_stages_status?.every(
-      (stage) => stage.status === "Approved",
-    );
-  }, [item?.approval_stages_status]);
+
 
   const postStagesStarted = Array.isArray(stages) && stages.length > 0;
 
   const canInitiateConfirmation =
     enabledActions.initiate_confirmation &&
-    (!postStagesStarted || allStagesComplted) &&
     showConfirmationButton?.show_button &&
-    (!item || item?.status !== "Draft");
+    !item;
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
@@ -244,10 +239,6 @@ const ConfirmationWorkflow = () => {
     refetchShowConfirmationButton,
   ]);
 
-  const canInitiateProbationExtension =
-    showConfirmationButton?.show_button &&
-    canInitiateConfirmation &&
-    activeEmployee?.custom_employment_status == "Probation Extended";
 
   const confirmationCards = useMemo(
     () => [
@@ -402,20 +393,6 @@ const ConfirmationWorkflow = () => {
           </div>
         ))}
       </Card>
-
-      {canInitiateProbationExtension && (
-        <div className="flex justify-center mt-6 mb-16">
-          <Button
-            variant="contain"
-            size="md"
-            onClick={handleInitiateConfirmation}
-            loading={isTriggeringChat}
-            disabled={isTriggeringChat}
-          >
-            Initiate Confirmation
-          </Button>
-        </div>
-      )}
 
       {formSchema &&
         showSelfInitForm &&

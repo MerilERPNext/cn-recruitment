@@ -69,7 +69,7 @@ const MobileDashboard: React.FC = () => {
     } catch (err) {
       console.error("Failed to get location:", err);
       setLocationError(
-        "Unable to get your location. Please enable location services.",
+        "Please refresh to get your current location.",
       );
       return null;
     } finally {
@@ -229,6 +229,7 @@ const MobileDashboard: React.FC = () => {
         {
           onSuccess: () => {
             refetchHomeSummary();
+            setGeoLocationModal(false)
           },
           onError: (e: CustomError) => {
             toast.error(

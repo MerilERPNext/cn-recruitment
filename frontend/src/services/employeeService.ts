@@ -5,6 +5,7 @@ import {
   EmployeeListItem,
   EmployeeNode,
   IReason,
+  AttendanceFieldPermissions,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -586,6 +587,11 @@ export class EmployeeService {
     });
     const data = await response;
     return data as Employee[];
+  }
+  static async getAttendanceFieldReasonAndMessagePermissions(): Promise<AttendanceFieldPermissions> {
+    const response = FrappeAPI.getMethod("cn_leave_shift_managment.api.get_attendance_field_settings");
+    const data = await response;
+    return data as AttendanceFieldPermissions;
   }
 
   static async getAllReasons(filters?: FilterCondition[]): Promise<IReason[]> {

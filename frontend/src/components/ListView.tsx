@@ -2,8 +2,8 @@
 import type React from "react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { UseInfiniteQueryResult, useQueryClient } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import {
-  Search,
   Filter,
   ChevronLeft,
   ChevronRight,
@@ -25,6 +25,7 @@ import { useLocation } from "react-router";
 import { FilterCondition, FrappePageResponse } from "../types/frappe";
 import { mapFiltersToConditions } from "../utils/helperUtils";
 import SearchInputWrapper from "./shared/SearchBar";
+import { useScreenSize } from "../hooks/useScreenSize";
 
 interface BaseItem {
   name: string;
@@ -260,7 +261,7 @@ const FrappeListView = <T extends BaseItem>({
   // Calculate pagination values for traditional pagination
   const totalCount = infiniteScroll
     ? (infiniteQueryResult.data?.pages[0] as unknown as PageData)?.totalCount ||
-      0
+    0
     : countData || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -369,11 +370,10 @@ const FrappeListView = <T extends BaseItem>({
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -499,9 +499,12 @@ const FrappeListView = <T extends BaseItem>({
   const error = queryResult.error;
 
   return (
-    <>
-      {/* Header */}
-      <div className="border-gray-200">
+    <div>
+      {/* Header — sticky top, constrained to visible width */}
+      <div
+        className="sticky top-0 left-0 z-10 bg-white border-gray-200"
+        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
@@ -513,9 +516,8 @@ const FrappeListView = <T extends BaseItem>({
             {isFilter && (
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  showFilters ? "bg-gray-100" : ""
-                }`}
+                className={`inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${showFilters ? "bg-gray-100" : ""
+                  }`}
               >
                 <Filter className="h-4 w-4" />
               </button>
@@ -539,7 +541,7 @@ const FrappeListView = <T extends BaseItem>({
       {renderFilters()}
 
       {/* Content */}
-      <div className="min-h-full">
+      <div>
         {PreListComponent && (
           <PreListComponent
             doctype={doctype}
@@ -580,8 +582,8 @@ const FrappeListView = <T extends BaseItem>({
                       </button>
                       <button
                         onClick={() =>
-                          (window.location.href =
-                            "/login?redirect-to=" + window.location.pathname)
+                        (window.location.href =
+                          "/login?redirect-to=" + window.location.pathname)
                         }
                         className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
@@ -647,9 +649,8 @@ const FrappeListView = <T extends BaseItem>({
                   onClick={() => {
                     onItemClick?.(item); // Use optional chaining
                   }}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer" : ""
+                    }`}
                 >
                   <ItemComponent item={item} index={index} doctype={doctype} />
                 </div>
@@ -681,13 +682,19 @@ const FrappeListView = <T extends BaseItem>({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — sticky bottom */}
       {showPagination &&
         !isListLoading &&
         !error &&
-        processedData.length > 0 &&
-        renderPagination()}
-    </>
+        processedData.length > 0 && (
+          <div
+            className="sticky bottom-0 left-0 z-10 bg-white"
+            style={{ width: 'var(--card-table-visible-width, 100%)' }}
+          >
+            {renderPagination()}
+          </div>
+        )}
+    </div>
   );
 };
 
@@ -701,14 +708,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   options?: string[];
 }
 
@@ -716,14 +723,14 @@ interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   options?: string[];
 }
 
@@ -752,6 +759,10 @@ interface StaticListViewProps<T extends BaseItemStatic> {
   onRefresh?: () => void;
 
   getItemKey?: (item: T, index: number) => string;
+  /** When true, filters are staged and only applied when the Apply button is clicked. */
+  requireApplyButton?: boolean;
+  /** When true, the drawer closes automatically when a Select value is chosen (single-pick UX). */
+  closeOnSelect?: boolean;
 }
 
 export const StaticListView = <T extends BaseItemStatic>({
@@ -776,12 +787,17 @@ export const StaticListView = <T extends BaseItemStatic>({
   showRefreshButton = false,
   onRefresh,
   getItemKey,
+  requireApplyButton = false,
+  closeOnSelect = false,
 }: StaticListViewProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Record<string, any>>({});
+  // Draft state — used when requireApplyButton is true; staged until Apply is clicked
+  const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const { isDesktop } = useScreenSize();
 
   // Debounce search input
   useEffect(() => {
@@ -839,9 +855,11 @@ export const StaticListView = <T extends BaseItemStatic>({
   }, [dedupedData, debouncedSearch, filters, searchFields]);
 
   // Reset page when data/search/filters change to avoid showing old pages
+  // Use dedupedData.length instead of dedupedData reference to avoid resetting
+  // pagination when parent re-renders with the same data (e.g. opening/closing details).
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, JSON.stringify(filters), dedupedData, pageSize]);
+  }, [debouncedSearch, JSON.stringify(filters), dedupedData.length, pageSize]);
 
   // Pagination output
   const paginatedData = useMemo(() => {
@@ -941,11 +959,10 @@ export const StaticListView = <T extends BaseItemStatic>({
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
@@ -963,152 +980,237 @@ export const StaticListView = <T extends BaseItemStatic>({
       </div>
     );
 
+  const handleFilterChange = (fieldname: string, value: string) => {
+    if (requireApplyButton) {
+      // Stage the change — only apply when Apply is clicked
+      setPendingFilters((p) => ({ ...p, [fieldname]: value }));
+    } else {
+      // Instant-apply
+      setFilters((p: Record<string, any>) => ({ ...p, [fieldname]: value }));
+      if (closeOnSelect) setShowFilters(false);
+    }
+  };
+
+  const handleApplyFilters = () => {
+    setFilters(pendingFilters);
+    setShowFilters(false);
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setPendingFilters({});
+    setSearchTerm("");
+    setDebouncedSearch("");
+  };
+
   return (
     <div>
-      {/* HEADER */}
-      <div className="flex gap-2 mb-3">
-        {isSearch && (
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              placeholder="Search..."
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      {/* HEADER — sticky top, constrained to visible width */}
+      <div
+        className="sticky top-0 left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            {isSearch && (
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={(e) => setSearchTerm(e.target.value)}
+              />
+            )}
+
+            {isFilter && filterFields.length > 0 && (
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""
+                  }`}
+              >
+                <Filter className="h-4 w-4" />
+              </button>
+            )}
+
+            {showRefreshButton && (
+              <button
+                disabled={isLoading}
+                onClick={() => onRefresh?.()}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              </button>
+            )}
           </div>
+        </div>
+      </div>
+
+      {/* FILTERS DRAWER — right sidebar on desktop, portal to body on mobile */}
+      {isFilter && showFilters && filterFields.length > 0 && (() => {
+        const drawerContent = (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black bg-opacity-40 z-[9999]"
+              onClick={() => setShowFilters(false)}
+            />
+
+            {/* Right-side drawer */}
+            <div
+              className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000]
+                transform transition-transform duration-300 ease-in-out
+                ${showFilters ? "translate-x-0" : "translate-x-full"}`}
+            >
+              {/* Drawer header */}
+              <div className="px-6 py-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Filters content */}
+              <div className="px-6 py-4 overflow-y-auto flex-1 space-y-4">
+                {filterFields.map((f) => (
+                  <div key={f.fieldname}>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {f.label}
+                    </label>
+
+                    {f.fieldtype === "Select" ? (
+                      <select
+                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        onChange={(e) =>
+                          handleFilterChange(f.fieldname, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select</option>
+                        {f.options?.map((op) => (
+                          <option key={op} value={op}>
+                            {op}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={(requireApplyButton ? pendingFilters : filters)[f.fieldname] || ""}
+                        onChange={(e) =>
+                          handleFilterChange(f.fieldname, e.target.value)
+                        }
+                        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer actions */}
+              <div className="px-6 py-4 flex gap-3 border-t">
+                <button
+                  onClick={clearFilters}
+                  className="flex-1 px-4 py-2 border rounded-md text-gray-700 bg-white hover:bg-gray-100"
+                >
+                  Clear
+                </button>
+                {requireApplyButton ? (
+                  <button
+                    onClick={handleApplyFilters}
+                    className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                  >
+                    Apply
+                  </button>
+                ) : (
+                  !isDesktop && (
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      Close
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </>
+        );
+
+        return isDesktop ? drawerContent : createPortal(drawerContent, document.body);
+      })()}
+
+      {/* LIST */}
+      <div>
+        {/* PRE-LIST */}
+        {PreListComponent && (
+          <PreListComponent
+            data={paginatedData}
+            filteredData={filteredData}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
         )}
 
-        {isFilter && filterFields.length > 0 && (
-          <button
-            onClick={() => setShowFilters(true)}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            {/* Filter icon */}
-            Filters
-          </button>
+        {/* LIST */}
+        {isLoading ? (
+          SkeletonComponent ? (
+            <SkeletonComponent />
+          ) : (
+            <div className="flex justify-center py-8">Loading…</div>
+          )
+        ) : paginatedData.length === 0 ? (
+          <NoDataFound />
+        ) : (
+          <>
+            {paginatedData.map((item, index) => {
+              // compute isLast relative to the currently rendered list
+              const isLast = index === paginatedData.length - 1;
+              const key =
+                getItemKey?.(item, index) ??
+                item.id ??
+                item.name ??
+                `item-${JSON.stringify(item).slice(0, 50)}-${index}`;
+
+              return (
+                <div
+                  key={key}
+                  onClick={() => onItemClick?.(item)}
+                  className={onItemClick ? "cursor-pointer" : ""}
+                >
+                  {ItemComponent(index, item, isLast)}
+                </div>
+              );
+            })}
+
+            {infiniteScroll && (
+              <div id="static-listview-sentinel" ref={sentinelRef} />
+            )}
+          </>
         )}
 
-        {showRefreshButton && (
-          <button
-            disabled={isLoading}
-            onClick={() => onRefresh?.()}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            {/* Refresh icon */}
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </button>
+        {/* POST-LIST */}
+        {PostListComponent && (
+          <PostListComponent
+            data={paginatedData}
+            filteredData={filteredData}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
         )}
       </div>
 
-      {/* FILTERS PANEL */}
-      {showFilters && (
-        <div className="p-4 rounded-md border bg-gray-50 mb-4">
-          {filterFields.map((f) => (
-            <div key={f.fieldname} className="mb-3">
-              <label className="block text-sm mb-1">{f.label}</label>
-
-              {f.fieldtype === "Select" ? (
-                <select
-                  value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
-                  className="w-full border px-3 py-2 rounded-md"
-                >
-                  <option value="">All</option>
-                  {f.options?.map((op) => (
-                    <option key={op} value={op}>
-                      {op}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={filters[f.fieldname] || ""}
-                  onChange={(e) =>
-                    setFilters((p) => ({ ...p, [f.fieldname]: e.target.value }))
-                  }
-                  className="w-full border px-3 py-2 rounded-md"
-                />
-              )}
-            </div>
-          ))}
-
-          <button
-            onClick={() => setShowFilters(false)}
-            className="w-full py-2 bg-blue-600 text-white rounded-md"
-          >
-            Apply Filters
-          </button>
+      {/* PAGINATION — sticky bottom */}
+      {data?.length > pageSize && (
+        <div
+          className="lg:sticky bottom-0 left-0 z-10 bg-white"
+          style={{ width: 'var(--card-table-visible-width, 100%)' }}
+        >
+          {renderPagination()}
         </div>
       )}
-
-      {/* PRE-LIST */}
-      {PreListComponent && (
-        <PreListComponent
-          data={paginatedData}
-          filteredData={filteredData}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-      )}
-
-      {/* LIST */}
-      {isLoading ? (
-        SkeletonComponent ? (
-          <SkeletonComponent />
-        ) : (
-          <div className="flex justify-center py-8">Loading…</div>
-        )
-      ) : paginatedData.length === 0 ? (
-        <NoDataFound />
-      ) : (
-        <>
-          {paginatedData.map((item, index) => {
-            // compute isLast relative to the currently rendered list
-            const isLast = index === paginatedData.length - 1;
-            const key =
-              getItemKey?.(item, index) ??
-              item.id ??
-              item.name ??
-              `item-${JSON.stringify(item).slice(0, 50)}-${index}`;
-
-            return (
-              <div
-                key={key}
-                onClick={() => onItemClick?.(item)}
-                className={onItemClick ? "cursor-pointer" : ""}
-              >
-                {ItemComponent(index, item, isLast)}
-              </div>
-            );
-          })}
-
-          {infiniteScroll && (
-            <div id="static-listview-sentinel" ref={sentinelRef} />
-          )}
-        </>
-      )}
-
-      {/* POST-LIST */}
-      {PostListComponent && (
-        <PostListComponent
-          data={paginatedData}
-          filteredData={filteredData}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-      )}
-
-      {/* PAGINATION */}
-      {data?.length > pageSize && renderPagination()}
     </div>
   );
 };
+
 
 export default FrappeListView;

@@ -34,7 +34,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
-  const history = data?.custom_work_history || [];
+  const history = data?.custom_work_history?.filter((item) => item.history_type !== "Reporting") || [];
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory

@@ -21,7 +21,7 @@ const titles = [
   "Overall Flow Status",
 ];
 
-const columnWidths = ["1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"];
+const columnWidths = ["1fr 1fr 150px 150px 150px 150px 150px 150px"];
 
 const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -97,8 +97,8 @@ const FlowRequests: React.FC = () => {
     <>
       {FlowDetailComponent}
       <div
-        className="flex flex-col h-full"
-        style={{ visibility: flowDetails ? "hidden" : "visible" }}
+        className="flex flex-col h-full overflow-auto"
+        style={{ display: flowDetails ? "none" : "flex" }}
       >
         <div>
           {isDesktop && (
@@ -126,11 +126,32 @@ const FlowRequests: React.FC = () => {
                   );
                 }}
                 isSearch={true}
-                searchFields={["flow_name", "flow_category"]}
+                searchFields={["flow_name", "flow_category", "initiated_by"]}
                 getItemKey={(item) => item.request_id}
                 pageSize={10}
                 SkeletonComponent={CardSkeleton}
                 isLoading={flowRequestsLoading}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "approval_status",
+                    label: "Approval Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Approved", "Rejected", "N/A"],
+                  },
+                  {
+                    fieldname: "workflow_status",
+                    label: "Workflow Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Completed", "N/A"],
+                  },
+                  {
+                    fieldname: "overall_flow_status",
+                    label: "Overall Flow Status",
+                    fieldtype: "Select",
+                    options: ["Pending", "Completed"],
+                  },
+                ]}
               // loadMorePagination={true}
               />
             </CardTable>

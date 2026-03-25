@@ -77,9 +77,9 @@ export class NoticeService {
       return false;
     }
   }
-  async checkIfNoticeIsReadOrAcknowledged(noticeId: string): Promise<NoticeUserActivity[]> {
+  async checkIfNoticeIsReadOrAcknowledged(noticeId: string, user: string): Promise<NoticeUserActivity[]> {
     try {
-      const response = await FrappeAPI.getDocumentList(`Notice Read Status`, { filters: [["notice", "=", noticeId]], fields: ['*'] });
+      const response = await FrappeAPI.getDocumentList(`Notice Read Status`, { filters: [["notice", "=", noticeId], ["user", "=", user]], fields: ['*'] });
       return response?.data as unknown as NoticeUserActivity[];
     } catch (error) {
       console.error('📡 Error marking notice as read:', error);
