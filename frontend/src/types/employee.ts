@@ -90,6 +90,42 @@ export interface Employee {
   custom_work_history?: IEmployeeWorkHistory[];
 }
 
+/**
+ * get_employee_details and get_current_employee response type
+ */
+export interface EmployeeIdCardResponse {
+  blood_group: string;
+  branch: string;
+  branch_name: string;
+  cell_number: string;
+  company: string;
+  company_email: string;
+  company_name: string;
+  current_address: string | null;
+  custom_aadhar_no: string | null;
+  custom_employment_status: string;
+  date_of_birth: string; // ISO date (YYYY-MM-DD)
+  date_of_joining: string; // ISO date
+  department: string;
+  department_name: string;
+  designation: string;
+  designation_name: string;
+  emergency_phone_number: string | null;
+  employee_name: string;
+  employee_number: string;
+  employment_type: string;
+  final_confirmation_date: string; // ISO date
+  first_name: string;
+  gender: "Male" | "Female" | "Other" | string; // extendable
+  image: string | null;
+  last_name: string | null;
+  middle_name: string | null;
+  name: string;
+  person_to_be_contacted: string | null;
+  personal_email: string;
+  prefered_email: string;
+  status: "Active" | "Inactive" | string; // extendable
+}
 export interface EmployeeProfileOverview {
   field_label: string;
   display: string;

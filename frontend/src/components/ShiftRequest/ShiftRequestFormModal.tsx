@@ -28,6 +28,7 @@ import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { X } from "lucide-react";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { Employee } from "../MyProfile/EmploymentHistory";
 
 interface ShiftRequestFormModalProps {
   onClose: () => void;
@@ -121,7 +122,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       reason,
       status: "Draft",
       employee: activeEmployee.name,
-      shift_request_approver: activeEmployee.shift_request_approver,
+      shift_request_approver: (activeEmployee as Employee).shift_request_approver,
     };
 
     // 2️⃣ Wrap only the network mutation inside the overlay

@@ -6,6 +6,7 @@ import {
   EmployeeNode,
   IReason,
   AttendanceFieldPermissions,
+  EmployeeIdCardResponse,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -97,7 +98,7 @@ function isEmployeeListItemArray(obj: unknown): obj is EmployeeListItem[] {
 
 export class EmployeeService {
   // Get a single employee by ID/name
-  static async getEmployee(employeeId: string): Promise<Employee> {
+  static async getEmployee(employeeId: string): Promise<Employee | EmployeeIdCardResponse> {
     try {
 
       let result;
@@ -205,7 +206,7 @@ export class EmployeeService {
   }
 
   // Get current user's employee record
-  static async getCurrentEmployee(): Promise<Employee | null> {
+  static async getCurrentEmployee(): Promise<Employee | EmployeeIdCardResponse | null> {
     try {
       let result;
 
@@ -497,20 +498,20 @@ export class EmployeeService {
   }
 
   // Transform Employee data to EmployeeIdCard format
-  static transformToIdCard(employee: Employee): EmployeeIdCard {
+  static transformToIdCard(employee: Employee | EmployeeIdCardResponse): EmployeeIdCard {
     try {
       return {
         id: employee.name || "Unknown",
         name: employee.employee_name || employee.first_name || "Unknown",
         employee_name:
           employee.employee_name || employee.first_name || "Unknown",
-        department: employee.department || "Not Specified",
-        designation: employee.designation || "Not Specified",
-        location: employee.branch || employee.company || "Not Specified",
+        department: (employee as EmployeeIdCardResponse)?.department_name || employee.department || "Not Specified",
+        designation: (employee as EmployeeIdCardResponse)?.designation_name || employee.designation || "Not Specified",
+        location: (employee as EmployeeIdCardResponse)?.branch_name || employee.branch || employee.company || "Not Specified",
         startDate: employee.date_of_joining || "Not Available",
         avatar: employee.image || undefined, // Don't set default here, let the component handle it
         status: employee.status || "Active",
-        company: employee.company || "Not Specified",
+        company: (employee as EmployeeIdCardResponse)?.company_name || employee.company || "Not Specified",
         employee_number: employee.employee_number || employee.name || "N/A",
         contact: employee.cell_number || undefined,
         email:

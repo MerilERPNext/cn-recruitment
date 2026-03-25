@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -165,9 +166,8 @@ const EmployeeAvatar = ({
 // Employee Info Row Component
 const InfoRow = ({ label, value, isLast = false }: any) => (
   <div
-    className={`flex justify-between items-center py-3 ${
-      !isLast ? "border-b border-gray-200" : ""
-    }`}
+    className={`flex justify-between items-center py-3 ${!isLast ? "border-b border-gray-200" : ""
+      }`}
   >
     <p className="text-gray-600 text-sm">{label}</p>
     <p className="text-gray-800 text-sm font-medium">{value}</p>
@@ -214,9 +214,8 @@ const ActionButton = ({
 
   return (
     <button
-      className={`${baseClasses} ${
-        variantClasses[variant] as string
-      } ${className}`}
+      className={`${baseClasses} ${variantClasses[variant] as string
+        } ${className}`}
       onClick={onClick}
     >
       {Icon && <Icon />}
@@ -276,7 +275,7 @@ const ActionButtons = ({
   onWhatsApp,
   onCall,
 }: // onAttendanceAssignments,
-ActionButtonsProps) => (
+  ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
     <div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>

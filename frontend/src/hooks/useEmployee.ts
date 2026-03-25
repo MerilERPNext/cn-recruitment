@@ -12,6 +12,7 @@ import {
   EmployeeNode,
   Award,
   AttendanceFieldPermissions,
+  EmployeeIdCardResponse,
 } from "../types/employee";
 import { profileService } from "../services/profileService";
 import { AddressInfoData } from "../types/profile";
@@ -58,8 +59,8 @@ export const useAttendanceFieldReasonAndMessagePermissions = (): UseQueryResult<
 
 export const useEmployee = (
   employeeId: string | null
-): UseQueryResult<Employee, Error> => {
-  return useQuery<Employee, Error>({
+): UseQueryResult<Employee | EmployeeIdCardResponse, Error> => {
+  return useQuery<Employee | EmployeeIdCardResponse, Error>({
     queryKey: ["employee", employeeId],
     queryFn: () => EmployeeService.getEmployee(employeeId!),
     enabled: !!employeeId,
@@ -70,10 +71,10 @@ export const useEmployee = (
 
 // Hook to get current logged-in user's employee record
 export const useCurrentEmployee = (): UseQueryResult<
-  Employee | null,
+  Employee | EmployeeIdCardResponse | null,
   Error
 > => {
-  return useQuery<Employee | null, Error>({
+  return useQuery<Employee | EmployeeIdCardResponse | null, Error>({
     queryKey: ["currentEmployee"],
     queryFn: () => EmployeeService.getCurrentEmployee(),
     staleTime: 5 * 60 * 1000, // 5 minutes
