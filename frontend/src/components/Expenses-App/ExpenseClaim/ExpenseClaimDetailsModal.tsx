@@ -201,8 +201,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   key={item.name}
                   className="bg-white hover:bg-gray-50 transition-colors duration-150"
                 >
-                  <td className="px-4 py-3 text-gray-800">
-                    {item.expense_type ?? "—"}
+                  <td className="px-4 py-3 text-gray-800 truncate">
+                    {item?.custom_claim_type_name} ({item.expense_type ?? "—"})
                   </td>
                   <td className="px-4 py-3 text-gray-800">
                     {formatToIndianDate(item.expense_date)}
@@ -210,7 +210,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                   <td className="px-4 py-3">
                     <div className="flex justify-center">
-                      <StatusBadge status={item.custom_approval_staus} />
+                      <StatusBadge status={item?.custom_approval_staus} />
                     </div>
                   </td>
 
@@ -291,8 +291,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <Typography variant="mobileCardLabel" className="block">
                     Expense Type
                   </Typography>
-                  <Typography variant="mobileCardValue">
-                    {item.expense_type ?? "—"}
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {item?.custom_claim_type_name} ({item.expense_type ?? "—"})
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1">

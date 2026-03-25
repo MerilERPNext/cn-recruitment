@@ -374,6 +374,19 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               },
               input: true,
               html: true,
+              ...(field?.fieldname === "expense_date"
+                ? {
+                    widget: {
+                      type: "calendar",
+                      displayInTimezone: "viewer",
+                      locale: "en",
+                      maxDate: format(new Date(), "yyyy-MM-dd"),
+                    },
+                    datePicker: {
+                      maxDate: format(new Date(), "yyyy-MM-dd"),
+                    },
+                  }
+                : {}),
             };
           case "Datetime":
             return {

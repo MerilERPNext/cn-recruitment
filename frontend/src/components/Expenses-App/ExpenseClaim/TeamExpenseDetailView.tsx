@@ -410,7 +410,7 @@ export function TeamExpenseDetailView({
                   Due in{" "}
                   {Math.ceil(
                     (new Date(data.due_date).getTime() - Date.now()) /
-                      (1000 * 60 * 60 * 24),
+                    (1000 * 60 * 60 * 24),
                   )}{" "}
                   days
                 </span>
@@ -479,8 +479,8 @@ export function TeamExpenseDetailView({
                           </div>
                           {(item.custom_approval_staus === "Approved" ||
                             item.custom_approval_staus === "Rejected") && (
-                            <StatusBadge status={item.custom_approval_staus} />
-                          )}
+                              <StatusBadge status={item.custom_approval_staus} />
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-3">
@@ -488,8 +488,8 @@ export function TeamExpenseDetailView({
                             <Typography variant="mobileCardLabel">
                               EXPENSE TYPE
                             </Typography>
-                            <Typography variant="mobileCardValue">
-                              {item.expense_type}
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {item?.custom_claim_type_name} ({item.expense_type})
                             </Typography>
                           </div>
 

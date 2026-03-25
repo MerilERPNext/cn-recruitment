@@ -215,7 +215,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formattedAmount}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {formattedSanctionedAmount}
+        {item?.status?.toLowerCase() === "approved" ? formattedSanctionedAmount : " -- "}
       </Typography>
       {isPaidFilter && (
         <Typography variant="bodySmall" className="font-medium text-center">

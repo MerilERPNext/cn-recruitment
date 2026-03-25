@@ -172,6 +172,7 @@ export interface Expense {
   amount: number;
   custom_currency: string;
   custom_amount_in_other_currency: number;
+  custom_claim_type_name: string;
   sanctioned_amount: number;
   custom_sanctioned_amount_in_other_currency: number;
   custom_exchange_rate: number;
