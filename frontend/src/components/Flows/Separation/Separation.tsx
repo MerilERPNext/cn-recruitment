@@ -161,7 +161,7 @@ const Separation = () => {
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${activeEmployee?.notice_number_of_days ? "of " + activeEmployee?.notice_number_of_days + " days" : ""}`,
+      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],
