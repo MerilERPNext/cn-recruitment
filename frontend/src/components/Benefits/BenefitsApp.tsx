@@ -115,7 +115,7 @@ const BenefitsApp: React.FC = () => {
         <Outlet context={{ setActionButtonConfig }} />
       </main>
       {actionButtonConfig && (
-        <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 p-2">
+        <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 p-2">
           <Button
             fullWidth
             size="lg"
