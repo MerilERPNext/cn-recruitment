@@ -134,18 +134,23 @@ const TeamExpense = () => {
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "approval_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
                 },
               ]}
               noRecordsScreen={noRecordsScreen}
-              defaultFilters={{ status: "Draft" }}
+              defaultFilters={{ approval_status: "Draft" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (

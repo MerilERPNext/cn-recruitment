@@ -298,7 +298,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       >
         {expenseClaim?.name}
       </Typography>
-     <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""}`}>
+      <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""}`}>
         <Typography
           variant="bodySmall"
           className="font-medium text-center truncate"
@@ -336,7 +336,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           role={item?.role}
           position="left"
         >
-          <StatusBadge status={item?.status} />
+          <StatusBadge status={item?.reference_document?.approval_status} />
         </AllocatedToTooltip>
       </div>
 
@@ -596,18 +596,19 @@ const ExpensesList: React.FC = () => {
               isFilter={true}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "approval_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
+                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
-                    { label: "Paid", value: "Paid" },
+
+
                   ],
                 },
               ]}
-              defaultFilters={{ status: ["!=", "Cancelled"] }}
+              defaultFilters={{ approval_status: ["===", "Draft"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}

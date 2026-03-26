@@ -167,7 +167,7 @@ const ExpenseApprovalCard = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.status} />
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
             </AllocatedToTooltip>
           </div>
 
@@ -225,7 +225,7 @@ const ExpenseApprovalCard = ({
                     </Typography>
                   </Link>
                 </div>
-                <StatusBadge status={data?.status} />
+                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
               </div>
 
               {/* Category & Amount */}
