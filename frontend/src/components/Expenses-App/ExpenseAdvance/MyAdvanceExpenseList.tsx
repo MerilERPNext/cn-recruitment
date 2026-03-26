@@ -1,22 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import { formatCurrency } from "../../../utils/currencyFormatter";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
-import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { useSearchParams } from "react-router-dom";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
@@ -26,7 +32,9 @@ const MyAdvanceExpenseList = () => {
 
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const navigate = useNavigate();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const urlRequestId = searchParams.get("requestId");
@@ -34,8 +42,11 @@ const MyAdvanceExpenseList = () => {
 
   const { data: todoData } = useGetToDoWithReferenceDoc(
     urlRequestId || undefined,
-    urlReferenceName || undefined
+    urlReferenceName || undefined,
   );
+
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
 
   const openDetailModal = (id: string, stages: ApprovalStage[]) => {
     setSelectedStages(stages);
@@ -59,15 +70,54 @@ const MyAdvanceExpenseList = () => {
     todoData?.reference_name ||
     todoData?.reference_document?.name;
 
+  /** Determine action permissions for a todo item */
+  const getActionFlags = (item: any) => {
+    const canEdit =
+      item?.can_edit === true &&
+      currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase();
+    const canRevoke = item?.custom_allow_revoke === 1;
+    return { canEdit, canRevoke };
+  };
+
+  /** Navigate to the advance form in edit mode with pre-filled data */
+  const handleEditClick = (item: any) => {
+    navigate("/webapp/expenses-app/new-expense-advance", {
+      state: { advanceData: item.reference_document },
+    });
+  };
+
+  /** Revoke an advance */
+  const handleRevokeClick = (item: any) => {
+    if (!item?.todo_id) return;
+    loading?.show("Revoking Advance...");
+    revokeEventMutation.mutate(
+      {
+        docname: item?.reference_name,
+        doctype: item?.reference_type,
+        todo: item?.todo_id,
+      },
+      {
+        onSuccess: () => {
+          setTimeout(() => setRefetchAttendance(true), 2000);
+          toast.success("Advance Revoked Successfully!");
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+        onSettled: () => loading?.hide(),
+      },
+    );
+  };
+
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
+    const { canEdit, canRevoke } = getActionFlags(item);
 
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -77,7 +127,6 @@ const MyAdvanceExpenseList = () => {
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
         </Typography>
-
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
@@ -91,12 +140,27 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge status={item?.reference_document?.status} />
           </AllocatedToTooltip>
         </div>
+        {/* Actions column — stop propagation so click doesn't open detail modal */}
+        <div
+          className="flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MyApprovalActionPill
+            isPending={doc?.status === "Draft"}
+            canEdit={canEdit}
+            onEdit={() => handleEditClick(item)}
+            canRevoke={canRevoke}
+            revokeLoading={revokeEventMutation.isPending}
+            onRevoke={() => handleRevokeClick(item)}
+          />
+        </div>
       </div>
     );
   };
 
   const MobileRow = ({ item }: any) => {
     const doc = item.reference_document;
+    const { canEdit, canRevoke } = getActionFlags(item);
 
     return (
       <div
@@ -107,7 +171,7 @@ const MyAdvanceExpenseList = () => {
         <div className="p-4 flex flex-col gap-3 w-full">
           {/* Header */}
           <div className="flex items-start justify-between">
-            {isDesktop ?
+            {isDesktop ? (
               <AllocatedToTooltip
                 users={item?.allocated_to}
                 roles={item?.allocated_roles}
@@ -116,7 +180,8 @@ const MyAdvanceExpenseList = () => {
                 position="left"
               >
                 <StatusBadge status={doc?.status} />
-              </AllocatedToTooltip> :
+              </AllocatedToTooltip>
+            ) : (
               <>
                 <MobileAllocatedTo
                   users={item?.allocated_to}
@@ -126,7 +191,8 @@ const MyAdvanceExpenseList = () => {
                   align="left"
                 />
                 <StatusBadge status={doc?.status} />
-              </>}
+              </>
+            )}
           </div>
 
           {/* Amount & Department */}
@@ -162,6 +228,21 @@ const MyAdvanceExpenseList = () => {
               </Typography>
             </div>
           </div>
+
+          {/* Action Buttons — stop propagation to prevent opening detail modal */}
+          {(canEdit || canRevoke) && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <MyApprovalActionPill
+                variant="buttons"
+                isPending={doc?.status === "Draft"}
+                canEdit={canEdit}
+                onEdit={() => handleEditClick(item)}
+                canRevoke={canRevoke}
+                revokeLoading={revokeEventMutation.isPending}
+                onRevoke={() => handleRevokeClick(item)}
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -188,7 +269,7 @@ const MyAdvanceExpenseList = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Pending: {
+        Draft: {
           title: "No Pending Advances",
           description: "You have no pending advance expense requests.",
         },
@@ -212,9 +293,7 @@ const MyAdvanceExpenseList = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <NoDataFound title={message.title} subtitle={message.description} />
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
   return (
@@ -237,8 +316,9 @@ const MyAdvanceExpenseList = () => {
             "Posting Date",
             "Advance Amount",
             "Status",
+            "ACTIONS",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
@@ -262,7 +342,11 @@ const MyAdvanceExpenseList = () => {
                 fieldname: "status",
                 label: "Status",
                 fieldtype: "Select",
-                options: ["Pending", "Approved", "Rejected"],
+                options: [
+                  { label: "Pending", value: "Draft" },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                ],
               },
             ]}
             orderBy="posting_date desc"

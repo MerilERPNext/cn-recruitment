@@ -37,7 +37,10 @@ export default function TeamAdvanceDetailView({
 }: TeamAdvanceDetailViewProps) {
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data, isLoading, error } = useGetToDoWithReferenceDoc(documentName, referenceName);
+  const { data, isLoading, error } = useGetToDoWithReferenceDoc(
+    documentName,
+    referenceName,
+  );
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -66,7 +69,8 @@ export default function TeamAdvanceDetailView({
 
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
   if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
-  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
+  if (!(data?.todo_id || data?.name || data?.reference_document?.name))
+    return null;
 
   const ref = data.reference_document;
   const actions = (() => {
@@ -99,9 +103,6 @@ export default function TeamAdvanceDetailView({
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Amount
             </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Attachment
-            </th>
           </tr>
         </thead>
 
@@ -125,20 +126,6 @@ export default function TeamAdvanceDetailView({
               </td>
               <td className="px-4 py-3 text-gray-800">
                 {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
-              </td>
-              <td className="px-4 py-3">
-                {item.custom_attach_receipt ? (
-                  <a
-                    href={item.custom_attach_receipt}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                  >
-                    View File
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-400 italic">No file</span>
-                )}
               </td>
             </tr>
           ))}
@@ -204,19 +191,6 @@ export default function TeamAdvanceDetailView({
               </div>
             )}
           </div>
-
-          {item.custom_attach_receipt && (
-            <button
-              type="button"
-              className="mt-3 text-sm text-blue-600 underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(item.custom_attach_receipt, "_blank");
-              }}
-            >
-              View Attachment
-            </button>
-          )}
         </div>
       ))}
     </div>

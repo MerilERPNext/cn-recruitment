@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -49,27 +49,26 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ]
     : [
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
-
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -77,7 +76,7 @@ const TeamAdvanceExpenseList = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Pending: {
+        Draft: {
           title: "No Pending Requests",
           description: "You have no team advance requests to review.",
         },
@@ -101,9 +100,7 @@ const TeamAdvanceExpenseList = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <NoDataFound title={message.title} subtitle={message.description} />
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
   return (
@@ -139,10 +136,14 @@ const TeamAdvanceExpenseList = () => {
                   fieldname: "status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    { label: "Pending", value: "Draft" },
+                    { label: "Approved", value: "Approved" },
+                    { label: "Rejected", value: "Rejected" },
+                  ],
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
+              defaultFilters={{ status: "Draft" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               noRecordsScreen={noRecordsScreen}
