@@ -137,7 +137,8 @@ const MyAdvanceExpenseList = () => {
             allocated_to_user={item?.allocated_to_user}
             position="left"
           >
-            <StatusBadge status={item?.reference_document?.status} />
+            <StatusBadge status={item?.reference_document?.custom_final_status} />
+         
           </AllocatedToTooltip>
         </div>
         {/* Actions column — stop propagation so click doesn't open detail modal */}
@@ -179,7 +180,7 @@ const MyAdvanceExpenseList = () => {
                 role={item?.role}
                 position="left"
               >
-                <StatusBadge status={doc?.status} />
+                <StatusBadge status={doc?.custom_final_status} />
               </AllocatedToTooltip>
             ) : (
               <>
@@ -190,7 +191,7 @@ const MyAdvanceExpenseList = () => {
                   role={item?.role}
                   align="left"
                 />
-                <StatusBadge status={doc?.status} />
+                <StatusBadge status={doc?.custom_final_status} />
               </>
             )}
           </div>
@@ -331,7 +332,7 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
-              status: ["!=", "Cancelled"],
+              custom_final_status: "Pending",
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
@@ -339,14 +340,30 @@ const MyAdvanceExpenseList = () => {
             isFilter={true}
             filterFields={[
               {
-                fieldname: "status",
+                fieldname: "custom_final_status",
                 label: "Status",
                 fieldtype: "Select",
                 options: [
-                  { label: "Pending", value: "Draft" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Pending",
+                    key: "Pending",
+                    value: "Pending",
+                    customAPIParams: { todo_status: "Open" },
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: "Approved",
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected",
+                  },
                 ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             orderBy="posting_date desc"

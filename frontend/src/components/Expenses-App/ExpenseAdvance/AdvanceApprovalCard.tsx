@@ -120,7 +120,7 @@ const AdvanceApprovalCard = ({
               }
               position="left"
             >
-              <StatusBadge status={data?.status} />
+              <StatusBadge status={data.todo_status == "Closed" ? "Approved" : data.reference_document.custom_final_status } />
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
@@ -177,7 +177,7 @@ const AdvanceApprovalCard = ({
                     </Typography>
                   </Link>
                 </div>
-                <StatusBadge status={data?.status} />
+              <StatusBadge status={data.todo_status == "Closed" ? "Approved" : data.reference_document.custom_final_status } />
               </div>
 
               {/* Category & Amount */}

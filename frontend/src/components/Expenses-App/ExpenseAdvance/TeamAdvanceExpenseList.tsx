@@ -131,19 +131,38 @@ const TeamAdvanceExpenseList = () => {
               isFilter={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+          
               filterFields={[
+
                 {
-                  fieldname: "status",
+                  fieldname: "custom_final_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"]
+                  }
                 },
               ]}
-              defaultFilters={{ status: "Draft" }}
+              defaultFilters={{ custom_final_status: "Pending" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               noRecordsScreen={noRecordsScreen}
