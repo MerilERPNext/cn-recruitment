@@ -99,14 +99,36 @@ const TeamAttendanceDetails = () => {
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
+
                 {
                   fieldname: "status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"]
+                  }
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
+              // defaultFilters={{ status: ["!=", "Cancelled"] }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (

@@ -88,10 +88,27 @@ const TeamOvertimeRequests = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Open" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    {
+                      label: "Pending",
+                      key: "Open",
+                      value: "Open",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"]
+                  }
                 },
               ]}
               SkeletonComponent={CardSkeleton}
