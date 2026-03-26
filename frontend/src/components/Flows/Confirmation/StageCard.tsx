@@ -119,7 +119,8 @@ const StageCard: React.FC<StageCardProps> = ({
       ? "Process yet to be trigger for"
       : status == "completed"
         ? "Approved by "
-        : "Pending inputs from ";
+        : "Pending input from ";
+
 
   return (
     <>

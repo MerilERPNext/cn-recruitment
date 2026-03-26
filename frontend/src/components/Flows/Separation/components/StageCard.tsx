@@ -153,13 +153,15 @@ const CardStages = ({
   };
 
   const approverPerfix =
-    stage?.status == "Pending"
-      ? "Process yet to be trigger for"
-      : stage?.status == "Approved"
-        ? "Approved by "
-        : stage?.status == "Rejected"
-          ? "Rejected by"
-          : "Pending inputs from ";
+    isActive ? "Process triggered for"
+      : stage?.status == "Pending"
+        ? "Process yet to be trigger for"
+        : stage?.status == "Approved"
+          ? "Approved by "
+          : stage?.status == "Rejected"
+            ? "Rejected by"
+            : "Pending inputs from ";
+
 
   return (
     <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer  items-center text-sm  lg:px-6">

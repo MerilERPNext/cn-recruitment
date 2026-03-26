@@ -23,6 +23,7 @@ import NotificationList from "./components/Notification/Notification";
 import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1095,6 +1096,10 @@ export const routesConfig: AppRoute[] = [
         path: "separation",
         element: <Separation />,
         permissionKey: "Separation",
+      }, {
+        path: "rejected-separation-request",
+        element: <RejectedSeparationRequest />,
+        permissionKey: "Rejected Separation Request",
       },
       {
         path: "separation-workflow",
