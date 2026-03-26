@@ -505,13 +505,13 @@ export class EmployeeService {
         name: employee.employee_name || employee.first_name || "Unknown",
         employee_name:
           employee.employee_name || employee.first_name || "Unknown",
-        department: (employee as EmployeeIdCardResponse)?.department_name || employee.department || "Not Specified",
-        designation: (employee as EmployeeIdCardResponse)?.designation_name || employee.designation || "Not Specified",
-        location: (employee as EmployeeIdCardResponse)?.branch_name || employee.branch || employee.company || "Not Specified",
+        department: ('department_name' in employee && employee.department_name) || employee.department || "Not Specified",
+        designation: ('designation_name' in employee && employee.designation_name) || employee.designation || "Not Specified",
+        location: ('branch_name' in employee && employee.branch_name) || employee.branch || employee.company || "Not Specified",
         startDate: employee.date_of_joining || "Not Available",
         avatar: employee.image || undefined, // Don't set default here, let the component handle it
         status: employee.status || "Active",
-        company: (employee as EmployeeIdCardResponse)?.company_name || employee.company || "Not Specified",
+        company: ('company_name' in employee && employee.company_name) || employee.company || "Not Specified",
         employee_number: employee.employee_number || employee.name || "N/A",
         contact: employee.cell_number || undefined,
         email:

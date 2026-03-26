@@ -22,7 +22,6 @@ import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkelet
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
-import { Employee } from "../../MyProfile/EmploymentHistory";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -159,7 +158,7 @@ const Separation = () => {
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${(activeEmployee as Employee)?.notice_number_of_days ? "of " + (activeEmployee as Employee)?.notice_number_of_days + " days" : ""}`,
+      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],

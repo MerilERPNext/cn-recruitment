@@ -1935,7 +1935,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             editingExpenseId={editingExpenseId}
             expenses={expenses}
             setExpenses={(fn) => setExpenses(fn)}
-            currentEmployee={currentEmployee as Employee}
+            currentEmployee={currentEmployee as any}
             maxParticipants={maxAllowedParticipants}
             employeeOptions={employeeOptionsForDrawer}
             employeeOptionsLoading={isLoadingEmployees as boolean}
