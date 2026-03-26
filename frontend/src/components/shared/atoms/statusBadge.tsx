@@ -236,7 +236,7 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
 
     default:
       return {
-        label: rawStatus || "Unknown",
+        label: rawStatus || "NA",
         bgClass: "bg-gray-100",
         textClass: "text-gray-600",
         icon: null,
