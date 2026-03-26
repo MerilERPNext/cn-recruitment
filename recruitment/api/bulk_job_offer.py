@@ -271,7 +271,6 @@ Team HR
                     message=message,
                     reference_doctype="Job Offer",
                     reference_name=job_offer.name,
-                    now=True
                 )
             except Exception as mail_error:
                 failed += 1
