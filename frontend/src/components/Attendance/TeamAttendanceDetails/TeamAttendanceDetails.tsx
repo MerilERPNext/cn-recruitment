@@ -106,7 +106,7 @@ const TeamAttendanceDetails = () => {
                   options: ["Pending", "Approved", "Rejected"],
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (

@@ -240,23 +240,44 @@ const DataListView = <T extends BaseItem>({
   }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
 
   // Common query parameters
-  const queryParams = useMemo(
-    () => ({
+  const queryParams = useMemo(() => {
+    const currentStatus = debouncedFilters?.status;
+    let processedFilters = { ...debouncedFilters, ...queryParamsFilters };
+
+    // Handle special "Approved" status filter
+    if (currentStatus === "Approved") {
+      // Replace status with ["in", ["Draft", "Approved", "Open", "Pending"]]
+      processedFilters = {
+        ...processedFilters,
+        status: ["in", ["Draft", "Approved", "Open", "Pending"]],
+      };
+    }
+
+    // Handle empty status (Select option) - show all except Cancelled
+    if (!currentStatus || currentStatus === "") {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { status, ...restFilters } = processedFilters as Record<string, any>;
+      processedFilters = {
+        ...restFilters,
+        status: ["!=", "Cancelled"],
+      };
+    }
+
+    return {
       pageSize,
       searchTerm: debouncedSearchTerm,
-      filters: { ...debouncedFilters, ...queryParamsFilters },
+      filters: processedFilters,
       searchFields,
       orderBy,
-    }),
-    [
-      pageSize,
-      debouncedSearchTerm,
-      debouncedFilters,
-      queryParamsFilters,
-      searchFields,
-      orderBy,
-    ],
-  );
+    };
+  }, [
+    pageSize,
+    debouncedSearchTerm,
+    debouncedFilters,
+    queryParamsFilters,
+    searchFields,
+    orderBy,
+  ]);
 
   // Conditionally add/strip todo_status from customAPI params based on active filters
   const effectiveCustomAPI = useMemo(() => {
@@ -275,6 +296,14 @@ const DataListView = <T extends BaseItem>({
       return {
         ...customAPI,
         params: { ...customAPI.params, todo_status: "Open" },
+      };
+    }
+
+    // Handle Approved status - send Closed todo_status
+    if (currentStatus === "Approved") {
+      return {
+        ...customAPI,
+        params: { ...customAPI.params, todo_status: "Closed" },
       };
     }
 

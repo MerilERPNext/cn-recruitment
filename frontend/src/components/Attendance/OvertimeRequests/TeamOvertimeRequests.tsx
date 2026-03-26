@@ -95,7 +95,7 @@ const TeamOvertimeRequests = () => {
                 },
               ]}
               SkeletonComponent={CardSkeleton}
-              defaultFilters={{ status: "Open" }}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               renderCardContent={(item) => (
                 <OvertimeApprovalCard
                   isSelected={item?.isSelected}
