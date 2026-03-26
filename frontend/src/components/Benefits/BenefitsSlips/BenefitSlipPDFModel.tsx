@@ -47,7 +47,7 @@ const BenefitSlipPDFMOdel: React.FC<BenefitSlipPDFMOdelProps> = ({
             })
             .from(container)
             .save()
-            .then(() => document.body.removeChild(container))
+            .finally(() => document.body.removeChild(container))
     }
 
     // Inject CSS into iframe content

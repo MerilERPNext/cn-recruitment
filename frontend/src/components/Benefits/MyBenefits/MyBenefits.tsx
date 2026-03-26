@@ -463,7 +463,7 @@ const MyBenefits: React.FC = () => {
             </div>
             <div className="space-y-3">
               {(selectedComponent.details ?? []).map((detail, idx) => (
-                <MobileDetailCard key={idx} data={detail} />
+                <MobileDetailCard key={detail.month ?? idx} data={detail} />
               ))}
               {(!selectedComponent.details || selectedComponent.details.length === 0) && (
                 <NoDataFound title="No Details" subtitle="No accrual details available." />
