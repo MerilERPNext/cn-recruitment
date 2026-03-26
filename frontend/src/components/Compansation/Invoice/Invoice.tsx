@@ -6,7 +6,6 @@ import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
-import { Upload } from "lucide-react";
 import Button from "../../shared/atoms/Button";
 import { useRef } from "react";
 import CardTable from "../../shared/CardTable";
@@ -20,6 +19,7 @@ import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import ShowHideButton from "../ui/ShowHideButton";
+import { IoMdCloudUpload } from "react-icons/io";
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -228,7 +228,7 @@ export default function Invoice() {
         fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
       }
     >
-     <Upload className="w-3.5 h-3.5" /> Upload
+     <IoMdCloudUpload className="w-4 h-4" /> Upload
     </button>
   </>
 )}
@@ -343,7 +343,7 @@ export default function Invoice() {
         fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
       }
     >
-     <Upload className="w-3.5 h-3.5" /> Upload
+     <IoMdCloudUpload className="w-3.5 h-3.5" /> Upload
     </button>
   </>
 )}
