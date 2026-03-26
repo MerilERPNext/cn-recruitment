@@ -161,9 +161,7 @@ const ShiftRequestApp: React.FC = () => {
       {showShiftChangeButton.Mobile && activeTab === "My Shift Assignment" && (
         <RequestShiftChangeButton onClick={handleShiftForm} />
       )}
-      {showShiftRequestModal && (
-        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      )}
+      <ShiftRequestFormModal isOpen={showShiftRequestModal} onClose={handleCloseShiftModal} />
     </div>
   );
 
@@ -177,9 +175,7 @@ const ShiftRequestApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
       <Outlet />
-      {showShiftRequestModal && (
-        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      )}
+      <ShiftRequestFormModal isOpen={showShiftRequestModal} onClose={handleCloseShiftModal} />
     </DesktopLayoutWrapper>
   );
 

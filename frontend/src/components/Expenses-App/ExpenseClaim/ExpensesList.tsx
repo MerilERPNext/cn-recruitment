@@ -26,6 +26,7 @@ import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useSearchParams } from "react-router-dom";
+import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import toast from "react-hot-toast";
@@ -297,12 +298,14 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       >
         {expenseClaim?.name}
       </Typography>
-      <Typography
-        variant="bodySmall"
-        className="font-medium text-center truncate"
-      >
-        {expenseClaim?.custom_expense_category_name}
-      </Typography>
+     <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""}`}>
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          {expenseClaim?.custom_expense_category_name}
+        </Typography>
+      </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {expenseClaim?.expenses[0]?.custom_claim_type_name}
       </Typography>
