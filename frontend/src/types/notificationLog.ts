@@ -6,4 +6,5 @@ export interface NotificationLog {
   read: number;
   from_user: string;
   creation: string;
+  
 }

@@ -74,7 +74,7 @@ const Events = () => {
       className="h-full flex flex-col max-h-[16.5rem] min-h-[16.5rem]"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-white rounded-t-lg flex justify-between items-center w-full ">
+      <div className=" bg-white rounded-t-lg flex justify-between items-center w-full">
         <Typography variant="subheading" color="title">
           Events
         </Typography>
@@ -174,9 +174,8 @@ const Events = () => {
 
                     <Badge
                       size="sm"
-                      label={`${
-                        isBirthdayTab ? "Birthday" : "Anniversary"
-                      }: ${format(displayDate, "dd MMM")}`}
+                      label={`${isBirthdayTab ? "Birthday" : "Anniversary"
+                        }: ${format(displayDate, "dd MMM")}`}
                       backgroundColor={
                         isBirthdayTab ? "bg-blue-100" : "bg-success-100"
                       }
@@ -189,7 +188,7 @@ const Events = () => {
               })
             )}
 
-            {}
+            { }
           </div>
         </div>
       </div>

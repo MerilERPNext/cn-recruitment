@@ -9,6 +9,7 @@ import {
 } from "../../../../hooks/payroll/useEditITDeclaration";
 
 import itDeclarationSchema from "./editITDeclarationForm.json";
+import toast from "react-hot-toast";
 
 type Props = {
   isOpen: boolean;
@@ -62,8 +63,8 @@ const EditITDeclarationAccess = ({
       });
 
       onClose();
-    } catch (error) {
-      console.error("Submission failed", error);
+    } catch (error: any) {
+      toast.error(error);  
     }
   };
 
