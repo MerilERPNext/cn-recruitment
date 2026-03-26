@@ -13,6 +13,7 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [activeStatus, setActiveStatus] = useState("Draft");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
@@ -50,25 +51,35 @@ const TeamExpense = () => {
     ? [
       "Select",
       "Employee",
+      "Expense ID",
       "Expense Category",
+      "Expense Type",
       "Claimed Amount",
       "Due Date",
       "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
       "ACTIONS",
     ]
     : [
       "Employee",
+      "Expense ID",
       "Expense Category",
+      "Expense Type",
       "Claimed Amount",
       "Due Date",
       "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
       "ACTIONS",
     ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? (activeStatus === "Approved" 
+        ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"] 
+        : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
+    : (activeStatus === "Approved"
+        ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+        : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -153,6 +164,9 @@ const TeamExpense = () => {
               defaultFilters={{ approval_status: "Draft" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.approval_status || "Draft");
+              }}
               renderCardContent={(item) => (
                 <ExpenseApprovalCard
                   isSelected={item?.isSelected}
@@ -162,6 +176,7 @@ const TeamExpense = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  activeStatus={activeStatus}
                 />
               )}
             />

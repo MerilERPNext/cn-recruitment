@@ -25,6 +25,7 @@ interface ExpenseClaimModalProps {
   selectedStages: ApprovalStage[];
   selectedSendBackUser?: string | null;
   canEdit?: boolean;
+  todoStatus?: string | null;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -33,6 +34,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   selectedStages,
   selectedSendBackUser,
   canEdit: canEditProp = false,
+  todoStatus = null,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
   const navigate = useNavigate();
@@ -43,7 +45,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const { isDesktop } = useScreenSize();
 
   const isSendedBack =
-    currentUser?.name === selectedSendBackUser && canEditProp;
+    currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
 
   const formatINR = (value?: number | null) =>
     typeof value === "number"
