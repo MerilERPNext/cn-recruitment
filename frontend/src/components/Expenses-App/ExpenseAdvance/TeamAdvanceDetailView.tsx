@@ -5,6 +5,7 @@ import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -89,19 +90,22 @@ export default function TeamAdvanceDetailView({
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Expense Type
+              Advance Type
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Date
+              Advance Date
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Merchant
+              Sanctioned Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Invoice No.
+              Claimed Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Amount
+              Approval Status
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Description
             </th>
           </tr>
         </thead>
@@ -112,21 +116,21 @@ export default function TeamAdvanceDetailView({
               key={item.name || idx}
               className="bg-white hover:bg-gray-50 transition-colors duration-150"
             >
-              <td className="px-4 py-3 text-gray-800">
-                {item.expense_type || "-"}
-              </td>
+              <td className="px-4 py-3 text-gray-800">{item.expense_type}</td>
               <td className="px-4 py-3 text-gray-800">
                 {formatToIndianDate(item.expense_date)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {item.custom_mercent || "-"}
+                {formatCurrency(item.sanctioned_amount)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {item.custom_invoice_number || "-"}
+                {formatCurrency(item.amount)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
+                {" "}
+                {<StatusBadge status={item.custom_approval_staus} />}
               </td>
+              <td className="px-4 py-3 text-gray-800">{item.description}</td>
             </tr>
           ))}
         </tbody>
@@ -141,55 +145,59 @@ export default function TeamAdvanceDetailView({
           key={item.name || idx}
           className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
         >
-          <div className="mb-3">
+          {/* Header */}
+          <div className="mb-3 flex justify-between items-center">
             <Typography variant="label" className="card-title">
               Breakup Entry {idx + 1}
             </Typography>
+
+            {/* Approval Status */}
+            <StatusBadge status={item.custom_approval_staus} />
           </div>
 
+          {/* Content */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            {/* Advance Type */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Expense Type
-              </Typography>
+              <Typography variant="mobileCardLabel">Advance Type</Typography>
               <Typography variant="mobileCardValue">
-                {item.expense_type}
+                {item.expense_type || "—"}
               </Typography>
             </div>
+
+            {/* Date */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Amount
-              </Typography>
-              <Typography variant="mobileCardValue">
-                {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
-              </Typography>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Date
-              </Typography>
+              <Typography variant="mobileCardLabel">Advance Date</Typography>
               <Typography variant="mobileCardValue">
                 {formatToIndianDate(item.expense_date)}
               </Typography>
             </div>
+
+            {/* Sanctioned Amount */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Merchant
+              <Typography variant="mobileCardLabel">
+                Sanctioned Amount
               </Typography>
               <Typography variant="mobileCardValue">
-                {item.custom_mercent || "-"}
+                {formatCurrency(item.sanctioned_amount)}
               </Typography>
             </div>
-            {item.custom_invoice_number && (
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Invoice
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {item.custom_invoice_number}
-                </Typography>
-              </div>
-            )}
+
+            {/* Claimed Amount */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(item.amount)}
+              </Typography>
+            </div>
+
+            {/* Description - full width */}
+            <div className="col-span-2 flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Description</Typography>
+              <Typography variant="mobileCardValue">
+                {item.description || "—"}
+              </Typography>
+            </div>
           </div>
         </div>
       ))}
@@ -304,7 +312,7 @@ export default function TeamAdvanceDetailView({
               variant="bodySmall"
               className="base-title mb-1 font-bold block"
             >
-              Advance Breakup
+              Advance Breakup Items ({ref?.expenses?.length || 0})
             </Typography>
 
             {ref.expenses?.length > 0 ? (
