@@ -126,7 +126,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
               </Typography>
 
               {/* Approval Status */}
-              <StatusBadge status={item.custom_approval_status} />
+              <StatusBadge status={item.custom_approval_staus} />
             </div>
 
             {/* Content */}

@@ -90,7 +90,6 @@ const ExpenseAdvanceForm: React.FC<{
 
   const prepareExpenseClaims = (claims: ExpenseClaim[]) =>
     claims.map(({ id, ...claim }) => {
-      console.debug(id);
       const filteredClaim = Object.fromEntries(
         Object.entries(claim).filter(
           ([, value]) => value !== null && value !== undefined && value !== "",
