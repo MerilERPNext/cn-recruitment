@@ -121,7 +121,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
       reason,
       status: "Draft",
       employee: activeEmployee.name,
-      shift_request_approver: activeEmployee.shift_request_approver,
+      shift_request_approver: (activeEmployee as any)?.shift_request_approver,
     };
 
     // 2️⃣ Wrap only the network mutation inside the overlay
