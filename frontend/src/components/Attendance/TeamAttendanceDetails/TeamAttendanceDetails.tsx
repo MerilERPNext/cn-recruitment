@@ -99,18 +99,43 @@ const TeamAttendanceDetails = () => {
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
+
                 {
-                  fieldname: "status",
+                  fieldname: "custom_status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  }
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
               orderBy="from_date desc"
+              defaultFilters={{ custom_status: "Pending" }}
               SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => (
-                <ApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -121,7 +146,7 @@ const TeamAttendanceDetails = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>

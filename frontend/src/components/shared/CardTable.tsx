@@ -13,7 +13,10 @@ const CardTable = ({
 }) => {
   const { isDesktop } = useScreenSize();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+
   const [scrollContainerWidth, setScrollContainerWidth] = useState<number>(0);
+  const [searchBarOffset, setSearchBarOffset] = useState<number>(0);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -21,6 +24,22 @@ const CardTable = ({
 
     const updateWidth = () => {
       setScrollContainerWidth(el.clientWidth);
+    };
+
+    updateWidth();
+
+    const ro = new ResizeObserver(() => updateWidth());
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      setSearchBarOffset(el.clientHeight);
     };
 
     updateWidth();
@@ -48,8 +67,9 @@ const CardTable = ({
         style={
           scrollContainerWidth
             ? ({
-                "--card-table-visible-width": `${scrollContainerWidth}px`,
-              } as React.CSSProperties)
+              "--card-table-visible-width": `${scrollContainerWidth}px`,
+              "--search-bar-offset": `${searchBarOffset}px`,
+            } as React.CSSProperties)
             : undefined
         }
       >
@@ -60,6 +80,7 @@ const CardTable = ({
             <div
               className="grid gap-4 px-6 py-4 bg-gray-50 border-b flex-shrink-0 sticky top-0 z-10"
               style={{ gridTemplateColumns }}
+              ref={stickyRef}
             >
               {titles.map((title, index) => (
                 <Typography

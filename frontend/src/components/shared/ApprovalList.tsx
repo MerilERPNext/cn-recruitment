@@ -116,7 +116,7 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
 
-  const currentStatus = activeFilters?.status || status;
+  const currentStatus = activeFilters?.status || activeFilters?.approval_status || activeFilters?.custom_final_status || activeFilters?.custom_status || status;
 
   const statusBasedBulkEnable =
     currentStatus === "Open" ||
@@ -134,12 +134,12 @@ const ApprovalList = ({
     onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
   }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
 
-  const triggerRefetch = () => {
+  const triggerRefetch = useCallback(() => {
     if (setRefetch) {
       setRefetch(true);
     }
     setRefetchAttendance(true);
-  };
+  }, [setRefetch, setRefetchAttendance]);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -154,7 +154,7 @@ const ApprovalList = ({
         handleChatClose,
       );
     };
-  }, []);
+  }, [triggerRefetch]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -316,7 +316,7 @@ const ApprovalList = ({
           method: "cn_leave_shift_managment.api.get_open_approval_todos",
           params: {
             doctype: doctype,
-            include_allocated_todos: true, 
+            include_allocated_todos: true,
             fields: ["*"],
             // status: status,
             // ...activeFilters,

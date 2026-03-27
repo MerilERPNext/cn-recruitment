@@ -13,6 +13,7 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [activeStatus, setActiveStatus] = useState("Draft");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
@@ -51,24 +52,36 @@ const TeamExpense = () => {
       "Select",
       "Employee",
       "Expense Category",
+      "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Actions",
     ]
     : [
       "Employee",
       "Expense Category",
+      "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Actions",
     ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? (activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
+    : (activeStatus === "Approved"
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -134,22 +147,33 @@ const TeamExpense = () => {
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "approval_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
                 },
               ]}
               noRecordsScreen={noRecordsScreen}
-              defaultFilters={{ status: "Draft" }}
+              defaultFilters={{ approval_status: "Draft" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => (
-                <ExpenseApprovalCard
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.approval_status || "Draft");
+              }}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ExpenseApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -157,8 +181,9 @@ const TeamExpense = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  activeStatus={activeStatus}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>

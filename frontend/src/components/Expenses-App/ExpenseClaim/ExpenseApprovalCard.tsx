@@ -24,6 +24,7 @@ type ApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  activeStatus?: string;
 };
 
 const ExpenseApprovalCard = ({
@@ -35,6 +36,7 @@ const ExpenseApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled = true,
+  activeStatus = "Draft",
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const commentMutation = useExpenseCommentUpdate();
@@ -55,8 +57,12 @@ const ExpenseApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr";
+    ? (activeStatus === "Approved"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
+    : (activeStatus === "Approved"
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -135,9 +141,11 @@ const ExpenseApprovalCard = ({
               />
             </div>
           )}
+
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
+            className="min-w-0"
           >
             <Typography
               variant="bodySmall"
@@ -148,13 +156,22 @@ const ExpenseApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
+
           <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.custom_expense_category_name} ({data?.reference_document?.custom_expense_category})
+            {data?.reference_document?.custom_expense_category_name || "--"}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center truncate">
+            {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
+          </Typography>
+          <Typography variant="bodySmall" className="font-medium text-center truncate">
+            {data?.reference_document?.expenses[0]?.expense_date || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
           </Typography>
-
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document?.creation)}
+          </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
           </Typography>
@@ -167,18 +184,33 @@ const ExpenseApprovalCard = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.status} />
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
             </AllocatedToTooltip>
           </div>
+          {activeStatus === "Approved" && (
+            <div className="flex items-center justify-center">
+              <Typography variant="bodySmall" className={`font-medium text-center min-w-[70px] ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}>
+                {data?.status === "Paid" ? "Paid" : "Unpaid"}
+              </Typography>
+            </div>
+          )}
 
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => handleActionClick(action, data)}
-            />
+            {activeStatus === "Draft" ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <Typography variant="bodySmall" className="font-medium text-center text-gray-500">
+                  Action taken
+                </Typography>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -225,31 +257,40 @@ const ExpenseApprovalCard = ({
                     </Typography>
                   </Link>
                 </div>
-                <StatusBadge status={data?.status} />
+                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
               </div>
-
-              {/* Category & Amount */}
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Category</Typography>
+                  <Typography variant="mobileCardLabel">Expense Category</Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.reference_document?.custom_expense_category}
+                    {data?.reference_document?.custom_expense_category_name || "-"}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">
-                    Claimed Amount
+                  <Typography variant="mobileCardLabel">Expense Type</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.expenses?.[0]?.custom_claim_type_name || "-"}
                   </Typography>
+                </div>
+              </div>
+              <div className="flex justify-between w-full mt-2">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Claimed Amount</Typography>
                   <Typography variant="mobileCardValue">
                     {totalClaimedAmount}
                   </Typography>
                 </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Claimed Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.reference_document?.creation)}
+                  </Typography>
+                </div>
               </div>
 
-              {/* Dates */}
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Claim Date</Typography>
+                  <Typography variant="mobileCardLabel">Expense Date</Typography>
                   <Typography variant="mobileCardValue">
                     {formatToIndianDate(
                       data?.reference_document?.expenses[0]?.expense_date,
@@ -264,6 +305,8 @@ const ExpenseApprovalCard = ({
                 </div>
               </div>
 
+
+
               {/* Allocated To */}
               <MobileAllocatedTo
                 users={data?.allocated_to}
@@ -271,15 +314,33 @@ const ExpenseApprovalCard = ({
                 username={data?.username}
                 role={data?.role}
               />
+              {activeStatus === "Approved" && (
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">Paid Status</Typography>
+                    <Typography variant="bodySmall" className={`font-medium w-fit ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}>
+                      {data?.status === "Paid" ? "Paid" : "Unpaid"}
+                    </Typography>
+                  </div>
+                </div>
+              )}
 
-              <TeamApprovalActionPill
-                variant="buttons"
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              />
+              {activeStatus === "Draft" ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => handleActionClick(action, data)}
+                />
+              ) : (
+                <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
+                  <Typography variant="bodySmall" className="text-center text-gray-100">
+                    Action taken
+                  </Typography>
+                </div>
+              )}
             </div>
           </div>
         </div>

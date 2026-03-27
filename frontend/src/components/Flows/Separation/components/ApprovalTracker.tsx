@@ -146,7 +146,7 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
               const isActive =
                 item.status === "Pending" &&
                 (idx == 0 ||
-                  data?.approval_stages[idx - 1].status != "Pending");
+                  data?.approval_stages[idx - 1].status === "Approved");
               const isLastStage =
                 idx == data?.approval_stages.length - 1;
 

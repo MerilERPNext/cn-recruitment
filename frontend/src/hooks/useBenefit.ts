@@ -100,7 +100,7 @@ export const useGetAllAccruedReimbursements = (employee: string, company: string
     return useQuery<any, Error>({
         queryKey: ["benefit", "my-benefits", employee, company, payroll_period],
         queryFn: () => getAllAccruedReimbursements(employee, company, payroll_period),
-        enabled: !!employee && !!company
+        enabled: !!employee && !!company && !!payroll_period
         // ...defaultQueryOptions,
     });
 };

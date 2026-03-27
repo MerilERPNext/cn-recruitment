@@ -77,6 +77,7 @@ doctype_js = {
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
         "public/js/emp_OB_verification_table.js",
+        "public/js/emp_OB_field_level_approval.js",
     ],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],

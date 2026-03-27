@@ -55,8 +55,11 @@ export function TeamExpenseDetailView({
     error,
   } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
+
   const data = (documentName || referenceName) ? fetchedData : propsData;
   const ref = data?.reference_document || {};
+
+  console.log(ref);
 
   const claimId = ref?.name || data?.reference_name || "";
 
@@ -244,6 +247,10 @@ export function TeamExpenseDetailView({
       toast.error("Please enter a comment");
       return;
     }
+    if (rejectionComment.trim().length < 15) {
+      toast.error("Comment must be at least 15 characters long");
+      return;
+    }
 
     try {
       await loading?.wrap(
@@ -325,13 +332,12 @@ export function TeamExpenseDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const { totalToBeReimbursed, totalAmount, nonReimbursableAmount } =
+  const { totalAmount } =
     useMemo(() => {
       const approved = expenseItems.filter(
         (item) => item.custom_approval_staus === "Approved",
       );
 
-      const nonReimbursable = 0;
 
       let totalReimbursed;
 
@@ -353,9 +359,7 @@ export function TeamExpenseDetailView({
       const total = totalReimbursed;
 
       return {
-        totalToBeReimbursed: totalReimbursed,
         totalAmount: total,
-        nonReimbursableAmount: nonReimbursable,
       };
     }, [expenseItems]);
 
@@ -421,30 +425,26 @@ export function TeamExpenseDetailView({
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <Typography
-                variant="mobileCardLabel"
-                className="text-md font-bold mb-2"
-              >
-                Report Details
-              </Typography>
+
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 min-w-0">
                   <Typography
                     variant="mobileCardLabel"
                     className="text-gray-500"
                   >
                     {ref?.employee_name ? "Employee Name" : "Employee ID"}
                   </Typography>
-                  <Typography variant="mobileCardValue">
+                  <Typography variant="mobileCardValue" className="truncate">
                     {ref?.employee_name || ref?.employee}
                   </Typography>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Policy</Typography>
-                  <Typography variant="mobileCardValue">
-                    {ref?.custom_expense_category || "N/A"}
+                <div className="flex flex-col gap-1 min-w-0">
+                  <Typography variant="mobileCardLabel">Employee ID</Typography>
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {ref?.employee || "N/A"}
                   </Typography>
                 </div>
+
               </div>
             </div>
 
@@ -460,36 +460,45 @@ export function TeamExpenseDetailView({
                 return (
                   <div
                     key={item.id}
-                    className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                    className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow overflow-hidden"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <Typography variant="mobileCardLabel">
-                                EXPENSE DATE
-                              </Typography>
-                              <Typography variant="mobileCardValue">
-                                {formatToIndianDate(
-                                  item.expense_date || item.creation,
-                                )}
-                              </Typography>
-                            </div>
-                          </div>
-                          {(item.custom_approval_staus === "Approved" ||
-                            item.custom_approval_staus === "Rejected") && (
-                              <StatusBadge status={item.custom_approval_staus} />
-                            )}
-                        </div>
-
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex-1 min-w-0">
                         <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              EXPENSE DATE
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {formatToIndianDate(
+                                item.expense_date || item.creation,
+                              )}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              CLAIMED DATE
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {formatToIndianDate(
+                                item?.creation,
+                              )}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              EXPENSE CATEGORY
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {ref?.custom_expense_category_name || "--"}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
                             <Typography variant="mobileCardLabel">
                               EXPENSE TYPE
                             </Typography>
                             <Typography variant="mobileCardValue" className="truncate">
-                              {item?.custom_claim_type_name} ({item.expense_type})
+                              {item?.custom_claim_type_name || "--"}
                             </Typography>
                           </div>
 
@@ -628,52 +637,51 @@ export function TeamExpenseDetailView({
                             </Typography>
                             <AttachmentCard
                               fileUrl={item.custom_attach_receipt}
-                              compact={isDesktop ? false : true}
+                              compact={false}
                             />
                           </div>
                         )}
 
                         <div className="mb-3">
-                          <label className="text-xs text-gray-500 uppercase mb-1 block">
+                          <label className="text-xs text-gray-500 uppercase mb-1 block font-medium">
                             SANCTIONED AMOUNT ({CURRENCY_SYMBOL}) *
                           </label>
 
-                          <input
-                            type="number"
-                            value={item.sanctionedAmountInput}
-                            onChange={(e) =>
-                              updateSanctionedAmount(item.id, e.target.value)
-                            }
-                            disabled={!isClaimEditable}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                            step="1"
-                            min="0"
-                            onKeyDown={(e) => {
-                              if (e.key === "." || e.key === ",") {
-                                e.preventDefault();
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={item.sanctionedAmountInput}
+                              onChange={(e) =>
+                                updateSanctionedAmount(item.id, e.target.value)
                               }
-                            }}
-                          />
-                        </div>
-
-                        {isClaimEditable && isItemDirty && (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleSaveItem(item.id)}
-                              disabled={savingItem === item.id}
-                              variant="contain"
-                              bgColor="primary"
-                              size="sm"
-                              className="px-4"
-                            >
-                              {savingItem === item.id ? (
-                                <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                "Save"
-                              )}
-                            </Button>
+                              disabled={!isClaimEditable}
+                              className="w-48 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                              step="1"
+                              min="0"
+                              onKeyDown={(e) => {
+                                if (e.key === "." || e.key === ",") {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            {isClaimEditable && isItemDirty && (
+                              <Button
+                                onClick={() => handleSaveItem(item.id)}
+                                disabled={savingItem === item.id}
+                                variant="contain"
+                                bgColor="primary"
+                                size="sm"
+                                className="px-4 py-2 h-[38px] min-w-[70px] text-sm"
+                              >
+                                {savingItem === item.id ? (
+                                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -691,23 +699,10 @@ export function TeamExpenseDetailView({
           {/* Footer totals */}
           <div className="border-t bg-white px-6 py-4">
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Non Reimbursable Amount</span>
-                <span className="font-medium">
-                  {formatCurrency(nonReimbursableAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  Total Amount To Be Reimbursed
-                </span>
-                <span className="font-medium">
-                  {formatCurrency(totalToBeReimbursed)}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2 border-t">
+
+              <div className="flex justify-between pt-2">
                 <span className="font-semibold text-lg text-gray-900">
-                  Total Amount
+                  Total Approved Amount
                 </span>
                 <span className="font-bold text-lg text-gray-900">
                   {formatCurrency(totalAmount)}
@@ -716,22 +711,24 @@ export function TeamExpenseDetailView({
             </div>
           </div>
 
-          {actions?.length > 0 && status?.label === "Pending" && (
-            <div className="w-full bg-white border-t shadow-md p-4 z-20">
-              <TeamApprovalActionPill
-                variant={isDesktop ? "modal" : "buttons"}
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={
-                  currentAction
-                    ? { id: data?.todo_id, action: currentAction }
-                    : null
-                }
-                onAction={(action) => handleAction(action)}
-              />
-            </div>
-          )}
+          {actions?.length > 0 &&
+            status?.label === "Pending" &&
+            data?.todo_status !== "Closed" && (
+              <div className="w-full bg-white border-t shadow-md p-4 z-20">
+                <TeamApprovalActionPill
+                  variant={isDesktop ? "modal" : "buttons"}
+                  actions={actions}
+                  status={data?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={
+                    currentAction
+                      ? { id: data?.todo_id, action: currentAction }
+                      : null
+                  }
+                  onAction={(action) => handleAction(action)}
+                />
+              </div>
+            )}
 
           {/* Comment modal */}
           {showCommentModal && (
@@ -755,6 +752,11 @@ export function TeamExpenseDetailView({
                     rows={4}
                     autoFocus
                   />
+                  {rejectionComment.trim().length < 15 && (
+                    <p className="text-[10px] mt-1 text-right text-gray-400">
+                      {rejectionComment.trim().length}/15 characters minimum
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-3 justify-end">
                   <Button
@@ -769,11 +771,11 @@ export function TeamExpenseDetailView({
                     size="sm"
                     bgColor="primary"
                     disabled={
-                      !rejectionComment.trim() || commentMutation.isPending
+                      rejectionComment.trim().length < 15 || commentMutation.isPending
                     }
                   >
                     {commentMutation.isPending ? (
-                      <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       "Save & Continue"
                     )}

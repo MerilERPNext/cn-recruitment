@@ -108,17 +108,25 @@ const TeamLeaveRequest = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Open" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    { label: "Pending", key: "Open", value: "Open", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
                 },
               ]}
               defaultFilters={{ status: "Open" }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => (
-                <LeaveApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <LeaveApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -128,7 +136,7 @@ const TeamLeaveRequest = () => {
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   showRejectReason={isRejectedFilter}
                 />
-              )}
+              }}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters.status || "Open");
               }}

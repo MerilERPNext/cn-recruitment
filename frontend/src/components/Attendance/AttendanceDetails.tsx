@@ -189,7 +189,7 @@ export function AttendanceDetailView({
               </Typography>
             </div>
 
-            <StatusBadge status={data?.status} />
+            <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
           </div>
 
           {/* Dates Section */}
@@ -262,22 +262,30 @@ export function AttendanceDetailView({
 
         {/* Actions */}
         {actions?.length > 0 &&
-          (data?.status === "Pending" || data?.status === "Open") && (
-            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-              <TeamApprovalActionPill
-                variant={isDesktop ? "modal" : "buttons"}
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={
-                  currentAction
-                    ? { id: data?.todo_id, action: currentAction }
-                    : null
-                }
-                onAction={(action) => handleAction(action)}
-              />
+          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") ? (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <TeamApprovalActionPill
+              variant={isDesktop ? "modal" : "buttons"}
+              actions={actions}
+              status={data?.reference_document?.custom_status}
+              recordId={data?.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data?.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={(action) => handleAction(action)}
+            />
+          </div>
+        ) : (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -67,7 +67,9 @@ export interface PostListComponentProps<T> {
 
 export interface FilterOption {
   label: string;
-  value: string;
+  value: string | any[]; // Can be a simple string or complex array like ["in", ["Draft", "Approved"]]
+  key?: string; // Optional key for matching when value is complex (e.g., "Approved")
+  customAPIParams?: Record<string, any>; // Additional params to add to customAPI when this option is selected
 }
 
 export interface FilterField {
@@ -84,6 +86,10 @@ export interface FilterField {
   | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
+  emptyValueConfig?: {
+    filterValue?: any; // Value to use when empty/Select option is chosen
+    customAPIParams?: Record<string, any>; // Additional params for empty state
+  };
 }
 
 interface DataListViewProps<T extends BaseItem> {
@@ -240,56 +246,101 @@ const DataListView = <T extends BaseItem>({
   }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
 
   // Common query parameters
-  const queryParams = useMemo(
-    () => ({
+  const queryParams = useMemo(() => {
+    let processedFilters: Record<string, any> = { ...debouncedFilters, ...queryParamsFilters };
+
+    // Process filter values based on filterFields configuration
+    filterFields.forEach((field) => {
+      const currentValue = processedFilters[field.fieldname];
+
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.filterValue !== undefined) {
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: field.emptyValueConfig.filterValue,
+          };
+        }
+      } else {
+        // Check if the current value matches a FilterOption
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string") {
+          // Replace the filter value with the actual value (could be complex array)
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: matchingOption.value,
+          };
+        }
+      }
+    });
+
+    return {
       pageSize,
       searchTerm: debouncedSearchTerm,
-      filters: { ...debouncedFilters, ...queryParamsFilters },
+      filters: processedFilters,
       searchFields,
       orderBy,
-    }),
-    [
-      pageSize,
-      debouncedSearchTerm,
-      debouncedFilters,
-      queryParamsFilters,
-      searchFields,
-      orderBy,
-    ],
-  );
+    };
+  }, [
+    pageSize,
+    debouncedSearchTerm,
+    debouncedFilters,
+    queryParamsFilters,
+    searchFields,
+    orderBy,
+    filterFields,
+  ]);
 
-  // Conditionally add/strip todo_status from customAPI params based on active filters
+  // Conditionally add/strip customAPI params based on active filters
   const effectiveCustomAPI = useMemo(() => {
     if (!customAPI) return customAPI;
 
-    const currentStatus = debouncedFilters?.status;
+    let additionalParams: Record<string, any> = {};
 
-    // Only add todo_status when user explicitly selects a pending-like status
-    const isExplicitPending =
-      currentStatus === "Pending" ||
-      currentStatus === "Open" ||
-      currentStatus === "Draft";
+    // Process filter fields to find matching customAPIParams
+    filterFields.forEach((field) => {
+      const currentValue = debouncedFilters?.[field.fieldname];
 
-    if (isExplicitPending) {
-      // Add todo_status: "Open" only for explicit pending filter selection
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.customAPIParams) {
+          additionalParams = { ...additionalParams, ...field.emptyValueConfig.customAPIParams };
+        }
+      } else {
+        // Check if the current value matches a FilterOption with customAPIParams
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string" && matchingOption.customAPIParams) {
+          additionalParams = { ...additionalParams, ...matchingOption.customAPIParams };
+        }
+      }
+    });
+
+    // Merge additional params with existing customAPI params
+    if (Object.keys(additionalParams).length > 0) {
       return {
         ...customAPI,
-        params: { ...customAPI.params, todo_status: "Open" },
+        params: { ...customAPI.params, ...additionalParams },
       };
     }
 
-    // Strip todo_status for non-pending filters or when no filter is selected
-    if (customAPI.params?.todo_status) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { todo_status, ...restParams } = customAPI.params as Record<
-        string,
-        unknown
-      >;
-      return { ...customAPI, params: restParams };
-    }
-
     return customAPI;
-  }, [customAPI, debouncedFilters?.status]);
+  }, [customAPI, debouncedFilters, filterFields]);
 
   // Create internal fetch function for custom API
   const internalFetchFunction = useMemo(() => {
@@ -575,7 +626,7 @@ const DataListView = <T extends BaseItem>({
       }
       return {
         ...prev,
-        [fieldname]: value,
+        [fieldname]: value, // Store the key for matching
       };
     });
 
@@ -805,8 +856,10 @@ const DataListView = <T extends BaseItem>({
                           </option>
                         );
                       }
+                      // Use key for matching if provided, otherwise use value
+                      const optionValue = option.key || (typeof option.value === "string" ? option.value : option.label);
                       return (
-                        <option key={option.value} value={option.value}>
+                        <option key={optionValue} value={optionValue}>
                           {option.label}
                         </option>
                       );
@@ -885,8 +938,8 @@ const DataListView = <T extends BaseItem>({
     <div>
       {/* Header — sticky top, constrained to visible width */}
       <div
-        className="sticky top-0 left-0 z-10 bg-white pb-2"
-        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+        className="sticky left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">

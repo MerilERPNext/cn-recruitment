@@ -619,14 +619,41 @@ export const AttendanceRequestInfo = ({
 }: {
   data: AttendanceRequest;
 }) => {
-  const formatTime = (timeString: string | undefined) => {
+
+  const formatTime = (timeString?: string): string => {
     if (!timeString) return "-";
+
     try {
-      return format(new Date(`1970-01-01T${timeString}`), "hh:mm a");
+      // Split microseconds if present
+      const [hms] = timeString.split(".");
+
+      const parts = hms.split(":");
+
+      if (parts.length !== 3) return timeString;
+
+      const [hours, minutes, seconds] = parts;
+
+      // Ensure all parts exist
+      if (!hours || !minutes || !seconds) return timeString;
+
+      // Normalize to HH:mm:ss
+      const normalizedTime = [
+        hours.padStart(2, "0"),
+        minutes.padStart(2, "0"),
+        seconds.padStart(2, "0"),
+      ].join(":");
+
+      const date = new Date(`1970-01-01T${normalizedTime}`);
+
+      // Validate date
+      if (isNaN(date.getTime())) return timeString;
+
+      return format(date, "hh:mm a");
     } catch {
       return timeString;
     }
   };
+
   const status = getBadgePropsByStatus(data.custom_status);
 
   return (

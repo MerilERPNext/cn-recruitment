@@ -14,6 +14,7 @@ import {
   useGetApplicableExpenseCategoriesMutation,
   useGetExpenseTypesByCategoryMutation,
 } from "../../../hooks/useExpense";
+import { useFileUploader } from "../../../hooks/useFileUploader";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -110,6 +111,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isAcknowledgementChecked, setIsAcknowledgementChecked] = useState(false);
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = useState(false);
   const [pendingSubmissionType, setPendingSubmissionType] = useState<"General" | "Relocation" | null>(null);
+  const [filesMap, setFilesMap] = useState<Record<string, any[]>>({});
+  const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
+  const [pendingExpensesToSubmit, setPendingExpensesToSubmit] = useState<Expense[] | undefined>(undefined);
   const hydrationRef = useRef(false);
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage);
@@ -131,6 +135,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
+  const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
   const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
   const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
 
@@ -170,6 +175,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             copy.custom_attach_receipt.split("/").pop() || "attachment",
         },
       ];
+    } else if (Array.isArray(copy.attachments)) {
+      // Handle multiple attachments if they are already in the correct format
     }
     setDynamicFormData(copy);
     const mainForm = {
@@ -282,7 +289,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.category_name }} ({{item.name}})</span>",
+                  template: "<span>{{ item.category_name }}</span>",
                   validate: {
                     required: true,
                     customMessage: "Expense Category is required",
@@ -308,7 +315,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   },
                   selectValues: "message",
                   valueProperty: "name",
-                  template: "<span>{{ item.expense_type }} ({{ item.name }})</span>",
+                  template: "<span>{{ item.expense_type }}</span>",
                   refreshOn: "expenseCategory",
                   clearOnRefresh: true,
                   clearOnHide: true,
@@ -376,16 +383,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               html: true,
               ...(field?.fieldname === "expense_date"
                 ? {
-                    widget: {
-                      type: "calendar",
-                      displayInTimezone: "viewer",
-                      locale: "en",
-                      maxDate: format(new Date(), "yyyy-MM-dd"),
-                    },
-                    datePicker: {
-                      maxDate: format(new Date(), "yyyy-MM-dd"),
-                    },
-                  }
+                  widget: {
+                    type: "calendar",
+                    displayInTimezone: "viewer",
+                    locale: "en",
+                    maxDate: format(new Date(), "yyyy-MM-dd"),
+                  },
+                  datePicker: {
+                    maxDate: format(new Date(), "yyyy-MM-dd"),
+                  },
+                }
                 : {}),
             };
           case "Datetime":
@@ -435,6 +442,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               field?.fieldname === "units" ||
               field?.fieldname === "no_of_units"
             ) {
+              if (field?.required !== true && field?.required !== 1) {
+                return null;
+              }
               return {
                 type: "number",
                 key: field?.fieldname,
@@ -481,23 +491,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               html: true,
             };
           case "Attach":
-            return {
-              type: "file",
-              key: field?.fieldname,
-              label:
-                field?.required === true
-                  ? `${field?.label} <span style="color:red">&nbsp;*</span>`
-                  : field?.label || "Attachment",
-              storage: "customBase64",
-              validate: {
-                required: field?.required,
-                customMessage: `${field?.label} is required`,
-              },
-              input: true,
-              filePattern: "*/*",
-              customClass: "mb-4",
-              html: true,
-            };
+            return null;
           case "Link":
             if (
               field?.fieldname === "currency" &&
@@ -623,6 +617,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
     return "Units";
   }, [unitPriceData]);
+
+  const isAttachmentMandatory = useMemo(() => {
+    if (!expenseTypeData?.fields) return false;
+    return expenseTypeData.fields.some(
+      (f: any) => f.fieldname === "attach_receipt" && (f.required === true || f.required === 1)
+    );
+  }, [expenseTypeData]);
+
 
   const isShareAllowed = Boolean(expenseTypeData?.shared_expense_allowed);
   const maxAllowedParticipants = Number(expenseTypeData?.shared_expense_limit);
@@ -767,12 +769,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const loading = useLoadingOverlay();
 
-  const submitAll = async (type: "General" | "Relocation") => {
+  const submitAll = async (type: "General" | "Relocation", specificExpenses?: Expense[]) => {
     if (type === "Relocation") {
       toast.success("You have chosen this option and in future cannot reapply");
     }
     await loading?.wrap(async () => {
-      const selectedForCategory = expenses.filter(e =>
+      const selectedForCategory = specificExpenses || expenses.filter(e =>
         (e.categoryType || "General") === type &&
         selectedExpenses.includes(e.uid)
       );
@@ -849,12 +851,91 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
       await new Promise<void>((resolve, reject) => {
         submitExpenseClaim(JSON.stringify(payload), {
-          onSuccess: () => {
+          onSuccess: async (response: any) => {
+            // Handle file uploads for each created expense
+            // Supporting both single document and multiple document results
+            const message = response?.message;
+            const claims = response?.claims;
+
+            if (Array.isArray(claims) && claims.length > 0) {
+              // Map each claim to its respective expense's attachments
+              const uploadPromises = claims.map(async (claim: any, idx: number) => {
+                const name = claim.name || (typeof claim === "string" ? claim : null);
+                if (!name) return;
+
+                // Map claim to expense by index
+                const expense = selectedForCategory[idx];
+                if (!expense) return;
+
+                const attachments = filesMap[expense.uid];
+                if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+                  return uploadFiles(attachments, "Expense Claim", name);
+                }
+              });
+              await Promise.all(uploadPromises);
+            } else {
+              // Fallback for single document or alternative response structures
+              const docName = response?.name ||
+                message?.name ||
+                (typeof message === "string" ? message : null);
+
+              if (docName) {
+                // Single document created for this category
+                const allAttachments: any[] = [];
+                selectedForCategory.forEach((exp) => {
+                  const attachments = filesMap[exp.uid];
+                  if (attachments && Array.isArray(attachments)) {
+                    allAttachments.push(...attachments);
+                  }
+                });
+
+                if (allAttachments.length > 0) {
+                  await uploadFiles(allAttachments, "Expense Claim", docName);
+                }
+              } else {
+                // Multiple documents might have been created via results array
+                const results = message?.results || (Array.isArray(message) ? message : []);
+                if (results.length > 0) {
+                  const uploadPromises = results.map(async (res: any, idx: number) => {
+                    const name = res.name || (typeof res === "string" ? res : null);
+                    if (!name) return;
+
+                    // If the result has a UID, use it. Otherwise, assume order matches.
+                    const uid = res.uid || selectedForCategory[idx]?.uid;
+                    const attachments = filesMap[uid];
+
+                    if (attachments && attachments.length > 0) {
+                      return uploadFiles(attachments, "Expense Claim", name);
+                    }
+                  });
+                  await Promise.all(uploadPromises);
+                }
+              }
+            }
 
             const submittedUids = selectedForCategory.map(e => e.uid);
-            setExpenses(prev => prev.filter(e => !submittedUids.includes(e.uid)));
+
+            // Filter expenses and update state
+            setExpenses(prev => {
+              const next = prev.filter(e => !submittedUids.includes(e.uid));
+              // Persist to localStorage immediately to avoid race conditions with navigation
+              localStorage.setItem(LOCAL_KEYS.EXPENSES, JSON.stringify(next));
+              return next;
+            });
+
             setSelectedExpenses(prev => prev.filter(uid => !submittedUids.includes(uid)));
 
+            // Clear files map for submitted UIDs
+            setFilesMap(prev => {
+              const next = { ...prev };
+              submittedUids.forEach(uid => delete next[uid]);
+              return next;
+            });
+
+            // Navigate to the list page after everything is done
+            navigate("/webapp/expenses-app/expenses-list", {
+              state: { refresh: true },
+            });
 
             resolve();
           },
@@ -868,8 +949,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const handleInitialSubmit = (type: "General" | "Relocation") => {
     setPendingSubmissionType(type);
+    setPendingExpensesToSubmit(undefined);
     setIsAcknowledgementChecked(false);
     setIsRelocationAcknowledgementChecked(false);
+    setCurrentAttachments(initialExpense?.attachments ? [] : []); // We can't easily map server URLs to File objects here, but we can reset
+    if (initialExpense) {
+      setIsAcknowledgementOpen(true);
+    }
     setIsAcknowledgementOpen(true);
   };
 
@@ -881,7 +967,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
     if (!pendingSubmissionType) return;
     setIsAcknowledgementOpen(false);
-    submitAll(pendingSubmissionType);
+    submitAll(pendingSubmissionType, pendingExpensesToSubmit);
+    setPendingExpensesToSubmit(undefined);
   };
 
   const handleEdit = (expense: Expense) => {
@@ -898,6 +985,14 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
 
     setDynamicFormData(copy);
+
+    // Sync currentAttachments with the files stored for this expense
+    if (filesMap[expense.uid]) {
+      setCurrentAttachments(filesMap[expense.uid]);
+    } else {
+      setCurrentAttachments([]);
+    }
+
 
     setMainFormData({
       categoryType: expense.categoryType || "General",
@@ -1034,6 +1129,24 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               form={{
                 display: "form",
                 components: (() => {
+                  const attachmentsField = {
+                    label: isAttachmentMandatory
+                      ? `Attachments <span style="color:red">&nbsp;*</span>`
+                      : "Attachments",
+                    key: "attachments",
+                    type: "file",
+                    input: true,
+                    multiple: true,
+                    storage: "customfiles",
+                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+                    customClass: "mb-4",
+                    html: true,
+                    validate: {
+                      required: isAttachmentMandatory,
+                      customMessage: "Please attach a receipt",
+                    },
+                  };
+
                   if (isMobile) {
                     return [
                       ...dynamicFields.map((comp) => comp),
@@ -1043,19 +1156,44 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                             type: "checkbox",
                             key: "shareExpenseCheckbox",
                             label: "Share Expense",
-                            customClass: "mt-4",
                             input: true,
+                            customClass: `custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 mt-4 ${displayParticipants.length > 0 ? "pointer-events-none opacity-80" : ""}`,
                           },
                         ]
                         : []),
+                      attachmentsField,
                       {
-                        type: "button",
-                        action: "submit",
-                        label: submitButtonLabel,
-                        theme: "primary",
-                        key: "submitButton",
+                        type: "columns",
+                        key: "submitButtonsRow",
                         customClass: "mt-4",
-                        disabled: isCalculating,
+                        columns: [
+                          {
+                            width: 6,
+                            components: [
+                              {
+                                type: "button",
+                                action: "submit",
+                                label: submitButtonLabel,
+                                theme: "primary",
+                                key: "submitButton",
+                                disabled: isCalculating,
+                              },
+                            ],
+                          },
+                          ...(!(isEditingFromDetailsPage || editingExpenseId) ? [{
+                            width: 6,
+                            components: [
+                              {
+                                type: "button",
+                                action: "submit",
+                                label: "Save & Submit",
+                                theme: "primary",
+                                key: "saveAndSubmit",
+                                disabled: isCalculating || isUploadingFiles,
+                              },
+                            ],
+                          }] : []),
+                        ],
                       },
                     ];
                   }
@@ -1066,14 +1204,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       key: "dynamicColumns",
                       columns: [
                         {
-                          components: dynamicFields.filter(
-                            (_, i) => i % 2 === 0,
-                          ),
+                          components: [
+                            ...dynamicFields.filter((_, i) => i % 2 === 0),
+                            ...(dynamicFields.length % 2 === 0 ? [attachmentsField] : []),
+                          ],
                         },
                         {
-                          components: dynamicFields.filter(
-                            (_, i) => i % 2 !== 0,
-                          ),
+                          components: [
+                            ...dynamicFields.filter((_, i) => i % 2 !== 0),
+                            ...(dynamicFields.length % 2 !== 0 ? [attachmentsField] : []),
+                          ],
                         },
                       ],
                     },
@@ -1092,6 +1232,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   key: "shareExpenseCheckbox",
                                   label: "Share Expense",
                                   input: true,
+                                  customClass: `custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 ${displayParticipants.length > 0 ? "pointer-events-none opacity-80" : ""}`,
                                 },
                               ],
                             },
@@ -1101,12 +1242,36 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                           width: isShareAllowed ? 6 : 12,
                           components: [
                             {
-                              type: "button",
-                              action: "submit",
-                              label: submitButtonLabel,
-                              theme: "primary",
-                              key: "submitButton",
-                              disabled: isCalculating,
+                              type: "columns",
+                              key: "desktopSubmitButtons",
+                              columns: [
+                                {
+                                  width: 6,
+                                  components: [
+                                    {
+                                      type: "button",
+                                      action: "submit",
+                                      label: isUploadingFiles ? "Uploading Files..." : submitButtonLabel,
+                                      theme: "primary",
+                                      key: "submitButton",
+                                      disabled: isCalculating || isUploadingFiles,
+                                    },
+                                  ],
+                                },
+                                ...(!(isEditingFromDetailsPage || editingExpenseId) ? [{
+                                  width: 6,
+                                  components: [
+                                    {
+                                      type: "button",
+                                      action: "submit",
+                                      label: "Save & Submit",
+                                      theme: "primary",
+                                      key: "saveAndSubmit",
+                                      disabled: isCalculating || isUploadingFiles,
+                                    },
+                                  ],
+                                }] : []),
+                              ],
                             },
                           ],
                         },
@@ -1213,7 +1378,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     expenses: [
                       {
                         ...combinedData,
-                        attach_receipt: combinedData.attach_receipt?.[0]?.url || null,
                         expense_date: combinedData.expense_date
                           ? format(
                             new Date(combinedData.expense_date),
@@ -1249,35 +1413,74 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   return;
                 }
 
-                const attachment =
-                  combinedData.attach_receipt?.[0]?.url || null;
+                const attachments = currentAttachments;
+
+                if (isAttachmentMandatory && attachments.length === 0) {
+                  toast.error("Please attach a receipt to proceed.");
+                  return;
+                }
+
+                const expenseUid = editingExpenseId ?? Date.now().toString();
+
+                if (attachments.length > 0) {
+                  setFilesMap((prev) => ({
+                    ...prev,
+                    [expenseUid]: attachments,
+                  }));
+                }
 
                 let custom_expense_category_name = combinedData.expenseCategory;
                 let custom_expense_type = combinedData.expenseType;
                 try {
                   const employee = currentEmployee?.name || "";
-                  const categoryTypeReq = combinedData.categoryType || "General";
+                  const categoryTypeReq = selectedCategoryType || "General";
                   const expenseCategoryReq = combinedData.expenseCategory;
 
                   const catRes = await fetchApplicableCategories(categoryTypeReq);
-                  const catMatch = Array.isArray(catRes) ? catRes.find((c: any) => c.name === combinedData.expenseCategory) : undefined;
-                  if (catMatch && catMatch.category_name) custom_expense_category_name = catMatch.category_name;
+                  const catMatch = Array.isArray(catRes)
+                    ? catRes.find((c: any) => c.name === combinedData.expenseCategory)
+                    : undefined;
+                  if (catMatch && catMatch.category_name)
+                    custom_expense_category_name = catMatch.category_name;
 
-                  const typeRes = await fetchExpenseTypesByCategory({ employee, reimbursementCategory: expenseCategoryReq });
-                  const typeMatch = Array.isArray(typeRes) ? typeRes.find((t: any) => t.name === combinedData.expenseType) : undefined;
-                  if (typeMatch && typeMatch.expense_type) custom_expense_type = typeMatch.expense_type;
+                  const typeRes = await fetchExpenseTypesByCategory({
+                    employee,
+                    reimbursementCategory: expenseCategoryReq,
+                  });
+                  const typeMatch = Array.isArray(typeRes)
+                    ? typeRes.find((t: any) => t.name === combinedData.expenseType)
+                    : undefined;
+                  if (typeMatch && typeMatch.expense_type)
+                    custom_expense_type = typeMatch.expense_type;
                 } catch (e) {
-                  console.error("Failed to fetch display names for expense table", e);
+                  console.error(
+                    "Failed to fetch display names for expense table",
+                    e,
+                  );
                 }
 
+                const cleanCombinedData = { ...combinedData };
+                delete (cleanCombinedData as any).attach_receipt;
+
                 const newExpense: Expense = {
-                  uid: editingExpenseId ?? Date.now().toString(),
-                  ...combinedData,
-                  custom_expense_category_name,
-                  custom_expense_type,
-                  attach_receipt: attachment,
+                  uid: expenseUid,
+                  ...cleanCombinedData,
+                  custom_expense_category_name: custom_expense_category_name,
+                  custom_expense_type: custom_expense_type,
+                  attachments: attachments.length > 0
+                    ? attachments.map((f: any) => f.name).join(", ")
+                    : null,
                   amount: amountFromApi ?? combinedData.amount ?? undefined,
                 };
+
+                const isSaveAndSubmit = (submission.data as any).saveAndSubmit === true;
+
+                if (isSaveAndSubmit) {
+                  setPendingExpensesToSubmit([newExpense]);
+                  setPendingSubmissionType(selectedCategoryType as any || "General");
+                  setIsAcknowledgementOpen(true);
+                  return;
+                }
 
                 if (isEditingFromDetailsPage) {
                   updateExpense(
@@ -1320,25 +1523,43 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setDynamicFields([]);
                 setShowCategoryAndType(false);
                 setFormKey((prev) => prev + 1);
+                setCurrentAttachments([]);
               }}
               onChange={(change: any) => {
                 setDynamicFormData(change.data);
+                if (change.changed?.component?.key === "attachments") {
+                  setCurrentAttachments(change.data?.attachments || []);
+                }
 
-                if (change.data?.shareExpenseCheckbox !== undefined) {
-                  const currentAmount = Number(change.data?.amount);
-                  if (change.data.shareExpenseCheckbox && !(currentAmount > 0)) {
+                if (change.changed?.component?.key === "shareExpenseCheckbox") {
+                  if (displayParticipants.length > 0 && change.data.shareExpenseCheckbox === false) {
+                    change.data.shareExpenseCheckbox = true;
+                    dynamicFormRef.current?.getComponent("shareExpenseCheckbox").setValue(true);
+                  }
 
-                    toast.error("Please enter an amount before sharing the expense.");
-                    change.data.shareExpenseCheckbox = false;
-                    setDynamicFormData({ ...change.data, shareExpenseCheckbox: false });
-                    if (dynamicFormRef.current?.submission) {
-                      dynamicFormRef.current.submission = {
-                        data: { ...dynamicFormRef.current.submission.data, shareExpenseCheckbox: false },
-                      };
+                  if (displayParticipants.length === 0) {
+                    const currentAmount = Number(change.data?.amount);
+                    if (change.data.shareExpenseCheckbox && !(currentAmount > 0)) {
+                      toast.error(
+                        "Please enter an amount before sharing the expense.",
+                      );
+                      change.data.shareExpenseCheckbox = false;
+                      setDynamicFormData({
+                        ...change.data,
+                        shareExpenseCheckbox: false,
+                      });
+                      if (dynamicFormRef.current?.submission) {
+                        dynamicFormRef.current.submission = {
+                          data: {
+                            ...dynamicFormRef.current.submission.data,
+                            shareExpenseCheckbox: false,
+                          },
+                        };
+                      }
+                      setIsSharePanelOpen(false);
+                    } else {
+                      setIsSharePanelOpen(change.data.shareExpenseCheckbox);
                     }
-                    setIsSharePanelOpen(false);
-                  } else {
-                    setIsSharePanelOpen(change.data.shareExpenseCheckbox);
                   }
                 }
 
@@ -1366,16 +1587,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     if (debounceRef.current) {
                       window.clearTimeout(debounceRef.current);
                     }
-                    const rawUnits =
-                      dynamicFormData?.units ??
-                      dynamicFormData?.no_of_units ??
-                      null;
-                    const unitsNum = parseUnits(rawUnits);
-                    if (unitsNum === undefined) return;
                     debounceRef.current = window.setTimeout(() => {
                       const payload: CalculateExpenseParams = {
                         expense_type: String(expense_type).trim(),
-                        units: unitsNum,
+                        units: Number(unitsStr),
                       };
                       if (
                         vehicle_type !== null &&
@@ -1397,18 +1612,22 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               displayParticipants.length > 0 && (
                 <div className="mt-4 border rounded-lg p-3 bg-white shadow-sm">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium">Participants</div>
-                    <div className="text-xs text-gray-500">
-                      {displayParticipants.length}{" "}
-                      {displayParticipants.length === 1
-                        ? "participant"
-                        : "participants"}
+                    <div className="text-md font-medium">Participants</div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsSharePanelOpen(true)}
+                        className="text-md flex items-center  text-primary font-bold hover:underline transition-all active:scale-95"
+                      >
+                        <SquarePen className="w-4 h-4" />
+                        Edit
+                      </button>
                     </div>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead>
-                        <tr className="text-left text-xs text-gray-600">
+                        <tr className="text-left text-md text-gray-600">
                           <th className="px-2 py-1">#</th>
                           <th className="px-2 py-1">Type</th>
                           <th className="px-2 py-1">Employee Name</th>
@@ -1945,10 +2164,15 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   dynamicFormData?.amount)
                 : (dynamicFormData?.amount ?? 0),
             )}
+            initialParticipants={
+              editingExpenseId
+                ? expenses.find((x) => (x.id === editingExpenseId || x.uid === editingExpenseId))?.participants
+                : dynamicFormData?.participants
+            }
             editingExpenseId={editingExpenseId}
             expenses={expenses}
             setExpenses={(fn) => setExpenses(fn)}
-            currentEmployee={currentEmployee || undefined}
+            currentEmployee={currentEmployee as any}
             maxParticipants={maxAllowedParticipants}
             employeeOptions={employeeOptionsForDrawer}
             employeeOptionsLoading={isLoadingEmployees as boolean}

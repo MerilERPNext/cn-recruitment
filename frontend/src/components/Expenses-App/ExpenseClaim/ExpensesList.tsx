@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { FileText, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useSearchParams } from "react-router-dom";
+import Tooltip from "../../shared/Tooltip";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import toast from "react-hot-toast";
@@ -135,7 +136,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
 
-          <StatusBadge status={item?.status} />
+          <StatusBadge status={item?.reference_document?.approval_status} />
         </div>
 
         {/* Categories / Types */}
@@ -165,7 +166,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
             <Typography variant="mobileCardValue">
-              {sanctionedAmount}
+              {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? sanctionedAmount : " - "}
             </Typography>
           </div>
         </div>
@@ -297,12 +298,14 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
       >
         {expenseClaim?.name}
       </Typography>
-      <Typography
-        variant="bodySmall"
-        className="font-medium text-center truncate"
-      >
-        {expenseClaim?.custom_expense_category_name}
-      </Typography>
+      <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""}`}>
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          {expenseClaim?.custom_expense_category_name}
+        </Typography>
+      </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {expenseClaim?.expenses[0]?.custom_claim_type_name}
       </Typography>
@@ -310,7 +313,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formattedAmount}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {item?.status?.toLowerCase() === "approved" ? formattedSanctionedAmount : " -- "}
+        {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? formattedSanctionedAmount : " -- "}
       </Typography>
       {isPaidFilter && (
         <Typography variant="bodySmall" className="font-medium text-center">
@@ -333,7 +336,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           role={item?.role}
           position="left"
         >
-          <StatusBadge status={item?.status} />
+          <StatusBadge status={item?.reference_document?.approval_status} />
         </AllocatedToTooltip>
       </div>
 
@@ -377,6 +380,7 @@ const ExpensesList: React.FC = () => {
     string | null
   >(null);
   const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
+  const [selectedTodoStatus, setSelectedTodoStatus] = React.useState<string | null>(null);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
 
@@ -404,8 +408,9 @@ const ExpensesList: React.FC = () => {
   const openModal = (
     id: string,
     stages: ApprovalStage[],
-    sendBackUser: string,
+    sendBackUser: string | null,
     canEdit: boolean,
+    todoStatus: string | null,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -414,6 +419,7 @@ const ExpensesList: React.FC = () => {
     }, 0);
     setSelectedSendBackUser(sendBackUser);
     setSelectedCanEdit(canEdit);
+    setSelectedTodoStatus(todoStatus);
   };
 
   const closeModal = () => {
@@ -421,6 +427,7 @@ const ExpensesList: React.FC = () => {
     setSelectedStages([]);
     setSelectedSendBackUser(null);
     setSelectedCanEdit(false);
+    setSelectedTodoStatus(null);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
     }
@@ -437,11 +444,12 @@ const ExpensesList: React.FC = () => {
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
     const canEdit = item?.can_edit || false;
+    const todoStatus = item?.todo_status || item?.status || null;
     const isPaidFilter = currentFilters.status === "Paid";
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} isPaidFilter={isPaidFilter} />
@@ -454,10 +462,11 @@ const ExpensesList: React.FC = () => {
     const stages = item?.approval_stages_status || [];
     const sendBackUser = item?.send_back_user || null;
     const canEdit = item?.can_edit || false;
+    const todoStatus = item?.todo_status || item?.status || null;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
@@ -514,7 +523,7 @@ const ExpensesList: React.FC = () => {
     "Expense Date",
     "Claimed Date",
     "Status",
-    "ACTIONS",
+    "Actions",
   ];
 
   const tableColumnWidths = [
@@ -546,7 +555,7 @@ const ExpensesList: React.FC = () => {
               <span></span>
             )}
             <div className="flex items-center space-x-3 pb-1">
-              <Button
+              {/* <Button
                 icon={<FileText size={16} />}
                 variant="outline"
                 size="md"
@@ -554,7 +563,7 @@ const ExpensesList: React.FC = () => {
                 onClick={() => setIsPolicyDrawerOpen(true)}
               >
                 Policy
-              </Button>
+              </Button> */}
 
               <Button
                 onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
@@ -593,18 +602,19 @@ const ExpensesList: React.FC = () => {
               isFilter={true}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "approval_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
+                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
-                    { label: "Paid", value: "Paid" },
+
+
                   ],
                 },
               ]}
-              defaultFilters={{ status: ["!=", "Cancelled"] }}
+              defaultFilters={{ approval_status: ["===", "Draft"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
@@ -629,6 +639,7 @@ const ExpensesList: React.FC = () => {
           selectedStages={selectedStages}
           selectedSendBackUser={selectedSendBackUser}
           canEdit={selectedCanEdit}
+          todoStatus={selectedTodoStatus || todoData?.todo_status || todoData?.status}
         />
       )}
       <ExpensePolicyDrawer

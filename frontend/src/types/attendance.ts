@@ -159,6 +159,7 @@ export interface MyPlannedAttendanceRequest {
   date?: string;
   description?: string;
   allocated_to_name?: string;
+  todo_status: string;
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;

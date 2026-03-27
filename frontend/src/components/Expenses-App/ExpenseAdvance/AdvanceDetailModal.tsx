@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import React from "react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
@@ -53,34 +54,32 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
               Advance Type
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Date
+              Advance Date
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Sanctioned Amt
+              Sanctioned Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Claimed Amt
+              Claimed Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Invoice No.
+              Approval Status
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Merchant
+              Description
             </th>
           </tr>
         </thead>
 
         <tbody className="divide-y divide-gray-100">
           {Array.isArray(advanceDetails?.expenses) &&
-          advanceDetails.expenses.length > 0 ? (
+            advanceDetails.expenses.length > 0 ? (
             advanceDetails.expenses.map((item: any, index: number) => (
               <tr
                 key={item.name || index}
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
               >
-                <td className="px-4 py-3 text-gray-800">
-                  {item.expense_type ?? "—"}
-                </td>
+                <td className="px-4 py-3 text-gray-800">{item.expense_type}</td>
                 <td className="px-4 py-3 text-gray-800">
                   {formatToIndianDate(item.expense_date)}
                 </td>
@@ -91,11 +90,9 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   {formatCurrency(item.amount)}
                 </td>
                 <td className="px-4 py-3 text-gray-800">
-                  {item.custom_invoice_number ?? "—"}
+                  {<StatusBadge status={item.custom_approval_staus} />}
                 </td>
-                <td className="px-4 py-3 text-gray-800">
-                  {item.custom_mercent ?? "—"}
-                </td>
+                <td className="px-4 py-3 text-gray-800">{item.description}</td>
               </tr>
             ))
           ) : (
@@ -117,65 +114,65 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   const MobileBreakup = (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(advanceDetails?.expenses) &&
-      advanceDetails.expenses.length > 0 ? (
+        advanceDetails.expenses.length > 0 ? (
         advanceDetails.expenses.map((item: any, index: number) => (
           <div
             key={item.name || index}
             className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
           >
-            <div className="mb-3">
+            {/* Header */}
+            <div className="mb-3 flex justify-between items-center">
               <Typography variant="label" className="card-title">
                 Breakup Entry {index + 1}
               </Typography>
+
+              {/* Approval Status */}
+              <StatusBadge status={item.custom_approval_staus} />
             </div>
 
+            {/* Content */}
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {/* Advance Type */}
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Advance Type
-                </Typography>
+                <Typography variant="mobileCardLabel">Advance Type</Typography>
                 <Typography variant="mobileCardValue">
                   {item.expense_type ?? "—"}
                 </Typography>
               </div>
+
+              {/* Advance Date */}
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Date
-                </Typography>
+                <Typography variant="mobileCardLabel">Advance Date</Typography>
                 <Typography variant="mobileCardValue">
                   {formatToIndianDate(item.expense_date)}
                 </Typography>
               </div>
+
+              {/* Sanctioned Amount */}
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel">
                   Sanctioned Amount
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatCurrency(item.sanctioned_amount)}
                 </Typography>
               </div>
+
+              {/* Claimed Amount */}
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
+                <Typography variant="mobileCardLabel">
                   Claimed Amount
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatCurrency(item.amount)}
                 </Typography>
               </div>
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Invoice No.
-                </Typography>
+
+              {/* Description (full width) */}
+              <div className="col-span-2 flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Description</Typography>
                 <Typography variant="mobileCardValue">
-                  {item.custom_invoice_number ?? "—"}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Merchant
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {item.custom_mercent ?? "—"}
+                  {item.description || "—"}
                 </Typography>
               </div>
             </div>
@@ -311,7 +308,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   variant="bodySmall"
                   className="base-title mb-1 font-bold block"
                 >
-                  Expense Breakup Items ({advanceDetails?.expenses?.length || 0}
+                  Advance Breakup Items ({advanceDetails?.expenses?.length || 0}
                   )
                 </Typography>
 

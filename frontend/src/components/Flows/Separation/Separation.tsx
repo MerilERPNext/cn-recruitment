@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { AlertCircle } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeAllDetails,
@@ -13,7 +14,7 @@ import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
@@ -22,6 +23,8 @@ import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkelet
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { FlowRequestItem } from "../../../types/flows";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -158,7 +161,7 @@ const Separation = () => {
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${activeEmployee?.notice_number_of_days ? "of " + activeEmployee?.notice_number_of_days + " days" : ""}`,
+      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],
@@ -184,7 +187,6 @@ const Separation = () => {
     };
   }, [refetchSeparationFunnelDetails, queryClient, activeEmployee?.name]);
 
-  const showInitiatePage = !item;
 
   const navigate = useNavigate();
   const handleShowWorkflow = () => {
@@ -193,12 +195,25 @@ const Separation = () => {
     );
   };
 
+
+  const showRequestPage = useMemo(() => {
+    if (!item) return false;
+    if (item.approval_status === "Rejected") {
+      return false;
+    }
+    return true;
+  }, [item]);
+
+  const showRejectStatus = item && item?.approval_status === "Rejected";
+
+
   const canViewWorkflow = useMemo(() => {
+    if (!showRequestPage) return false;
     if (!separationFunnelDetails?.data?.[0]) return false;
     if (separationFunnelDetails?.data?.[0].workflow_stages?.length === 0) return false;
     if (!enabledActions.view_workflow) return false;
     return true;
-  }, [separationFunnelDetails, enabledActions])
+  }, [separationFunnelDetails, enabledActions, showRequestPage])
 
   const { isDesktop } = useScreenSize();
   /* -------------------- LOADING Skeleton -------------------- */
@@ -227,10 +242,10 @@ const Separation = () => {
           </Button>
         )}
       </div>
-      {!showInitiatePage ? (
+      {showRequestPage ? (
         <main className="min-h-full mb-2">
           <div className="max-w-full">
-            <ApprovalTracker For="Employee Separation" data={item} />
+            <ApprovalTracker For="Employee Separation" data={item as FlowRequestItem} />
           </div>
         </main>
       ) : (
@@ -266,6 +281,22 @@ const Separation = () => {
             </div>
           </div>
           {/* Button */}
+
+          {showRejectStatus &&
+            <div className="flex w-full mt-4 mb-2">
+              <div className="flex flex-col sm:flex-row items-center w-full bg-red-50 border border-red-100 p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm">
+                <div className="bg-red-100 p-2 rounded-full shrink-0 text-red-500">
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <Typography variant="bodyMedium" color="body1" className="text-red-800">
+                    Your separation request initiated on <span className="font-semibold">{formatToIndianDate(item?.initiated_on)}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          }
+
           <div className="flex items-center py-6 gap-2 flex-col">
             {showSeparationButton && (
               <Button

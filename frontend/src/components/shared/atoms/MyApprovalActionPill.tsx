@@ -1,6 +1,6 @@
 "use client";
 
-import { Repeat1, RotateCcw, SquarePen, Wallet } from "lucide-react";
+import { Repeat1, SquarePen, Trash2, Wallet } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../Tooltip";
 
@@ -62,7 +62,7 @@ const MyApprovalActionPill = ({
       tooltip: "Revoke",
       loading: revokeLoading,
       onClick: onRevoke,
-      icon: <RotateCcw className="w-4 h-4 text-white md:text-warning" />,
+      icon: <Trash2 className="w-4 h-4 text-white md:text-red-400" />,
     });
   }
 
