@@ -101,7 +101,7 @@ const TeamAttendanceDetails = () => {
               filterFields={[
 
                 {
-                  fieldname: "status",
+                  fieldname: "custom_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [

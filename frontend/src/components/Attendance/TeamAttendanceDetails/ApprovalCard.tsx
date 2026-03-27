@@ -123,17 +123,22 @@ const ApprovalCard = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.status} />
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
+
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
+            {data?.reference_document?.custom_status === "Pending" ? <TeamApprovalActionPill
               actions={actions}
-              status={data?.status}
+              status={data?.reference_document?.custom_status}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
               onAction={(action) => onAction(action, data)}
-            />
+            /> : <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
+            </div>}
           </div>
         </div>
       ) : (
@@ -175,7 +180,7 @@ const ApprovalCard = ({
                   </Typography>
                 </div>
 
-                <StatusBadge status={data?.status} />
+                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
               </div>
 
               {/* Info Section */}
@@ -221,14 +226,18 @@ const ApprovalCard = ({
               </div>
 
               {/* Actions */}
-              <TeamApprovalActionPill
+              {data?.reference_document?.custom_status === "Pending" ? <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
-                status={data?.status}
+                status={data?.custom_status}
                 recordId={data?.todo_id}
                 loadingAction={loadingAction}
                 onAction={(action) => onAction(action, data)}
-              />
+              /> : <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
+              </div>}
             </div>
           </div>
         </div>
