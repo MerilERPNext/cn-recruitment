@@ -68,7 +68,7 @@ const MyTeamRequest: React.FC = () => {
             onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
             filterFields={[
               {
-                fieldname: "status",
+                fieldname: "custom_status",
                 label: "Status",
                 fieldtype: "Select",
                 options: [

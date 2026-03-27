@@ -112,7 +112,14 @@ const ApprovalRejectionQueue = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data.reference_document.status} />
+              <StatusBadge
+                status={
+                  data.todo_status === "Closed" &&
+                    data.reference_document.status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.status
+                }
+              />
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
@@ -162,7 +169,14 @@ const ApprovalRejectionQueue = ({
                   </Typography>
                 </div>
 
-                <StatusBadge status={data?.reference_document?.status} />
+                <StatusBadge
+                  status={
+                    data.todo_status === "Closed" &&
+                      data.reference_document.status !== "Rejected"
+                      ? "Approved"
+                      : data.reference_document.status
+                  }
+                />
               </div>
 
               {/* Info Section */}
