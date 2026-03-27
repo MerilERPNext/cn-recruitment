@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate, useSearchParams } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 
@@ -131,18 +132,23 @@ const AllShiftChangeRequestsList: React.FC = () => {
             defaultFilters={{ status: "Draft" }}
             orderBy="from_date desc"
             SkeletonComponent={CardSkeleton}
-            renderCardContent={(item) => (
-              <ApprovalRejectionQueue
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => handleRequestClick(request)}
-                loadingAction={item?.loadingAction}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
-            )}
+            renderCardContent={(item) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return (
+                <ApprovalRejectionQueue
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={(request: any) => handleRequestClick(request)}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              )
+            }}
           />
         </CardTable>
       </div>

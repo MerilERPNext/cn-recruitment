@@ -938,8 +938,8 @@ const DataListView = <T extends BaseItem>({
     <div>
       {/* Header — sticky top, constrained to visible width */}
       <div
-        className="sticky top-0 left-0 z-10 bg-white pb-2"
-        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+        className="sticky left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
