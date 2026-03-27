@@ -151,6 +151,33 @@ const COLOR_CLASSES: Record<TypographyColor, string> = {
 };
 
 /* ======================================================
+   Helpers
+====================================================== */
+
+const FALLBACK_TEXT = "--";
+
+/**
+ * Returns `true` when `node` resolves to visible text content
+ * (string, number, or a fragment / array / component that recursively contains text).
+ * React elements (components / JSX) are inspected for their children.
+ */
+function isTextContent(node: React.ReactNode): boolean {
+  if (node == null || typeof node === "boolean") return false;
+  if (typeof node === "string") return node.trim().length > 0;
+  if (typeof node === "number") return true;
+
+  // Arrays / fragments – at least one child must be text
+  if (Array.isArray(node)) return node.some(isTextContent);
+
+  // React element – recurse into its children
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) {
+    return isTextContent(node.props.children);
+  }
+
+  return false;
+}
+
+/* ======================================================
    Component
 ====================================================== */
 
@@ -185,9 +212,11 @@ export function Typography<T extends React.ElementType = "span">(
     .filter(Boolean)
     .join(" ");
 
+  const resolvedChildren = isTextContent(children) ? children : FALLBACK_TEXT;
+
   return (
     <Component className={classes} style={style} {...rest}>
-      {children}
+      {resolvedChildren}
     </Component>
   );
 }

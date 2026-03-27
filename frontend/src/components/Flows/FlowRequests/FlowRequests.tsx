@@ -100,62 +100,61 @@ const FlowRequests: React.FC = () => {
         className="flex flex-col h-full overflow-auto"
         style={{ display: flowDetails ? "none" : "flex" }}
       >
-        <div>
-          {isDesktop && (
-            <div className="flex-shrink-0">
-              <div className="px-6 py-1 md:py-4">
-                <Typography variant="h4">Flow Requests</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Manage your Flows
-                </Typography>
-              </div>
-            </div>
-          )}
 
-          {/*Flows List*/}
-          <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-            <CardTable titles={titles} columnWidths={columnWidths}>
-              <StaticListView
-                data={flowRequests?.data || []}
-                ItemComponent={(_, item) => {
-                  return (
-                    <FlowRequestCard
-                      request={item}
-                      handleShowDetails={handleShowDetails}
-                    />
-                  );
-                }}
-                isSearch={true}
-                searchFields={["flow_name", "flow_category", "initiated_by"]}
-                getItemKey={(item) => item.request_id}
-                pageSize={10}
-                SkeletonComponent={CardSkeleton}
-                isLoading={flowRequestsLoading}
-                isFilter={true}
-                filterFields={[
-                  {
-                    fieldname: "approval_status",
-                    label: "Approval Status",
-                    fieldtype: "Select",
-                    options: ["Pending", "Approved", "Rejected", "N/A"],
-                  },
-                  {
-                    fieldname: "workflow_status",
-                    label: "Workflow Status",
-                    fieldtype: "Select",
-                    options: ["Pending", "Completed", "N/A"],
-                  },
-                  {
-                    fieldname: "overall_flow_status",
-                    label: "Overall Flow Status",
-                    fieldtype: "Select",
-                    options: ["Pending", "Completed"],
-                  },
-                ]}
-              // loadMorePagination={true}
-              />
-            </CardTable>
+        {isDesktop && (
+          <div className="flex-shrink-0">
+            <div className="px-6 py-1 md:py-4">
+              <Typography variant="h4">Flow Requests</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Manage your Flows
+              </Typography>
+            </div>
           </div>
+        )}
+
+        {/*Flows List*/}
+        <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            <StaticListView
+              data={flowRequests?.data || []}
+              ItemComponent={(_, item) => {
+                return (
+                  <FlowRequestCard
+                    request={item}
+                    handleShowDetails={handleShowDetails}
+                  />
+                );
+              }}
+              isSearch={true}
+              searchFields={["flow_name", "flow_category", "initiated_by"]}
+              getItemKey={(item) => item.request_id}
+              pageSize={10}
+              SkeletonComponent={CardSkeleton}
+              isLoading={flowRequestsLoading}
+              isFilter={true}
+              filterFields={[
+                {
+                  fieldname: "approval_status",
+                  label: "Approval Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Approved", "Rejected", "N/A"],
+                },
+                {
+                  fieldname: "workflow_status",
+                  label: "Workflow Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Completed", "N/A"],
+                },
+                {
+                  fieldname: "overall_flow_status",
+                  label: "Overall Flow Status",
+                  fieldtype: "Select",
+                  options: ["Pending", "Completed"],
+                },
+              ]}
+            // loadMorePagination={true}
+            />
+          </CardTable>
         </div>
       </div>
     </>
