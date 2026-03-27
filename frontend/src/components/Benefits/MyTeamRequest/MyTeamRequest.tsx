@@ -97,18 +97,23 @@ const MyTeamRequest: React.FC = () => {
             ]}
             orderBy="claim_date desc"
             SkeletonComponent={CardSkeleton}
-            renderCardContent={(item) => (
-              <BenefitRequestItem
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                // onClick={handleRequestClick}
-                loadingAction={item?.loadingAction}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
-            )}
+            renderCardContent={(item) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return (
+                <BenefitRequestItem
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // onClick={handleRequestClick}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              )
+            }}
           />
         </CardTable>
       </div>

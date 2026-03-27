@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import React from "react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
@@ -72,7 +73,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 
         <tbody className="divide-y divide-gray-100">
           {Array.isArray(advanceDetails?.expenses) &&
-          advanceDetails.expenses.length > 0 ? (
+            advanceDetails.expenses.length > 0 ? (
             advanceDetails.expenses.map((item: any, index: number) => (
               <tr
                 key={item.name || index}
@@ -113,7 +114,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   const MobileBreakup = (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(advanceDetails?.expenses) &&
-      advanceDetails.expenses.length > 0 ? (
+        advanceDetails.expenses.length > 0 ? (
         advanceDetails.expenses.map((item: any, index: number) => (
           <div
             key={item.name || index}
