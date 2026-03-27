@@ -82,7 +82,28 @@ const TeamProofSubmissionList = () => {
                 fieldname: "status",
                 label: "Status",
                 fieldtype: "Select",
-                options: ["Draft", "Approved", "Rejected"],
+                options: [
+                  {
+                    label: "Pending",
+                    key: "Pending",
+                    value: "Pending",
+                    customAPIParams: { todo_status: "Open" }
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                    customAPIParams: { todo_status: "Closed" }
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected"
+                  },
+                ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"]
+                }
               },
             ]}
             defaultFilters={{ status: "Draft" }}

@@ -716,7 +716,9 @@ export function TeamExpenseDetailView({
             </div>
           </div>
 
-          {actions?.length > 0 && status?.label === "Pending" && (
+          {actions?.length > 0 && 
+           status?.label === "Pending" && 
+           data?.todo_status !== "Closed" && (
             <div className="w-full bg-white border-t shadow-md p-4 z-20">
               <TeamApprovalActionPill
                 variant={isDesktop ? "modal" : "buttons"}
