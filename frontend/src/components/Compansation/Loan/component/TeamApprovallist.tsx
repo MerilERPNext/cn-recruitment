@@ -141,7 +141,16 @@ const ApprovalRejectionLoanList = ({
                     </Typography>
                   </Link>
                 </div>
-                <StatusBadge status={data?.status} />
+                {/* <StatusBadge status={data?.status} /> */}
+                
+                <StatusBadge
+                status={
+                  data.todo_status === "Closed" &&
+                  data.reference_document.status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.status
+                }
+              />
               </div>
 
               {/* Amount & Loan Product */}
@@ -318,7 +327,14 @@ const ApprovalRejectionLoanList = ({
             role={data?.role}
             position="left"
           >
-            <StatusBadge status={data?.reference_document?.status} />
+        <StatusBadge
+                status={
+                  data.todo_status === "Closed" && data.custom_selected_doctype_action !== "Send Back" &&
+                  data.reference_document.status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.status
+                }
+              />
           </AllocatedToTooltip>
         </div>
 

@@ -96,6 +96,7 @@ const TeamLoanRequest = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
+            status="Open"
             doctype="Loan Application"
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
@@ -116,8 +117,8 @@ const TeamLoanRequest = () => {
                 options: [
                   {
                     label: "Pending",
-                    key: "Pending",
-                    value: "Pending",
+                    key: "Open",
+                    value: "Open",
                     customAPIParams: { todo_status: "Open" }
                   },
                   {

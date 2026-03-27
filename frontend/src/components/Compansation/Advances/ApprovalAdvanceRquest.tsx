@@ -105,7 +105,7 @@ const TeamAdvanceRequest = () => {
             onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
             filterFields={[
               {
-                fieldname: "status",
+                fieldname: "custom_final_status",
                 label: "Status",
                 fieldtype: "Select",
                 options: [
@@ -132,7 +132,7 @@ const TeamAdvanceRequest = () => {
                 }
               },
             ]}
-            defaultFilters={{ status: "Draft" }}
+            defaultFilters={{ custom_final_status: "Pending" }}
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item: any) => (
               <ApprovalRejectionAdvanceList

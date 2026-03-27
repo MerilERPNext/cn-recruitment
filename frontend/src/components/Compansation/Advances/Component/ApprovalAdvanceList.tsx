@@ -164,7 +164,14 @@ const ApprovalRejectionAdvanceList = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.reference_document?.status} />
+            <StatusBadge
+                status={
+                  data.todo_status === "Closed" && data.custom_selected_doctype_action !== "Send Back" &&
+                  data.reference_document.status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.status
+                }
+              />
             </AllocatedToTooltip>
           </div>
 
