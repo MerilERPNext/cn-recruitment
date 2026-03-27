@@ -52,7 +52,7 @@ export function AttachmentCard({
           </div>
 
           {/* Info */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
               {fileName}
             </p>

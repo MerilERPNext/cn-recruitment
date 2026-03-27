@@ -33,6 +33,7 @@ export interface ParticipantsDrawerProps {
   employeeOptions?: EmployeeOption[];
   employeeOptionsLoading?: boolean;
   onSave?: (participantsFormatted: any[]) => void;
+  initialParticipants?: any[];
 }
 
 const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
@@ -47,6 +48,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   employeeOptions = [],
   employeeOptionsLoading = false,
   onSave,
+  initialParticipants = [],
 }) => {
   const [mode, setMode] = useState<"percentage" | "amount">("percentage");
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
@@ -142,6 +144,26 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     }
 
     setParticipants((prev) => {
+      if (initialParticipants && initialParticipants.length > 0) {
+        return initialParticipants.map(p => {
+          if (p.employee_type === "Guest") {
+            return {
+              employee_type: "Guest",
+              name: p.guest_name || p.name || "",
+              percentage: p.percentage,
+              amount: p.amount
+            };
+          }
+          return {
+            employee_type: p.employee_type || "Employee",
+            name: p.employee || p.name || "",
+            employee_name: p.employee_name || "",
+            percentage: p.percentage,
+            amount: p.amount
+          };
+        });
+      }
+
       if (prev.length > 0) {
         return computeAllocations(ensureFirstRowSelf(prev), "percentage")
           .participants;
@@ -157,7 +179,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
       return comp.participants;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editingExpenseId, expenses, expenseAmount, currentEmployee]);
+  }, [isOpen, editingExpenseId, expenses, expenseAmount, currentEmployee, initialParticipants]);
 
   const computed = useMemo(
     () => computeAllocations(participants, mode),
@@ -351,21 +373,25 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
       }
 
       if (mode === "percentage") {
+        const p = Number(row.percentage);
         if (
           row.percentage === null ||
           row.percentage === undefined ||
-          !Number.isFinite(Number(row.percentage))
+          !Number.isFinite(p) ||
+          p <= 0
         ) {
-          toast.error(`Row ${idx}: Percentage is required.`);
+          toast.error(`Row ${idx}: Percentage must be greater than 0.`);
           return;
         }
       } else {
+        const a = Number(row.amount);
         if (
           row.amount === null ||
           row.amount === undefined ||
-          !Number.isFinite(Number(row.amount))
+          !Number.isFinite(a) ||
+          a <= 0
         ) {
-          toast.error(`Row ${idx}: Amount is required.`);
+          toast.error(`Row ${idx}: Amount must be greater than 0.`);
           return;
         }
       }
@@ -433,7 +459,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 pb-20 space-y-6">
           {/* Summary Card */}
           <div className="bg-[#f8fafc] border border-gray-100 rounded-2xl p-6 shadow-sm">
             <div className="grid grid-cols-3 gap-8">
@@ -549,9 +575,10 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                         {i === 0 ? (
                           <div className="w-full p-2.5 border border-gray-200 bg-[#f1f5f9] rounded-lg text-sm text-gray-700 font-medium truncate">
                             {(() => {
-                              const id = row.name || currentEmployee?.name || currentEmployee?.employee_name || "";
+                              const id = row.name || currentEmployee?.name || "";
                               const found = optionsSource.find((o) => o.name === id);
-                              return found?.employee_name ?? currentEmployee?.employee_name ?? id ?? "Self";
+                              const name = found?.employee_name ?? currentEmployee?.employee_name ?? id ?? "Self";
+                              return name && id ? `${name} (${id})` : name || id || "Self";
                             })()}
                           </div>
                         ) : row.employee_type === "Employee" ? (
@@ -565,7 +592,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                                 .filter((opt) => opt.name !== currentEmployee?.name)
                                 .map((opt) => ({
                                   value: opt.name,
-                                  label: opt.employee_name ?? opt.name,
+                                  label: opt.employee_name ? `${opt.employee_name} (${opt.name})` : opt.name,
                                 }))}
                               value={row.name || ""}
                               onChange={(value, label) =>
@@ -665,7 +692,12 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
           <button
             onClick={addRow}
             type="button"
-            className="flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+            disabled={participants.length >= maxParticipants || maxParticipants === 0}
+            className={`flex items-center gap-2 px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95 ${
+              participants.length >= maxParticipants || maxParticipants === 0
+                ? "bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
             <span className="text-lg leading-none">+</span>
             <span>{isDesktop ? "Add Participant" : "Participant"}</span>
@@ -675,14 +707,24 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
             <button
               onClick={resetParticipants}
               type="button"
-              className="px-6 py-2.5 text-sm font-bold border border-gray-200 rounded-xl text-[#64748b] hover:text-gray-900 transition-colors"
+              disabled={participants.length <= 1 || maxParticipants === 0}
+              className={`px-6 py-2.5 text-sm font-bold border rounded-xl transition-colors ${
+                participants.length <= 1 || maxParticipants === 0
+                  ? "border-gray-100 text-gray-300 cursor-not-allowed"
+                  : "border-gray-200 text-[#64748b] hover:text-gray-900"
+              }`}
             >
               Reset
             </button>
             <button
               onClick={saveParticipants}
               type="button"
-              className="px-8 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-600 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              disabled={participants.length <= 1 || maxParticipants === 0}
+              className={`px-8 py-3 rounded-xl text-sm font-bold shadow-lg transition-all active:scale-95 ${
+                participants.length <= 1 || maxParticipants === 0
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+                  : "bg-primary text-white hover:bg-primary-600 shadow-blue-500/20"
+              }`}
             >
               Save
             </button>

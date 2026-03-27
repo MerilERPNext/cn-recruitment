@@ -129,6 +129,7 @@ const TeamAttendanceDetails = () => {
                 },
               ]}
               orderBy="from_date desc"
+              defaultFilters={{ custom_status: "Pending" }}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {

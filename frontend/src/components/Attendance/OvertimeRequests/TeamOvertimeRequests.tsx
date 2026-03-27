@@ -112,6 +112,7 @@ const TeamOvertimeRequests = () => {
                 },
               ]}
               SkeletonComponent={CardSkeleton}
+              defaultFilters={{ status: "Open" }}
               renderCardContent={(item) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {
                   return null;

@@ -122,8 +122,11 @@ const TeamLeaveRequest = () => {
               defaultFilters={{ status: "Open" }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => (
-                <LeaveApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <LeaveApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -133,7 +136,7 @@ const TeamLeaveRequest = () => {
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   showRejectReason={isRejectedFilter}
                 />
-              )}
+              }}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters.status || "Open");
               }}

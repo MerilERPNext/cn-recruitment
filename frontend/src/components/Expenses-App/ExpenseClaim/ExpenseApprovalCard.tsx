@@ -58,11 +58,11 @@ const ExpenseApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? (activeStatus === "Approved"
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
     : (activeStatus === "Approved"
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -141,9 +141,11 @@ const ExpenseApprovalCard = ({
               />
             </div>
           )}
+
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
+            className="min-w-0"
           >
             <Typography
               variant="bodySmall"
@@ -154,19 +156,22 @@ const ExpenseApprovalCard = ({
               </WrapperHoverCard>
             </Typography>
           </Link>
+
           <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.name}
+            {data?.reference_document?.custom_expense_category_name || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.custom_expense_category_name || "-"}
+            {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.expenses[0]?.custom_claim_type_name || "-"}
+            {data?.reference_document?.expenses[0]?.expense_date || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
           </Typography>
-
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(data?.reference_document?.creation)}
+          </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.due_date)}
           </Typography>
@@ -254,13 +259,11 @@ const ExpenseApprovalCard = ({
                 </div>
                 <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
               </div>
-
-              {/* Expense ID & Type */}
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Expense ID</Typography>
+                  <Typography variant="mobileCardLabel">Expense Category</Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.reference_document?.name}
+                    {data?.reference_document?.custom_expense_category_name || "-"}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
@@ -270,29 +273,24 @@ const ExpenseApprovalCard = ({
                   </Typography>
                 </div>
               </div>
-
-              {/* Category & Amount */}
-              <div className="flex justify-between w-full">
+              <div className="flex justify-between w-full mt-2">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Category</Typography>
-                  <Typography variant="mobileCardValue">
-                    {data?.reference_document?.custom_expense_category_name || "-"}
-                  </Typography>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">
-                    Claimed Amount
-                  </Typography>
+                  <Typography variant="mobileCardLabel">Claimed Amount</Typography>
                   <Typography variant="mobileCardValue">
                     {totalClaimedAmount}
                   </Typography>
                 </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Claimed Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.reference_document?.creation)}
+                  </Typography>
+                </div>
               </div>
 
-              {/* Dates */}
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">Claim Date</Typography>
+                  <Typography variant="mobileCardLabel">Expense Date</Typography>
                   <Typography variant="mobileCardValue">
                     {formatToIndianDate(
                       data?.reference_document?.expenses[0]?.expense_date,
@@ -306,6 +304,8 @@ const ExpenseApprovalCard = ({
                   </Typography>
                 </div>
               </div>
+
+
 
               {/* Allocated To */}
               <MobileAllocatedTo
