@@ -133,10 +133,10 @@ const BenefitRequestItem = ({
             {data.reference_document.earning_component}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data.reference_document.claimed_amount}
+            {formatCurrency(data.reference_document.claimed_amount)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data.reference_document.custom_max_amount}
+            {formatCurrency(data.reference_document.custom_max_amount)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data.reference_document.claim_date)}
