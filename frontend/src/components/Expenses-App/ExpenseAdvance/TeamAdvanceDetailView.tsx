@@ -5,6 +5,7 @@ import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { formatCurrency } from "../../../utils/currencyFormatter";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
@@ -14,6 +15,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 type TeamAdvanceDetailViewProps = {
   documentName?: string;
@@ -37,7 +39,10 @@ export default function TeamAdvanceDetailView({
 }: TeamAdvanceDetailViewProps) {
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data, isLoading, error } = useGetToDoWithReferenceDoc(documentName, referenceName);
+  const { data, isLoading, error } = useGetToDoWithReferenceDoc(
+    documentName,
+    referenceName,
+  );
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -66,7 +71,8 @@ export default function TeamAdvanceDetailView({
 
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
   if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
-  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
+  if (!(data?.todo_id || data?.name || data?.reference_document?.name))
+    return null;
 
   const ref = data.reference_document;
   const actions = (() => {
@@ -85,22 +91,22 @@ export default function TeamAdvanceDetailView({
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Expense Type
+              Advance Type
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Date
+              Advance Date
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Merchant
+              Sanctioned Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Invoice No.
+              Claimed Amount
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Amount
+              Approval Status
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Attachment
+              Description
             </th>
           </tr>
         </thead>
@@ -111,35 +117,21 @@ export default function TeamAdvanceDetailView({
               key={item.name || idx}
               className="bg-white hover:bg-gray-50 transition-colors duration-150"
             >
-              <td className="px-4 py-3 text-gray-800">
-                {item.expense_type || "-"}
-              </td>
+              <td className="px-4 py-3 text-gray-800">{item.expense_type}</td>
               <td className="px-4 py-3 text-gray-800">
                 {formatToIndianDate(item.expense_date)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {item.custom_mercent || "-"}
+                {formatCurrency(item.sanctioned_amount)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {item.custom_invoice_number || "-"}
+                {formatCurrency(item.amount)}
               </td>
               <td className="px-4 py-3 text-gray-800">
-                {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
+                {" "}
+                {<StatusBadge status={item.custom_approval_staus} />}
               </td>
-              <td className="px-4 py-3">
-                {item.custom_attach_receipt ? (
-                  <a
-                    href={item.custom_attach_receipt}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                  >
-                    View File
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-400 italic">No file</span>
-                )}
-              </td>
+              <td className="px-4 py-3 text-gray-800">{item.description}</td>
             </tr>
           ))}
         </tbody>
@@ -154,76 +146,68 @@ export default function TeamAdvanceDetailView({
           key={item.name || idx}
           className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
         >
-          <div className="mb-3">
+          {/* Header */}
+          <div className="mb-3 flex justify-between items-center">
             <Typography variant="label" className="card-title">
               Breakup Entry {idx + 1}
             </Typography>
+
+            {/* Approval Status */}
+            <StatusBadge status={item.custom_approval_staus} />
           </div>
 
+          {/* Content */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            {/* Advance Type */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Expense Type
-              </Typography>
+              <Typography variant="mobileCardLabel">Advance Type</Typography>
               <Typography variant="mobileCardValue">
-                {item.expense_type}
+                {item.expense_type || "—"}
               </Typography>
             </div>
+
+            {/* Date */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Amount
-              </Typography>
-              <Typography variant="mobileCardValue">
-                {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
-              </Typography>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Date
-              </Typography>
+              <Typography variant="mobileCardLabel">Advance Date</Typography>
               <Typography variant="mobileCardValue">
                 {formatToIndianDate(item.expense_date)}
               </Typography>
             </div>
+
+            {/* Sanctioned Amount */}
             <div className="flex flex-col gap-1">
-              <Typography variant="mobileCardLabel" className="block">
-                Merchant
+              <Typography variant="mobileCardLabel">
+                Sanctioned Amount
               </Typography>
               <Typography variant="mobileCardValue">
-                {item.custom_mercent || "-"}
+                {formatCurrency(item.sanctioned_amount)}
               </Typography>
             </div>
-            {item.custom_invoice_number && (
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Invoice
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {item.custom_invoice_number}
-                </Typography>
-              </div>
-            )}
-          </div>
 
-          {item.custom_attach_receipt && (
-            <button
-              type="button"
-              className="mt-3 text-sm text-blue-600 underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(item.custom_attach_receipt, "_blank");
-              }}
-            >
-              View Attachment
-            </button>
-          )}
+            {/* Claimed Amount */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(item.amount)}
+              </Typography>
+            </div>
+
+            {/* Description - full width */}
+            <div className="col-span-2 flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Description</Typography>
+              <Typography variant="mobileCardValue">
+                {item.description || "—"}
+              </Typography>
+            </div>
+          </div>
         </div>
       ))}
     </div>
   );
 
   const ActionButtons =
-    actions?.length && ["Open", "Pending", "Draft"].includes(ref.status) ? (
+    actions?.length &&
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
           variant={isDesktop ? "modal" : "buttons"}
@@ -236,7 +220,16 @@ export default function TeamAdvanceDetailView({
           onAction={(action) => handleAction(action)}
         />
       </div>
-    ) : null;
+    ) : (
+      <div className="border-t bg-white p-4 flex justify-end">
+        <StatusBadge status={"Action taken"} />
+      </div>
+    );
+
+  const computedStatus =
+    data.todo_status === "Closed" && ref.custom_final_status !== "Rejected"
+      ? "Approved"
+      : ref.custom_final_status;
 
   return (
     <div
@@ -279,9 +272,10 @@ export default function TeamAdvanceDetailView({
                 </Typography>
               </div>
               <div>
-                <StatusBadge status={ref.status} />
+                <StatusBadge status={computedStatus} />
               </div>
             </div>
+
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -300,6 +294,7 @@ export default function TeamAdvanceDetailView({
                 </Typography>
               </div>
             </div>
+
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -307,13 +302,35 @@ export default function TeamAdvanceDetailView({
                 </Typography>
                 <Typography variant="mobileCardValue">{ref.company}</Typography>
               </div>
-              <div className="flex flex-col gap-2 text-right">
+              {computedStatus === "Approved" && (
+                <div className="flex flex-col gap-2 text-right">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Paid Status
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    <StatusBadge
+                      status={data?.status === "Paid" ? "Paid" : "Unpaid"}
+                    />
+                  </Typography>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Posting Date
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatToIndianDate(ref.posting_date)}
                 </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <MobileAllocatedTo
+                  users={data?.allocated_to}
+                  roles={data?.allocated_roles}
+                  username={data?.username}
+                />
               </div>
             </div>
             {ref.purpose && (
@@ -330,7 +347,7 @@ export default function TeamAdvanceDetailView({
               variant="bodySmall"
               className="base-title mb-1 font-bold block"
             >
-              Advance Breakup
+              Advance Breakup Items ({ref?.expenses?.length || 0})
             </Typography>
 
             {ref.expenses?.length > 0 ? (

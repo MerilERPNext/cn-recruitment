@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
@@ -15,6 +15,7 @@ const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("Pending");
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,27 +50,36 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Advance ID",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
+        "ACTIONS",
+      ]
     : [
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Advance ID",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
+        "ACTIONS",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
-
+    ? activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : activeStatus === "Approved"
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -101,9 +111,7 @@ const TeamAdvanceExpenseList = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <NoDataFound title={message.title} subtitle={message.description} />
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
   return (
@@ -136,15 +144,39 @@ const TeamAdvanceExpenseList = () => {
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "custom_final_status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" },
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" },
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected",
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
+              defaultFilters={{ custom_final_status: "Pending" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.custom_final_status || "Pending");
+              }}
               noRecordsScreen={noRecordsScreen}
               renderCardContent={(item) => (
                 <AdvanceApprovalCard
@@ -155,6 +187,7 @@ const TeamAdvanceExpenseList = () => {
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   onClick={(request: any) => handleRequestClick(request)}
                   onAction={item?.onAction}
+                  activeStatus={activeStatus}
                 />
               )}
             />
