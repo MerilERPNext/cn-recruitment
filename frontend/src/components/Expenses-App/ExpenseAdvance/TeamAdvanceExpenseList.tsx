@@ -15,6 +15,7 @@ const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("Pending");
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -50,25 +51,35 @@ const TeamAdvanceExpenseList = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
+        "Advance ID",
         "Employee",
         "Department",
         "Advance Amount",
         "Due Date",
         "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
         "ACTIONS",
       ]
     : [
+        "Advance ID",
         "Employee",
         "Department",
         "Advance Amount",
         "Due Date",
         "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
         "ACTIONS",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : activeStatus === "Approved"
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -76,7 +87,7 @@ const TeamAdvanceExpenseList = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Draft: {
+        Pending: {
           title: "No Pending Requests",
           description: "You have no team advance requests to review.",
         },
@@ -131,9 +142,7 @@ const TeamAdvanceExpenseList = () => {
               isFilter={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-          
               filterFields={[
-
                 {
                   fieldname: "custom_final_status",
                   label: "Status",
@@ -143,28 +152,31 @@ const TeamAdvanceExpenseList = () => {
                       label: "Pending",
                       key: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: "Open" }
+                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",
                       key: "Approved",
                       value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" }
+                      customAPIParams: { todo_status: "Closed" },
                     },
                     {
                       label: "Rejected",
                       key: "Rejected",
-                      value: "Rejected"
+                      value: "Rejected",
                     },
                   ],
                   emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"]
-                  }
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
               ]}
               defaultFilters={{ custom_final_status: "Pending" }}
               orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.custom_final_status || "Pending");
+              }}
               noRecordsScreen={noRecordsScreen}
               renderCardContent={(item) => (
                 <AdvanceApprovalCard
@@ -175,6 +187,7 @@ const TeamAdvanceExpenseList = () => {
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   onClick={(request: any) => handleRequestClick(request)}
                   onAction={item?.onAction}
+                  activeStatus={activeStatus}
                 />
               )}
             />

@@ -15,6 +15,7 @@ import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 type TeamAdvanceDetailViewProps = {
   documentName?: string;
@@ -205,7 +206,8 @@ export default function TeamAdvanceDetailView({
   );
 
   const ActionButtons =
-    actions?.length && ["Open", "Pending", "Draft"].includes(ref.status) ? (
+    actions?.length &&
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
           variant={isDesktop ? "modal" : "buttons"}
@@ -218,7 +220,16 @@ export default function TeamAdvanceDetailView({
           onAction={(action) => handleAction(action)}
         />
       </div>
-    ) : null;
+    ) : (
+      <div className="border-t bg-white p-4 flex justify-end">
+        <StatusBadge status={"Action taken"} />
+      </div>
+    );
+
+  const computedStatus =
+    data.todo_status === "Closed" && ref.custom_final_status !== "Rejected"
+      ? "Approved"
+      : ref.custom_final_status;
 
   return (
     <div
@@ -261,9 +272,10 @@ export default function TeamAdvanceDetailView({
                 </Typography>
               </div>
               <div>
-                <StatusBadge status={ref.status} />
+                <StatusBadge status={computedStatus} />
               </div>
             </div>
+
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -282,6 +294,7 @@ export default function TeamAdvanceDetailView({
                 </Typography>
               </div>
             </div>
+
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -289,13 +302,35 @@ export default function TeamAdvanceDetailView({
                 </Typography>
                 <Typography variant="mobileCardValue">{ref.company}</Typography>
               </div>
-              <div className="flex flex-col gap-2 text-right">
+              {computedStatus === "Approved" && (
+                <div className="flex flex-col gap-2 text-right">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Paid Status
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    <StatusBadge
+                      status={data?.status === "Paid" ? "Paid" : "Unpaid"}
+                    />
+                  </Typography>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
                   Posting Date
                 </Typography>
                 <Typography variant="mobileCardValue">
                   {formatToIndianDate(ref.posting_date)}
                 </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <MobileAllocatedTo
+                  users={data?.allocated_to}
+                  roles={data?.allocated_roles}
+                  username={data?.username}
+                />
               </div>
             </div>
             {ref.purpose && (

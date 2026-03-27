@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
@@ -19,6 +19,7 @@ type ApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  activeStatus?: string;
 };
 
 const AdvanceApprovalCard = ({
@@ -30,6 +31,7 @@ const AdvanceApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled = true,
+  activeStatus = "Pending",
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = (() => {
@@ -53,8 +55,12 @@ const AdvanceApprovalCard = ({
   })();
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr";
+    ? activeStatus === "Approved"
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+    : activeStatus === "Approved"
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -85,6 +91,9 @@ const AdvanceApprovalCard = ({
               />
             </div>
           )}
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {data?.reference_document?.name}
+          </Typography>
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
@@ -113,24 +122,60 @@ const AdvanceApprovalCard = ({
           <div className="flex items-center justify-center">
             <AllocatedToTooltip
               users={
-                data?.status === "Pending" ? data?.allocated_to : undefined
+                data?.reference_document?.custom_final_status === "Pending"
+                  ? data?.allocated_to
+                  : undefined
               }
               roles={
-                data?.status === "Pending" ? data?.allocated_roles : undefined
+                data?.reference_document?.custom_final_status === "Pending"
+                  ? data?.allocated_roles
+                  : undefined
               }
               position="left"
             >
-              <StatusBadge status={data.todo_status == "Closed" ? "Approved" : data.reference_document.custom_final_status } />
+              <StatusBadge
+                status={
+                  data.todo_status === "Closed" &&
+                  data.reference_document.custom_final_status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.custom_final_status
+                }
+              />
             </AllocatedToTooltip>
           </div>
+          {activeStatus === "Approved" && (
+            <div className="flex items-center justify-center">
+              <Typography
+                variant="bodySmall"
+                className={`font-medium text-center min-w-[70px] ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}
+              >
+                {data?.status === "Paid" ? (
+                  <StatusBadge status={"Paid"} />
+                ) : (
+                  <StatusBadge status={"Unpaid"} />
+                )}
+              </Typography>
+            </div>
+          )}
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
-            />
+            {activeStatus === "Pending" ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data?.reference_document?.custom_final_status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <Typography
+                  variant="bodySmall"
+                  className="font-medium text-center text-gray-500"
+                >
+                  <StatusBadge status={"Action taken"} />
+                </Typography>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -177,7 +222,14 @@ const AdvanceApprovalCard = ({
                     </Typography>
                   </Link>
                 </div>
-              <StatusBadge status={data.todo_status == "Closed" ? "Approved" : data.reference_document.custom_final_status } />
+                <StatusBadge
+                  status={
+                    data.todo_status === "Closed" &&
+                    data.reference_document.custom_final_status !== "Rejected"
+                      ? "Approved"
+                      : data.reference_document.custom_final_status
+                  }
+                />
               </div>
 
               {/* Category & Amount */}
@@ -205,14 +257,45 @@ const AdvanceApprovalCard = ({
                 username={data?.username}
               />
 
-              <TeamApprovalActionPill
-                variant="buttons"
-                actions={actions}
-                status={data?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => onAction(action, data)}
-              />
+              {activeStatus === "Approved" && (
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">
+                      Paid Status
+                    </Typography>
+                    <Typography
+                      variant="bodySmall"
+                      className={`font-medium w-fit ${data?.status === "Paid" ? "text-green-600" : "text-amber-600"}`}
+                    >
+                      {data?.status === "Paid" ? (
+                        <StatusBadge status={"Paid"} />
+                      ) : (
+                        <StatusBadge status={"Unpaid"} />
+                      )}
+                    </Typography>
+                  </div>
+                </div>
+              )}
+
+              {activeStatus === "Draft" ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.reference_document?.custom_final_status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => onAction(action, data)}
+                />
+              ) : (
+                <div className="bg-gray-50 px-3 py-1 rounded-md mt-2 w-fit mx-auto">
+                  <Typography
+                    variant="bodySmall"
+                    className="text-center text-gray-100"
+                  >
+                    <StatusBadge status={"Action taken"} />
+                  </Typography>
+                </div>
+              )}
             </div>
           </div>
         </div>

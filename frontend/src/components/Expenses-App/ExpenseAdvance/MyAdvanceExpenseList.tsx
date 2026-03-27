@@ -116,8 +116,11 @@ const MyAdvanceExpenseList = () => {
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.name}
+        </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -147,7 +150,7 @@ const MyAdvanceExpenseList = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <MyApprovalActionPill
-            isPending={doc?.status === "Draft"}
+            isPending={doc?.custom_final_status === "Pending"}
             canEdit={canEdit}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke}
@@ -235,7 +238,7 @@ const MyAdvanceExpenseList = () => {
             <div onClick={(e) => e.stopPropagation()}>
               <MyApprovalActionPill
                 variant="buttons"
-                isPending={doc?.status === "Draft"}
+                isPending={doc?.custom_final_status === "Pending"}
                 canEdit={canEdit}
                 onEdit={() => handleEditClick(item)}
                 canRevoke={canRevoke}
@@ -270,7 +273,7 @@ const MyAdvanceExpenseList = () => {
     const getEmptyStateMessage = () => {
       const status = filters.status;
       const messages: Record<string, { title: string; description: string }> = {
-        Draft: {
+        Pending: {
           title: "No Pending Advances",
           description: "You have no pending advance expense requests.",
         },
@@ -312,6 +315,7 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
+            "Advance ID",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
@@ -319,7 +323,7 @@ const MyAdvanceExpenseList = () => {
             "Status",
             "ACTIONS",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
