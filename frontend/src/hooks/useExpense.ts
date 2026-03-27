@@ -12,7 +12,6 @@ import {
 } from "../services/expenseService";
 import { FilterCondition } from "../types/frappe";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import {
   ExpenseTypeFieldsResponse,
   CalculateExpenseParams,
@@ -78,7 +77,6 @@ export const useExpenseClaim = (filters?: FilterCondition[]) => {
 
 export function usePostExpenseClaim() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const handleError = (err: any) => {
     toast.error(
@@ -91,9 +89,6 @@ export function usePostExpenseClaim() {
       expenseService.postExpenseClaim(expenses_data),
     onSuccess: () => {
       toast.success("Expense claim submitted successfully!");
-      navigate("/webapp/expenses-app/expenses-list", {
-        state: { refresh: true },
-      });
       
       setTimeout(() => {
         queryClient.invalidateQueries({
@@ -393,3 +388,15 @@ export function useGetExpenseTypesByCategoryMutation() {
     }) => expenseService.getExpenseTypesByCategory(employee, reimbursementCategory),
   });
 }
+
+export const useGetExpenseAttachments = (documentName?: string) => {
+  return useQuery({
+    queryKey: ["expense-attachments", documentName],
+    queryFn: () => {
+      if (!documentName) throw new Error("documentName is required");
+      return expenseService.getExpenseAttachments(documentName);
+    },
+    enabled: !!documentName,
+    staleTime: 5 * 60 * 1000,
+  });
+};

@@ -318,4 +318,18 @@ export const expenseService = {
       { expenses_data }
     );
   },
+
+  getExpenseAttachments: async (documentName: string): Promise<any[]> => {
+    const filters: FilterCondition[] = [
+      ["attached_to_doctype", "=", "Expense Claim"],
+      ["attached_to_name", "=", documentName],
+    ];
+    const result = await FrappeAPI.getDocumentList("File", {
+      fields: ["name", "file_name", "file_url"],
+      filters,
+    });
+    return (result.data as any[]) || [];
+  },
 };
+
+

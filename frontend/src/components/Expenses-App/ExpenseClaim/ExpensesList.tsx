@@ -136,7 +136,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
 
-          <StatusBadge status={item?.status} />
+          <StatusBadge status={item?.reference_document?.approval_status} />
         </div>
 
         {/* Categories / Types */}
@@ -166,7 +166,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
             <Typography variant="mobileCardValue">
-              {sanctionedAmount}
+              {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? sanctionedAmount : " - "}
             </Typography>
           </div>
         </div>
@@ -313,7 +313,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formattedAmount}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {item?.status?.toLowerCase() === "approved" ? formattedSanctionedAmount : " -- "}
+        {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? formattedSanctionedAmount : " -- "}
       </Typography>
       {isPaidFilter && (
         <Typography variant="bodySmall" className="font-medium text-center">

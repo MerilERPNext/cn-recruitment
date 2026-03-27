@@ -17,8 +17,10 @@ import { Typography } from "../../shared/atoms/Typography";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 import ApprovalStagesProgress from "./ApprovalStagesProgress";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { useGetExpenseAttachments } from "../../../hooks/useExpense";
 
 interface ExpenseClaimModalProps {
+
   id: string | null;
   onClose: () => void;
   getStatusBadgeClasses?: (status: string) => string;
@@ -43,9 +45,14 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const error = raw.error;
   const { data: currentUser } = useCurrentUser();
   const { isDesktop } = useScreenSize();
+  const { data: claimAttachments } = useGetExpenseAttachments(id || undefined);
 
   const isSendedBack =
     currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
+
+  const getAttachmentsForItem = () => {
+    return claimAttachments || [];
+  };
 
   const formatINR = (value?: number | null) =>
     typeof value === "number"
@@ -223,17 +230,17 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <td className="px-4 py-3 text-gray-800">
                     {data?.approval_status === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
                   </td>
-                  <td className="px-4 py-3 flex justify-center">
-                    {item.custom_attach_receipt ? (
-                      <AttachmentCard
-                        fileUrl={item.custom_attach_receipt}
-                        compact
-                      />
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">
-                        No file
-                      </span>
-                    )}
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col gap-2 items-center justify-center">
+                      {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                        <AttachmentCard key={i} fileUrl={file.file_url} compact />
+                      ))}
+                      {getAttachmentsForItem().length === 0 && (
+                        <span className="text-xs text-gray-400 italic">
+                          No file
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {isSendedBack && (
                     <td className="px-4 py-3">
@@ -326,13 +333,16 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
               {/* Attachment */}
               <div className="mt-3">
                 <Typography variant="mobileCardLabel" className="block">
-                  Attachment
+                  Attachments
                 </Typography>
-                {item.custom_attach_receipt ? (
-                  <AttachmentCard fileUrl={item.custom_attach_receipt} />
-                ) : (
-                  <span className="text-gray-400 text-sm">No File</span>
-                )}
+                <div className="flex flex-col gap-2 mt-2">
+                  {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                    <AttachmentCard key={i} fileUrl={file.file_url} />
+                  ))}
+                  {getAttachmentsForItem().length === 0 && (
+                    <span className="text-gray-400 text-sm">No File</span>
+                  )}
+                </div>
               </div>
 
               {/* Edit button for sent-back claims */}

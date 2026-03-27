@@ -255,12 +255,28 @@ const ExpenseApprovalCard = ({
                 <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
               </div>
 
+              {/* Expense ID & Type */}
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Expense ID</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.name}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Expense Type</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.expenses?.[0]?.custom_claim_type_name || "-"}
+                  </Typography>
+                </div>
+              </div>
+
               {/* Category & Amount */}
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel">Category</Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.reference_document?.custom_expense_category}
+                    {data?.reference_document?.custom_expense_category_name || "-"}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
