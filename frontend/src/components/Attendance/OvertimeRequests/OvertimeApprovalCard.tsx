@@ -200,7 +200,7 @@ const OvertimeApprovalCard = ({
                   </Typography>
                 </div>
               </div>
-              {data?.reference_document?.status === "Pending" ? <TeamApprovalActionPill
+              {data?.reference_document?.status === "Open" ? <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
                 status={data?.reference_document?.status}
