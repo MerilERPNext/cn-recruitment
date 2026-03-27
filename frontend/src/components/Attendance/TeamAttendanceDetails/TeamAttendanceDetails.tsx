@@ -128,11 +128,13 @@ const TeamAttendanceDetails = () => {
                   }
                 },
               ]}
-              defaultFilters={{ custom_selected_doctype_action: ["!=", "Send Back"] }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
-              renderCardContent={(item) => (
-                <ApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -143,7 +145,7 @@ const TeamAttendanceDetails = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>

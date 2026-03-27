@@ -112,9 +112,11 @@ const TeamOvertimeRequests = () => {
                 },
               ]}
               SkeletonComponent={CardSkeleton}
-              defaultFilters={{ custom_selected_doctype_action: ["!=", "Send Back"] }}
-              renderCardContent={(item) => (
-                <OvertimeApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <OvertimeApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -125,7 +127,7 @@ const TeamOvertimeRequests = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )}
+              }}
             />
           )}
         </CardTable>
