@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { FileText, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";

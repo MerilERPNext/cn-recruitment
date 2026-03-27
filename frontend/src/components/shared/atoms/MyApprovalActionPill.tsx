@@ -1,6 +1,6 @@
 "use client";
 
-import { Repeat1, RotateCcw, SquarePen, Trash, Trash2, Wallet } from "lucide-react";
+import { Repeat1, SquarePen, Trash2, Wallet } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../Tooltip";
 

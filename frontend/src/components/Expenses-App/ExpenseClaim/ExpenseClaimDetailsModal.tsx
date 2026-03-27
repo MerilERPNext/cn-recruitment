@@ -294,7 +294,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const MobileExpenseItems = (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
-        data.expenses.map((item: Expense, idx: number) => {
+        data.expenses.map((item: Expense) => {
           return (
             <div
               key={item.name}

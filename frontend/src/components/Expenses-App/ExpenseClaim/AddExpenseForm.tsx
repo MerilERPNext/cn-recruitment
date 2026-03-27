@@ -22,7 +22,7 @@ import HeaderBar from "../../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import ExpenseFieldSkeleton from "./ExpenseFieldSkeleton";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
-import { AlertCircle, PencilIcon, SquarePen, Trash2 } from "lucide-react";
+import { AlertCircle, SquarePen, Trash2 } from "lucide-react";
 import ParticipantsDrawer from "./ParticipantDrawer";
 import { Employee } from "../../../types/employee";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
