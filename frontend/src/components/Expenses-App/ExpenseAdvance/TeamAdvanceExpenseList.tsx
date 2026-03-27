@@ -178,18 +178,26 @@ const TeamAdvanceExpenseList = () => {
                 setActiveStatus(filters?.custom_final_status || "Pending");
               }}
               noRecordsScreen={noRecordsScreen}
-              renderCardContent={(item) => (
-                <AdvanceApprovalCard
-                  data={item?.data}
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  onClick={(request: any) => handleRequestClick(request)}
-                  onAction={item?.onAction}
-                  activeStatus={activeStatus}
-                />
-              )}
+              renderCardContent={(item) => {
+                if (
+                  item?.data?.custom_selected_doctype_action === "Send Back"
+                ) {
+                  return null;
+                }
+
+                return (
+                  <AdvanceApprovalCard
+                    data={item?.data}
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                    onClick={(request: any) => handleRequestClick(request)}
+                    onAction={item?.onAction}
+                    activeStatus={activeStatus}
+                  />
+                );
+              }}
             />
           )}
         </CardTable>
