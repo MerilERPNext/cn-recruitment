@@ -34,6 +34,6 @@ export async function searchEmployeesByQuery(q: string): Promise<Option[]> {
 
   return employees.map((e) => ({
     value: e.name,
-    label: e.employee_name || e.name,
+    label: e.employee_name ? `${e.employee_name} (${e.name})` : e.name,
   }));
 }

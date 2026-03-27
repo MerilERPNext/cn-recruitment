@@ -177,6 +177,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Expense Category
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Expense Type
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
@@ -187,6 +190,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Claimed Amt
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Claimed Date
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Sanctioned Amt
@@ -211,6 +217,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   className="bg-white hover:bg-gray-50 transition-colors duration-150"
                 >
                   <td className="px-4 py-3 text-gray-800 truncate">
+                    {data?.custom_expense_category_name}
+                  </td>
+                  <td className="px-4 py-3 text-gray-800 truncate">
                     {item?.custom_claim_type_name}
                   </td>
                   <td className="px-4 py-3 text-gray-800">
@@ -219,12 +228,15 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                   <td className="px-4 py-3">
                     <div className="flex justify-center">
-                      <StatusBadge status={item?.custom_approval_staus} />
+                      <StatusBadge status={data?.approval_status} />
                     </div>
                   </td>
 
                   <td className="px-4 py-3 text-gray-800">
                     {formatINR(item.amount)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-800">
+                    {formatToIndianDate(item.creation)}
                   </td>
 
                   <td className="px-4 py-3 text-gray-800">
@@ -282,7 +294,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const MobileExpenseItems = (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
-        data.expenses.map((item: Expense, idx: number) => {
+        data.expenses.map((item: Expense) => {
           return (
             <div
               key={item.name}
@@ -290,12 +302,20 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             >
               <div className="flex justify-between items-center mb-3">
                 <Typography variant="label" className="card-title">
-                  Expense Item {idx + 1}
+                  Expense Item
                 </Typography>
-                <StatusBadge status={item.custom_approval_staus} />
+                <StatusBadge status={data?.approval_status} />
               </div>
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Expense Category
+                  </Typography>
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {data?.custom_expense_category_name}
+                  </Typography>
+                </div>
                 <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel" className="block">
                     Expense Type
@@ -318,6 +338,14 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   </Typography>
                   <Typography variant="mobileCardValue">
                     {formatINR(item.amount)}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Claimed Date
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(item.creation)}
                   </Typography>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -416,63 +444,6 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             </p>
           ) : (
             <>
-              {/* Category + Status */}
-              <div className="flex gap-2 justify-between p-1">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel">
-                    Expense Category
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {data?.custom_expense_category_name}
-                  </Typography>
-                </div>
-                <div>
-                  <StatusBadge status={data?.approval_status} />
-                </div>
-              </div>
-
-              {/* Paired data rows */}
-              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claimed Amount
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatINR(data?.total_claimed_amount)}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Sanctioned Amount
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.approval_status === "Approved" ? formatINR(data?.total_sanctioned_amount) : "—"}
-                    </Typography>
-                  </div>
-                </div>
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Expense Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(data?.creation || "")}
-                    </Typography>
-                  </div>
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Claimed Date
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {formatToIndianDate(
-                        data?.expenses?.[0]?.expense_date || "",
-                      )}
-                    </Typography>
-                  </div>
-                </div>
-              </div>
-
               {/* Approval Stages */}
               {Array.isArray(selectedStages) && selectedStages.length > 0 && (
                 <div className="mb-4 pt-2">

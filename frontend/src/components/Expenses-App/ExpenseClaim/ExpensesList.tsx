@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { FileText, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -523,7 +523,7 @@ const ExpensesList: React.FC = () => {
     "Expense Date",
     "Claimed Date",
     "Status",
-    "ACTIONS",
+    "Actions",
   ];
 
   const tableColumnWidths = [
@@ -555,7 +555,7 @@ const ExpensesList: React.FC = () => {
               <span></span>
             )}
             <div className="flex items-center space-x-3 pb-1">
-              <Button
+              {/* <Button
                 icon={<FileText size={16} />}
                 variant="outline"
                 size="md"
@@ -563,7 +563,7 @@ const ExpensesList: React.FC = () => {
                 onClick={() => setIsPolicyDrawerOpen(true)}
               >
                 Policy
-              </Button>
+              </Button> */}
 
               <Button
                 onClick={() => navigate("/webapp/expenses-app/shared-expenses")}

@@ -51,35 +51,37 @@ const TeamExpense = () => {
     ? [
       "Select",
       "Employee",
-      "Expense ID",
       "Expense Category",
       "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
       ...(activeStatus === "Approved" ? ["Paid Status"] : []),
-      "ACTIONS",
+      "Actions",
     ]
     : [
       "Employee",
-      "Expense ID",
       "Expense Category",
       "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
       ...(activeStatus === "Approved" ? ["Paid Status"] : []),
-      "ACTIONS",
+      "Actions",
     ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? (activeStatus === "Approved" 
-        ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"] 
-        : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
+    ? (activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
     : (activeStatus === "Approved"
-        ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-        : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -167,8 +169,11 @@ const TeamExpense = () => {
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters?.approval_status || "Draft");
               }}
-              renderCardContent={(item) => (
-                <ExpenseApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ExpenseApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -178,7 +183,7 @@ const TeamExpense = () => {
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   activeStatus={activeStatus}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>
