@@ -112,7 +112,7 @@ const TeamOvertimeRequests = () => {
                 },
               ]}
               SkeletonComponent={CardSkeleton}
-              defaultFilters={{ status: "Open" }}
+              defaultFilters={{ custom_selected_doctype_action: ["!=", "Send Back"] }}
               renderCardContent={(item) => (
                 <OvertimeApprovalCard
                   isSelected={item?.isSelected}

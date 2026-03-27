@@ -124,11 +124,11 @@ const TeamAttendanceDetails = () => {
                     },
                   ],
                   emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"]
+                    filterValue: ["!=", "Cancelled"],
                   }
                 },
               ]}
-              // defaultFilters={{ status: ["!=", "Cancelled"] }}
+              defaultFilters={{ custom_selected_doctype_action: ["!=", "Send Back"] }}
               orderBy="from_date desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => (
