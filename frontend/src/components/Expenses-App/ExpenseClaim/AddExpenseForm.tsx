@@ -1165,7 +1165,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       {
                         type: "columns",
                         key: "submitButtonsRow",
-                        customClass: "mt-4",
+                        customClass: "flex mt-4 gap-2",
                         columns: [
                           {
                             width: 6,
@@ -1176,6 +1176,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                 label: submitButtonLabel,
                                 theme: "primary",
                                 key: "submitButton",
+                                customClass: "w-full",
                                 disabled: isCalculating,
                               },
                             ],
@@ -1189,6 +1190,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                 label: "Save & Submit",
                                 theme: "primary",
                                 key: "saveAndSubmit",
+                                customClass: "w-full",
                                 disabled: isCalculating || isUploadingFiles,
                               },
                             ],
@@ -1246,7 +1248,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               key: "desktopSubmitButtons",
                               columns: [
                                 {
-                                  width: 6,
+                                  width: 1,
                                   components: [
                                     {
                                       type: "button",
@@ -1267,6 +1269,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                       label: "Save & Submit",
                                       theme: "primary",
                                       key: "saveAndSubmit",
+                                      customClass: "ml-4",
                                       disabled: isCalculating || isUploadingFiles,
                                     },
                                   ],

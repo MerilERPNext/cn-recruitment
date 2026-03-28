@@ -294,6 +294,13 @@ export const expenseService = {
     );
   },
 
+  getAllExpenseCategories: async (): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
+      { category_type: "General" }
+    );
+  },
+
   getExpenseTypesByCategory: async (employee: string, reimbursementCategory: string): Promise<any> => {
     return FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.get_expense_types_by_category",

@@ -377,6 +377,14 @@ export function useGetApplicableExpenseCategoriesMutation() {
   });
 }
 
+export const useGetAllExpenseCategories = () => {
+  return useQuery({
+    queryKey: ["all-expense-categories"],
+    queryFn: () => expenseService.getAllExpenseCategories(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export function useGetExpenseTypesByCategoryMutation() {
   return useMutation({
     mutationFn: ({

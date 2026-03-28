@@ -9,6 +9,7 @@ import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
@@ -372,6 +373,8 @@ const ExpensesList: React.FC = () => {
     urlReferenceName || undefined
   );
 
+  const { data: expenseCategories } = useGetAllExpenseCategories();
+
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     [],
@@ -391,6 +394,16 @@ const ExpensesList: React.FC = () => {
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
   >({});
+
+  const expenseCategoryOptions = React.useMemo(() => {
+    if (!expenseCategories || !Array.isArray(expenseCategories)) {
+      return [];
+    }
+    return expenseCategories.map((cat: any) => ({
+      label: cat.category_name || cat.name,
+      value: cat.category_name || cat.name,
+    }));
+  }, [expenseCategories]);
 
   React.useEffect(() => {
     if ((location.state as any)?.refresh) {
@@ -609,9 +622,23 @@ const ExpensesList: React.FC = () => {
                     { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
-
-
                   ],
+                },
+                {
+                  fieldname: "custom_expense_category_name",
+                  label: "Expense Category",
+                  fieldtype: "Select",
+                  options: expenseCategoryOptions,
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
                 },
               ]}
               defaultFilters={{ approval_status: ["===", "Draft"] }}
