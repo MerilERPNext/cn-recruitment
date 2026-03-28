@@ -781,6 +781,21 @@ export const attendanceService = {
       throw error;
     }
   },
+  updatePlannedOvertimeRequest: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.updateDocument(
+        "Planned Overtime Request",
+        body.name as string,
+        body.data as Record<string, unknown>
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Planned Overtime Request in:", error);
+      throw error;
+    }
+  },
 };
 
 export const getAllAttendancePolicies = async (

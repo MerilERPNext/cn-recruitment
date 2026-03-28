@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import "../../../formio.custom.css";
 import {
   useCreatePlannedOvertimeRequest,
   usePlannedOvertimeRequestAttachments,
+  useUpdatePlannedOvertimeRequest,
 } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
@@ -21,10 +22,17 @@ import { useRequiredFields } from "../../../hooks/useRequiredFields";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useTargetUser } from "../../../context/ViewedUserContext";
+import { Typography } from "../../shared/atoms/Typography";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
   onCancel?: () => void;
+  editData?: {
+    name: string;
+    overtime_details: any[];
+    attachments?: any[];
+  };
+  isEditMode?: boolean;
 }
 
 interface SchemaComponent {
@@ -59,6 +67,8 @@ interface FormSchema {
 const transformSchemaWithRequired = (
   baseSchema: FormSchema,
   requiredMap: Record<string, boolean>,
+  isEditMode: boolean = false,
+  hasExistingAttachments: boolean = false,
 ): FormSchema => {
   if (!baseSchema) return baseSchema;
   const cloned = JSON.parse(JSON.stringify(baseSchema)) as FormSchema;
@@ -67,7 +77,20 @@ const transformSchemaWithRequired = (
     if (!components) return;
     components.forEach((comp: SchemaComponent) => {
       const key = comp.key;
-      if (key && requiredMap[key]) {
+
+      // Handle attachment field specially in edit mode
+      if (key === "attachment" && isEditMode && hasExistingAttachments) {
+        // Don't make attachment required in edit mode if there are existing attachments
+        if (comp.validate) {
+          comp.validate.required = false;
+        }
+        // Remove the asterisk from label if it exists
+        if (typeof comp.label === "string") {
+          const asteriskHtml =
+            "<span style='color:red;margin-left:3px;'> *</span>";
+          comp.label = comp.label.replace(asteriskHtml, "");
+        }
+      } else if (key && requiredMap[key]) {
         if (!comp.validate) comp.validate = {};
         comp.validate.required = true;
 
@@ -80,7 +103,8 @@ const transformSchemaWithRequired = (
         }
       }
 
-      if (key === "start_date" || key === "end_date") {
+      // Only apply minDate validation when NOT in edit mode
+      if (!isEditMode && (key === "start_date" || key === "end_date")) {
         if (!comp.datePicker) comp.datePicker = {};
         comp.datePicker.minDate = format(new Date(), "yyyy-MM-dd");
       }
@@ -104,10 +128,13 @@ const transformSchemaWithRequired = (
   return cloned;
 };
 
-const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
+const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOvertimeProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<any[]>(
+    editData?.attachments || []
+  );
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
 
@@ -118,21 +145,54 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
   const { targetEmployeeId } = useTargetUser();
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 
-  const mutation = useCreatePlannedOvertimeRequest();
+  const createMutation = useCreatePlannedOvertimeRequest();
+  const updateMutation = useUpdatePlannedOvertimeRequest();
+  const mutation = isEditMode ? updateMutation : createMutation;
   const { data: plannedOvertimeRequestAttachments } =
     usePlannedOvertimeRequestAttachments(
       targetEmployeeId || currentEmployee?.employee || "",
     );
 
   /** Memoized initial value to avoid rerender resets */
-  const initialSubmissionData = useMemo(
-    () => ({
-      data: {
-        show_attachment: !!plannedOvertimeRequestAttachments,
-      },
-    }),
-    [plannedOvertimeRequestAttachments],
-  );
+  const initialSubmissionData = useMemo(() => {
+    const baseData: any = {
+      show_attachment: !!plannedOvertimeRequestAttachments,
+    };
+
+    // If in edit mode, prefill the form with existing data
+    if (isEditMode && editData?.overtime_details) {
+      baseData.overtime_details = editData.overtime_details.map((detail: any) => {
+        // Convert time string (HH:mm:ss) to a datetime string that Formio can understand
+        const convertTimeToDateTime = (timeStr: string, dateStr: string) => {
+          if (!timeStr || !dateStr) return "";
+          try {
+            // Parse the date string
+            const date = parseISO(dateStr);
+            // Split time string (HH:mm:ss)
+            const [hours, minutes, seconds] = timeStr.split(':');
+            // Create a new date with the time
+            date.setHours(parseInt(hours, 10));
+            date.setMinutes(parseInt(minutes, 10));
+            date.setSeconds(seconds ? parseInt(seconds, 10) : 0);
+            return date.toISOString();
+          } catch (e) {
+            console.error("Error converting time:", e);
+            return "";
+          }
+        };
+
+        return {
+          start_date: detail.start_date,
+          end_date: detail.end_date,
+          start_time: convertTimeToDateTime(detail.start_time, detail.start_date),
+          end_time: convertTimeToDateTime(detail.end_time, detail.end_date),
+          message: detail.message || "",
+        };
+      });
+    }
+
+    return { data: baseData };
+  }, [plannedOvertimeRequestAttachments, isEditMode, editData]);
 
   const isValidDate = (dateString: string) => {
     try {
@@ -182,6 +242,10 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
   console.log("requiredFieldMap", requiredFieldMap);
 
+  const handleRemoveExistingAttachment = (index: number) => {
+    setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const loading = useLoadingOverlay();
   const handleSubmit = async () => {
     await loading?.wrap(async () => {
@@ -207,24 +271,40 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         );
 
         await new Promise<void>((resolve, reject) => {
-          mutation.mutate(
-            {
+          const payload = isEditMode
+            ? {
+              name: editData?.name || "",
+              data: {
+                overtime_details: formattedOvertimeDetails || [],
+                // Send remaining existing attachments
+                attachments: existingAttachments.map(att => ({
+                  file_url: att.file_url,
+                  file_name: att.file_name,
+                })),
+              },
+            }
+            : {
               employee: currentEmployee?.employee || "",
               overtime_details: formattedOvertimeDetails || [],
-            },
+            };
+
+          mutation.mutate(
+            payload,
             {
               onSuccess: async (data: any) => {
                 const onFinish = () => {
                   setAttachments([]);
+                  setExistingAttachments([]);
                   onCancel?.();
                   setTimeout(() => setRefetchAttendance(true), 1000);
                 };
 
                 if (attachments?.length > 0) {
+                  const docName = isEditMode ? editData?.name : data.name;
                   await uploadFiles(
                     attachments,
-                    data.doctype,
-                    data.name,
+                    data.doctype || "Planned Overtime Request",
+                    docName,
                     onFinish,
                   );
                 } else {
@@ -232,7 +312,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
                 }
 
                 resolve();
-                toast.success("Overtime Requests SuccessFully");
+                toast.success(isEditMode ? "Overtime Request Updated Successfully" : "Overtime Request Created Successfully");
               },
               onError: (e: CustomError) => {
                 const formattedError = errorResponseFormater(
@@ -277,6 +357,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         if (e.target === e.currentTarget) {
           onCancel?.();
           setAttachments([]);
+          setExistingAttachments([]);
         }
       }}
     >
@@ -284,7 +365,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            Planned Overtime Request
+            {isEditMode ? "Edit Overtime Request" : "Planned Overtime Request"}
           </h2>
           {isDesktop && (
             <button
@@ -292,6 +373,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
                 e.stopPropagation();
                 onCancel?.();
                 setAttachments([]);
+                setExistingAttachments([]);
               }}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
               aria-label="Close"
@@ -303,14 +385,17 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
 
         {/* Form.io Form */}
         <div className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
+
           <Form
             form={useMemo(
               () =>
                 transformSchemaWithRequired(
                   overtimeRequestSchema,
                   requiredFieldMap,
+                  isEditMode,
+                  !!(isEditMode && existingAttachments.length > 0),
                 ),
-              [requiredFieldMap],
+              [requiredFieldMap, isEditMode, existingAttachments.length],
             )}
             onChange={useCallback(
               (submission: any) => {
@@ -359,11 +444,43 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               labelClass: "mb-1 font-medium text-gray-700",
               inputClass:
                 "border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 px-2 py-1",
-              validateOnInit: true,
+              validateOnInit: !isEditMode,
               validateOnBlur: true,
               validateOnChange: false,
             }}
           />
+          {isEditMode && existingAttachments.length > 0 && (
+            <div className="my-2 p-4 bg-gray-50 border border-gray-200 rounded-md">
+              <Typography variant="bodySmall" className="font-semibold mb-3">
+                Existing Attachments ({existingAttachments.length})
+              </Typography>
+              <div className="space-y-2">
+                {existingAttachments.map((attachment, index) => (
+                  <div
+                    key={attachment.file_url || index}
+                    className="flex items-center justify-between p-2 bg-white border border-gray-200 rounded"
+                  >
+                    <a
+                      href={attachment.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                    >
+                      {attachment.file_name || attachment.file_url?.split('/').pop() || `Attachment ${index + 1}`}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingAttachment(index)}
+                      className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                      aria-label="Remove attachment"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -375,6 +492,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
                   e.stopPropagation();
                   onCancel?.();
                   setAttachments([]);
+                  setExistingAttachments([]);
                 }}
                 size="md"
                 variant="outline"
@@ -396,7 +514,7 @@ const CreateOvertimeRequest = ({ onCancel }: RequestOvertimeProps) => {
               {mutation?.isPending || uploadFileLoading ? (
                 <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
               ) : (
-                "Submit"
+                isEditMode ? "Update" : "Submit"
               )}
             </Button>
           </div>

@@ -212,17 +212,25 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   const queryClient = useQueryClient();
 
-  const activeEmployeeId =
-    currentlySelectedEmployee?.name || currentEmployee?.employee || "";
+  // Memoize activeEmployeeId to prevent unnecessary refetches
+  const activeEmployeeId = useMemo(
+    () => currentlySelectedEmployee?.name || currentEmployee?.employee || "",
+    [currentlySelectedEmployee?.name, currentEmployee?.employee]
+  );
 
   const reqValidationmutation =
     useReqValidationsForAttendanceRequest(activeEmployeeId);
+
+  // Memoize the date parameter to prevent unnecessary refetches
+  const attachmentQueryDate = useMemo(
+    () => format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    [] // Only compute once on mount
+  );
+
   const { data: attendanceRequestAttachmentsMandatory } =
     useAttendanceRequestAttachments(
       activeEmployeeId,
-      // fromDateChanged ||
-      // format(selectedDate ? new Date(selectedDate) : new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
-      format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+      attachmentQueryDate,
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();

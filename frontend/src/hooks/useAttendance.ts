@@ -539,6 +539,9 @@ export const useAttendanceRequestAttachments = (employee: string, date: string, 
     },
     enabled: !!employee && !!request_type && !!date,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -631,6 +634,25 @@ export function useCreatePlannedOvertimeRequest() {
     },
   });
 }
+
+export function useUpdatePlannedOvertimeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.updatePlannedOvertimeRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
 export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
   return useQuery({
     queryKey: ["all-attendance-policies", filters],

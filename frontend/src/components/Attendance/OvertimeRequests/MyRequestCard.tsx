@@ -10,22 +10,80 @@ import {
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import Button from "../../shared/atoms/Button";
+import { Edit, RotateCcw } from "lucide-react";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 export function MyRequestCard({
   request,
   onClick,
+  onEdit,
+  onActionComplete,
 }: {
   request: MyPlannedAttendanceRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onClick?: (request: MyPlannedAttendanceRequest) => void;
+  onEdit?: (request: MyPlannedAttendanceRequest) => void;
+  onActionComplete?: () => void;
 }) {
   const { isDesktop } = useScreenSize();
 
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canEditOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "edit_overtime_request",
+    "Planned Overtime",
+  );
+  const canRevokeOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "can_revoke_overtime",
+    "Planned Overtime",
+  );
+  // Only allow editing if status is "Open"
+  const canEdit = request?.status === "Open" && request?.can_edit;
+  const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 0.5fr";
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
 
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr";
+  const handleRevokeClick = () => {
+    if (request?.todo_id) {
+      revokeEventMutation.mutate(
+        {
+          docname: request?.reference_name,
+          doctype: request?.reference_type,
+          todo: request?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Attendance Request Revoked Successfully!");
+            // Trigger refetch in parent component
+            setTimeout(() => {
+              if (onActionComplete) {
+                onActionComplete();
+              }
+            }, 2000);
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
+      );
+    }
+  };
+
   return (
     <>
       {isDesktop ? (
@@ -58,6 +116,31 @@ export function MyRequestCard({
             >
               <StatusBadge status={request?.status} />
             </AllocatedToTooltip>
+          </div>
+          <div className="flex items-center justify-center">
+            {canEditOvertimeRequest && <Button
+              size="sm"
+              variant="subtle"
+              disabled={!canEdit}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (canEdit && onEdit) {
+                  onEdit(request);
+                }
+              }}
+            >
+              <Edit className="w-4 h-4" />
+            </Button>}
+            {canRevokeOvertimeRequest && <Button size="sm" variant="subtle"
+              disabled={!canRevoke}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRevokeClick();
+              }}>
+              <RotateCcw className="w-4 h-4" />
+            </Button>}
           </div>
         </div>
       ) : (
@@ -107,6 +190,37 @@ export function MyRequestCard({
                   <Typography variant="mobileCardValue">
                     {truncateByChars(cleanDescription, 40)}
                   </Typography>
+                </div>
+                <div className="flex items-center justify-center">
+                  {canEditOvertimeRequest && <Button
+                    size="sm"
+                    variant="soft"
+                    disabled={!canEdit}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (canEdit && onEdit) {
+                        onEdit(request);
+                      }
+                    }}
+                  >
+                    <Edit className="w-4 h-4" /> Edit
+                  </Button>}
+                  {canRevokeOvertimeRequest && <Button size="sm" variant="soft"
+                    disabled={!canRevoke}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRevokeClick();
+                    }}>
+                    <RotateCcw className="w-4 h-4" /> Revoke
+                  </Button>}
+                  {
+                    !canRevokeOvertimeRequest && !canEditOvertimeRequest && <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                      No Available Action
+                    </div>
+                  }
+
                 </div>
               </div>
             </div>

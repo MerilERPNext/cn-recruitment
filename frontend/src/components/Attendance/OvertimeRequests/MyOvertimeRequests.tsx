@@ -42,6 +42,7 @@ const MyOvertimeRequests = () => {
   );
 
   const [showForm, setShowForm] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<MyPlannedAttendanceRequest | null>(null);
 
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
@@ -70,6 +71,20 @@ const MyOvertimeRequests = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
+  const handleEditRequest = useCallback((request: MyPlannedAttendanceRequest) => {
+    setEditingRequest(request);
+    setShowForm(true);
+  }, []);
+
+  const handleCloseForm = useCallback(() => {
+    setShowForm(false);
+    setEditingRequest(null);
+  }, []);
+
+  const handleRevokeComplete = useCallback(() => {
+    setRefetchMyRequestsList(true);
+  }, []);
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -85,12 +100,13 @@ const MyOvertimeRequests = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
-          columnWidths={["1.5fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.5fr"]}
           titles={[
             "Description",
             "Creation",
             "Due Date",
             "Status",
+            "Actions"
           ]}
         >
           {effectiveEmployeeId ? (
@@ -110,6 +126,8 @@ const MyOvertimeRequests = () => {
                     onClick={(request: MyPlannedAttendanceRequest) =>
                       handleRequestClick(request)
                     }
+                    onEdit={handleEditRequest}
+                    onActionComplete={handleRevokeComplete}
                   />
                 );
               }}
@@ -158,7 +176,15 @@ const MyOvertimeRequests = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <CreateOvertimeRequest onCancel={() => setShowForm(false)} />
+            <CreateOvertimeRequest
+              onCancel={handleCloseForm}
+              isEditMode={!!editingRequest}
+              editData={editingRequest ? {
+                name: editingRequest.reference_name,
+                overtime_details: editingRequest.reference_document?.overtime_details || [],
+                attachments: editingRequest.attachments || []
+              } : undefined}
+            />
           </div>
         </div>
       )}

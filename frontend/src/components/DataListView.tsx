@@ -92,6 +92,22 @@ export interface FilterField {
   };
 }
 
+interface DateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const DateInput = ({ value, onChange }: DateInputProps) => {
+  return (
+    <input
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+    />
+  );
+};
+
 interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
   fetchFunction?: (params: FetchParams) => Promise<FrappePageResponse>;
@@ -125,6 +141,7 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  clientFilterFn?: (data: T[]) => T[];
   noRecordsScreen?:
   | React.ReactNode
   | ((filters: Record<string, any>) => React.ReactNode);
@@ -160,6 +177,7 @@ const DataListView = <T extends BaseItem>({
   getItemKey,
   enableUrlParams = true,
   onFiltersChange,
+  clientFilterFn,
   noRecordsScreen,
 }: DataListViewProps<T>) => {
   const { search } = useLocation();
@@ -170,6 +188,8 @@ const DataListView = <T extends BaseItem>({
   const [filters, setFilters] = useState(defaultFilters);
   const [debouncedFilters, setDebouncedFilters] = useState(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] =
     useState(initialSearchQuery);
@@ -182,11 +202,39 @@ const DataListView = <T extends BaseItem>({
   const { isDesktop } = useScreenSize();
   const maxVisiblePages = isDesktop ? 5 : 2;
 
+  const hasActiveFilters = useMemo(() => {
+    const filterKeys = Object.keys(filters);
+
+    // Check if any filter key exists and has a value
+    const hasNonDefaultFilters = filterKeys.some(key => {
+      const filterValue = filters[key];
+      const defaultValue = defaultFilters[key];
+
+      // If filter exists and is not empty/null
+      if (filterValue !== undefined && filterValue !== null && filterValue !== "") {
+        // Check if it's different from default
+        if (JSON.stringify(filterValue) !== JSON.stringify(defaultValue)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    // Also check if there are filters beyond default filters
+    return filterKeys.length > 0 && hasNonDefaultFilters;
+  }, [filters, defaultFilters]);
+
   useEffect(() => {
     if (onFiltersChange) {
       onFiltersChange(debouncedFilters);
     }
   }, [debouncedFilters, onFiltersChange]);
+
+  useEffect(() => {
+    if (showFilters && !isFilterApplied) {
+      setPendingFilters({ ...filters });
+    }
+  }, [showFilters]);
 
   useEffect(() => {
     if (!enableUrlParams || !filtersString) {
@@ -281,6 +329,22 @@ const DataListView = <T extends BaseItem>({
         }
       }
     });
+
+    // Handle date range filters (creation_start and creation_end)
+    const creationStart = processedFilters.creation_start;
+    const creationEnd = processedFilters.creation_end;
+
+    // Remove the separate date fields
+    delete processedFilters.creation_start;
+    delete processedFilters.creation_end;
+
+    // Add combined date range filter
+    if (creationStart || creationEnd) {
+      processedFilters.creation = ["between", [
+        creationStart || "1900-01-01",
+        creationEnd || "2099-12-31"
+      ]];
+    }
 
     return {
       pageSize,
@@ -530,6 +594,10 @@ const DataListView = <T extends BaseItem>({
       data = (paginationQueryResult.data?.data || []) as unknown as T[];
     }
 
+    if (clientFilterFn) {
+      return clientFilterFn(data);
+    }
+
     return data;
   }, [
     infiniteScroll,
@@ -537,6 +605,7 @@ const DataListView = <T extends BaseItem>({
     infiniteQueryResult.data,
     paginationQueryResult.data,
     accumulatedData,
+    clientFilterFn,
   ]);
 
   // Handle accumulating data for load more pagination
@@ -614,7 +683,7 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => {
+    setPendingFilters((prev: Record<string, any>) => {
       if (value === "") {
         const newFilters = { ...prev };
         if (defaultFilters && defaultFilters[fieldname] !== undefined) {
@@ -629,16 +698,19 @@ const DataListView = <T extends BaseItem>({
         [fieldname]: value, // Store the key for matching
       };
     });
+  };
 
+  const applyPendingFilters = () => {
+    setFilters(pendingFilters);
+    setIsFilterApplied(true);
     setShowFilters(false);
   };
 
-  const clearFilters = () => {
-    // setFilters({});
-    // setDebouncedFilters({});
+  const handleClearFilters = () => {
+    setPendingFilters({});
     setFilters(defaultFilters);
     setDebouncedFilters(defaultFilters);
-
+    setIsFilterApplied(false);
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
@@ -652,6 +724,10 @@ const DataListView = <T extends BaseItem>({
       url.searchParams.delete("q");
       window.history.replaceState({}, "", url);
     }
+  };
+
+  const clearFilters = () => {
+    handleClearFilters();
   };
 
   const refreshData = () => {
@@ -840,7 +916,7 @@ const DataListView = <T extends BaseItem>({
 
                 {field.fieldtype === "Select" ? (
                   <select
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -868,16 +944,23 @@ const DataListView = <T extends BaseItem>({
                 ) : field.fieldtype === "Check" ? (
                   <input
                     type="checkbox"
-                    checked={filters[field.fieldname] || false}
+                    checked={pendingFilters[field.fieldname] || false}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.checked)
                     }
                     className="h-4 w-4"
                   />
+                ) : field.fieldtype === "Date" ? (
+                  <DateInput
+                    value={pendingFilters[field.fieldname] || ""}
+                    onChange={(val) =>
+                      handleFilterChange(field.fieldname, val)
+                    }
+                  />
                 ) : (
                   <input
                     type="text"
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -896,14 +979,12 @@ const DataListView = <T extends BaseItem>({
             >
               Clear
             </button>
-            {!isDesktop && (
-              <button
-                onClick={() => setShowFilters(false)}
-                className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Apply
-              </button>
-            )}
+            <button
+              onClick={applyPendingFilters}
+              className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Apply
+            </button>
           </div>
         </div>
       </>
@@ -950,12 +1031,28 @@ const DataListView = <T extends BaseItem>({
               />
             )}
             {isFilter && filterFields.length > 0 && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""}`}
-              >
-                <Filter className="h-4 w-4" />
-              </button>
+              <div className="flex items-center">
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="h-12 px-2 flex items-center text-red-500 hover:bg-red-50 transition border-l border-gray-300"
+                    title="Clear all filters"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`h-12 px-3 flex items-center border-l border-gray-300 hover:bg-gray-50 transition relative ${showFilters ? "bg-gray-100" : ""} ${hasActiveFilters ? "text-blue-600" : "text-gray-600"}`}
+                >
+                  <Filter className="h-4 w-4" />
+                  {hasActiveFilters && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold"></span>
+                    </span>
+                  )}
+                </button>
+              </div>
             )}
             {showRefreshButton && (
               <button
