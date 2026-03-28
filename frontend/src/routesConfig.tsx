@@ -479,11 +479,15 @@ const AddExpensePage = () => {
   const initialExpense = (location.state as any)?.expense || null;
   const expense_claim_name =
     (location.state as any)?.expense_claim_name || null;
+  const draft_document_name =
+    (location.state as any)?.draft_document_name || null;
+  const isEditingFromDraft = Boolean(draft_document_name);
   return (
     <AddExpenseForm
       initialExpense={initialExpense}
       expense_claim_name={expense_claim_name}
-      isEditingFromDetailsPage={Boolean(initialExpense)}
+      draft_document_name={draft_document_name}
+      isEditingFromDetailsPage={Boolean(initialExpense) && !isEditingFromDraft}
     />
   );
 };
