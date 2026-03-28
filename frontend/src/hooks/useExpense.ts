@@ -446,7 +446,6 @@ export function useDeleteDraftExpenseClaim() {
   return useMutation({
     mutationFn: (docName: string) => expenseService.deleteDraftExpenseClaim(docName),
     onSuccess: () => {
-      toast.success("Draft expense claim deleted!");
       queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
     },
     onError: (err: any) => {

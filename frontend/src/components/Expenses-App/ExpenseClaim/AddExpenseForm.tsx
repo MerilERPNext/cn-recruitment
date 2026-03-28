@@ -820,17 +820,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             );
 
             if (filteredRest.expense_date) {
-              let dateVal = filteredRest.expense_date;
-              if (
-                typeof dateVal === "string" &&
-                /^\d{4}-\d{2}-\d{2}$/.test(dateVal)
-              ) {
-                dateVal += "T00:00:00";
+              const dateVal = filteredRest.expense_date;
+              if (typeof dateVal === "string" && dateVal.includes("T")) {
+                filteredRest.expense_date = dateVal.split("T")[0];
+              } else if (dateVal instanceof Date) {
+                filteredRest.expense_date = format(dateVal, "yyyy-MM-dd");
               }
-              filteredRest.expense_date = format(
-                new Date(dateVal),
-                "yyyy-MM-dd",
-              );
             }
             if (filteredRest.start_datetime) {
               filteredRest.start_datetime = format(
@@ -1311,6 +1306,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   ...submission.data,
                 };
 
+                // Normalize dates safe from timezone shifts for both Save and Submit
+                if (combinedData.expense_date) {
+                  const dateVal = combinedData.expense_date;
+                  if (typeof dateVal === "string" && dateVal.includes("T")) {
+                    combinedData.expense_date = dateVal.split("T")[0];
+                  } else if (dateVal instanceof Date) {
+                    combinedData.expense_date = format(dateVal, "yyyy-MM-dd");
+                  }
+                }
+
                 if (
                   !combinedData.expenseCategory ||
                   !combinedData.expenseType
@@ -1403,12 +1408,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     expenses: [
                       {
                         ...combinedData,
-                        expense_date: combinedData.expense_date
-                          ? format(
-                            new Date(combinedData.expense_date),
-                            "yyyy-MM-dd",
-                          )
-                          : undefined,
+                        expense_date: combinedData.expense_date,
                         start_datetime: combinedData.start_datetime
                           ? format(
                             new Date(combinedData.start_datetime),
