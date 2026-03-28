@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { Users } from "lucide-react";
+import { Users, Pencil, Trash2 } from "lucide-react";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -9,7 +9,8 @@ import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
+import { useGetAllExpenseCategories, useGetDraftExpenseClaims, useDeleteDraftExpenseClaim, usePostExpenseClaim, useUpdateFileAttachment } from "../../../hooks/useExpense";
+import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
@@ -32,6 +33,7 @@ import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import Modal from "../../shared/Modal";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -360,6 +362,223 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   );
 };
 
+// --- Draft Expense Mobile Card ---
+const DraftExpenseItem: React.FC<{
+  item: any;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onEdit: (item: any) => void;
+  onDelete: (item: any) => void;
+}> = ({ item, isSelected, onToggleSelect, onEdit, onDelete }) => {
+  const parsedJson = React.useMemo(() => {
+    if (item?.json && typeof item.json === "string") {
+      try {
+        return JSON.parse(item.json);
+      } catch {
+        return null;
+      }
+    }
+    return item?.json || null;
+  }, [item]);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(value ?? 0);
+
+  const claimedAmount = formatCurrency(parsedJson?.amount);
+  const itemId = item?.name;
+
+  const attachmentNames = React.useMemo(() => {
+    if (!parsedJson?.attachments) return [];
+    return parsedJson.attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+  }, [parsedJson]);
+
+  return (
+    <div
+      className="cursor-pointer border-t-4 border-x border-b
+      border-x-primary/20 border-b-primary/20
+      shadow-sm border-primary bg-white rounded-xl"
+    >
+      <div className="p-4 flex flex-col gap-4">
+        {/* Checkbox + Actions header */}
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelect(itemId);
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <Typography variant="mobileCardLabel">Select</Typography>
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(item);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(item);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+            >
+              <Trash2 size={14} />
+              Delete
+            </button>
+          </div>
+        </div>
+
+        {/* Categories / Types */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Category</Typography>
+            <Typography variant="mobileCardValue">
+              {parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || "-"}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Expense Type</Typography>
+            <Typography variant="mobileCardValue">
+              {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Date & Amount */}
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Expense Date</Typography>
+            <Typography variant="mobileCardValue">
+              {parsedJson?.expense_date ? formatToIndianDate(parsedJson.expense_date) : "-"}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+            <Typography variant="mobileCardValue">{claimedAmount}</Typography>
+          </div>
+        </div>
+
+        {/* Attachments */}
+        {attachmentNames.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Attachments</Typography>
+            <Typography variant="mobileCardValue">
+              {attachmentNames.length} file(s): {attachmentNames.join(", ")}
+            </Typography>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- Draft Expense Desktop Row ---
+const DraftExpenseTableRow: React.FC<{
+  item: any;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onEdit: (item: any) => void;
+  onDelete: (item: any) => void;
+}> = ({ item, isSelected, onToggleSelect, onEdit, onDelete }) => {
+  const itemId = item?.name;
+
+  const parsedJson = React.useMemo(() => {
+    if (item?.json && typeof item.json === "string") {
+      try {
+        return JSON.parse(item.json);
+      } catch {
+        return null;
+      }
+    }
+    return item?.json || null;
+  }, [item]);
+
+  const formattedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+  }).format(parsedJson?.amount ?? 0);
+
+  const attachmentNames = React.useMemo(() => {
+    if (!parsedJson?.attachments) return null;
+    return parsedJson.attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+  }, [parsedJson]);
+
+  return (
+    <div
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px" }}
+    >
+      <div className="flex items-center justify-center">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleSelect(itemId);
+          }}
+          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+        />
+      </div>
+      <Tooltip content={`${parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || ""}`}>
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate"
+        >
+          {parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || "-"}
+        </Typography>
+      </Tooltip>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {parsedJson?.expense_date ? formatToIndianDate(parsedJson.expense_date) : "-"}
+      </Typography>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formattedAmount}
+      </Typography>
+      <Tooltip content={attachmentNames?.join(", ") || "No attachments"}>
+        <Typography variant="bodySmall" className="font-medium text-center truncate px-2">
+          {attachmentNames ? `${attachmentNames.length} file(s)` : "-"}
+        </Typography>
+      </Tooltip>
+      <div className="flex items-center justify-center gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(item);
+          }}
+          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <Pencil size={16} />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(item);
+          }}
+          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ExpensesList: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const location = useLocation();
@@ -375,6 +594,8 @@ const ExpensesList: React.FC = () => {
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
+  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">("draft");
+  const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     [],
@@ -386,10 +607,24 @@ const ExpensesList: React.FC = () => {
   const [selectedTodoStatus, setSelectedTodoStatus] = React.useState<string | null>(null);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{
+    isOpen: boolean;
+    message: string;
+    onConfirm: () => void;
+  }>({ isOpen: false, message: "", onConfirm: () => {} });
+
+  const [submitConfirmModal, setSubmitConfirmModal] = React.useState<{
+    isOpen: boolean;
+    count: number;
+  }>({ isOpen: false, count: 0 });
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
   const navigate = useNavigate();
+  const { data: draftExpenses, isFetching: isFetchingDrafts } = useGetDraftExpenseClaims(currentEmployee?.name);
+  const deleteDraftMutation = useDeleteDraftExpenseClaim();
+  const { mutateAsync: submitExpenses, isPending: isSubmitting } = usePostExpenseClaim();
+  const updateFileMutation = useUpdateFileAttachment();
 
   const [currentFilters, setCurrentFilters] = React.useState<
     Record<string, any>
@@ -526,31 +761,35 @@ const ExpensesList: React.FC = () => {
     );
   };
 
-  const tableTitles = [
-    "Expense ID",
-    "Expense Category",
-    "Expense Type",
-    "Claimed Amount",
-    "Sanctioned Amount",
-    ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-    "Expense Date",
-    "Claimed Date",
-    "Status",
-    "Actions",
-  ];
+  const tableTitles = activeTab === "draft"
+    ? ["", "Expense Category", "Expense Type", "Expense Date", "Claimed Amount", "Attachments", "Actions"]
+    : [
+        "Expense ID",
+        "Expense Category",
+        "Expense Type",
+        "Claimed Amount",
+        "Sanctioned Amount",
+        ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+        "Expense Date",
+        "Claimed Date",
+        "Status",
+        "Actions",
+      ];
 
-  const tableColumnWidths = [
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const tableColumnWidths = activeTab === "draft"
+    ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
+    : [
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+      ];
 
   return (
     <div className="flex flex-col h-full">
@@ -559,25 +798,19 @@ const ExpensesList: React.FC = () => {
           <div className="flex items-center justify-between">
             {isDesktop ? (
               <div>
-                <Typography variant="h4">My Expense Claims</Typography>
+                <Typography variant="h4">
+                  {activeTab === "draft" ? "Draft Expense Claims" : "My Expense Claims"}
+                </Typography>
                 <Typography variant="bodySmall" color="body2">
-                  Track and manage your expense claim requests
+                  {activeTab === "draft"
+                    ? "View your draft expense claims"
+                    : "Track and manage your expense claim requests"}
                 </Typography>
               </div>
             ) : (
               <span></span>
             )}
             <div className="flex items-center space-x-3 pb-1">
-              {/* <Button
-                icon={<FileText size={16} />}
-                variant="outline"
-                size="md"
-                className="rounded-xl hover:bg-blue-100 py-1"
-                onClick={() => setIsPolicyDrawerOpen(true)}
-              >
-                Policy
-              </Button> */}
-
               <Button
                 onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
                 icon={<Users size={16} />}
@@ -589,11 +822,35 @@ const ExpensesList: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {/* Toggle Tabs */}
+          <div className="flex mt-3 bg-gray-100 rounded-xl p-1 w-fit">
+            <button
+              onClick={() => setActiveTab("draft")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "draft"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Draft Expenses
+            </button>
+            <button
+              onClick={() => setActiveTab("expenses")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "expenses"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              My Expenses
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {currentEmployee?.name && (
+        {currentEmployee?.name && activeTab === "expenses" && (
           <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
             <DataListView
               queryKey={["expense-claims-all"]}
@@ -656,6 +913,179 @@ const ExpensesList: React.FC = () => {
             />
           </CardTable>
         )}
+
+        {currentEmployee?.name && activeTab === "draft" && (
+          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+            {isFetchingDrafts ? (
+              <div className="flex flex-col gap-3 px-4">
+                {[1, 2, 3].map((i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </div>
+            ) : draftExpenses && draftExpenses.length > 0 ? (
+              <>
+                <div className="flex flex-col gap-3">
+                  {/* Select All Header Row - Desktop only */}
+                  {isDesktop && (
+                    <div
+                      className="grid max-w-screen items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
+                      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px" }}
+                    >
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedDraftIds.size === draftExpenses.length && draftExpenses.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedDraftIds(new Set(draftExpenses.map((d: any) => d.name)));
+                            } else {
+                              setSelectedDraftIds(new Set());
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                        />
+                      </div>
+                      <div className="col-span-5 flex items-center">
+                        <span className="text-sm font-medium text-gray-700">
+                          Select All ({selectedDraftIds.size} selected)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Draft List */}
+                  {draftExpenses.map((draft: any) => {
+                    const isSelected = selectedDraftIds.has(draft.name);
+                    const handleToggleSelect = (id: string) => {
+                      setSelectedDraftIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(id)) {
+                          next.delete(id);
+                        } else {
+                          next.add(id);
+                        }
+                        return next;
+                      });
+                    };
+                    const handleEdit = (editItem: any) => {
+                      const parsedJson = editItem?.json && typeof editItem.json === "string"
+                        ? JSON.parse(editItem.json)
+                        : editItem?.json;
+                      if (parsedJson) {
+                        const attachments = parsedJson?.attachments;
+                        let attachReceipt = null;
+                        if (attachments) {
+                          const attachmentNames = attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+                          if (attachmentNames.length > 0) {
+                            attachReceipt = attachmentNames.map((name: string) => ({
+                              name: name,
+                              size: 4000,
+                              url: name,
+                              storage: "url",
+                              originalName: name,
+                            }));
+                          }
+                        }
+                        navigate("/webapp/expenses-app/add-expense", {
+                          state: {
+                            expense: {
+                              ...parsedJson,
+                              attach_receipt: attachReceipt,
+                              uid: parsedJson.uid,
+                            },
+                            expense_claim_name: editItem.name,
+                            draft_document_name: editItem.name,
+                            isEditingFromDetailsPage: false,
+                          },
+                        });
+                      }
+                    };
+                    const handleDelete = (deleteItem: any) => {
+                      setDeleteConfirmModal({
+                        isOpen: true,
+                        message: "Are you sure you want to delete this draft expense?",
+                        onConfirm: () => {
+                          deleteDraftMutation.mutate(deleteItem.name);
+                          setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                        },
+                      });
+                    };
+                    return isDesktop ? (
+                      <DraftExpenseTableRow
+                        key={draft.name}
+                        item={draft}
+                        isSelected={isSelected}
+                        onToggleSelect={handleToggleSelect}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ) : (
+                      <DraftExpenseItem
+                        key={draft.name}
+                        item={draft}
+                        isSelected={isSelected}
+                        onToggleSelect={handleToggleSelect}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Action Buttons for Selected */}
+                {selectedDraftIds.size > 0 && (
+                  <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2">
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={() => setSelectedDraftIds(new Set())}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contain"
+                      size="md"
+                      bgColor="primary"
+                      onClick={() => {
+                        setSubmitConfirmModal({ isOpen: true, count: selectedDraftIds.size });
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "Submitting..." : `Submit Selected (${selectedDraftIds.size})`}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="md"
+                      bgColor="error"
+                      onClick={() => {
+                        setDeleteConfirmModal({
+                          isOpen: true,
+                          message: `Are you sure you want to delete ${selectedDraftIds.size} selected draft(s)?`,
+                          onConfirm: () => {
+                            selectedDraftIds.forEach((id) => {
+                              deleteDraftMutation.mutate(id);
+                            });
+                            setSelectedDraftIds(new Set());
+                            setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                          },
+                        });
+                      }}
+                    >
+                      Delete Selected ({selectedDraftIds.size})
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-4">
+                <NoDataFound
+                  title="No Draft Expenses"
+                  subtitle="Your saved draft expense claims will appear here."
+                />
+              </div>
+            )}
+          </CardTable>
+        )}
       </div>
 
       {documentIdToOpen && (
@@ -673,6 +1103,197 @@ const ExpensesList: React.FC = () => {
         isOpen={isPolicyDrawerOpen}
         onClose={() => setIsPolicyDrawerOpen(false)}
       />
+      
+      <Modal
+        isOpen={deleteConfirmModal.isOpen}
+        onClose={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} })}
+        size="sm"
+      >
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Delete</h3>
+          <p className="text-gray-600 mb-6">{deleteConfirmModal.message}</p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} })}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="md"
+              bgColor="error"
+              onClick={deleteConfirmModal.onConfirm}
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={submitConfirmModal.isOpen}
+        onClose={() => setSubmitConfirmModal({ isOpen: false, count: 0 })}
+        size="sm"
+      >
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Submit</h3>
+          <p className="text-gray-600 mb-6">
+            Are you sure you want to submit {submitConfirmModal.count} selected draft(s)?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setSubmitConfirmModal({ isOpen: false, count: 0 })}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="md"
+              bgColor="primary"
+              onClick={async () => {
+                const selectedDrafts = draftExpenses?.filter((d: any) => selectedDraftIds.has(d.name)) || [];
+                
+                const expensesToSubmit = selectedDrafts.map((draft: any) => {
+                  const parsedJson = draft?.json && typeof draft.json === "string"
+                    ? JSON.parse(draft.json)
+                    : draft?.json;
+                  return {
+                    ...parsedJson,
+                    uid: parsedJson?.uid,
+                  };
+                });
+
+                const formatExpenseDate = (dateVal: any) => {
+                  if (!dateVal) return undefined;
+                  if (typeof dateVal === "string") {
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+                      return dateVal;
+                    }
+                    const d = new Date(dateVal);
+                    if (!isNaN(d.getTime())) {
+                      return d.toISOString().split("T")[0];
+                    }
+                  }
+                  if (dateVal instanceof Date) {
+                    return dateVal.toISOString().split("T")[0];
+                  }
+                  return undefined;
+                };
+
+                const payload = {
+                  employee: currentEmployee?.name,
+                  employee_name: currentEmployee?.employee_name,
+                  company: currentEmployee?.company,
+                  posting_date: new Date().toISOString().split("T")[0],
+                  expenses: expensesToSubmit.map((exp: any) => {
+                    const { uid, submitButton, saveAndSubmit, categoryTypeOptions, expense_date, start_datetime, end_datetime, ...rest } = exp;
+                    const formattedExpense: any = { ...rest };
+                    
+                    if (expense_date) {
+                      formattedExpense.expense_date = formatExpenseDate(expense_date);
+                    }
+                    if (start_datetime) {
+                      const d = new Date(start_datetime);
+                      if (!isNaN(d.getTime())) {
+                        formattedExpense.start_datetime = d.toISOString().replace("T", " ").slice(0, 19);
+                      }
+                    }
+                    if (end_datetime) {
+                      const d = new Date(end_datetime);
+                      if (!isNaN(d.getTime())) {
+                        formattedExpense.end_datetime = d.toISOString().replace("T", " ").slice(0, 19);
+                      }
+                    }
+                    
+                    return {
+                      ...formattedExpense,
+                      expense_type: exp.expenseType || exp.expense_type,
+                      reimbursement_category: exp.expenseCategory || exp.expenseCategory,
+                    };
+                  }),
+                };
+
+                setSubmitConfirmModal({ isOpen: false, count: 0 });
+                
+                await new Promise<void>((resolve, reject) => {
+                  submitExpenses(JSON.stringify(payload), {
+                    onSuccess: async (response: any) => {
+                      try {
+                        // Get the created expense claim document name(s)
+                        const message = response?.message;
+                        const claims = response?.claims;
+                        
+                        let expenseClaimNames: string[] = [];
+                        
+                        if (Array.isArray(claims) && claims.length > 0) {
+                          expenseClaimNames = claims.map((claim: any) => claim.name || claim);
+                        } else if (response?.name) {
+                          expenseClaimNames = [response.name];
+                        } else if (message?.name) {
+                          expenseClaimNames = [message.name];
+                        } else if (message?.results) {
+                          expenseClaimNames = message.results.map((r: any) => r.name || r);
+                        }
+                        
+                        // Update files attached to drafts with new expense claim reference
+                        const fileUpdatePromises: Promise<any>[] = [];
+                        
+                        selectedDrafts.forEach((draft: any, index: number) => {
+                          const expenseClaimName = expenseClaimNames[index];
+                          if (!expenseClaimName) return;
+                          
+                          // Find files attached to this draft
+                          fileUpdatePromises.push(
+                            expenseService.getFilesByAttachment("Draft Expense Claim", draft.name)
+                              .then((files: any[]) => {
+                                files.forEach((file: any) => {
+                                  updateFileMutation.mutate({
+                                    fileName: file.name,
+                                    data: {
+                                      attached_to_doctype: "Expense Claim",
+                                      attached_to_name: expenseClaimName,
+                                    },
+                                  });
+                                });
+                              })
+                          );
+                        });
+                        
+                        await Promise.all(fileUpdatePromises);
+                        
+                        // Delete submitted drafts after updating files
+                        selectedDraftIds.forEach((id) => {
+                          deleteDraftMutation.mutate(id);
+                        });
+                        
+                        setSelectedDraftIds(new Set());
+                        toast.success("Drafts submitted successfully!");
+                        resolve();
+                      } catch (error) {
+                        console.error("Error updating file attachments:", error);
+                        // Still proceed with deletion even if file update fails
+                        selectedDraftIds.forEach((id) => {
+                          deleteDraftMutation.mutate(id);
+                        });
+                        setSelectedDraftIds(new Set());
+                        resolve();
+                      }
+                    },
+                    onError: (err: any) => {
+                      reject(err);
+                    },
+                  } as any);
+                });
+              }}
+              loading={isSubmitting}
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

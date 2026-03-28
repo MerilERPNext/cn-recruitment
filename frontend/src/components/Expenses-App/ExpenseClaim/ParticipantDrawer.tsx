@@ -52,6 +52,11 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 }) => {
   const [mode, setMode] = useState<"percentage" | "amount">("percentage");
   const [participants, setParticipants] = useState<ParticipantRow[]>([]);
+  const [activeEdit, setActiveEdit] = useState<{
+    index: number;
+    field: "percentage" | "amount";
+    value: string;
+  } | null>(null);
   const { isDesktop } = useScreenSize();
   const computeAllocations = (
     rowsIn?: ParticipantRow[],
@@ -128,7 +133,10 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setActiveEdit(null);
+      return;
+    }
 
     if (editingExpenseId) {
       const e = expenses.find((x) => x.id === editingExpenseId);
@@ -622,17 +630,45 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 
                       <div className="text-center">
                         <input
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          max={100}
-                          value={row.percentage !== null && row.percentage !== undefined ? row.percentage : ""}
+                          type="text"
+                          inputMode="decimal"
+                          value={
+                            activeEdit?.index === i && activeEdit?.field === "percentage"
+                              ? activeEdit.value
+                              : row.percentage !== null && row.percentage !== undefined
+                                ? row.percentage
+                                : ""
+                          }
                           onChange={(e) => {
                             const v = e.target.value;
-                            const parsed = v === "" ? null : parseFloat(v);
+                            if (v === "") {
+                              setActiveEdit({ index: i, field: "percentage", value: v });
+                              updateRow(i, { percentage: null });
+                              return;
+                            }
+                            const regex = /^\d*\.?\d{0,2}$/;
+                            if (!regex.test(v)) return;
+                            
+                            setActiveEdit({ index: i, field: "percentage", value: v });
+                            const parsed = parseFloat(v);
+                            if (isNaN(parsed) || parsed < 0 || parsed > 100) return;
                             updateRow(i, { percentage: parsed });
                           }}
-                          onFocus={(e) => e.target.select()}
+                          onBlur={(e) => {
+                            setActiveEdit(null);
+                            const val = row.percentage;
+                            if (val !== null && val !== undefined) {
+                              e.target.value = String(val);
+                            }
+                          }}
+                          onFocus={(e) => {
+                            e.target.select();
+                            setActiveEdit({
+                              index: i,
+                              field: "percentage",
+                              value: e.target.value,
+                            });
+                          }}
                           disabled={mode !== "percentage"}
                           placeholder="0"
                           className={`w-full p-2.5 border border-gray-200 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all ${mode !== "percentage" ? "bg-gray-50 text-gray-400" : "bg-white text-gray-700 font-medium"}`}
@@ -641,15 +677,44 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
 
                       <div className="text-center">
                         <input
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={row.amount !== null && row.amount !== undefined ? row.amount : ""}
-                          onFocus={(e) => e.target.select()}
+                          type="text"
+                          inputMode="decimal"
+                          value={
+                            activeEdit?.index === i && activeEdit?.field === "amount"
+                              ? activeEdit.value
+                              : row.amount !== null && row.amount !== undefined
+                                ? row.amount
+                                : ""
+                          }
                           onChange={(e) => {
                             const v = e.target.value;
-                            const parsed = v === "" ? null : parseFloat(v);
+                            if (v === "") {
+                              setActiveEdit({ index: i, field: "amount", value: v });
+                              updateRow(i, { amount: null });
+                              return;
+                            }
+                            const regex = /^\d*\.?\d{0,2}$/;
+                            if (!regex.test(v)) return;
+                            
+                            setActiveEdit({ index: i, field: "amount", value: v });
+                            const parsed = parseFloat(v);
+                            if (isNaN(parsed) || parsed < 0) return;
                             updateRow(i, { amount: parsed });
+                          }}
+                          onBlur={(e) => {
+                            setActiveEdit(null);
+                            const val = row.amount;
+                            if (val !== null && val !== undefined) {
+                              e.target.value = String(val);
+                            }
+                          }}
+                          onFocus={(e) => {
+                            e.target.select();
+                            setActiveEdit({
+                              index: i,
+                              field: "amount",
+                              value: e.target.value,
+                            });
                           }}
                           disabled={mode !== "amount"}
                           placeholder="0"

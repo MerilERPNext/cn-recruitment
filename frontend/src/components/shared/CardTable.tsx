@@ -7,7 +7,7 @@ const CardTable = ({
   columnWidths,
   children,
 }: {
-  titles: string[];
+  titles: ReactNode[];
   columnWidths?: string[];
   children: ReactNode;
 }) => {

@@ -22,6 +22,7 @@ import {
   ExpenseCategoryType,
   ExpensePolicyQuestionsResponse,
 } from "../types/expense";
+import { useNavigate } from "react-router-dom";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -408,3 +409,73 @@ export const useGetExpenseAttachments = (documentName?: string) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export function useCreateDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload: any) => expenseService.createDraftExpenseClaim(payload),
+    onSuccess: () => {
+      toast.success("Draft expense claim saved!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      navigate("/webapp/expenses-app/expenses-list");
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to save draft."));
+    },
+  });
+}
+
+export const useGetDraftExpenseClaims = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["expense-claims-draft", employeeId],
+    queryFn: () => {
+      if (!employeeId) return [];
+      return expenseService.getDraftExpenseClaims(employeeId);
+    },
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export function useDeleteDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (docName: string) => expenseService.deleteDraftExpenseClaim(docName),
+    onSuccess: () => {
+      toast.success("Draft expense claim deleted!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to delete draft."));
+    },
+  });
+}
+
+export function useUpdateDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: ({ docName, payload }: { docName: string; payload: any }) =>
+      expenseService.updateDraftExpenseClaim(docName, payload),
+    onSuccess: () => {
+      toast.success("Draft expense claim updated!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      navigate("/webapp/expenses-app/expenses-list");
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to update draft."));
+    },
+  });
+}
+
+export function useUpdateFileAttachment() {
+  return useMutation({
+    mutationFn: ({ fileName, data }: { fileName: string; data: { attached_to_doctype: string; attached_to_name: string } }) =>
+      expenseService.updateFile(fileName, data),
+  });
+}

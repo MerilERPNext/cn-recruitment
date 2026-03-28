@@ -13,6 +13,8 @@ import {
   useValidateExpense,
   useGetApplicableExpenseCategoriesMutation,
   useGetExpenseTypesByCategoryMutation,
+  useCreateDraftExpenseClaim,
+  useUpdateDraftExpenseClaim,
 } from "../../../hooks/useExpense";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { format } from "date-fns";
@@ -38,6 +40,7 @@ export interface EmployeeOption {
 interface AddExpenseFormProps {
   initialExpense?: Expense | null;
   expense_claim_name?: string | null;
+  draft_document_name?: string | null;
   isEditingFromDetailsPage?: boolean;
 }
 
@@ -69,6 +72,7 @@ const LOCAL_KEYS = {
 const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   initialExpense,
   expense_claim_name,
+  draft_document_name,
   isEditingFromDetailsPage = false,
 }) => {
   const formRef = useRef<any>(null);
@@ -116,7 +120,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [pendingExpensesToSubmit, setPendingExpensesToSubmit] = useState<Expense[] | undefined>(undefined);
   const hydrationRef = useRef(false);
 
-  const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage);
+  const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
   const { data: currentEmployee } = useCurrentEmployee();
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
@@ -132,6 +136,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { mutate: submitExpenseClaim } = usePostExpenseClaim();
 
   const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
+
+  const { mutate: saveDraftExpense, isPending: isSavingDraft } = useCreateDraftExpenseClaim();
+
+  const { mutate: updateDraftExpense, isPending: isUpdatingDraft } = useUpdateDraftExpenseClaim();
 
   const { mutateAsync: validateExpense, isPending: isValidating } =
     useValidateExpense();
@@ -175,10 +183,19 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             copy.custom_attach_receipt.split("/").pop() || "attachment",
         },
       ];
-    } else if (Array.isArray(copy.attachments)) {
+    } else if (Array.isArray(copy.attach_receipt)) {
       // Handle multiple attachments if they are already in the correct format
     }
+
+    // Set currentAttachments from attach_receipt if available
+    if (copy.attach_receipt && Array.isArray(copy.attach_receipt)) {
+      // Also set attachments in dynamicFormData for Form.io file component
+      copy.attachments = copy.attach_receipt;
+      setCurrentAttachments(copy.attach_receipt);
+    }
+
     setDynamicFormData(copy);
+
     const mainForm = {
       categoryType: initialExpense.categoryType || "General",
       expenseCategory: initialExpense.expenseCategory,
@@ -1014,9 +1031,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       ? "Validating..."
       : isUpdating
         ? "Updating..."
-        : isEditingFromDetailsPage || editingExpenseId
-          ? "Update"
-          : "Save";
+        : isSavingDraft || isUpdatingDraft
+          ? "Saving..."
+          : draft_document_name
+            ? "Update Draft"
+            : isEditingFromDetailsPage || editingExpenseId
+              ? "Update"
+              : "Save";
 
   const showSelectionForm = showCategoryAndType || expenses.length === 0 || isEditActive;
 
@@ -1173,15 +1194,15 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               {
                                 type: "button",
                                 action: "submit",
-                                label: submitButtonLabel,
+                                label: isSavingDraft || isUpdatingDraft ? "Saving..." : submitButtonLabel,
                                 theme: "primary",
                                 key: "submitButton",
                                 customClass: "w-full",
-                                disabled: isCalculating,
+                                disabled: isCalculating || isSavingDraft || isUpdatingDraft,
                               },
                             ],
                           },
-                          ...(!(isEditingFromDetailsPage || editingExpenseId) ? [{
+                          ...(!(isEditingFromDetailsPage || editingExpenseId || draft_document_name) ? [{
                             width: 6,
                             components: [
                               {
@@ -1248,7 +1269,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               key: "desktopSubmitButtons",
                               columns: [
                                 {
-                                  width: 1,
+                                  width: 9,
                                   components: [
                                     {
                                       type: "button",
@@ -1256,12 +1277,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                       label: isUploadingFiles ? "Uploading Files..." : submitButtonLabel,
                                       theme: "primary",
                                       key: "submitButton",
-                                      disabled: isCalculating || isUploadingFiles,
+                                      customClass: "text-right",
+                                      disabled: isCalculating || isUploadingFiles || isSavingDraft || isUpdatingDraft,
                                     },
                                   ],
                                 },
-                                ...(!(isEditingFromDetailsPage || editingExpenseId) ? [{
-                                  width: 6,
+                                ...(!(isEditingFromDetailsPage || editingExpenseId || draft_document_name) ? [{
+                                  width: 3,
                                   components: [
                                     {
                                       type: "button",
@@ -1269,7 +1291,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                       label: "Save & Submit",
                                       theme: "primary",
                                       key: "saveAndSubmit",
-                                      customClass: "ml-4",
+                                      customClass: "text-left",
                                       disabled: isCalculating || isUploadingFiles,
                                     },
                                   ],
@@ -1485,6 +1507,43 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   return;
                 }
 
+                // Update draft if editing from draft list
+                if (draft_document_name) {
+                  const updatePayload = {
+                    json: JSON.stringify({
+                      employee: currentEmployee?.name,
+                      expense_claim_name: expense_claim_name || draft_document_name,
+                      ...newExpense,
+                    }),
+                  };
+
+                  updateDraftExpense(
+                    { docName: draft_document_name, payload: updatePayload },
+                    {
+                      onSuccess: async () => {
+                        if (draft_document_name && attachments.length > 0) {
+                          await uploadFiles(attachments, "Draft Expense Claim", draft_document_name);
+                        }
+                        setIsSharePanelOpen(false);
+                        setEditingExpenseId(null);
+                        formRef.current?.reset();
+                        dynamicFormRef.current?.reset();
+                        setMainFormData({});
+                        setDynamicFormData({});
+                        setDynamicFields([]);
+                        setShowCategoryAndType(false);
+                        setFormKey((prev) => prev + 1);
+                        setCurrentAttachments([]);
+                        setExpenses((prev) =>
+                          prev.filter((e) => e.uid !== newExpense.uid),
+                        );
+                      },
+                    },
+                  );
+                  return;
+                }
+
+                // Update expense claim if editing from details page
                 if (isEditingFromDetailsPage) {
                   updateExpense(
                     {
@@ -1507,26 +1566,36 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   return;
                 }
 
-                if (editingExpenseId) {
-                  setExpenses((prev) =>
-                    prev.map((e) =>
-                      e.uid === editingExpenseId ? newExpense : e,
-                    ),
-                  );
-                } else {
-                  setExpenses((prev) => [...prev, newExpense]);
-                }
+                const draftPayload = {
+                  employee: currentEmployee?.name,
+                  json: JSON.stringify({
+                    employee: currentEmployee?.name,
+                    expense_claim_name: expense_claim_name || "",
+                    ...newExpense,
+                  }),
+                };
 
-                setIsSharePanelOpen(false);
-                setEditingExpenseId(null);
-                formRef.current?.reset();
-                dynamicFormRef.current?.reset();
-                setMainFormData({});
-                setDynamicFormData({});
-                setDynamicFields([]);
-                setShowCategoryAndType(false);
-                setFormKey((prev) => prev + 1);
-                setCurrentAttachments([]);
+                saveDraftExpense(draftPayload, {
+                  onSuccess: async (response: any) => {
+                    const draftName = response?.name || response?.data?.name;
+                    if (draftName && attachments.length > 0) {
+                      await uploadFiles(attachments, "Draft Expense Claim", draftName);
+                    }
+                    setIsSharePanelOpen(false);
+                    setEditingExpenseId(null);
+                    formRef.current?.reset();
+                    dynamicFormRef.current?.reset();
+                    setMainFormData({});
+                    setDynamicFormData({});
+                    setDynamicFields([]);
+                    setShowCategoryAndType(false);
+                    setFormKey((prev) => prev + 1);
+                    setCurrentAttachments([]);
+                    setExpenses((prev) =>
+                      prev.filter((e) => e.uid !== newExpense.uid),
+                    );
+                  },
+                });
               }}
               onChange={(change: any) => {
                 setDynamicFormData(change.data);
