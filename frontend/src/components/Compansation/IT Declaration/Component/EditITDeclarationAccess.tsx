@@ -10,6 +10,7 @@ import {
 
 import itDeclarationSchema from "./editITDeclarationForm.json";
 import toast from "react-hot-toast";
+import { formatDate } from "../util/Validation";
 
 type Props = {
   isOpen: boolean;
@@ -58,13 +59,13 @@ const EditITDeclarationAccess = ({
         empdoc_id,
         declaration_type: data.declaration_type,
         status: data.status,
-        from_date: data.from_date,
-        to_date: data.to_date,
+        from_date: formatDate(data.from_date),
+        to_date: formatDate(data.to_date),
       });
 
       onClose();
     } catch (error: any) {
-      toast.error(error);  
+      toast.error(error?.message || "Something went wrong"); 
     }
   };
 
@@ -126,12 +127,6 @@ const EditITDeclarationAccess = ({
 
         {/* Footer */}
         <div className="flex justify-end gap-4 mt-6">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 border border-gray-300 rounded"
-          >
-            Cancel
-          </button>
 
           <Button variant="contain" size="md" onClick={handleSubmit}>
             Submit
