@@ -58,7 +58,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     value: string;
   } | null>(null);
   const { isDesktop } = useScreenSize();
-  const computeAllocations = (
+  const computeAllocations = React.useCallback((
     rowsIn?: ParticipantRow[],
     m?: "percentage" | "amount"
   ) => {
@@ -112,9 +112,9 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         totalAllocated: +totalAllocated.toFixed(2),
       },
     };
-  };
+  }, [mode, expenseAmount]);
 
-  const ensureFirstRowSelf = (rows: ParticipantRow[] = []) => {
+  const ensureFirstRowSelf = React.useCallback((rows: ParticipantRow[] = []) => {
     const first: ParticipantRow = {
       employee_type: "Self",
       name:
@@ -130,7 +130,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     };
     const rest = Array.isArray(rows) && rows.length > 1 ? rows.slice(1) : [];
     return [first, ...rest];
-  };
+  }, [currentEmployee, expenseAmount]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -139,43 +139,38 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
     }
 
     if (editingExpenseId) {
-      const e = expenses.find((x) => x.id === editingExpenseId);
+      const e = expenses.find((x) => x.id === editingExpenseId || x.uid === editingExpenseId);
       if (e && Array.isArray(e.participants) && e.participants.length > 0) {
         const comp = computeAllocations(
           ensureFirstRowSelf(e.participants),
           "percentage"
         );
-        setMode(comp.mode);
         setParticipants(comp.participants);
         return;
       }
     }
 
-    setParticipants((prev) => {
-      if (initialParticipants && initialParticipants.length > 0) {
-        return initialParticipants.map(p => {
-          if (p.employee_type === "Guest") {
-            return {
-              employee_type: "Guest",
-              name: p.guest_name || p.name || "",
-              percentage: p.percentage,
-              amount: p.amount
-            };
-          }
+    if (initialParticipants && initialParticipants.length > 0) {
+      const mapped = initialParticipants.map(p => {
+        if (p.employee_type === "Guest") {
           return {
-            employee_type: p.employee_type || "Employee",
-            name: p.employee || p.name || "",
-            employee_name: p.employee_name || "",
+            employee_type: "Guest",
+            name: p.guest_name || p.name || "",
             percentage: p.percentage,
             amount: p.amount
           };
-        });
-      }
-
-      if (prev.length > 0) {
-        return computeAllocations(ensureFirstRowSelf(prev), "percentage")
-          .participants;
-      }
+        }
+        return {
+          employee_type: p.employee_type || "Employee",
+          name: p.employee || p.name || "",
+          employee_name: p.employee_name || "",
+          percentage: p.percentage,
+          amount: p.amount
+        };
+      });
+      const comp = computeAllocations(ensureFirstRowSelf(mapped), "percentage");
+      setParticipants(comp.participants);
+    } else {
       const seed: ParticipantRow = {
         employee_type: "Self",
         name: currentEmployee?.name || currentEmployee?.employee_name || "Self",
@@ -183,11 +178,14 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
         amount: +(Number(expenseAmount || 0).toFixed(2) || 0),
       };
       const comp = computeAllocations([seed], "percentage");
-      setMode(comp.mode);
-      return comp.participants;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, editingExpenseId, expenses, expenseAmount, currentEmployee, initialParticipants]);
+      setParticipants(comp.participants);
+    }
+  }, [isOpen, editingExpenseId, expenses, expenseAmount, currentEmployee, initialParticipants, computeAllocations, ensureFirstRowSelf]);
+
+  const handleSearch = React.useCallback(async (q: string) => {
+    const res = await searchEmployeesByQuery(q);
+    return res.filter((op) => op.value !== currentEmployee?.name);
+  }, [currentEmployee?.name]);
 
   const computed = useMemo(
     () => computeAllocations(participants, mode),
@@ -611,10 +609,7 @@ const ParticipantsDrawer: React.FC<ParticipantsDrawerProps> = ({
                               }
                               placeholder="Search employee..."
                               disabled={false}
-                              onSearch={async (q) => {
-                                const res = await searchEmployeesByQuery(q);
-                                return res.filter((op) => op.value !== currentEmployee?.name);
-                              }}
+                              onSearch={handleSearch}
                             />
                           )
                         ) : (

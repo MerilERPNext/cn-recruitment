@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const buildExpenseNavigationState = (
   expenseClaim: any,
-  expenseItem: any
+  expenseItem: any,
+  isResubmit?: boolean
 ) => {
   return {
     expense_claim_name: expenseClaim.name,
+    isResubmit,
     expense: {
       uid: expenseItem.name,
       name: expenseItem.name,

@@ -15,6 +15,7 @@ import {
   useGetExpenseTypesByCategoryMutation,
   useCreateDraftExpenseClaim,
   useUpdateDraftExpenseClaim,
+  useGetExpenseAttachments,
 } from "../../../hooks/useExpense";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { format } from "date-fns";
@@ -31,6 +32,7 @@ import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import Button from "../../shared/atoms/Button";
+import { FilePreviewModal } from "../../shared/molecules/FilePreviewModal";
 
 export interface EmployeeOption {
   name: string;
@@ -42,6 +44,7 @@ interface AddExpenseFormProps {
   expense_claim_name?: string | null;
   draft_document_name?: string | null;
   isEditingFromDetailsPage?: boolean;
+  isResubmit?: boolean;
 }
 
 interface Expense {
@@ -69,11 +72,86 @@ const LOCAL_KEYS = {
   EXPENSES: "add_expense_expenses",
 };
 
+const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ currentAttachments }) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const portal = document.getElementById("attachment-preview-portal");
+      if (!portal) return;
+
+      const hash = currentAttachments.map(a => a.url || a.originalName || a.name || "file").join("|");
+
+      // Only rebuild if the Formio portal has been wiped, or if the files have changed.
+      if (portal.getAttribute("data-hash") === hash) {
+        if (portal.children.length > 0) return; // Already rendered and intact!
+      }
+
+      portal.setAttribute("data-hash", hash);
+
+      if (currentAttachments.length === 0) {
+        portal.innerHTML = "";
+        return;
+      }
+
+      let html = '<div class="h-full px-2 lg:px-6">';
+      html += '<h3 class="text-md font-medium mb-2 text-gray-800">Attachments Preview</h3>';
+      html += '<div class="flex flex-wrap gap-3">';
+
+      currentAttachments.forEach((f: any) => {
+        let actualFile = f.file;
+        if (actualFile && !(actualFile instanceof Blob || actualFile instanceof File)) {
+          actualFile = null;
+        }
+        const url = f.url;
+        if (!actualFile && !url) return;
+        let parsedUrl = url;
+        if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('/') && !url.startsWith('blob:')) {
+          parsedUrl = `/files/${url}`;
+        }
+        const previewUrl = actualFile ? URL.createObjectURL(actualFile) : parsedUrl;
+        const isImage = actualFile
+          ? actualFile.type?.startsWith("image/")
+          : (f.type?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.name || ""));
+        const safeName = (f.originalName || f.name || "Attachment").replace(/"/g, '&quot;');
+
+        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px]" style="border: 1px solid #cbd5e1 !important;">';
+
+        if (isImage) {
+          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;" />`;
+        } else {
+          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
+        }
+        html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px]" title="${safeName}">${safeName}</p>`;
+        html += '</div>';
+      });
+
+      html += '</div></div>';
+      portal.innerHTML = html;
+
+      // Safely attach click listeners natively to bypass inline string eval sanitizers
+      const triggers = portal.querySelectorAll('.preview-image-trigger');
+      triggers.forEach(el => {
+        el.addEventListener('click', () => {
+          const uri = el.getAttribute('data-preview-url');
+          if (uri) setPreviewUrl(uri);
+        });
+      });
+
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [currentAttachments]);
+
+  return previewUrl ? <FilePreviewModal fileUrl={previewUrl} onClose={() => setPreviewUrl(null)} /> : null;
+};
+
 const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   initialExpense,
   expense_claim_name,
   draft_document_name,
   isEditingFromDetailsPage = false,
+  isResubmit = false,
 }) => {
   const formRef = useRef<any>(null);
   const dynamicFormRef = useRef<any>(null);
@@ -115,9 +193,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isAcknowledgementChecked, setIsAcknowledgementChecked] = useState(false);
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = useState(false);
   const [pendingSubmissionType, setPendingSubmissionType] = useState<"General" | "Relocation" | null>(null);
+  const [isDeleteShareConfirmOpen, setIsDeleteShareConfirmOpen] = useState(false);
   const [filesMap, setFilesMap] = useState<Record<string, any[]>>({});
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
   const [pendingExpensesToSubmit, setPendingExpensesToSubmit] = useState<Expense[] | undefined>(undefined);
+  const [isFileProcessing, setIsFileProcessing] = useState(false);
   const hydrationRef = useRef(false);
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
@@ -133,6 +213,25 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       employee_name: e.employee_name || e.name,
     }),
   );
+
+  const handleDeleteParticipants = () => {
+    if (editingExpenseId) {
+      setExpenses((prev) =>
+        prev.map((e) =>
+          e.uid === editingExpenseId ? { ...e, participants: [] } : e,
+        ),
+      );
+    }
+    setDynamicFormData((prev: any) => ({
+      ...prev,
+      participants: [],
+      shareExpenseCheckbox: false,
+    }));
+    // We increment formKey to ensure the dynamic form re-renders and reads the updated state correctly (e.g. enabling the share toggle)
+    setFormKey(k => k + 1);
+    setIsDeleteShareConfirmOpen(false);
+  };
+
   const { mutate: submitExpenseClaim } = usePostExpenseClaim();
 
   const { mutate: updateExpense, isPending: isUpdating } = useUpdateExpense();
@@ -146,6 +245,45 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const { uploadFiles, loading: isUploadingFiles } = useFileUploader();
   const { mutateAsync: fetchApplicableCategories } = useGetApplicableExpenseCategoriesMutation();
   const { mutateAsync: fetchExpenseTypesByCategory } = useGetExpenseTypesByCategoryMutation();
+  const { data: claimAttachments } = useGetExpenseAttachments(
+    draft_document_name || expense_claim_name || undefined,
+    draft_document_name ? "Draft Expense Claim" : "Expense Claim"
+  );
+
+  useEffect(() => {
+    if (claimAttachments && Array.isArray(claimAttachments) && claimAttachments.length > 0 && currentAttachments.length === 0) {
+      const files = claimAttachments.map((att: any) => ({
+        name: att.file_name,
+        size: 4000,
+        url: att.file_url,
+        storage: "url",
+        originalName: att.file_name,
+      }));
+
+      setCurrentAttachments(files);
+      setDynamicFormData((curr: any) => ({
+        ...curr,
+        attachments: files
+      }));
+    }
+    // Handle URL mapping for existing metadata if needed
+    else if (claimAttachments && Array.isArray(claimAttachments) && claimAttachments.length > 0) {
+      setCurrentAttachments(prev => {
+        let changed = false;
+        const next = prev.map(p => {
+          if (!p.file && p.url && !p.url.startsWith('/') && !p.url.startsWith('http')) {
+            const matchedFile = claimAttachments?.find((c: any) => c.file_name === p.name || c.file_url?.includes(p.name));
+            if (matchedFile && matchedFile.file_url) {
+              changed = true;
+              return { ...p, url: matchedFile.file_url };
+            }
+          }
+          return p;
+        });
+        return changed ? next : prev;
+      });
+    }
+  }, [claimAttachments, currentAttachments.length]);
 
   const [calcParams, setCalcParams] = useState<
     CalculateExpenseParams | undefined
@@ -247,7 +385,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const displayParticipants = useMemo(() => {
     if (editingExpenseId) {
       const e = expenses.find((x) => x.uid === editingExpenseId);
-      if (e && Array.isArray(e.participants)) return e.participants;
+      if (e && Array.isArray(e.participants) && e.participants.length > 0) return e.participants;
     }
     if (
       dynamicFormData?.participants &&
@@ -257,6 +395,18 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     }
     return [];
   }, [editingExpenseId, expenses, dynamicFormData]);
+
+  const initialDrawerParticipants = useMemo(() => {
+    if (editingExpenseId) {
+      const found = expenses.find(
+        (x) => x.id === editingExpenseId || x.uid === editingExpenseId,
+      );
+      if (found && Array.isArray(found.participants) && found.participants.length > 0) {
+        return found.participants;
+      }
+    }
+    return dynamicFormData?.participants || [];
+  }, [editingExpenseId, expenses, dynamicFormData?.participants]);
 
   const formSchema = useMemo(
     () => ({
@@ -503,7 +653,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 required: field?.required,
                 customMessage: `${field?.label} is required`,
               },
-              rows: 5,
+              rows: 1,
               input: true,
               html: true,
             };
@@ -1025,13 +1175,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     : isValidating
       ? "Validating..."
       : isUpdating
-        ? "Updating..."
+        ? isResubmit ? "Resubmitting..." : "Updating..."
         : isSavingDraft || isUpdatingDraft
           ? "Saving..."
           : draft_document_name
-            ? "Update Draft"
+            ? "Update"
             : isEditingFromDetailsPage || editingExpenseId
-              ? "Update"
+              ? isResubmit ? "Resubmit" : "Update"
               : "Save";
 
   const showSelectionForm = showCategoryAndType || expenses.length === 0 || isEditActive;
@@ -1163,25 +1313,47 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     },
                   };
 
+                  const attachmentPreviewTarget = {
+                    type: "htmlelement",
+                    tag: "div",
+                    attrs: [{ attr: "id", value: "attachment-preview-portal" }],
+                    content: "",
+                  };
+
                   if (isMobile) {
                     return [
                       ...dynamicFields.map((comp) => comp),
-                      ...(isShareAllowed && !isEditingFromDetailsPage
+                      ...(isShareAllowed
                         ? [
                           {
                             type: "checkbox",
                             key: "shareExpenseCheckbox",
                             label: "Share Expense",
                             input: true,
-                            customClass: `custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 mt-4 ${displayParticipants.length > 0 ? "pointer-events-none opacity-80" : ""}`,
+                            defaultValue: displayParticipants.length > 0,
+                            hidden: displayParticipants.length > 0,
+                            customClass: "custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 mt-4",
                           },
                         ]
                         : []),
-                      attachmentsField,
+                      {
+                        type: "columns",
+                        key: "attachmentsRow",
+                        columns: [
+                          {
+                            width: 12,
+                            components: [attachmentsField]
+                          },
+                          {
+                            width: 12,
+                            components: [attachmentPreviewTarget]
+                          }
+                        ]
+                      },
                       {
                         type: "columns",
                         key: "submitButtonsRow",
-                        customClass: "flex mt-4 gap-2",
+                        customClass: "hidden",
                         columns: [
                           {
                             width: 6,
@@ -1189,25 +1361,25 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                               {
                                 type: "button",
                                 action: "submit",
-                                label: isSavingDraft || isUpdatingDraft ? "Saving..." : submitButtonLabel,
+                                label: isFileProcessing ? "Processing Files..." : (isSavingDraft || isUpdatingDraft ? "Saving..." : submitButtonLabel),
                                 theme: "primary",
                                 key: "submitButton",
                                 customClass: "w-full",
-                                disabled: isCalculating || isSavingDraft || isUpdatingDraft,
+                                disabled: isCalculating || isSavingDraft || isUpdatingDraft || isFileProcessing,
                               },
                             ],
                           },
-                          ...(!(isEditingFromDetailsPage || editingExpenseId || draft_document_name) ? [{
+                          ...(!(isEditingFromDetailsPage || (editingExpenseId && !draft_document_name)) ? [{
                             width: 6,
                             components: [
                               {
                                 type: "button",
                                 action: "submit",
-                                label: "Save & Submit",
+                                label: isFileProcessing ? "Processing Files..." : (draft_document_name ? "Submit" : "Save & Submit"),
                                 theme: "primary",
                                 key: "saveAndSubmit",
                                 customClass: "w-full",
-                                disabled: isCalculating || isUploadingFiles,
+                                disabled: isCalculating || isUploadingFiles || isFileProcessing,
                               },
                             ],
                           }] : []),
@@ -1224,15 +1396,28 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         {
                           components: [
                             ...dynamicFields.filter((_, i) => i % 2 === 0),
-                            ...(dynamicFields.length % 2 === 0 ? [attachmentsField] : []),
                           ],
                         },
                         {
                           components: [
                             ...dynamicFields.filter((_, i) => i % 2 !== 0),
-                            ...(dynamicFields.length % 2 !== 0 ? [attachmentsField] : []),
                           ],
                         },
+                      ],
+                    },
+                    {
+                      type: "columns",
+                      key: "attachmentsRow",
+                      customClass: "mt-6",
+                      columns: [
+                        {
+                          width: 6,
+                          components: [attachmentsField]
+                        },
+                        {
+                          width: 6,
+                          components: [attachmentPreviewTarget]
+                        }
                       ],
                     },
                     {
@@ -1240,7 +1425,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       key: "actionsRow",
                       customClass: "mt-4",
                       columns: [
-                        ...(isShareAllowed && !isEditingFromDetailsPage
+                        ...(isShareAllowed
                           ? [
                             {
                               width: 6,
@@ -1250,7 +1435,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                   key: "shareExpenseCheckbox",
                                   label: "Share Expense",
                                   input: true,
-                                  customClass: `custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 ${displayParticipants.length > 0 ? "pointer-events-none opacity-80" : ""}`,
+                                  defaultValue: displayParticipants.length > 0,
+                                  hidden: displayParticipants.length > 0,
+                                  customClass: "custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50",
                                 },
                               ],
                             },
@@ -1262,6 +1449,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                             {
                               type: "columns",
                               key: "desktopSubmitButtons",
+                              customClass: "hidden",
                               columns: [
                                 {
                                   width: 9,
@@ -1269,25 +1457,25 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                     {
                                       type: "button",
                                       action: "submit",
-                                      label: isUploadingFiles ? "Uploading Files..." : submitButtonLabel,
+                                      label: isFileProcessing ? "Processing Files..." : (isUploadingFiles ? "Uploading Files..." : submitButtonLabel),
                                       theme: "primary",
                                       key: "submitButton",
                                       customClass: "text-right",
-                                      disabled: isCalculating || isUploadingFiles || isSavingDraft || isUpdatingDraft,
+                                      disabled: isCalculating || isUploadingFiles || isSavingDraft || isUpdatingDraft || isFileProcessing,
                                     },
                                   ],
                                 },
-                                ...(!(isEditingFromDetailsPage || editingExpenseId || draft_document_name) ? [{
+                                ...(!(isEditingFromDetailsPage || (editingExpenseId && !draft_document_name)) ? [{
                                   width: 3,
                                   components: [
                                     {
                                       type: "button",
                                       action: "submit",
-                                      label: "Save & Submit",
+                                      label: isFileProcessing ? "Processing Files..." : (draft_document_name ? "Submit" : "Save & Submit"),
                                       theme: "primary",
                                       key: "saveAndSubmit",
                                       customClass: "text-left",
-                                      disabled: isCalculating || isUploadingFiles,
+                                      disabled: isCalculating || isUploadingFiles || isFileProcessing,
                                     },
                                   ],
                                 }] : []),
@@ -1549,6 +1737,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     {
                       expense_claim_name: expense_claim_name || "",
                       expenses: [newExpense],
+                      isResubmit,
                     },
                     {
                       onSuccess: () => {
@@ -1598,9 +1787,34 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 });
               }}
               onChange={(change: any) => {
+                // Warning: Do not spread change.data! Form.io relies on reference equality 
+                // to prevent infinite onChange validation loops. 
                 setDynamicFormData(change.data);
-                if (change.changed?.component?.key === "attachments") {
-                  setCurrentAttachments(change.data?.attachments || []);
+
+                // Form.io mutates arrays directly. We must create a new array reference 
+                // to force React to re-render the Attachment Preview component below.
+                const newAttachments = [...(change.data?.attachments || [])];
+
+                setCurrentAttachments(prev => {
+                  // Only map metadata to avoid serializing giant raw blob string blobs
+                  const stripFile = (arr: any[]) => arr.map((p: any) => ({ ...p, file: undefined }));
+                  if (JSON.stringify(stripFile(prev)) !== JSON.stringify(stripFile(newAttachments))) {
+                    return newAttachments;
+                  }
+                  return prev;
+                });
+
+                const hasFilesWithoutUrl = newAttachments.some((f: any) => !f.url && !f.storage);
+                const hasFilesWithUrl = newAttachments.some((f: any) => f.url || f.storage);
+
+                if (hasFilesWithoutUrl && !hasFilesWithUrl) {
+                  setIsFileProcessing(true);
+                  if (change.changed?.component?.key === "attachments") {
+                    toast.loading("Processing attachments...", { id: "file-processing" });
+                  }
+                } else {
+                  setIsFileProcessing(false);
+                  toast.dismiss("file-processing");
                 }
 
                 if (change.changed?.component?.key === "shareExpenseCheckbox") {
@@ -1677,10 +1891,12 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   }
                 }
               }}
-            />
 
-            {!isEditingFromDetailsPage &&
-              displayParticipants &&
+            />
+            {/* Attachment Preview rendering moved into formio dynamic schema generation above via robust decoupled vanilla hook */}
+            <AttachmentPreviewVanilla currentAttachments={currentAttachments} />
+
+            {displayParticipants &&
               displayParticipants.length > 0 && (
                 <div className="mt-4 border rounded-lg p-3 bg-white shadow-sm">
                   <div className="flex items-center justify-between mb-2">
@@ -1691,8 +1907,16 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         onClick={() => setIsSharePanelOpen(true)}
                         className="text-md flex items-center  text-primary font-bold hover:underline transition-all active:scale-95"
                       >
-                        <SquarePen className="w-4 h-4" />
+                        <SquarePen className="w-4 h-4 mr-1" />
                         Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsDeleteShareConfirmOpen(true)}
+                        className="text-md flex items-center text-red-600 font-bold hover:underline transition-all active:scale-95"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1 ml-1" />
+                        Remove share %
                       </button>
                     </div>
                   </div>
@@ -1758,6 +1982,36 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   </div>
                 </div>
               )}
+
+            <div className="flex flex-col md:flex-row md:justify-end gap-3 mt-6">
+              <Button
+                bgColor="primary"
+                onClick={() => {
+                  const btn = document.querySelector('button[name="data[submitButton]"]') as HTMLButtonElement | null;
+                  if (btn) btn.click();
+                }}
+                disabled={isCalculating || isUploadingFiles || isSavingDraft || isUpdatingDraft || isFileProcessing}
+                className="w-full md:w-auto font-semibold flex-1 md:flex-none justify-center"
+                size="md"
+              >
+                {isFileProcessing ? "Processing Files..." : (isUploadingFiles ? "Uploading Files..." : (isSavingDraft || isUpdatingDraft ? "Saving..." : submitButtonLabel))}
+              </Button>
+
+              {!(isEditingFromDetailsPage || (editingExpenseId && !draft_document_name)) && (
+                <Button
+                  bgColor="primary"
+                  onClick={() => {
+                    const btn = document.querySelector('button[name="data[saveAndSubmit]"]') as HTMLButtonElement | null;
+                    if (btn) btn.click();
+                  }}
+                  disabled={isCalculating || isUploadingFiles || isFileProcessing}
+                  className="w-full md:w-auto font-semibold flex-1 md:flex-none justify-center"
+                  size="md"
+                >
+                  {isFileProcessing ? "Processing Files..." : (draft_document_name ? "Submit" : "Save & Submit")}
+                </Button>
+              )}
+            </div>
           </div>
         )}
 
@@ -2225,6 +2479,25 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         )
       }
 
+      {isDeleteShareConfirmOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-semibold mb-4 text-red-600 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" /> Confirm Removal
+            </h3>
+            <p className="mb-6 text-sm text-gray-700">Are you sure you want to remove the shared expense? This will delete all added participants.</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" size="md" className="font-semibold" onClick={() => setIsDeleteShareConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button size="md" className="font-semibold text-white bg-red-600" onClick={handleDeleteParticipants}>
+                Remove
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {
         isSharePanelOpen && (
           <ParticipantsDrawer
@@ -2236,11 +2509,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   dynamicFormData?.amount)
                 : (dynamicFormData?.amount ?? 0),
             )}
-            initialParticipants={
-              editingExpenseId
-                ? expenses.find((x) => (x.id === editingExpenseId || x.uid === editingExpenseId))?.participants
-                : dynamicFormData?.participants
-            }
+            initialParticipants={initialDrawerParticipants}
             editingExpenseId={editingExpenseId}
             expenses={expenses}
             setExpenses={(fn) => setExpenses(fn)}
@@ -2257,11 +2526,21 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                       : e,
                   ),
                 );
-              } else {
-                setDynamicFormData((prev: any) => ({
-                  ...prev,
-                  participants: formattedParticipants,
-                }));
+              }
+
+              // Always ensure dynamicFormData is updated so the current form UI (like the participants table) re-renders
+              setDynamicFormData((prev: any) => ({
+                ...prev,
+                participants: formattedParticipants,
+                // Automatically enable share checkbox if participants are added
+                shareExpenseCheckbox: formattedParticipants.length > 0 ? true : prev?.shareExpenseCheckbox
+              }));
+
+              // If adding participants for the first time, we might need a quick re-key to ensure 
+              // the Form.io checkbox "pointer-events-none" class updates based on the new displayParticipants.length
+              if (formattedParticipants.length > 0) {
+                // We use a small timeout to avoid sync state update during render issues if any
+                setTimeout(() => setFormKey(k => k + 1), 100);
               }
             }}
           />
