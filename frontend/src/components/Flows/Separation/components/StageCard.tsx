@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Form } from "@tsed/react-formio";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../../hooks/userApprovalList";
-import { FormIOComponent, FormIOSchema } from "../../../../types/formio";
+import { FormIOComponent } from "../../../../types/formio";
 import { useCallback, useMemo, useState } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
 import Button from "../../../shared/atoms/Button";
@@ -14,7 +14,7 @@ import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
 import { Attachment, FlowRequestStage } from "../../../../types/flows";
-import { extractRolesAndUsers } from "../../../../utils/flowUtils";
+import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
 
 
 interface CardStagesProps {
@@ -28,7 +28,7 @@ const CardStages = ({
   isActive,
   isLastStage,
 }: CardStagesProps) => {
-  const [formSchema, setFormSchema] = useState<FormIOSchema | null>(null);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
 
@@ -51,24 +51,7 @@ const CardStages = ({
 
     setFormSchema((prev) => {
       if (!schema) return prev;
-
-      const updatedSchema = schema.map((component) => {
-        const key = component.key;
-
-        if (key && data[key] !== undefined) {
-          return {
-            ...component,
-            defaultValue: data[key],
-          };
-        }
-
-        return component;
-      });
-
-      return {
-        display: "form",
-        components: updatedSchema,
-      };
+      return buildFormFromSchemaAndAnswer(schema, data);
     });
     setShow(true);
   };

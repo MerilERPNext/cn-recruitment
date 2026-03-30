@@ -26,26 +26,84 @@ export interface FormIOForm {
   components: FormIOComponent[];
 }
 
+/**
+ * Normalize file URLs for Form.io preview
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const normalizeFileValue = (files: any[]): any[] => {
+  if (!Array.isArray(files)) return [];
+
+  return files.map((file) => {
+    const baseUrl = file?.data?.baseUrl || "";
+
+    // actual stored file path (correct one)
+    const filePath =
+      file?.data?.message?.file_url ||
+      file?.file_url ||
+      file?.url ||
+      "";
+
+    // build full URL
+    const fullUrl = filePath.startsWith("http")
+      ? filePath
+      : `${baseUrl}${filePath}`;
+
+    // detect doc types that browsers can't preview
+    const isDocFile = /\.(doc|docx)$/i.test(fullUrl);
+
+    return {
+      ...file,
+      name: file?.originalName || file?.name || "file",
+      url: isDocFile
+        ? `https://docs.google.com/gview?url=${encodeURIComponent(
+          fullUrl
+        )}&embedded=true`
+        : fullUrl,
+      originalUrl: fullUrl, // keep original for download if needed
+    };
+  });
+};
+
+/**
+ * Build Form.io form with prefilled answers (READ ONLY PREVIEW MODE)
+ */
 export const buildFormFromSchemaAndAnswer = (
   schema?: FormIOComponent[],
   answer?: Record<string, unknown>
 ): FormIOForm => {
-
-  if (!schema) return { display: "form", components: [] };
+  if (!schema) {
+    return { display: "form", components: [] };
+  }
 
   const components = schema
     .filter((comp) => comp.key !== "submit")
     .map((component) => {
       const key = component?.key;
+      const value = key ? answer?.[key] : undefined;
 
-      if (key && answer && answer[key] !== undefined) {
+      if (key && value !== undefined) {
+        // ✅ Handle FILE component
+        if (component.type === "file" && Array.isArray(value)) {
+          return {
+            ...component,
+            defaultValue: normalizeFileValue(value),
+            disabled: true, // read-only
+          };
+        }
+
+        // ✅ Handle normal fields
         return {
           ...component,
-          defaultValue: answer[key],
+          defaultValue: value,
+          disabled: true, // read-only mode
         };
       }
 
-      return component;
+      // no answer → still make read-only
+      return {
+        ...component,
+        disabled: true,
+      };
     });
 
   return {

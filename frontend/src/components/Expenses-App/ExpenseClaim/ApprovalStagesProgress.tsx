@@ -2,6 +2,7 @@ import React from "react";
 import { ApprovalStage } from "../../../types/expenseAdvance";
 import Tooltip from "../../shared/Tooltip";
 import { Check, X, Clock } from "lucide-react";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 
 interface ApprovalStagesProgressProps {
   stages: ApprovalStage[];
@@ -129,12 +130,19 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                       <p>
                         <strong>Stage:</strong> {stage.stage_name || "—"}
                       </p>
+                      {!stage.role &&
+                        <p>
+                          <strong>User:</strong> {stage.user || "—"}
+                        </p>
+                      }
                       <p>
-                        <strong>Role:</strong> {stage.role || "—"}
+                        <strong>Role:</strong> {stage?.role || stage?.designation_name || "—"}
                       </p>
-                      <p>
-                        <strong>User:</strong> {stage.user || "—"}
-                      </p>
+                      {stage.status !== "Pending" && (
+                        <p>
+                          <strong>{stage.status} on: </strong> {formatToIndianDate(stage.approval_time || "—")}
+                        </p>
+                      )}
                     </div>
                   }
                 >
