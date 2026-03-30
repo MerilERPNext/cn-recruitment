@@ -101,7 +101,7 @@ const CardStages = ({
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const canPerformActions = useMemo(() => {
-    if (!isActive) return false;
+    if (!isActive && stage.can_act) return false;
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
