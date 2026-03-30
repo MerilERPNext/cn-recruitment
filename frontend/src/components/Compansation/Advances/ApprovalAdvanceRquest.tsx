@@ -134,8 +134,11 @@ const TeamAdvanceRequest = () => {
             ]}
             defaultFilters={{ status: "Draft" }}
             SkeletonComponent={CardSkeleton}
-            renderCardContent={(item: any) => (
-              <ApprovalRejectionAdvanceList
+            renderCardContent={(item: any) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return <ApprovalRejectionAdvanceList
                 isSelected={item?.isSelected}
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
@@ -144,7 +147,7 @@ const TeamAdvanceRequest = () => {
                 loadingAction={item?.loadingAction}
                 isBulkSelectEnabled={isBulkSelectEnabled}
               />
-            )}
+            }}
           />
         </CardTable>
       </div>

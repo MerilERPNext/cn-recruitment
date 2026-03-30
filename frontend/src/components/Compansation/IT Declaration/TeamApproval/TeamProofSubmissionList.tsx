@@ -111,14 +111,17 @@ const TeamProofSubmissionList = () => {
             SkeletonComponent={CardSkeleton}
             noRecordsScreen={noRecordsScreen}
             bulkSelectVisible={false}
-            renderCardContent={(item) => (
-              <TeamProofApprovalCard
+            renderCardContent={(item) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return <TeamProofApprovalCard
                 data={item.data}
                 loadingAction={item.loadingAction}
                 onAction={item.onAction}
                 onClick={handleRowClick}
               />
-            )}
+            }}
           />
         </CardTable>
       </div>
