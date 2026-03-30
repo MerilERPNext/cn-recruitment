@@ -2,6 +2,7 @@ import React from "react";
 import { User, Shield } from "lucide-react";
 import AllocatedToTooltip from "./AllocatedToTooltip";
 import { Typography } from "./atoms/Typography";
+import { allocatedToType } from "../../types/allocatedToTooltip";
 
 interface MobileAllocatedToProps {
     /** User names — string or string[] */
@@ -31,10 +32,37 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 }) => {
     /** Merge all user sources → deduped array (same logic as AllocatedToTooltip) */
     const allUsers: string[] = React.useMemo(() => {
-        const normalize = (value?: string | string[] | null): string[] => {
-            if (!value && value !== "") return [];
-            if (Array.isArray(value)) return value.filter(Boolean).map(v => String(v));
-            return [String(value).trim()].filter(Boolean);
+        const normalize = (
+            value?: string | string[] | allocatedToType[] | null
+        ): string[] => {
+            if (value == null) return [];
+
+            if (Array.isArray(value)) {
+                return value
+                    .map((v): string | null => {
+                        if (!v) return null;
+
+                        if (typeof v === "string") {
+                            const trimmed = v.trim();
+                            return trimmed || null;
+                        }
+
+                        if (typeof v === "object") {
+                            const name = v.name?.trim();
+                            if (!name) return null;
+
+                            return v.designation
+                                ? `${name} - (${v.designation})`
+                                : name;
+                        }
+
+                        return null;
+                    })
+                    .filter((v): v is string => Boolean(v));
+            }
+
+            const str = String(value).trim();
+            return str ? [str] : [];
         };
 
         return Array.from(new Set([
@@ -108,7 +136,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 
     return (
         <div className={wrapperClass}>
-            <AllocatedToTooltip users={allUsers} roles={allRoles} position="top">
+            <AllocatedToTooltip users={users} allocated_to_user={allocated_to_user} username={username} allocated_to={allocated_to} roles={allRoles} position="top">
                 {labelEl}
             </AllocatedToTooltip>
         </div>

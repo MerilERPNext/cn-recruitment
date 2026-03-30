@@ -105,6 +105,8 @@ export interface ApprovalStage {
   user: string | null;
   role: string;
   status: string;
+  approval_time: string | null;
+  designation_name: string | null;
 }
 
 export interface ExpenseClaim {
