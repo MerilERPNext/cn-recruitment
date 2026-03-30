@@ -43,7 +43,7 @@ const MyRequests: React.FC = () => {
     "My Requests",
   );
 
-  const { data: employeeIdCard } = useCurrentEmployeeIdCard();
+  const { data: employeeIdCard, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
   const { data: employee } = useCurrentEmployeeIdCard();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
@@ -211,6 +211,7 @@ const MyRequests: React.FC = () => {
                 payroll_period: selectedYear,
               },
             }}
+
             ItemComponent={(props: { item: BenefitPayslip }) => {
               return (
                 <BenefitSlipItem
@@ -220,6 +221,7 @@ const MyRequests: React.FC = () => {
                 />
               );
             }}
+            isLoading={YearsLoading || EmployeeIdCardLoading}
             SkeletonComponent={CardSkeleton}
             orderBy="claim_date desc"
             // refetchTrigger={refetchAttendance}
@@ -331,101 +333,114 @@ const BenefitSlipItem = ({
       </div>
     </div>
   ) : (
-    <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-2xl mt-4 w-full">
-      <div className="p-6 flex flex-col items-center w-full">
-        <div className="flex w-full items-center">
-          <div className="flex justify-between w-full">
-            <div className="flex flex-col justify-start text-start">
-              <Typography variant="mobileCardLabel" className="block ">
+    <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mt-2 w-full">
+      <div className="p-4 flex items-start gap-3 w-full">
+        <div className="w-full">
+          {/* Header: Benefit For + Status */}
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1 min-w-0 flex-1 mr-3">
+              <Typography variant="mobileCardLabel" className="block">
                 Benefit For
               </Typography>
+              <Typography variant="mobileCardTitle" className="break-words">
+                {item?.earning_component}
+              </Typography>
             </div>
-            <div className="ml-auto flex items-center gap-2 shrink-0">
+            <div className="shrink-0">
               <StatusBadge status={item?.custom_status} />
             </div>
           </div>
-        </div>
-        <Typography variant="mobileCardTitle">
-          {item?.earning_component}
-        </Typography>
-        <div className="grid grid-cols-3 w-full mt-4">
-          <div className="flex flex-col justify-start text-start">
-            <Link
-              to={`/webapp/employee-profile?target_user=${item?.employee}`}
-              target="_blank"
-            >
-              <Typography variant="mobileCardLabel" className="block ">
+
+          {/* Row: Employee Name + Company */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
                 Employee Name
               </Typography>
-              <Typography variant="mobileCardValue">
-                {item?.employee_name}
+              <Link
+                to={`/webapp/employee-profile?target_user=${item?.employee}`}
+                target="_blank"
+              >
+                <Typography variant="mobileCardValue">
+                  {item?.employee_name}
+                </Typography>
+              </Link>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Company
               </Typography>
-            </Link>
+              <Typography variant="mobileCardValue">
+                {item?.company}
+              </Typography>
+            </div>
           </div>
-          <div className="flex flex-col justify-center text-center">
-            <Typography variant="mobileCardLabel" className="block ">
-              Company
-            </Typography>
-            <Typography variant="mobileCardValue" className="block ">
-              {item?.company}
-            </Typography>
+
+          {/* Row: Claim Date + Claim Amount */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Claim Date
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(item?.claim_date || "")}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Claim Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.claimed_amount ?? 0)}
+              </Typography>
+            </div>
           </div>
-          <div className="flex flex-col justify-end text-right">
-            <Typography variant="mobileCardLabel" className="block ">
-              Claim Date
-            </Typography>
-            <Typography variant="mobileCardValue">
-              {formatToIndianDate(item?.claim_date || "")}
-            </Typography>
+
+          {/* Row: Taxable Amount + Non Taxable Amount */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Taxable Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.custom_taxable_amount ?? 0)}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Non Taxable Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.custom_non_taxable_amount ?? 0)}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-4">
+            <MyApprovalActionPill
+              isPending={item.custom_status === "Pending"}
+              canEdit={!!item.can_edit}
+              canReplace={true}
+              variant="buttons"
+            />
           </div>
         </div>
-        <div className="grid grid-cols-3 w-full mt-4">
-          <div className="flex flex-col justify-start text-left">
-            <Typography variant="mobileCardLabel" className="block ">
-              Claim Amount
-            </Typography>
-            <Typography
-              variant="mobileCardValue"
-              className={maskAmounts ? "blur-[3px]" : ""}
-            >
-              {maskAmounts
-                ? "#####"
-                : formatCurrency(item?.claimed_amount ?? 0)}
-            </Typography>
-          </div>
-          <div className="flex flex-col justify-center text-center">
-            <Typography variant="mobileCardLabel" className="block ">
-              Taxable Amount
-            </Typography>
-            <Typography
-              variant="mobileCardValue"
-              className={maskAmounts ? "blur-[3px]" : ""}
-            >
-              {maskAmounts
-                ? "#####"
-                : formatCurrency(item?.custom_taxable_amount ?? 0)}
-            </Typography>
-          </div>
-          <div className="flex flex-col justify-end text-right">
-            <Typography variant="mobileCardLabel" className="block ">
-              Non Taxable Amount
-            </Typography>
-            <Typography
-              variant="mobileCardValue"
-              className={maskAmounts ? "blur-[3px]" : ""}
-            >
-              {maskAmounts
-                ? "#####"
-                : formatCurrency(item?.custom_non_taxable_amount ?? 0)}
-            </Typography>
-          </div>
-        </div>
-        <MyApprovalActionPill
-          isPending={item.custom_status === "Pending"}
-          canEdit={!!item.can_edit}
-          canReplace={true}
-          variant="buttons"
-        />
       </div>
     </div>
   );

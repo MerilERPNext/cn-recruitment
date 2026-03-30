@@ -108,9 +108,8 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 <div
                   className={`absolute top-1/2 h-1 transform -translate-y-1/2 transition-colors duration-300 z-0 ${segmentColor}`}
                   style={{
-                    left: `calc(${
-                      ((index - 1) / (totalStages - 1)) * 100
-                    }% + 16px)`,
+                    left: `calc(${((index - 1) / (totalStages - 1)) * 100
+                      }% + 16px)`,
                     width: `calc(${(1 / (totalStages - 1)) * 100}% - 4px)`,
                   }}
                 />
@@ -123,13 +122,10 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                 <Tooltip
                   {...(tooltipPosition
                     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      { position: tooltipPosition as any }
+                    { position: tooltipPosition as any }
                     : {})}
                   content={
                     <div className="flex flex-col text-left text-xs space-y-1 p-1">
-                      <p>
-                        <strong>Status:</strong> {stage.status}
-                      </p>
                       <p>
                         <strong>Stage:</strong> {stage.stage_name || "—"}
                       </p>

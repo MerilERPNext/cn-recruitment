@@ -11,6 +11,8 @@ import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import Button from "../../shared/atoms/Button";
+import { FileText } from "lucide-react";
 
 const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
   const formattedSanctioned = new Intl.NumberFormat("en-IN", {
@@ -31,6 +33,7 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
     <div className="cursor-pointer border-t-4 border-x border-b border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl">
       <div className="p-4 flex flex-col gap-3 w-full">
         {/* Row 1: Shared by + Status */}
+
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Shared by</Typography>
@@ -41,7 +44,9 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
           <StatusBadge
             status={item.status === "Draft" ? "Pending" : item.status}
           />
+
         </div>
+
 
         {/* Row 2: Posting Date + Sanctioned */}
         <div className="flex items-start justify-between">
@@ -153,13 +158,22 @@ const SharedExpenses: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {isDesktop && (
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 flex items-center justify-between">
           <div className="px-6 py-1 md:py-4">
             <Typography variant="h4">Shared Expense Claims</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your shared expense claims
             </Typography>
           </div>
+          <Button
+            icon={<FileText size={16} />}
+            variant="outline"
+            size="md"
+            className="rounded-xl hover:bg-blue-100 py-1"
+            onClick={() => navigate(-1)}
+          >
+            My Expense
+          </Button>
         </div>
       )}
 

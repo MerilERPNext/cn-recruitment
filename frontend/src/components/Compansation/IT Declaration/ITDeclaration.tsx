@@ -45,7 +45,7 @@ const ITDeclarationForm = () => {
   const { data: userUiPermission } = useGetUiPermission("Compensation");
   const actionsEnabled = getActionsEnabled(
     userUiPermission,
-    ["compare_tax", "form_12b", "preview"],
+    ["compare_tax", "form_12b", "preview", "edit_decalaration"],
     "IT Declaration"
   );
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
@@ -398,6 +398,7 @@ const ITDeclarationForm = () => {
           {isDesktop && <p className="text-gray-500">Tax Regime</p>}
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
+            disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(1)}
               className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
                 goHeadWithNewRegime === 1
@@ -408,6 +409,7 @@ const ITDeclarationForm = () => {
               New Regime
             </button>
             <button
+             disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(0)}
               className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
                 goHeadWithNewRegime === 0
@@ -417,28 +419,27 @@ const ITDeclarationForm = () => {
             >
               Old Regime
             </button>
+            
            
 
           </div>
           <div className=" flex gap-2 items-center">
       
       {/* Open Button */}
-      <button
+     {actionsEnabled?.edit_decalaration && ( <button
         onClick={() => setOpenModal(true)}
         className=" text-gray-500 rounded-xl"
       >
         <SquarePen className="h-5 w-5" />
-      </button>
+      </button>)}
 
       {/* Modal */}
       <EditITDeclarationAccess
               isOpen={openModal}
-              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}      />
+              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}/>
     </div>
         </div>
-
         {/* Tabs */}
-
         <div className="w-full">
         <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-6 mt-4 border-b border-gray-200">
   <button

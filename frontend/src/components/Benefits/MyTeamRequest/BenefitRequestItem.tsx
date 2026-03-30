@@ -133,10 +133,10 @@ const BenefitRequestItem = ({
             {data.reference_document.earning_component}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data.reference_document.claimed_amount}
+            {formatCurrency(data.reference_document.claimed_amount)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data.reference_document.custom_max_amount}
+            {formatCurrency(data.reference_document.custom_max_amount)}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data.reference_document.claim_date)}
@@ -149,13 +149,23 @@ const BenefitRequestItem = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.status} />
+              <StatusBadge
+                status={
+                  data.todo_status === "Closed" &&
+                    data.reference_document.custom_status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.custom_status
+                }
+              />
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
               actions={actions}
-              status={data?.status}
+              status={data.todo_status === "Closed" &&
+                data.reference_document.custom_status !== "Rejected"
+                ? "Approved"
+                : data.reference_document.custom_status}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
               onAction={(action) => onAction(action, data)}
@@ -190,7 +200,14 @@ const BenefitRequestItem = ({
                     {data.reference_document.earning_component}
                   </Typography>
                 </div>
-                <StatusBadge status={data?.status} />
+                <StatusBadge
+                  status={
+                    data.todo_status === "Closed" &&
+                      data.reference_document.custom_status !== "Rejected"
+                      ? "Approved"
+                      : data.reference_document.custom_status
+                  }
+                />
               </div>
               <div className="flex justify-between mt-4">
                 <div className="flex flex-col justify-start text-start">
@@ -239,7 +256,10 @@ const BenefitRequestItem = ({
                 <TeamApprovalActionPill
                   variant="buttons"
                   actions={actions}
-                  status={data?.status}
+                  status={data.todo_status === "Closed" &&
+                    data.reference_document.custom_status !== "Rejected"
+                    ? "Approved"
+                    : data.reference_document.custom_status}
                   recordId={data?.todo_id}
                   loadingAction={loadingAction}
                   onAction={(action) => handlePreSaveAction(action)}

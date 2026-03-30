@@ -1,27 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import HeaderBar from "../../HeaderBar";
+import { format } from "date-fns";
+import { Plus, SquarePen, Trash2 } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import {
+  useAdvanceTypes,
   useCostCenters,
   useCreateNewAdvance,
+  useEmployeeAdvanceUpdate,
   useExpenseTableFieldSettings,
   useProjects,
-  useAdvanceTypes,
 } from "../../../hooks/useEmployeeAdvances";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
-import ExpenseBreakupModal from "./ExpenseBreakupModal";
-import { SquarePen, Trash2, Plus } from "lucide-react";
-import { format } from "date-fns";
-import Button from "../../shared/atoms/Button";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
+import HeaderBar from "../../HeaderBar";
+import Button from "../../shared/atoms/Button";
+import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
+import ExpenseBreakupModal from "./ExpenseBreakupModal";
 
 interface ExpenseClaim {
   id: string;
@@ -38,7 +39,12 @@ const ExpenseAdvanceForm: React.FC<{
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { setRefetchAttendance } = useGlobalStore();
+
+  // Edit mode: pre-fill from navigation state set by MyAdvanceExpenseList Edit button
+  const editAdvanceData = (location.state as any)?.advanceData ?? null;
+  const isEditMode = !!editAdvanceData;
 
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useCurrentEmployee();
@@ -47,9 +53,11 @@ const ExpenseAdvanceForm: React.FC<{
 
   const { data: advanceTypesData } = useAdvanceTypes();
 
-  const [subAdvanceType, setSubAdvanceType] = useState<string | null>(null);
+  const [subAdvanceType, setSubAdvanceType] = useState<string | null>(
+    editAdvanceData?.custom_advance_type ?? null,
+  );
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string | null>(
-    null,
+    editAdvanceData?.custom_advance_type ?? null,
   );
 
   const { data: fieldSettings } = useExpenseTableFieldSettings(
@@ -61,9 +69,16 @@ const ExpenseAdvanceForm: React.FC<{
   const advanceType = "Reimbursement / Expense Advance";
 
   const mutation = useCreateNewAdvance();
+  const updateMutation = useEmployeeAdvanceUpdate();
   const [submitting, setSubmitting] = useState(false);
 
-  const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>([]);
+  // Pre-fill existing expense breakup rows when editing
+  const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>(() =>
+    (editAdvanceData?.expenses ?? []).map((exp: any, idx: number) => ({
+      ...exp,
+      id: exp.name || `pre-${idx}`,
+    })),
+  );
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
 
@@ -72,6 +87,34 @@ const ExpenseAdvanceForm: React.FC<{
   const getLabelWithAsterisk = (label: string, required?: boolean) => {
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
   };
+
+  const prepareExpenseClaims = (claims: ExpenseClaim[]) =>
+    claims.map(({ id, ...claim }) => {
+      const filteredClaim = Object.fromEntries(
+        Object.entries(claim).filter(
+          ([, value]) => value !== null && value !== undefined && value !== "",
+        ),
+      );
+      if (filteredClaim.expense_date) {
+        filteredClaim.expense_date = format(
+          new Date(filteredClaim.expense_date as string),
+          "yyyy-MM-dd",
+        );
+      }
+      if (filteredClaim.start_datetime) {
+        filteredClaim.start_datetime = format(
+          new Date(filteredClaim.start_datetime as string),
+          "yyyy-MM-dd HH:mm:ss",
+        );
+      }
+      if (filteredClaim.end_datetime) {
+        filteredClaim.end_datetime = format(
+          new Date(filteredClaim.end_datetime as string),
+          "yyyy-MM-dd HH:mm:ss",
+        );
+      }
+      return filteredClaim;
+    });
 
   const handleSubmit = async () => {
     try {
@@ -88,76 +131,75 @@ const ExpenseAdvanceForm: React.FC<{
         return;
       }
 
-      const preparedExpenseClaims = expenseClaims.map(({ id, ...claim }) => {
-        console.debug(id);
-        const filteredClaim = Object.fromEntries(
-          Object.entries(claim).filter(
-            ([, value]) =>
-              value !== null && value !== undefined && value !== "",
-          ),
-        );
-
-        if (filteredClaim.expense_date) {
-          filteredClaim.expense_date = format(
-            new Date(filteredClaim.expense_date),
-            "yyyy-MM-dd",
-          );
-        }
-        if (filteredClaim.start_datetime) {
-          filteredClaim.start_datetime = format(
-            new Date(filteredClaim.start_datetime),
-            "yyyy-MM-dd HH:mm:ss",
-          );
-        }
-        if (filteredClaim.end_datetime) {
-          filteredClaim.end_datetime = format(
-            new Date(filteredClaim.end_datetime),
-            "yyyy-MM-dd HH:mm:ss",
-          );
-        }
-
-        return filteredClaim;
-      });
-
-      const payload = {
-        custom_type: advanceType,
-        employee: employeeId,
-        company: employeeCompany,
-        posting_date: formData.posting_date || postingDate,
-        purpose: formData.purpose,
-        custom_advance_type: formData.advance_type,
-        advance_amount: formData.advance_amount,
-        currency: formData.currency,
-        exchange_rate: 1,
-        project: formData.project,
-        cost_center: formData.cost_center,
-        expenses: preparedExpenseClaims,
-      };
-
       if (
         fieldSettings?.expense_table_mandatory &&
         expenseClaims.length === 0
       ) {
-        toast.error("Please add at least one expense claim before submitting.");
+        toast.error(
+          "Please add at least one expense advance break-up table data before submitting.",
+        );
         return;
       }
 
-      setSubmitting(true);
-      mutation.mutate(payload, {
-        onSuccess: () => {
-          toast.success("Expense Advance submitted successfully!");
-          navigate("/webapp/expenses-app/my-advance-expense");
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 1000);
-        },
+      const preparedExpenseClaims = prepareExpenseClaims(expenseClaims);
 
-        onError: (error: any) => {
-          const msg = errorResponseFormater(error);
-          toast.error(msg);
-        },
-        onSettled: () => setSubmitting(false),
-      });
+      setSubmitting(true);
+
+      if (isEditMode && editAdvanceData?.name) {
+        // ── EDIT MODE ──
+        const updatePayload = {
+          docname: editAdvanceData.name,
+          data: {
+            posting_date: formData.posting_date || postingDate,
+            purpose: formData.purpose,
+            custom_advance_type: formData.advance_type,
+            advance_amount: formData.advance_amount,
+            currency: formData.currency,
+            exchange_rate: 1,
+            project: formData.project,
+            cost_center: formData.cost_center,
+            expenses: preparedExpenseClaims,
+          },
+        };
+        updateMutation.mutate(updatePayload, {
+          onSuccess: () => {
+            toast.success("Expense Advance updated successfully!");
+            navigate("/webapp/expenses-app/my-advance-expense");
+            setTimeout(() => setRefetchAttendance(true), 1000);
+          },
+          onError: (error: any) => {
+            toast.error(errorResponseFormater(error));
+          },
+          onSettled: () => setSubmitting(false),
+        });
+      } else {
+        // ── CREATE MODE ──
+        const payload = {
+          custom_type: advanceType,
+          employee: employeeId,
+          company: employeeCompany,
+          posting_date: formData.posting_date || postingDate,
+          purpose: formData.purpose,
+          custom_advance_type: formData.advance_type,
+          advance_amount: formData.advance_amount,
+          currency: formData.currency,
+          exchange_rate: 1,
+          project: formData.project,
+          cost_center: formData.cost_center,
+          expenses: preparedExpenseClaims,
+        };
+        mutation.mutate(payload, {
+          onSuccess: () => {
+            toast.success("Expense Advance submitted successfully!");
+            navigate("/webapp/expenses-app/my-advance-expense");
+            setTimeout(() => setRefetchAttendance(true), 1000);
+          },
+          onError: (error: any) => {
+            toast.error(errorResponseFormater(error));
+          },
+          onSettled: () => setSubmitting(false),
+        });
+      }
     } catch (err) {
       console.error("❌ Submission error:", err);
       toast.error("Form submission failed!");
@@ -283,6 +325,7 @@ const ExpenseAdvanceForm: React.FC<{
                       data: {
                         values: subAdvanceTypeOptions,
                       },
+                      defaultValue: editAdvanceData?.custom_advance_type ?? "",
                       validate: {
                         required: true,
                         customMessage: "Sub Advance Type is required",
@@ -300,7 +343,8 @@ const ExpenseAdvanceForm: React.FC<{
                       input: true,
                       enableTime: false,
                       format: "dd-MM-yyyy",
-                      defaultValue: postingDate,
+                      defaultValue:
+                        editAdvanceData?.posting_date ?? postingDate,
                     },
                   ],
                 },
@@ -381,6 +425,7 @@ const ExpenseAdvanceForm: React.FC<{
                       html: true,
                       input: true,
                       placeholder: "Enter amount",
+                      defaultValue: editAdvanceData?.advance_amount ?? "",
                       validate: {
                         required: true,
                         min: 1,
@@ -394,76 +439,76 @@ const ExpenseAdvanceForm: React.FC<{
 
             ...(showProject || showCostCenter
               ? [
-                {
-                  type: "columns",
-                  key: "row4",
-                  columns: [
-                    ...(showProject
-                      ? [
-                        {
-                          width: 6,
-                          components: [
+                  {
+                    type: "columns",
+                    key: "row4",
+                    columns: [
+                      ...(showProject
+                        ? [
                             {
-                              type: "select",
-                              key: "project",
-                              label: getLabelWithAsterisk(
-                                "Project",
-                                projectMandatory,
-                              ),
-                              html: true,
-                              input: true,
-                              placeholder: "Select project",
-                              data: {
-                                values:
-                                  projects?.data.map((pro) => ({
-                                    label: pro.project_name,
-                                    value: pro.project_name,
-                                  })) || [],
-                              },
-                              validate: {
-                                required: projectMandatory,
-                                customMessage: "Project is required",
-                              },
+                              width: 6,
+                              components: [
+                                {
+                                  type: "select",
+                                  key: "project",
+                                  label: getLabelWithAsterisk(
+                                    "Project",
+                                    projectMandatory,
+                                  ),
+                                  html: true,
+                                  input: true,
+                                  placeholder: "Select project",
+                                  data: {
+                                    values:
+                                      projects?.data.map((pro) => ({
+                                        label: pro.project_name,
+                                        value: pro.project_name,
+                                      })) || [],
+                                  },
+                                  validate: {
+                                    required: projectMandatory,
+                                    customMessage: "Project is required",
+                                  },
+                                },
+                              ],
                             },
-                          ],
-                        },
-                      ]
-                      : []),
+                          ]
+                        : []),
 
-                    ...(showCostCenter
-                      ? [
-                        {
-                          width: 6,
-                          components: [
+                      ...(showCostCenter
+                        ? [
                             {
-                              type: "select",
-                              key: "cost_center",
-                              label: getLabelWithAsterisk(
-                                "Cost Center",
-                                costCenterMandatory,
-                              ),
-                              html: true,
-                              input: true,
-                              placeholder: "Select cost center",
-                              data: {
-                                values:
-                                  costCenters?.data.map((cc) => ({
-                                    label: cc.name,
-                                    value: cc.name,
-                                  })) || [],
-                              },
-                              validate: {
-                                required: costCenterMandatory,
-                                customMessage: "Cost Center is required",
-                              },
+                              width: 6,
+                              components: [
+                                {
+                                  type: "select",
+                                  key: "cost_center",
+                                  label: getLabelWithAsterisk(
+                                    "Cost Center",
+                                    costCenterMandatory,
+                                  ),
+                                  html: true,
+                                  input: true,
+                                  placeholder: "Select cost center",
+                                  data: {
+                                    values:
+                                      costCenters?.data.map((cc) => ({
+                                        label: cc.name,
+                                        value: cc.name,
+                                      })) || [],
+                                  },
+                                  validate: {
+                                    required: costCenterMandatory,
+                                    customMessage: "Cost Center is required",
+                                  },
+                                },
+                              ],
                             },
-                          ],
-                        },
-                      ]
-                      : []),
-                  ],
-                },
-              ]
+                          ]
+                        : []),
+                    ],
+                  },
+                ]
               : []),
 
             {
@@ -473,6 +518,7 @@ const ExpenseAdvanceForm: React.FC<{
               html: true,
               input: true,
               placeholder: "Describe the purpose of advance",
+              defaultValue: editAdvanceData?.purpose ?? "",
               validate: {
                 required: true,
                 customMessage: "Purpose is required",
@@ -511,7 +557,10 @@ const ExpenseAdvanceForm: React.FC<{
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      <HeaderBar title="New Expense Advance" onBack={() => navigate(-1)} />
+      <HeaderBar
+        title={isEditMode ? "Edit Expense Advance" : "New Expense Advance"}
+        onBack={() => navigate(-1)}
+      />
 
       <div className="flex-1 overflow-y-auto p-4">
         {expenseAdvanceSchema ? (
@@ -561,7 +610,7 @@ const ExpenseAdvanceForm: React.FC<{
                 setIsExpenseModalOpen(true);
                 setExpenseToEdit(null);
               }}
-            // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
               Advance Break Up
@@ -701,7 +750,13 @@ const ExpenseAdvanceForm: React.FC<{
             bgColor="primary"
             className="w-full md:w-auto min-w-[150px]"
           >
-            {submitting ? "Submitting..." : "Submit"}
+            {submitting
+              ? isEditMode
+                ? "Updating..."
+                : "Submitting..."
+              : isEditMode
+                ? "Update"
+                : "Submit"}
           </Button>
         </div>
       </div>
@@ -721,7 +776,9 @@ const ExpenseAdvanceForm: React.FC<{
 
   if (isDesktop) {
     return (
-      <DesktopLayoutWrapper title="New Expense Advance">
+      <DesktopLayoutWrapper
+        title={isEditMode ? "Edit Expense Advance" : "New Expense Advance"}
+      >
         {FormContent}
       </DesktopLayoutWrapper>
     );

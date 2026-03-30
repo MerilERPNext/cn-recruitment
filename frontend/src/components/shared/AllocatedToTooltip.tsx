@@ -17,6 +17,8 @@ interface AllocatedToTooltipProps {
     role?: string;
     children: ReactNode;
     position?: "top" | "bottom" | "left" | "right";
+    /** If false, do not show user, role label or badge in the tooltip. Default true. */
+    showUserRoleLables?: boolean;
 }
 
 const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
@@ -28,6 +30,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     role,
     children,
     position = "top",
+    showUserRoleLables = false,
 }) => {
     /** Merge all user sources → deduped array */
     const usersArray: string[] = React.useMemo(() => {
@@ -215,8 +218,42 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                         </div>
                     )}
 
+                    {!showUserRoleLables && hasContent && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                            {usersArray.map((u, idx) => (
+                                <span
+                                    key={`val-u-${idx}-${u}`}
+                                    className="
+                                        inline-flex items-center
+                                        text-[11px] font-brand font-medium
+                                        text-primary-700 bg-primary-50
+                                        border border-primary-200
+                                        px-2 py-0.5 rounded-md max-w-full truncate
+                                    "
+                                    title={u}
+                                >
+                                    {u}
+                                </span>
+                            ))}
+                            {rolesArray.map((r, idx) => (
+                                <span
+                                    key={`val-r-${idx}-${r}`}
+                                    className="
+                                        inline-flex items-center
+                                        text-[11px] font-brand font-medium
+                                        text-secondary-700 bg-secondary-50
+                                        border border-secondary-200
+                                        px-2 py-0.5 rounded-md
+                                    "
+                                >
+                                    {r}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Users Section (now badges) */}
-                    {hasUsers && (
+                    {showUserRoleLables && hasUsers && (
                         <div className="flex items-start gap-2.5">
                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 shrink-0">
                                 <User className="w-3.5 h-3.5 text-primary-600" />
@@ -248,10 +285,10 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                     )}
 
                     {/* Divider between sections */}
-                    {hasUsers && hasRoles && <div className="border-t border-gray-100" />}
+                    {showUserRoleLables && hasUsers && hasRoles && <div className="border-t border-gray-100" />}
 
                     {/* Roles Section */}
-                    {hasRoles && (
+                    {showUserRoleLables && hasRoles && (
                         <div className="flex items-start gap-2.5">
                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-50 shrink-0">
                                 <Shield className="w-3.5 h-3.5 text-secondary-600" />

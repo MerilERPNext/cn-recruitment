@@ -172,7 +172,7 @@ export function MyOvertimeDetails({
               </div>
             </div>
             <div>
-              <StatusBadge status={data?.reference_document?.status} />
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
             </div>
           </div>
 
@@ -312,14 +312,14 @@ export function MyOvertimeDetails({
             </div>
           )}
         </div>
-        {actions?.length > 0 &&
-          data?.status === "Open" && typeof data?.allocated_to === "string" &&
-          data?.allocated_to === currentEmployee?.user_id && (
-            <div className="w-full bg-white border-t shadow-md p-4 z-20">
-              <TeamApprovalActionPill
+        {(actions?.length > 0 &&
+          data?.reference_document?.status === "Open") ? (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            {typeof data?.allocated_to === "string" &&
+              data?.allocated_to === currentEmployee?.user_id && <TeamApprovalActionPill
                 variant="modal"
                 actions={actions}
-                status={data?.status}
+                status={data?.reference_document?.status}
                 recordId={data?.todo_id}
                 loadingAction={
                   currentAction
@@ -327,9 +327,17 @@ export function MyOvertimeDetails({
                     : null
                 }
                 onAction={(action) => handleAction(action)}
-              />
+              />}
+          </div>
+        ) : (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   ) : null;

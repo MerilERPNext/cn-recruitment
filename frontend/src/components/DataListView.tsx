@@ -67,7 +67,9 @@ export interface PostListComponentProps<T> {
 
 export interface FilterOption {
   label: string;
-  value: string;
+  value: string | any[]; // Can be a simple string or complex array like ["in", ["Draft", "Approved"]]
+  key?: string; // Optional key for matching when value is complex (e.g., "Approved")
+  customAPIParams?: Record<string, any>; // Additional params to add to customAPI when this option is selected
 }
 
 export interface FilterField {
@@ -84,7 +86,27 @@ export interface FilterField {
   | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
+  emptyValueConfig?: {
+    filterValue?: any; // Value to use when empty/Select option is chosen
+    customAPIParams?: Record<string, any>; // Additional params for empty state
+  };
 }
+
+interface DateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const DateInput = ({ value, onChange }: DateInputProps) => {
+  return (
+    <input
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+    />
+  );
+};
 
 interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
@@ -119,6 +141,7 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  clientFilterFn?: (data: T[]) => T[];
   noRecordsScreen?:
   | React.ReactNode
   | ((filters: Record<string, any>) => React.ReactNode);
@@ -154,6 +177,7 @@ const DataListView = <T extends BaseItem>({
   getItemKey,
   enableUrlParams = true,
   onFiltersChange,
+  clientFilterFn,
   noRecordsScreen,
 }: DataListViewProps<T>) => {
   const { search } = useLocation();
@@ -164,6 +188,8 @@ const DataListView = <T extends BaseItem>({
   const [filters, setFilters] = useState(defaultFilters);
   const [debouncedFilters, setDebouncedFilters] = useState(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] =
     useState(initialSearchQuery);
@@ -176,11 +202,39 @@ const DataListView = <T extends BaseItem>({
   const { isDesktop } = useScreenSize();
   const maxVisiblePages = isDesktop ? 5 : 2;
 
+  const hasActiveFilters = useMemo(() => {
+    const filterKeys = Object.keys(filters);
+
+    // Check if any filter key exists and has a value
+    const hasNonDefaultFilters = filterKeys.some(key => {
+      const filterValue = filters[key];
+      const defaultValue = defaultFilters[key];
+
+      // If filter exists and is not empty/null
+      if (filterValue !== undefined && filterValue !== null && filterValue !== "") {
+        // Check if it's different from default
+        if (JSON.stringify(filterValue) !== JSON.stringify(defaultValue)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    // Also check if there are filters beyond default filters
+    return filterKeys.length > 0 && hasNonDefaultFilters;
+  }, [filters, defaultFilters]);
+
   useEffect(() => {
     if (onFiltersChange) {
       onFiltersChange(debouncedFilters);
     }
   }, [debouncedFilters, onFiltersChange]);
+
+  useEffect(() => {
+    if (showFilters && !isFilterApplied) {
+      setPendingFilters({ ...filters });
+    }
+  }, [showFilters]);
 
   useEffect(() => {
     if (!enableUrlParams || !filtersString) {
@@ -241,26 +295,55 @@ const DataListView = <T extends BaseItem>({
 
   // Common query parameters
   const queryParams = useMemo(() => {
-    const currentStatus = debouncedFilters?.status;
-    let processedFilters = { ...debouncedFilters, ...queryParamsFilters };
+    let processedFilters: Record<string, any> = { ...debouncedFilters, ...queryParamsFilters };
 
-    // Handle special "Approved" status filter
-    if (currentStatus === "Approved") {
-      // Replace status with ["in", ["Draft", "Approved", "Open", "Pending"]]
-      processedFilters = {
-        ...processedFilters,
-        status: ["in", ["Draft", "Approved", "Open", "Pending"]],
-      };
-    }
+    // Process filter values based on filterFields configuration
+    filterFields.forEach((field) => {
+      const currentValue = processedFilters[field.fieldname];
 
-    // Handle empty status (Select option) - show all except Cancelled
-    if (!currentStatus || currentStatus === "") {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { status, ...restFilters } = processedFilters as Record<string, any>;
-      processedFilters = {
-        ...restFilters,
-        status: ["!=", "Cancelled"],
-      };
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.filterValue !== undefined) {
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: field.emptyValueConfig.filterValue,
+          };
+        }
+      } else {
+        // Check if the current value matches a FilterOption
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string") {
+          // Replace the filter value with the actual value (could be complex array)
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: matchingOption.value,
+          };
+        }
+      }
+    });
+
+    // Handle date range filters (creation_start and creation_end)
+    const creationStart = processedFilters.creation_start;
+    const creationEnd = processedFilters.creation_end;
+
+    // Remove the separate date fields
+    delete processedFilters.creation_start;
+    delete processedFilters.creation_end;
+
+    // Add combined date range filter
+    if (creationStart || creationEnd) {
+      processedFilters.creation = ["between", [
+        creationStart || "1900-01-01",
+        creationEnd || "2099-12-31"
+      ]];
     }
 
     return {
@@ -277,48 +360,51 @@ const DataListView = <T extends BaseItem>({
     queryParamsFilters,
     searchFields,
     orderBy,
+    filterFields,
   ]);
 
-  // Conditionally add/strip todo_status from customAPI params based on active filters
+  // Conditionally add/strip customAPI params based on active filters
   const effectiveCustomAPI = useMemo(() => {
     if (!customAPI) return customAPI;
 
-    const currentStatus = debouncedFilters?.status;
+    let additionalParams: Record<string, any> = {};
 
-    // Only add todo_status when user explicitly selects a pending-like status
-    const isExplicitPending =
-      currentStatus === "Pending" ||
-      currentStatus === "Open" ||
-      currentStatus === "Draft";
+    // Process filter fields to find matching customAPIParams
+    filterFields.forEach((field) => {
+      const currentValue = debouncedFilters?.[field.fieldname];
 
-    if (isExplicitPending) {
-      // Add todo_status: "Open" only for explicit pending filter selection
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.customAPIParams) {
+          additionalParams = { ...additionalParams, ...field.emptyValueConfig.customAPIParams };
+        }
+      } else {
+        // Check if the current value matches a FilterOption with customAPIParams
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string" && matchingOption.customAPIParams) {
+          additionalParams = { ...additionalParams, ...matchingOption.customAPIParams };
+        }
+      }
+    });
+
+    // Merge additional params with existing customAPI params
+    if (Object.keys(additionalParams).length > 0) {
       return {
         ...customAPI,
-        params: { ...customAPI.params, todo_status: "Open" },
+        params: { ...customAPI.params, ...additionalParams },
       };
-    }
-
-    // Handle Approved status - send Closed todo_status
-    if (currentStatus === "Approved") {
-      return {
-        ...customAPI,
-        params: { ...customAPI.params, todo_status: "Closed" },
-      };
-    }
-
-    // Strip todo_status for non-pending filters or when no filter is selected
-    if (customAPI.params?.todo_status) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { todo_status, ...restParams } = customAPI.params as Record<
-        string,
-        unknown
-      >;
-      return { ...customAPI, params: restParams };
     }
 
     return customAPI;
-  }, [customAPI, debouncedFilters?.status]);
+  }, [customAPI, debouncedFilters, filterFields]);
 
   // Create internal fetch function for custom API
   const internalFetchFunction = useMemo(() => {
@@ -508,6 +594,10 @@ const DataListView = <T extends BaseItem>({
       data = (paginationQueryResult.data?.data || []) as unknown as T[];
     }
 
+    if (clientFilterFn) {
+      return clientFilterFn(data);
+    }
+
     return data;
   }, [
     infiniteScroll,
@@ -515,6 +605,7 @@ const DataListView = <T extends BaseItem>({
     infiniteQueryResult.data,
     paginationQueryResult.data,
     accumulatedData,
+    clientFilterFn,
   ]);
 
   // Handle accumulating data for load more pagination
@@ -592,7 +683,7 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => {
+    setPendingFilters((prev: Record<string, any>) => {
       if (value === "") {
         const newFilters = { ...prev };
         if (defaultFilters && defaultFilters[fieldname] !== undefined) {
@@ -604,19 +695,22 @@ const DataListView = <T extends BaseItem>({
       }
       return {
         ...prev,
-        [fieldname]: value,
+        [fieldname]: value, // Store the key for matching
       };
     });
+  };
 
+  const applyPendingFilters = () => {
+    setFilters(pendingFilters);
+    setIsFilterApplied(true);
     setShowFilters(false);
   };
 
-  const clearFilters = () => {
-    // setFilters({});
-    // setDebouncedFilters({});
+  const handleClearFilters = () => {
+    setPendingFilters({});
     setFilters(defaultFilters);
     setDebouncedFilters(defaultFilters);
-
+    setIsFilterApplied(false);
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
@@ -630,6 +724,10 @@ const DataListView = <T extends BaseItem>({
       url.searchParams.delete("q");
       window.history.replaceState({}, "", url);
     }
+  };
+
+  const clearFilters = () => {
+    handleClearFilters();
   };
 
   const refreshData = () => {
@@ -818,7 +916,7 @@ const DataListView = <T extends BaseItem>({
 
                 {field.fieldtype === "Select" ? (
                   <select
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -834,8 +932,10 @@ const DataListView = <T extends BaseItem>({
                           </option>
                         );
                       }
+                      // Use key for matching if provided, otherwise use value
+                      const optionValue = option.key || (typeof option.value === "string" ? option.value : option.label);
                       return (
-                        <option key={option.value} value={option.value}>
+                        <option key={optionValue} value={optionValue}>
                           {option.label}
                         </option>
                       );
@@ -844,16 +944,23 @@ const DataListView = <T extends BaseItem>({
                 ) : field.fieldtype === "Check" ? (
                   <input
                     type="checkbox"
-                    checked={filters[field.fieldname] || false}
+                    checked={pendingFilters[field.fieldname] || false}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.checked)
                     }
                     className="h-4 w-4"
                   />
+                ) : field.fieldtype === "Date" ? (
+                  <DateInput
+                    value={pendingFilters[field.fieldname] || ""}
+                    onChange={(val) =>
+                      handleFilterChange(field.fieldname, val)
+                    }
+                  />
                 ) : (
                   <input
                     type="text"
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -872,14 +979,12 @@ const DataListView = <T extends BaseItem>({
             >
               Clear
             </button>
-            {!isDesktop && (
-              <button
-                onClick={() => setShowFilters(false)}
-                className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Apply
-              </button>
-            )}
+            <button
+              onClick={applyPendingFilters}
+              className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Apply
+            </button>
           </div>
         </div>
       </>
@@ -914,8 +1019,8 @@ const DataListView = <T extends BaseItem>({
     <div>
       {/* Header — sticky top, constrained to visible width */}
       <div
-        className="sticky top-0 left-0 z-10 bg-white pb-2"
-        style={{ width: 'var(--card-table-visible-width, 100%)' }}
+        className="sticky left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
@@ -926,12 +1031,28 @@ const DataListView = <T extends BaseItem>({
               />
             )}
             {isFilter && filterFields.length > 0 && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""}`}
-              >
-                <Filter className="h-4 w-4" />
-              </button>
+              <div className="flex items-center">
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="h-12 px-2 flex items-center text-red-500 hover:bg-red-50 transition border-l border-gray-300"
+                    title="Clear all filters"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`h-12 px-3 flex items-center border-l border-gray-300 hover:bg-gray-50 transition relative ${showFilters ? "bg-gray-100" : ""} ${hasActiveFilters ? "text-blue-600" : "text-gray-600"}`}
+                >
+                  <Filter className="h-4 w-4" />
+                  {hasActiveFilters && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold"></span>
+                    </span>
+                  )}
+                </button>
+              </div>
             )}
             {showRefreshButton && (
               <button
