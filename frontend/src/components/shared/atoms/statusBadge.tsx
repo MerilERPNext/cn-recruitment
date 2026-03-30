@@ -9,6 +9,7 @@ import {
   Check,
   Clock,
   Eye,
+  RotateCcw,
   Vote,
   X,
 } from "lucide-react";
@@ -57,6 +58,13 @@ export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
         bgClass: "bg-red-50",
         textClass: "text-red-600",
         icon: <Ban className="w-3 h-3 md:w-4 md:h-4" />,
+      };
+    case "revoked":
+      return {
+        label: "Revoked",
+        bgClass: "bg-slate-100",
+        textClass: "text-slate-500",
+        icon: <RotateCcw className="w-3 h-3 md:w-4 md:h-4" />,
       };
 
     case "completed":

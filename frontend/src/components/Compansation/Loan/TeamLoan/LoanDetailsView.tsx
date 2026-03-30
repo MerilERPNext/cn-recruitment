@@ -359,14 +359,14 @@ const LoanDetailsModal = ({
 
           {/* ACTION BUTTONS — sticky at bottom */}
           <div className="border-t bg-white p-4">
-            <TeamApprovalActionPill
+           {data.todo_status != "Closed" &&  <TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={ref?.status || data?.status || ""}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
               onAction={(action) => handleActionClick(action)}
-            />
+            />}
           </div>
         </div>
       </div>

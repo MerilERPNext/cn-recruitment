@@ -58,11 +58,11 @@ const ExpenseApprovalCard = ({
 
   const gridTemplateColumns = isBulkSelectEnabled
     ? (activeStatus === "Approved"
-      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr")
     : (activeStatus === "Approved"
-      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
+      : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr");
 
   const totalClaimedAmount = new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -142,6 +142,10 @@ const ExpenseApprovalCard = ({
             </div>
           )}
 
+          <Typography variant="bodySmall" className="font-medium text-center truncate">
+            {data?.reference_document?.name || "--"}
+          </Typography>
+
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
@@ -164,7 +168,7 @@ const ExpenseApprovalCard = ({
             {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.expenses[0]?.expense_date || "--"}
+            {formatToIndianDate(data?.reference_document?.expenses[0]?.expense_date) || "--"}
           </Typography>
           <Typography variant="bodySmall" className="font-medium text-center">
             {totalClaimedAmount}
@@ -242,6 +246,15 @@ const ExpenseApprovalCard = ({
               {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Expense Id</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.name || "-"}
+                  </Typography>
+                </div>
+                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
+              </div>
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel">
                     {data?.reference_document?.employee_name
                       ? "Employee Name"
@@ -257,7 +270,6 @@ const ExpenseApprovalCard = ({
                     </Typography>
                   </Link>
                 </div>
-                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
               </div>
               <div className="flex justify-between w-full">
                 <div className="flex flex-col gap-1">

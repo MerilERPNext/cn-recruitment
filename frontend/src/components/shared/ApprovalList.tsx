@@ -319,7 +319,7 @@ const ApprovalList = ({
             include_allocated_todos: true,
             fields: ["*"],
             // status: status,
-            // ...activeFilters,
+            ...activeFilters,
           },
         }}
         // onFiltersChange={(filters) => {

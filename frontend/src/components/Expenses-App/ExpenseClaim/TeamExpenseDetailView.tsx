@@ -306,7 +306,9 @@ export function TeamExpenseDetailView({
 
   const statusSource = data?.status || ref?.approval_status || "";
   const status = getStatus(statusSource);
-  const isClaimEditable = ["Open", "Pending", "Draft"].includes(statusSource);
+  const isClaimEditable =
+    ["Open", "Pending", "Draft"].includes(statusSource) &&
+    !["Closed", "Cancelled"].includes(data?.todo_status);
 
   const updateSanctionedAmount = (itemId: string, value: string) => {
     const numValue = parseInt(value, 10) || 0;

@@ -1,25 +1,24 @@
 import React, { ReactNode, useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { User, Shield } from "lucide-react";
+import { allocatedToType } from "../../types/allocatedToTooltip";
 
 interface AllocatedToTooltipProps {
-    /** User names — string or string[] */
-    users?: string | string[];
-    /** Fallback user identifier (single or array) */
-    allocated_to_user?: string | string[] | null;
-    /** Fallback username (single string) */
+    users?: string | string[] | allocatedToType[];
+    allocated_to_user?: string | string[] | null | allocatedToType[];
     username?: string;
-    /** Fallback allocated_to (single or array) */
-    allocated_to?: string | string[] | null;
-    /** Role names array */
+    allocated_to?: string | string[] | null | allocatedToType[];
     roles?: string[];
-    /** Single role fallback */
     role?: string;
     children: ReactNode;
     position?: "top" | "bottom" | "left" | "right";
-    /** If false, do not show user, role label or badge in the tooltip. Default true. */
     showUserRoleLables?: boolean;
 }
+
+type NormalizedUser = {
+    name: string;
+    designation?: string;
+};
 
 const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     users,
@@ -33,19 +32,60 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
     showUserRoleLables = false,
 }) => {
     /** Merge all user sources → deduped array */
-    const usersArray: string[] = React.useMemo(() => {
-        const normalize = (value?: string | string[] | null): string[] => {
-            if (!value && value !== "") return [];
-            if (Array.isArray(value)) return value.filter(Boolean).map(v => String(v));
-            return [String(value).trim()].filter(Boolean);
+    const usersArray: NormalizedUser[] = React.useMemo(() => {
+        const normalize = (
+            value?: string | string[] | allocatedToType[] | null
+        ): NormalizedUser[] => {
+            if (value == null) return [];
+
+            if (Array.isArray(value)) {
+                return value
+                    .map((v): NormalizedUser | null => {
+                        if (!v) return null;
+
+                        if (typeof v === "string") {
+                            const name = v.trim();
+                            return name ? { name } : null;
+                        }
+
+                        if (typeof v === "object") {
+                            const name = v.name?.trim();
+                            if (!name) return null;
+
+                            return {
+                                name,
+                                designation: v.designation?.trim() || undefined,
+                            };
+                        }
+
+                        return null;
+                    })
+                    .filter((v): v is NormalizedUser => Boolean(v));
+            }
+
+            const str = String(value).trim();
+            return str ? [{ name: str }] : [];
         };
 
-        return Array.from(new Set([
+        const merged = [
             ...normalize(users),
             ...normalize(allocated_to_user),
             ...normalize(username),
             ...normalize(allocated_to),
-        ]));
+        ];
+
+        const seen = new Set<string>();
+        const deduped: NormalizedUser[] = [];
+
+        for (const item of merged) {
+            const key = `${item.name}__${item.designation ?? ""}`;
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduped.push(item);
+            }
+        }
+
+        return deduped;
     }, [users, allocated_to_user, username, allocated_to]);
 
     /** Merge roles + role → deduped array */
@@ -68,8 +108,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
     const calculatePosition = useCallback(() => {
         if (!triggerRef.current || !tooltipRef.current) return;
-        // getBoundingClientRect() is already viewport-relative.
-        // Since the tooltip is position:fixed we must NOT add scrollY/scrollX.
+
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const tooltipRect = tooltipRef.current.getBoundingClientRect();
         const vw = window.innerWidth;
@@ -79,10 +118,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         let top = 0;
         let left = 0;
 
-        // Centre horizontally on the trigger
         left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
 
-        // Auto-flip: prefer the requested side, but flip if it would clip
         const spaceBelow = vh - triggerRect.bottom;
         const spaceAbove = triggerRect.top;
         const fits = (side: "top" | "bottom") =>
@@ -92,7 +129,6 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
         let resolvedPosition = position;
         if ((position === "bottom" || position === "top") && !fits(position as "top" | "bottom")) {
-            // flip to the other side if current side doesn't fit
             resolvedPosition = position === "bottom" ? "top" : "bottom";
         }
 
@@ -114,9 +150,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 break;
         }
 
-        // Clamp horizontal so tooltip never overflows left/right edge
         left = Math.max(PADDING, Math.min(left, vw - tooltipRect.width - PADDING));
-        // Clamp vertical so tooltip never overflows top/bottom edge
         top = Math.max(PADDING, Math.min(top, vh - tooltipRect.height - PADDING));
 
         setCoords({ top, left });
@@ -124,12 +158,13 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
     useEffect(() => {
         if (isVisible) {
-            // recalc after next paint to ensure tooltip size is measured correctly
             requestAnimationFrame(() => {
                 calculatePosition();
             });
+
             window.addEventListener("scroll", calculatePosition, true);
             window.addEventListener("resize", calculatePosition);
+
             return () => {
                 window.removeEventListener("scroll", calculatePosition, true);
                 window.removeEventListener("resize", calculatePosition);
@@ -153,9 +188,9 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         setIsVisible((v) => !v);
     };
 
-    // Dismiss on outside click/tap
     useEffect(() => {
         if (!isVisible) return;
+
         const handleOutside = (e: MouseEvent | TouchEvent) => {
             if (
                 triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
@@ -164,8 +199,10 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 setIsVisible(false);
             }
         };
+
         document.addEventListener("mousedown", handleOutside);
         document.addEventListener("touchstart", handleOutside);
+
         return () => {
             document.removeEventListener("mousedown", handleOutside);
             document.removeEventListener("touchstart", handleOutside);
@@ -186,6 +223,27 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
         }
     };
 
+    const renderUserItem = (u: NormalizedUser, idx: number, prefix: string) => (
+        <span
+            key={`${prefix}-${idx}-${u.name}-${u.designation ?? ""}`}
+            className="
+                inline-flex flex-col items-start
+                text-[11px] font-brand font-medium
+                text-primary-700 bg-primary-50
+                border border-primary-200
+                px-2 py-1 rounded-md max-w-full
+            "
+            title={u.designation ? `${u.name} - ${u.designation}` : u.name}
+        >
+            <span className="leading-4">{u.name}</span>
+            {u.designation && (
+                <span className="text-[10px] leading-4 text-gray-500">
+                    {u.designation}
+                </span>
+            )}
+        </span>
+    );
+
     const tooltipEl = isVisible && (
         <div
             ref={tooltipRef}
@@ -193,15 +251,12 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
             className="fixed z-[9999]"
             style={{ top: `${coords.top}px`, left: `${coords.left}px` }}
         >
-            <div
-                className="
-          bg-white rounded-xl shadow-xl
-          border border-primary-100
-          min-w-[200px] max-w-[320px]
-          max-h-[60vh] overflow-y-auto
-        "
-            >
-                {/* Header */}
+            <div className="
+                bg-white rounded-xl shadow-xl
+                border border-primary-100
+                min-w-[200px] max-w-[320px]
+                max-h-[60vh] overflow-y-auto
+            ">
                 <div className="bg-primary-50 px-3.5 py-2 border-b border-primary-100">
                     <span className="text-[11px] font-brand font-semibold uppercase tracking-wider text-primary-700">
                         Allocated To
@@ -209,7 +264,6 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-2.5 p-3.5">
-                    {/* Fallback Section */}
                     {!hasContent && (
                         <div className="flex items-center gap-2.5">
                             <span className="text-[11px] font-brand font-medium italic text-gray-500">
@@ -220,21 +274,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                     {!showUserRoleLables && hasContent && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                            {usersArray.map((u, idx) => (
-                                <span
-                                    key={`val-u-${idx}-${u}`}
-                                    className="
-                                        inline-flex items-center
-                                        text-[11px] font-brand font-medium
-                                        text-primary-700 bg-primary-50
-                                        border border-primary-200
-                                        px-2 py-0.5 rounded-md max-w-full truncate
-                                    "
-                                    title={u}
-                                >
-                                    {u}
-                                </span>
-                            ))}
+                            {usersArray.map((u, idx) => renderUserItem(u, idx, "val-u"))}
+
                             {rolesArray.map((r, idx) => (
                                 <span
                                     key={`val-r-${idx}-${r}`}
@@ -252,62 +293,48 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                         </div>
                     )}
 
-                    {/* Users Section (now badges) */}
                     {showUserRoleLables && hasUsers && (
                         <div className="flex items-start gap-2.5">
                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary-50 shrink-0">
                                 <User className="w-3.5 h-3.5 text-primary-600" />
                             </div>
+
                             <div className="flex flex-col gap-0.5 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
                                     {usersArray.length > 1 ? "Users" : "User"}
                                 </span>
 
                                 <div className="flex flex-wrap gap-1 mt-1">
-                                    {usersArray.map((u, idx) => (
-                                        <span
-                                            key={`user-${idx}-${u}`}
-                                            className="
-                        inline-flex items-center
-                        text-[11px] font-brand font-medium
-                        text-primary-700 bg-primary-50
-                        border border-primary-200
-                        px-2 py-0.5 rounded-md max-w-full truncate
-                      "
-                                            title={u}
-                                        >
-                                            {u}
-                                        </span>
-                                    ))}
+                                    {usersArray.map((u, idx) => renderUserItem(u, idx, "user"))}
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Divider between sections */}
                     {showUserRoleLables && hasUsers && hasRoles && <div className="border-t border-gray-100" />}
 
-                    {/* Roles Section */}
                     {showUserRoleLables && hasRoles && (
                         <div className="flex items-start gap-2.5">
                             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-secondary-50 shrink-0">
                                 <Shield className="w-3.5 h-3.5 text-secondary-600" />
                             </div>
+
                             <div className="flex flex-col gap-1 min-w-0">
                                 <span className="text-[10px] font-brand font-semibold uppercase tracking-wider text-gray-500">
                                     {rolesArray.length > 1 ? "Roles" : "Role"}
                                 </span>
+
                                 <div className="flex flex-wrap gap-1">
                                     {rolesArray.map((r, idx) => (
                                         <span
                                             key={`role-${idx}-${r}`}
                                             className="
-                        inline-flex items-center
-                        text-[11px] font-brand font-medium
-                        text-secondary-700 bg-secondary-50
-                        border border-secondary-200
-                        px-2 py-0.5 rounded-md
-                      "
+                                                inline-flex items-center
+                                                text-[11px] font-brand font-medium
+                                                text-secondary-700 bg-secondary-50
+                                                border border-secondary-200
+                                                px-2 py-0.5 rounded-md
+                                            "
                                         >
                                             {r}
                                         </span>
@@ -319,7 +346,6 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 </div>
             </div>
 
-            {/* Arrow */}
             <div
                 className={`absolute w-0 h-0 ${getArrowClasses()}`}
                 style={{ filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.06))" }}

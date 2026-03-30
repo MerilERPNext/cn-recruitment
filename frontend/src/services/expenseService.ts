@@ -203,7 +203,8 @@ export const expenseService = {
   //expense update
   updateExpense: async (
     expense_claim_name: string,
-    expenses: Array<Record<string, any>>
+    expenses: Array<Record<string, any>>,
+    isResubmit?: boolean
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -217,10 +218,22 @@ export const expenseService = {
       expense_claim_data: { expense_claim_name, expenses },
     };
 
-    return FrappeAPI.callMethod(
+    const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.edit_expense_claim",
       payload
     );
+
+    if (isResubmit) {
+      await FrappeAPI.callMethod(
+        "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+        {
+          doctype: "Expense Claim",
+          docname: expense_claim_name,
+        }
+      );
+    }
+
+    return response;
   },
 
   //update line item status
@@ -326,9 +339,9 @@ export const expenseService = {
     );
   },
 
-  getExpenseAttachments: async (documentName: string): Promise<any[]> => {
+  getExpenseAttachments: async (documentName: string, doctype: string = "Expense Claim"): Promise<any[]> => {
     const filters: FilterCondition[] = [
-      ["attached_to_doctype", "=", "Expense Claim"],
+      ["attached_to_doctype", "=", doctype],
       ["attached_to_name", "=", documentName],
     ];
     const result = await FrappeAPI.getDocumentList("File", {
@@ -375,6 +388,16 @@ export const expenseService = {
 
   updateFile: async (fileName: string, data: { attached_to_doctype: string; attached_to_name: string }) => {
     return FrappeAPI.updateDocument("File", fileName, data);
+  },
+
+  resubmitApprovalEvent: async (doctype: string, docname: string) => {
+    return FrappeAPI.callMethod(
+      "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+      {
+        doctype,
+        docname,
+      }
+    );
   },
 };
 

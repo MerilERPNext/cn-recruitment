@@ -261,6 +261,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                           const navigationState = buildExpenseNavigationState(
                             data,
                             item,
+                            isSendedBack,
                           );
                           navigate("/webapp/expenses-app/add-expense", {
                             state: navigationState,

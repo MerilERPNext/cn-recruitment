@@ -45,6 +45,8 @@ const getStatusBadgeClasses = (status: string) => {
       return "bg-red-100 text-red-800";
     case "Paid":
       return "bg-emerald-100 text-emerald-800";
+    case "Revoked":
+      return "bg-slate-100 text-slate-500";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -98,6 +100,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     canEditExpense &&
     item?.can_edit;
 
+
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -107,6 +110,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
       expenseItem,
+      canEdit,
     );
 
     navigate("/webapp/expenses-app/add-expense", {
@@ -139,7 +143,13 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
 
-          <StatusBadge status={item?.reference_document?.approval_status} />
+          <StatusBadge
+            status={
+              item?.custom_selected_doctype_action === "Revoked"
+                ? "Revoked"
+                : item?.reference_document?.approval_status
+            }
+          />
         </div>
 
         {/* Categories / Types */}
@@ -194,7 +204,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {/* Allocated To */}
         <MobileAllocatedTo
           users={item?.allocated_to}
-          roles={item?.allocated_to_roles}
+          roles={item?.allocated_roles}
           role={item?.role}
           username={item?.username}
         />
@@ -204,7 +214,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke}
+          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -273,6 +283,12 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     "Expense Claims",
   );
 
+  const canEdit =
+    currentUser?.name?.toLowerCase() ===
+    item?.send_back_user?.toLowerCase() &&
+    canEditExpense &&
+    item?.can_edit;
+
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -282,6 +298,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
       expenseItem,
+      canEdit,
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
@@ -339,7 +356,13 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           role={item?.role}
           position="left"
         >
-          <StatusBadge status={item?.reference_document?.approval_status} />
+          <StatusBadge
+            status={
+              item?.custom_selected_doctype_action === "Revoked"
+                ? "Revoked"
+                : item?.reference_document?.approval_status
+            }
+          />
         </AllocatedToTooltip>
       </div>
 
@@ -353,7 +376,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.can_edit
           }
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke}
+          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -594,7 +617,9 @@ const ExpensesList: React.FC = () => {
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
-  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">("draft");
+  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">(() => {
+    return (localStorage.getItem("expenseActiveTab") as "expenses" | "draft") || "draft";
+  });
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
@@ -611,7 +636,7 @@ const ExpensesList: React.FC = () => {
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
-  }>({ isOpen: false, message: "", onConfirm: () => {} });
+  }>({ isOpen: false, message: "", onConfirm: () => { } });
 
   const [submitConfirmModal, setSubmitConfirmModal] = React.useState<{
     isOpen: boolean;
@@ -652,6 +677,10 @@ const ExpensesList: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
+
+  React.useEffect(() => {
+    localStorage.setItem("expenseActiveTab", activeTab);
+  }, [activeTab]);
 
   const openModal = (
     id: string,
@@ -764,32 +793,32 @@ const ExpensesList: React.FC = () => {
   const tableTitles = activeTab === "draft"
     ? ["", "Expense Category", "Expense Type", "Expense Date", "Claimed Amount", "Attachments", "Actions"]
     : [
-        "Expense ID",
-        "Expense Category",
-        "Expense Type",
-        "Claimed Amount",
-        "Sanctioned Amount",
-        ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-        "Expense Date",
-        "Claimed Date",
-        "Status",
-        "Actions",
-      ];
+      "Expense Id",
+      "Expense Category",
+      "Expense Type",
+      "Claimed Amount",
+      "Sanctioned Amount",
+      ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+      "Expense Date",
+      "Claimed Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = activeTab === "draft"
     ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
     : [
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-        ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-        "1fr",
-        "1fr",
-        "1fr",
-        "1fr",
-      ];
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+      ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+      "1fr",
+      "1fr",
+      "1fr",
+      "1fr",
+    ];
 
   return (
     <div className="flex flex-col h-full">
@@ -827,21 +856,19 @@ const ExpensesList: React.FC = () => {
           <div className="flex mt-3 bg-gray-100 rounded-xl p-1 w-fit">
             <button
               onClick={() => setActiveTab("draft")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                activeTab === "draft"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "draft"
+                ? "bg-white text-primary shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               Draft Expenses
             </button>
             <button
               onClick={() => setActiveTab("expenses")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                activeTab === "expenses"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
+                ? "bg-white text-primary shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               My Expenses
             </button>
@@ -952,7 +979,7 @@ const ExpensesList: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Draft List */}
                   {draftExpenses.map((draft: any) => {
                     const isSelected = selectedDraftIds.has(draft.name);
@@ -1006,7 +1033,7 @@ const ExpensesList: React.FC = () => {
                         message: "Are you sure you want to delete this draft expense?",
                         onConfirm: () => {
                           deleteDraftMutation.mutate(deleteItem.name);
-                          setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                          setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } });
                         },
                       });
                     };
@@ -1031,7 +1058,7 @@ const ExpensesList: React.FC = () => {
                     );
                   })}
                 </div>
-                
+
                 {/* Action Buttons for Selected */}
                 {selectedDraftIds.size > 0 && (
                   <div className="flex justify-end gap-3 px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2">
@@ -1066,7 +1093,7 @@ const ExpensesList: React.FC = () => {
                               deleteDraftMutation.mutate(id);
                             });
                             setSelectedDraftIds(new Set());
-                            setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} });
+                            setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } });
                           },
                         });
                       }}
@@ -1103,10 +1130,10 @@ const ExpensesList: React.FC = () => {
         isOpen={isPolicyDrawerOpen}
         onClose={() => setIsPolicyDrawerOpen(false)}
       />
-      
+
       <Modal
         isOpen={deleteConfirmModal.isOpen}
-        onClose={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} })}
+        onClose={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } })}
         size="sm"
       >
         <div className="p-6">
@@ -1116,7 +1143,7 @@ const ExpensesList: React.FC = () => {
             <Button
               variant="outline"
               size="md"
-              onClick={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => {} })}
+              onClick={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } })}
             >
               Cancel
             </Button>
@@ -1154,7 +1181,7 @@ const ExpensesList: React.FC = () => {
               bgColor="primary"
               onClick={async () => {
                 const selectedDrafts = draftExpenses?.filter((d: any) => selectedDraftIds.has(d.name)) || [];
-                
+
                 const expensesToSubmit = selectedDrafts.map((draft: any) => {
                   const parsedJson = draft?.json && typeof draft.json === "string"
                     ? JSON.parse(draft.json)
@@ -1190,7 +1217,7 @@ const ExpensesList: React.FC = () => {
                   expenses: expensesToSubmit.map((exp: any) => {
                     const { uid, submitButton, saveAndSubmit, categoryTypeOptions, expense_date, start_datetime, end_datetime, ...rest } = exp;
                     const formattedExpense: any = { ...rest };
-                    
+
                     if (expense_date) {
                       formattedExpense.expense_date = formatExpenseDate(expense_date);
                     }
@@ -1206,7 +1233,7 @@ const ExpensesList: React.FC = () => {
                         formattedExpense.end_datetime = d.toISOString().replace("T", " ").slice(0, 19);
                       }
                     }
-                    
+
                     return {
                       ...formattedExpense,
                       expense_type: exp.expenseType || exp.expense_type,
@@ -1216,7 +1243,7 @@ const ExpensesList: React.FC = () => {
                 };
 
                 setSubmitConfirmModal({ isOpen: false, count: 0 });
-                
+
                 await new Promise<void>((resolve, reject) => {
                   submitExpenses(JSON.stringify(payload), {
                     onSuccess: async (response: any) => {
@@ -1224,9 +1251,9 @@ const ExpensesList: React.FC = () => {
                         // Get the created expense claim document name(s)
                         const message = response?.message;
                         const claims = response?.claims;
-                        
+
                         let expenseClaimNames: string[] = [];
-                        
+
                         if (Array.isArray(claims) && claims.length > 0) {
                           expenseClaimNames = claims.map((claim: any) => claim.name || claim);
                         } else if (response?.name) {
@@ -1236,14 +1263,14 @@ const ExpensesList: React.FC = () => {
                         } else if (message?.results) {
                           expenseClaimNames = message.results.map((r: any) => r.name || r);
                         }
-                        
+
                         // Update files attached to drafts with new expense claim reference
                         const fileUpdatePromises: Promise<any>[] = [];
-                        
+
                         selectedDrafts.forEach((draft: any, index: number) => {
                           const expenseClaimName = expenseClaimNames[index];
                           if (!expenseClaimName) return;
-                          
+
                           // Find files attached to this draft
                           fileUpdatePromises.push(
                             expenseService.getFilesByAttachment("Draft Expense Claim", draft.name)
@@ -1260,14 +1287,14 @@ const ExpensesList: React.FC = () => {
                               })
                           );
                         });
-                        
+
                         await Promise.all(fileUpdatePromises);
-                        
+
                         // Delete submitted drafts after updating files
                         selectedDraftIds.forEach((id) => {
                           deleteDraftMutation.mutate(id);
                         });
-                        
+
                         setSelectedDraftIds(new Set());
                         toast.success("Drafts submitted successfully!");
                         resolve();
