@@ -204,7 +204,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         {/* Allocated To */}
         <MobileAllocatedTo
           users={item?.allocated_to}
-          roles={item?.allocated_to_roles}
+          roles={item?.allocated_roles}
           role={item?.role}
           username={item?.username}
         />

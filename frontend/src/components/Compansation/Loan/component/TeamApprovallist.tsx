@@ -186,14 +186,14 @@ const ApprovalRejectionLoanList = ({
                 username={data?.username}
               />
 
-              <TeamApprovalActionPill
+             {data.todo_status != "Closed" && (  <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
                 status={data?.status || ""}
                 recordId={data?.todo_id}
                 loadingAction={loadingAction}
                 onAction={(action) => handleActionClick(action)}
-              />
+              />)}
             </div>
           </div>
         </div>
@@ -318,18 +318,19 @@ const ApprovalRejectionLoanList = ({
             role={data?.role}
             position="left"
           >
-            <StatusBadge status={data?.reference_document?.status} />
+        <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
+
           </AllocatedToTooltip>
         </div>
 
         <div className="flex items-center justify-center">
-          <TeamApprovalActionPill
+        {data.todo_status != "Closed" && ( <TeamApprovalActionPill
             actions={actions}
             status={data?.reference_document?.status}
             recordId={data?.todo_id}
             loadingAction={loadingAction}
             onAction={(action) => onAction(action, data)}
-          />
+          />)}
         </div>
       </div>
 

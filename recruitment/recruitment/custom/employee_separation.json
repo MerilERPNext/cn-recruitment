@@ -3757,7 +3757,7 @@
    "name": "Employee Separation-custom_status",
    "no_copy": 0,
    "non_negative": 0,
-   "options": "Resigned\nHold\nRejected",
+   "options": "\nApproved\nResigned\nHold\nRejected",
    "owner": "Administrator",
    "permlevel": 0,
    "placeholder": null,
