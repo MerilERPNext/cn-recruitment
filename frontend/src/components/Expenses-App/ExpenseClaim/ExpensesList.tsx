@@ -45,6 +45,8 @@ const getStatusBadgeClasses = (status: string) => {
       return "bg-red-100 text-red-800";
     case "Paid":
       return "bg-emerald-100 text-emerald-800";
+    case "Revoked":
+      return "bg-slate-100 text-slate-500";
     default:
       return "bg-gray-100 text-gray-800";
   }
@@ -98,6 +100,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     canEditExpense &&
     item?.can_edit;
 
+
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -107,6 +110,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
       expenseItem,
+      canEdit,
     );
 
     navigate("/webapp/expenses-app/add-expense", {
@@ -139,7 +143,13 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
             </Typography>
           </div>
 
-          <StatusBadge status={item?.reference_document?.approval_status} />
+          <StatusBadge
+            status={
+              item?.custom_selected_doctype_action === "Revoked"
+                ? "Revoked"
+                : item?.reference_document?.approval_status
+            }
+          />
         </div>
 
         {/* Categories / Types */}
@@ -204,7 +214,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke}
+          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -273,6 +283,12 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     "Expense Claims",
   );
 
+  const canEdit =
+    currentUser?.name?.toLowerCase() ===
+    item?.send_back_user?.toLowerCase() &&
+    canEditExpense &&
+    item?.can_edit;
+
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -282,6 +298,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
     const navigationState = buildExpenseNavigationState(
       expenseClaim,
       expenseItem,
+      canEdit,
     );
     navigate("/webapp/expenses-app/add-expense", { state: navigationState });
   };
@@ -339,7 +356,13 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           role={item?.role}
           position="left"
         >
-          <StatusBadge status={item?.reference_document?.approval_status} />
+          <StatusBadge
+            status={
+              item?.custom_selected_doctype_action === "Revoked"
+                ? "Revoked"
+                : item?.reference_document?.approval_status
+            }
+          />
         </AllocatedToTooltip>
       </div>
 
@@ -353,7 +376,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.can_edit
           }
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke}
+          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -594,7 +617,9 @@ const ExpensesList: React.FC = () => {
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
-  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">("draft");
+  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">(() => {
+    return (localStorage.getItem("expenseActiveTab") as "expenses" | "draft") || "draft";
+  });
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
@@ -652,6 +677,10 @@ const ExpensesList: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key]);
+
+  React.useEffect(() => {
+    localStorage.setItem("expenseActiveTab", activeTab);
+  }, [activeTab]);
 
   const openModal = (
     id: string,
@@ -764,7 +793,7 @@ const ExpensesList: React.FC = () => {
   const tableTitles = activeTab === "draft"
     ? ["", "Expense Category", "Expense Type", "Expense Date", "Claimed Amount", "Attachments", "Actions"]
     : [
-      "Expense ID",
+      "Expense Id",
       "Expense Category",
       "Expense Type",
       "Claimed Amount",

@@ -1,8 +1,9 @@
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
@@ -12,10 +13,21 @@ import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
+  const { data: expenseCategories } = useGetAllExpenseCategories();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [activeStatus, setActiveStatus] = useState("Draft");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+
+  const expenseCategoryOptions = useMemo(() => {
+    if (!expenseCategories || !Array.isArray(expenseCategories)) {
+      return [];
+    }
+    return expenseCategories.map((cat: any) => ({
+      label: cat.category_name || cat.name,
+      value: cat.category_name || cat.name,
+    }));
+  }, [expenseCategories]);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -50,6 +62,7 @@ const TeamExpense = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
       "Select",
+      "Expense Id",
       "Employee",
       "Expense Category",
       "Expense Type",
@@ -62,6 +75,7 @@ const TeamExpense = () => {
       "Actions",
     ]
     : [
+      "Expense Id",
       "Employee",
       "Expense Category",
       "Expense Type",
@@ -77,11 +91,11 @@ const TeamExpense = () => {
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
     ? (activeStatus === "Approved"
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
     : (activeStatus === "Approved"
-      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -160,6 +174,22 @@ const TeamExpense = () => {
                     },
                     { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
+                },
+                {
+                  fieldname: "custom_expense_category_name",
+                  label: "Expense Category",
+                  fieldtype: "Select",
+                  options: expenseCategoryOptions,
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
                 },
               ]}
               noRecordsScreen={noRecordsScreen}

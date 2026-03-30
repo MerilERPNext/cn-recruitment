@@ -481,6 +481,7 @@ const AddExpensePage = () => {
     (location.state as any)?.expense_claim_name || null;
   const draft_document_name =
     (location.state as any)?.draft_document_name || null;
+  const isResubmit = (location.state as any)?.isResubmit || false;
   const isEditingFromDraft = Boolean(draft_document_name);
   return (
     <AddExpenseForm
@@ -488,6 +489,7 @@ const AddExpensePage = () => {
       expense_claim_name={expense_claim_name}
       draft_document_name={draft_document_name}
       isEditingFromDetailsPage={Boolean(initialExpense) && !isEditingFromDraft}
+      isResubmit={isResubmit}
     />
   );
 };

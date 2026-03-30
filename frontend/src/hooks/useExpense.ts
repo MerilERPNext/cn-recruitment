@@ -251,17 +251,20 @@ type ExpenseItem = Record<string, any>;
 export type UpdateExpensePayload = {
   expense_claim_name: string;
   expenses: ExpenseItem[];
+  isResubmit?: boolean;
 };
 
 export function useUpdateExpense() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: UpdateExpensePayload) =>
-      expenseService.updateExpense(
+    mutationFn: async (params: UpdateExpensePayload) => {
+      return expenseService.updateExpense(
         params.expense_claim_name,
-        params.expenses
-      ),
+        params.expenses,
+        params.isResubmit
+      );
+    },
     onSuccess: () => {
       toast.dismiss();
       toast.success("Expense claim updated successfully");
@@ -398,12 +401,12 @@ export function useGetExpenseTypesByCategoryMutation() {
   });
 }
 
-export const useGetExpenseAttachments = (documentName?: string) => {
+export const useGetExpenseAttachments = (documentName?: string, doctype?: string) => {
   return useQuery({
-    queryKey: ["expense-attachments", documentName],
+    queryKey: ["expense-attachments", documentName, doctype],
     queryFn: () => {
       if (!documentName) throw new Error("documentName is required");
-      return expenseService.getExpenseAttachments(documentName);
+      return expenseService.getExpenseAttachments(documentName, doctype);
     },
     enabled: !!documentName,
     staleTime: 5 * 60 * 1000,
