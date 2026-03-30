@@ -2,6 +2,44 @@ frappe.listview_settings['Job Offer'] = {
 
     onload(listview) {
 
+        const df = {
+            fieldname: "docstatus",
+            label: "Document Status",
+            fieldtype: "Select",
+            input_class: "input-xs",
+            is_filter: 1,
+            options: "0\n1\n2",
+            onchange: function() {
+                listview.refresh();
+            }
+        };
+
+        let standard_filters_wrapper = listview.page.page_form.find('.standard-filter-section');
+        listview.page.add_field(df, standard_filters_wrapper);
+
+        setTimeout(() => {
+
+            let doc_filter = listview.page.page_form
+                .find('select[data-fieldname="docstatus"]')[0];
+
+            if (doc_filter) {
+                doc_filter.innerHTML = "";
+                doc_filter.add(new Option("", ""));
+                doc_filter.add(new Option("Draft", "0"));
+                doc_filter.add(new Option("Submitted", "1"));
+                doc_filter.add(new Option("Cancelled", "2"));
+            }
+
+            let status_filter = listview.page.page_form
+                .find('select[data-fieldname="status"]');
+
+            if (status_filter.length) {
+                status_filter.find('option[value="Cancelled"]').remove();
+            }
+
+        }, 300);
+
+
         frappe.call({
             method: "frappe.client.get",
             args: {
@@ -64,6 +102,10 @@ frappe.listview_settings['Job Offer'] = {
             }
         });
 
-    }
+    },
 
+    before_render: function() {
+        frappe.meta.get_docfield("Job Offer", "status").options =
+            "Awaiting Response\nAccepted\nRejected";
+    }
 };
