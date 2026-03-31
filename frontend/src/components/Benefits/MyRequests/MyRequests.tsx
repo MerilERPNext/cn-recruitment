@@ -259,7 +259,7 @@ const MyRequests: React.FC = () => {
             SkeletonComponent={CardSkeleton}
             orderBy="claim_date desc"
             // refetchTrigger={refetchAttendance}
-            isSearch={false}
+            isSearch={true}
             isFilter={false}
             showRefreshButton={false}
             // orderBy="creation desc"
