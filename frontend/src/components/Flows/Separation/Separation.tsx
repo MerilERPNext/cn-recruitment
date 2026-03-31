@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
 import {
   useCurrentEmployeeAllDetails,
@@ -155,7 +155,7 @@ const Separation = () => {
     !!termination_funnel_data?.name &&
     enabledActions.terminate;
   const showSeparationButton =
-    !!separation_funnel_data?.name && enabledActions.initiate_separation;
+    !!separation_funnel_data?.name && enabledActions.initiate_separation && ["Rejected"].includes(item?.approval_status || "");
 
   const cardData: cardDataType[] = [
     {
@@ -196,16 +196,30 @@ const Separation = () => {
   };
 
 
-  const showRequestPage = useMemo(() => {
-    if (!item) return false;
-    if (item.approval_status === "Rejected") {
-      return false;
+  const [showRequestPage, setShowRequestPage] = useState(false);
+
+  useEffect(() => {
+    if (item && item.approval_status !== "Rejected") {
+      setShowRequestPage(true);
+    } else {
+      setShowRequestPage(false);
     }
-    return true;
   }, [item]);
 
-  const showRejectStatus = item && item?.approval_status === "Rejected";
+  // check for current and previous request
+  const RejectedRequest = useMemo(() => {
+    if (!separationFunnelDetails?.data?.length || separationFunnelDetails?.data?.length == 0) {
+      return null;
+    }
 
+    if (separationFunnelDetails.data[0]?.approval_status === "Rejected") {
+      return separationFunnelDetails.data[0];
+    }
+
+    if (separationFunnelDetails.data[1]?.approval_status === "Rejected")
+      return separationFunnelDetails.data[1];
+    return null;
+  }, [separationFunnelDetails]);
 
   const canViewWorkflow = useMemo(() => {
     if (!showRequestPage) return false;
@@ -224,7 +238,18 @@ const Separation = () => {
 
   return (
     <div className="min-h-screen md:p-4 md:gap-4">
-      <div className="flex items-baseline">
+      <div className="flex items-center gap-1 mb-2">
+        {!!RejectedRequest &&
+          showRequestPage && (
+            <Button
+              bgColor="text"
+              variant="subtle"
+              onClick={() => setShowRequestPage(false)}
+              className="p-2 rounded-full min-w-0 h-fit ml-2 md:ml-0"
+            >
+              <ArrowLeft size={20} />
+            </Button>
+          )}
         <div className="flex flex-col md:mb-4 max-md:px-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
           <Typography variant="bodySmall" color="body2">
@@ -282,7 +307,7 @@ const Separation = () => {
           </div>
           {/* Button */}
 
-          {showRejectStatus &&
+          {RejectedRequest && (
             <div className="flex w-full mt-4 mb-2">
               <div className="flex flex-col sm:flex-row items-center w-full bg-red-50 border border-red-100 p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm">
                 <div className="bg-red-100 p-2 rounded-full shrink-0 text-red-500">
@@ -290,12 +315,59 @@ const Separation = () => {
                 </div>
                 <div>
                   <Typography variant="bodyMedium" color="body1" className="text-red-800">
-                    Your separation request initiated on <span className="font-semibold">{formatToIndianDate(item?.initiated_on)}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
+                    Your {RejectedRequest === item ? "current" : "previous"} separation request initiated on <span className="font-semibold">{formatToIndianDate(RejectedRequest?.initiated_on || "")}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
                   </Typography>
                 </div>
               </div>
             </div>
-          }
+          )}
+
+          {item && ["Pending", "Completed", "Approved", "Draft"].includes(item?.approval_status || "") && (
+            <div className="flex w-full mt-4 mb-2">
+              <div
+                className={`flex flex-col sm:flex-row items-center w-full p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm ${item?.approval_status === "Pending" || item?.approval_status === "Draft"
+                  ? "bg-amber-50 border border-amber-100"
+                  : "bg-emerald-50 border border-emerald-100"
+                  }`}
+              >
+                <div
+                  className={`p-2 rounded-full shrink-0 ${item?.approval_status === "Pending"
+                    ? "bg-amber-100 text-amber-500"
+                    : "bg-emerald-100 text-emerald-500"
+                    }`}
+                >
+                  {item?.approval_status === "Pending" ? (
+                    <Clock size={20} />
+                  ) : (
+                    <CheckCircle2 size={20} />
+                  )}
+                </div>
+                <div>
+                  <Typography
+                    variant="bodyMedium"
+                    color="body1"
+                    className={
+                      item?.approval_status === "Pending"
+                        ? "text-amber-800"
+                        : "text-emerald-800"
+                    }
+                  >
+                    Your current separation request initiated on <span className="font-semibold">{formatToIndianDate(item?.initiated_on || "")}</span> is{" "}
+                    <button
+                      onClick={() => setShowRequestPage(true)}
+                      className={`font-semibold underline underline-offset-4 transition-colors ${item.approval_status === "Pending" || item.approval_status === "Draft"
+                        ? "text-amber-600 hover:text-amber-700 decoration-amber-300"
+                        : "text-emerald-600 hover:text-emerald-700 decoration-emerald-300"
+                        }`}
+                    >
+                      {item.approval_status === "Pending" ? "Pending" : item.approval_status}
+                    </button>
+                    .
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center py-6 gap-2 flex-col">
             {showSeparationButton && (
@@ -314,18 +386,20 @@ const Separation = () => {
           </div>
         </div>
       )}
-      {showTerminationButton && (
-        <Button
-          onClick={() => handleTriggerChat("Termination")}
-          size="md"
-          bgColor="black"
-          className="hover:bg-gray-900 text-white"
-          loading={isTriggeringChat}
-          disabled={isTriggeringChat}
-        >
-          Terminate
-        </Button>
-      )}
+      <div className="w-full flex items-center justify-center">
+        {showTerminationButton && (
+          <Button
+            onClick={() => handleTriggerChat("Termination")}
+            size="md"
+            bgColor="black"
+            className="hover:bg-gray-900 text-white mx-auto"
+            loading={isTriggeringChat}
+            disabled={isTriggeringChat}
+          >
+            Terminate
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
