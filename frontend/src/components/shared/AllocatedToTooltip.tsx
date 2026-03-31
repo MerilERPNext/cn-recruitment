@@ -54,7 +54,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
 
                             return {
                                 name,
-                                designation: v.designation?.trim() || undefined,
+                                designation: v.designation_name?.trim() || undefined,
                             };
                         }
 
