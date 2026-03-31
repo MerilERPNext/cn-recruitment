@@ -214,7 +214,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
-          canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
+          canRevoke={!(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -376,7 +376,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.can_edit
           }
           onEdit={handleEditClick}
-          canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
+          canRevoke={!(item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />

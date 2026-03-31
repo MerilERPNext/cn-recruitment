@@ -75,7 +75,12 @@ const MyAdvanceExpenseList = () => {
     const canEdit =
       item?.can_edit === true &&
       currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase();
-    const canRevoke = item?.custom_allow_revoke === 1;
+
+    const canRevoke =
+      !(item?.custom_allow_revoke === 1 &&
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2);
+
     return { canEdit, canRevoke };
   };
 
@@ -112,6 +117,7 @@ const MyAdvanceExpenseList = () => {
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
+    console.log("Rendering DesktopRow for doc:", { canEdit, canRevoke });
 
     return (
       <div
@@ -140,8 +146,15 @@ const MyAdvanceExpenseList = () => {
             allocated_to_user={item?.allocated_to_user}
             position="left"
           >
-            <StatusBadge status={item?.reference_document?.custom_final_status} />
-         
+            <StatusBadge
+              status={
+                item?.custom_allow_revoke === 1 &&
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
+                  ? "Revoked"
+                  : item?.reference_document?.custom_final_status
+              }
+            />
           </AllocatedToTooltip>
         </div>
         {/* Actions column — stop propagation so click doesn't open detail modal */}
@@ -154,6 +167,7 @@ const MyAdvanceExpenseList = () => {
             canEdit={canEdit}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke}
+            // canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
             revokeLoading={revokeEventMutation.isPending}
             onRevoke={() => handleRevokeClick(item)}
           />
@@ -183,7 +197,15 @@ const MyAdvanceExpenseList = () => {
                 role={item?.role}
                 position="left"
               >
-                <StatusBadge status={doc?.custom_final_status} />
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
               </AllocatedToTooltip>
             ) : (
               <>
@@ -194,7 +216,15 @@ const MyAdvanceExpenseList = () => {
                   role={item?.role}
                   align="left"
                 />
-                <StatusBadge status={doc?.custom_final_status} />
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
               </>
             )}
           </div>
@@ -336,7 +366,6 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
-              custom_final_status: "Pending",
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}

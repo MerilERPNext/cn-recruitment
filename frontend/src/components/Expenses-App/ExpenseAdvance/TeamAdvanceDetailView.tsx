@@ -56,8 +56,11 @@ export default function TeamAdvanceDetailView({
         });
 
         setRefetchAttendance(true);
-        if (onAction) onAction();
-        onClose();
+        if (onAction) {
+          onAction();
+        } else {
+          onClose();
+        }
       } catch (e) {
         toast.error(errorResponseFormater(e));
 

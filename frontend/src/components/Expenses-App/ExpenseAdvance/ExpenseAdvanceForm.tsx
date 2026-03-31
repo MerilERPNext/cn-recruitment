@@ -16,6 +16,7 @@ import {
 } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { expenseService } from "../../../services/expenseService";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
@@ -162,7 +163,15 @@ const ExpenseAdvanceForm: React.FC<{
           },
         };
         updateMutation.mutate(updatePayload, {
-          onSuccess: () => {
+          onSuccess: async () => {
+            try {
+              await expenseService.resubmitApprovalEvent(
+                "Employee Advance",
+                editAdvanceData.name,
+              );
+            } catch (error) {
+              console.error("Failed to resubmit approval:", error);
+            }
             toast.success("Expense Advance updated successfully!");
             navigate("/webapp/expenses-app/my-advance-expense");
             setTimeout(() => setRefetchAttendance(true), 1000);

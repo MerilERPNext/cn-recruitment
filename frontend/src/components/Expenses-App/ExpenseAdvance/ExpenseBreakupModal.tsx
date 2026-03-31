@@ -115,7 +115,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           }
         }
       } else if (calcParams?.units) {
-        toast.error("Failed to calculate amount.");
+        toast.error(`Failed to calculate amount.`);
       }
     }
   }, [calcData, calcParams]);
@@ -183,6 +183,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 key: field.fieldname,
                 label: labelWithAsterisk,
                 input: true,
+                hidden: !field.required,
                 validate: {
                   required: !!field.required,
                   customMessage: `${field?.label} is required`,
