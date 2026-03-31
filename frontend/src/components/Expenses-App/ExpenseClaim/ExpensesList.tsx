@@ -145,7 +145,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
 
           <StatusBadge
             status={
-              item?.custom_selected_doctype_action === "Revoked"
+              item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -214,7 +214,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
+          canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -358,7 +358,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         >
           <StatusBadge
             status={
-              item?.custom_selected_doctype_action === "Revoked"
+              item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -376,7 +376,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
             item?.can_edit
           }
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
+          canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -630,6 +630,7 @@ const ExpensesList: React.FC = () => {
   >(null);
   const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
   const [selectedTodoStatus, setSelectedTodoStatus] = React.useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = React.useState<string | undefined>(undefined);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
   const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{
@@ -688,6 +689,7 @@ const ExpensesList: React.FC = () => {
     sendBackUser: string | null,
     canEdit: boolean,
     todoStatus: string | null,
+    status?: string,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -697,6 +699,7 @@ const ExpensesList: React.FC = () => {
     setSelectedSendBackUser(sendBackUser);
     setSelectedCanEdit(canEdit);
     setSelectedTodoStatus(todoStatus);
+    setSelectedStatus(status);
   };
 
   const closeModal = () => {
@@ -705,6 +708,7 @@ const ExpensesList: React.FC = () => {
     setSelectedSendBackUser(null);
     setSelectedCanEdit(false);
     setSelectedTodoStatus(null);
+    setSelectedStatus(undefined);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
     }
@@ -723,10 +727,13 @@ const ExpensesList: React.FC = () => {
     const canEdit = item?.can_edit || false;
     const todoStatus = item?.todo_status || item?.status || null;
     const isPaidFilter = currentFilters.status === "Paid";
+    const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2
+      ? "Revoked"
+      : item?.reference_document?.approval_status;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)}
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} isPaidFilter={isPaidFilter} />
@@ -741,9 +748,13 @@ const ExpensesList: React.FC = () => {
     const canEdit = item?.can_edit || false;
     const todoStatus = item?.todo_status || item?.status || null;
 
+    const status = item?.custom_allow_revoke === 1 && item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2
+      ? "Revoked"
+      : item?.reference_document?.approval_status;
+
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
+        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)}
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
@@ -925,7 +936,7 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Date",
                 },
               ]}
-              defaultFilters={{ approval_status: ["===", "Draft"] }}
+              // defaultFilters={{ approval_status: ["===", "Draft"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
@@ -1124,6 +1135,7 @@ const ExpensesList: React.FC = () => {
           selectedSendBackUser={selectedSendBackUser}
           canEdit={selectedCanEdit}
           todoStatus={selectedTodoStatus || todoData?.todo_status || todoData?.status}
+          status={selectedStatus}
         />
       )}
       <ExpensePolicyDrawer
@@ -1217,7 +1229,7 @@ const ExpensesList: React.FC = () => {
                   expenses: expensesToSubmit.map((exp: any) => {
                     const { uid, submitButton, saveAndSubmit, categoryTypeOptions, expense_date, start_datetime, end_datetime, ...rest } = exp;
                     const formattedExpense: any = { ...rest };
-
+                    console.log(uid, submitButton, saveAndSubmit, categoryTypeOptions)
                     if (expense_date) {
                       formattedExpense.expense_date = formatExpenseDate(expense_date);
                     }
