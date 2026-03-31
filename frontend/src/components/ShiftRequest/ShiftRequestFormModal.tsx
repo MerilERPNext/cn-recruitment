@@ -7,6 +7,7 @@ import {
   useUpdateShiftRequest,
   useShiftTypes,
 } from "../../hooks/useShift";
+import { useAttendanceRequestAttachments } from "../../hooks/useAttendance";
 import {
   useCurrentEmployee,
   useGetEmployeeDetailsByEmpId,
@@ -14,6 +15,7 @@ import {
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
 import Button from "../shared/atoms/Button";
+import { format } from "date-fns";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
@@ -170,6 +172,18 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   };
 
   const { data: requiredFields, isLoading: requiredFieldsLoading } = useRequiredFields("Shift Request");
+
+  const attachmentQueryDate = useMemo(
+    () => format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    [],
+  );
+
+  const { data: attachmentValidation } = useAttendanceRequestAttachments(
+    activeEmployee?.name || "",
+    attachmentQueryDate,
+    "Shift Change Request",
+  );
+
   const requiredFieldMap = useMemo(() => {
     if (!requiredFields?.fields) return {};
     const map: Record<string, boolean> = {};
@@ -188,6 +202,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
     requiredMap: Record<string, boolean>,
+    validation?: any,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
 
@@ -214,6 +229,20 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
             if (!comp.label.includes(asteriskHtml)) {
               comp.label = `${comp.label} ${asteriskHtml}`;
             }
+          }
+        }
+
+        // Add date validation limits
+        if (comp.key === "fromDate" || comp.key === "toDate") {
+          if (!comp.datePicker) comp.datePicker = {};
+          if (validation?.allowed_from_date) {
+            comp.datePicker.minDate = validation.allowed_from_date;
+          }
+          if (validation?.allowed_to_date) {
+            comp.datePicker.maxDate = validation.allowed_to_date;
+          }
+          if (comp.key === "toDate" && validation?.to_date_read_only) {
+            comp.disabled = true;
           }
         }
 
@@ -274,8 +303,12 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   }, [formSchema, shiftTypeValues]);
 
   const validatedSchema = useMemo(() => {
-    return transformSchemaWithRequired(schemaWithShiftTypes, requiredFieldMap);
-  }, [schemaWithShiftTypes, requiredFieldMap]);
+    return transformSchemaWithRequired(
+      schemaWithShiftTypes,
+      requiredFieldMap,
+      attachmentValidation,
+    );
+  }, [schemaWithShiftTypes, requiredFieldMap, attachmentValidation]);
   if (!isOpen) return null;
 
   if (employeeLoading || targetEmployeeLoading || shiftTypesLoading || requiredFieldsLoading) {
