@@ -49,7 +49,7 @@ const MyShiftItem: React.FC<{
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
         <p>
-          <span className="font-medium">{item.shift_type}</span>
+          <span className="font-medium">{item.shift_name}</span>
         </p>
         <p>
           <span className="font-medium">
@@ -106,7 +106,7 @@ const TeamShiftItem: React.FC<{
         </div>
         <div className="text-xs text-gray-600">
           <p>
-            <span className="font-medium">{item.shift_type}</span>
+            <span className="font-medium">{item.shift_name}</span>
           </p>
           <p>
             <span className="font-medium">

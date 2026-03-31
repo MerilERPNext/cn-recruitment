@@ -21,6 +21,7 @@ export interface ShiftRequest {
   custom_status: string;
   custom_request_type: string;
   doctype?: string;
+  shift_name?: string;
 }
 
 export interface ShiftRequestResponse {
