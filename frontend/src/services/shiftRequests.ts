@@ -85,4 +85,15 @@ export const getEmployeeShifts = async (employee: string): Promise<{ data: { shi
   };
 };
 
+export const getShiftsForEmployees = async (employee: string): Promise<{ message: ShiftType[] }> => {
+  const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_shifts_for_employees", {
+    filters: {
+      employees: [employee],
+    },
+  });
+  return {
+    message: res as ShiftType[],
+  };
+};
+
 

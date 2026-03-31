@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import {
   useCreateShiftRequest,
   useUpdateShiftRequest,
-  useShiftTypes,
+  useShiftsForEmployees,
 } from "../../hooks/useShift";
 import { useAttendanceRequestAttachments } from "../../hooks/useAttendance";
 import {
@@ -59,7 +59,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
-  const { data: shiftTypesData, isLoading: shiftTypesLoading } = useShiftTypes();
 
   const {
     data: employeeDetails,
@@ -72,6 +71,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const { data: targetEmployee, isLoading: targetEmployeeLoading } =
     useGetEmployeeDetailsByEmpId(targetEmployeeId || "");
   const activeEmployee = isViewingOtherUser ? targetEmployee : employeeDetails;
+
+  const { data: shiftTypesData, isLoading: shiftTypesLoading } =
+    useShiftsForEmployees(activeEmployee?.name || "");
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
@@ -270,20 +272,27 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   // Build static shift type options from the fetched list
   const shiftTypeValues = useMemo(() => {
-    if (!shiftTypesData?.data) return [];
-    const fmtTime = (t: string) => {
-      const parts = t?.split(":");
-      return parts?.length >= 2 ? `${parts[0]}:${parts[1]}` : (t ?? "");
-    };
-    return shiftTypesData.data.map((st) => {
-      const displayName = st.custom_shift_name || st.name;
-      const start = fmtTime(st.start_time);
-      const end = fmtTime(st.end_time);
+    if (!shiftTypesData?.message) return [];
+    
+    return shiftTypesData.message.map((st: any) => {
+      const id = st[0];
+      const name = st[1];
+      const label = name && id ? `${name} (${id})` : (name || id || "");
+      
+      const fmtTime = (t: string) => {
+        const parts = t?.split(":");
+        return parts?.length >= 3 ? `${parts[0]}:${parts[1]}:${parts[2]}` : (t ?? "");
+      };
+
+      const start = fmtTime(st[4]);
+      const end = fmtTime(st[5]);
+      const timeStr = start && end ? `${start} - ${end}` : "";
+
       return {
-        label: start && end ? `${displayName} (${start} - ${end})` : displayName,
-        value: st.name,
-        displayName,
-        time: start && end ? `${start} - ${end}` : "",
+        label: label,
+        value: id,
+        displayName: label,
+        time: timeStr,
       };
     });
   }, [shiftTypesData]);
@@ -297,7 +306,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     if (shiftTypeComp) {
       shiftTypeComp.data = { values: shiftTypeValues };
       shiftTypeComp.template =
-        `<span>{{ item.displayName || item.label }}<span style="font-size:0.78em;color:#6b7280;margin-left:4px;">{{ item.time }}</span></span>`;
+        `<div><div>{{ item.displayName || item.label }}</div><div style="font-size:0.85em;color:#6b7280;margin-top:2px;">{{ item.time }}</div></div>`;
     }
     return cloned;
   }, [formSchema, shiftTypeValues]);
