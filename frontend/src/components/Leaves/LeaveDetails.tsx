@@ -181,10 +181,10 @@ export function LeaveDetailView({
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <Typography
-            variant="h4"
+            variant="bodyMedium"
             className="font-semibold text-gray-900 leading-tight"
           >
-            {label}
+            {label}: {data?.reference_document?.name}
           </Typography>
 
           <Button
@@ -227,7 +227,7 @@ export function LeaveDetailView({
                   Leave Type
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.leave_type}
+                  {data?.reference_document?.custom_leave_type_name || "--"}
                 </Typography>
               </div>
               <div className="flex flex-col gap-2 text-right">
@@ -235,7 +235,7 @@ export function LeaveDetailView({
                   Reason
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.custom_reason}
+                  {data?.reference_document?.reason_name || "--"}
                 </Typography>
               </div>
             </div>

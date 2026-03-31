@@ -53,26 +53,26 @@ const TeamLeaveRequest = () => {
   const tableTitles = isBulkSelectEnabled
     ? (isRejectedFilter
       ? [
-        "Select", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
+        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
       ]
       : [
-        "Select", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
       ])
     : (isRejectedFilter
       ? [
-        "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
+        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
       ]
       : [
-        "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
       ]);
 
   const finalColumnWidths = isBulkSelectEnabled
     ? (isRejectedFilter
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
-      : ["0.5fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"])
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
+      : ["0.5fr", "1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"])
     : (isRejectedFilter
-      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
-      : ["1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"]);
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
+      : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"]);
 
   return (
     <div className="flex flex-col h-full">
