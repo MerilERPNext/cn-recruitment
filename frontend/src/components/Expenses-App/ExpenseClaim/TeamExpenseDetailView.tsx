@@ -60,6 +60,10 @@ export function TeamExpenseDetailView({
   const data = (documentName || referenceName) ? fetchedData : propsData;
   const ref = data?.reference_document || {};
 
+  const todoId = useMemo(() => {
+    return data?.todo_id || (data?.doctype === "ToDo" ? data?.name : null) || documentName || "";
+  }, [data, documentName]);
+
   console.log(ref);
 
   const claimId = ref?.name || data?.reference_name || "";
@@ -188,7 +192,7 @@ export function TeamExpenseDetailView({
 
       const response = await mutation?.mutateAsync({
         action,
-        name: data?.todo_id || "",
+        name: todoId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -374,7 +378,7 @@ export function TeamExpenseDetailView({
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
+  if (!(todoId || data?.name || data?.reference_document?.name)) return null;
 
   // Desktop table for participants
   const DesktopParticipants = (
@@ -841,11 +845,11 @@ export function TeamExpenseDetailView({
                 <TeamApprovalActionPill
                   variant={isDesktop ? "modal" : "buttons"}
                   actions={actions}
-                  status={data?.status}
-                  recordId={data?.todo_id}
+                  status={data?.status || ref?.approval_status || ""}
+                  recordId={todoId}
                   loadingAction={
                     currentAction
-                      ? { id: data?.todo_id, action: currentAction }
+                      ? { id: todoId, action: currentAction }
                       : null
                   }
                   onAction={(action) => handleAction(action)}
