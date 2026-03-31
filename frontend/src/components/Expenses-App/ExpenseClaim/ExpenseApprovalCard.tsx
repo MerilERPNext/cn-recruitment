@@ -8,6 +8,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import Button from "../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
@@ -142,9 +143,17 @@ const ExpenseApprovalCard = ({
             </div>
           )}
 
-          <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.name || "--"}
-          </Typography>
+          <Tooltip
+            content={data?.reference_document?.name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.name || "--"}
+            </Typography>
+          </Tooltip>
 
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
@@ -153,7 +162,7 @@ const ExpenseApprovalCard = ({
           >
             <Typography
               variant="bodySmall"
-              className="font-medium text-center truncate"
+              className="font-medium text-center truncate block w-full"
             >
               <WrapperHoverCard employeeId={data?.reference_document?.employee}>
                 {data?.reference_document?.employee_name}
@@ -161,12 +170,28 @@ const ExpenseApprovalCard = ({
             </Typography>
           </Link>
 
-          <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.custom_expense_category_name || "--"}
-          </Typography>
-          <Typography variant="bodySmall" className="font-medium text-center truncate">
-            {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
-          </Typography>
+          <Tooltip
+            content={data?.reference_document?.custom_expense_category_name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.custom_expense_category_name || "--"}
+            </Typography>
+          </Tooltip>
+          <Tooltip
+            content={data?.reference_document?.expenses[0]?.custom_claim_type_name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.expenses[0]?.custom_claim_type_name || "--"}
+            </Typography>
+          </Tooltip>
           <Typography variant="bodySmall" className="font-medium text-center truncate">
             {formatToIndianDate(data?.reference_document?.expenses[0]?.expense_date) || "--"}
           </Typography>

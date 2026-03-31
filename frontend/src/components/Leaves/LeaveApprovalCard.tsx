@@ -134,12 +134,17 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center whitespace-nowrap"
+          <Tooltip
+            content={data?.reference_document?.name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
           >
-            {data?.reference_document?.name}
-          </Typography>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.name}
+            </Typography>
+          </Tooltip>
 
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
@@ -157,10 +162,18 @@ const LeaveApprovalCard = ({
             </WrapperHoverCard>
           </Link>
 
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.custom_leave_type_name} (
-            {data?.reference_document?.leave_type})
-          </Typography>
+          <Tooltip
+            content={`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.custom_leave_type_name} (
+              {data?.reference_document?.leave_type})
+            </Typography>
+          </Tooltip>
 
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
