@@ -24,6 +24,7 @@ import type {
   ShiftRequestFormData,
   FormioSubmission,
   ShiftRequest,
+  ShiftTypeTuple,
 } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
@@ -274,7 +275,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const shiftTypeValues = useMemo(() => {
     if (!shiftTypesData?.message) return [];
     
-    return shiftTypesData.message.map((st: any) => {
+    return shiftTypesData.message.map((st: ShiftTypeTuple) => {
       const id = st[0];
       const name = st[1];
       const label = name && id ? `${name} (${id})` : (name || id || "");

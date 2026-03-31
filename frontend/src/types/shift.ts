@@ -55,6 +55,12 @@ export interface ShiftTypeResponse {
   data: ShiftType[];
 }
 
+export type ShiftTypeTuple = [string, string, string, string, string, string];
+
+export interface ShiftTypeTupleResponse {
+  message: ShiftTypeTuple[];
+}
+
 export interface ShiftRequestFormData {
   shiftType: string;
   fromDate: string;
