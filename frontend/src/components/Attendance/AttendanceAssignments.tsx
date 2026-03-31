@@ -4,14 +4,14 @@ import { Form } from "@tsed/react-formio";
 import { useRef } from "react";
 import "../../formio.custom.css";
 import toast from "react-hot-toast";
-import { useEmployeeShifts } from "../../hooks/useShift";
 import {
   useAddAttendanceAssignment,
-  useAllAttendanceAssignmentPolicies,
   useAllIpRestrictions,
   useAllShiftBlocks,
   useAllShiftLocations,
   useAllWeekOffs,
+  usePoliciesForEmployees,
+  useShiftsForEmployees,
 } from "../../hooks/useAttendance";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
@@ -50,9 +50,8 @@ const AttendanceAssignments = ({
       : [];
 
   const employeeIdForContext = employees.length > 0 ? employees[0].employee : (targetEmployeeId || currentEmployee?.employee);
-
-  const { data: shiftList } = useEmployeeShifts(employeeIdForContext || "");
-  const { data: attendancePolicy } = useAllAttendanceAssignmentPolicies(employeeIdForContext || "");
+  const { data: shifts } = useShiftsForEmployees(employeeIdForContext || "");
+  const { data: policies } = usePoliciesForEmployees(employeeIdForContext || "");
 
   const { data: weekOffs } = useAllWeekOffs();
   const { data: ipRestrictions } = useAllIpRestrictions();
@@ -125,7 +124,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 geoFencingRestrictions?.data?.map((item) => ({
-                  label: `${item.name}`,
+                  label: `${item.location_name}`,
                   value: item.name,
                 })) || [],
             },
@@ -149,9 +148,9 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                shiftList?.data?.shifts?.map((item) => ({
-                  label: item?.custom_shift_name ? `${item?.custom_shift_name} (${item.name})` : `${item.name}`,
-                  value: item.name,
+                shifts?.map((item) => ({
+                  label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
+                  value: item?.[0],
                 })) || [],
             },
             customConditional: "show = !data.use_shift_blocks ;",
@@ -200,9 +199,9 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                attendancePolicy?.data?.policies?.map((item) => ({
-                  label: `${item?.policy_name} (${item.name})`,
-                  value: item.name,
+                policies?.map((item) => ({
+                  label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
+                  value: item?.[0],
                 })) || [],
             },
           },

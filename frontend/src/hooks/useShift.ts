@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAllShiftTypes, getEmployeeShifts, ShiftRequestService } from "../services/shiftRequests";
+import { getAllShiftTypes, ShiftRequestService } from "../services/shiftRequests";
 import { ShiftRequest, UpdateShiftRequestPayload } from "../types/shift";
 import { toast } from "react-hot-toast"; // Optional: for notifications
 
@@ -50,13 +50,13 @@ export const useShiftTypes = () => {
     queryFn: getAllShiftTypes,
   });
 };
-export const useEmployeeShifts = (employee: string) => {
-  return useQuery({
-    queryKey: ["employee-shifts-assignment", employee],
-    queryFn: () => getEmployeeShifts(employee),
-    enabled: !!employee,
-  });
-};
+// export const useEmployeeShifts = (employee: string) => {
+//   return useQuery({
+//     queryKey: ["employee-shifts-assignment", employee],
+//     queryFn: () => getEmployeeShifts(employee),
+//     enabled: !!employee,
+//   });
+// };
 
 export const useCreateShiftRequest = () => {
   const queryClient = useQueryClient();
@@ -64,8 +64,8 @@ export const useCreateShiftRequest = () => {
   return useMutation({
     mutationFn: (payload: Partial<ShiftRequest>) =>
       ShiftRequestService.createShiftRequest(payload),
-    onSuccess: async() => {
-       await new Promise((res)=> setTimeout(res, 3000));
+    onSuccess: async () => {
+      await new Promise((res) => setTimeout(res, 3000));
       toast.success("Shift request submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
     },
