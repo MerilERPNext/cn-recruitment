@@ -52,7 +52,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
                             if (!name) return null;
 
                             return v.designation_name
-                                ? `${name} - (${v.designation_name})`
+                                ? `${name} (${v.employee}) - (${v.designation_name})`
                                 : name;
                         }
 
