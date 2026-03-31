@@ -269,15 +269,15 @@ export function useUpdateExpense() {
       toast.dismiss();
       toast.success("Expense claim updated successfully");
 
-      queryClient.invalidateQueries({
-        queryKey: ["document", "Expense Claim"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [
-          "custom-api-infinite",
-          "cn_leave_shift_managment.api.get_open_approval_todos",
-        ],
-      });
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+      }, 1500);
+
     },
     onError: (err: any) => {
       toast.error(errorResponseFormater(err));
