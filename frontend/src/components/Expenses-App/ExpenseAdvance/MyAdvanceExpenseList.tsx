@@ -81,11 +81,12 @@ const MyAdvanceExpenseList = () => {
       item?.can_edit === true &&
       currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase();
 
-    const canRevoke = !(
+    const canRevoke =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
-    );
+      !(
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
+      );
 
     return { canEdit, canRevoke };
   };
@@ -123,7 +124,6 @@ const MyAdvanceExpenseList = () => {
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
     const { canEdit, canRevoke } = getActionFlags(item);
-    console.log("Rendering DesktopRow for doc:", { canEdit, canRevoke });
 
     return (
       <div
@@ -173,7 +173,6 @@ const MyAdvanceExpenseList = () => {
             canEdit={canEdit}
             onEdit={() => handleEditClick(item)}
             canRevoke={canRevoke}
-            // canRevoke={item?.custom_allow_revoke === 1 && !(item?.todo_status?.toLowerCase() === "cancelled" && item?.reference_document?.docstatus === 2)}
             revokeLoading={revokeEventMutation.isPending}
             onRevoke={() => handleRevokeClick(item)}
           />

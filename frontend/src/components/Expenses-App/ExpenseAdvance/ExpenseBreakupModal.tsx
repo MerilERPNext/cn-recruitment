@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
 
@@ -56,7 +56,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
             {
               name:
                 storedData.custom_attach_receipt.substring(
-                  storedData.custom_attach_receipt.lastIndexOf("/") + 1
+                  storedData.custom_attach_receipt.lastIndexOf("/") + 1,
                 ) || "Attached File",
               originalName: "Attached File",
               size: 1,
@@ -70,7 +70,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     };
 
     return Object.fromEntries(
-      Object.entries(formReadyData).filter(([, value]) => value !== undefined)
+      Object.entries(formReadyData).filter(([, value]) => value !== undefined),
     );
   };
 
@@ -246,7 +246,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
                 data: {
                   url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
-                    advanceType || ""
+                    advanceType || "",
                   )}`,
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
@@ -335,7 +335,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
         },
       ],
     }),
-    []
+    [],
   );
 
   const [formSchema, setFormSchema] = useState<any>(initialSchema);
@@ -348,8 +348,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     try {
       const res = await fetch(
         `/api/method/chatnext_expense_trips.expense_claim.advance_get_expense_type_fields?expense_type=${encodeURIComponent(
-          expenseType
-        )}`
+          expenseType,
+        )}`,
       );
       const data = await res.json();
       const fields = data.message?.fields || [];
@@ -367,7 +367,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
             return { ...comp, disabled: true };
           }
           return comp;
-        }
+        },
       );
 
       const twoColumnRows = [];
@@ -525,10 +525,10 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
               }
 
               const startDatetime = formatMySQLDatetime(
-                combinedData.start_datetime
+                combinedData.start_datetime,
               );
               const endDatetime = formatMySQLDatetime(
-                combinedData.end_datetime
+                combinedData.end_datetime,
               );
               let finalAttachValue = attachReceiptValue;
 
