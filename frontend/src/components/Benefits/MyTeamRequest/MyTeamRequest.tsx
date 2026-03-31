@@ -95,7 +95,6 @@ const MyTeamRequest: React.FC = () => {
                 }
               },
             ]}
-            orderBy="claim_date desc"
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {

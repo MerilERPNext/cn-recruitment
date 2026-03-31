@@ -53,7 +53,6 @@ const ListViewOfLoanForMobile = () => {
         isFilter={false}
         pageSize={10}
         showRefreshButton={false}
-        orderBy="modified desc"
         infiniteScroll={true}
         loadMorePagination={true}
         showPagination={false}

@@ -205,7 +205,6 @@ const AllMyShiftRequestsList = () => {
               defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={4}
               showRefreshButton={false}
-              orderBy="from_date desc"
               infiniteScroll={false}
               loadMorePagination={true}
               showPagination={false}
@@ -306,7 +305,6 @@ export default function AllShiftsDashboard() {
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
-                    orderBy="from_date desc"
                     SkeletonComponent={() => <CardSkeleton rows={3} />}
                                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
 
