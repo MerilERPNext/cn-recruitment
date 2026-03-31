@@ -23,6 +23,7 @@ type TeamAdvanceDetailViewProps = {
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  status?: string;
 };
 
 const formatINR = (amount: number | undefined | null) =>
@@ -36,6 +37,7 @@ export default function TeamAdvanceDetailView({
   onClose,
   onAction,
   label = "Employee Advance",
+  status,
 }: TeamAdvanceDetailViewProps) {
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
@@ -88,6 +90,12 @@ export default function TeamAdvanceDetailView({
     }
   })();
 
+  const finalStatus =
+    status ||
+    (data.todo_status === "Closed" && ref.custom_final_status !== "Rejected"
+      ? "Approved"
+      : ref.custom_final_status);
+
   const DesktopBreakup = (
     <div className="mt-2 rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
       <table className="min-w-full text-sm text-center">
@@ -132,7 +140,7 @@ export default function TeamAdvanceDetailView({
               </td>
               <td className="px-4 py-3 text-gray-800">
                 {" "}
-                {<StatusBadge status={item.custom_approval_staus} />}
+                {<StatusBadge status={finalStatus} />}
               </td>
               <td className="px-4 py-3 text-gray-800">{item.description}</td>
             </tr>
@@ -156,7 +164,7 @@ export default function TeamAdvanceDetailView({
             </Typography>
 
             {/* Approval Status */}
-            <StatusBadge status={item.custom_approval_staus} />
+            <StatusBadge status={finalStatus} />
           </div>
 
           {/* Content */}
@@ -229,11 +237,6 @@ export default function TeamAdvanceDetailView({
       </div>
     );
 
-  const computedStatus =
-    data.todo_status === "Closed" && ref.custom_final_status !== "Rejected"
-      ? "Approved"
-      : ref.custom_final_status;
-
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
@@ -275,7 +278,7 @@ export default function TeamAdvanceDetailView({
                 </Typography>
               </div>
               <div>
-                <StatusBadge status={computedStatus} />
+                <StatusBadge status={finalStatus} />
               </div>
             </div>
 
@@ -305,7 +308,7 @@ export default function TeamAdvanceDetailView({
                 </Typography>
                 <Typography variant="mobileCardValue">{ref.company}</Typography>
               </div>
-              {computedStatus === "Approved" && (
+              {finalStatus === "Approved" && (
                 <div className="flex flex-col gap-2 text-right">
                   <Typography variant="mobileCardLabel" className="block">
                     Paid Status
