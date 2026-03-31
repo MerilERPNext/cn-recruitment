@@ -106,6 +106,7 @@ export interface ApprovalStage {
   role: string;
   status: string;
   approval_time: string | null;
+  employee_id: string | null;
   designation_name: string | null;
 }
 
