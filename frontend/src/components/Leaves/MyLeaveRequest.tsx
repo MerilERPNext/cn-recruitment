@@ -112,20 +112,24 @@ const MyLeaveRequests = ({
             titles={
               activeStatus === "Rejected"
                 ? [
+                  "Leave Id",
                   "Leave Type",
                   "From Date",
                   "To Date",
                   "Description",
+                  "Reason",
                   "Leave Days",
                   "Status",
                   "Reject Reason",
                   "ACTIONS",
                 ]
                 : [
+                  "Leave Id",
                   "Leave Type",
                   "From Date",
                   "To Date",
                   "Description",
+                  "Reason",
                   "Leave Days",
                   "Status",
                   "ACTIONS",
@@ -133,8 +137,8 @@ const MyLeaveRequests = ({
             }
             columnWidths={
               activeStatus === "Rejected"
-                ? ["1fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr 1fr"]
-                : ["1.5fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr"]
+                ? ["1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
+                : ["1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
             }
           >
             {currentEmployee?.name && (

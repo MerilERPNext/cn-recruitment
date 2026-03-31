@@ -54,7 +54,6 @@ const LeaveAppInner: React.FC = () => {
         label: "Leave Balance",
         permissionKey: "Leave Balance",
       },
-      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "my-requests",
         label: "My Requests",
@@ -65,6 +64,7 @@ const LeaveAppInner: React.FC = () => {
         label: "Team Requests",
         permissionKey: "Team Requests",
       },
+      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "compensatory",
         label: "Compensatory",
@@ -72,8 +72,21 @@ const LeaveAppInner: React.FC = () => {
       },
     ];
 
+    // If it's desktop, we might want to keep the original order or use this new logical order.
+    // The user specifically asked for mobile, but usually consistency is better.
+    // However, if we want to be strict about "for mobile application":
+    const orderedTabs = isDesktop
+      ? [
+          allTabs[0], // leave-balance
+          allTabs[3], // holidays
+          allTabs[1], // my-requests
+          allTabs[2], // team-requests
+          allTabs[4], // compensatory
+        ]
+      : allTabs; // mobile order (the one defined above)
+
     if (!userUiPermission || userUiPermission.length === 0) {
-      return allTabs.map(({ key, label }) => ({ key, label }));
+      return orderedTabs.map(({ key, label }) => ({ key, label }));
     }
 
     const leaveAppPermission = userUiPermission.find(
@@ -84,7 +97,7 @@ const LeaveAppInner: React.FC = () => {
       return [];
     }
 
-    return allTabs
+    return orderedTabs
       .filter((tab) => {
         const pagePermission = leaveAppPermission.pages?.find(
           (page) => page.page_name === tab.permissionKey,
@@ -92,7 +105,7 @@ const LeaveAppInner: React.FC = () => {
         return pagePermission && pagePermission.enabled;
       })
       .map(({ key, label }) => ({ key, label }));
-  }, [userUiPermission]);
+  }, [userUiPermission, isDesktop]);
 
   const { showModal, openModal, closeModal } = useRequestLeaveModal();
 
@@ -145,7 +158,7 @@ const LeaveAppInner: React.FC = () => {
     if (!isRequestRoute && showModal) {
       closeModal();
     }
-  }, [isRequestRoute]);
+  }, [isRequestRoute, showModal, openModal, closeModal]);
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);

@@ -78,8 +78,8 @@ export const useCreateShiftRequest = () => {
   return useMutation({
     mutationFn: (payload: Partial<ShiftRequest>) =>
       ShiftRequestService.createShiftRequest(payload),
-    onSuccess: async() => {
-       await new Promise((res)=> setTimeout(res, 3000));
+    onSuccess: async () => {
+      await new Promise((res) => setTimeout(res, 3000));
       toast.success("Shift request submitted successfully!");
       queryClient.invalidateQueries({ queryKey: ["shift-requests"] });
     },

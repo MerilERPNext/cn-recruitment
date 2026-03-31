@@ -152,10 +152,18 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     return leaveBalanceData.leave_balance
       .filter((entry) => entry.dont_show_in_frontend === 0)
-      .map((entry) => ({
-        label: `${entry.type} (${entry.leave_id})`,
-        value: entry.leave_id,
-      }));
+      .map((entry) => {
+        let label = `${entry.type} (${entry.leave_id})`;
+
+        if (defaults?.leaveType === entry.leave_id) {
+          label = `Optional Holiday (${entry.leave_id})`;
+        }
+
+        return {
+          label,
+          value: entry.leave_id,
+        };
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [leaveBalanceData, defaults?.leaveType]);
 
@@ -163,7 +171,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     if (!leaveBalanceData?.leave_balance) return {};
     return leaveBalanceData.leave_balance.reduce(
       (acc: Record<string, number>, entry) => {
-        acc[entry.type] = entry.balance;
+        acc[entry.leave_id] = entry.balance;
         return acc;
       },
       {},

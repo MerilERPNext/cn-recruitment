@@ -324,23 +324,39 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
       }}
     >
-      <Typography
-        variant="bodySmall"
-        className="font-medium text-center truncate"
+      <Tooltip
+        content={expenseClaim?.name || ""}
+        triggerClassName="w-full truncate min-w-0 block"
       >
-        {expenseClaim?.name}
-      </Typography>
-      <Tooltip content={`${expenseClaim?.custom_expense_category_name ?? ""}`}>
         <Typography
           variant="bodySmall"
-          className="font-medium text-center truncate"
+          className="font-medium text-center truncate block w-full"
+        >
+          {expenseClaim?.name}
+        </Typography>
+      </Tooltip>
+      <Tooltip
+        content={`${expenseClaim?.custom_expense_category_name ?? ""}`}
+        triggerClassName="w-full truncate min-w-0 block"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate block w-full"
         >
           {expenseClaim?.custom_expense_category_name}
         </Typography>
       </Tooltip>
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {expenseClaim?.expenses[0]?.custom_claim_type_name}
-      </Typography>
+      <Tooltip
+        content={expenseClaim?.expenses[0]?.custom_claim_type_name || ""}
+        triggerClassName="w-full truncate min-w-0 block"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate block w-full"
+        >
+          {expenseClaim?.expenses[0]?.custom_claim_type_name}
+        </Typography>
+      </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}
       </Typography>
@@ -591,19 +607,30 @@ const DraftExpenseTableRow: React.FC<{
       </div>
       <Tooltip
         content={`${parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || ""}`}
+        triggerClassName="w-full truncate min-w-0 block"
       >
         <Typography
           variant="bodySmall"
-          className="font-medium text-center truncate"
+          className="font-medium text-center truncate block w-full"
         >
           {parsedJson?.custom_expense_category_name ||
             parsedJson?.expenseCategory ||
             "-"}
         </Typography>
       </Tooltip>
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
-      </Typography>
+      <Tooltip
+        content={
+          parsedJson?.custom_expense_type || parsedJson?.expenseType || ""
+        }
+        triggerClassName="w-full truncate min-w-0 block"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate block w-full"
+        >
+          {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
+        </Typography>
+      </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {parsedJson?.expense_date
           ? formatToIndianDate(parsedJson.expense_date)
