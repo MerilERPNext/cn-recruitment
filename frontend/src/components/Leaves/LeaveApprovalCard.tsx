@@ -103,8 +103,12 @@ const LeaveApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? (showRejectReason ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr" : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr")
-    : (showRejectReason ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr");
+    ? showRejectReason
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr"
+    : showRejectReason
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -130,7 +134,10 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
-          <Typography variant="bodySmall" className="font-medium text-center whitespace-nowrap">
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center whitespace-nowrap"
+          >
             {data?.reference_document?.name}
           </Typography>
 
@@ -151,7 +158,8 @@ const LeaveApprovalCard = ({
           </Link>
 
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
+            {data?.reference_document?.custom_leave_type_name} (
+            {data?.reference_document?.leave_type})
           </Typography>
 
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -182,13 +190,19 @@ const LeaveApprovalCard = ({
           </div>
           {showRejectReason && (
             <div className="flex items-center justify-center w-full min-w-0 pr-2">
-              {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
-                <Tooltip content={data?.reference_document?.custom_rejection_reason}>
-                  <Typography variant="bodySmall" className="font-medium text-center truncate">
-                    {data?.reference_document?.custom_rejection_reason}
-                  </Typography>
-                </Tooltip>
-              )}
+              {data?.reference_document?.status === "Rejected" &&
+                data?.reference_document?.custom_rejection_reason && (
+                  <Tooltip
+                    content={data?.reference_document?.custom_rejection_reason}
+                  >
+                    <Typography
+                      variant="bodySmall"
+                      className="font-medium text-center truncate"
+                    >
+                      {data?.reference_document?.custom_rejection_reason}
+                    </Typography>
+                  </Tooltip>
+                )}
             </div>
           )}
           <div className="flex items-center justify-center">
@@ -232,7 +246,10 @@ const LeaveApprovalCard = ({
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
                   <Typography variant="mobileCardLabel">Leave ID</Typography>
-                  <Typography variant="mobileCardValue" className="whitespace-nowrap">
+                  <Typography
+                    variant="mobileCardValue"
+                    className="whitespace-nowrap"
+                  >
                     {data?.reference_document?.name || "-"}
                   </Typography>
                 </div>
@@ -246,7 +263,10 @@ const LeaveApprovalCard = ({
                     ? "Employee Name"
                     : "Employee ID"}
                 </Typography>
-                <Typography variant="mobileCardValue" className="truncate font-bold text-gray-900">
+                <Typography
+                  variant="mobileCardValue"
+                  className="truncate font-bold text-gray-900"
+                >
                   {data?.reference_document?.employee_name ||
                     data?.reference_document?.employee}
                 </Typography>
@@ -254,18 +274,15 @@ const LeaveApprovalCard = ({
 
               <div className="flex justify-between w-full px-1">
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
-                  <Typography variant="mobileCardLabel">
-                    Leave Type
-                  </Typography>
+                  <Typography variant="mobileCardLabel">Leave Type</Typography>
                   <Typography variant="mobileCardValue" className="truncate">
-                    {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
+                    {data?.reference_document?.custom_leave_type_name} (
+                    {data?.reference_document?.leave_type})
                   </Typography>
                 </div>
 
                 <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel">
-                    Leave Days
-                  </Typography>
+                  <Typography variant="mobileCardLabel">Leave Days</Typography>
                   <Typography variant="mobileCardValue">
                     {data?.reference_document?.total_leave_days > 1
                       ? data?.reference_document?.total_leave_days + " Days"
@@ -290,6 +307,16 @@ const LeaveApprovalCard = ({
                 </div>
               </div>
 
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">Reason</Typography>
+                <Typography
+                  variant="mobileCardValue"
+                  className="whitespace-normal"
+                >
+                  {data?.reference_document?.reason_name || "-"}
+                </Typography>
+              </div>
+
               <div className="px-1 pt-1">
                 <MobileAllocatedTo
                   users={data?.allocated_to}
@@ -299,14 +326,20 @@ const LeaveApprovalCard = ({
                 />
               </div>
 
-              {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
-                <div className="flex flex-col gap-1 px-1 pb-3">
-                  <Typography variant="mobileCardLabel">Reject Reason</Typography>
-                  <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
-                    {data?.reference_document?.custom_rejection_reason}
-                  </Typography>
-                </div>
-              )}
+              {data?.reference_document?.status === "Rejected" &&
+                data?.reference_document?.custom_rejection_reason && (
+                  <div className="flex flex-col gap-1 px-1 pb-3">
+                    <Typography variant="mobileCardLabel">
+                      Reject Reason
+                    </Typography>
+                    <Typography
+                      variant="mobileCardValue"
+                      className="text-red-500 text-sm whitespace-normal"
+                    >
+                      {data?.reference_document?.custom_rejection_reason}
+                    </Typography>
+                  </div>
+                )}
 
               <TeamApprovalActionPill
                 variant="buttons"
