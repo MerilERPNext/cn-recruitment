@@ -1,39 +1,44 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { Users, Pencil, Trash2 } from "lucide-react";
-import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { Pencil, Trash2, Users } from "lucide-react";
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import {
+  useDeleteDraftExpenseClaim,
+  useGetAllExpenseCategories,
+  useGetDraftExpenseClaims,
+  usePostExpenseClaim,
+  useUpdateFileAttachment,
+} from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { useGetAllExpenseCategories, useGetDraftExpenseClaims, useDeleteDraftExpenseClaim, usePostExpenseClaim, useUpdateFileAttachment } from "../../../hooks/useExpense";
 import { expenseService } from "../../../services/expenseService";
 import { ApprovalStage } from "../../../types/expenseAdvance";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
-import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import CardTable from "../../shared/CardTable";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import Modal from "../../shared/Modal";
+import Tooltip from "../../shared/Tooltip";
 import Button from "../../shared/atoms/Button";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
-import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { useSearchParams } from "react-router-dom";
-import Tooltip from "../../shared/Tooltip";
-import { useRevokeEvent } from "../../../hooks/userApprovalList";
-import { useLoadingOverlay } from "../../../context/OverlayContext";
-import toast from "react-hot-toast";
-import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import Modal from "../../shared/Modal";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -100,7 +105,6 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
     canEditExpense &&
     item?.can_edit;
 
-
   const expenseClaim = item?.reference_document;
   const expenseItem = expenseClaim?.expenses?.[0];
 
@@ -138,14 +142,14 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Expense ID</Typography>
-            <Typography variant="mobileCardValue">
-              {expense?.name}
-            </Typography>
+            <Typography variant="mobileCardValue">{expense?.name}</Typography>
           </div>
 
           <StatusBadge
             status={
-              item?.custom_selected_doctype_action === "Revoked"
+              item?.custom_allow_revoke === 1 &&
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -179,7 +183,10 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Sanctioned Amount</Typography>
             <Typography variant="mobileCardValue">
-              {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? sanctionedAmount : " - "}
+              {item?.todo_status?.toLowerCase() === "closed" &&
+              item?.reference_document?.approval_status !== "Rejected"
+                ? sanctionedAmount
+                : " - "}
             </Typography>
           </div>
         </div>
@@ -214,7 +221,13 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           isPending={item?.status === "Draft"}
           canEdit={canEdit}
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
+          canRevoke={
+            item?.custom_allow_revoke === 1 &&
+            !(
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
+            )
+          }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -284,8 +297,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   );
 
   const canEdit =
-    currentUser?.name?.toLowerCase() ===
-    item?.send_back_user?.toLowerCase() &&
+    currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase() &&
     canEditExpense &&
     item?.can_edit;
 
@@ -333,7 +345,10 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         {formattedAmount}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {item?.todo_status?.toLowerCase() === "closed" && item?.reference_document?.approval_status !== "Rejected" ? formattedSanctionedAmount : " -- "}
+        {item?.todo_status?.toLowerCase() === "closed" &&
+        item?.reference_document?.approval_status !== "Rejected"
+          ? formattedSanctionedAmount
+          : " -- "}
       </Typography>
       {isPaidFilter && (
         <Typography variant="bodySmall" className="font-medium text-center">
@@ -358,7 +373,9 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         >
           <StatusBadge
             status={
-              item?.custom_selected_doctype_action === "Revoked"
+              item?.custom_allow_revoke === 1 &&
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
                 ? "Revoked"
                 : item?.reference_document?.approval_status
             }
@@ -371,12 +388,18 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
-            item?.send_back_user?.toLowerCase() &&
+              item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
             item?.can_edit
           }
           onEdit={handleEditClick}
-          canRevoke={!!item?.custom_allow_revoke && item?.custom_selected_doctype_action !== "Revoked"}
+          canRevoke={
+            item?.custom_allow_revoke === 1 &&
+            !(
+              item?.todo_status?.toLowerCase() === "cancelled" &&
+              item?.reference_document?.docstatus === 2
+            )
+          }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
         />
@@ -415,7 +438,10 @@ const DraftExpenseItem: React.FC<{
 
   const attachmentNames = React.useMemo(() => {
     if (!parsedJson?.attachments) return [];
-    return parsedJson.attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+    return parsedJson.attachments
+      .split(",")
+      .map((a: string) => a.trim())
+      .filter(Boolean);
   }, [parsedJson]);
 
   return (
@@ -468,13 +494,17 @@ const DraftExpenseItem: React.FC<{
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Expense Category</Typography>
             <Typography variant="mobileCardValue">
-              {parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || "-"}
+              {parsedJson?.custom_expense_category_name ||
+                parsedJson?.expenseCategory ||
+                "-"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Expense Type</Typography>
             <Typography variant="mobileCardValue">
-              {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
+              {parsedJson?.custom_expense_type ||
+                parsedJson?.expenseType ||
+                "-"}
             </Typography>
           </div>
         </div>
@@ -484,7 +514,9 @@ const DraftExpenseItem: React.FC<{
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Expense Date</Typography>
             <Typography variant="mobileCardValue">
-              {parsedJson?.expense_date ? formatToIndianDate(parsedJson.expense_date) : "-"}
+              {parsedJson?.expense_date
+                ? formatToIndianDate(parsedJson.expense_date)
+                : "-"}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
@@ -535,7 +567,10 @@ const DraftExpenseTableRow: React.FC<{
 
   const attachmentNames = React.useMemo(() => {
     if (!parsedJson?.attachments) return null;
-    return parsedJson.attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+    return parsedJson.attachments
+      .split(",")
+      .map((a: string) => a.trim())
+      .filter(Boolean);
   }, [parsedJson]);
 
   return (
@@ -554,25 +589,34 @@ const DraftExpenseTableRow: React.FC<{
           className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
         />
       </div>
-      <Tooltip content={`${parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || ""}`}>
+      <Tooltip
+        content={`${parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || ""}`}
+      >
         <Typography
           variant="bodySmall"
           className="font-medium text-center truncate"
         >
-          {parsedJson?.custom_expense_category_name || parsedJson?.expenseCategory || "-"}
+          {parsedJson?.custom_expense_category_name ||
+            parsedJson?.expenseCategory ||
+            "-"}
         </Typography>
       </Tooltip>
       <Typography variant="bodySmall" className="font-medium text-center">
         {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
-        {parsedJson?.expense_date ? formatToIndianDate(parsedJson.expense_date) : "-"}
+        {parsedJson?.expense_date
+          ? formatToIndianDate(parsedJson.expense_date)
+          : "-"}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formattedAmount}
       </Typography>
       <Tooltip content={attachmentNames?.join(", ") || "No attachments"}>
-        <Typography variant="bodySmall" className="font-medium text-center truncate px-2">
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate px-2"
+        >
           {attachmentNames ? `${attachmentNames.length} file(s)` : "-"}
         </Typography>
       </Tooltip>
@@ -612,15 +656,20 @@ const ExpensesList: React.FC = () => {
 
   const { data: todoData } = useGetToDoWithReferenceDoc(
     urlRequestId || undefined,
-    urlReferenceName || undefined
+    urlReferenceName || undefined,
   );
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
   const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">(() => {
-    return (localStorage.getItem("expenseActiveTab") as "expenses" | "draft") || "draft";
+    return (
+      (localStorage.getItem("expenseActiveTab") as "expenses" | "draft") ||
+      "draft"
+    );
   });
-  const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(new Set());
+  const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(
+    new Set(),
+  );
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [selectedStages, setSelectedStages] = React.useState<ApprovalStage[]>(
     [],
@@ -629,14 +678,19 @@ const ExpensesList: React.FC = () => {
     string | null
   >(null);
   const [selectedCanEdit, setSelectedCanEdit] = React.useState<boolean>(false);
-  const [selectedTodoStatus, setSelectedTodoStatus] = React.useState<string | null>(null);
+  const [selectedTodoStatus, setSelectedTodoStatus] = React.useState<
+    string | null
+  >(null);
+  const [selectedStatus, setSelectedStatus] = React.useState<
+    string | undefined
+  >(undefined);
 
   const [isPolicyDrawerOpen, setIsPolicyDrawerOpen] = React.useState(false);
   const [deleteConfirmModal, setDeleteConfirmModal] = React.useState<{
     isOpen: boolean;
     message: string;
     onConfirm: () => void;
-  }>({ isOpen: false, message: "", onConfirm: () => { } });
+  }>({ isOpen: false, message: "", onConfirm: () => {} });
 
   const [submitConfirmModal, setSubmitConfirmModal] = React.useState<{
     isOpen: boolean;
@@ -646,9 +700,11 @@ const ExpensesList: React.FC = () => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployee();
   const navigate = useNavigate();
-  const { data: draftExpenses, isFetching: isFetchingDrafts } = useGetDraftExpenseClaims(currentEmployee?.name);
+  const { data: draftExpenses, isFetching: isFetchingDrafts } =
+    useGetDraftExpenseClaims(currentEmployee?.name);
   const deleteDraftMutation = useDeleteDraftExpenseClaim();
-  const { mutateAsync: submitExpenses, isPending: isSubmitting } = usePostExpenseClaim();
+  const { mutateAsync: submitExpenses, isPending: isSubmitting } =
+    usePostExpenseClaim();
   const updateFileMutation = useUpdateFileAttachment();
 
   const [currentFilters, setCurrentFilters] = React.useState<
@@ -688,6 +744,7 @@ const ExpensesList: React.FC = () => {
     sendBackUser: string | null,
     canEdit: boolean,
     todoStatus: string | null,
+    status?: string,
   ) => {
     setSelectedStages(stages);
     setTimeout(() => {
@@ -697,6 +754,7 @@ const ExpensesList: React.FC = () => {
     setSelectedSendBackUser(sendBackUser);
     setSelectedCanEdit(canEdit);
     setSelectedTodoStatus(todoStatus);
+    setSelectedStatus(status);
   };
 
   const closeModal = () => {
@@ -705,6 +763,7 @@ const ExpensesList: React.FC = () => {
     setSelectedSendBackUser(null);
     setSelectedCanEdit(false);
     setSelectedTodoStatus(null);
+    setSelectedStatus(undefined);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
     }
@@ -723,10 +782,18 @@ const ExpensesList: React.FC = () => {
     const canEdit = item?.can_edit || false;
     const todoStatus = item?.todo_status || item?.status || null;
     const isPaidFilter = currentFilters.status === "Paid";
+    const status =
+      item?.custom_allow_revoke === 1 &&
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
+        ? "Revoked"
+        : item?.reference_document?.approval_status;
 
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
+        onClick={() =>
+          id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)
+        }
         className="cursor-pointer"
       >
         <ExpensesTableRow item={item} isPaidFilter={isPaidFilter} />
@@ -741,9 +808,18 @@ const ExpensesList: React.FC = () => {
     const canEdit = item?.can_edit || false;
     const todoStatus = item?.todo_status || item?.status || null;
 
+    const status =
+      item?.custom_allow_revoke === 1 &&
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
+        ? "Revoked"
+        : item?.reference_document?.approval_status;
+
     return (
       <div
-        onClick={() => id && openModal(id, stages, sendBackUser, canEdit, todoStatus)}
+        onClick={() =>
+          id && openModal(id, stages, sendBackUser, canEdit, todoStatus, status)
+        }
         className="cursor-pointer"
       >
         <ExpensesItem item={item} />
@@ -785,40 +861,48 @@ const ExpensesList: React.FC = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <NoDataFound title={message.title} subtitle={message.description} />
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
-  const tableTitles = activeTab === "draft"
-    ? ["", "Expense Category", "Expense Type", "Expense Date", "Claimed Amount", "Attachments", "Actions"]
-    : [
-      "Expense Id",
-      "Expense Category",
-      "Expense Type",
-      "Claimed Amount",
-      "Sanctioned Amount",
-      ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
-      "Expense Date",
-      "Claimed Date",
-      "Status",
-      "Actions",
-    ];
+  const tableTitles =
+    activeTab === "draft"
+      ? [
+          "",
+          "Expense Category",
+          "Expense Type",
+          "Expense Date",
+          "Claimed Amount",
+          "Attachments",
+          "Actions",
+        ]
+      : [
+          "Expense Id",
+          "Expense Category",
+          "Expense Type",
+          "Claimed Amount",
+          "Sanctioned Amount",
+          ...(currentFilters.status === "Paid" ? ["Paid Amount"] : []),
+          "Expense Date",
+          "Claimed Date",
+          "Status",
+          "Actions",
+        ];
 
-  const tableColumnWidths = activeTab === "draft"
-    ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
-    : [
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-      ...(currentFilters.status === "Paid" ? ["1fr"] : []),
-      "1fr",
-      "1fr",
-      "1fr",
-      "1fr",
-    ];
+  const tableColumnWidths =
+    activeTab === "draft"
+      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
+      : [
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          ...(currentFilters.status === "Paid" ? ["1fr"] : []),
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ];
 
   return (
     <div className="flex flex-col h-full">
@@ -828,7 +912,9 @@ const ExpensesList: React.FC = () => {
             {isDesktop ? (
               <div>
                 <Typography variant="h4">
-                  {activeTab === "draft" ? "Draft Expense Claims" : "My Expense Claims"}
+                  {activeTab === "draft"
+                    ? "Draft Expense Claims"
+                    : "My Expense Claims"}
                 </Typography>
                 <Typography variant="bodySmall" color="body2">
                   {activeTab === "draft"
@@ -856,19 +942,21 @@ const ExpensesList: React.FC = () => {
           <div className="flex mt-3 bg-gray-100 rounded-xl p-1 w-fit">
             <button
               onClick={() => setActiveTab("draft")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "draft"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "draft"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               Draft Expenses
             </button>
             <button
               onClick={() => setActiveTab("expenses")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === "expenses"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               My Expenses
             </button>
@@ -903,7 +991,12 @@ const ExpensesList: React.FC = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Pending",
+                      key: "Draft",
+                      value: "Draft",
+                      customAPIParams: { todo_status: "Open" },
+                    },
                     { label: "Approved", value: "Approved" },
                     { label: "Rejected", value: "Rejected" },
                   ],
@@ -925,7 +1018,7 @@ const ExpensesList: React.FC = () => {
                   fieldtype: "Date",
                 },
               ]}
-              defaultFilters={{ approval_status: ["===", "Draft"] }}
+              // defaultFilters={{ approval_status: ["===", "Draft"] }}
               onFiltersChange={setCurrentFilters}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
@@ -956,15 +1049,22 @@ const ExpensesList: React.FC = () => {
                   {isDesktop && (
                     <div
                       className="grid max-w-screen items-center gap-4 px-6 h-12 border-b border-gray-200 bg-gray-50"
-                      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px" }}
+                      style={{
+                        gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px",
+                      }}
                     >
                       <div className="flex items-center justify-center">
                         <input
                           type="checkbox"
-                          checked={selectedDraftIds.size === draftExpenses.length && draftExpenses.length > 0}
+                          checked={
+                            selectedDraftIds.size === draftExpenses.length &&
+                            draftExpenses.length > 0
+                          }
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedDraftIds(new Set(draftExpenses.map((d: any) => d.name)));
+                              setSelectedDraftIds(
+                                new Set(draftExpenses.map((d: any) => d.name)),
+                              );
                             } else {
                               setSelectedDraftIds(new Set());
                             }
@@ -995,22 +1095,28 @@ const ExpensesList: React.FC = () => {
                       });
                     };
                     const handleEdit = (editItem: any) => {
-                      const parsedJson = editItem?.json && typeof editItem.json === "string"
-                        ? JSON.parse(editItem.json)
-                        : editItem?.json;
+                      const parsedJson =
+                        editItem?.json && typeof editItem.json === "string"
+                          ? JSON.parse(editItem.json)
+                          : editItem?.json;
                       if (parsedJson) {
                         const attachments = parsedJson?.attachments;
                         let attachReceipt = null;
                         if (attachments) {
-                          const attachmentNames = attachments.split(",").map((a: string) => a.trim()).filter(Boolean);
+                          const attachmentNames = attachments
+                            .split(",")
+                            .map((a: string) => a.trim())
+                            .filter(Boolean);
                           if (attachmentNames.length > 0) {
-                            attachReceipt = attachmentNames.map((name: string) => ({
-                              name: name,
-                              size: 4000,
-                              url: name,
-                              storage: "url",
-                              originalName: name,
-                            }));
+                            attachReceipt = attachmentNames.map(
+                              (name: string) => ({
+                                name: name,
+                                size: 4000,
+                                url: name,
+                                storage: "url",
+                                originalName: name,
+                              }),
+                            );
                           }
                         }
                         navigate("/webapp/expenses-app/add-expense", {
@@ -1030,10 +1136,15 @@ const ExpensesList: React.FC = () => {
                     const handleDelete = (deleteItem: any) => {
                       setDeleteConfirmModal({
                         isOpen: true,
-                        message: "Are you sure you want to delete this draft expense?",
+                        message:
+                          "Are you sure you want to delete this draft expense?",
                         onConfirm: () => {
                           deleteDraftMutation.mutate(deleteItem.name);
-                          setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } });
+                          setDeleteConfirmModal({
+                            isOpen: false,
+                            message: "",
+                            onConfirm: () => {},
+                          });
                         },
                       });
                     };
@@ -1074,11 +1185,16 @@ const ExpensesList: React.FC = () => {
                       size="md"
                       bgColor="primary"
                       onClick={() => {
-                        setSubmitConfirmModal({ isOpen: true, count: selectedDraftIds.size });
+                        setSubmitConfirmModal({
+                          isOpen: true,
+                          count: selectedDraftIds.size,
+                        });
                       }}
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "Submitting..." : `Submit Selected (${selectedDraftIds.size})`}
+                      {isSubmitting
+                        ? "Submitting..."
+                        : `Submit Selected (${selectedDraftIds.size})`}
                     </Button>
                     <Button
                       variant="outline"
@@ -1093,7 +1209,11 @@ const ExpensesList: React.FC = () => {
                               deleteDraftMutation.mutate(id);
                             });
                             setSelectedDraftIds(new Set());
-                            setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } });
+                            setDeleteConfirmModal({
+                              isOpen: false,
+                              message: "",
+                              onConfirm: () => {},
+                            });
                           },
                         });
                       }}
@@ -1123,7 +1243,10 @@ const ExpensesList: React.FC = () => {
           selectedStages={selectedStages}
           selectedSendBackUser={selectedSendBackUser}
           canEdit={selectedCanEdit}
-          todoStatus={selectedTodoStatus || todoData?.todo_status || todoData?.status}
+          todoStatus={
+            selectedTodoStatus || todoData?.todo_status || todoData?.status
+          }
+          status={selectedStatus}
         />
       )}
       <ExpensePolicyDrawer
@@ -1133,17 +1256,31 @@ const ExpensesList: React.FC = () => {
 
       <Modal
         isOpen={deleteConfirmModal.isOpen}
-        onClose={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } })}
+        onClose={() =>
+          setDeleteConfirmModal({
+            isOpen: false,
+            message: "",
+            onConfirm: () => {},
+          })
+        }
         size="sm"
       >
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Delete</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Confirm Delete
+          </h3>
           <p className="text-gray-600 mb-6">{deleteConfirmModal.message}</p>
           <div className="flex justify-end gap-3">
             <Button
               variant="outline"
               size="md"
-              onClick={() => setDeleteConfirmModal({ isOpen: false, message: "", onConfirm: () => { } })}
+              onClick={() =>
+                setDeleteConfirmModal({
+                  isOpen: false,
+                  message: "",
+                  onConfirm: () => {},
+                })
+              }
             >
               Cancel
             </Button>
@@ -1164,9 +1301,12 @@ const ExpensesList: React.FC = () => {
         size="sm"
       >
         <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Submit</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Confirm Submit
+          </h3>
           <p className="text-gray-600 mb-6">
-            Are you sure you want to submit {submitConfirmModal.count} selected draft(s)?
+            Are you sure you want to submit {submitConfirmModal.count} selected
+            draft(s)?
           </p>
           <div className="flex justify-end gap-3">
             <Button
@@ -1180,12 +1320,16 @@ const ExpensesList: React.FC = () => {
               size="md"
               bgColor="primary"
               onClick={async () => {
-                const selectedDrafts = draftExpenses?.filter((d: any) => selectedDraftIds.has(d.name)) || [];
+                const selectedDrafts =
+                  draftExpenses?.filter((d: any) =>
+                    selectedDraftIds.has(d.name),
+                  ) || [];
 
                 const expensesToSubmit = selectedDrafts.map((draft: any) => {
-                  const parsedJson = draft?.json && typeof draft.json === "string"
-                    ? JSON.parse(draft.json)
-                    : draft?.json;
+                  const parsedJson =
+                    draft?.json && typeof draft.json === "string"
+                      ? JSON.parse(draft.json)
+                      : draft?.json;
                   return {
                     ...parsedJson,
                     uid: parsedJson?.uid,
@@ -1215,29 +1359,51 @@ const ExpensesList: React.FC = () => {
                   company: currentEmployee?.company,
                   posting_date: new Date().toISOString().split("T")[0],
                   expenses: expensesToSubmit.map((exp: any) => {
-                    const { uid, submitButton, saveAndSubmit, categoryTypeOptions, expense_date, start_datetime, end_datetime, ...rest } = exp;
+                    const {
+                      uid,
+                      submitButton,
+                      saveAndSubmit,
+                      categoryTypeOptions,
+                      expense_date,
+                      start_datetime,
+                      end_datetime,
+                      ...rest
+                    } = exp;
                     const formattedExpense: any = { ...rest };
-
+                    console.log(
+                      uid,
+                      submitButton,
+                      saveAndSubmit,
+                      categoryTypeOptions,
+                    );
                     if (expense_date) {
-                      formattedExpense.expense_date = formatExpenseDate(expense_date);
+                      formattedExpense.expense_date =
+                        formatExpenseDate(expense_date);
                     }
                     if (start_datetime) {
                       const d = new Date(start_datetime);
                       if (!isNaN(d.getTime())) {
-                        formattedExpense.start_datetime = d.toISOString().replace("T", " ").slice(0, 19);
+                        formattedExpense.start_datetime = d
+                          .toISOString()
+                          .replace("T", " ")
+                          .slice(0, 19);
                       }
                     }
                     if (end_datetime) {
                       const d = new Date(end_datetime);
                       if (!isNaN(d.getTime())) {
-                        formattedExpense.end_datetime = d.toISOString().replace("T", " ").slice(0, 19);
+                        formattedExpense.end_datetime = d
+                          .toISOString()
+                          .replace("T", " ")
+                          .slice(0, 19);
                       }
                     }
 
                     return {
                       ...formattedExpense,
                       expense_type: exp.expenseType || exp.expense_type,
-                      reimbursement_category: exp.expenseCategory || exp.expenseCategory,
+                      reimbursement_category:
+                        exp.expenseCategory || exp.expenseCategory,
                     };
                   }),
                 };
@@ -1255,13 +1421,17 @@ const ExpensesList: React.FC = () => {
                         let expenseClaimNames: string[] = [];
 
                         if (Array.isArray(claims) && claims.length > 0) {
-                          expenseClaimNames = claims.map((claim: any) => claim.name || claim);
+                          expenseClaimNames = claims.map(
+                            (claim: any) => claim.name || claim,
+                          );
                         } else if (response?.name) {
                           expenseClaimNames = [response.name];
                         } else if (message?.name) {
                           expenseClaimNames = [message.name];
                         } else if (message?.results) {
-                          expenseClaimNames = message.results.map((r: any) => r.name || r);
+                          expenseClaimNames = message.results.map(
+                            (r: any) => r.name || r,
+                          );
                         }
 
                         // Update files attached to drafts with new expense claim reference
@@ -1273,7 +1443,11 @@ const ExpensesList: React.FC = () => {
 
                           // Find files attached to this draft
                           fileUpdatePromises.push(
-                            expenseService.getFilesByAttachment("Draft Expense Claim", draft.name)
+                            expenseService
+                              .getFilesByAttachment(
+                                "Draft Expense Claim",
+                                draft.name,
+                              )
                               .then((files: any[]) => {
                                 files.forEach((file: any) => {
                                   updateFileMutation.mutate({
@@ -1284,7 +1458,7 @@ const ExpensesList: React.FC = () => {
                                     },
                                   });
                                 });
-                              })
+                              }),
                           );
                         });
 
@@ -1299,7 +1473,10 @@ const ExpensesList: React.FC = () => {
                         toast.success("Drafts submitted successfully!");
                         resolve();
                       } catch (error) {
-                        console.error("Error updating file attachments:", error);
+                        console.error(
+                          "Error updating file attachments:",
+                          error,
+                        );
                         // Still proceed with deletion even if file update fails
                         selectedDraftIds.forEach((id) => {
                           deleteDraftMutation.mutate(id);

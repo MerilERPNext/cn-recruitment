@@ -132,7 +132,7 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
                       </p>
                       {!stage.role &&
                         <p>
-                          <strong>User:</strong> {stage.user || "—"}
+                          <strong>User:</strong> {stage.user || "—"}{stage.employee_id ? " (" + stage.employee_id + ")" : ""}
                         </p>
                       }
                       <p>

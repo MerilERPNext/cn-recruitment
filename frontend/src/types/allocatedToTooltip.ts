@@ -1,5 +1,5 @@
 export type allocatedToType = {
     name: string | null;
-    designation: string | null;
+    designation_name: string | null;
     employee: string | null;
 };
