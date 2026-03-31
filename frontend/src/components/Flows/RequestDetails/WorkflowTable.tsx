@@ -130,7 +130,7 @@ const WorkflowCard = ({
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
 
   const canPerformActions = useMemo(() => {
-    if (!isActive && stage.can_act) return false;
+    if (!isActive || !stage.can_act) return false;
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -142,7 +142,7 @@ const WorkflowCard = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act]);
 
   const getIcon = (status: string) => {
     const iconProps = { size: 20, strokeWidth: 3, className: "text-white" };

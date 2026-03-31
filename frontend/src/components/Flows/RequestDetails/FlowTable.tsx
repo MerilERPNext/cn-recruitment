@@ -106,7 +106,7 @@ const StageCard = ({
 
   const allocatedTo = useMemo(() => extractRolesAndUsers(stage), [stage]);
   const canPerformActions = useMemo(() => {
-    if (!isActive && stage.can_act) return false;
+    if (!isActive || !stage.can_act) return false;
     let actionPermission = false;
 
     if (allocatedTo?.users && currentUser?.name)
@@ -118,7 +118,7 @@ const StageCard = ({
       );
 
     return actionPermission;
-  }, [currentUser, isActive, allocatedTo]);
+  }, [currentUser, isActive, allocatedTo, stage.can_act]);
 
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
