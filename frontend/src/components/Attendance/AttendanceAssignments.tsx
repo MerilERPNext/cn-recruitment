@@ -149,11 +149,11 @@ const AttendanceAssignments = ({
             data: {
               values:
                 shifts?.map((item) => ({
-                  label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
+                  label: `<div><div>${item?.[1] ?? "--"} (${item?.[0] ?? "--"})</div><div style="font-size:0.85em;color:#6b7280;margin-top:2px;">${item?.[4] ?? "--"} - ${item?.[5] ?? "--"}</div></div>`
+                  ,
                   value: item?.[0],
                 })) || [],
-            },
-            customConditional: "show = !data.use_shift_blocks ;",
+            }
           },
           {
             label: "Shift Block",
