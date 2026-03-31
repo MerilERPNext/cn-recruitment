@@ -6,8 +6,9 @@ import {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
+import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getSalaryComponentFilters, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
 import FrappeAPI from "../utils/frappeAPI";
+import { TodoType } from "../types/todos";
 
 
 export interface BenefitPayslip {
@@ -27,6 +28,7 @@ export interface BenefitPayslip {
     custom_taxable_amount: number;
     custom_is_non_taxable: number;
     custom_non_taxable_amount: number;
+    todo_list: TodoType[];
     attachments: {
         file_url: string;
     }[];
@@ -176,5 +178,15 @@ export const useUpdateBenefitDoc = () => {
         onError: (error: any) => {
             console.error("Benefit claim update failed:", error);
         },
+    });
+};
+
+export const useGetSalaryComponentFilters = (
+    employee: string, claim_date: string
+) => {
+    return useQuery<{ component_array: string[] }>({
+        queryKey: ["benefit-salary-component-filters", employee, claim_date],
+        queryFn: () => getSalaryComponentFilters(employee, claim_date),
+        enabled: !!employee && !!claim_date,
     });
 };

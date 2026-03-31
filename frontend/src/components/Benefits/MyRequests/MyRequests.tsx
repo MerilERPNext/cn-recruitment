@@ -10,6 +10,7 @@ import {
   BenefitPayslip,
   useGetBenefitClaimLockingPeriod,
   useGetBenefitRequestLockView,
+  useGetSalaryComponentFilters,
   useGetYearFilterOptions,
 } from "../../../hooks/useBenefit";
 import {
@@ -31,6 +32,7 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getCurrentPeriod } from "../shared/logic";
 import BenefitRequestForm from "./BenefitsRequestForm";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -42,6 +44,7 @@ const MyRequests: React.FC = () => {
     "request_benefit",
     "My Requests",
   );
+
 
   const { data: employeeIdCard, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
   const { data: employee } = useCurrentEmployeeIdCard();
@@ -77,7 +80,8 @@ const MyRequests: React.FC = () => {
   }, [optionYearsData, YearsLoading]);
 
   const [selectedYear, setSelectedYear] = useState("");
-
+  const [selectedComponent, setSelectedComponent] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [benefitId, setBenefitId] = useState<string | null>(null);
   const handleEdit = (BenefitId: string) => {
     setBenefitId(BenefitId);
@@ -132,6 +136,16 @@ const MyRequests: React.FC = () => {
     );
   }, [data, isLoading]);
 
+  const { data: salaryComponentFilters, isLoading: salaryComponentFiltersLoading } = useGetSalaryComponentFilters(
+    effectiveEmployeeId || "",
+    today,
+  );
+  const componentArray = salaryComponentFilters?.component_array?.map((item) => ({
+    label: item,
+    value: item,
+  })) ?? [];
+
+  console.log({ salaryComponentFilters })
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0">
@@ -147,7 +161,7 @@ const MyRequests: React.FC = () => {
                 </Typography>
               </div>
             )}
-            <div className="flex items-center justify-between gap-2 w-full md:w-auto">
+            <div className="flex items-center flex-wrap lg:justify-between justify-end gap-2 w-full md:w-auto">
               <button
                 onClick={() => setMaskAmounts(!maskAmounts)}
                 className="my-btn-secondary"
@@ -174,6 +188,24 @@ const MyRequests: React.FC = () => {
                 value={selectedYear}
                 onChange={(event) => setSelectedYear(event?.target.value)}
                 options={optionYears}
+              />
+              <CustomDropdown
+                position="bottom-left"
+                value={selectedComponent}
+                onChange={(event) => setSelectedComponent(event?.target.value)}
+                options={componentArray}
+
+              />
+              <CustomDropdown
+                position="bottom-left"
+                value={selectedStatus}
+                onChange={(event) => setSelectedStatus(event?.target.value)}
+                options={[
+                  { label: "All", value: "All" },
+                  { label: "Pending", value: "Pending" },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                ]}
               />
             </div>
           </div>
@@ -209,6 +241,8 @@ const MyRequests: React.FC = () => {
                 employee: employeeIdCard?.id || "",
                 company: employeeIdCard?.company || "",
                 payroll_period: selectedYear,
+                custom_status: selectedStatus,
+                earning_component: selectedComponent
               },
             }}
 
@@ -221,7 +255,7 @@ const MyRequests: React.FC = () => {
                 />
               );
             }}
-            isLoading={YearsLoading || EmployeeIdCardLoading}
+            isLoading={YearsLoading || EmployeeIdCardLoading || salaryComponentFiltersLoading}
             SkeletonComponent={CardSkeleton}
             orderBy="claim_date desc"
             // refetchTrigger={refetchAttendance}
@@ -321,7 +355,14 @@ const BenefitSlipItem = ({
       </Typography>
 
       <div className="flex items-center justify-center">
-        <StatusBadge status={item?.custom_status} />
+        <AllocatedToTooltip
+          position="left"
+          users={item?.todo_list[0]?.allocated_to}
+          roles={item?.todo_list[0]?.allocated_roles}
+          role={item?.todo_list[0]?.role ?? ""}
+        >
+          <StatusBadge status={item?.custom_status} />
+        </AllocatedToTooltip>
       </div>
 
       <div className="flex items-center justify-center">

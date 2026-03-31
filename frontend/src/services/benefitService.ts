@@ -108,3 +108,13 @@ export const getYearFilterOptions = async (company: string): Promise<{ name: str
     return response as { name: string }[];
 };
 
+export const getSalaryComponentFilters = async (employee: string, claim_date: string): Promise<{ component_array: string[] }> => {
+    const response = await FrappeAPI.callMethod(
+        "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.benefit_claim.benefit_claim",
+        {
+            employee,
+            claim_date
+        }
+    );
+    return response as { component_array: string[] };
+};
