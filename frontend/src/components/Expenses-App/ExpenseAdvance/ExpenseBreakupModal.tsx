@@ -329,7 +329,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           },
           selectValues: "data",
           valueProperty: "name",
-          template: "<span>{{ item.name }} - {{ item.expense_type }}</span>",
+          template: "<span>{{ item.expense_type }}</span>",
           validate: { required: true },
           input: true,
         },

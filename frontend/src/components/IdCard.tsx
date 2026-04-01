@@ -288,22 +288,25 @@ interface ActionButtonsProps {
   onWhatsApp: () => void;
   onCall: () => void;
   onAttendanceAssignments: () => void;
+  employeeContact?: number | string;
 }
 // Action Buttons Component
 const ActionButtons = ({
   onWhatsApp,
   onCall,
+  employeeContact,
 }: // onAttendanceAssignments,
   ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
-    <div className="flex gap-4">
+    
+    {employeeContact && (<div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
         WhatsApp
       </ActionButton>
       <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
         Call
       </ActionButton>
-    </div>
+    </div>)}
     {/* <ActionButton
       variant="secondary"
       onClick={onAttendanceAssignments}
@@ -788,6 +791,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                 <>
                   <EmployeeCard employee={employee} />
                   <ActionButtons
+                    employeeContact={employee.contact}
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
                     onAttendanceAssignments={() =>
