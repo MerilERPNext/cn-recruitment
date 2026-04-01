@@ -122,7 +122,6 @@ const BenefitsSlips = () => {
             isSearch={false}
             isFilter={false}
             showRefreshButton={false}
-            // orderBy="creation desc"
             // pageSize={10}
             infiniteScroll={true}
             // showPagination={true}

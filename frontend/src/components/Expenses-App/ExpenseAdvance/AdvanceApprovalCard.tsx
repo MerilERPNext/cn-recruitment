@@ -8,6 +8,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import Tooltip from "../../shared/Tooltip";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -91,9 +92,18 @@ const AdvanceApprovalCard = ({
               />
             </div>
           )}
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.name}
-          </Typography>
+          <Tooltip
+        content={data?.reference_document?.name || ""}
+        triggerClassName="w-full truncate min-w-0 block"
+      >
+        <Typography
+          variant="bodySmall"
+          className="font-medium text-center truncate block w-full"
+        >
+          {data?.reference_document?.name}
+        </Typography>
+      </Tooltip>
+          
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"

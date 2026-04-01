@@ -63,7 +63,6 @@ const Cardtable: React.FC<prop> = ({
           isFilter={false}
           pageSize={5}
           showRefreshButton={false}
-          orderBy="from_date desc"
           infiniteScroll={false}
           loadMorePagination={true}
           showPagination={false}

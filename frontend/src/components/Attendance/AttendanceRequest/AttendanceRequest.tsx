@@ -106,7 +106,6 @@ const AttendanceRequest = ({
                   refetchTrigger={refetchAttendance}
                   pageSize={pageSize}
                   showRefreshButton={false}
-                  orderBy="from_date desc"
                   infiniteScroll={false}
                   loadMorePagination={false}
                   showPagination={true}

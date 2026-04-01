@@ -98,7 +98,9 @@ const transformSchemaWithRequired = (
           const asteriskHtml =
             "<span style='color:red;margin-left:3px;'> *</span>";
           if (!comp.label.includes(asteriskHtml)) {
+            comp.errorLabel = comp.label;
             comp.label = `${comp.label} ${asteriskHtml}`;
+
           }
         }
       }

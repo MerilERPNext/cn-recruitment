@@ -23,6 +23,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import Tooltip from "../../shared/Tooltip";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
@@ -130,9 +131,17 @@ const MyAdvanceExpenseList = () => {
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.name}
-        </Typography>
+        <Tooltip
+          content={doc.name || ""}
+          triggerClassName="w-full truncate min-w-0 block"
+        >
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate block w-full"
+          >
+            {doc.name}
+          </Typography>
+        </Tooltip>
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>

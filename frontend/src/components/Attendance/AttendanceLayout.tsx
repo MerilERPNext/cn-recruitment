@@ -49,9 +49,10 @@ const AttendanceLayoutContent: React.FC = () => {
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "Attendance Summary",
+    "Planned Overtime",
   );
 
+  
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
@@ -219,6 +220,8 @@ const AttendanceLayoutContent: React.FC = () => {
   const isOvertimePage =
     currentPathSegment === "my-overtime-requests" ||
     currentPathSegment === "team-overtime-requests";
+
+    console.log(isOvertimePage && plannedOvertimAllowed && canRequestOvertime, "can show overtime request")
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (

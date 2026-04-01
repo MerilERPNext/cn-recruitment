@@ -12,7 +12,6 @@ import {
   getAllShiftBlocks,
   getAllShiftLocations,
   getAllWeekOffs,
-  getAttendanceAssignmentPolicies,
 } from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
@@ -659,13 +658,13 @@ export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
     queryFn: () => getAllAttendancePolicies(filters),
   });
 };
-export const useAllAttendanceAssignmentPolicies = (employee: string) => {
-  return useQuery({
-    queryKey: ["all-attendance-assignment-policies", employee],
-    queryFn: () => getAttendanceAssignmentPolicies(employee),
-    enabled: !!employee,
-  });
-};
+// export const useAllAttendanceAssignmentPolicies = (employee: string) => {
+//   return useQuery({
+//     queryKey: ["all-attendance-assignment-policies", employee],
+//     queryFn: () => getAttendanceAssignmentPolicies(employee),
+//     enabled: !!employee,
+//   });
+// };
 
 export const useAllWeekOffs = (filters?: FilterCondition[]) => {
   return useQuery({
@@ -715,5 +714,22 @@ export const useDataOfAttendanceDetails = (selectedReporties: string, selectedDa
       // ✅ handle frappe-style response
       return Array.isArray(res?.data) ? res.data : [];
     },
+  });
+};
+
+
+export const useShiftsForEmployees = (empId: string) => {
+  return useQuery({
+    queryKey: ["shifts-for-employees", empId],
+    queryFn: () => attendanceService.getShiftsForEmployees(empId),
+    enabled: !!empId,
+  });
+};
+
+export const usePoliciesForEmployees = (empId: string) => {
+  return useQuery({
+    queryKey: ["policies-for-employees", empId],
+    queryFn: () => attendanceService.getPoliciesForEmployees(empId),
+    enabled: !!empId,
   });
 };

@@ -3,6 +3,7 @@ type RequestLeaveDefaults = {
   fromDate?: string;
   toDate?: string;
   leaveType?: string;
+  leaveTypeName?: string;
   halfDay?: boolean;
   halfDayOption?: "First Half" | "Second Half";
   half_day_date?: string;
@@ -13,6 +14,7 @@ type RequestLeaveDefaults = {
   source?: "holiday" | "balances" | "other";
   hideHalfDayToggle?: boolean;
   isEdit?: boolean;
+  isResubmit?: boolean;
   leave_application?: string;
 };
 
