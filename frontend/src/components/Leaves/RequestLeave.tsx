@@ -89,7 +89,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-          submission.data.toDate.split("T")[0];
+        submission.data.toDate.split("T")[0];
 
       await editLeaveMutation.mutateAsync({
         leave_application: defaults?.leave_application || "",
@@ -155,7 +155,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       .map((entry) => {
         let label = `${entry.type} (${entry.leave_id})`;
 
-        if (defaults?.leaveType === entry.leave_id) {
+        if (defaults?.source === "holiday" && defaults?.leaveType === entry.leave_id) {
           label = `Optional Holiday (${entry.leave_id})`;
         }
 
@@ -307,7 +307,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate &&
         submission.data.toDate &&
         submission.data.fromDate.split("T")[0] !==
-          submission.data.toDate.split("T")[0];
+        submission.data.toDate.split("T")[0];
 
       const payload = buildLeavePayload({
         employee: currentEmployee.name,
@@ -360,55 +360,55 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
     const halfDayComponents = show.half_day
       ? [
-          {
-            type: "columns",
-            key: "halfDayColumns",
-            customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
-            columns: [
-              {
-                width: 6,
-                components: [
-                  {
-                    type: "checkbox",
-                    key: "halfDay",
-                    label: mandatory.half_day
-                      ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
-                      : "Half-Day Leave",
-                    input: true,
-                    labelPosition: "bottom",
-                    defaultValue: defaults?.halfDay,
-                    validate: { required: !!mandatory.half_day },
-                    customClass:
-                      "custom-halfday-toggle border rounded-lg shadow-sm p-2",
-                  },
-                ],
-              },
-              {
-                width: 6,
-                components: [],
-              },
-            ],
-          },
-          ...(show.show_half_day_options
-            ? [
+        {
+          type: "columns",
+          key: "halfDayColumns",
+          customClass: "bg-gray-100 mx-2 p-3 rounded-md mt-4",
+          columns: [
+            {
+              width: 6,
+              components: [
                 {
-                  type: "radio",
-                  key: "halfDayOption",
-                  label: "Select Half-Day Option",
+                  type: "checkbox",
+                  key: "halfDay",
+                  label: mandatory.half_day
+                    ? "Half-Day Leave <span style='color:red;margin-left:3px;'> *</span>"
+                    : "Half-Day Leave",
                   input: true,
-                  validate: { required: !!mandatory.show_half_day_options },
-                  values: [
-                    { label: "First Half", value: "First Half" },
-                    { label: "Second Half", value: "Second Half" },
-                  ],
-
-                  customConditional: `
-  show = data.halfDay === true && data.fromDate === data.toDate;`,
-                  customClass: "px-2 mb-4 ml-4 mt-2",
+                  labelPosition: "bottom",
+                  defaultValue: defaults?.halfDay,
+                  validate: { required: !!mandatory.half_day },
+                  customClass:
+                    "custom-halfday-toggle border rounded-lg shadow-sm p-2",
                 },
-              ]
-            : []),
-        ]
+              ],
+            },
+            {
+              width: 6,
+              components: [],
+            },
+          ],
+        },
+        ...(show.show_half_day_options
+          ? [
+            {
+              type: "radio",
+              key: "halfDayOption",
+              label: "Select Half-Day Option",
+              input: true,
+              validate: { required: !!mandatory.show_half_day_options },
+              values: [
+                { label: "First Half", value: "First Half" },
+                { label: "Second Half", value: "Second Half" },
+              ],
+
+              customConditional: `
+  show = data.halfDay === true && data.fromDate === data.toDate;`,
+              customClass: "px-2 mb-4 ml-4 mt-2",
+            },
+          ]
+          : []),
+      ]
       : [];
 
     const panelComponents = [
@@ -447,67 +447,67 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       ...(defaults?.source !== "holiday"
         ? [
-            {
-              type: "select",
-              key: "custom_reason",
-              label:
-                mandatory?.custom_reason || requiredFieldMap["custom_reason"]
-                  ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
-                  : "Reason",
-              errorLabel: "Reason",
-              placeholder: "Select a reason",
-              defaultValue: defaults?.custom_reason ?? "",
-              input: true,
-              validate: {
-                required:
-                  !!mandatory.custom_reason ||
-                  requiredFieldMap["custom_reason"],
-              },
-              data: {
-                values:
-                  reasons?.map((r) => ({
-                    label: r.reason,
-                    value: r.name,
-                  })) ?? [],
-              },
-              customClass: "px-2 mb-4",
-              disabled: isReasonLoading || isReasonError,
+          {
+            type: "select",
+            key: "custom_reason",
+            label:
+              mandatory?.custom_reason || requiredFieldMap["custom_reason"]
+                ? "Reason <span style='color:red;margin-left:3px;'> *</span>"
+                : "Reason",
+            errorLabel: "Reason",
+            placeholder: "Select a reason",
+            defaultValue: defaults?.custom_reason ?? "",
+            input: true,
+            validate: {
+              required:
+                !!mandatory.custom_reason ||
+                requiredFieldMap["custom_reason"],
             },
-          ]
+            data: {
+              values:
+                reasons?.map((r) => ({
+                  label: r.reason,
+                  value: r.name,
+                })) ?? [],
+            },
+            customClass: "px-2 mb-4",
+            disabled: isReasonLoading || isReasonError,
+          },
+        ]
         : []),
 
       ...(defaults?.source !== "holiday"
         ? [
-            {
-              type: "file",
-              key: "custom_attachment",
-              defaultValue: defaults?.custom_attachment
-                ? [
-                    {
-                      name: defaults.custom_attachment,
-                      url: defaults.custom_attachment,
-                      storage: "url",
-                      size: 0,
-                    },
-                  ]
-                : [],
-              label:
-                fields?.mandatory?.custom_attachment || isAttachmentMandatory
-                  ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
-                  : "Attachment",
-              errorLabel: "Attachment",
-              input: true,
-              storage: "customBase64",
-              validate: {
-                required:
-                  !!mandatory.custom_attachment ||
-                  requiredFieldMap["custom_attachment"] ||
-                  isAttachmentMandatory,
-              },
-              filePattern: "*/*",
-              customClass: "px-2 mb-6",
+          {
+            type: "file",
+            key: "custom_attachment",
+            defaultValue: defaults?.custom_attachment
+              ? [
+                {
+                  name: defaults.custom_attachment,
+                  url: defaults.custom_attachment,
+                  storage: "url",
+                  size: 0,
+                },
+              ]
+              : [],
+            label:
+              fields?.mandatory?.custom_attachment || isAttachmentMandatory
+                ? "Attachment <span style='color:red;margin-left:3px;'> *</span>"
+                : "Attachment",
+            errorLabel: "Attachment",
+            input: true,
+            storage: "customBase64",
+            validate: {
+              required:
+                !!mandatory.custom_attachment ||
+                requiredFieldMap["custom_attachment"] ||
+                isAttachmentMandatory,
             },
-          ]
+            filePattern: "*/*",
+            customClass: "px-2 mb-6",
+          },
+        ]
         : []),
 
       {
