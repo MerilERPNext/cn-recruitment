@@ -72,6 +72,7 @@ import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import Modal from "./Compansation/Advances/commonModal";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
+import { useShiftRequestConfig } from "../hooks/useShift";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -366,6 +367,13 @@ export default function DesktopDashboard() {
   const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
     effectiveEmployeeId || ""
   );
+  const { data: shiftRequestConfig } = useShiftRequestConfig(
+    effectiveEmployeeId || "");
+
+  const isShiftConfigEnabled =
+    shiftRequestConfig?.shift_change_requests ||
+    shiftRequestConfig?.shift_change_and_attendance_requests;
+    
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
@@ -436,7 +444,7 @@ export default function DesktopDashboard() {
       icon: ArrowUpDown,
       color: "success",
       onClick: handleShiftForm,
-      permission: canShiftChangeRequest,
+      permission: canShiftChangeRequest && isShiftConfigEnabled,
     },
     {
       label: "Create Loan Request",
