@@ -254,16 +254,17 @@ def auto_separate_employees_on_lwd():
         if force_separate:
             sep_docstatus = frappe.db.get_value("Employee Separation", sep.name, "docstatus")
 
-            if sep_docstatus == 0:  # Draft
+            if sep_docstatus == 0:
                 sep_doc = frappe.get_doc("Employee Separation", sep.name)
                 sep_doc.flags.ignore_permissions = True
                 sep_doc.submit()
 
-            frappe.db.set_value("Employee", sep.employee, {
-                "status": "Left",
-                "custom_employment_status": "Separated",
-                "relieving_date": sep.custom_final_last_working_day
-            })
+            employee_doc = frappe.get_doc("Employee", sep.employee)
+            employee_doc.flags.ignore_permissions = True
+            employee_doc.status = "Left"
+            employee_doc.custom_employment_status = "Separated"
+            employee_doc.relieving_date = sep.custom_final_last_working_day
+            employee_doc.save()
 
             employee_name = frappe.db.get_value("Employee", sep.employee, "employee_name")
 
