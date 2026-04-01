@@ -52,6 +52,7 @@ const AttendanceLayoutContent: React.FC = () => {
     "Planned Overtime",
   );
 
+  
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
