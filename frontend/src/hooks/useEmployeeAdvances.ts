@@ -10,6 +10,7 @@ import {
   getCurrencies,
   getExpenseAdvanceList,
   getExpenseTableFieldSettings,
+  getCheckAdvancePolicy,
   getExpenseTypeFields,
   getExpenseTypes,
   getProjects,
@@ -115,6 +116,14 @@ export const useExpenseTableFieldSettings = (
     queryKey: ["expense-table-field-settings", employeeId, subAdvanceType],
     queryFn: () => getExpenseTableFieldSettings(employeeId!, subAdvanceType!),
     enabled: !!employeeId && !!subAdvanceType,
+  });
+};
+
+export const useCheckAdvancePolicy = (employeeId: string | null) => {
+  return useQuery({
+    queryKey: ["check-advance-policy", employeeId],
+    queryFn: () => getCheckAdvancePolicy(employeeId!),
+    enabled: !!employeeId,
   });
 };
 
