@@ -41,6 +41,12 @@ const ExpensesApp: React.FC = () => {
     "Expense Claims",
   );
 
+  const canAddAdvance = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances",
+  );
+
   const [activeTab, setActiveTab] = useState<TabName>("Expenses");
 
   const tabs: Tab[] = useMemo(() => {
@@ -111,7 +117,9 @@ const ExpensesApp: React.FC = () => {
     location.pathname === "/webapp/expenses-app/team-requests/all";
 
   const shouldShowActionButton = () => {
-    if (!canAddExpense) return false;
+    if (activeTab === "Expenses" && !canAddExpense) return false;
+    if (activeTab === "My Advances" && !canAddAdvance) return false;
+
     if (isFormActive || isTeamRequests || isTeamRequestsAll) return false;
 
     if (activeTab === "My Advances" && hasAdvancePolicy === false) {
