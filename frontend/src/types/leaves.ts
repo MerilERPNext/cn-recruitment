@@ -114,6 +114,7 @@ export interface Holiday {
   is_repeated: boolean;
   original_doc_name: string;
   leave_type: string;
+  leave_type_name?: string;
   optional_leave?: number;
 }
 export type HolidayGroupType = "Optional" | "National Holiday" | "Mandatory";
@@ -199,6 +200,8 @@ export interface MyLeaveRequestType {
   todo_id: string;
   username: string;
   reference_name: string;
+  can_edit?: boolean;
+  send_back_user?: string;
 }
 
 // types/leaves.ts

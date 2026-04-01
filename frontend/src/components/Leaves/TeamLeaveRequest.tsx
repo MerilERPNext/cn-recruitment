@@ -26,6 +26,7 @@ const TeamLeaveRequest = () => {
 
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+  const reasonName = searchParams.get("reason_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
@@ -33,6 +34,7 @@ const TeamLeaveRequest = () => {
         setSearchParams({
           requestId: request.todo_id,
           reference_name: request?.reference_document?.name || "",
+          reason_name: request?.reference_document?.reason_name || "",
         });
       }
     },
@@ -150,6 +152,7 @@ const TeamLeaveRequest = () => {
           label="Leave Application"
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          reasonName={reasonName || undefined}
         />
       )}
     </div>

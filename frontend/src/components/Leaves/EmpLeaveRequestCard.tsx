@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
@@ -39,6 +40,7 @@ const EmpLeaveRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
 
   const { openModal } = useRequestLeaveModal();
+  const { data: currentUser } = useCurrentUser();
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -52,7 +54,14 @@ const EmpLeaveRequestCard = ({
     (app: any) => app.name === data?.reference_name,
   );
 
-  const allowEdit = leaveButtonConfig?.show_edit_button;
+  const isPending = data?.reference_document?.status === "Open";
+  const isApproved = data?.reference_document?.status === "Approved";
+
+  const isResubmit =
+    isPending &&
+    data?.can_edit &&
+    data?.send_back_user === currentUser?.name;
+  const allowEdit = leaveButtonConfig?.show_edit_button || isResubmit;
   const allowReplace = leaveButtonConfig?.show_replace_button;
 
   const handleRevokeClick = () => {
@@ -95,6 +104,7 @@ const EmpLeaveRequestCard = ({
       source: "other",
       hideHalfDayToggle: false,
       isEdit: true,
+      isResubmit: isResubmit,
       leave_application: data?.reference_document?.name,
     });
   };
@@ -105,8 +115,6 @@ const EmpLeaveRequestCard = ({
   );
   const truncatedDescription = truncateByChars(cleanDescription);
 
-  const isPending = data?.reference_document?.status === "Open";
-  const isApproved = data?.reference_document?.status === "Approved";
 
   return (
     <>
@@ -207,6 +215,7 @@ const EmpLeaveRequestCard = ({
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
               canEdit={allowEdit}
+              isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
@@ -311,6 +320,7 @@ const EmpLeaveRequestCard = ({
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
               canEdit={allowEdit}
+              isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}

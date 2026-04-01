@@ -29,6 +29,7 @@ export function LeaveDetailView({
   onClose,
   onAction,
   label = "Leave Request",
+  reasonName,
 }: {
   documentName?: string;
   referenceName?: string;
@@ -37,6 +38,7 @@ export function LeaveDetailView({
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  reasonName?: string;
 }) {
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -227,7 +229,7 @@ export function LeaveDetailView({
                   Leave Type
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.custom_leave_type_name || "--"}
+                  {`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
                 </Typography>
               </div>
               <div className="flex flex-col gap-2 text-right">
@@ -235,7 +237,7 @@ export function LeaveDetailView({
                   Reason
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.reason_name || "--"}
+                  {data?.reference_document?.reason_name || reasonName || "--"}
                 </Typography>
               </div>
             </div>
