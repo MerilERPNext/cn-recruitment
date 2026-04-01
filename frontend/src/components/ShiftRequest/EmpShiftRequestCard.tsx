@@ -83,7 +83,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         >
           {/* Request Type */}
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.shift_type}
+            {data?.reference_document?.shift_name}
             <Typography variant="bodySmall" className="font-medium text-center">
               {getShiftTimeline(data?.reference_document?.shift_type || "")}
             </Typography>
@@ -144,7 +144,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Shift Type</Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.shift_type || "--"}
+                  {data?.reference_document?.shift_name || "--"}
                 </Typography>
               </div>
 

@@ -194,7 +194,6 @@ const MyLeaveRequests = ({
                 refetchTrigger={refetchAttendance}
                 pageSize={pageSize}
                 showRefreshButton={false}
-                orderBy="creation desc"
                 infiniteScroll={false}
                 loadMorePagination={false}
                 showPagination={true}

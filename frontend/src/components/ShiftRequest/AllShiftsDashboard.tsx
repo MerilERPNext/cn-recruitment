@@ -49,7 +49,7 @@ const MyShiftItem: React.FC<{
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
         <p>
-          <span className="font-medium">{item.shift_type}</span>
+          <span className="font-medium">{item.shift_name}</span>
         </p>
         <p>
           <span className="font-medium">
@@ -106,7 +106,7 @@ const TeamShiftItem: React.FC<{
         </div>
         <div className="text-xs text-gray-600">
           <p>
-            <span className="font-medium">{item.shift_type}</span>
+            <span className="font-medium">{item.shift_name}</span>
           </p>
           <p>
             <span className="font-medium">
@@ -205,7 +205,6 @@ const AllMyShiftRequestsList = () => {
               defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={4}
               showRefreshButton={false}
-              orderBy="from_date desc"
               infiniteScroll={false}
               loadMorePagination={true}
               showPagination={false}
@@ -306,7 +305,6 @@ export default function AllShiftsDashboard() {
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
-                    orderBy="from_date desc"
                     SkeletonComponent={() => <CardSkeleton rows={3} />}
                                 onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
 

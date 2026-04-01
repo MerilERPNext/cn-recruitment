@@ -70,7 +70,6 @@ const AllMyShiftRequestsList = () => {
               onRefetchComplete={handleRefetchComplete}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="from_date desc"
               isSearch={true}
               isFilter={true}
               filterFields={[

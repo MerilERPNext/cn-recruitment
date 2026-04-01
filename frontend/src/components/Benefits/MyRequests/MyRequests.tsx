@@ -223,12 +223,10 @@ const MyRequests: React.FC = () => {
             }}
             isLoading={YearsLoading || EmployeeIdCardLoading}
             SkeletonComponent={CardSkeleton}
-            orderBy="claim_date desc"
             // refetchTrigger={refetchAttendance}
             isSearch={false}
             isFilter={false}
             showRefreshButton={false}
-            // orderBy="creation desc"
             pageSize={10}
             infiniteScroll={false}
             loadMorePagination={false}

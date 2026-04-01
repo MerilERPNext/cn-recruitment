@@ -120,7 +120,6 @@ const TeamLeaveRequest = () => {
                 },
               ]}
               defaultFilters={{ status: "Open" }}
-              orderBy="creation desc"
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {
                 if (item?.data?.custom_selected_doctype_action === "Send Back") {
