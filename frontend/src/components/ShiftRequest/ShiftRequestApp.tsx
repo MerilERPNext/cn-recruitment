@@ -34,9 +34,8 @@ const ShiftRequestApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const { data: currentEmployee } = useCurrentEmployee();
-  const { data: shiftRequestConfig } = useShiftRequestConfig(
-    currentEmployee?.name || null,
-  );
+  const { data: shiftRequestConfig, isLoading: isShiftConfigLoading } =
+    useShiftRequestConfig(currentEmployee?.name || null);
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -80,7 +79,7 @@ const ShiftRequestApp: React.FC = () => {
       shiftRequestConfig?.shift_change_requests ||
       shiftRequestConfig?.shift_change_and_attendance_requests;
 
-    if (shiftRequestConfig && !isShiftConfigEnabled) {
+    if (isShiftConfigLoading || (shiftRequestConfig && !isShiftConfigEnabled)) {
       For.Desktop = false;
       For.Mobile = false;
     }
@@ -92,6 +91,7 @@ const ShiftRequestApp: React.FC = () => {
     ShiftAppPermissionLoading,
     attendancePermissionLoading,
     shiftRequestConfig,
+    isShiftConfigLoading,
   ]);
 
   useEffect(() => {

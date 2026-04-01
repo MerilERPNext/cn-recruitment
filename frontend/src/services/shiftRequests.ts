@@ -54,13 +54,21 @@ export const ShiftRequestService = {
     });
   },
 
-  getShiftRequestConfig: async (employee: string): Promise<any> => {
-    return await FrappeAPI.callMethod(
+  getShiftRequestConfig: async (
+    employee: string,
+  ): Promise<{
+    shift_change_requests: boolean;
+    shift_change_and_attendance_requests: boolean;
+  }> => {
+    return (await FrappeAPI.callMethod(
       "cn_leave_shift_managment.api.get_shift_request_config",
       {
         employee,
       },
-    );
+    )) as {
+      shift_change_requests: boolean;
+      shift_change_and_attendance_requests: boolean;
+    };
   },
 };
 
