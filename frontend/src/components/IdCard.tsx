@@ -176,15 +176,19 @@ interface InfoRowProps {
 
 // Employee Info Row Component
 const InfoRow = ({ label, value, isLast = false }: InfoRowProps) => (
-  <div
-    className={`flex justify-between items-center py-3 ${!isLast ? "border-b border-gray-200" : ""
-      }`}
-  >
-    <p className="text-gray-600 text-sm">{label}</p>
-    <p className="text-gray-800 text-sm font-medium">{value}</p>
-  </div>
-);
+  <>
+    <div className="contents">
+      <p className="text-gray-600 text-sm py-2">{label}</p>
+      <p className="pl-3 text-gray-800 text-sm font-medium text-right py-2 break-all">
+        {value}
+      </p>
+    </div>
 
+    {!isLast && (
+      <div className="col-span-2 border-b border-gray-300" />
+    )}
+  </>
+);
 // QR Code Component
 const QRCode = ({
   employee,
@@ -263,7 +267,7 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
       )}
     </div>
 
-    <div className="space-y-3">
+    <div className="space-y-2  items-baseline grid grid-cols-[max-content_1fr] ">
       <InfoRow
         label="Employee ID"
         value={employee.employee_number || employee.id}
