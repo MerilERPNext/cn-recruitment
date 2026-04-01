@@ -96,6 +96,7 @@ export type FlowRequestStage = {
   status: string;
   approval_time: string | null;
   completion_date: string | null;
+  can_act: boolean;
   form_json?: {
     components: any[];
   };
@@ -170,6 +171,7 @@ export type WorkflowStage = {
   action_options: string;
   form_data: string;
   trigger_title: string;
+  can_act: boolean;
   todo: {
     name: string;
     owner: string;
