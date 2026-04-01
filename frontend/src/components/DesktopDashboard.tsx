@@ -15,10 +15,13 @@ import {
   ChevronDown,
   Dock,
   FileText,
+  IndianRupee,
   LogOut,
+  ReceiptIndianRupeeIcon,
   RotateCcwKey,
   Timer,
   User,
+  Wallet,
   XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -65,6 +68,10 @@ import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
 import { useGetUiPermission } from "../hooks/userUiPermission";
 import { isActionEnabled } from "../utils/uiPermission";
+import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import Modal from "./Compansation/Advances/commonModal";
+import AdvanceForm from "./Compansation/Advances/AdvanceForm";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -79,6 +86,9 @@ export default function DesktopDashboard() {
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const { clearTargetEmployee, targetEmployeeId } = useTargetUser();
   const { openModal } = useRequestLeaveModal();
+  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
 
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
@@ -93,7 +103,7 @@ export default function DesktopDashboard() {
     useCurrentEmployeeAllDetails(userId || "");
 
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id || "",
+    currentEmployee?.user_id || ""
   );
   const loginUserEmail = userId || "";
   const mutation = useRequestPasswordReset();
@@ -106,7 +116,7 @@ export default function DesktopDashboard() {
       onError: (error: any) => {
         const formatedError = errorResponseFormater(
           error,
-          "Failed to send password reset email!",
+          "Failed to send password reset email!"
         );
         toast.error(formatedError);
       },
@@ -131,7 +141,7 @@ export default function DesktopDashboard() {
     isRefetching,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: canShowClockIn } = useCanShowClockIn(
-    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
   );
   const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
     useClockInOutService();
@@ -140,29 +150,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
-    )[0]
+        compareDesc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
 
   const lastLog =
     homeSummary && homeSummary.length > 0
       ? [...homeSummary].sort((a, b) =>
-        compareDesc(
-          parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
-      )[0]
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -218,8 +228,8 @@ export default function DesktopDashboard() {
     const sortedLogs = [...homeSummary].sort((a, b) =>
       compareAsc(
         parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T")),
-      ),
+        parseISO(b.time.replace(" ", "T"))
+      )
     );
 
     let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -262,10 +272,10 @@ export default function DesktopDashboard() {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking in",
+              e?.response?.data?.message?.error || "Error while Clocking in"
             );
           },
-        },
+        }
       );
     } else {
       clockInCheckOutMutation(
@@ -281,10 +291,10 @@ export default function DesktopDashboard() {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out",
+              e?.response?.data?.message?.error || "Error while Clocking out"
             );
           },
-        },
+        }
       );
     }
   };
@@ -300,8 +310,8 @@ export default function DesktopDashboard() {
       const sortedLogs = [...homeSummary].sort((a, b) =>
         compareAsc(
           parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T")),
-        ),
+          parseISO(b.time.replace(" ", "T"))
+        )
       );
 
       let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -332,7 +342,7 @@ export default function DesktopDashboard() {
     }
 
     const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100,
+      (totalWorkedMinutes / totalShiftMinutes) * 100
     );
     return Math.min(percentage, 100);
   };
@@ -340,25 +350,123 @@ export default function DesktopDashboard() {
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
+    ["System User", "Payroll Manager", "System Manager"].includes(role.role)
   );
 
   const currentUserIsAdmin = currentUser?.roles?.some(
-    (role) => "Administrator" === role.role,
+    (role) => "Administrator" === role.role
   );
-  const { data: userUiPermission } = useGetUiPermission("Attendance");
-
+  const { data: userUiPermission } = useGetUiPermission();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    effectiveEmployeeId || "",
+    effectiveEmployeeId || ""
+  );
+  const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
+    effectiveEmployeeId || ""
   );
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "Attendance Summary",
+    "Planned Overtime"
   );
+
+  const canLeaveRequest = isActionEnabled(
+    userUiPermission,
+    "request_leave",
+    "My Requests"
+  );
+  const canAttendaneRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
+  const canShiftChangeRequest = isActionEnabled(
+    userUiPermission,
+    "request_shift_change",
+    "All Shift"
+  );
+  const canLoanRequest = isActionEnabled(
+    userUiPermission,
+    "create_loan",
+    "My Loan Requests"
+  );
+  const canEmployeeAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_advance",
+    "My Advances"
+  );
+  const canExpenseRequest = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims"
+  );
+
+  const canExpenseAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances"
+  );
+
+  const actions = [
+    {
+      label: "Apply Leave",
+      icon: Calendar,
+      color: "primary",
+      onClick: () => openModal(),
+      permission: canLeaveRequest,
+    },
+    {
+      label: "Attendance Request",
+      icon: FileText,
+      color: "secondary",
+      onClick: () => setShowAttendanceRequest(true),
+      permission: canAttendaneRequest,
+    },
+    {
+      label: "Planned Overtime",
+      icon: Timer,
+      color: "purple",
+      onClick: () => setShowOvertimeRequest(true),
+      permission: canRequestOvertime && plannedOvertimAllowed,
+    },
+    {
+      label: "Shift Change",
+      icon: ArrowUpDown,
+      color: "success",
+      onClick: handleShiftForm,
+      permission: canShiftChangeRequest,
+    },
+    {
+      label: "Create Loan Request",
+      icon: Wallet,
+      bg: "bg-pink-100",
+      onClick: () => setIsLoanDialogOpen(true),
+      permission: canLoanRequest,
+    },
+    {
+      label: "Create Advance",
+      icon: IndianRupee,
+      bg: "bg-orange-100",
+      onClick: () => setShowAdvanceForm(true),
+      permission: canEmployeeAdvanceRequest,
+    },
+    {
+      label: "Create Expense",
+      icon: ReceiptIndianRupeeIcon,
+      bg: "bg-green-100",
+      onClick: () => navigate("/webapp/expenses-app/add-expense"),
+      permission: canExpenseRequest,
+    },
+    {
+      label: "Expense Advance",
+      icon: IndianRupee,
+      bg: "bg-amber-100",
+      onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
+      permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
+    },
+  ];
 
   return (
     <div className="h-screen flex">
@@ -443,8 +551,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -481,8 +590,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -847,10 +957,11 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-3"
-                    : "flex-row gap-3 mt-2"
-                    }`}
+                  className={`flex  h-full ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -860,7 +971,7 @@ export default function DesktopDashboard() {
                         bgColor={isCurrentlyCheckedIn ? "primary" : "success"}
                         onClick={() =>
                           handleClockInOut(
-                            isCurrentlyCheckedIn ? "clockOut" : "clockIn",
+                            isCurrentlyCheckedIn ? "clockOut" : "clockIn"
                           )
                         }
                         disabled={
@@ -872,8 +983,8 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                            ? "Clock Out"
-                            : "Clock In"}
+                          ? "Clock Out"
+                          : "Clock In"}
                       </Button>
                     </div>
                   )}
@@ -918,55 +1029,35 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    {
-                      label: "Apply Leave",
-                      icon: Calendar,
-                      color: "primary",
-                      onClick: () => openModal(),
-                    },
-                    {
-                      label: "Attendance Request",
-                      icon: FileText,
-                      color: "secondary",
-                      onClick: () => setShowAttendanceRequest(true),
-                    },
-                    {
-                      label: "Planned Overtime",
-                      icon: Timer,
-                      color: "purple",
-                      onClick: () => setShowOvertimeRequest(true),
-                    },
-                    {
-                      label: "Shift Change",
-                      icon: ArrowUpDown,
-                      color: "success",
-                      onClick: handleShiftForm,
-                    },
-                  ].filter((action) => (canRequestOvertime && plannedOvertimAllowed) || action.label !== "Planned Overtime").map((action, idx) => (
-                    <div
-                      key={idx}
-                      className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
-                      onClick={action.onClick}
-                    >
+                  {actions
+                    .filter((action) => action.permission)
+                    .slice(0, 4)
+                    .map((action, idx) => (
                       <div
-                        className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
-                          ? "bg-primary-100 text-primary-600"
-                          : action.color === "purple"
-                            ? "bg-purple-100 text-purple-600"
-                            : "bg-success-100 text-success"
+                        key={idx}
+                        className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
+                        onClick={action.onClick}
+                      >
+                        <div
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                            action.color === "primary"
+                              ? "bg-primary-100 text-primary-600"
+                              : action.color === "purple"
+                              ? "bg-purple-100 text-purple-600"
+                              : "bg-success-100 text-success"
                           }`}
-                      >
-                        <action.icon className="w-5 h-5 shadow-sm" />
+                        >
+                          <action.icon className="w-5 h-5 shadow-sm" />
+                        </div>
+
+                        <Typography
+                          variant="bodySmall"
+                          className="font-semibold leading-tight line-clamp-2"
+                        >
+                          {action.label}
+                        </Typography>
                       </div>
-                      <Typography
-                        variant="bodySmall"
-                        className="font-semibold leading-tight line-clamp-2"
-                      >
-                        {action.label}
-                      </Typography>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </Card>
             </div>
@@ -996,6 +1087,17 @@ export default function DesktopDashboard() {
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
       />
+      {/*loan request */}
+      <CreateLoanDialog
+        isOpen={isLoanDialogOpen}
+        onClose={() => setIsLoanDialogOpen(false)}
+      />
+
+      {showAdvanceForm && (
+        <Modal onClose={handleCloseAdvanceModal}>
+          <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
+        </Modal>
+      )}
     </div>
   );
 }
