@@ -112,4 +112,12 @@ export const useShiftRequestById = (id: string) => {
     queryFn: () => ShiftRequestService.getShiftRequestById(id),
     enabled: !!id, // Only run the query if id is provided
   });
-}
+};
+
+export const useShiftRequestConfig = (employee: string | null) => {
+  return useQuery({
+    queryKey: ["shift-request-config", employee],
+    queryFn: () => ShiftRequestService.getShiftRequestConfig(employee!),
+    enabled: !!employee,
+  });
+};

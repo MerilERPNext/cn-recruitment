@@ -8,6 +8,8 @@ import RequestShiftChangeButton from "./RequestShiftChangeButton";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useShiftRequestConfig } from "../../hooks/useShift";
 import Button from "../shared/atoms/Button";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
 
@@ -31,6 +33,10 @@ const ShiftRequestApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: shiftRequestConfig } = useShiftRequestConfig(
+    currentEmployee?.name || null,
+  );
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
@@ -69,12 +75,23 @@ const ShiftRequestApp: React.FC = () => {
         ) ?? false,
       );
     }
+
+    const isShiftConfigEnabled =
+      shiftRequestConfig?.shift_change_requests ||
+      shiftRequestConfig?.shift_change_and_attendance_requests;
+
+    if (shiftRequestConfig && !isShiftConfigEnabled) {
+      For.Desktop = false;
+      For.Mobile = false;
+    }
+
     return For;
   }, [
     attendnacePermission,
     ShiftAppPermission,
     ShiftAppPermissionLoading,
     attendancePermissionLoading,
+    shiftRequestConfig,
   ]);
 
   useEffect(() => {

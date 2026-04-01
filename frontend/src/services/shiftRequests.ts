@@ -53,6 +53,15 @@ export const ShiftRequestService = {
       action: "Rejected",
     });
   },
+
+  getShiftRequestConfig: async (employee: string): Promise<any> => {
+    return await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_shift_request_config",
+      {
+        employee,
+      },
+    );
+  },
 };
 
 export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
