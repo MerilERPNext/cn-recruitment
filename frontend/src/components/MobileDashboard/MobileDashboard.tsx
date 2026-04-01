@@ -462,7 +462,7 @@ const MobileDashboard: React.FC = () => {
 
         <div className="h-fit flex flex-col px-4 mb-2 bg-white">
           <div className="w-full">
-            <Typography variant="subheading" className="mb-4 text-left block">
+            <Typography variant="subheading" className="mb-4 mt-4 text-left block">
               Attendance Tracker
             </Typography>
             <div>
