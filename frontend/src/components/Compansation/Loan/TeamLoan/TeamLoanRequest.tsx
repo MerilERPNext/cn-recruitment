@@ -53,28 +53,28 @@ const TeamLoanRequest = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Loan Type",
-        "Loan Amount",
-        "Rate of Interest",
-        "Standard Interest",
-        "Start Date",
-        "End Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Loan Type",
+      "Loan Amount",
+      "Rate of Interest",
+      "Standard Interest",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Loan Type",
-        "Loan Amount",
-        "Rate of Interest",
-        "Standard Interest",
-        "Start Date",
-        "End Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Loan Type",
+      "Loan Amount",
+      "Rate of Interest",
+      "Standard Interest",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -138,7 +138,7 @@ const TeamLoanRequest = () => {
                 }
               },
             ]}
-            defaultFilters={{ status: "Open"}}
+            defaultFilters={{ status: "Open" }}
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item: any) => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {

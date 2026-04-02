@@ -329,7 +329,7 @@ const EmployeeAttendance = () => {
               "Due Date",
               "Duration",
               "Status",
-              "ACTIONS",
+              "Actions",
             ]}
           >
             <Cardtable

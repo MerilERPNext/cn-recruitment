@@ -46,8 +46,8 @@ const TeamOvertimeRequests = () => {
   }, [setSearchParams]);
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Employee", "Description", "Due Date", "Status", "ACTIONS"]
-    : ["Employee", "Description", "Due Date", "Status", "ACTIONS"];
+    ? ["Select", "Employee", "Description", "Due Date", "Status", "Actions"]
+    : ["Employee", "Description", "Due Date", "Status", "Actions"];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]

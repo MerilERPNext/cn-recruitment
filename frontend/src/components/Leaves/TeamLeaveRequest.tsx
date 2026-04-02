@@ -55,17 +55,17 @@ const TeamLeaveRequest = () => {
   const tableTitles = isBulkSelectEnabled
     ? (isRejectedFilter
       ? [
-        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
+        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "Actions",
       ]
       : [
-        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Actions",
       ])
     : (isRejectedFilter
       ? [
-        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
+        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "Actions",
       ]
       : [
-        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
+        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Actions",
       ]);
 
   const finalColumnWidths = isBulkSelectEnabled

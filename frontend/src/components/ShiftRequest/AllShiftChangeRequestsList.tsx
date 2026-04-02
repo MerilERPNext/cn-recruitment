@@ -55,7 +55,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
       "To Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ]
     : [
       "Employee",
@@ -64,7 +64,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
       "To Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ];
 
   const tableColumnWidths = isBulkSelectEnabled

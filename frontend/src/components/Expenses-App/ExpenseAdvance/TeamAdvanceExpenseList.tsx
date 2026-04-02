@@ -32,7 +32,7 @@ const TeamAdvanceExpenseList = () => {
       if (request?.todo_id) {
         const computedStatus =
           request.todo_status === "Closed" &&
-          request.reference_document.custom_final_status !== "Rejected"
+            request.reference_document.custom_final_status !== "Rejected"
             ? "Approved"
             : request.reference_document.custom_final_status;
 
@@ -58,28 +58,28 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Advance ID",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Select",
+      "Advance ID",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "ACTIONS",
-      ]
+      "Actions",
+    ]
     : [
-        "Advance ID",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Advance ID",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "ACTIONS",
-      ];
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? activeStatus === "Approved"

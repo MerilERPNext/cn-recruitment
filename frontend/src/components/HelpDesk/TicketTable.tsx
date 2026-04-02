@@ -392,7 +392,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
             ))}
             <th className="pl-4 pr-6 py-3 w-28 text-left">
               <Typography variant="bodySmall" color="body2" className="font-medium">
-                ACTIONS
+                Actions
               </Typography>
             </th>
           </tr>

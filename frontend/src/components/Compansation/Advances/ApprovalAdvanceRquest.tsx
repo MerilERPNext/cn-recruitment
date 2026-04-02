@@ -51,24 +51,24 @@ const TeamAdvanceRequest = () => {
   console.log({ requestId, referenceName, isModalOpen, selectedItem }, "URL Params and Modal State");
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee Name",
-        "Advance Type",
-        "Amount",
-        "Start Date",
-        "End Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee Name",
+      "Advance Type",
+      "Amount",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee Name",
-        "Advance Type",
-        "Amount",
-        "Start Date",
-        "End Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee Name",
+      "Advance Type",
+      "Amount",
+      "Start Date",
+      "End Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]

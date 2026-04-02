@@ -54,7 +54,7 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ]
     : [
       "Employee",
@@ -63,7 +63,7 @@ const TeamAttendanceDetails = () => {
       "To Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ];
 
   const tableColumnWidths = isBulkSelectEnabled

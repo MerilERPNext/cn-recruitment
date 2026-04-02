@@ -22,7 +22,7 @@ const MyTeamRequest: React.FC = () => {
       "Max Amount Eligible",
       "Claim Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ]
     : [
       "Employee Name",
@@ -31,7 +31,7 @@ const MyTeamRequest: React.FC = () => {
       "Max Amount Eligible",
       "Claim Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ];
 
   const finalColumnWidths = isBulkSelectEnabled

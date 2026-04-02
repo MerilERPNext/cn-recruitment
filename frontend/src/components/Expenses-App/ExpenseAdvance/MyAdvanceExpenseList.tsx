@@ -164,8 +164,8 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge
               status={
                 item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                  item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2
                   ? "Revoked"
                   : item?.reference_document?.custom_final_status
               }
@@ -214,8 +214,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -233,8 +233,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -303,8 +303,8 @@ const MyAdvanceExpenseList = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.custom_final_status;
 
@@ -372,7 +372,7 @@ const MyAdvanceExpenseList = () => {
             "Posting Date",
             "Advance Amount",
             "Status",
-            "ACTIONS",
+            "Actions",
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >

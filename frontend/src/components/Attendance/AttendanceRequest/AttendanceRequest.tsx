@@ -74,7 +74,7 @@ const AttendanceRequest = ({
                 "Due Date",
                 "Duration",
                 "Status",
-                "ACTIONS",
+                "Actions",
               ]}
             >
               {effectiveEmployeeId ? (

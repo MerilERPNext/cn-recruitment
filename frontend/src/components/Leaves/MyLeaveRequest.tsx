@@ -121,7 +121,7 @@ const MyLeaveRequests = ({
                   "Leave Days",
                   "Status",
                   "Reject Reason",
-                  "ACTIONS",
+                  "Actions",
                 ]
                 : [
                   "Leave Id",
@@ -132,7 +132,7 @@ const MyLeaveRequests = ({
                   "Reason",
                   "Leave Days",
                   "Status",
-                  "ACTIONS",
+                  "Actions",
                 ]
             }
             columnWidths={
