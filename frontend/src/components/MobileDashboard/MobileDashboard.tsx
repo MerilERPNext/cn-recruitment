@@ -209,6 +209,7 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
             setGeoLocationModal(false)
+            toast.success("Check In successful");
           },
           onError: (e: CustomError) => {
             toast.error(
@@ -230,6 +231,7 @@ const MobileDashboard: React.FC = () => {
           onSuccess: () => {
             refetchHomeSummary();
             setGeoLocationModal(false)
+            toast.success("Check Out successful");
           },
           onError: (e: CustomError) => {
             toast.error(
@@ -252,6 +254,7 @@ const MobileDashboard: React.FC = () => {
         {
           onSuccess: () => {
             refetchHomeSummary();
+            toast.success("Clock In successful");
           },
           onError: (e: CustomError) => {
             toast.error(
@@ -270,6 +273,7 @@ const MobileDashboard: React.FC = () => {
         {
           onSuccess: () => {
             refetchHomeSummary();
+            toast.success("Clock Out successful");
           },
           onError: (e: CustomError) => {
             toast.error(
