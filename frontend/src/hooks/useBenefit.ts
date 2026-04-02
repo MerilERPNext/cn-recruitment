@@ -168,12 +168,21 @@ export const useGetBenefitDoc = (
 export const useUpdateBenefitDoc = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ docname, data }: { docname: string; data: Record<string, unknown> }) =>
-            FrappeAPI.updateDocument("Employee Benefit Claim", docname, data),
+        mutationFn: async ({ docname, data }: { docname: string; data: Record<string, unknown> }) => {
+            FrappeAPI.updateDocument("Employee Benefit Claim", docname, data)
+            const response = await FrappeAPI.callMethod(
+                "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+                {
+                    doctype: "Employee Benefit Claim",
+                    docname: docname,
+                    data: [data],
+                }
+            );
+            return response as boolean;
+        },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["advance-doc-data", variables.docname] });
             queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
-            queryClient.invalidateQueries({ queryKey: ["benifit-request"] });
         },
         onError: (error: any) => {
             console.error("Benefit claim update failed:", error);

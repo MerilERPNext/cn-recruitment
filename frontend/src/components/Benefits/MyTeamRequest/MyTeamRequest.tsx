@@ -1,18 +1,52 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { BenefitRequestDetailModal } from "../BenefitRequestDetailModal";
 import BenefitRequestItem from "./BenefitRequestItem";
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
+
+  const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+
+  const handleApprovalRefetchComplete = useCallback(() => {
+    setRefetchApprovalList(false);
+  }, []);
+
+  const handleRequestClick = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (request: any) => {
+      if (request?.todo_id) {
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request?.reference_document?.name || "",
+        });
+      }
+    },
+    [setSearchParams],
+  );
+
+  const handleCloseModal = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  const handleActionComplete = useCallback(() => {
+    setSearchParams({});
+    setRefetchApprovalList(true);
+  }, [setSearchParams]);
   const tableTitles = isBulkSelectEnabled
     ? [
       "Select",
@@ -55,9 +89,9 @@ const MyTeamRequest: React.FC = () => {
         <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
           <ApprovalList
             doctype={"Employee Benefit Claim"}
-            // refetch={refetchApprovalList}
-            // setRefetch={setRefetchApprovalList}
-            // onApprovalRefetchComplete={handleApprovalRefetchComplete}
+            refetch={refetchApprovalList}
+            setRefetch={setRefetchApprovalList}
+            onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
             infiniteScroll={false}
             loadMorePagination={false}
@@ -96,6 +130,7 @@ const MyTeamRequest: React.FC = () => {
               },
             ]}
             orderBy="claim_date desc"
+            defaultFilters={{ custom_status: "Pending" }}
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {
@@ -107,16 +142,24 @@ const MyTeamRequest: React.FC = () => {
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
                   onAction={item?.onAction}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  // onClick={handleRequestClick}
+                  onClick={(request) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )
+              );
             }}
           />
         </CardTable>
       </div>
+      {(requestId || referenceName) && (
+        <BenefitRequestDetailModal
+          documentName={requestId || undefined}
+          referenceName={referenceName || undefined}
+          label="Benefit Request"
+          onClose={handleCloseModal}
+          onAction={handleActionComplete}
+        />
+      )}
     </div>
   );
 };

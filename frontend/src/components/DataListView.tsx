@@ -133,7 +133,7 @@ interface DataListViewProps<T extends BaseItem> {
   showRefreshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
   onDataLoad?: (data: T[]) => void;
-  refetchTrigger?: boolean;
+  refetchTrigger?: boolean | number;
   onRefetchComplete?: () => void;
   orderBy?: string;
   showPagination?: boolean;

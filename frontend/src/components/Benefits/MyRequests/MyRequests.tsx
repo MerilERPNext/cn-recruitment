@@ -33,6 +33,13 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getCurrentPeriod } from "../shared/logic";
 import BenefitRequestForm from "./BenefitsRequestForm";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import { TodoType } from "../../../types/todos";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { queryClient } from "../../../providers/QueryProvider";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
@@ -55,6 +62,8 @@ const MyRequests: React.FC = () => {
   const effectiveEmployeeId = isViewingOtherUser
     ? targetEmployee?.name
     : employee?.id;
+
+  const [refetchCounter, setRefetchCounter] = useState(0);
 
   const handleCloseModal = () => {
     setShowBenefitForm(false);
@@ -86,6 +95,13 @@ const MyRequests: React.FC = () => {
   const handleEdit = (BenefitId: string) => {
     setBenefitId(BenefitId);
     setShowBenefitForm(true);
+  };
+
+  const handleRefetch = () => {
+    setTimeout(() => {
+      setRefetchCounter((prev) => prev + 1);
+    }, 1000);
+    queryClient.invalidateQueries({ queryKey: ["benefit_request_list"] });
   };
 
   useEffect(() => {
@@ -252,17 +268,18 @@ const MyRequests: React.FC = () => {
                   handleEdit={handleEdit}
                   item={props?.item}
                   maskAmounts={maskAmounts}
+                  handleRefetch={handleRefetch}
                 />
               );
             }}
             isLoading={YearsLoading || EmployeeIdCardLoading || salaryComponentFiltersLoading}
             SkeletonComponent={CardSkeleton}
-            orderBy="claim_date desc"
-            // refetchTrigger={refetchAttendance}
+            // orderBy="claim_date desc"
+            refetchTrigger={refetchCounter}
             isSearch={true}
             isFilter={false}
             showRefreshButton={false}
-            // orderBy="creation desc"
+            orderBy="creation desc"
             pageSize={10}
             infiniteScroll={false}
             loadMorePagination={false}
@@ -285,9 +302,7 @@ const MyRequests: React.FC = () => {
                 docname={benefitId}
                 isOpen={showBenefitForm}
                 onClose={handleCloseModal}
-                onSuccess={() => {
-                  // setRefetch(true);
-                }}
+                onSuccess={handleRefetch}
               />
             </div>
           </div>,
@@ -301,12 +316,50 @@ const BenefitSlipItem = ({
   item,
   maskAmounts,
   handleEdit,
+  handleRefetch
 }: {
   item: BenefitPayslip;
   maskAmounts: boolean;
   handleEdit: (benefitId: string) => void;
+  handleRefetch: () => void;
 }) => {
   const { isDesktop } = useScreenSize();
+  const todo: TodoType | null = (Array.isArray(item.todo_list) && item.todo_list.length > 0) ? item.todo_list[0] : null;
+  const { data: currentUser } = useCurrentUser();
+
+  const canEdit = todo?.can_edit === true &&
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+  const canRevoke = todo?.custom_allow_revoke === 1;
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
+
+  const handleRevokeClick = () => {
+    if (todo?.todo_id) {
+      loading?.show("Revoking Request...");
+      revokeEventMutation.mutate(
+        {
+          docname: todo?.reference_name,
+          doctype: todo?.reference_type,
+          todo: todo?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            setTimeout(() => {
+              handleRefetch();
+            }, 2000);
+            toast.success("Benefit Request Revoked Successfully!");
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
+      );
+    }
+  };
 
   return isDesktop ? (
     <div className="grid grid-cols-9 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
@@ -368,7 +421,9 @@ const BenefitSlipItem = ({
       <div className="flex items-center justify-center">
         <MyApprovalActionPill
           isPending={item.custom_status === "Pending"}
-          canEdit={!!item.can_edit}
+          canEdit={canEdit}
+          canRevoke={canRevoke}
+          onRevoke={handleRevokeClick}
           onEdit={() => handleEdit(item.name)}
         />
       </div>
@@ -476,8 +531,10 @@ const BenefitSlipItem = ({
           <div className="mt-4">
             <MyApprovalActionPill
               isPending={item.custom_status === "Pending"}
-              canEdit={!!item.can_edit}
-              canReplace={true}
+              canEdit={canEdit}
+              canRevoke={canRevoke}
+              onRevoke={handleRevokeClick}
+              onEdit={() => handleEdit(item.name)}
               variant="buttons"
             />
           </div>
