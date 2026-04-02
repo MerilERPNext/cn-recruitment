@@ -67,7 +67,7 @@ const TeamAdvanceExpenseList = () => {
         "Status",
         ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "ACTIONS",
+        "Actions",
       ]
     : [
         "Advance ID",
@@ -78,7 +78,7 @@ const TeamAdvanceExpenseList = () => {
         "Status",
         ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "ACTIONS",
+        "Actions",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled

@@ -172,7 +172,7 @@ const AllMyShiftRequestsList = () => {
           onSeeAll={() => navigate("/webapp/shift-request/shift-list")}
         />
         <CardTable
-          titles={["Shift Type", "From Date", "To Date", "Status", "ACTIONS"]}
+          titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           {currentEmployee?.employee ? (
@@ -221,8 +221,7 @@ const AllMyShiftRequestsList = () => {
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-    const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
-
+  const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
@@ -233,7 +232,8 @@ export default function AllShiftsDashboard() {
       if (request?.todo_id || request?.reference_name) {
         const params: Record<string, string> = {};
         if (request?.todo_id) params.requestId = request.todo_id;
-        if (request?.reference_name) params.reference_name = request.reference_name;
+        if (request?.reference_name)
+          params.reference_name = request.reference_name;
         setSearchParams(params);
       }
     },
@@ -254,7 +254,7 @@ export default function AllShiftsDashboard() {
     setRefetchApprovalList(false);
   }, []);
 
- const tableTitles = isBulkSelectEnabled
+  const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
         "Employee",
@@ -263,7 +263,7 @@ export default function AllShiftsDashboard() {
         "To Date",
         "Due Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ]
     : [
         "Employee",
@@ -272,7 +272,7 @@ export default function AllShiftsDashboard() {
         "To Date",
         "Due Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
@@ -306,8 +306,7 @@ export default function AllShiftsDashboard() {
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
                     SkeletonComponent={() => <CardSkeleton rows={3} />}
-                                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-
+                    onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
                     renderCardContent={(item) => (
                       <ApprovalRejectionQueue
                         isSelected={item?.isSelected}
@@ -316,8 +315,7 @@ export default function AllShiftsDashboard() {
                         onAction={item?.onAction}
                         onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
-                                        isBulkSelectEnabled={isBulkSelectEnabled}
-
+                        isBulkSelectEnabled={isBulkSelectEnabled}
                       />
                     )}
                   />
