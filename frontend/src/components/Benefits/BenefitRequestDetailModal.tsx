@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
 import { useCommentOnBenefitClaim } from "../../hooks/useBenefit";
@@ -134,9 +134,24 @@ export function BenefitRequestDetailModal({
     setPendingAction(null);
   };
 
-  const actions = data?.custom_doctype_actions
-    ? JSON.parse(data?.custom_doctype_actions)
-    : [];
+  const actions = useMemo(() => {
+    try {
+      const value = data?.custom_doctype_actions;
+
+      if (typeof value === "string") {
+        return JSON.parse(value);
+      }
+
+      if (Array.isArray(value)) {
+        return value;
+      }
+
+      return [];
+    } catch (e) {
+      console.error("Invalid JSON in custom_doctype_actions", e);
+      return [];
+    }
+  }, [data?.custom_doctype_actions]);
 
   const refDoc = data?.reference_document;
   const status =
@@ -236,31 +251,31 @@ export function BenefitRequestDetailModal({
           {/* Taxable / Non-Taxable Amounts */}
           {(refDoc?.custom_taxable_amount !== undefined ||
             refDoc?.custom_non_taxable_amount !== undefined) && (
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Taxable Amount</Typography>
-                <Typography
-                  variant="mobileCardValue"
-                  className={maskAmounts ? "blur-[3px]" : ""}
-                >
-                  {maskAmounts
-                    ? "#####"
-                    : formatCurrency(refDoc?.custom_taxable_amount ?? 0)}
-                </Typography>
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Taxable Amount</Typography>
+                  <Typography
+                    variant="mobileCardValue"
+                    className={maskAmounts ? "blur-[3px]" : ""}
+                  >
+                    {maskAmounts
+                      ? "#####"
+                      : formatCurrency(refDoc?.custom_taxable_amount ?? 0)}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Non-Taxable Amount</Typography>
+                  <Typography
+                    variant="mobileCardValue"
+                    className={maskAmounts ? "blur-[3px]" : ""}
+                  >
+                    {maskAmounts
+                      ? "#####"
+                      : formatCurrency(refDoc?.custom_non_taxable_amount ?? 0)}
+                  </Typography>
+                </div>
               </div>
-              <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">Non-Taxable Amount</Typography>
-                <Typography
-                  variant="mobileCardValue"
-                  className={maskAmounts ? "blur-[3px]" : ""}
-                >
-                  {maskAmounts
-                    ? "#####"
-                    : formatCurrency(refDoc?.custom_non_taxable_amount ?? 0)}
-                </Typography>
-              </div>
-            </div>
-          )}
+            )}
 
           {/* Company */}
           {refDoc?.company && (

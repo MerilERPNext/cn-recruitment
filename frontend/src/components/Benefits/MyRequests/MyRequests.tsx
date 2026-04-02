@@ -161,7 +161,6 @@ const MyRequests: React.FC = () => {
     value: item,
   })) ?? [];
 
-  console.log({ salaryComponentFilters })
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0">

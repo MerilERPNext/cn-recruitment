@@ -169,7 +169,7 @@ export const useUpdateBenefitDoc = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ docname, data }: { docname: string; data: Record<string, unknown> }) => {
-            FrappeAPI.updateDocument("Employee Benefit Claim", docname, data)
+            await FrappeAPI.updateDocument("Employee Benefit Claim", docname, data)
             const response = await FrappeAPI.callMethod(
                 "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
                 {
