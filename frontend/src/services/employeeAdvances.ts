@@ -185,6 +185,19 @@ export const getExpenseTableFieldSettings = async (
   return result as ExpenseTableFieldSettings;
 };
 
+export const getCheckAdvancePolicy = async (
+  employeeId: string,
+): Promise<boolean> => {
+  const result = await FrappeAPI.callMethod(
+    "chatnext_expense_trips.employee_advance.check_advance_policy_for_employee",
+    {
+      employee: employeeId,
+    },
+  );
+
+  return result as boolean;
+};
+
 export const getAdvancesTypes = async (): Promise<any> => {
   return await FrappeAPI.callMethod(
     "chatnext_expense_trips.employee_advance.get_advance_type"

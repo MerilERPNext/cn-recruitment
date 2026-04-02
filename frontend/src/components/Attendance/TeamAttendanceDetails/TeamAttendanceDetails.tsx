@@ -128,7 +128,6 @@ const TeamAttendanceDetails = () => {
                   }
                 },
               ]}
-              orderBy="from_date desc"
               defaultFilters={{ custom_status: "Pending" }}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {

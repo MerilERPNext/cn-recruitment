@@ -20,7 +20,6 @@ import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { useGetExpenseAttachments } from "../../../hooks/useExpense";
 
 interface ExpenseClaimModalProps {
-
   id: string | null;
   onClose: () => void;
   getStatusBadgeClasses?: (status: string) => string;
@@ -28,6 +27,7 @@ interface ExpenseClaimModalProps {
   selectedSendBackUser?: string | null;
   canEdit?: boolean;
   todoStatus?: string | null;
+  status?: string;
 }
 
 const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
@@ -37,6 +37,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   selectedSendBackUser,
   canEdit: canEditProp = false,
   todoStatus = null,
+  status,
 }) => {
   const raw = useFrappeDocument("Expense Claim", id as string);
   const navigate = useNavigate();
@@ -46,6 +47,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const { data: currentUser } = useCurrentUser();
   const { isDesktop } = useScreenSize();
   const { data: claimAttachments } = useGetExpenseAttachments(id || undefined);
+
+  const finalStatus = status || data?.approval_status;
 
   const isSendedBack =
     currentUser?.name === selectedSendBackUser && canEditProp && todoStatus !== "Closed";
@@ -228,7 +231,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
                   <td className="px-4 py-3">
                     <div className="flex justify-center">
-                      <StatusBadge status={data?.approval_status} />
+                      <StatusBadge status={finalStatus} />
                     </div>
                   </td>
 
@@ -240,7 +243,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   </td>
 
                   <td className="px-4 py-3 text-gray-800">
-                    {data?.approval_status === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col gap-2 items-center justify-center">
@@ -305,7 +308,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 <Typography variant="label" className="card-title">
                   Expense Item
                 </Typography>
-                <StatusBadge status={data?.approval_status} />
+                <StatusBadge status={finalStatus} />
               </div>
 
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -354,7 +357,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                     Sanctioned Amount
                   </Typography>
                   <Typography variant="mobileCardValue">
-                    {data?.approval_status === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
                   </Typography>
                 </div>
               </div>

@@ -85,7 +85,7 @@ const ApprovalRejectionQueue = ({
             </Typography>
           </Link>
           <Typography variant="bodySmall" className="font-medium text-center">
-            {data.reference_document.shift_type}
+            {data.reference_document.shift_name}
             <Typography variant="bodySmall" className="font-medium text-center">
               {data.reference_document.custom_start_time &&
                 data.reference_document.custom_end_time
@@ -187,7 +187,7 @@ const ApprovalRejectionQueue = ({
                       Shift Type
                     </Typography>
                     <Typography variant="mobileCardValue">
-                      {data?.reference_document?.shift_type || "--"}
+                      {data?.reference_document?.shift_name || "--"}
                     </Typography>
                   </div>
 

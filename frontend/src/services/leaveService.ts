@@ -401,4 +401,27 @@ export const leaveService = {
     );
     return response as { is_mandatory: number };
   },
+
+  getNumberOfLeaveDays: async (
+    employee: string,
+    leaveType: string,
+    fromDate: string,
+    toDate: string,
+    individualDates: string
+  ): Promise<number> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.override.get_number_of_leave_days",
+      {
+        employee,
+        leave_type: leaveType,
+        from_date: fromDate,
+        to_date: toDate,
+        individual_dates: individualDates,
+      }
+    );
+    // Handle both { message: number } and number directly
+    return typeof response === "object" && response !== null && "message" in response
+      ? (response as { message: number }).message
+      : (response as number);
+  },
 };

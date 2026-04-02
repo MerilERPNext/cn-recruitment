@@ -171,7 +171,7 @@ const DataListView = <T extends BaseItem>({
   onDataLoad,
   refetchTrigger = false,
   onRefetchComplete,
-  orderBy = "modified desc",
+  orderBy = "creation desc",
   showPagination = true,
   filterFields = [],
   getItemKey,

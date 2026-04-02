@@ -5,8 +5,9 @@ import { toast } from "react-hot-toast";
 import {
   useCreateShiftRequest,
   useUpdateShiftRequest,
-  useShiftTypes,
+  useShiftsForEmployees,
 } from "../../hooks/useShift";
+import { useAttendanceRequestAttachments } from "../../hooks/useAttendance";
 import {
   useCurrentEmployee,
   useGetEmployeeDetailsByEmpId,
@@ -14,6 +15,7 @@ import {
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import defaultFormSchema from "./ShiftRequestFormSchema.json";
 import Button from "../shared/atoms/Button";
+import { format } from "date-fns";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
 import { SchemaComponent } from "../Attendance/AttendanceRequest/AttendanceRequestFormV2";
@@ -22,6 +24,7 @@ import type {
   ShiftRequestFormData,
   FormioSubmission,
   ShiftRequest,
+  ShiftTypeTuple,
 } from "../../types/shift";
 import { Formio } from "formiojs";
 import { useLoadingOverlay } from "../../context/OverlayContext";
@@ -57,7 +60,6 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   const { mutate: createShiftRequest } = useCreateShiftRequest();
   const { mutate: updateShiftRequest } = useUpdateShiftRequest();
-  const { data: shiftTypesData, isLoading: shiftTypesLoading } = useShiftTypes();
 
   const {
     data: employeeDetails,
@@ -70,6 +72,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const { data: targetEmployee, isLoading: targetEmployeeLoading } =
     useGetEmployeeDetailsByEmpId(targetEmployeeId || "");
   const activeEmployee = isViewingOtherUser ? targetEmployee : employeeDetails;
+
+  const { data: shiftTypesData, isLoading: shiftTypesLoading } =
+    useShiftsForEmployees(activeEmployee?.name || "");
   const handleSubmitonSuccess = () => {
     onClose?.();
     setTimeout(() => {
@@ -170,6 +175,18 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   };
 
   const { data: requiredFields, isLoading: requiredFieldsLoading } = useRequiredFields("Shift Request");
+
+  const attachmentQueryDate = useMemo(
+    () => format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    [],
+  );
+
+  const { data: attachmentValidation } = useAttendanceRequestAttachments(
+    activeEmployee?.name || "",
+    attachmentQueryDate,
+    "Shift Change Request",
+  );
+
   const requiredFieldMap = useMemo(() => {
     if (!requiredFields?.fields) return {};
     const map: Record<string, boolean> = {};
@@ -188,6 +205,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   const transformSchemaWithRequired = (
     baseSchema: FormSchema,
     requiredMap: Record<string, boolean>,
+    validation?: any,
   ): FormSchema => {
     if (!baseSchema) return baseSchema;
 
@@ -217,6 +235,20 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
           }
         }
 
+        // Add date validation limits
+        if (comp.key === "fromDate" || comp.key === "toDate") {
+          if (!comp.datePicker) comp.datePicker = {};
+          if (validation?.allowed_from_date) {
+            comp.datePicker.minDate = validation.allowed_from_date;
+          }
+          if (validation?.allowed_to_date) {
+            comp.datePicker.maxDate = validation.allowed_to_date;
+          }
+          if (comp.key === "toDate" && validation?.to_date_read_only) {
+            comp.disabled = true;
+          }
+        }
+
         if (comp.components) applyToComponents(comp.components);
         if (comp.columns) {
           comp.columns.forEach((col: any) => applyToComponents(col.components));
@@ -241,20 +273,27 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
 
   // Build static shift type options from the fetched list
   const shiftTypeValues = useMemo(() => {
-    if (!shiftTypesData?.data) return [];
-    const fmtTime = (t: string) => {
-      const parts = t?.split(":");
-      return parts?.length >= 2 ? `${parts[0]}:${parts[1]}` : (t ?? "");
-    };
-    return shiftTypesData.data.map((st) => {
-      const displayName = st.custom_shift_name || st.name;
-      const start = fmtTime(st.start_time);
-      const end = fmtTime(st.end_time);
+    if (!shiftTypesData?.message) return [];
+    
+    return shiftTypesData.message.map((st: ShiftTypeTuple) => {
+      const id = st[0];
+      const name = st[1];
+      const label = name && id ? `${name} (${id})` : (name || id || "");
+      
+      const fmtTime = (t: string) => {
+        const parts = t?.split(":");
+        return parts?.length >= 3 ? `${parts[0]}:${parts[1]}:${parts[2]}` : (t ?? "");
+      };
+
+      const start = fmtTime(st[4]);
+      const end = fmtTime(st[5]);
+      const timeStr = start && end ? `${start} - ${end}` : "";
+
       return {
-        label: start && end ? `${displayName} (${start} - ${end})` : displayName,
-        value: st.name,
-        displayName,
-        time: start && end ? `${start} - ${end}` : "",
+        label: label,
+        value: id,
+        displayName: label,
+        time: timeStr,
       };
     });
   }, [shiftTypesData]);
@@ -268,14 +307,18 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     if (shiftTypeComp) {
       shiftTypeComp.data = { values: shiftTypeValues };
       shiftTypeComp.template =
-        `<span>{{ item.displayName || item.label }}<span style="font-size:0.78em;color:#6b7280;margin-left:4px;">{{ item.time }}</span></span>`;
+        `<div><div>{{ item.displayName || item.label }}</div><div style="font-size:0.85em;color:#6b7280;margin-top:2px;">{{ item.time }}</div></div>`;
     }
     return cloned;
   }, [formSchema, shiftTypeValues]);
 
   const validatedSchema = useMemo(() => {
-    return transformSchemaWithRequired(schemaWithShiftTypes, requiredFieldMap);
-  }, [schemaWithShiftTypes, requiredFieldMap]);
+    return transformSchemaWithRequired(
+      schemaWithShiftTypes,
+      requiredFieldMap,
+      attachmentValidation,
+    );
+  }, [schemaWithShiftTypes, requiredFieldMap, attachmentValidation]);
   if (!isOpen) return null;
 
   if (employeeLoading || targetEmployeeLoading || shiftTypesLoading || requiredFieldsLoading) {

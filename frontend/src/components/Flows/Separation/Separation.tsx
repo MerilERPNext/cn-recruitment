@@ -310,20 +310,21 @@ const Separation = () => {
                 Initiate Separation
               </Button>
             )}
-            {showTerminationButton && (
-              <Button
-                onClick={() => handleTriggerChat("Termination")}
-                size="md"
-                bgColor="black"
-                className="hover:bg-gray-900 text-white"
-                loading={isTriggeringChat}
-                disabled={isTriggeringChat}
-              >
-                Terminate
-              </Button>
-            )}
+
           </div>
         </div>
+      )}
+      {showTerminationButton && (
+        <Button
+          onClick={() => handleTriggerChat("Termination")}
+          size="md"
+          bgColor="black"
+          className="hover:bg-gray-900 text-white"
+          loading={isTriggeringChat}
+          disabled={isTriggeringChat}
+        >
+          Terminate
+        </Button>
       )}
     </div>
   );

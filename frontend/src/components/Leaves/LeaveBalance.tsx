@@ -368,7 +368,7 @@ const LeaveBalance: React.FC = () => {
                                 e.stopPropagation();
                                 openModal({
                                   source: "balances",
-                                  leaveType: leave?.type,
+                                  leaveType: leave?.leave_id,
                                 });
                               }}
                               className="text-[#98A9CD] hover:text-[#98b1e6] ml-auto  mr-2.5"

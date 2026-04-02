@@ -3,6 +3,7 @@ import React, { Component, ReactNode } from "react";
 const DYNAMIC_IMPORT_ERROR_MESSAGES = [
   "Failed to fetch dynamically imported module",
   "Importing a module script failed",
+  "error loading dynamically imported module"
 ];
 
 const DYNAMIC_IMPORT_RELOAD_STORAGE_KEY = "dynamic_import_reload_timestamp";

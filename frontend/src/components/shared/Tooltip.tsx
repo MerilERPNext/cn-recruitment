@@ -12,6 +12,7 @@ interface TooltipProps {
   children: ReactNode;
   position?: "top" | "bottom" | "left" | "right" | "tl" | "tr";
   className?: string;
+  triggerClassName?: string;
   delay?: number;
 }
 
@@ -20,6 +21,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   children,
   position = "top",
   className = "",
+  triggerClassName = "",
   delay = 200,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -180,7 +182,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     <>
       <div
         ref={triggerRef}
-        className="inline-block"
+        className={triggerClassName || "inline-block"}
         onMouseEnter={show}
         onMouseLeave={hide}
         onFocus={show}

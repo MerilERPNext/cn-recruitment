@@ -2,7 +2,7 @@
 import { Form } from "@tsed/react-formio";
 import { format } from "date-fns";
 import { Plus, SquarePen, Trash2 } from "lucide-react";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
@@ -16,6 +16,7 @@ import {
 } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { expenseService } from "../../../services/expenseService";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
@@ -60,10 +61,23 @@ const ExpenseAdvanceForm: React.FC<{
     editAdvanceData?.custom_advance_type ?? null,
   );
 
-  const { data: fieldSettings } = useExpenseTableFieldSettings(
-    employeeId || null,
-    subAdvanceType,
-  );
+  const { data: fieldSettings, isLoading: isFieldSettingsLoading } =
+    useExpenseTableFieldSettings(employeeId || null, subAdvanceType);
+
+  const isPolicyMissing = useMemo(() => {
+    return !!subAdvanceType && !isFieldSettingsLoading && !fieldSettings?.advance_policy;
+  }, [subAdvanceType, isFieldSettingsLoading, fieldSettings]);
+
+  useEffect(() => {
+    if (isPolicyMissing) {
+      toast.error(
+        "You are not eligible for expense advances. Contact HR. Advance Policy Not Found For Employee",
+        {
+          id: "advance-policy-missing",
+        }
+      );
+    }
+  }, [isPolicyMissing]);
 
   const postingDate = new Date().toISOString().split("T")[0];
   const advanceType = "Reimbursement / Expense Advance";
@@ -162,7 +176,15 @@ const ExpenseAdvanceForm: React.FC<{
           },
         };
         updateMutation.mutate(updatePayload, {
-          onSuccess: () => {
+          onSuccess: async () => {
+            try {
+              await expenseService.resubmitApprovalEvent(
+                "Employee Advance",
+                editAdvanceData.name,
+              );
+            } catch (error) {
+              console.error("Failed to resubmit approval:", error);
+            }
             toast.success("Expense Advance updated successfully!");
             navigate("/webapp/expenses-app/my-advance-expense");
             setTimeout(() => setRefetchAttendance(true), 1000);
@@ -564,27 +586,39 @@ const ExpenseAdvanceForm: React.FC<{
 
       <div className="flex-1 overflow-y-auto p-4">
         {expenseAdvanceSchema ? (
-          <Form
-            form={expenseAdvanceSchema}
-            onFormReady={(instance: any) => (formRef.current = instance)}
-            onChange={(submission: any) => {
-              const newSubType = submission?.data?.advance_type || null;
+          <div className="space-y-6">
+            {isPolicyMissing && (
+              <div className="p-4 border border-red-200 bg-red-50 rounded-lg flex flex-col items-center text-center">
+                <p className="text-red-700 font-semibold text-sm lg:text-base">
+                  You are not eligible for expense advances. Contact HR.
+                </p>
+                <p className="text-red-600 text-xs mt-1">
+                  Advance Policy Not Found For Employee
+                </p>
+              </div>
+            )}
+            <Form
+              form={expenseAdvanceSchema}
+              onFormReady={(instance: any) => (formRef.current = instance)}
+              onChange={(submission: any) => {
+                const newSubType = submission?.data?.advance_type || null;
 
-              setSubAdvanceType((prev) =>
-                prev === newSubType ? prev : newSubType,
-              );
+                setSubAdvanceType((prev) =>
+                  prev === newSubType ? prev : newSubType,
+                );
 
-              if (newSubType !== selectedAdvanceType) {
-                setSelectedAdvanceType(newSubType);
-                if (formRef.current) {
-                  const currencyField =
-                    formRef.current.getComponent("currency");
-                  if (currencyField) currencyField.refresh();
+                if (newSubType !== selectedAdvanceType) {
+                  setSelectedAdvanceType(newSubType);
+                  if (formRef.current) {
+                    const currencyField =
+                      formRef.current.getComponent("currency");
+                    if (currencyField) currencyField.refresh();
+                  }
                 }
-              }
-            }}
-            options={{ submitButton: false, noAlerts: true }}
-          />
+              }}
+              options={{ submitButton: false, noAlerts: true }}
+            />
+          </div>
         ) : (
           <div className="flex items-center justify-center p-10 border border-dashed rounded-lg">
             <p className="text-gray-500">Loading form settings...</p>
@@ -604,12 +638,19 @@ const ExpenseAdvanceForm: React.FC<{
               size="md"
               onClick={() => {
                 if (!selectedAdvanceType) {
-                  toast.error("Please select Advance Type first");
+                  toast.error("Please select Advance Type first before starting");
+                  return;
+                }
+                if (isPolicyMissing) {
+                  toast.error(
+                    "Cannot add breakup: Advance Policy not found for this type."
+                  );
                   return;
                 }
                 setIsExpenseModalOpen(true);
                 setExpenseToEdit(null);
               }}
+              disabled={isPolicyMissing}
               // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -744,7 +785,7 @@ const ExpenseAdvanceForm: React.FC<{
 
           <Button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || isPolicyMissing}
             size="md"
             variant="contain"
             bgColor="primary"

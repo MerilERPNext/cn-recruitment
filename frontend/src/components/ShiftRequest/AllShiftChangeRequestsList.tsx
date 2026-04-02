@@ -130,7 +130,6 @@ const AllShiftChangeRequestsList: React.FC = () => {
               },
             ]}
             defaultFilters={{ status: "Draft" }}
-            orderBy="from_date desc"
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {

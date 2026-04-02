@@ -6,6 +6,7 @@ export const getLoan = async (employeeId: string): Promise<Loan[]> => {
 
   const result = await FrappeAPI.callMethod("cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard", {
     employee: employeeId,
+    todo_status: "Open",
   });
   return result as Loan[];
 };

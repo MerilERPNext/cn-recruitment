@@ -19,6 +19,7 @@ type MyApprovalActionPillProps = {
   payLoading?: boolean;
   revokeLoading?: boolean;
   variant?: "pill" | "buttons";
+  isResubmit?: boolean;
 };
 
 type ActionItem = {
@@ -41,6 +42,7 @@ const MyApprovalActionPill = ({
   canPay,
   onPay,
   payLoading = false,
+  isResubmit = false,
 }: MyApprovalActionPillProps) => {
   const hasActions = canRevoke || canEdit || canReplace || canPay;
 
@@ -69,7 +71,7 @@ const MyApprovalActionPill = ({
   if (canEdit && onEdit) {
     actions.push({
       key: "edit",
-      tooltip: "Edit",
+      tooltip: isResubmit ? "Resubmit" : "Edit",
       onClick: onEdit,
       icon: <SquarePen className="w-4 h-4 text-white md:text-primary" />,
     });
@@ -114,7 +116,11 @@ const MyApprovalActionPill = ({
             ) : (
               <>
                 {action.icon}
-                <span className="capitalize">{action.key}</span>
+                <span className="capitalize">
+                  {action.key === "edit" && isResubmit
+                    ? "Resubmit"
+                    : action.key}
+                </span>
               </>
             )}
           </button>

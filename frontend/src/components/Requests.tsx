@@ -25,6 +25,8 @@ import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
 import { isActionEnabled } from "../utils/uiPermission";
 import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useTargetUser } from "../context/ViewedUserContext";
+import { Typography } from "./shared/atoms/Typography";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 
 interface RequestsProps {
   limitCards?: number;
@@ -35,23 +37,61 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const { data: userUiPermission } = useGetUiPermission();
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
     effectiveEmployeeId || "",
   );
-  const canRequestAttendance = isActionEnabled(
-    userUiPermission,
-    "create_attendance_request",
-    "Attendance Summary",
+
+  const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
+    effectiveEmployeeId || ""
   );
+
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "Attendance Summary",
+    "Planned Overtime"
   );
+
+  const canLeaveRequest = isActionEnabled(
+    userUiPermission,
+    "request_leave",
+    "My Requests"
+  );
+  const canAttendaneRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
+  const canShiftChangeRequest = isActionEnabled(
+    userUiPermission,
+    "request_shift_change",
+    "All Shift"
+  );
+  const canLoanRequest = isActionEnabled(
+    userUiPermission,
+    "create_loan",
+    "My Loan Requests"
+  );
+  const canEmployeeAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_advance",
+    "My Advances"
+  );
+  const canExpenseRequest = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims"
+  );
+
+  const canExpenseAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances"
+  );
+
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
@@ -68,56 +108,63 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
 
   /* ---------- Cards Config ---------- */
 
-  const cards = [
+  const actions = [
     {
-      label: "Apply Leaves",
-      icon: <Calendar className="w-5 h-5 text-blue-600" />,
-      bg: "bg-blue-100",
+      label: "Apply Leave",
+      icon: Calendar,
+      color: "primary",
       onClick: () => openModal(),
+      permission: canLeaveRequest,
     },
     {
       label: "Attendance Request",
-      icon: <FileText className="w-5 h-5 text-blue-600" />,
-      bg: "bg-blue-100",
+      icon: FileText,
+      color: "secondary",
       onClick: () => setShowAttendanceRequest(true),
+      permission: canAttendaneRequest,
     },
     {
       label: "Planned Overtime",
-      icon: <Timer className="w-5 h-5 text-purple-600" />,
-      bg: "bg-purple-100",
+      icon: Timer,
+      color: "purple",
       onClick: () => setShowOvertimeRequest(true),
+      permission: canRequestOvertime && plannedOvertimAllowed,
     },
     {
-      label: "Change Shifts",
-      icon: <ArrowUpDown className="w-5 h-5 text-green-600" />,
-      bg: "bg-green-100",
+      label: "Shift Change",
+      icon: ArrowUpDown,
+      color: "success",
       onClick: handleShiftForm,
+      permission: canShiftChangeRequest,
     },
     {
       label: "Create Loan Request",
-      icon: <Wallet className="w-5 h-5 text-pink-600" />,
+      icon: Wallet,
       bg: "bg-pink-100",
       onClick: () => setIsLoanDialogOpen(true),
+      permission: canLoanRequest,
     },
     {
       label: "Create Advance",
-      icon: <IndianRupee className="w-5 h-5 text-orange-600" />,
+      icon: IndianRupee,
       bg: "bg-orange-100",
       onClick: () => setShowAdvanceForm(true),
+      permission: canEmployeeAdvanceRequest,
     },
     {
       label: "Create Expense",
-      icon: <ReceiptIndianRupeeIcon className="w-5 h-5 text-green-600" />,
+      icon: ReceiptIndianRupeeIcon,
       bg: "bg-green-100",
       onClick: () => navigate("/webapp/expenses-app/add-expense"),
+      permission: canExpenseRequest,
     },
     {
       label: "Expense Advance",
-      icon: <IndianRupee className="w-5 h-5 text-amber-600" />,
+      icon: IndianRupee,
       bg: "bg-amber-100",
       onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
+      permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
     },
-
   ];
 
   /* ---------- Requests Cards UI ---------- */
@@ -125,39 +172,42 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const requestsCards = () => (
     <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
       <div className="grid grid-cols-4 gap-3 justify-center">
-        {(limitCards ? cards.filter((action) => {
-          if (action.label === "Planned Overtime") {
-            return canRequestOvertime && plannedOvertimAllowed;
-          }
-          if (action.label === "Attendance Request") {
-            return canRequestAttendance;
-          }
-          return true;
-        })
+        {actions
+          .filter((action) => action.permission)
           .slice(0, limitCards)
-          : cards
-        ).map(
-          (card, index) => (
+          .map((action, idx) => (
             <div
-              key={index}
-              className="shadow-sm hover-lift rounded-lg cursor-pointer
-              h-28 w-full flex flex-col items-center justify-center p-2"
-              onClick={card.onClick}
+              key={idx}
+              className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
+              onClick={action.onClick}
             >
               <div
-                className={`w-10 h-10 ${card.bg}
-                rounded-full md:rounded-lg
-                flex items-center justify-center mb-2`}
+                className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110
+                ${
+                  action.bg
+                    ? `${action.bg} text-gray-700`
+                    : action.color === "primary"
+                    ? "bg-primary-100 text-primary-600"
+                    : action.color === "secondary"
+                    ? "bg-secondary-100 text-secondary-600"
+                    : action.color === "purple"
+                    ? "bg-purple-100 text-purple-600"
+                    : action.color === "success"
+                    ? "bg-success-100 text-success-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
               >
-                {card.icon}
+                <action.icon className="w-5 h-5 shadow-sm" />
               </div>
 
-              <p className="text-xs text-gray-600 font-medium text-center">
-                {card.label}
-              </p>
+              <Typography
+                variant="bodySmall"
+                className="font-semibold leading-tight line-clamp-2"
+              >
+                {action.label}
+              </Typography>
             </div>
-          ),
-        )}
+          ))}
       </div>
 
       {/* Attendance Modal */}
@@ -189,7 +239,6 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
         onClose={() => setIsLoanDialogOpen(false)}
       />
 
-
       <ShiftRequestFormModal
         className="h-full"
         isOpen={showShiftRequestModal}
@@ -214,7 +263,6 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
 
       <div className="md:p-4 flex-grow">
         {requestsCards()}
-
         <Outlet />
       </div>
     </div>
@@ -224,7 +272,6 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
     <DesktopLayoutWrapper title="Requests">
       <div className="p-8 md:p-0 overflow-y-auto h-full">
         {requestsCards()}
-
         <Outlet />
       </div>
     </DesktopLayoutWrapper>

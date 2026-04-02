@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ShiftRequest, ShiftType, UpdateShiftRequestPayload } from "../types/shift";
+import {
+  ShiftRequest,
+  ShiftType,
+  ShiftTypeTupleResponse,
+  UpdateShiftRequestPayload,
+} from "../types/shift";
 
 export const ShiftRequestService = {
   getDraftShiftRequests: async (): Promise<ShiftRequest[]> => {
@@ -48,6 +53,23 @@ export const ShiftRequestService = {
       action: "Rejected",
     });
   },
+
+  getShiftRequestConfig: async (
+    employee: string,
+  ): Promise<{
+    shift_change_requests: boolean;
+    shift_change_and_attendance_requests: boolean;
+  }> => {
+    return (await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_shift_request_config",
+      {
+        employee,
+      },
+    )) as {
+      shift_change_requests: boolean;
+      shift_change_and_attendance_requests: boolean;
+    };
+  },
 };
 
 export const getAllShiftTypes = async (): Promise<{ data: ShiftType[] }> => {
@@ -82,6 +104,22 @@ export const getEmployeeShifts = async (employee: string): Promise<{ data: { shi
   });
   return {
     data: res as { shifts: ShiftType[] },
+  };
+};
+
+export const getShiftsForEmployees = async (
+  employee: string,
+): Promise<ShiftTypeTupleResponse> => {
+  const res = await FrappeAPI.callMethod(
+    "cn_leave_shift_managment.api.get_shifts_for_employees",
+    {
+      filters: {
+        employees: [employee],
+      },
+    },
+  );
+  return {
+    message: res as ShiftTypeTupleResponse["message"],
   };
 };
 

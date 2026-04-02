@@ -9,6 +9,8 @@ import NavigationTabs, { Tab } from "../NavigationTab";
 import Button from "../shared/atoms/Button";
 import ExpenseAdvanceForm from "./ExpenseAdvance/ExpenseAdvanceForm";
 import ExpenseFormModal from "./ExpenseFormModal";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCheckAdvancePolicy } from "../../hooks/useEmployeeAdvances";
 
 type TabName = "Expenses" | "Team" | "My Advances" | "Team Advances";
 
@@ -28,11 +30,21 @@ const ExpensesApp: React.FC = () => {
   );
 
   const { data: userUiPermission } = useGetUiPermission("Expenses");
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: hasAdvancePolicy } = useCheckAdvancePolicy(
+    currentEmployee?.name || null,
+  );
 
   const canAddExpense = isActionEnabled(
     userUiPermission,
     "expense_claim_request",
     "Expense Claims",
+  );
+
+  const canAddAdvance = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances",
   );
 
   const [activeTab, setActiveTab] = useState<TabName>("Expenses");
@@ -105,8 +117,15 @@ const ExpensesApp: React.FC = () => {
     location.pathname === "/webapp/expenses-app/team-requests/all";
 
   const shouldShowActionButton = () => {
-    if (!canAddExpense) return false;
+    if (activeTab === "Expenses" && !canAddExpense) return false;
+    if (activeTab === "My Advances" && !canAddAdvance) return false;
+
     if (isFormActive || isTeamRequests || isTeamRequestsAll) return false;
+
+    if (activeTab === "My Advances" && hasAdvancePolicy === false) {
+      return false;
+    }
+
     return activeTab === "Expenses" || activeTab === "My Advances";
   };
 

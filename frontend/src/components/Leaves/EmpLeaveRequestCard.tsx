@@ -2,6 +2,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useRevokeEvent } from "../../hooks/userApprovalList";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { queryClient } from "../../providers/QueryProvider";
@@ -17,7 +18,6 @@ import MyApprovalActionPill from "../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { Typography } from "../shared/atoms/Typography";
 import AllocatedToTooltip from "../shared/AllocatedToTooltip";
-import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
 import { useRequestLeaveModal } from "./RequestLeaveModalContext";
 
@@ -40,6 +40,7 @@ const EmpLeaveRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
 
   const { openModal } = useRequestLeaveModal();
+  const { data: currentUser } = useCurrentUser();
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -53,7 +54,14 @@ const EmpLeaveRequestCard = ({
     (app: any) => app.name === data?.reference_name,
   );
 
-  const allowEdit = leaveButtonConfig?.show_edit_button;
+  const isPending = data?.reference_document?.status === "Open";
+  const isApproved = data?.reference_document?.status === "Approved";
+
+  const isResubmit =
+    isPending &&
+    data?.can_edit &&
+    data?.send_back_user === currentUser?.name;
+  const allowEdit = leaveButtonConfig?.show_edit_button || isResubmit;
   const allowReplace = leaveButtonConfig?.show_replace_button;
 
   const handleRevokeClick = () => {
@@ -96,6 +104,7 @@ const EmpLeaveRequestCard = ({
       source: "other",
       hideHalfDayToggle: false,
       isEdit: true,
+      isResubmit: isResubmit,
       leave_application: data?.reference_document?.name,
     });
   };
@@ -106,22 +115,37 @@ const EmpLeaveRequestCard = ({
   );
   const truncatedDescription = truncateByChars(cleanDescription);
 
-  const isPending = data?.reference_document?.status === "Open";
-  const isApproved = data?.reference_document?.status === "Approved";
 
   return (
     <>
       {isDesktop ? (
         <div
-          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr 1fr" : "1.5fr 1fr 1fr 1.5fr 1fr 1fr 1.5fr" }}
+          style={{ gridTemplateColumns: showRejectReason ? "1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr" : "1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr" }}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         >
-          <Typography
-            variant="bodySmall"
-            className="font-medium text-center truncate"
+          <Tooltip
+            content={data?.reference_document?.name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
           >
-            {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
-          </Typography>
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.name}
+            </Typography>
+          </Tooltip>
+          <Tooltip
+            content={`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.custom_leave_type_name} (
+              {data?.reference_document?.leave_type})
+            </Typography>
+          </Tooltip>
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document.from_date)}
           </Typography>
@@ -129,12 +153,26 @@ const EmpLeaveRequestCard = ({
             {formatToIndianDate(data?.reference_document.to_date)}
           </Typography>
 
-          <Tooltip content={cleanDescription}>
+          <Tooltip
+            content={cleanDescription}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
             <Typography
               variant="bodySmall"
-              className="font-medium text-center truncate"
+              className="font-medium text-center truncate block w-full"
             >
               {truncatedDescription}
+            </Typography>
+          </Tooltip>
+          <Tooltip
+            content={data?.reference_document?.reason_name || "--"}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.reason_name || "--"}
             </Typography>
           </Tooltip>
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -156,8 +194,14 @@ const EmpLeaveRequestCard = ({
           {showRejectReason && (
             <div className="flex items-center justify-center w-full min-w-0 pr-2">
               {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
-                <Tooltip content={data?.reference_document?.custom_rejection_reason}>
-                  <Typography variant="bodySmall" className="font-medium text-center truncate">
+                <Tooltip
+                  content={data?.reference_document?.custom_rejection_reason}
+                  triggerClassName="w-full truncate min-w-0 block"
+                >
+                  <Typography
+                    variant="bodySmall"
+                    className="font-medium text-center truncate block w-full"
+                  >
                     {data?.reference_document?.custom_rejection_reason}
                   </Typography>
                 </Tooltip>
@@ -171,6 +215,7 @@ const EmpLeaveRequestCard = ({
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
               canEdit={allowEdit}
+              isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
@@ -188,13 +233,12 @@ const EmpLeaveRequestCard = ({
           <div className="p-4 flex flex-col gap-3 w-full">
             {/* Header */}
             <div className="flex items-start justify-between">
-              <MobileAllocatedTo
-                users={data?.allocated_to}
-                roles={data?.allocated_roles}
-                allocated_to={data?.username}
-                role={data?.role}
-              />
-
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Leave Id</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.name}
+                </Typography>
+              </div>
               <StatusBadge status={data?.reference_document?.status} />
             </div>
 
@@ -253,6 +297,13 @@ const EmpLeaveRequestCard = ({
               )}
             </div>
 
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Reason</Typography>
+              <Typography variant="mobileCardValue">
+                {data?.reference_document?.reason_name || "--"}
+              </Typography>
+            </div>
+
             {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Reject Reason</Typography>
@@ -269,6 +320,7 @@ const EmpLeaveRequestCard = ({
                 isPending && data?.custom_allow_revoke && canRequestLeave
               }
               canEdit={allowEdit}
+              isResubmit={isResubmit}
               canReplace={allowReplace && (isPending || isApproved)}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}

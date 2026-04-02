@@ -18,6 +18,7 @@ interface AllocatedToTooltipProps {
 type NormalizedUser = {
     name: string;
     designation?: string;
+    employee?: string;
 };
 
 const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
@@ -55,6 +56,7 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                             return {
                                 name,
                                 designation: v.designation_name?.trim() || undefined,
+                                employee: v.employee?.trim() || undefined,
                             };
                         }
 
@@ -233,9 +235,8 @@ const AllocatedToTooltip: React.FC<AllocatedToTooltipProps> = ({
                 border border-primary-200
                 px-2 py-1 rounded-md max-w-full
             "
-            title={u.designation ? `${u.name} - ${u.designation}` : u.name}
         >
-            <span className="leading-4">{u.name}</span>
+            <span className="leading-4">{u.name} {u?.employee && `(${u.employee})`}</span>
             {u.designation && (
                 <span className="text-[10px] leading-4 text-gray-500">
                     {u.designation}

@@ -176,15 +176,19 @@ interface InfoRowProps {
 
 // Employee Info Row Component
 const InfoRow = ({ label, value, isLast = false }: InfoRowProps) => (
-  <div
-    className={`flex justify-between items-center py-3 ${!isLast ? "border-b border-gray-200" : ""
-      }`}
-  >
-    <p className="text-gray-600 text-sm">{label}</p>
-    <p className="text-gray-800 text-sm font-medium">{value}</p>
-  </div>
-);
+  <>
+    <div className="contents">
+      <p className="text-gray-600 text-sm py-2">{label}</p>
+      <p className="pl-3 text-gray-800 text-sm font-medium text-right py-2 break-all">
+        {value}
+      </p>
+    </div>
 
+    {!isLast && (
+      <div className="col-span-2 border-b border-gray-300" />
+    )}
+  </>
+);
 // QR Code Component
 const QRCode = ({
   employee,
@@ -263,7 +267,7 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
       )}
     </div>
 
-    <div className="space-y-3">
+    <div className="space-y-2  items-baseline grid grid-cols-[max-content_1fr] ">
       <InfoRow
         label="Employee ID"
         value={employee.employee_number || employee.id}
@@ -288,22 +292,25 @@ interface ActionButtonsProps {
   onWhatsApp: () => void;
   onCall: () => void;
   onAttendanceAssignments: () => void;
+  employeeContact?: number | string;
 }
 // Action Buttons Component
 const ActionButtons = ({
   onWhatsApp,
   onCall,
+  employeeContact,
 }: // onAttendanceAssignments,
   ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
-    <div className="flex gap-4">
+    
+    {employeeContact && (<div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
         WhatsApp
       </ActionButton>
       <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
         Call
       </ActionButton>
-    </div>
+    </div>)}
     {/* <ActionButton
       variant="secondary"
       onClick={onAttendanceAssignments}
@@ -788,6 +795,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                 <>
                   <EmployeeCard employee={employee} />
                   <ActionButtons
+                    employeeContact={employee.contact}
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
                     onAttendanceAssignments={() =>

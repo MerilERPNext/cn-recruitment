@@ -45,7 +45,7 @@ const MyShiftRowItem: React.FC<{
         className="font-medium text-center"
         title={`Shift Time: ${item.start_time} - ${item.end_time}`}
       >
-        {item.shift_type}
+        {item.shift_name}
       </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {formatToIndianDate(item.start_date)}
@@ -91,7 +91,7 @@ const ShiftAssignmentItem: React.FC<{ item: ApiShiftAssignment }> = ({
         <div className="flex justify-between w-full">
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Shift Type</Typography>
-            <Typography variant="mobileCardValue">{item.shift_type}</Typography>
+            <Typography variant="mobileCardValue">{item.shift_name}</Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Shift Time</Typography>

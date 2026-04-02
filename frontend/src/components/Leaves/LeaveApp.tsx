@@ -54,7 +54,6 @@ const LeaveAppInner: React.FC = () => {
         label: "Leave Balance",
         permissionKey: "Leave Balance",
       },
-      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "my-requests",
         label: "My Requests",
@@ -65,6 +64,7 @@ const LeaveAppInner: React.FC = () => {
         label: "Team Requests",
         permissionKey: "Team Requests",
       },
+      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "compensatory",
         label: "Compensatory",

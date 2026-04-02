@@ -7,6 +7,7 @@ import {
 } from "../../../hooks/useExpense";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
+import { Participant } from "../../../types/expenseAdvance";
 
 import DOMPurify from "dompurify";
 import toast from "react-hot-toast";
@@ -58,6 +59,10 @@ export function TeamExpenseDetailView({
 
   const data = (documentName || referenceName) ? fetchedData : propsData;
   const ref = data?.reference_document || {};
+
+  const todoId = useMemo(() => {
+    return data?.todo_id || (data?.doctype === "ToDo" ? data?.name : null) || documentName || "";
+  }, [data, documentName]);
 
   console.log(ref);
 
@@ -187,7 +192,7 @@ export function TeamExpenseDetailView({
 
       const response = await mutation?.mutateAsync({
         action,
-        name: data?.todo_id || "",
+        name: todoId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -373,7 +378,113 @@ export function TeamExpenseDetailView({
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  if (!(data?.todo_id || data?.name || data?.reference_document?.name)) return null;
+  if (!(todoId || data?.name || data?.reference_document?.name)) return null;
+
+  // Desktop table for participants
+  const DesktopParticipants = (
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Name
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Percentage
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Allocated Amount
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-gray-100">
+          {ref?.custom_participants?.map((p: Participant) => {
+            const name =
+              p?.employee_name || p?.guest_name || p?.employee || "—";
+            return (
+              <tr
+                key={p?.name}
+                className="bg-white hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-4 py-3 text-gray-800">
+                  {p?.employee_type ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">{name}</td>
+                <td className="px-4 py-3 text-gray-800">
+                  {typeof p?.percentage === "number"
+                    ? `${p?.percentage}%`
+                    : "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(p?.allocated_amount)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Mobile cards for participants
+  const MobileParticipants = (
+    <div className="grid grid-cols-1 gap-4">
+      {ref?.custom_participants?.map((p: Participant, idx: number) => {
+        const name = p?.employee_name || p?.guest_name || p?.employee || "—";
+        return (
+          <div
+            key={p?.name}
+            className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+          >
+            <div className="mb-3">
+              <Typography variant="label" className="card-title">
+                Participant {idx + 1}
+              </Typography>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Employee Type
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {p?.employee_type ?? "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Employee Name
+                </Typography>
+                <Typography variant="mobileCardValue">{name}</Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Percentage
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {typeof p?.percentage === "number"
+                    ? `${p?.percentage}%`
+                    : "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatCurrency(p?.allocated_amount)}
+                </Typography>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <>
@@ -696,6 +807,20 @@ export function TeamExpenseDetailView({
                 </Typography>
               </div>
             )}
+
+            {/* Participants */}
+            {Array.isArray(ref?.custom_participants) &&
+              ref.custom_participants.length > 0 && (
+                <div className="mt-6 mb-6 px-0 md:px-0">
+                  <Typography
+                    variant="bodySmall"
+                    className="base-title mb-2 font-bold block"
+                  >
+                    Participants
+                  </Typography>
+                  {isDesktop ? DesktopParticipants : MobileParticipants}
+                </div>
+              )}
           </div>
 
           {/* Footer totals */}
@@ -720,11 +845,11 @@ export function TeamExpenseDetailView({
                 <TeamApprovalActionPill
                   variant={isDesktop ? "modal" : "buttons"}
                   actions={actions}
-                  status={data?.status}
-                  recordId={data?.todo_id}
+                  status={data?.status || ref?.approval_status || ""}
+                  recordId={todoId}
                   loadingAction={
                     currentAction
-                      ? { id: data?.todo_id, action: currentAction }
+                      ? { id: todoId, action: currentAction }
                       : null
                   }
                   onAction={(action) => handleAction(action)}

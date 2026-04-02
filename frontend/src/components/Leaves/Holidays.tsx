@@ -83,6 +83,7 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
                 fromDate: holiday.date,
                 toDate: holiday.date,
                 leaveType: holiday.leave_type,
+                leaveTypeName: holiday.leave_type_name,
                 source: "holiday",
                 hideHalfDayToggle: true,
               })

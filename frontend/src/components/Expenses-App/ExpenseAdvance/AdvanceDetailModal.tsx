@@ -15,12 +15,14 @@ interface AdvanceDetailModalProps {
   id: string;
   onClose: () => void;
   selectedStages: ApprovalStage[];
+  status?: string;
 }
 
 const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   id,
   onClose,
   selectedStages,
+  status,
 }) => {
   const raw = useFrappeDocument("Employee Advance", id as string);
 
@@ -41,6 +43,8 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   const isLoading = raw.isLoading;
   const error = raw.error;
   const { isDesktop } = useScreenSize();
+
+  const finalStatus = status || advanceDetails?.status;
 
   if (!id) return null;
 
@@ -73,7 +77,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
 
         <tbody className="divide-y divide-gray-100">
           {Array.isArray(advanceDetails?.expenses) &&
-            advanceDetails.expenses.length > 0 ? (
+          advanceDetails.expenses.length > 0 ? (
             advanceDetails.expenses.map((item: any, index: number) => (
               <tr
                 key={item.name || index}
@@ -90,7 +94,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   {formatCurrency(item.amount)}
                 </td>
                 <td className="px-4 py-3 text-gray-800">
-                  {<StatusBadge status={item.custom_approval_staus} />}
+                  {<StatusBadge status={finalStatus} />}
                 </td>
                 <td className="px-4 py-3 text-gray-800">{item.description}</td>
               </tr>
@@ -114,7 +118,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   const MobileBreakup = (
     <div className="grid grid-cols-1 gap-4">
       {Array.isArray(advanceDetails?.expenses) &&
-        advanceDetails.expenses.length > 0 ? (
+      advanceDetails.expenses.length > 0 ? (
         advanceDetails.expenses.map((item: any, index: number) => (
           <div
             key={item.name || index}
@@ -127,7 +131,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
               </Typography>
 
               {/* Approval Status */}
-              <StatusBadge status={item.custom_approval_staus} />
+              <StatusBadge status={finalStatus} />
             </div>
 
             {/* Content */}
@@ -242,7 +246,7 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
                   </Typography>
                 </div>
                 <div>
-                  <StatusBadge status={advanceDetails?.status} />
+                  <StatusBadge status={finalStatus} />
                 </div>
               </div>
 

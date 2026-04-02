@@ -494,3 +494,37 @@ export const useCheckAttachmentMandatory = (leaveType: string | undefined) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export const useGetNumberOfLeaveDays = (
+  employee: string | undefined,
+  leaveType: string | undefined,
+  fromDate: string | undefined,
+  toDate: string | undefined,
+  individualDates: string | undefined,
+) => {
+  return useQuery({
+    queryKey: [
+      "number-of-leave-days",
+      employee,
+      leaveType,
+      fromDate,
+      toDate,
+      individualDates,
+    ],
+    queryFn: async () => {
+      if (!employee || !leaveType || !fromDate || !toDate || !individualDates) {
+        throw new Error("Missing parameters for get_number_of_leave_days");
+      }
+      return await leaveService.getNumberOfLeaveDays(
+        employee,
+        leaveType,
+        fromDate,
+        toDate,
+        individualDates,
+      );
+    },
+    enabled:
+      !!employee && !!leaveType && !!fromDate && !!toDate && !!individualDates,
+    staleTime: 5 * 60 * 1000,
+  });
+};

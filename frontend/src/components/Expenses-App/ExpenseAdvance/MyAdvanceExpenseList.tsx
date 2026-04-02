@@ -23,11 +23,13 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import Tooltip from "../../shared/Tooltip";
 
 const MyAdvanceExpenseList = () => {
-  const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
-    null,
-  );
+  const [selectedAdvance, setSelectedAdvance] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
   const { isDesktop } = useScreenSize();
@@ -48,16 +50,20 @@ const MyAdvanceExpenseList = () => {
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 
-  const openDetailModal = (id: string, stages: ApprovalStage[]) => {
+  const openDetailModal = (
+    id: string,
+    stages: ApprovalStage[],
+    status: string,
+  ) => {
     setSelectedStages(stages);
     setTimeout(() => {
-      setSelectedAdvanceId(id);
+      setSelectedAdvance({ id, status });
       setSearchParams({ reference_name: id });
     }, 0);
   };
 
   const closeDetailModal = () => {
-    setSelectedAdvanceId(null);
+    setSelectedAdvance(null);
     setSelectedStages([]);
     if (urlRequestId || urlReferenceName) {
       setSearchParams({});
@@ -65,7 +71,7 @@ const MyAdvanceExpenseList = () => {
   };
 
   const documentIdToOpen =
-    selectedAdvanceId ||
+    selectedAdvance?.id ||
     urlReferenceName ||
     todoData?.reference_name ||
     todoData?.reference_document?.name;
@@ -75,7 +81,14 @@ const MyAdvanceExpenseList = () => {
     const canEdit =
       item?.can_edit === true &&
       currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase();
-    const canRevoke = item?.custom_allow_revoke === 1;
+
+    const canRevoke =
+      item?.custom_allow_revoke === 1 &&
+      !(
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
+      );
+
     return { canEdit, canRevoke };
   };
 
@@ -118,9 +131,17 @@ const MyAdvanceExpenseList = () => {
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
         style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.name}
-        </Typography>
+        <Tooltip
+          content={doc.name || ""}
+          triggerClassName="w-full truncate min-w-0 block"
+        >
+          <Typography
+            variant="bodySmall"
+            className="font-medium text-center truncate block w-full"
+          >
+            {doc.name}
+          </Typography>
+        </Tooltip>
         <Typography variant="bodySmall" className="font-medium text-center">
           {doc.custom_advance_type}
         </Typography>
@@ -140,8 +161,15 @@ const MyAdvanceExpenseList = () => {
             allocated_to_user={item?.allocated_to_user}
             position="left"
           >
-            <StatusBadge status={item?.reference_document?.custom_final_status} />
-         
+            <StatusBadge
+              status={
+                item?.custom_allow_revoke === 1 &&
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
+                  ? "Revoked"
+                  : item?.reference_document?.custom_final_status
+              }
+            />
           </AllocatedToTooltip>
         </div>
         {/* Actions column — stop propagation so click doesn't open detail modal */}
@@ -183,7 +211,15 @@ const MyAdvanceExpenseList = () => {
                 role={item?.role}
                 position="left"
               >
-                <StatusBadge status={doc?.custom_final_status} />
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
               </AllocatedToTooltip>
             ) : (
               <>
@@ -194,7 +230,15 @@ const MyAdvanceExpenseList = () => {
                   role={item?.role}
                   align="left"
                 />
-                <StatusBadge status={doc?.custom_final_status} />
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
               </>
             )}
           </div>
@@ -257,9 +301,16 @@ const MyAdvanceExpenseList = () => {
     const id = doc.name;
     const stages = item.approval_stages_status || [];
 
+    const status =
+      item?.custom_allow_revoke === 1 &&
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
+        ? "Revoked"
+        : item?.reference_document?.custom_final_status;
+
     return (
       <div
-        onClick={() => openDetailModal(id, stages)}
+        onClick={() => openDetailModal(id, stages, status)}
         className="cursor-pointer"
       >
         {isDesktop ? <DesktopRow item={item} /> : <MobileRow item={item} />}
@@ -336,7 +387,6 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
-              custom_final_status: "Pending",
             }}
             SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
@@ -388,6 +438,7 @@ const MyAdvanceExpenseList = () => {
           id={documentIdToOpen}
           onClose={closeDetailModal}
           selectedStages={selectedStages}
+          status={selectedAdvance?.status}
         />
       )}
     </div>

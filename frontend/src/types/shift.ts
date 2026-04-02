@@ -21,6 +21,7 @@ export interface ShiftRequest {
   custom_status: string;
   custom_request_type: string;
   doctype?: string;
+  shift_name?: string;
 }
 
 export interface ShiftRequestResponse {
@@ -52,6 +53,12 @@ export interface ShiftType {
 
 export interface ShiftTypeResponse {
   data: ShiftType[];
+}
+
+export type ShiftTypeTuple = [string, string, string, string, string, string];
+
+export interface ShiftTypeTupleResponse {
+  message: ShiftTypeTuple[];
 }
 
 export interface ShiftRequestFormData {

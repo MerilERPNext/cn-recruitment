@@ -21,6 +21,7 @@ const TeamAdvanceExpenseList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
+  const status = searchParams.get("status");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -29,9 +30,16 @@ const TeamAdvanceExpenseList = () => {
   const handleRequestClick = useCallback(
     (request: any) => {
       if (request?.todo_id) {
+        const computedStatus =
+          request.todo_status === "Closed" &&
+          request.reference_document.custom_final_status !== "Rejected"
+            ? "Approved"
+            : request.reference_document.custom_final_status;
+
         setSearchParams({
           requestId: request.todo_id,
           reference_name: request?.reference_document?.name || "",
+          status: computedStatus,
         });
       }
     },
@@ -209,6 +217,7 @@ const TeamAdvanceExpenseList = () => {
           label="Employee Advance"
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          status={status || undefined}
         />
       )}
     </div>

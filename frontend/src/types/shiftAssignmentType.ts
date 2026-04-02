@@ -14,4 +14,5 @@ export interface ApiShiftAssignment {
   docstatus: number;
   creation: string;
   shift_status: string;
+  shift_name: string;
 }
