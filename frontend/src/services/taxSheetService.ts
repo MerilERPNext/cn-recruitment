@@ -73,7 +73,7 @@ export const PayrollPeriodsService = {
   getPayrollPeriods: async (company: string | null) => {
     const response = await FrappeAPI.getDocumentList("Payroll Period", {
       fields: ["name","start_date","end_date"],
-      orderBy: "creation desc",
+      orderBy: "start_date desc",
       filters: [["company", "=", company]],
     });
 
