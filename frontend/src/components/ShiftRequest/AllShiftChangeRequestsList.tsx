@@ -25,7 +25,8 @@ const AllShiftChangeRequestsList: React.FC = () => {
       if (request?.todo_id || request?.reference_name) {
         const params: Record<string, string> = {};
         if (request?.todo_id) params.requestId = request.todo_id;
-        if (request?.reference_name) params.reference_name = request.reference_name;
+        if (request?.reference_name)
+          params.reference_name = request.reference_name;
         setSearchParams(params);
       }
     },
@@ -48,24 +49,24 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Shift Type",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
     : [
-      "Employee",
-      "Shift Type",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -110,23 +111,23 @@ const AllShiftChangeRequestsList: React.FC = () => {
                     label: "Pending",
                     key: "Draft",
                     value: "Draft",
-                    customAPIParams: { todo_status: "Open" }
+                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
                     key: "Approved",
                     value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" }
+                    customAPIParams: { todo_status: "Closed" },
                   },
                   {
                     label: "Rejected",
                     key: "Rejected",
-                    value: "Rejected"
+                    value: "Rejected",
                   },
                 ],
                 emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"]
-                }
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             defaultFilters={{ status: "Draft" }}
@@ -146,7 +147,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )
+              );
             }}
           />
         </CardTable>

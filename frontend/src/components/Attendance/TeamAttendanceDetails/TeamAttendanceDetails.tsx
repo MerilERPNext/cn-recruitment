@@ -30,7 +30,10 @@ const TeamAttendanceDetails = () => {
   const handleRequestClick = useCallback(
     (request: MyAttendanceRequest) => {
       if (request?.todo_id || request?.reference_name) {
-        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request.reference_name,
+        });
       }
     },
     [setSearchParams],
@@ -47,24 +50,24 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Explanation",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee",
+        "Explanation",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ]
     : [
-      "Employee",
-      "Explanation",
-      "From Date",
-      "To Date",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee",
+        "Explanation",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "Actions",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -99,7 +102,6 @@ const TeamAttendanceDetails = () => {
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
-
                 {
                   fieldname: "custom_status",
                   label: "Status",
@@ -109,42 +111,46 @@ const TeamAttendanceDetails = () => {
                       label: "Pending",
                       key: "Pending",
                       value: "Pending",
-                      customAPIParams: { todo_status: "Open" }
+                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",
                       key: "Approved",
                       value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" }
+                      customAPIParams: { todo_status: "Closed" },
                     },
                     {
                       label: "Rejected",
                       key: "Rejected",
-                      value: "Rejected"
+                      value: "Rejected",
                     },
                   ],
                   emptyValueConfig: {
                     filterValue: ["!=", "Cancelled"],
-                  }
+                  },
                 },
               ]}
               defaultFilters={{ custom_status: "Pending" }}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {
-                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                if (
+                  item?.data?.custom_selected_doctype_action === "Send Back"
+                ) {
                   return null;
                 }
-                return <ApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  onClick={(request: MyAttendanceRequest) =>
-                    handleRequestClick(request)
-                  }
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                />
+                return (
+                  <ApprovalCard
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    onClick={(request: MyAttendanceRequest) =>
+                      handleRequestClick(request)
+                    }
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                  />
+                );
               }}
             />
           ) : null}

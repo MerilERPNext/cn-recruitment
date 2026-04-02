@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
@@ -7,7 +8,6 @@ import CardTable from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import LoanDetailsModal from "./LoanDetailsView";
-import { useSearchParams } from "react-router-dom";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
@@ -62,7 +62,7 @@ const TeamLoanRequest = () => {
         "Start Date",
         "End Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ]
     : [
         "Employee",
@@ -73,7 +73,7 @@ const TeamLoanRequest = () => {
         "Start Date",
         "End Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
@@ -119,40 +119,42 @@ const TeamLoanRequest = () => {
                     label: "Pending",
                     key: "Open",
                     value: "Open",
-                    customAPIParams: { todo_status: "Open" }
+                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
                     key: "Approved",
                     value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" }
+                    customAPIParams: { todo_status: "Closed" },
                   },
                   {
                     label: "Rejected",
                     key: "Rejected",
-                    value: "Rejected"
+                    value: "Rejected",
                   },
                 ],
                 emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"]
-                }
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
-            defaultFilters={{ status: "Open"}}
+            defaultFilters={{ status: "Open" }}
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item: any) => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {
                 return null;
               }
-              return <ApprovalRejectionLoanList
-                data={item.data}
-                isSelected={item.isSelected}
-                onToggleSelect={item.onToggleSelect}
-                onAction={item.onAction}
-                loadingAction={item.loadingAction}
-                onClick={() => handleRequestClick(item)}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
+              return (
+                <ApprovalRejectionLoanList
+                  data={item.data}
+                  isSelected={item.isSelected}
+                  onToggleSelect={item.onToggleSelect}
+                  onAction={item.onAction}
+                  loadingAction={item.loadingAction}
+                  onClick={() => handleRequestClick(item)}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              );
             }}
           />
         </CardTable>
@@ -163,7 +165,7 @@ const TeamLoanRequest = () => {
         documentName={requestId || ""}
         referenceName={referenceName || ""}
         open={isModalOpen}
-        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
+        item={selectedItem} // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
       />
     </div>

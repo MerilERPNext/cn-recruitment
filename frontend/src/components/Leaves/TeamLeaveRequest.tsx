@@ -53,28 +53,87 @@ const TeamLeaveRequest = () => {
   const isRejectedFilter = activeStatus === "Rejected";
 
   const tableTitles = isBulkSelectEnabled
-    ? (isRejectedFilter
+    ? isRejectedFilter
       ? [
-        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
-      ]
+          "Select",
+          "Leave Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Reject Reason",
+          "Actions",
+        ]
       : [
-        "Select", "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
-      ])
-    : (isRejectedFilter
+          "Select",
+          "Leave Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Actions",
+        ]
+    : isRejectedFilter
       ? [
-        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "Reject Reason", "ACTIONS",
-      ]
+          "Leave Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Reject Reason",
+          "Actions",
+        ]
       : [
-        "Leave Id", "Employee", "Leave Type", "From Date", "To Date", "Due Date", "Leave Days", "Status", "ACTIONS",
-      ]);
+          "Leave Id",
+          "Employee",
+          "Leave Type",
+          "From Date",
+          "To Date",
+          "Due Date",
+          "Leave Days",
+          "Status",
+          "Actions",
+        ];
 
   const finalColumnWidths = isBulkSelectEnabled
-    ? (isRejectedFilter
-      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
-      : ["0.5fr", "1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"])
-    : (isRejectedFilter
+    ? isRejectedFilter
+      ? [
+          "0.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1.5fr",
+          "1fr",
+        ]
+      : [
+          "0.5fr",
+          "1fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1.5fr",
+          "1fr",
+          "1fr",
+          "1fr",
+          "1fr",
+        ]
+    : isRejectedFilter
       ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
-      : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"]);
+      : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="flex flex-col h-full">
@@ -110,12 +169,17 @@ const TeamLeaveRequest = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", key: "Open", value: "Open", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Pending",
+                      key: "Open",
+                      value: "Open",
+                      customAPIParams: { todo_status: "Open" },
+                    },
                     {
                       label: "Approved",
                       key: "Approved",
                       value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" }
+                      customAPIParams: { todo_status: "Closed" },
                     },
                     { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
@@ -124,19 +188,23 @@ const TeamLeaveRequest = () => {
               defaultFilters={{ status: "Open" }}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {
-                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                if (
+                  item?.data?.custom_selected_doctype_action === "Send Back"
+                ) {
                   return null;
                 }
-                return <LeaveApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  onClick={(request: any) => handleRequestClick(request)}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  showRejectReason={isRejectedFilter}
-                />
+                return (
+                  <LeaveApprovalCard
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    onClick={(request: any) => handleRequestClick(request)}
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                    showRejectReason={isRejectedFilter}
+                  />
+                );
               }}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters.status || "Open");

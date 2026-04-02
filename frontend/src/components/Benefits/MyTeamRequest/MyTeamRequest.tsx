@@ -15,24 +15,24 @@ const MyTeamRequest: React.FC = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee Name",
-      "Claim Benefit For",
-      "Claimed Amount",
-      "Max Amount Eligible",
-      "Claim Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Employee Name",
+        "Claim Benefit For",
+        "Claimed Amount",
+        "Max Amount Eligible",
+        "Claim Date",
+        "Status",
+        "Actions",
+      ]
     : [
-      "Employee Name",
-      "Claim Benefit For",
-      "Claimed Amount",
-      "Max Amount Eligible",
-      "Claim Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Employee Name",
+        "Claim Benefit For",
+        "Claimed Amount",
+        "Max Amount Eligible",
+        "Claim Date",
+        "Status",
+        "Actions",
+      ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -76,23 +76,23 @@ const MyTeamRequest: React.FC = () => {
                     label: "Pending",
                     key: "Pending",
                     value: "Pending",
-                    customAPIParams: { todo_status: "Open" }
+                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
                     key: "Approved",
                     value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" }
+                    customAPIParams: { todo_status: "Closed" },
                   },
                   {
                     label: "Rejected",
                     key: "Rejected",
-                    value: "Rejected"
+                    value: "Rejected",
                   },
                 ],
                 emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"]
-                }
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             SkeletonComponent={CardSkeleton}
@@ -111,7 +111,7 @@ const MyTeamRequest: React.FC = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )
+              );
             }}
           />
         </CardTable>

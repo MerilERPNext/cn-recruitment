@@ -27,6 +27,7 @@ import { useGetUiPermission } from "../hooks/userUiPermission";
 import { useTargetUser } from "../context/ViewedUserContext";
 import { Typography } from "./shared/atoms/Typography";
 import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
+import { useShiftRequestConfig } from "../hooks/useShift";
 
 interface RequestsProps {
   limitCards?: number;
@@ -105,6 +106,12 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const handleShiftForm = () => setShowShiftRequestModal(true);
   const handleCloseShiftModal = () => setShowShiftRequestModal(false);
   const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
+    const { data: shiftRequestConfig } = useShiftRequestConfig(
+      effectiveEmployeeId || "");
+  
+    const isShiftConfigEnabled =
+      shiftRequestConfig?.shift_change_requests ||
+      shiftRequestConfig?.shift_change_and_attendance_requests;
 
   /* ---------- Cards Config ---------- */
 
@@ -135,7 +142,7 @@ const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
       icon: ArrowUpDown,
       color: "success",
       onClick: handleShiftForm,
-      permission: canShiftChangeRequest,
+      permission: canShiftChangeRequest, isShiftConfigEnabled,
     },
     {
       label: "Create Loan Request",

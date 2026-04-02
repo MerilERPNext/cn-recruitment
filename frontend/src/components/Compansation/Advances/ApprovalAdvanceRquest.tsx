@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useCallback, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
@@ -8,7 +9,6 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
 import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import { useSearchParams } from "react-router-dom";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -48,7 +48,6 @@ const TeamAdvanceRequest = () => {
 
   // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
   const isModalOpen = !!selectedItem || !!(requestId || referenceName);
-  console.log({ requestId, referenceName, isModalOpen, selectedItem }, "URL Params and Modal State");
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -58,7 +57,7 @@ const TeamAdvanceRequest = () => {
         "Start Date",
         "End Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ]
     : [
         "Employee Name",
@@ -67,7 +66,7 @@ const TeamAdvanceRequest = () => {
         "Start Date",
         "End Date",
         "Status",
-        "ACTIONS",
+        "Actions",
       ];
 
   const tableColumnWidths = isBulkSelectEnabled
@@ -113,23 +112,23 @@ const TeamAdvanceRequest = () => {
                     label: "Pending",
                     key: "Pending",
                     value: "Pending",
-                    customAPIParams: { todo_status: "Open" }
+                    customAPIParams: { todo_status: "Open" },
                   },
                   {
                     label: "Approved",
                     key: "Approved",
                     value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                    customAPIParams: { todo_status: "Closed" }
+                    customAPIParams: { todo_status: "Closed" },
                   },
                   {
                     label: "Rejected",
                     key: "Rejected",
-                    value: "Rejected"
+                    value: "Rejected",
                   },
                 ],
                 emptyValueConfig: {
-                  filterValue: ["!=", "Cancelled"]
-                }
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
             defaultFilters={{ status: "Draft" }}
@@ -138,15 +137,17 @@ const TeamAdvanceRequest = () => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {
                 return null;
               }
-              return <ApprovalRejectionAdvanceList
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                onClick={() => handleRequestClick(item)}
-                loadingAction={item?.loadingAction}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
+              return (
+                <ApprovalRejectionAdvanceList
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  onClick={() => handleRequestClick(item)}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              );
             }}
           />
         </CardTable>
@@ -156,7 +157,7 @@ const TeamAdvanceRequest = () => {
         documentName={requestId || ""}
         referenceName={referenceName || ""}
         open={isModalOpen}
-        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
+        item={selectedItem} // null when opened via direct URL — modal fetches data itself
         onClose={handleClose}
       />
     </div>

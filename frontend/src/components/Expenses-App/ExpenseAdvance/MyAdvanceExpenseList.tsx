@@ -17,13 +17,13 @@ import DataListView from "../../DataListView";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import CardTable from "../../shared/CardTable";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import Tooltip from "../../shared/Tooltip";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
-import Tooltip from "../../shared/Tooltip";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
@@ -372,7 +372,7 @@ const MyAdvanceExpenseList = () => {
             "Posting Date",
             "Advance Amount",
             "Status",
-            "ACTIONS",
+            "Actions",
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >

@@ -1,11 +1,11 @@
+import { ChevronDown, ChevronUp, ExternalLink, X } from "lucide-react";
 import React from "react";
-import { ExternalLink, X, ChevronUp, ChevronDown } from "lucide-react";
+import { HDTicket } from "../../hooks/useHelpDeskTickets";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
-import { HDTicket } from "../../hooks/useHelpDeskTickets";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { useScreenSize } from "../../hooks/useScreenSize";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -21,15 +21,22 @@ interface TicketTableProps {
   employeeByEmail?: Map<string, string>;
 }
 
-
-const getAssignedName = (assignStr: string | null, userLookup?: Map<string, string>): string => {
+const getAssignedName = (
+  assignStr: string | null,
+  userLookup?: Map<string, string>,
+): string => {
   if (!assignStr) return "-";
   try {
     const parsed = JSON.parse(assignStr);
     if (Array.isArray(parsed) && parsed.length > 0) {
       const email = parsed[0];
       // Use full name from lookup if available, otherwise extract from email
-      return userLookup?.get(email) || email.split("@")[0].replace(/[._]/g, " ");
+      return (
+        userLookup?.get(email) ||
+        (typeof email === "string"
+          ? email.split("@")[0].replace(/[._]/g, " ")
+          : "-")
+      );
     }
   } catch {
     return "-";
@@ -38,20 +45,46 @@ const getAssignedName = (assignStr: string | null, userLookup?: Map<string, stri
 };
 
 // Status badge config for Badge component
-const getStatusBadgeConfig = (status: string): { label: string; backgroundColor: string; textColor: string } => {
+const getStatusBadgeConfig = (
+  status: string,
+): { label: string; backgroundColor: string; textColor: string } => {
   switch (status) {
     case "Open":
-      return { label: "Open", backgroundColor: "bg-blue-100", textColor: "text-blue-600" };
+      return {
+        label: "Open",
+        backgroundColor: "bg-blue-100",
+        textColor: "text-blue-600",
+      };
     case "Replied":
-      return { label: "Replied", backgroundColor: "bg-purple-100", textColor: "text-purple-600" };
+      return {
+        label: "Replied",
+        backgroundColor: "bg-purple-100",
+        textColor: "text-purple-600",
+      };
     case "Resolved":
-      return { label: "Resolved", backgroundColor: "bg-green-100", textColor: "text-green-600" };
+      return {
+        label: "Resolved",
+        backgroundColor: "bg-green-100",
+        textColor: "text-green-600",
+      };
     case "Closed":
-      return { label: "Closed", backgroundColor: "bg-gray-100", textColor: "text-gray-600" };
+      return {
+        label: "Closed",
+        backgroundColor: "bg-gray-100",
+        textColor: "text-gray-600",
+      };
     case "Reopened":
-      return { label: "Reopened", backgroundColor: "bg-yellow-100", textColor: "text-yellow-600" };
+      return {
+        label: "Reopened",
+        backgroundColor: "bg-yellow-100",
+        textColor: "text-yellow-600",
+      };
     default:
-      return { label: status, backgroundColor: "bg-gray-100", textColor: "text-gray-600" };
+      return {
+        label: status,
+        backgroundColor: "bg-gray-100",
+        textColor: "text-gray-600",
+      };
   }
 };
 
@@ -118,7 +151,6 @@ const TicketCard: React.FC<TicketCardProps> = ({
         />
       </div>
 
-
       {/* Data Fields - Responsive Flex Layout */}
       <div className="flex flex-wrap gap-5">
         {/* Category */}
@@ -147,7 +179,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
             Assigned to
           </Typography>
           <WrapperHoverCard
-            employeeId={employeeByEmail?.get(getAssignedEmail(ticket._assign) || "")}
+            employeeId={employeeByEmail?.get(
+              getAssignedEmail(ticket._assign) || "",
+            )}
             placement="bottom-left"
           >
             <Typography variant="mobileCardValue">
@@ -173,7 +207,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
           <Typography variant="mobileCardFooter">
             Last Updated on {formatToIndianDate(ticket.modified)}
           </Typography>
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => onReply(ticket)}
               className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
@@ -200,7 +237,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
 const columns = [
   { key: "name", label: "Issue ID", sortable: true, width: "w-28" },
   { key: "custom_category", label: "Category", sortable: true, width: "w-32" },
-  { key: "custom_sub_category", label: "Sub Category", sortable: true, width: "w-40" },
+  {
+    key: "custom_sub_category",
+    label: "Sub Category",
+    sortable: true,
+    width: "w-40",
+  },
   { key: "_assign", label: "Assigned to", sortable: false, width: "w-40" },
   { key: "creation", label: "Created on", sortable: true, width: "w-32" },
   { key: "modified", label: "Last Updated", sortable: true, width: "w-32" },
@@ -250,7 +292,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
       return (
         <div className="space-y-4 px-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl bg-white border border-gray-100 p-6 animate-pulse">
+            <div
+              key={i}
+              className="rounded-2xl bg-white border border-gray-100 p-6 animate-pulse"
+            >
               {/* Header with badge */}
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-3">
@@ -306,7 +351,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               {columns.map((col) => (
-                <th key={col.key} className={`px-4 py-3 text-left ${col.width}`}>
+                <th
+                  key={col.key}
+                  className={`px-4 py-3 text-left ${col.width}`}
+                >
                   <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
                 </th>
               ))}
@@ -379,11 +427,15 @@ const TicketTable: React.FC<TicketTableProps> = ({
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === 'name' ? 'pl-6 pr-4' : 'px-4'}`}
+                className={`py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
                 onClick={() => col.sortable && onSort(col.key)}
               >
                 <div className="flex items-center gap-1">
-                  <Typography variant="bodySmall" color="body2" className="font-medium">
+                  <Typography
+                    variant="bodySmall"
+                    color="body2"
+                    className="font-medium"
+                  >
                     {col.label}
                   </Typography>
                   {col.sortable && renderSortIcon(col.key)}
@@ -391,8 +443,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
               </th>
             ))}
             <th className="pl-4 pr-6 py-3 w-28 text-left">
-              <Typography variant="bodySmall" color="body2" className="font-medium">
-                ACTIONS
+              <Typography
+                variant="bodySmall"
+                color="body2"
+                className="font-medium"
+              >
+                Actions
               </Typography>
             </th>
           </tr>
@@ -401,8 +457,9 @@ const TicketTable: React.FC<TicketTableProps> = ({
           {tickets.map((ticket) => (
             <tr
               key={ticket.name}
-              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${onRowClick ? "cursor-pointer" : ""
-                }`}
+              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${
+                onRowClick ? "cursor-pointer" : ""
+              }`}
               onClick={() => onRowClick?.(ticket)}
             >
               <td className="px-4 py-3">
@@ -421,19 +478,32 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <WrapperHoverCard employeeId={employeeByEmail?.get(getAssignedEmail(ticket._assign) || "")} placement="bottom-left">
+                <WrapperHoverCard
+                  employeeId={employeeByEmail?.get(
+                    getAssignedEmail(ticket._assign) || "",
+                  )}
+                  placement="bottom-left"
+                >
                   <Typography variant="bodySmall" color="body1">
                     {getAssignedName(ticket._assign, userLookup)}
                   </Typography>
                 </WrapperHoverCard>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1" className="font-semibold tracking-tight">
+                <Typography
+                  variant="bodySmall"
+                  color="body1"
+                  className="font-semibold tracking-tight"
+                >
                   {formatToIndianDate(ticket.creation)}
                 </Typography>
               </td>
               <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1" className="font-semibold tracking-tight">
+                <Typography
+                  variant="bodySmall"
+                  color="body1"
+                  className="font-semibold tracking-tight"
+                >
                   {formatToIndianDate(ticket.modified)}
                 </Typography>
               </td>
@@ -450,7 +520,10 @@ const TicketTable: React.FC<TicketTableProps> = ({
                   );
                 })()}
               </td>
-              <td className="pl-4 pr-6 py-3" onClick={(e) => e.stopPropagation()}>
+              <td
+                className="pl-4 pr-6 py-3"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <div className="flex items-center gap-2">
                   {/* Reply Button */}
                   <button
