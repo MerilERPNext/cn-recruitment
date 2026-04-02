@@ -48,10 +48,6 @@ const TeamAdvanceRequest = () => {
 
   // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
   const isModalOpen = !!selectedItem || !!(requestId || referenceName);
-  console.log(
-    { requestId, referenceName, isModalOpen, selectedItem },
-    "URL Params and Modal State",
-  );
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",

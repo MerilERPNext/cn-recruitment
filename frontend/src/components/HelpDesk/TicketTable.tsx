@@ -32,7 +32,10 @@ const getAssignedName = (
       const email = parsed[0];
       // Use full name from lookup if available, otherwise extract from email
       return (
-        userLookup?.get(email) || email.split("@")[0].replace(/[._]/g, " ")
+        userLookup?.get(email) ||
+        (typeof email === "string"
+          ? email.split("@")[0].replace(/[._]/g, " ")
+          : "-")
       );
     }
   } catch {
