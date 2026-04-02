@@ -147,12 +147,15 @@ const AttendanceAssignments = ({
             customClass: "mb-4",
             validate: { required: true },
             data: {
-              values:
-                shifts?.map((item) => ({
-                  label: `<div><div>${item?.[1] ?? "--"} (${item?.[0] ?? "--"})</div><div style="font-size:0.85em;color:#6b7280;margin-top:2px;">${item?.[4] ?? "--"} - ${item?.[5] ?? "--"}</div></div>`
-                  ,
-                  value: item?.[0],
-                })) || [],
+              values: (Array.isArray(shifts) ? shifts : []).map((item) => ({
+                label: `<div>
+                    <div>${item?.[1] ?? "--"} (${item?.[0] ?? "--"})</div>
+                    <div style="font-size:0.85em;color:#6b7280;margin-top:2px;">
+                      ${item?.[4] ?? "--"} - ${item?.[5] ?? "--"}
+                    </div>
+                  </div>`,
+                value: item?.[0],
+              }))
             }
           },
           {
@@ -198,11 +201,10 @@ const AttendanceAssignments = ({
             customClass: "mb-4",
             validate: { required: true },
             data: {
-              values:
-                policies?.map((item) => ({
-                  label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
-                  value: item?.[0],
-                })) || [],
+              values: (Array.isArray(policies) ? policies : []).map((item) => ({
+                label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
+                value: item?.[0],
+              }))
             },
           },
           {
