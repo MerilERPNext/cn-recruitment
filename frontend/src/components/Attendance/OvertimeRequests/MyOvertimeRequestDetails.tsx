@@ -1,33 +1,37 @@
 import { X } from "lucide-react";
+import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import {
   MyPlannedAttendanceRequest,
   OvertimeDetail,
 } from "../../../types/attendance";
-import Button from "../../shared/atoms/Button";
-import { Typography } from "../../shared/atoms/Typography";
-import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
+import Button from "../../shared/atoms/Button";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function MyOvertimeDetails({
   documentName,
+  referenceName,
   data: propData,
   onClose,
   onAction,
-  label = "Planned Overtime Request",
+  label = "Overtime Request",
 }: {
   documentName?: string;
+  referenceName?: string;
   data?: MyPlannedAttendanceRequest;
   onClose: () => void;
   label?: string;
@@ -38,7 +42,7 @@ export function MyOvertimeDetails({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
@@ -49,7 +53,7 @@ export function MyOvertimeDetails({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const data = (
-    documentName ? fetchedData : propData
+    documentName || referenceName ? fetchedData : propData
   ) as MyPlannedAttendanceRequest;
   const handleAction = useCallback(
     async (action: string) => {
@@ -96,6 +100,8 @@ export function MyOvertimeDetails({
       } catch (error) {
         setCurrentAction(null);
 
+        toast.error(errorResponseFormater(error));
+
         console.error("Action failed", error);
       }
     },
@@ -110,16 +116,16 @@ export function MyOvertimeDetails({
   const doc = data?.reference_document;
 
   // Loading state
-  if (isLoading && documentName) {
+  if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
   }
 
   // Error state
-  if (error && documentName) {
+  if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return data?.allocated_to ? (
+  return data?.todo_id ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -153,7 +159,7 @@ export function MyOvertimeDetails({
           <div className="flex gap-2 justify-between p-1">
             <div className="flex flex-col gap-1">
               <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="text-gray-500">
+                <Typography variant="mobileCardLabel">
                   {data?.reference_document?.employee_name
                     ? "Employee Name"
                     : "Employee ID"}
@@ -166,29 +172,11 @@ export function MyOvertimeDetails({
               </div>
             </div>
             <div>
-              <StatusBadge status={data?.reference_document?.status} />
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
             </div>
           </div>
 
           <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to_name}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To Email
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to}
-                </Typography>
-              </div>
-            </div>
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
@@ -219,8 +207,8 @@ export function MyOvertimeDetails({
           {doc?.overtime_details?.length > 0 && (
             <div>
               <Typography
-                variant="bodyMedium"
-                className="base-title mb-1 block font-semibold"
+                variant="bodySmall"
+                className="base-title mb-1 font-bold block"
               >
                 Overtime Details
               </Typography>
@@ -237,65 +225,49 @@ export function MyOvertimeDetails({
                         </Typography>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-600">
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             Start Date
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {formatToIndianDate(item.start_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             Start Time
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {item.start_time}
                           </Typography>
                         </div>
 
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             End Date
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {formatToIndianDate(item.end_date)}
                           </Typography>
                         </div>
                         <div className="flex flex-col gap-1">
                           <Typography
-                            variant="bodySmall"
-                            className="card-subtitle"
+                            variant="mobileCardLabel"
+                            className="block"
                           >
                             End Time
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color="body2"
-                            className="card-title"
-                          >
+                          <Typography variant="mobileCardValue">
                             {item.end_time}
                           </Typography>
                         </div>
@@ -303,16 +275,12 @@ export function MyOvertimeDetails({
                         {item.message && (
                           <div className="flex flex-col gap-1">
                             <Typography
-                              variant="bodySmall"
-                              className="card-subtitle"
+                              variant="mobileCardLabel"
+                              className="block"
                             >
                               Message
                             </Typography>
-                            <Typography
-                              variant="bodySmall"
-                              color="body2"
-                              className="card-title"
-                            >
+                            <Typography variant="mobileCardValue">
                               {item.message}
                             </Typography>
                           </div>
@@ -344,40 +312,32 @@ export function MyOvertimeDetails({
             </div>
           )}
         </div>
-        {/* Actions */}
-        {actions?.length > 0 &&
-          data?.status === "Open" &&
-          data?.allocated_to === currentEmployee?.user_id && (
-            <div className=" w-full bg-white border-t shadow-md p-4 z-20">
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length &&
-                  actions?.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
-                    const isLoading =
-                      currentAction === action && mutation.isPending;
-                    return (
-                      <Button
-                        key={action}
-                        disabled={isLoading}
-                        onClick={() => {
-                          handleAction(action);
-                        }}
-                        size="md"
-                        bgColor={actionStyle.bgColor}
-                        variant={actionStyle.variant}
-                        className="w-full"
-                      >
-                        {isLoading ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
+        {(actions?.length > 0 &&
+          data?.reference_document?.status === "Open") ? (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            {typeof data?.allocated_to === "string" &&
+              data?.allocated_to === currentEmployee?.user_id && <TeamApprovalActionPill
+                variant="modal"
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={
+                  currentAction
+                    ? { id: data?.todo_id, action: currentAction }
+                    : null
+                }
+                onAction={(action) => handleAction(action)}
+              />}
+          </div>
+        ) : (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
               </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   ) : null;

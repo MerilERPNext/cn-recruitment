@@ -1,105 +1,190 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import CardTable from "../../shared/CardTable";
 import { useState } from "react";
-import { formatCurrency } from "../../../utils/currencyFormatter";
-import AdvanceDetailModal from "./AdvanceDetailModal";
-import { useScreenSize } from "../../../hooks/useScreenSize";
+import toast from "react-hot-toast";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DataListView from "../../DataListView";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { ApprovalStage } from "../../../types/expenseAdvance";
-import Tooltip from "../../shared/Tooltip";
-import Badge from "../../shared/Badge";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { Typography } from "../../shared/atoms/Typography";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
+import DataListView from "../../DataListView";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import CardTable from "../../shared/CardTable";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { FileText } from "lucide-react";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceDetailModal from "./AdvanceDetailModal";
+import Tooltip from "../../shared/Tooltip";
 
 const MyAdvanceExpenseList = () => {
-  const [selectedAdvanceId, setSelectedAdvanceId] = useState<string | null>(
-    null,
-  );
+  const [selectedAdvance, setSelectedAdvance] = useState<{
+    id: string;
+    status: string;
+  } | null>(null);
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const navigate = useNavigate();
 
-  const openDetailModal = (id: string, stages: ApprovalStage[]) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlRequestId = searchParams.get("requestId");
+  const urlReferenceName = searchParams.get("reference_name");
+
+  const { data: todoData } = useGetToDoWithReferenceDoc(
+    urlRequestId || undefined,
+    urlReferenceName || undefined,
+  );
+
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
+
+  const openDetailModal = (
+    id: string,
+    stages: ApprovalStage[],
+    status: string,
+  ) => {
     setSelectedStages(stages);
-    setTimeout(() => setSelectedAdvanceId(id), 0);
+    setTimeout(() => {
+      setSelectedAdvance({ id, status });
+      setSearchParams({ reference_name: id });
+    }, 0);
   };
 
   const closeDetailModal = () => {
-    setSelectedAdvanceId(null);
+    setSelectedAdvance(null);
     setSelectedStages([]);
+    if (urlRequestId || urlReferenceName) {
+      setSearchParams({});
+    }
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-    if (status === "draft")
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-800" };
-    if (status === "approved")
-      return { label: "Approved", statusColor: "bg-green-100 text-green-800" };
-    if (status === "cancelled")
-      return { label: "Cancelled", statusColor: "bg-red-100 text-red-800" };
-    return {
-      label: rawStatus || "Unknown",
-      statusColor: "bg-gray-100 text-gray-800",
-    };
+  const documentIdToOpen =
+    selectedAdvance?.id ||
+    urlReferenceName ||
+    todoData?.reference_name ||
+    todoData?.reference_document?.name;
+
+  /** Determine action permissions for a todo item */
+  const getActionFlags = (item: any) => {
+    const canEdit =
+      item?.can_edit === true &&
+      currentUser?.name?.toLowerCase() === item?.send_back_user?.toLowerCase();
+
+    const canRevoke =
+      item?.custom_allow_revoke === 1 &&
+      !(
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
+      );
+
+    return { canEdit, canRevoke };
+  };
+
+  /** Navigate to the advance form in edit mode with pre-filled data */
+  const handleEditClick = (item: any) => {
+    navigate("/webapp/expenses-app/new-expense-advance", {
+      state: { advanceData: item.reference_document },
+    });
+  };
+
+  /** Revoke an advance */
+  const handleRevokeClick = (item: any) => {
+    if (!item?.todo_id) return;
+    loading?.show("Revoking Advance...");
+    revokeEventMutation.mutate(
+      {
+        docname: item?.reference_name,
+        doctype: item?.reference_type,
+        todo: item?.todo_id,
+      },
+      {
+        onSuccess: () => {
+          setTimeout(() => setRefetchAttendance(true), 2000);
+          toast.success("Advance Revoked Successfully!");
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+        onSettled: () => loading?.hide(),
+      },
+    );
   };
 
   const DesktopRow = ({ item }: any) => {
     const doc = item.reference_document;
-    const status = getStatus(item?.reference_document?.status);
+    const { canEdit, canRevoke } = getActionFlags(item);
 
     return (
       <div
         className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+        style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
       >
-        <Link
-          to={`/webapp/employee-profile?target_user=${doc?.employee}`}
-          target="_blank"
+        <Tooltip
+          content={doc.name || ""}
+          triggerClassName="w-full truncate min-w-0 block"
         >
           <Typography
             variant="bodySmall"
-            className="font-medium text-center truncate"
+            className="font-medium text-center truncate block w-full"
           >
-            <WrapperHoverCard employeeId={doc.employee}>
-              {doc.employee_name}
-            </WrapperHoverCard>
+            {doc.name}
           </Typography>
-        </Link>
+        </Tooltip>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.custom_advance_type}
+        </Typography>
+        <Typography variant="bodySmall" className="font-medium text-center">
+          {doc.custom_advance_policy}
+        </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatToIndianDate(doc.posting_date)}
-        </Typography>
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.company}
-        </Typography>
-        <Typography variant="bodySmall" className="font-medium text-center">
-          {doc.department}
         </Typography>
         <Typography variant="bodySmall" className="font-medium text-center">
           {formatCurrency(doc.advance_amount)}
         </Typography>
         <div className="flex items-center justify-center">
-          <Tooltip
-            content={
-              status?.label === "Pending"
-                ? `Allocated to : ${item?.allocated_to}`
-                : ""
-            }
+          <AllocatedToTooltip
+            users={item?.allocated_to}
+            roles={item?.allocated_roles}
+            allocated_to_user={item?.allocated_to_user}
+            position="left"
           >
-            {/* <Badge
-              size="md"
-              backgroundColor={status?.statusColor}
-              label={status?.label || ""}
-            /> */}
-            <StatusBadge status={item?.reference_document?.status} />
-          </Tooltip>
+            <StatusBadge
+              status={
+                item?.custom_allow_revoke === 1 &&
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
+                  ? "Revoked"
+                  : item?.reference_document?.custom_final_status
+              }
+            />
+          </AllocatedToTooltip>
+        </div>
+        {/* Actions column — stop propagation so click doesn't open detail modal */}
+        <div
+          className="flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MyApprovalActionPill
+            isPending={doc?.custom_final_status === "Pending"}
+            canEdit={canEdit}
+            onEdit={() => handleEditClick(item)}
+            canRevoke={canRevoke}
+            revokeLoading={revokeEventMutation.isPending}
+            onRevoke={() => handleRevokeClick(item)}
+          />
         </div>
       </div>
     );
@@ -107,77 +192,105 @@ const MyAdvanceExpenseList = () => {
 
   const MobileRow = ({ item }: any) => {
     const doc = item.reference_document;
-    const status = getStatus(item?.reference_document?.status);
+    const { canEdit, canRevoke } = getActionFlags(item);
 
     return (
-      <div className="rounded-2xl shadow-sm p-6 border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20  shadow-sm border-primary mb-3">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            {formatCurrency(doc.advance_amount)}
-          </h3>
-          <div className="flex justify-start">
-            <Tooltip
-              content={status?.label === "Pending" ? item?.allocated_to : ""}
-            >
-              <Badge
-                size="sm"
-                backgroundColor={status?.statusColor}
-                label={status?.label || ""}
+      <div
+        className="cursor-pointer border-t-4 border-x border-b
+        border-x-primary/20 border-b-primary/20
+        shadow-sm border-primary bg-white rounded-xl mb-3"
+      >
+        <div className="p-4 flex flex-col gap-3 w-full">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            {isDesktop ? (
+              <AllocatedToTooltip
+                users={item?.allocated_to}
+                roles={item?.allocated_roles}
+                allocated_to_user={item?.username}
+                role={item?.role}
+                position="left"
+              >
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
+              </AllocatedToTooltip>
+            ) : (
+              <>
+                <MobileAllocatedTo
+                  users={item?.allocated_to}
+                  roles={item?.allocated_roles}
+                  username={item?.username}
+                  role={item?.role}
+                  align="left"
+                />
+                <StatusBadge
+                  status={
+                    item?.custom_allow_revoke === 1 &&
+                    item?.todo_status?.toLowerCase() === "cancelled" &&
+                    item?.reference_document?.docstatus === 2
+                      ? "Revoked"
+                      : item?.reference_document?.custom_final_status
+                  }
+                />
+              </>
+            )}
+          </div>
+
+          {/* Amount & Department */}
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                Advance Category
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {doc?.custom_advance_type}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Advance Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(doc?.advance_amount)}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Company & Posting Date */}
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Advance Policy</Typography>
+              <Typography variant="mobileCardValue">
+                {doc?.custom_advance_policy}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">Posting Date</Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(doc?.posting_date)}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Action Buttons — stop propagation to prevent opening detail modal */}
+          {(canEdit || canRevoke) && (
+            <div onClick={(e) => e.stopPropagation()}>
+              <MyApprovalActionPill
+                variant="buttons"
+                isPending={doc?.custom_final_status === "Pending"}
+                canEdit={canEdit}
+                onEdit={() => handleEditClick(item)}
+                canRevoke={canRevoke}
+                revokeLoading={revokeEventMutation.isPending}
+                onRevoke={() => handleRevokeClick(item)}
               />
-            </Tooltip>
-          </div>
-        </div>
-        <div className="flex flex-col gap-3">
-          <div className="flex justify-between">
-            <Link
-              to={`/webapp/employee-profile?target_user=${doc?.employee}`}
-              target="_blank"
-            >
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
-                  Employee
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {doc.employee_name}
-                </Typography>
-              </div>
-            </Link>
-
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block text-right">
-                Date
-              </Typography>
-              <Typography variant="mobileCardValue">
-                {formatToIndianDate(doc.posting_date)}
-              </Typography>
             </div>
-          </div>
-          <div className="flex justify-between">
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
-                Company
-              </Typography>
-              <Typography variant="mobileCardValue">
-                {doc.company}
-              </Typography>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel" className="block">
-                Department
-              </Typography>
-              <Typography variant="mobileCardValue">
-                {doc.department}
-              </Typography>
-            </div>
-          </div>
-          <div>
-            <div className="h-[1px] w-full bg-gray-100 my-4" />
-            <Typography variant="mobileCardFooter">
-              Last Updated on{" "}
-              {formatToIndianDate(item?.reference_document?.modified)}
-            </Typography>
-          </div>
+          )}
         </div>
       </div>
     );
@@ -188,9 +301,16 @@ const MyAdvanceExpenseList = () => {
     const id = doc.name;
     const stages = item.approval_stages_status || [];
 
+    const status =
+      item?.custom_allow_revoke === 1 &&
+      item?.todo_status?.toLowerCase() === "cancelled" &&
+      item?.reference_document?.docstatus === 2
+        ? "Revoked"
+        : item?.reference_document?.custom_final_status;
+
     return (
       <div
-        onClick={() => openDetailModal(id, stages)}
+        onClick={() => openDetailModal(id, stages, status)}
         className="cursor-pointer"
       >
         {isDesktop ? <DesktopRow item={item} /> : <MobileRow item={item} />}
@@ -228,27 +348,7 @@ const MyAdvanceExpenseList = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="max-w-sm w-full mx-auto text-center p-6">
-          <div className="space-y-5">
-            <div className="flex items-center justify-center">
-              <div className="p-4 bg-blue-50 rounded-full">
-                <FileText className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {message.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {message.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
   return (
@@ -256,7 +356,7 @@ const MyAdvanceExpenseList = () => {
       {isDesktop && (
         <div className="flex-shrink-0">
           <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">My Advance Expenses</Typography>{" "}
+            <Typography variant="h4">My Advance Expenses</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage your advance expense requests
             </Typography>
@@ -266,14 +366,15 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Employee",
+            "Advance ID",
+            "Advance Category",
+            "Advance Policy",
             "Posting Date",
-            "Company",
-            "Department",
             "Advance Amount",
             "Status",
+            "ACTIONS",
           ]}
-          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
           <DataListView
             queryKey={["employee-advance"]}
@@ -286,48 +387,58 @@ const MyAdvanceExpenseList = () => {
             }}
             defaultFilters={{
               custom_type: "Reimbursement / Expense Advance",
-              status: "Pending",
             }}
+            SkeletonComponent={CardSkeleton}
             ItemComponent={RowWrapper}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
             isSearch={true}
             isFilter={true}
             filterFields={[
               {
-                fieldname: "status",
+                fieldname: "custom_final_status",
                 label: "Status",
                 fieldtype: "Select",
-                options: ["Pending", "Approved", "Rejected"],
+                options: [
+                  {
+                    label: "Pending",
+                    key: "Pending",
+                    value: "Pending",
+                    customAPIParams: { todo_status: "Open" },
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: "Approved",
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected",
+                  },
+                ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"],
+                },
               },
             ]}
+            orderBy="posting_date desc"
             noRecordsScreen={noRecordsScreen}
             refetchTrigger={refetchAttendance}
             onRefetchComplete={() => setRefetchAttendance(false)}
             showRefreshButton={false}
-            orderBy="creation desc"
             pageSize={10}
-            infiniteScroll={true}
-            showPagination={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
           />
         </CardTable>
       </div>
 
-      {selectedAdvanceId && (
+      {documentIdToOpen && (
         <AdvanceDetailModal
-          id={selectedAdvanceId}
+          id={documentIdToOpen}
           onClose={closeDetailModal}
           selectedStages={selectedStages}
+          status={selectedAdvance?.status}
         />
       )}
     </div>

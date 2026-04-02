@@ -1,14 +1,15 @@
-import { useState, useCallback } from "react";
-import { MyAttendanceRequest } from "../../../types/attendance";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { MyAttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
 
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalCard from "./ApprovalCard";
-import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalCard from "./ApprovalCard";
 
 const TeamAttendanceDetails = () => {
   const { data: currentUser } = useCurrentUser();
@@ -20,6 +21,7 @@ const TeamAttendanceDetails = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -27,8 +29,8 @@ const TeamAttendanceDetails = () => {
 
   const handleRequestClick = useCallback(
     (request: MyAttendanceRequest) => {
-      if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+      if (request?.todo_id || request?.reference_name) {
+        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
       }
     },
     [setSearchParams],
@@ -45,24 +47,24 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -89,24 +91,50 @@ const TeamAttendanceDetails = () => {
               setRefetch={setRefetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               isSearch={true}
               isFilter={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
+
                 {
-                  fieldname: "status",
+                  fieldname: "custom_status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  }
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
-              renderCardContent={(item) => (
-                <ApprovalCard
+              defaultFilters={{ custom_status: "Pending" }}
+              SkeletonComponent={CardSkeleton}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -117,14 +145,15 @@ const TeamAttendanceDetails = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <AttendanceDetailView
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />

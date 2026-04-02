@@ -1,19 +1,33 @@
-import { useState, useCallback } from "react";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import ApprovalList from "../../shared/ApprovalList";
-import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetAllExpenseCategories } from "../../../hooks/useExpense";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
-import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { FileText } from "lucide-react";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
+  const { data: expenseCategories } = useGetAllExpenseCategories();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+  const [activeStatus, setActiveStatus] = useState("Draft");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+
+  const expenseCategoryOptions = useMemo(() => {
+    if (!expenseCategories || !Array.isArray(expenseCategories)) {
+      return [];
+    }
+    return expenseCategories.map((cat: any) => ({
+      label: cat.category_name || cat.name,
+      value: cat.category_name || cat.name,
+    }));
+  }, [expenseCategories]);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -22,11 +36,15 @@ const TeamExpense = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request?.reference_document?.name || "",
+        });
       }
     },
     [setSearchParams],
@@ -44,26 +62,40 @@ const TeamExpense = () => {
   const tableTitles = isBulkSelectEnabled
     ? [
       "Select",
+      "Expense Id",
       "Employee",
       "Expense Category",
+      "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Actions",
     ]
     : [
+      "Expense Id",
       "Employee",
       "Expense Category",
+      "Expense Type",
+      "Expense Date",
       "Claimed Amount",
+      "Claimed Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Actions",
     ];
 
   const { isDesktop } = useScreenSize();
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? (activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"])
+    : (activeStatus === "Approved"
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]);
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -97,25 +129,7 @@ const TeamExpense = () => {
     const message = getEmptyStateMessage();
 
     return (
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="max-w-sm w-full mx-auto text-center p-6">
-          <div className="space-y-5">
-            <div className="flex items-center justify-center">
-              <div className="p-4 bg-blue-50 rounded-full">
-                <FileText className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {message.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {message.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <NoDataFound title={message.title} subtitle={message.description} />
     );
   };
   return (
@@ -138,29 +152,58 @@ const TeamExpense = () => {
               refetch={refetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              showPagination={true}
-              infiniteScroll={true}
-              loadMorePagination={false}
               isSearch={true}
               isFilter={true}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "approval_status",
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Draft" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    { label: "Pending", key: "Draft", value: "Draft", customAPIParams: { todo_status: "Open" } },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    { label: "Rejected", key: "Rejected", value: "Rejected" },
                   ],
+                },
+                {
+                  fieldname: "custom_expense_category_name",
+                  label: "Expense Category",
+                  fieldtype: "Select",
+                  options: expenseCategoryOptions,
+                },
+                {
+                  fieldname: "creation_start",
+                  label: "Start Date",
+                  fieldtype: "Date",
+                },
+                {
+                  fieldname: "creation_end",
+                  label: "End Date",
+                  fieldtype: "Date",
                 },
               ]}
               noRecordsScreen={noRecordsScreen}
-              defaultFilters={{ status: "Draft" }}
-              renderCardContent={(item) => (
-                <ExpenseApprovalCard
+              defaultFilters={{ approval_status: "Draft" }}
+              orderBy="posting_date desc"
+              SkeletonComponent={CardSkeleton}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.approval_status || "Draft");
+              }}
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <ExpenseApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -168,15 +211,17 @@ const TeamExpense = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  activeStatus={activeStatus}
                 />
-              )}
+              }}
             />
           ) : null}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <TeamExpenseDetailView
-          documentName={requestId}
+          documentName={requestId || undefined}
+          referenceName={referenceName || undefined}
           label="Expense Claim"
           onClose={handleCloseModal}
           onAction={handleActionComplete}

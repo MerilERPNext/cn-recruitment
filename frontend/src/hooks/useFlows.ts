@@ -3,21 +3,40 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getChatAssistantData,
   getChatAssistantFlowInitiateData,
-  getDifinitionNameForSeparation,
+  getFlowConfigSelfTriggerList,
+  getFlowConfigOthersTriggerList,
+  getFlowRequests,
+  getOpenApprovalTodos,
   getSeparationFunnelData,
   getSeparationWorkflow,
   getShouldShowConfirmationButton,
-  postSelectEventFromOptions
+  postSelectEventFromOptions,
+  getDifinitionNameForSeparation
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
-
+import { FlowRequestResponse } from "../types/flows";
 
 export const useDifinitaionNameForSeparation = () => {
   return useQuery<string | AssistantTriggerResponse>({
     queryKey: ["chatAssistant"],
     queryFn: getDifinitionNameForSeparation,
+  });
+};
+
+export const useFlowConfigSelfTriggerList = () => {
+  return useQuery<string | AssistantTriggerResponse>({
+    queryKey: ["flowConfigSelfTriggerList"],
+    queryFn: getFlowConfigSelfTriggerList,
+  });
+};
+
+export const useFlowConfigOthersTriggerList = (employee: string) => {
+  return useQuery<string | AssistantTriggerResponse>({
+    queryKey: ["flowConfigOthersTriggerList", employee],
+    queryFn: () => getFlowConfigOthersTriggerList(employee),
+    enabled: !!employee,
   });
 };
 
@@ -47,6 +66,23 @@ export const useChatAssistant = (
       && !!document_name
       && !!definition_name
       && !!l, // fetch tabhi jab data mile
+  });
+};
+
+export const useChatAssistantLazy = () => {
+  return useMutation({
+    mutationFn: ({
+      doctype_name,
+      document_name,
+      definition_name,
+      l,
+    }: {
+      doctype_name: string;
+      document_name: string;
+      definition_name: string;
+      l: string;
+    }) =>
+      getChatAssistantData(doctype_name, document_name, definition_name, l),
   });
 };
 
@@ -145,3 +181,25 @@ export function useConfirmationApproval() {
   });
 }
 
+export const useGetFlowRequests = (
+) => {
+  return useQuery<FlowRequestResponse>({
+    queryKey: [
+      "employee-flow-requests"
+    ],
+    queryFn: () => getFlowRequests(),
+  });
+};
+
+
+export const useGetOpenApprovalTodos = (
+  name: string
+) => {
+  return useQuery<FlowRequestResponse>({
+    queryKey: [
+      "employee-flow-requests",
+    ],
+    queryFn: () => getOpenApprovalTodos({ name }),
+    enabled: !!name
+  });
+};

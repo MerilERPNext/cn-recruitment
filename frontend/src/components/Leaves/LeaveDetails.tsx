@@ -1,39 +1,44 @@
+import DOMPurify from "dompurify";
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import {
-  useUpdateRejectionReason,
-  useIsRejectionReasonMandatory,
-} from "../../hooks/useLeaves";
-import Button from "../shared/atoms/Button";
-import DOMPurify from "dompurify";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
+import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import {
+  useIsRejectionReasonMandatory,
+  useUpdateRejectionReason,
+} from "../../hooks/useLeaves";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import formatToIndianDate from "../../utils/formatToIndianDate";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
+import Button from "../shared/atoms/Button";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import toast from "react-hot-toast";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
-import { getActionStyles } from "../../utils/actionButtonStyles";
 
 export function LeaveDetailView({
   documentName,
+  referenceName,
   data: propsData,
   onClose,
   onAction,
   label = "Leave Request",
+  reasonName,
 }: {
   documentName?: string;
+  referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  reasonName?: string;
 }) {
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -44,11 +49,13 @@ export function LeaveDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-  const data = documentName ? fetchedData : propsData;
+  const data = (documentName || referenceName) ? fetchedData : propsData;
+  console.log(data)
+  const { isDesktop } = useScreenSize();
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
+  const cleanDescription = DOMPurify.sanitize(data?.reference_document?.description || "");
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -158,14 +165,14 @@ export function LeaveDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  if (isLoading && documentName) {
+  if (isLoading && (documentName || referenceName)) {
     return <LoadingView onClose={onClose} label={label} />;
   }
-  if (error && documentName) {
+  if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  return data?.todo_id ? (
+  return (data?.todo_id || data?.name || data?.reference_document?.name) ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={onClose}
@@ -176,10 +183,10 @@ export function LeaveDetailView({
       >
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <Typography
-            variant="h4"
+            variant="bodyMedium"
             className="font-semibold text-gray-900 leading-tight"
           >
-            {label}
+            {label}: {data?.reference_document?.name}
           </Typography>
 
           <Button
@@ -219,28 +226,10 @@ export function LeaveDetailView({
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-2">
                 <Typography variant="mobileCardLabel" className="block">
-                  Allocated To
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to_name}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-2 text-right">
-                <Typography variant="mobileCardLabel" className="block">
-                  Allocated To Email
-                </Typography>
-                <Typography variant="mobileCardValue">
-                  {data.allocated_to}
-                </Typography>
-              </div>
-            </div>
-            <div className="flex justify-between w-full">
-              <div className="flex flex-col gap-2">
-                <Typography variant="mobileCardLabel" className="block">
                   Leave Type
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.leave_type}
+                  {`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
                 </Typography>
               </div>
               <div className="flex flex-col gap-2 text-right">
@@ -248,7 +237,7 @@ export function LeaveDetailView({
                   Reason
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.custom_reason}
+                  {data?.reference_document?.reason_name || reasonName || "--"}
                 </Typography>
               </div>
             </div>
@@ -276,6 +265,14 @@ export function LeaveDetailView({
                 {cleanDescription}
               </Typography>
             </div>
+            {data?.reference_document?.status === "Rejected" && data?.reference_document?.custom_rejection_reason && (
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel">Reject Reason</Typography>
+                <Typography variant="mobileCardValue" className="text-red-500 text-sm whitespace-normal">
+                  {data?.reference_document?.custom_rejection_reason}
+                </Typography>
+              </div>
+            )}
           </div>
 
           {data?.attachments && data?.attachments?.length > 0 ? (
@@ -294,34 +291,19 @@ export function LeaveDetailView({
         </div>
 
         {actions?.length > 0 && data?.status === "Open" && (
-          <div className=" w-full bg-white border-t shadow-md p-4 z-20">
-            <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-              {actions?.length &&
-                actions?.map((action: string) => {
-                  const actionStyle = getActionStyles(action);
-                  const isLoading =
-                    currentAction === action && mutation.isPending;
-                  return (
-                    <Button
-                      key={action}
-                      disabled={isLoading}
-                      onClick={() => {
-                        handleAction(action);
-                      }}
-                      size="md"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                      className="w-full"
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
-            </div>
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            <TeamApprovalActionPill
+              variant={isDesktop ? "modal" : "buttons"}
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data?.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={(action) => handleAction(action)}
+            />
           </div>
         )}
       </div>

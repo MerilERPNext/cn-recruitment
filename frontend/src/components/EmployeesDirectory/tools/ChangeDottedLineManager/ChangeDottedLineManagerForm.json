@@ -1,0 +1,44 @@
+{
+    "title": "Change Dotted Line Manager",
+    "name": "changeDottedLineManagerForm",
+    "path": "change-dotted-line-manager-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Dotted Line Manager",
+            "key": "dotted_line_manager",
+            "type": "select",
+            "input": true,
+            "placeholder": "Select Dotted Line Manager",
+            "customClass": "mb-4",
+            "refreshOn": "doctype",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Employee?fields=[\"*\"]"
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.employee_name }} ({{item.name}})</span>",
+            "selectValues": "data",
+            "lazyLoad": false,
+            "validate": {
+                "required": true
+            }
+        },
+        {
+            "label": "Effective From",
+            "key": "effective_from",
+            "type": "datetime",
+            "input": true,
+            "widget": {
+                "type": "calendar"
+            },
+            "validate": {
+                "required": true
+            },
+            "format": "dd-MM-yyyy",
+            "placeholder": "dd-mm-yyyy",
+            "customClass": "mb-4",
+            "enableTime": false
+        }
+    ]
+}

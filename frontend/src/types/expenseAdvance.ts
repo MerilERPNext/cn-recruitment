@@ -105,6 +105,9 @@ export interface ApprovalStage {
   user: string | null;
   role: string;
   status: string;
+  approval_time: string | null;
+  employee_id: string | null;
+  designation_name: string | null;
 }
 
 export interface ExpenseClaim {
@@ -125,6 +128,7 @@ export interface ExpenseClaim {
   custom_day_of_month: number;
   custom_day_of_week: string;
   custom_expense_category: string;
+  custom_expense_category_name?: string;
   custom_is_shared_expense: number;
   expense_approver: string;
   approval_status: string;
@@ -171,6 +175,7 @@ export interface Expense {
   amount: number;
   custom_currency: string;
   custom_amount_in_other_currency: number;
+  custom_claim_type_name: string;
   sanctioned_amount: number;
   custom_sanctioned_amount_in_other_currency: number;
   custom_exchange_rate: number;

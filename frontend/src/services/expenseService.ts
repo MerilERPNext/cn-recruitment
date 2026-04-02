@@ -204,7 +204,7 @@ export const expenseService = {
   updateExpense: async (
     expense_claim_name: string,
     expenses: Array<Record<string, any>>,
-    participants: Array<Record<string, any>>
+    isResubmit?: boolean
   ) => {
     if (!expense_claim_name) {
       throw new Error("expense_claim_name is required");
@@ -214,18 +214,26 @@ export const expenseService = {
       throw new Error("expenses must be an array");
     }
 
-    if (!Array.isArray(participants)) {
-      throw new Error("participants must be an array");
-    }
-
     const payload = {
-      expense_claim_data: { expense_claim_name, expenses, participants },
+      expense_claim_data: { expense_claim_name, expenses },
     };
 
-    return FrappeAPI.callMethod(
+    const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.edit_expense_claim",
       payload
     );
+
+    if (isResubmit) {
+      await FrappeAPI.callMethod(
+        "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+        {
+          doctype: "Expense Claim",
+          docname: expense_claim_name,
+        }
+      );
+    }
+
+    return response;
   },
 
   //update line item status
@@ -284,13 +292,33 @@ export const expenseService = {
     }
   },
 
-  //get Expense type general/relocation
   getExpenseCategoryTypes: async (): Promise<ExpenseCategoryType[]> => {
     const response = await FrappeAPI.callMethod(
       "chatnext_expense_trips.expense_claim.fiter_category_types"
     );
 
     return Array.isArray(response) ? response : [];
+  },
+
+  getApplicableExpenseCategories: async (categoryType: string): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
+      { category_type: categoryType }
+    );
+  },
+
+  getAllExpenseCategories: async (): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_applicable_expense_categories",
+      { category_type: "General" }
+    );
+  },
+
+  getExpenseTypesByCategory: async (employee: string, reimbursementCategory: string): Promise<any> => {
+    return FrappeAPI.callMethod(
+      "chatnext_expense_trips.expense_claim.get_expense_types_by_category",
+      { employee, reimbursement_category: reimbursementCategory }
+    );
   },
 
   getExpensePolicyQuestions: async (
@@ -310,4 +338,68 @@ export const expenseService = {
       { expenses_data }
     );
   },
+
+  getExpenseAttachments: async (documentName: string, doctype: string = "Expense Claim"): Promise<any[]> => {
+    const filters: FilterCondition[] = [
+      ["attached_to_doctype", "=", doctype],
+      ["attached_to_name", "=", documentName],
+    ];
+    const result = await FrappeAPI.getDocumentList("File", {
+      fields: ["name", "file_name", "file_url"],
+      filters,
+    });
+    return (result.data as any[]) || [];
+  },
+
+  createDraftExpenseClaim: async (payload: any) => {
+    return FrappeAPI.createDocument("Draft Expense Claim", payload);
+  },
+
+  getDraftExpenseClaims: async (employeeId: string): Promise<any[]> => {
+    const filters: FilterCondition[] = [
+      ["employee", "=", employeeId],
+    ];
+    const response = await FrappeAPI.getDocumentList("Draft Expense Claim", {
+      fields: ["*"],
+      filters,
+    });
+    return response.data || [];
+  },
+
+  deleteDraftExpenseClaim: async (docName: string) => {
+    return FrappeAPI.deleteDocument("Draft Expense Claim", docName);
+  },
+
+  updateDraftExpenseClaim: async (docName: string, payload: any) => {
+    return FrappeAPI.updateDocument("Draft Expense Claim", docName, payload);
+  },
+
+  getFilesByAttachment: async (attachedToDoctype: string, attachedToName: string): Promise<any[]> => {
+    const filters: FilterCondition[] = [
+      ["attached_to_doctype", "=", attachedToDoctype],
+      ["attached_to_name", "=", attachedToName],
+    ];
+    const response = await FrappeAPI.getDocumentList("File", {
+      fields: ["name", "file_name", "file_url", "attached_to_doctype", "attached_to_name"],
+      filters,
+    });
+    return response.data || [];
+  },
+
+  updateFile: async (fileName: string, data: { attached_to_doctype: string; attached_to_name: string }) => {
+    return FrappeAPI.updateDocument("File", fileName, data);
+  },
+
+  resubmitApprovalEvent: async (doctype: string, docname: string) => {
+    return FrappeAPI.callMethod(
+      "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+      {
+        doctype,
+        docname,
+      }
+    );
+  },
+
 };
+
+

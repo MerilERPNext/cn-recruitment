@@ -6,223 +6,262 @@ import {
   ReceiptIndianRupeeIcon,
   Timer,
   Wallet,
-  Workflow,
 } from "lucide-react";
 import { useState } from "react";
-import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
-import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
-import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
-import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
-import { useScreenSize } from "../hooks/useScreenSize";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
-import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useLoggedInUser } from "../hooks/useLoggedInUser";
+import { useScreenSize } from "../hooks/useScreenSize";
+import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import AdvanceForm from "./Compansation/Advances/AdvanceForm";
 import Modal from "./Compansation/Advances/commonModal";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import InitiateFlow from "./Flows/Initiate/InitiateFlow";
+import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import DesktopLayoutWrapper from "./DesktopLayoutWrapper";
 import HeaderBar from "./HeaderBar";
-import { createPortal } from "react-dom";
+import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import { usePlannedOvertimeAllowed } from "../hooks/useAttendance";
+import { isActionEnabled } from "../utils/uiPermission";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { useTargetUser } from "../context/ViewedUserContext";
+import { Typography } from "./shared/atoms/Typography";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 
-const Requests = () => {
+interface RequestsProps {
+  limitCards?: number;
+}
+
+const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
+  const { targetEmployeeId } = useTargetUser();
+
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: userUiPermission } = useGetUiPermission();
+
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    effectiveEmployeeId || "",
+  );
+
+  const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
+    effectiveEmployeeId || ""
+  );
+
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Planned Overtime"
+  );
+
+  const canLeaveRequest = isActionEnabled(
+    userUiPermission,
+    "request_leave",
+    "My Requests"
+  );
+  const canAttendaneRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
+  const canShiftChangeRequest = isActionEnabled(
+    userUiPermission,
+    "request_shift_change",
+    "All Shift"
+  );
+  const canLoanRequest = isActionEnabled(
+    userUiPermission,
+    "create_loan",
+    "My Loan Requests"
+  );
+  const canEmployeeAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_advance",
+    "My Advances"
+  );
+  const canExpenseRequest = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims"
+  );
+
+  const canExpenseAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances"
+  );
 
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const { openModal } = useRequestLeaveModal();
+
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
   const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-  const [showInitiateModel, setShowInitiateModel] = useState<boolean>(false);
 
-  const handleShiftForm = () => {
-    setShowShiftRequestModal(true);
-  };
+  const handleShiftForm = () => setShowShiftRequestModal(true);
+  const handleCloseShiftModal = () => setShowShiftRequestModal(false);
+  const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
 
-  const handleCloseShiftModal = () => {
-    setShowShiftRequestModal(false);
-  };
-  const handleCloseAdvanceModal = () => {
-    setShowAdvanceForm(false);
-  };
+  /* ---------- Cards Config ---------- */
 
-  const requestsCards = () => {
-    return (
-      <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
-        <div className="grid grid-cols-4 md:grid-cols-4 gap-3 justify-center">
-          {/* Apply Leave */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => openModal()}
-          >
-            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+  const actions = [
+    {
+      label: "Apply Leave",
+      icon: Calendar,
+      color: "primary",
+      onClick: () => openModal(),
+      permission: canLeaveRequest,
+    },
+    {
+      label: "Attendance Request",
+      icon: FileText,
+      color: "secondary",
+      onClick: () => setShowAttendanceRequest(true),
+      permission: canAttendaneRequest,
+    },
+    {
+      label: "Planned Overtime",
+      icon: Timer,
+      color: "purple",
+      onClick: () => setShowOvertimeRequest(true),
+      permission: canRequestOvertime && plannedOvertimAllowed,
+    },
+    {
+      label: "Shift Change",
+      icon: ArrowUpDown,
+      color: "success",
+      onClick: handleShiftForm,
+      permission: canShiftChangeRequest,
+    },
+    {
+      label: "Create Loan Request",
+      icon: Wallet,
+      bg: "bg-pink-100",
+      onClick: () => setIsLoanDialogOpen(true),
+      permission: canLoanRequest,
+    },
+    {
+      label: "Create Advance",
+      icon: IndianRupee,
+      bg: "bg-orange-100",
+      onClick: () => setShowAdvanceForm(true),
+      permission: canEmployeeAdvanceRequest,
+    },
+    {
+      label: "Create Expense",
+      icon: ReceiptIndianRupeeIcon,
+      bg: "bg-green-100",
+      onClick: () => navigate("/webapp/expenses-app/add-expense"),
+      permission: canExpenseRequest,
+    },
+    {
+      label: "Expense Advance",
+      icon: IndianRupee,
+      bg: "bg-amber-100",
+      onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
+      permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
+    },
+  ];
+
+  /* ---------- Requests Cards UI ---------- */
+
+  const requestsCards = () => (
+    <div className="bg-white rounded-lg md:p-6 shadow-sm h-full">
+      <div className="grid grid-cols-4 gap-3 justify-center">
+        {actions
+          .filter((action) => action.permission)
+          .slice(0, limitCards)
+          .map((action, idx) => (
+            <div
+              key={idx}
+              className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
+              onClick={action.onClick}
+            >
+              <div
+                className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110
+                ${
+                  action.bg
+                    ? `${action.bg} text-gray-700`
+                    : action.color === "primary"
+                    ? "bg-primary-100 text-primary-600"
+                    : action.color === "secondary"
+                    ? "bg-secondary-100 text-secondary-600"
+                    : action.color === "purple"
+                    ? "bg-purple-100 text-purple-600"
+                    : action.color === "success"
+                    ? "bg-success-100 text-success-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                <action.icon className="w-5 h-5 shadow-sm" />
+              </div>
+
+              <Typography
+                variant="bodySmall"
+                className="font-semibold leading-tight line-clamp-2"
+              >
+                {action.label}
+              </Typography>
             </div>
-            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
-              Apply Leaves
-            </p>
-          </div>
+          ))}
+      </div>
 
-          {/* Attendance Request */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowAttendanceRequest(true)}
-          >
-            <div className="w-10 h-10 bg-blue-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Attendance Request
-            </p>
-          </div>
+      {/* Attendance Modal */}
 
-          {/* Overtime */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowOvertimeRequest(true)}
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Timer className="w-5 h-5 text-purple-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Planned Overtime
-            </p>
-          </div>
-
-          {/* Shift Change */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={handleShiftForm}
-          >
-            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <ArrowUpDown className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Change Shifts
-            </p>
-          </div>
-
-          {/* Create Loan */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setIsLoanDialogOpen(true)}
-          >
-            <div className="w-10 h-10 bg-pink-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Wallet className="w-5 h-5 text-pink-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center whitespace-wrap">
-              Create Loan Request
-            </p>
-          </div>
-
-          {/* Create Advance */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowAdvanceForm(true)}
-          >
-            <div className="w-10 h-10 bg-orange-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <IndianRupee className="w-5 h-5 text-orange-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Advance
-            </p>
-          </div>
-
-          {/* Create Expense */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => navigate("/webapp/expenses-app/add-expense")}
-          >
-            <div className="w-10 h-10 bg-green-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <ReceiptIndianRupeeIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Expense
-            </p>
-          </div>
-
-          {/* Create Flow Request */}
-          <div
-            className="shadow-sm hover-lift rounded-lg cursor-pointer 
-        h-28 w-full flex flex-col items-center justify-center p-2"
-            onClick={() => setShowInitiateModel(true)}
-          >
-            <div className="w-10 h-10 bg-purple-100 rounded-full md:rounded-lg flex items-center justify-center mb-2">
-              <Workflow className="w-5 h-5 text-purple-600" />
-            </div>
-            <p className="text-xs text-gray-600 font-medium text-center">
-              Create Flow Request
-            </p>
+      {showAttendanceRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <AttendanceRequestFormV2
+              onClose={() => setShowAttendanceRequest(false)}
+            />
           </div>
         </div>
+      )}
 
-        {showAttendanceRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <AttendanceRequestFormV2
-                onClose={() => setShowAttendanceRequest(false)}
-              />
-            </div>
-          </div>
-        )}
-        {showOvertimeRequest && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <CreateOvertimeRequest
-                onCancel={() => setShowOvertimeRequest(false)}
-              />
-            </div>
-          </div>
-        )}
-        <CreateLoanDialog
-          isOpen={isLoanDialogOpen}
-          onClose={() => {
-            try {
-              setIsLoanDialogOpen(false);
-            } catch (error) {
-              console.error("Error closing loan dialog:", error);
-            }
-          }}
-        />
+      {/* Overtime Modal */}
 
-        <ExpenseFormModal
-          forMbileScreen={true}
-          isOpen={showShiftRequestModal}
-          onClose={handleCloseShiftModal}
-          title="Request Shift Change"
-        >
-          <ShiftRequestFormModal className="h-full" onClose={handleCloseShiftModal} />
-        </ExpenseFormModal>
-        {showInitiateModel && (
-          createPortal(
-            <InitiateFlow handleCloseModel={() => setShowInitiateModel(false)} />
-            , document.body)
-        )}
-        {showAdvanceForm && (
-          <Modal onClose={handleCloseAdvanceModal}>
-            <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
-          </Modal>
-        )}
-      </div>
-    );
-  };
+      {showOvertimeRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <CreateOvertimeRequest
+              onCancel={() => setShowOvertimeRequest(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      <CreateLoanDialog
+        isOpen={isLoanDialogOpen}
+        onClose={() => setIsLoanDialogOpen(false)}
+      />
+
+      <ShiftRequestFormModal
+        className="h-full"
+        isOpen={showShiftRequestModal}
+        onClose={handleCloseShiftModal}
+      />
+
+      {showAdvanceForm && (
+        <Modal onClose={handleCloseAdvanceModal}>
+          <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
+        </Modal>
+      )}
+    </div>
+  );
+
   const isRequestPage = useLocation().pathname === "/webapp/requests";
+
   const mobileLayout = (
-    <div className="flex flex-col min-h-fit bg-white h-fit">
-      {isRequestPage && <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />}
-      <div className="md:p-4 z-100 flex-grow overflow-y-auto h-fit">
+    <div className="flex flex-col min-h-fit bg-white">
+      {isRequestPage && (
+        <HeaderBar title={"Requests"} onBack={() => navigate(-1)} />
+      )}
+
+      <div className="md:p-4 flex-grow">
         {requestsCards()}
         <Outlet />
       </div>
@@ -233,7 +272,6 @@ const Requests = () => {
     <DesktopLayoutWrapper title="Requests">
       <div className="p-8 md:p-0 overflow-y-auto h-full">
         {requestsCards()}
-
         <Outlet />
       </div>
     </DesktopLayoutWrapper>

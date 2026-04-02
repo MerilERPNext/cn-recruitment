@@ -16,15 +16,18 @@ import type {
   EmployeeTeamCheckIns,
   IOvertimeLog,
   IPRestrictionsT,
+  OvertimeJournalData,
   Policy,
   PolicyQuestion,
   ShiftBlock,
   ShiftLocationT,
   UserRoles,
   WeeklyOff,
+  WeeklyOffDoc,
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
+import { format } from "date-fns";
 
 export const attendanceService = {
   getAllAttendance: async (
@@ -37,10 +40,29 @@ export const attendanceService = {
     });
     return response.data as Attendance[];
   },
+  getShiftsForEmployees: async (
+    empId: string,
+  ): Promise<string[][]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_shifts_for_employees",
+      {
+        filters: { employees: [empId] },
+      }
+    );
+    return response as string[][];
+  },
 
-
-
-
+  getPoliciesForEmployees: async (
+    empId: string,
+  ): Promise<string[][]> => {
+    const response = await FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.get_policies_for_employees",
+      {
+        filters: { employees: [empId] },
+      }
+    );
+    return response as string[][];
+  },
 
   getDataOfAttendance: async (
     empId: string
@@ -448,7 +470,7 @@ export const attendanceService = {
   ): Promise<string> => {
     try {
       const response = await FrappeAPI.callMethod(
-        `cn_leave_shift_managment.api._get_policy_for_date`,
+        `cn_leave_shift_managment.api._get_policy_for_dates`,
         filters
       );
       return response as string;
@@ -456,6 +478,16 @@ export const attendanceService = {
       console.error("📡 Error while setting device id:", error);
       throw error;
     }
+  },
+  getWeeklyOff: async (
+    filters?: FilterCondition[]
+  ): Promise<WeeklyOffDoc[]> => {
+    const response = await FrappeAPI.getDocumentList("Week Off", {
+      fields: ["*"],
+      filters: filters,
+      orderBy: "creation desc",
+    });
+    return response.data as WeeklyOffDoc[];
   },
 
 
@@ -586,12 +618,23 @@ export const attendanceService = {
     );
     return response as UserRoles;
   },
+  getOvertimeJournal: async (employee: string, date: string): Promise<OvertimeJournalData> => {
+    const response = await FrappeAPI.getMethod(
+      "cn_leave_shift_managment.cn_leave_shift_managment.overtime.get_overtime_journal",
+      {
+        employee: employee,
+        date: date,
+      }
+    );
+    return response as OvertimeJournalData;
+  },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getToDoWithReferenceDoc: async (todo_id?: string): Promise<any> => {
+  getToDoWithReferenceDoc: async (todo_id?: string, reference_name?: string): Promise<any> => {
     const response = await FrappeAPI.callMethod(
       "cn_hrms_core.api.get_reference_doc",
       {
-        todo_id: todo_id,
+        todo_id: todo_id || undefined,
+        reference_name: reference_name || undefined,
       }
     );
     return response;
@@ -737,7 +780,7 @@ export const attendanceService = {
       "cn_leave_shift_managment.api.check_attachment_mandatory",
       {
         employee: empId,
-        date: date,
+        date: format(new Date(date), "yyyy-MM-dd'T'HH:mm:ssXXX"),
         request_type: request_type
       }
     );
@@ -750,6 +793,21 @@ export const attendanceService = {
       const response = await FrappeAPI.createDocument(
         "Planned Overtime Request",
         body
+      );
+      return response as boolean;
+    } catch (error) {
+      console.error("📡 Error while Planned Overtime Request in:", error);
+      throw error;
+    }
+  },
+  updatePlannedOvertimeRequest: async (
+    body: Record<string, unknown>
+  ): Promise<boolean> => {
+    try {
+      const response = await FrappeAPI.updateDocument(
+        "Planned Overtime Request",
+        body.name as string,
+        body.data as Record<string, unknown>
       );
       return response as boolean;
     } catch (error) {
@@ -771,16 +829,16 @@ export const getAllAttendancePolicies = async (
   };
 };
 
-export const getAttendanceAssignmentPolicies = async (
-  employee: string
-): Promise<{ data: { policies: Policy[] } }> => {
-  const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_policies", {
-    employees: [employee]
-  });
-  return {
-    data: res as { policies: Policy[] }, // Return the expected format
-  };
-};
+// export const getAttendanceAssignmentPolicies = async (
+//   employee: string
+// ): Promise<{ data: { policies: Policy[] } }> => {
+//   const res = await FrappeAPI.callMethod("cn_leave_shift_managment.api.get_employee_policies", {
+//     employees: [employee]
+//   });
+//   return {
+//     data: res as { policies: Policy[] }, // Return the expected format
+//   };
+// };
 
 export const getAllWeekOffs = async (
   filters?: FilterCondition[]

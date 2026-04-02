@@ -7,7 +7,12 @@ export interface ApiRepayment {
   balance_amount: number;
 }
 
-export type ApiAdvance =  {
+export type ApiAdvance = {
+  allocated_to: string[];
+  allocated_to_roles: string[];
+  allocated_to_user: string | string[] | null;
+  name: string;
+  can_edit: number;
   employee_name: string;
   amount: number;
   advance_account: string;
@@ -24,6 +29,10 @@ export type ApiAdvance =  {
 
 // UI shape (your old Advance type)
 export interface UiAdvance {
+  allocated_to: string[];
+  allocated_to_roles: string[];
+  allocated_to_user: string | string[] | null;
+  docname: string;
   employee_name: string;
   name: string;
   amount: number;
@@ -32,6 +41,7 @@ export interface UiAdvance {
   endDate: string;
   advanceStatus: string;
   installments: Installment[];
+  can_edit: number;
 }
 
 export interface Installment {

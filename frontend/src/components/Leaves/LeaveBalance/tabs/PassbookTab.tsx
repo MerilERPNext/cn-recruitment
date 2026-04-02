@@ -8,6 +8,7 @@ import {
 } from "../../../../hooks/useLeaves";
 import { LeaveBalance } from "../../../../types/leaves";
 import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 
 interface PassbookTabProps {
   leaveData: LeaveBalance;
@@ -21,6 +22,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
   } = useCurrentEmployee();
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
+  const leaveId = leaveData?.leave_id || "";
 
   const [selectedCycle, setSelectedCycle] = useState<string>("");
 
@@ -28,7 +30,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
     data: metadata,
     isLoading: isMetadataLoading,
     isError: isMetadataError,
-  } = useGetLeavePassbookMetadata(employeeId ?? "", leaveType);
+  } = useGetLeavePassbookMetadata(employeeId ?? "", leaveId);
 
   const {
     data: transactions,
@@ -36,7 +38,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
     isError: isTransactionsError,
   } = useGetLeavePassbookTransaction(
     employeeId ?? "",
-    leaveType,
+    leaveId,
     selectedCycle
   );
 
@@ -158,27 +160,10 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
   if (!metadata?.cycle_options || metadata.cycle_options.length === 0) {
     return (
       <div className="p-4">
-        <div className="flex flex-col items-center justify-center py-16 text-gray-500">
-          <svg
-            className="w-16 h-16 mb-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <p className="text-base font-medium text-gray-700">
-            No passbook data available
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            There are no cycles available for {leaveType}
-          </p>
-        </div>
+        <NoDataFound
+          title="No Passbook Data"
+          subtitle={`There are no cycles available for ${leaveType} (${leaveId})`}
+        />
       </div>
     );
   }
@@ -317,15 +302,15 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                  No transactions found
+                <td colSpan={5} className="px-4 py-4">
+                  <NoDataFound title="No Transactions" subtitle="No transaction records found for the selected cycle." />
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-    </div>
+    </div >
   );
 };
 

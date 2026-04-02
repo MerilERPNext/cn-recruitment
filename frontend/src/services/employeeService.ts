@@ -5,6 +5,8 @@ import {
   EmployeeListItem,
   EmployeeNode,
   IReason,
+  AttendanceFieldPermissions,
+  EmployeeIdCardResponse,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
@@ -96,7 +98,7 @@ function isEmployeeListItemArray(obj: unknown): obj is EmployeeListItem[] {
 
 export class EmployeeService {
   // Get a single employee by ID/name
-  static async getEmployee(employeeId: string): Promise<Employee> {
+  static async getEmployee(employeeId: string): Promise<Employee | EmployeeIdCardResponse> {
     try {
 
       let result;
@@ -204,7 +206,7 @@ export class EmployeeService {
   }
 
   // Get current user's employee record
-  static async getCurrentEmployee(): Promise<Employee | null> {
+  static async getCurrentEmployee(): Promise<Employee | EmployeeIdCardResponse | null> {
     try {
       let result;
 
@@ -271,14 +273,15 @@ export class EmployeeService {
     }
   }
   static async getCurrentEmployeeAllDetails(
-    user_id: string
+    user_id: string,
+    name?: string,
   ): Promise<Employee | null> {
     try {
       logger.info("Fetching employee details for user_id", { user_id });
 
       const result = await FrappeAPI.getDocumentList("Employee", {
         fields: ["*"],
-        filters: [["user_id", "=", user_id]],
+        filters: name ? [["name", "=", name]] : [["user_id", "=", user_id]],
       });
 
       // Debug the API response
@@ -368,6 +371,100 @@ export class EmployeeService {
       return null;
     }
   }
+  static async getCurrentEmployeeAllDetailsWithParams(
+    filters: FilterCondition[]
+  ): Promise<Employee | null> {
+    try {
+      logger.info("Fetching employee details for filters", { filters });
+
+      const result = await FrappeAPI.getDocumentList("Employee", {
+        fields: ["*"],
+        filters: filters,
+      });
+
+      // Debug the API response
+      debugEmployeeData(
+        result,
+        `getCurrentEmployeeAllDetails API response for filters: ${filters}`
+      );
+
+      // Handle different response structures
+      let employeeDataArray: unknown[] = [];
+
+      if (result && "data" in result && Array.isArray(result.data)) {
+        // Standard Frappe API response structure
+        employeeDataArray = result.data;
+      } else if (Array.isArray(result)) {
+        // Direct array response
+        employeeDataArray = result;
+      } else if (result && typeof result === "object") {
+        // Single object response
+        employeeDataArray = [result];
+      } else {
+        logger.warn("Unexpected API response structure", {
+          resultExists: !!result,
+          resultType: typeof result,
+          hasDataProperty: result && "data" in result,
+          dataIsArray:
+            result &&
+            typeof result === "object" &&
+            "data" in result &&
+            Array.isArray((result as { data?: unknown }).data),
+        });
+        return null;
+      }
+
+      // Check if any employee records were found
+      if (employeeDataArray.length === 0) {
+        logger.warn("No employee found for user_id");
+        return null;
+      }
+
+      const employeeData = employeeDataArray[0];
+
+      // Debug employee data validation
+      const validation = validateEmployeeFields(employeeData);
+      logger.debug("Employee validation result", validation);
+
+      // Validate the employee data
+      if (!isEmployee(employeeData)) {
+        logger.error(
+          "getCurrentEmployeeAllDetails validation failed",
+          {
+            missingFields: validation.missingFields,
+            invalidFields: validation.invalidFields,
+            receivedData: employeeData,
+          }
+        );
+
+        // Try to provide helpful suggestions
+        if (
+          validation.missingFields.includes("name") &&
+          employeeData &&
+          typeof employeeData === "object"
+        ) {
+          const emp = employeeData as Record<string, unknown>;
+          logger.debug("Potential name fields found", {
+            potentialFields: Object.keys(emp)
+              .filter(
+                (key) =>
+                  key.toLowerCase().includes("name") ||
+                  key.toLowerCase().includes("id")
+              )
+              .map((key) => ({ key, value: emp[key] })),
+          });
+        }
+
+        return null;
+      }
+
+      logger.info("Employee data validated successfully");
+      return employeeData;
+    } catch (error) {
+      logger.error("getCurrentEmployeeAllDetails", error);
+      return null;
+    }
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static async getCurrentEmployeeAddress(user_id: string): Promise<any> {
     try {
@@ -401,20 +498,20 @@ export class EmployeeService {
   }
 
   // Transform Employee data to EmployeeIdCard format
-  static transformToIdCard(employee: Employee): EmployeeIdCard {
+  static transformToIdCard(employee: Employee | EmployeeIdCardResponse): EmployeeIdCard {
     try {
       return {
         id: employee.name || "Unknown",
         name: employee.employee_name || employee.first_name || "Unknown",
         employee_name:
           employee.employee_name || employee.first_name || "Unknown",
-        department: employee.department || "Not Specified",
-        designation: employee.designation || "Not Specified",
-        location: employee.branch || employee.company || "Not Specified",
+        department: ('department_name' in employee && employee.department_name) || employee.department || "Not Specified",
+        designation: ('designation_name' in employee && employee.designation_name) || employee.designation || "Not Specified",
+        location: ('branch_name' in employee && employee.branch_name) || employee.branch || employee.company || "Not Specified",
         startDate: employee.date_of_joining || "Not Available",
         avatar: employee.image || undefined, // Don't set default here, let the component handle it
         status: employee.status || "Active",
-        company: employee.company || "Not Specified",
+        company: ('company_name' in employee && employee.company_name) || employee.company || "Not Specified",
         employee_number: employee.employee_number || employee.name || "N/A",
         contact: employee.cell_number || undefined,
         email:
@@ -464,11 +561,13 @@ export class EmployeeService {
     fields?: string[],
     filters?: FilterCondition[],
     orFilters?: FilterCondition[],
-    limit?: number
+    limit?: number,
+    limitStart?: number
   ): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
       fields: fields && fields.length > 0 ? fields : ["*"],
       limit: limit,
+      limitStart: limitStart,
       filters: filters,
       orFilters: orFilters,
     });
@@ -490,6 +589,11 @@ export class EmployeeService {
     const data = await response;
     return data as Employee[];
   }
+  static async getAttendanceFieldReasonAndMessagePermissions(): Promise<AttendanceFieldPermissions> {
+    const response = FrappeAPI.getMethod("cn_leave_shift_managment.api.get_attendance_field_settings");
+    const data = await response;
+    return data as AttendanceFieldPermissions;
+  }
 
   static async getAllReasons(filters?: FilterCondition[]): Promise<IReason[]> {
     const response = FrappeAPI.getDocumentList("Reason", {
@@ -502,6 +606,98 @@ export class EmployeeService {
     }
     return data?.data as IReason[];
   }
+
+  static async resetPassword(
+    employee: string,
+    new_password: string,
+    send_mail: boolean
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.reset_employee_password", {
+      employee: employee,
+      new_password: new_password,
+      send_mail: send_mail,
+    });
+    const data = await response;
+    return data;
+  }
+  static async updateEmployeeSelfService(
+    employee?: string,
+    status?: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_employee_self_service_role", {
+      employee: employee,
+      status: status,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateProbationPeriod(
+    employees: string[],
+    probation_period: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_probation_period", {
+      employees: employees,
+      probation_period: probation_period,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateHRBP(
+    employees: string[],
+    hrbp: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_hrbp", {
+      employees: employees,
+      hrbp: hrbp,
+      date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateDottedLineManager(
+    employees: string[],
+    dotted_line_manager: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_dotted_line_manager", {
+      employees: employees,
+      dotted_line_manager: dotted_line_manager,
+      date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async updateEmployeeWeekOff(
+    employee: string,
+    new_week_off: string,
+    date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.api.change_employee_week_off", {
+      employee: employee,
+      new_week_off: new_week_off,
+      effective_date: date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
+  static async deactivateEmployee(
+    employees: string[],
+    deactivate_reason: string,
+    comment: string,
+    notice_period_start_date: string
+  ) {
+    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.deactivate_employee", {
+      employees: employees,
+      deactivate_reason: deactivate_reason,
+      comment: comment,
+      notice_period_start_date: notice_period_start_date,
+    });
+    const data = await response;
+    return data as Employee[];
+  }
 }
+
+
 
 export default EmployeeService;

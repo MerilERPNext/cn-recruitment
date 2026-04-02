@@ -26,6 +26,7 @@ import {
   useGetQuickAttendanceSummary,
   useGetTeamCheckinSummary,
   useReqValidationsForOvertimeRequest,
+  useWeeklyOff,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
@@ -45,6 +46,9 @@ import { Attendance } from "../../types/attendance";
 // import EmployeeWorkingHoursBarChart from "./EmployeeWorkingHoursBarChart";
 // import AttendanceSummaryCards from "./AttendanceSummaryCards";
 import AttendanceChart from "../AttendanceChart";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import { isActionEnabled } from "../../utils/uiPermission";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -54,6 +58,8 @@ export interface PolicyDrawerConfig {
 
 const AttendanceSummary = () => {
   const navigate = useNavigate();
+  const { targetEmployeeId } = useTargetUser();
+
   const { isDesktop } = useScreenSize();
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -63,8 +69,21 @@ const AttendanceSummary = () => {
     useState<PolicyDrawerConfig | null>(null);
 
   const { data: currentUser } = useCurrentUser();
+
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
+    currentUser?.name || "", targetEmployeeId || ""
+  );
+
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canCreateOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "My Overtime",
+  );
+  const canCreateAttendanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary",
   );
 
   const { data: employeeShift } = useGetEmployeeShift(
@@ -96,7 +115,9 @@ const AttendanceSummary = () => {
     },
     !!currentEmployee?.employee,
   );
-
+  const { data: weeklyOff } = useWeeklyOff(
+    [["name", "=", currentEmployee?.custom_weekly_off]]
+  );
   const { data: attendanceData } = useFrappeDocumentList("Attendance", {
     fields: ["*"],
     filters: [
@@ -183,6 +204,7 @@ const AttendanceSummary = () => {
             {
               label: "+ New Request",
               type: "primary",
+              disabled: !canCreateAttendanceRequest,
               onClick: () => setShowAttendanceRequestModal(true),
             },
           ],
@@ -220,6 +242,7 @@ const AttendanceSummary = () => {
             {
               label: "+ Log Overtime",
               type: "primary",
+              disabled: !canCreateOvertimeRequest,
               onClick: () => setShowOvertimeRequest(true),
             },
           ],
@@ -300,19 +323,24 @@ const AttendanceSummary = () => {
       color: "text-indigo-500",
       background: "bg-indigo-50",
       title: "Week Off",
-      details: [currentEmployee?.custom_weekly_off || ""],
+      details: [weeklyOff?.[0] ? [weeklyOff?.[0].weekly_off, weeklyOff?.[0]?.name] : []]
     },
     {
       icon: Timer,
       color: "text-purple-500",
       background: "bg-purple-50",
       title: "Overtime Policy",
-      details: [employeeOvertimePolicy || ""],
+      details: employeeOvertimePolicy ? [employeeOvertimePolicy] : [],
     },
   ];
 
-  const getNavigatableSettingsButton = (settingType: string, data?: string) => {
-    if (!data) return null;
+  const getNavigatableSettingsButton = (
+    settingType: string,
+    data?: string | string[],
+  ) => {
+    if (!data) return "N/A";
+    const displayLabel = Array.isArray(data) ? data[0] : data;
+    const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
     const drawerSettings: Record<
       string,
@@ -338,13 +366,13 @@ const AttendanceSummary = () => {
               doctypeName,
               targetDoctype: useEmployeeAsTarget
                 ? currentEmployee?.employee || ""
-                : data,
+                : redirectId,
             });
             setOpenPolicyDrawer(true);
           }}
           className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
         >
-          {data}
+          {displayLabel}
         </Typography>
       );
     }
@@ -353,11 +381,11 @@ const AttendanceSummary = () => {
 
     switch (settingType) {
       case "Attendance Policy":
-        path = `/webapp/attendance/attendance-policies?policy=${data}`;
+        path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
         break;
 
       case "Overtime Policy":
-        path = `/webapp/attendance/overtime-policies?policy=${data}`;
+        path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
         break;
 
       default:
@@ -370,13 +398,13 @@ const AttendanceSummary = () => {
         onClick={() => navigate(path!)}
         className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
       >
-        {data}
+        {displayLabel}
       </Typography>
     );
   };
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4 min-h-0">
+    <div className="h-full overflow-y-auto p-0 md:p-4 space-y-4 min-h-0">
       {/* Date Navigation */}
       <Card
         padding="sm"
@@ -513,7 +541,7 @@ const AttendanceSummary = () => {
                                 variant="bodySmall"
                                 className="font-medium text-gray-600 block"
                               >
-                                {detail}
+                                {detail || "N/A"}
                               </Typography>
                             ),
                         )}

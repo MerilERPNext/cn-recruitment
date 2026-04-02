@@ -1,31 +1,89 @@
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import { Typography } from "../../shared/atoms/Typography";
-import { Link } from "react-router-dom";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import Button from "../../shared/atoms/Button";
+import { Edit, RotateCcw } from "lucide-react";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import toast from "react-hot-toast";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
 
 export function MyRequestCard({
   request,
   onClick,
+  onEdit,
+  onActionComplete,
 }: {
   request: MyPlannedAttendanceRequest;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
   onClick?: (request: MyPlannedAttendanceRequest) => void;
+  onEdit?: (request: MyPlannedAttendanceRequest) => void;
+  onActionComplete?: () => void;
 }) {
   const { isDesktop } = useScreenSize();
 
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
+  const canEditOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "edit_overtime_request",
+    "Planned Overtime",
+  );
+  const canRevokeOvertimeRequest = isActionEnabled(
+    userUiPermission,
+    "can_revoke_overtime",
+    "Planned Overtime",
+  );
+  // Only allow editing if status is "Open"
+  const canEdit = request?.status === "Open" && request?.can_edit;
+  const canRevoke = request?.status === "Open" && request?.custom_allow_revoke;
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 0.5fr";
+  const revokeEventMutation = useRevokeEvent();
+  const loading = useLoadingOverlay();
 
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr";
+  const handleRevokeClick = () => {
+    if (request?.todo_id) {
+      revokeEventMutation.mutate(
+        {
+          docname: request?.reference_name,
+          doctype: request?.reference_type,
+          todo: request?.todo_id,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Attendance Request Revoked Successfully!");
+            // Trigger refetch in parent component
+            setTimeout(() => {
+              if (onActionComplete) {
+                onActionComplete();
+              }
+            }, 2000);
+          },
+          onError: (error) => {
+            const formatedError = errorResponseFormater(error);
+            toast.error(formatedError);
+          },
+          onSettled: () => {
+            loading?.hide();
+          },
+        },
+      );
+    }
+  };
+
   return (
     <>
       {isDesktop ? (
@@ -48,29 +106,41 @@ export function MyRequestCard({
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(request?.due_date)}
           </Typography>
-          <Link
-            to={`/webapp/employee-profile?target_user=${request?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              <WrapperHoverCard employeeId={request?.allocated_to_emp_id}>
-                {request?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                request?.status === "Open"
-                  ? `Allocated to : ${request?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={request?.allocated_to}
+              roles={request?.allocated_roles}
+              allocated_to_user={request?.username}
+              position="left"
             >
               <StatusBadge status={request?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
+          </div>
+          <div className="flex items-center justify-center">
+            {canEditOvertimeRequest && <Button
+              size="sm"
+              variant="subtle"
+              disabled={!canEdit}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (canEdit && onEdit) {
+                  onEdit(request);
+                }
+              }}
+            >
+              <Edit className="w-4 h-4" />
+            </Button>}
+            {canRevokeOvertimeRequest && <Button size="sm" variant="subtle"
+              disabled={!canRevoke}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleRevokeClick();
+              }}>
+              <RotateCcw className="w-4 h-4" />
+            </Button>}
           </div>
         </div>
       ) : (
@@ -84,14 +154,11 @@ export function MyRequestCard({
             <div className="w-full">
               {/* Header */}
               <div className="flex items-start justify-between p-1">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Allocated To
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {request?.username || request?.allocated_to}
-                  </Typography>
-                </div>
+                <MobileAllocatedTo
+                  users={request?.allocated_to}
+                  roles={request?.allocated_roles}
+                  username={request?.username}
+                />
 
                 <StatusBadge status={request?.status} />
               </div>
@@ -113,7 +180,7 @@ export function MyRequestCard({
                   <div className="flex flex-col gap-2 text-right">
                     <Typography variant="mobileCardLabel">Due Date</Typography>
                     <Typography variant="mobileCardValue">
-                      {request?.due_date as String}
+                      {request?.due_date as string}
                     </Typography>
                   </div>
                 </div>
@@ -123,6 +190,37 @@ export function MyRequestCard({
                   <Typography variant="mobileCardValue">
                     {truncateByChars(cleanDescription, 40)}
                   </Typography>
+                </div>
+                <div className="flex items-center justify-center">
+                  {canEditOvertimeRequest && <Button
+                    size="sm"
+                    variant="soft"
+                    disabled={!canEdit}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (canEdit && onEdit) {
+                        onEdit(request);
+                      }
+                    }}
+                  >
+                    <Edit className="w-4 h-4" /> Edit
+                  </Button>}
+                  {canRevokeOvertimeRequest && <Button size="sm" variant="soft"
+                    disabled={!canRevoke}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRevokeClick();
+                    }}>
+                    <RotateCcw className="w-4 h-4" /> Revoke
+                  </Button>}
+                  {
+                    !canRevokeOvertimeRequest && !canEditOvertimeRequest && <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                      No Available Action
+                    </div>
+                  }
+
                 </div>
               </div>
             </div>

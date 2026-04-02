@@ -1,27 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useMemo, useRef, useState } from "react";
 import { Form } from "@tsed/react-formio";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import HeaderBar from "../../HeaderBar";
+import { format } from "date-fns";
+import { Plus, SquarePen, Trash2 } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
 import {
+  useAdvanceTypes,
   useCostCenters,
   useCreateNewAdvance,
+  useEmployeeAdvanceUpdate,
   useExpenseTableFieldSettings,
   useProjects,
-  useAdvanceTypes,
 } from "../../../hooks/useEmployeeAdvances";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
-import ExpenseBreakupModal from "./ExpenseBreakupModal";
-import { SquarePen, Trash2, Plus } from "lucide-react";
-import { format } from "date-fns";
-import Button from "../../shared/atoms/Button";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { expenseService } from "../../../services/expenseService";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
-import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import DesktopLayoutWrapper from "../../DesktopLayoutWrapper";
+import HeaderBar from "../../HeaderBar";
+import Button from "../../shared/atoms/Button";
+import AdvanceFormSkeleton from "./AdvanceFormSkeleton";
+import ExpenseBreakupModal from "./ExpenseBreakupModal";
 
 interface ExpenseClaim {
   id: string;
@@ -38,7 +40,12 @@ const ExpenseAdvanceForm: React.FC<{
   const { isDesktop } = useScreenSize();
   const formRef = useRef<any>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { setRefetchAttendance } = useGlobalStore();
+
+  // Edit mode: pre-fill from navigation state set by MyAdvanceExpenseList Edit button
+  const editAdvanceData = (location.state as any)?.advanceData ?? null;
+  const isEditMode = !!editAdvanceData;
 
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useCurrentEmployee();
@@ -47,23 +54,45 @@ const ExpenseAdvanceForm: React.FC<{
 
   const { data: advanceTypesData } = useAdvanceTypes();
 
-  const [subAdvanceType, setSubAdvanceType] = useState<string | null>(null);
+  const [subAdvanceType, setSubAdvanceType] = useState<string | null>(
+    editAdvanceData?.custom_advance_type ?? null,
+  );
   const [selectedAdvanceType, setSelectedAdvanceType] = useState<string | null>(
-    null,
+    editAdvanceData?.custom_advance_type ?? null,
   );
 
-  const { data: fieldSettings } = useExpenseTableFieldSettings(
-    employeeId || null,
-    subAdvanceType,
-  );
+  const { data: fieldSettings, isLoading: isFieldSettingsLoading } =
+    useExpenseTableFieldSettings(employeeId || null, subAdvanceType);
+
+  const isPolicyMissing = useMemo(() => {
+    return !!subAdvanceType && !isFieldSettingsLoading && !fieldSettings?.advance_policy;
+  }, [subAdvanceType, isFieldSettingsLoading, fieldSettings]);
+
+  useEffect(() => {
+    if (isPolicyMissing) {
+      toast.error(
+        "You are not eligible for expense advances. Contact HR. Advance Policy Not Found For Employee",
+        {
+          id: "advance-policy-missing",
+        }
+      );
+    }
+  }, [isPolicyMissing]);
 
   const postingDate = new Date().toISOString().split("T")[0];
   const advanceType = "Reimbursement / Expense Advance";
 
   const mutation = useCreateNewAdvance();
+  const updateMutation = useEmployeeAdvanceUpdate();
   const [submitting, setSubmitting] = useState(false);
 
-  const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>([]);
+  // Pre-fill existing expense breakup rows when editing
+  const [expenseClaims, setExpenseClaims] = useState<ExpenseClaim[]>(() =>
+    (editAdvanceData?.expenses ?? []).map((exp: any, idx: number) => ({
+      ...exp,
+      id: exp.name || `pre-${idx}`,
+    })),
+  );
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
 
@@ -72,6 +101,34 @@ const ExpenseAdvanceForm: React.FC<{
   const getLabelWithAsterisk = (label: string, required?: boolean) => {
     return required ? `${label} <span style="color:red">&nbsp;*</span>` : label;
   };
+
+  const prepareExpenseClaims = (claims: ExpenseClaim[]) =>
+    claims.map(({ id, ...claim }) => {
+      const filteredClaim = Object.fromEntries(
+        Object.entries(claim).filter(
+          ([, value]) => value !== null && value !== undefined && value !== "",
+        ),
+      );
+      if (filteredClaim.expense_date) {
+        filteredClaim.expense_date = format(
+          new Date(filteredClaim.expense_date as string),
+          "yyyy-MM-dd",
+        );
+      }
+      if (filteredClaim.start_datetime) {
+        filteredClaim.start_datetime = format(
+          new Date(filteredClaim.start_datetime as string),
+          "yyyy-MM-dd HH:mm:ss",
+        );
+      }
+      if (filteredClaim.end_datetime) {
+        filteredClaim.end_datetime = format(
+          new Date(filteredClaim.end_datetime as string),
+          "yyyy-MM-dd HH:mm:ss",
+        );
+      }
+      return filteredClaim;
+    });
 
   const handleSubmit = async () => {
     try {
@@ -88,76 +145,83 @@ const ExpenseAdvanceForm: React.FC<{
         return;
       }
 
-      const preparedExpenseClaims = expenseClaims.map(({ id, ...claim }) => {
-        console.debug(id);
-        const filteredClaim = Object.fromEntries(
-          Object.entries(claim).filter(
-            ([, value]) =>
-              value !== null && value !== undefined && value !== "",
-          ),
-        );
-
-        if (filteredClaim.expense_date) {
-          filteredClaim.expense_date = format(
-            new Date(filteredClaim.expense_date),
-            "yyyy-MM-dd",
-          );
-        }
-        if (filteredClaim.start_datetime) {
-          filteredClaim.start_datetime = format(
-            new Date(filteredClaim.start_datetime),
-            "yyyy-MM-dd HH:mm:ss",
-          );
-        }
-        if (filteredClaim.end_datetime) {
-          filteredClaim.end_datetime = format(
-            new Date(filteredClaim.end_datetime),
-            "yyyy-MM-dd HH:mm:ss",
-          );
-        }
-
-        return filteredClaim;
-      });
-
-      const payload = {
-        custom_type: advanceType,
-        employee: employeeId,
-        company: employeeCompany,
-        posting_date: formData.posting_date || postingDate,
-        purpose: formData.purpose,
-        custom_advance_type: formData.advance_type,
-        advance_amount: formData.advance_amount,
-        currency: formData.currency,
-        exchange_rate: 1,
-        project: formData.project,
-        cost_center: formData.cost_center,
-        expenses: preparedExpenseClaims,
-      };
-
       if (
         fieldSettings?.expense_table_mandatory &&
         expenseClaims.length === 0
       ) {
-        toast.error("Please add at least one expense claim before submitting.");
+        toast.error(
+          "Please add at least one expense advance break-up table data before submitting.",
+        );
         return;
       }
 
-      setSubmitting(true);
-      mutation.mutate(payload, {
-        onSuccess: () => {
-          toast.success("Expense Advance submitted successfully!");
-          navigate("/webapp/expenses-app/my-advance-expense");
-          setTimeout(() => {
-            setRefetchAttendance(true);
-          }, 1000);
-        },
+      const preparedExpenseClaims = prepareExpenseClaims(expenseClaims);
 
-        onError: (error: any) => {
-          const msg = errorResponseFormater(error);
-          toast.error(msg);
-        },
-        onSettled: () => setSubmitting(false),
-      });
+      setSubmitting(true);
+
+      if (isEditMode && editAdvanceData?.name) {
+        // ── EDIT MODE ──
+        const updatePayload = {
+          docname: editAdvanceData.name,
+          data: {
+            posting_date: formData.posting_date || postingDate,
+            purpose: formData.purpose,
+            custom_advance_type: formData.advance_type,
+            advance_amount: formData.advance_amount,
+            currency: formData.currency,
+            exchange_rate: 1,
+            project: formData.project,
+            cost_center: formData.cost_center,
+            expenses: preparedExpenseClaims,
+          },
+        };
+        updateMutation.mutate(updatePayload, {
+          onSuccess: async () => {
+            try {
+              await expenseService.resubmitApprovalEvent(
+                "Employee Advance",
+                editAdvanceData.name,
+              );
+            } catch (error) {
+              console.error("Failed to resubmit approval:", error);
+            }
+            toast.success("Expense Advance updated successfully!");
+            navigate("/webapp/expenses-app/my-advance-expense");
+            setTimeout(() => setRefetchAttendance(true), 1000);
+          },
+          onError: (error: any) => {
+            toast.error(errorResponseFormater(error));
+          },
+          onSettled: () => setSubmitting(false),
+        });
+      } else {
+        // ── CREATE MODE ──
+        const payload = {
+          custom_type: advanceType,
+          employee: employeeId,
+          company: employeeCompany,
+          posting_date: formData.posting_date || postingDate,
+          purpose: formData.purpose,
+          custom_advance_type: formData.advance_type,
+          advance_amount: formData.advance_amount,
+          currency: formData.currency,
+          exchange_rate: 1,
+          project: formData.project,
+          cost_center: formData.cost_center,
+          expenses: preparedExpenseClaims,
+        };
+        mutation.mutate(payload, {
+          onSuccess: () => {
+            toast.success("Expense Advance submitted successfully!");
+            navigate("/webapp/expenses-app/my-advance-expense");
+            setTimeout(() => setRefetchAttendance(true), 1000);
+          },
+          onError: (error: any) => {
+            toast.error(errorResponseFormater(error));
+          },
+          onSettled: () => setSubmitting(false),
+        });
+      }
     } catch (err) {
       console.error("❌ Submission error:", err);
       toast.error("Form submission failed!");
@@ -283,6 +347,7 @@ const ExpenseAdvanceForm: React.FC<{
                       data: {
                         values: subAdvanceTypeOptions,
                       },
+                      defaultValue: editAdvanceData?.custom_advance_type ?? "",
                       validate: {
                         required: true,
                         customMessage: "Sub Advance Type is required",
@@ -300,7 +365,8 @@ const ExpenseAdvanceForm: React.FC<{
                       input: true,
                       enableTime: false,
                       format: "dd-MM-yyyy",
-                      defaultValue: postingDate,
+                      defaultValue:
+                        editAdvanceData?.posting_date ?? postingDate,
                     },
                   ],
                 },
@@ -381,6 +447,7 @@ const ExpenseAdvanceForm: React.FC<{
                       html: true,
                       input: true,
                       placeholder: "Enter amount",
+                      defaultValue: editAdvanceData?.advance_amount ?? "",
                       validate: {
                         required: true,
                         min: 1,
@@ -473,6 +540,7 @@ const ExpenseAdvanceForm: React.FC<{
               html: true,
               input: true,
               placeholder: "Describe the purpose of advance",
+              defaultValue: editAdvanceData?.purpose ?? "",
               validate: {
                 required: true,
                 customMessage: "Purpose is required",
@@ -511,31 +579,46 @@ const ExpenseAdvanceForm: React.FC<{
 
   const FormContent = (
     <div className="flex flex-col h-full bg-white">
-      <HeaderBar title="New Expense Advance" onBack={() => navigate(-1)} />
+      <HeaderBar
+        title={isEditMode ? "Edit Expense Advance" : "New Expense Advance"}
+        onBack={() => navigate(-1)}
+      />
 
       <div className="flex-1 overflow-y-auto p-4">
         {expenseAdvanceSchema ? (
-          <Form
-            form={expenseAdvanceSchema}
-            onFormReady={(instance: any) => (formRef.current = instance)}
-            onChange={(submission: any) => {
-              const newSubType = submission?.data?.advance_type || null;
+          <div className="space-y-6">
+            {isPolicyMissing && (
+              <div className="p-4 border border-red-200 bg-red-50 rounded-lg flex flex-col items-center text-center">
+                <p className="text-red-700 font-semibold text-sm lg:text-base">
+                  You are not eligible for expense advances. Contact HR.
+                </p>
+                <p className="text-red-600 text-xs mt-1">
+                  Advance Policy Not Found For Employee
+                </p>
+              </div>
+            )}
+            <Form
+              form={expenseAdvanceSchema}
+              onFormReady={(instance: any) => (formRef.current = instance)}
+              onChange={(submission: any) => {
+                const newSubType = submission?.data?.advance_type || null;
 
-              setSubAdvanceType((prev) =>
-                prev === newSubType ? prev : newSubType,
-              );
+                setSubAdvanceType((prev) =>
+                  prev === newSubType ? prev : newSubType,
+                );
 
-              if (newSubType !== selectedAdvanceType) {
-                setSelectedAdvanceType(newSubType);
-                if (formRef.current) {
-                  const currencyField =
-                    formRef.current.getComponent("currency");
-                  if (currencyField) currencyField.refresh();
+                if (newSubType !== selectedAdvanceType) {
+                  setSelectedAdvanceType(newSubType);
+                  if (formRef.current) {
+                    const currencyField =
+                      formRef.current.getComponent("currency");
+                    if (currencyField) currencyField.refresh();
+                  }
                 }
-              }
-            }}
-            options={{ submitButton: false, noAlerts: true }}
-          />
+              }}
+              options={{ submitButton: false, noAlerts: true }}
+            />
+          </div>
         ) : (
           <div className="flex items-center justify-center p-10 border border-dashed rounded-lg">
             <p className="text-gray-500">Loading form settings...</p>
@@ -544,26 +627,35 @@ const ExpenseAdvanceForm: React.FC<{
 
         <div className="mt-8 border-t pt-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-1">
+            <h3 className="lg:text-lg font-semibold text-gray-800 flex items-center gap-1">
               Advance Break Up
               {fieldSettings?.expense_table_mandatory && (
                 <span className="text-red-500">*</span>
               )}
             </h3>
-            <button
+            <Button
+              variant="contain"
+              size="md"
               onClick={() => {
                 if (!selectedAdvanceType) {
-                  toast.error("Please select Advance Type first");
+                  toast.error("Please select Advance Type first before starting");
+                  return;
+                }
+                if (isPolicyMissing) {
+                  toast.error(
+                    "Cannot add breakup: Advance Policy not found for this type."
+                  );
                   return;
                 }
                 setIsExpenseModalOpen(true);
                 setExpenseToEdit(null);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={isPolicyMissing}
+              // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
               Advance Break Up
-            </button>
+            </Button>
           </div>
 
           {expenseClaims.length > 0 && (
@@ -679,29 +771,35 @@ const ExpenseAdvanceForm: React.FC<{
         </div>
       </div>
 
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 px-5 py-3 flex space-x-3">
-        <Button
-          fullWidth
-          variant="outline"
-          size="lg"
-          onClick={
-            onClose
-              ? onClose
-              : () => navigate("/webapp/expenses-app/my-advance-expense")
-          }
-        >
-          Cancel
-        </Button>
+      <div className="sticky md:static bottom-0 right-0 w-full bg-white py-4 px-4 border-t border-gray-200">
+        <div className="w-full mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
+          <Button
+            onClick={onClose ? onClose : () => navigate(-1)}
+            size="md"
+            variant="outline"
+            bgColor="primary"
+            className="w-full md:w-auto min-w-[150px]"
+          >
+            Cancel
+          </Button>
 
-        <Button
-          fullWidth
-          size="lg"
-          onClick={handleSubmit}
-          disabled={submitting}
-          bgColor="primary"
-        >
-          {submitting ? "Submitting..." : "Submit"}
-        </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || isPolicyMissing}
+            size="md"
+            variant="contain"
+            bgColor="primary"
+            className="w-full md:w-auto min-w-[150px]"
+          >
+            {submitting
+              ? isEditMode
+                ? "Updating..."
+                : "Submitting..."
+              : isEditMode
+                ? "Update"
+                : "Submit"}
+          </Button>
+        </div>
       </div>
 
       <ExpenseBreakupModal
@@ -719,7 +817,9 @@ const ExpenseAdvanceForm: React.FC<{
 
   if (isDesktop) {
     return (
-      <DesktopLayoutWrapper title="New Expense Advance">
+      <DesktopLayoutWrapper
+        title={isEditMode ? "Edit Expense Advance" : "New Expense Advance"}
+      >
         {FormContent}
       </DesktopLayoutWrapper>
     );

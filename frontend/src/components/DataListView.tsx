@@ -1,34 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type React from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  useQueryClient,
-  useQuery,
   useInfiniteQuery,
+  useQuery,
+  useQueryClient,
 } from "@tanstack/react-query";
 import {
-  useCustomApiQuery,
-  useCustomApiInfiniteQuery,
-} from "../hooks/useCustomApi";
-import {
-  Search,
-  Filter,
+  AlertCircle,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
-  AlertCircle,
+  Filter,
   Loader2,
-  Shield,
+  RefreshCw,
   RepeatIcon as RetryIcon,
+  Shield,
 } from "lucide-react";
+import { NoDataFound } from "./shared/atoms/NoDataFound";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
+import {
+  useCustomApiInfiniteQuery,
+  useCustomApiQuery,
+} from "../hooks/useCustomApi";
+import { useScreenSize } from "../hooks/useScreenSize";
 import {
   customApiService,
   type CustomAPIConfig,
   type FetchParams,
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
-import { useScreenSize } from "../hooks/useScreenSize";
+import SearchInputWrapper from "./shared/SearchBar";
 
 interface BaseItem {
   name?: string;
@@ -66,33 +67,56 @@ export interface PostListComponentProps<T> {
 
 export interface FilterOption {
   label: string;
-  value: string;
+  value: string | any[]; // Can be a simple string or complex array like ["in", ["Draft", "Approved"]]
+  key?: string; // Optional key for matching when value is complex (e.g., "Approved")
+  customAPIParams?: Record<string, any>; // Additional params to add to customAPI when this option is selected
 }
 
 export interface FilterField {
   fieldname: string;
   label: string;
   fieldtype:
-    | "Select"
-    | "Link"
-    | "Data"
-    | "Int"
-    | "Float"
-    | "Check"
-    | "Date"
-    | "Datetime";
+  | "Select"
+  | "Link"
+  | "Data"
+  | "Int"
+  | "Float"
+  | "Check"
+  | "Date"
+  | "Datetime";
   // options?: string[];
   options?: (string | FilterOption)[];
+  emptyValueConfig?: {
+    filterValue?: any; // Value to use when empty/Select option is chosen
+    customAPIParams?: Record<string, any>; // Additional params for empty state
+  };
 }
+
+interface DateInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const DateInput = ({ value, onChange }: DateInputProps) => {
+  return (
+    <input
+      type="date"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+    />
+  );
+};
 
 interface DataListViewProps<T extends BaseItem> {
   queryKey: string | string[];
   fetchFunction?: (params: FetchParams) => Promise<FrappePageResponse>;
   customAPI?: CustomAPIConfig;
-  ItemComponent: React.ComponentType<{
+  ItemComponent?: React.ComponentType<{
     item: T;
     index?: number;
   }>;
+  renderItem?: (item: T, index: number) => React.ReactNode;
   PreListComponent?: React.ComponentType<PreListComponentProps<T>>;
   PostListComponent?: React.ComponentType<PostListComponentProps<T>>;
   SkeletonComponent?: React.ComponentType;
@@ -117,9 +141,10 @@ interface DataListViewProps<T extends BaseItem> {
   getItemKey?: (item: T, index: number) => string;
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
+  clientFilterFn?: (data: T[]) => T[];
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
 }
 
 const DataListView = <T extends BaseItem>({
@@ -127,6 +152,7 @@ const DataListView = <T extends BaseItem>({
   fetchFunction,
   customAPI,
   ItemComponent,
+  renderItem,
   isLoading,
   PreListComponent,
   PostListComponent,
@@ -145,12 +171,13 @@ const DataListView = <T extends BaseItem>({
   onDataLoad,
   refetchTrigger = false,
   onRefetchComplete,
-  orderBy = "modified desc",
+  orderBy = "creation desc",
   showPagination = true,
   filterFields = [],
   getItemKey,
   enableUrlParams = true,
   onFiltersChange,
+  clientFilterFn,
   noRecordsScreen,
 }: DataListViewProps<T>) => {
   const { search } = useLocation();
@@ -161,6 +188,8 @@ const DataListView = <T extends BaseItem>({
   const [filters, setFilters] = useState(defaultFilters);
   const [debouncedFilters, setDebouncedFilters] = useState(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingFilters, setPendingFilters] = useState<Record<string, any>>({});
+  const [isFilterApplied, setIsFilterApplied] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] =
     useState(initialSearchQuery);
@@ -171,12 +200,41 @@ const DataListView = <T extends BaseItem>({
   const filtersString = enableUrlParams ? queryParam.get("filters") : null;
   const [queryParamsFilters, setQueryParamsFilters] = useState({});
   const { isDesktop } = useScreenSize();
+  const maxVisiblePages = isDesktop ? 5 : 2;
+
+  const hasActiveFilters = useMemo(() => {
+    const filterKeys = Object.keys(filters);
+
+    // Check if any filter key exists and has a value
+    const hasNonDefaultFilters = filterKeys.some(key => {
+      const filterValue = filters[key];
+      const defaultValue = defaultFilters[key];
+
+      // If filter exists and is not empty/null
+      if (filterValue !== undefined && filterValue !== null && filterValue !== "") {
+        // Check if it's different from default
+        if (JSON.stringify(filterValue) !== JSON.stringify(defaultValue)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    // Also check if there are filters beyond default filters
+    return filterKeys.length > 0 && hasNonDefaultFilters;
+  }, [filters, defaultFilters]);
 
   useEffect(() => {
     if (onFiltersChange) {
       onFiltersChange(debouncedFilters);
     }
   }, [debouncedFilters, onFiltersChange]);
+
+  useEffect(() => {
+    if (showFilters && !isFilterApplied) {
+      setPendingFilters({ ...filters });
+    }
+  }, [showFilters]);
 
   useEffect(() => {
     if (!enableUrlParams || !filtersString) {
@@ -235,43 +293,137 @@ const DataListView = <T extends BaseItem>({
     }
   }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
 
+  // Common query parameters
+  const queryParams = useMemo(() => {
+    let processedFilters: Record<string, any> = { ...debouncedFilters, ...queryParamsFilters };
+
+    // Process filter values based on filterFields configuration
+    filterFields.forEach((field) => {
+      const currentValue = processedFilters[field.fieldname];
+
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.filterValue !== undefined) {
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: field.emptyValueConfig.filterValue,
+          };
+        }
+      } else {
+        // Check if the current value matches a FilterOption
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string") {
+          // Replace the filter value with the actual value (could be complex array)
+          processedFilters = {
+            ...processedFilters,
+            [field.fieldname]: matchingOption.value,
+          };
+        }
+      }
+    });
+
+    // Handle date range filters (creation_start and creation_end)
+    const creationStart = processedFilters.creation_start;
+    const creationEnd = processedFilters.creation_end;
+
+    // Remove the separate date fields
+    delete processedFilters.creation_start;
+    delete processedFilters.creation_end;
+
+    // Add combined date range filter
+    if (creationStart || creationEnd) {
+      processedFilters.creation = ["between", [
+        creationStart || "1900-01-01",
+        creationEnd || "2099-12-31"
+      ]];
+    }
+
+    return {
+      pageSize,
+      searchTerm: debouncedSearchTerm,
+      filters: processedFilters,
+      searchFields,
+      orderBy,
+    };
+  }, [
+    pageSize,
+    debouncedSearchTerm,
+    debouncedFilters,
+    queryParamsFilters,
+    searchFields,
+    orderBy,
+    filterFields,
+  ]);
+
+  // Conditionally add/strip customAPI params based on active filters
+  const effectiveCustomAPI = useMemo(() => {
+    if (!customAPI) return customAPI;
+
+    let additionalParams: Record<string, any> = {};
+
+    // Process filter fields to find matching customAPIParams
+    filterFields.forEach((field) => {
+      const currentValue = debouncedFilters?.[field.fieldname];
+
+      // Handle empty value case
+      if (!currentValue || currentValue === "") {
+        if (field.emptyValueConfig?.customAPIParams) {
+          additionalParams = { ...additionalParams, ...field.emptyValueConfig.customAPIParams };
+        }
+      } else {
+        // Check if the current value matches a FilterOption with customAPIParams
+        const matchingOption = field.options?.find((opt) => {
+          if (typeof opt === "string") {
+            return opt === currentValue;
+          }
+          // For FilterOption objects, match using key (if provided) or value
+          const matchKey = opt.key || opt.value;
+          return matchKey === currentValue;
+        });
+
+        if (matchingOption && typeof matchingOption !== "string" && matchingOption.customAPIParams) {
+          additionalParams = { ...additionalParams, ...matchingOption.customAPIParams };
+        }
+      }
+    });
+
+    // Merge additional params with existing customAPI params
+    if (Object.keys(additionalParams).length > 0) {
+      return {
+        ...customAPI,
+        params: { ...customAPI.params, ...additionalParams },
+      };
+    }
+
+    return customAPI;
+  }, [customAPI, debouncedFilters, filterFields]);
+
   // Create internal fetch function for custom API
   const internalFetchFunction = useMemo(() => {
     if (fetchFunction) {
       return fetchFunction;
     }
 
-    if (customAPI) {
+    if (effectiveCustomAPI) {
       return (params: FetchParams): Promise<FrappePageResponse> => {
-        return customApiService.fetchData<T>(customAPI, params);
+        return customApiService.fetchData<T>(effectiveCustomAPI, params);
       };
     }
 
     throw new Error("Either fetchFunction or customAPI must be provided");
-  }, [fetchFunction, customAPI]);
-
-  // Common query parameters
-  const queryParams = useMemo(
-    () => ({
-      pageSize,
-      searchTerm: debouncedSearchTerm,
-      filters: { ...debouncedFilters, ...queryParamsFilters },
-      searchFields,
-      orderBy,
-    }),
-    [
-      pageSize,
-      debouncedSearchTerm,
-      debouncedFilters,
-      queryParamsFilters,
-      searchFields,
-      orderBy,
-    ],
-  );
+  }, [fetchFunction, effectiveCustomAPI]);
 
   // Infinite query for infinite scroll - always call both hooks but enable conditionally
   const customApiInfiniteResult = useCustomApiInfiniteQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -280,7 +432,7 @@ const DataListView = <T extends BaseItem>({
       orderBy: queryParams.orderBy,
     },
     {
-      enabled: infiniteScroll && !isLoading && !!customAPI,
+      enabled: infiniteScroll && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -292,20 +444,21 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: pageParam as number,
       }),
-    enabled: infiniteScroll && !isLoading && !!fetchFunction && !customAPI,
+    enabled:
+      infiniteScroll && !isLoading && !!fetchFunction && !effectiveCustomAPI,
     getNextPageParam: (lastPage: FrappePageResponse) => lastPage.nextCursor,
     initialPageParam: 0,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const infiniteQueryResult = customAPI
+  const infiniteQueryResult = effectiveCustomAPI
     ? customApiInfiniteResult
     : fetchFunctionInfiniteResult;
 
   // Traditional pagination query - always call both hooks but enable conditionally
   const customApiPaginationResult = useCustomApiQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -316,7 +469,10 @@ const DataListView = <T extends BaseItem>({
     },
     {
       enabled:
-        !infiniteScroll && !loadMorePagination && !isLoading && !!customAPI,
+        !infiniteScroll &&
+        !loadMorePagination &&
+        !isLoading &&
+        !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -333,18 +489,18 @@ const DataListView = <T extends BaseItem>({
       !loadMorePagination &&
       !isLoading &&
       !!fetchFunction &&
-      !customAPI,
+      !effectiveCustomAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const paginationQueryResult = customAPI
+  const paginationQueryResult = effectiveCustomAPI
     ? customApiPaginationResult
     : fetchFunctionPaginationResult;
 
   // Load more pagination query - always call both hooks but enable conditionally
   const customApiLoadMoreResult = useCustomApiQuery<T>(
-    customAPI || { method: "", params: {} },
+    effectiveCustomAPI || { method: "", params: {} },
     {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
@@ -354,7 +510,7 @@ const DataListView = <T extends BaseItem>({
       pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
     },
     {
-      enabled: loadMorePagination && !isLoading && !!customAPI,
+      enabled: loadMorePagination && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
   );
@@ -366,12 +522,16 @@ const DataListView = <T extends BaseItem>({
         ...queryParams,
         pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
       }),
-    enabled: loadMorePagination && !isLoading && !!fetchFunction && !customAPI,
+    enabled:
+      loadMorePagination &&
+      !isLoading &&
+      !!fetchFunction &&
+      !effectiveCustomAPI,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const loadMoreQueryResult = customAPI
+  const loadMoreQueryResult = effectiveCustomAPI
     ? customApiLoadMoreResult
     : fetchFunctionLoadMoreResult;
 
@@ -434,6 +594,10 @@ const DataListView = <T extends BaseItem>({
       data = (paginationQueryResult.data?.data || []) as unknown as T[];
     }
 
+    if (clientFilterFn) {
+      return clientFilterFn(data);
+    }
+
     return data;
   }, [
     infiniteScroll,
@@ -441,6 +605,7 @@ const DataListView = <T extends BaseItem>({
     infiniteQueryResult.data,
     paginationQueryResult.data,
     accumulatedData,
+    clientFilterFn,
   ]);
 
   // Handle accumulating data for load more pagination
@@ -518,20 +683,34 @@ const DataListView = <T extends BaseItem>({
   };
 
   const handleFilterChange = (fieldname: string, value: any) => {
-    setFilters((prev: Record<string, any>) => ({
-      ...prev,
-      [fieldname]: value,
-    }));
+    setPendingFilters((prev: Record<string, any>) => {
+      if (value === "") {
+        const newFilters = { ...prev };
+        if (defaultFilters && defaultFilters[fieldname] !== undefined) {
+          newFilters[fieldname] = defaultFilters[fieldname];
+        } else {
+          delete newFilters[fieldname];
+        }
+        return newFilters;
+      }
+      return {
+        ...prev,
+        [fieldname]: value, // Store the key for matching
+      };
+    });
+  };
 
+  const applyPendingFilters = () => {
+    setFilters(pendingFilters);
+    setIsFilterApplied(true);
     setShowFilters(false);
   };
 
-  const clearFilters = () => {
-    // setFilters({});
-    // setDebouncedFilters({});
+  const handleClearFilters = () => {
+    setPendingFilters({});
     setFilters(defaultFilters);
     setDebouncedFilters(defaultFilters);
-
+    setIsFilterApplied(false);
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setQueryParamsFilters({});
@@ -545,6 +724,10 @@ const DataListView = <T extends BaseItem>({
       url.searchParams.delete("q");
       window.history.replaceState({}, "", url);
     }
+  };
+
+  const clearFilters = () => {
+    handleClearFilters();
   };
 
   const refreshData = () => {
@@ -650,31 +833,39 @@ const DataListView = <T extends BaseItem>({
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
+          {/* Calculate page range */}
+          {(() => {
+            let startPage = Math.max(
+              1,
+              currentPage - Math.floor(maxVisiblePages / 2),
+            );
+
+            let endPage = startPage + maxVisiblePages - 1;
+
+            if (endPage > totalPages) {
+              endPage = totalPages;
+              startPage = Math.max(1, endPage - maxVisiblePages + 1);
             }
-            return (
+
+            const pages = [];
+            for (let i = startPage; i <= endPage; i++) {
+              pages.push(i);
+            }
+
+            return pages.map((pageNum) => (
               <button
                 key={pageNum}
                 onClick={() => goToPage(pageNum)}
-                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${
-                  currentPage === pageNum
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
+                className={`relative inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md ${currentPage === pageNum
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
               >
                 {pageNum}
               </button>
-            );
-          })}
+            ));
+          })()}
+
           <button
             onClick={() => goToPage(currentPage + 1)}
             disabled={currentPage === totalPages}
@@ -694,13 +885,13 @@ const DataListView = <T extends BaseItem>({
       <>
         {/* Backdrop */}
         <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40"
+          className="fixed inset-0 bg-black bg-opacity-40 z-[9999]"
           onClick={() => setShowFilters(false)}
         />
 
         {/* Right Side Drawer */}
         <div
-          className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50
+          className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[10000]
         transform transition-transform duration-300 ease-in-out
         ${showFilters ? "translate-x-0" : "translate-x-full"}`}
         >
@@ -725,7 +916,7 @@ const DataListView = <T extends BaseItem>({
 
                 {field.fieldtype === "Select" ? (
                   <select
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -741,8 +932,10 @@ const DataListView = <T extends BaseItem>({
                           </option>
                         );
                       }
+                      // Use key for matching if provided, otherwise use value
+                      const optionValue = option.key || (typeof option.value === "string" ? option.value : option.label);
                       return (
-                        <option key={option.value} value={option.value}>
+                        <option key={optionValue} value={optionValue}>
                           {option.label}
                         </option>
                       );
@@ -751,16 +944,23 @@ const DataListView = <T extends BaseItem>({
                 ) : field.fieldtype === "Check" ? (
                   <input
                     type="checkbox"
-                    checked={filters[field.fieldname] || false}
+                    checked={pendingFilters[field.fieldname] || false}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.checked)
                     }
                     className="h-4 w-4"
                   />
+                ) : field.fieldtype === "Date" ? (
+                  <DateInput
+                    value={pendingFilters[field.fieldname] || ""}
+                    onChange={(val) =>
+                      handleFilterChange(field.fieldname, val)
+                    }
+                  />
                 ) : (
                   <input
                     type="text"
-                    value={filters[field.fieldname] || ""}
+                    value={pendingFilters[field.fieldname] || ""}
                     onChange={(e) =>
                       handleFilterChange(field.fieldname, e.target.value)
                     }
@@ -779,14 +979,12 @@ const DataListView = <T extends BaseItem>({
             >
               Clear
             </button>
-            {!isDesktop && (
-              <button
-                onClick={() => setShowFilters(false)}
-                className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-              >
-                Apply
-              </button>
-            )}
+            <button
+              onClick={applyPendingFilters}
+              className="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Apply
+            </button>
           </div>
         </div>
       </>
@@ -812,40 +1010,49 @@ const DataListView = <T extends BaseItem>({
 
     return (
       customScreen ?? (
-        <div className="flex items-center justify-center py-12">
-          <span className="text-gray-500">No records found</span>
-        </div>
+        <NoDataFound />
       )
     );
   }, [noRecordsScreen, debouncedFilters]);
 
   return (
-    <>
-      {/* Header */}
-      <div className="pb-2">
+    <div>
+      {/* Header — sticky top, constrained to visible width */}
+      <div
+        className="sticky left-0 z-10 bg-white pb-2"
+        style={{ width: 'var(--card-table-visible-width, 100%)', top: 'var(--search-bar-offset, 0px)' }}
+      >
         <div className="flex items-center justify-between">
-          <div className="flex items-center w-full border border-gray-300 rounded-md bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+          <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             {isSearch && (
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearch}
-                  placeholder="Search..."
-                  className="w-full h-12 pl-10 pr-3 text-sm bg-transparent placeholder-gray-400 outline-none border-none focus:outline-none"
-                />
-              </div>
+              <SearchInputWrapper
+                searchTerm={searchTerm}
+                handleSearch={handleSearch}
+              />
             )}
             {isFilter && filterFields.length > 0 && (
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`h-12 px-3 flex items-center border-l border-gray-300 text-gray-600 hover:bg-gray-50 transition ${showFilters ? "bg-gray-100" : ""}`}
-              >
-                <Filter className="h-4 w-4" />
-              </button>
+              <div className="flex items-center">
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="h-12 px-2 flex items-center text-red-500 hover:bg-red-50 transition border-l border-gray-300"
+                    title="Clear all filters"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`h-12 px-3 flex items-center border-l border-gray-300 hover:bg-gray-50 transition relative ${showFilters ? "bg-gray-100" : ""} ${hasActiveFilters ? "text-blue-600" : "text-gray-600"}`}
+                >
+                  <Filter className="h-4 w-4" />
+                  {hasActiveFilters && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-[10px] font-bold"></span>
+                    </span>
+                  )}
+                </button>
+              </div>
             )}
             {showRefreshButton && (
               <button
@@ -938,9 +1145,7 @@ const DataListView = <T extends BaseItem>({
           </div>
         ) : isListLoading && processedData.length === 0 ? (
           SkeletonComponent ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <SkeletonComponent key={index} />
-            ))
+            <SkeletonComponent />
           ) : (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-2 text-gray-500">
@@ -961,11 +1166,14 @@ const DataListView = <T extends BaseItem>({
                 <div
                   key={itemKey}
                   onClick={() => onItemClick?.(item)}
-                  className={`mb-2 md:mb-0 ${
-                    onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
-                  }`}
+                  className={`mb-2 md:mb-0 ${onItemClick ? "cursor-pointer hover:bg-primary/20" : ""
+                    }`}
                 >
-                  <ItemComponent item={item} index={index} />
+                  {ItemComponent ? (
+                    <ItemComponent item={item} index={index} />
+                  ) : renderItem ? (
+                    renderItem(item, index)
+                  ) : null}
                 </div>
               );
             })}
@@ -997,13 +1205,19 @@ const DataListView = <T extends BaseItem>({
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination — sticky bottom */}
       {showPagination &&
         !isListLoading &&
         !error &&
-        processedData.length > 0 &&
-        renderPagination()}
-    </>
+        processedData.length > 0 && (
+          <div
+            className="lg:sticky bottom-0 left-0 z-10 bg-white"
+            style={{ width: 'var(--card-table-visible-width, 100%)' }}
+          >
+            {renderPagination()}
+          </div>
+        )}
+    </div>
   );
 };
 

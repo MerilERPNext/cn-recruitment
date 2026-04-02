@@ -29,7 +29,7 @@ export const NoticeSlide = ({ data, backgroundColor }: NoticeSlideProps) => {
     const backgroundStyle = {
         backgroundColor: base,
         backgroundImage: data.attachments
-            ? `url(${data.attachments})`
+            ? `url(${encodeURI(data.attachments)})`
             : "none",
         backgroundSize: data.attachments ? "contain" : "auto",
         backgroundRepeat: "no-repeat",

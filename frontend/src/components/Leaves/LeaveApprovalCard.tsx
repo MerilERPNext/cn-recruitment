@@ -1,20 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 import {
-  useUpdateRejectionReason,
   useIsRejectionReasonMandatory,
+  useUpdateRejectionReason,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import Button from "../shared/atoms/Button";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import { getActionStyles } from "../../utils/actionButtonStyles";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
 import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../shared/atoms/Typography";
+import AllocatedToTooltip from "../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../shared/MobileAllocatedTo";
 import Tooltip from "../shared/Tooltip";
-import StatusBadge from "../shared/atoms/statusBadge";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
 
 type LeaveApprovalCardProps = {
   isSelected?: boolean;
@@ -26,6 +27,7 @@ type LeaveApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled: boolean;
+  showRejectReason?: boolean;
 };
 const LeaveApprovalCard = ({
   isSelected = false,
@@ -36,6 +38,7 @@ const LeaveApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  showRejectReason,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -100,8 +103,12 @@ const LeaveApprovalCard = ({
     : [];
 
   const gridTemplateColumns = isBulkSelectEnabled
-    ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
-    : "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+    ? showRejectReason
+      ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "0.5fr 1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr"
+    : showRejectReason
+      ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1.5fr 1fr"
+      : "1fr 1.5fr 1.5fr 1.5fr 1.5fr 1fr 1fr 1fr 1fr";
   return (
     <>
       {isDesktop ? (
@@ -127,6 +134,18 @@ const LeaveApprovalCard = ({
             </div>
           )}
 
+          <Tooltip
+            content={data?.reference_document?.name || ""}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.name}
+            </Typography>
+          </Tooltip>
+
           <Link
             to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
             target="_blank"
@@ -135,7 +154,7 @@ const LeaveApprovalCard = ({
             <WrapperHoverCard employeeId={data?.reference_document?.employee}>
               <Typography
                 variant="bodySmall"
-                className="font-medium text-center truncate"
+                className="font-medium text-center truncate max-w-[150px]"
               >
                 {data?.reference_document?.employee_name ||
                   data?.reference_document?.employee}
@@ -143,9 +162,18 @@ const LeaveApprovalCard = ({
             </WrapperHoverCard>
           </Link>
 
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {data?.reference_document?.leave_type}
-          </Typography>
+          <Tooltip
+            content={`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+            triggerClassName="w-full truncate min-w-0 block"
+          >
+            <Typography
+              variant="bodySmall"
+              className="font-medium text-center truncate block w-full"
+            >
+              {data?.reference_document?.custom_leave_type_name} (
+              {data?.reference_document?.leave_type})
+            </Typography>
+          </Tooltip>
 
           <Typography variant="bodySmall" className="font-medium text-center">
             {formatToIndianDate(data?.reference_document?.from_date)}
@@ -163,16 +191,33 @@ const LeaveApprovalCard = ({
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                data?.reference_document?.status === "Open"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
+              position="left"
             >
               <StatusBadge status={data?.reference_document?.status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
+          {showRejectReason && (
+            <div className="flex items-center justify-center w-full min-w-0 pr-2">
+              {data?.reference_document?.status === "Rejected" &&
+                data?.reference_document?.custom_rejection_reason && (
+                  <Tooltip
+                    content={data?.reference_document?.custom_rejection_reason}
+                  >
+                    <Typography
+                      variant="bodySmall"
+                      className="font-medium text-center truncate"
+                    >
+                      {data?.reference_document?.custom_rejection_reason}
+                    </Typography>
+                  </Tooltip>
+                )}
+            </div>
+          )}
           <div className="flex items-center justify-center">
             <TeamApprovalActionPill
               actions={actions}
@@ -210,104 +255,113 @@ const LeaveApprovalCard = ({
               />
             )}
 
-            <div className="w-full">
+            <div className="w-full flex flex-col gap-3">
               <div className="flex items-start justify-between p-1">
                 <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="text-gray-500"
-                  >
-                    {data?.reference_document?.employee_name
-                      ? "Employee Name"
-                      : "Employee ID"}
-                  </Typography>
-
+                  <Typography variant="mobileCardLabel">Leave ID</Typography>
                   <Typography
                     variant="mobileCardValue"
-                    className="font-semibold text-gray-900"
+                    className="whitespace-nowrap"
                   >
-                    {data?.reference_document?.employee_name ||
-                      data?.reference_document?.employee}
+                    {data?.reference_document?.name || "-"}
                   </Typography>
                 </div>
 
                 <StatusBadge status={data?.reference_document?.status} />
               </div>
 
-              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel">
-                      Leave Type
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.reference_document?.leave_type}
-                    </Typography>
-                  </div>
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">
+                  {data?.reference_document?.employee_name
+                    ? "Employee Name"
+                    : "Employee ID"}
+                </Typography>
+                <Typography
+                  variant="mobileCardValue"
+                  className="truncate font-bold text-gray-900"
+                >
+                  {data?.reference_document?.employee_name ||
+                    data?.reference_document?.employee}
+                </Typography>
+              </div>
 
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel" className="block">
-                      Allocated To
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.username || data?.allocated_to}
-                    </Typography>
-                  </div>
+              <div className="flex justify-between w-full px-1">
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
+                  <Typography variant="mobileCardLabel">Leave Type</Typography>
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {data?.reference_document?.custom_leave_type_name} (
+                    {data?.reference_document?.leave_type})
+                  </Typography>
                 </div>
 
-                <div className="flex justify-between w-full">
-                  <div className="flex flex-col gap-2">
-                    <Typography variant="mobileCardLabel">Duration</Typography>
-                    <Typography variant="mobileCardValue">
-                      {`${formatToIndianDate(data?.reference_document?.from_date)} to ${formatToIndianDate(data?.reference_document?.to_date)}`}
-                    </Typography>
-                  </div>
-
-                  <div className="flex flex-col gap-2 text-right">
-                    <Typography variant="mobileCardLabel">
-                      Leave Days
-                    </Typography>
-                    <Typography variant="mobileCardValue">
-                      {data?.reference_document?.total_leave_days > 1
-                        ? data?.reference_document?.total_leave_days + " Days"
-                        : data?.reference_document?.total_leave_days + " Day"}
-                    </Typography>
-                  </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Leave Days</Typography>
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.total_leave_days > 1
+                      ? data?.reference_document?.total_leave_days + " Days"
+                      : data?.reference_document?.total_leave_days + " Day"}
+                  </Typography>
                 </div>
               </div>
 
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length > 0 &&
-                  data?.reference_document?.status === "Open" &&
-                  actions.map((action: string) => {
-                    const actionStyle = getActionStyles(action);
+              <div className="flex justify-between w-full px-1">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">Duration</Typography>
+                  <Typography variant="mobileCardValue">
+                    {`${formatToIndianDate(data?.reference_document?.from_date)} to ${formatToIndianDate(data?.reference_document?.to_date)}`}
+                  </Typography>
+                </div>
 
-                    return (
-                      <Button
-                        key={action}
-                        fullWidth
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleActionClick(action, data);
-                        }}
-                        bgColor={actionStyle.bgColor}
-                        variant={actionStyle.variant}
-                        disabled={
-                          loadingAction?.id === data?.todo_id &&
-                          loadingAction?.action === action
-                        }
-                      >
-                        {loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel">Due Date</Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(data?.due_date)}
+                  </Typography>
+                </div>
               </div>
+
+              <div className="flex flex-col gap-1 px-1">
+                <Typography variant="mobileCardLabel">Reason</Typography>
+                <Typography
+                  variant="mobileCardValue"
+                  className="whitespace-normal"
+                >
+                  {data?.reference_document?.reason_name || "-"}
+                </Typography>
+              </div>
+
+              <div className="px-1 pt-1">
+                <MobileAllocatedTo
+                  users={data?.allocated_to}
+                  roles={data?.allocated_roles}
+                  username={data?.username}
+                  role={data?.role}
+                />
+              </div>
+
+              {data?.reference_document?.status === "Rejected" &&
+                data?.reference_document?.custom_rejection_reason && (
+                  <div className="flex flex-col gap-1 px-1 pb-3">
+                    <Typography variant="mobileCardLabel">
+                      Reject Reason
+                    </Typography>
+                    <Typography
+                      variant="mobileCardValue"
+                      className="text-red-500 text-sm whitespace-normal"
+                    >
+                      {data?.reference_document?.custom_rejection_reason}
+                    </Typography>
+                  </div>
+                )}
+
+              <TeamApprovalActionPill
+                variant="buttons"
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
             </div>
           </div>
         </div>
@@ -315,13 +369,16 @@ const LeaveApprovalCard = ({
       {showCommentModal && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
-            handleCancelComment();
           }}
         >
           <div
             className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+            onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -337,6 +394,7 @@ const LeaveApprovalCard = ({
               <textarea
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 placeholder="Enter rejection reason..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={4}

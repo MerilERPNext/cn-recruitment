@@ -1,28 +1,32 @@
-import HeaderBar from "../HeaderBar";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNavigate, useSearchParams } from "react-router-dom";
+import HeaderBar from "../HeaderBar";
 
-import ApprovalList from "../shared/ApprovalList";
-import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { useCallback, useState } from "react";
-import CardTable from "../shared/CardTable";
-import { ShiftDetailView } from "./ShiftDetailView";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import ApprovalList from "../shared/ApprovalList";
+import CardTable from "../shared/CardTable";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
+import { ShiftDetailView } from "./ShiftDetailView";
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
-
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
-
   const [searchParams, setSearchParams] = useSearchParams();
 
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
-      if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+      if (request?.todo_id || request?.reference_name) {
+        const params: Record<string, string> = {};
+        if (request?.todo_id) params.requestId = request.todo_id;
+        if (request?.reference_name) params.reference_name = request.reference_name;
+        setSearchParams(params);
       }
     },
     [setSearchParams],
@@ -42,27 +46,31 @@ const AllShiftChangeRequestsList: React.FC = () => {
     setRefetchApprovalList(false);
   }, []);
 
-  const tableTitles = [
-    "Select",
-    "Employee",
-    "Shift Type",
-    "From Date",
-    "To Date",
-    "Due Date",
-    "Status",
-    "ACTIONS",
-  ];
+  const tableTitles = isBulkSelectEnabled
+    ? [
+      "Select",
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ]
+    : [
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "ACTIONS",
+    ];
 
-  const tableColumnWidths = [
-    "0.5fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const tableColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -85,9 +93,9 @@ const AllShiftChangeRequestsList: React.FC = () => {
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}
@@ -98,32 +106,56 @@ const AllShiftChangeRequestsList: React.FC = () => {
                 label: "Status",
                 fieldtype: "Select",
                 options: [
-                  { label: "Pending", value: "Draft" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Pending",
+                    key: "Draft",
+                    value: "Draft",
+                    customAPIParams: { todo_status: "Open" }
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                    customAPIParams: { todo_status: "Closed" }
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected"
+                  },
                 ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"]
+                }
               },
             ]}
             defaultFilters={{ status: "Draft" }}
-            renderCardContent={(item) => (
-              <ApprovalRejectionQueue
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                onClick={(request: any) => handleRequestClick(request)}
-                loadingAction={item?.loadingAction}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
-            )}
+            SkeletonComponent={CardSkeleton}
+            renderCardContent={(item) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return (
+                <ApprovalRejectionQueue
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={(request: any) => handleRequestClick(request)}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              )
+            }}
           />
         </CardTable>
       </div>
 
-      {requestId && (
+      {(requestId || referenceName) && (
         <ShiftDetailView
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || undefined}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />

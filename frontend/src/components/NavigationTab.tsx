@@ -1,21 +1,26 @@
 import React, { useEffect, useRef, useState } from "react";
-import Button from "./shared/atoms/Button";
+import Button, { ButtonColor, ButtonVariant } from "./shared/atoms/Button";
 
 export interface Tab {
   key: string;
   label: string;
+  permissionKey?: string;
 }
 
 interface NavigationProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tab: string) => void;
+  variant?: ButtonVariant
+  bgColor?: ButtonColor
 }
 
 const NavigationTabs: React.FC<NavigationProps> = ({
   tabs,
   activeTab,
   onTabChange,
+  variant = "subtle",
+  bgColor = "text",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -51,14 +56,15 @@ const NavigationTabs: React.FC<NavigationProps> = ({
       >
         {tabs.map((tab, idx) => (
           <Button
-            variant="subtle"
+            variant={variant}
+            bgColor={bgColor}
             key={tab.key}
             size="md"
             ref={(el) => {
               tabRefs.current[idx] = el;
             }}
             onClick={() => onTabChange(tab.key)}
-            className={`flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
+            className={`hover:bg-transparent flex-1 min-w-fit text-center w-fit px-2 py-3 outline-none focus:outline-none font-semibold  transition-colors duration-200
               ${activeTab === tab.key ? "text-primary-500" : "text-gray-600 "}`}
           >
             {tab.label}

@@ -165,7 +165,7 @@ const SearchableSelect: React.FC<Props> = ({
         width: `${dropdownPosition.width}px`,
         zIndex: 9999,
       }}
-      className="mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto"
+      className="mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
     >
       {loading ? (
         <div className="p-2 text-sm">Loading...</div>
@@ -174,7 +174,7 @@ const SearchableSelect: React.FC<Props> = ({
           <div
             key={opt.value}
             onClick={() => handleSelect(opt)}
-            className="p-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center gap-2"
+            className="px-3 py-2.5 hover:bg-blue-50 cursor-pointer text-sm text-gray-700 flex items-center gap-2 transition-colors"
             role="button"
             tabIndex={0}
             onKeyDown={(e) => {
@@ -185,7 +185,7 @@ const SearchableSelect: React.FC<Props> = ({
           </div>
         ))
       ) : (
-        <div className="p-2 text-gray-500 text-sm">No results found</div>
+        <div className="px-3 py-2.5 text-gray-400 text-sm">No results found</div>
       )}
     </div>
   );
@@ -203,7 +203,7 @@ const SearchableSelect: React.FC<Props> = ({
         onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full p-1 border rounded text-sm"
+        className="w-full p-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all text-sm"
       />
 
       {typeof document !== "undefined" && createPortal(dropdown, document.body)}

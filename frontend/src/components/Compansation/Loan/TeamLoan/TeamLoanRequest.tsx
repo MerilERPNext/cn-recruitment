@@ -1,30 +1,55 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
-import { useState, useCallback } from "react";
-import ApprovalList from "../../../shared/ApprovalList";
-import CardTable from "../../../shared/CardTable";
-import ApprovalRejectionLoanList from "../component/TeamApprovallist";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
-import LoanDetailsModal from "./LoanDetailsView";
+import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
+import CardTable from "../../../shared/CardTable";
+import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
+import ApprovalRejectionLoanList from "../component/TeamApprovallist";
+import LoanDetailsModal from "./LoanDetailsView";
+import { useSearchParams } from "react-router-dom";
 
 const TeamLoanRequest = () => {
   const { isDesktop } = useScreenSize();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
 
-  // 👉 FULL ITEM store karo (data + onAction + loadingAction)
+  // Read from URL
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
+
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-  // 👉 list row click
-  const handleRequestClick = useCallback((item: any) => {
-    setSelectedItem(item);
-  }, []);
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      const data = request?.data || request;
+      const todoId = data?.todo_id || request?.todo_id;
+      const refName = data?.reference_name || request?.reference_name;
+
+      if (todoId || refName) {
+        setSearchParams({
+          ...(todoId ? { requestId: todoId } : {}),
+          ...(refName ? { reference_name: refName } : {}),
+        });
+        setSelectedItem(request);
+      }
+    },
+    [setSearchParams],
+  );
+
+  // 👉 Close: clear URL params AND selectedItem
+  const handleClose = useCallback(() => {
+    setSelectedItem(null);
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
+  const isModalOpen = !!selectedItem || !!(requestId || referenceName);
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -71,14 +96,15 @@ const TeamLoanRequest = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
+            status="Open"
             doctype="Loan Application"
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}
@@ -89,15 +115,36 @@ const TeamLoanRequest = () => {
                 label: "Status",
                 fieldtype: "Select",
                 options: [
-                  { label: "Pending", value: "Open" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Pending",
+                    key: "Open",
+                    value: "Open",
+                    customAPIParams: { todo_status: "Open" }
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                    customAPIParams: { todo_status: "Closed" }
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected"
+                  },
                 ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"]
+                }
               },
             ]}
-            defaultFilters={{ status: "Open" }}
-            renderCardContent={(item: any) => (
-              <ApprovalRejectionLoanList
+            defaultFilters={{ status: "Open"}}
+            SkeletonComponent={CardSkeleton}
+            renderCardContent={(item: any) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return <ApprovalRejectionLoanList
                 data={item.data}
                 isSelected={item.isSelected}
                 onToggleSelect={item.onToggleSelect}
@@ -106,16 +153,18 @@ const TeamLoanRequest = () => {
                 onClick={() => handleRequestClick(item)}
                 isBulkSelectEnabled={isBulkSelectEnabled}
               />
-            )}
+            }}
           />
         </CardTable>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL — opens on row click OR direct URL */}
       <LoanDetailsModal
-        open={!!selectedItem}
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
+        documentName={requestId || ""}
+        referenceName={referenceName || ""}
+        open={isModalOpen}
+        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
+        onClose={handleClose}
       />
     </div>
   );

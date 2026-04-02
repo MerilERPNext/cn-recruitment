@@ -38,11 +38,15 @@ type ApprovalListProps = {
   isFilter?: boolean;
   isSearch?: boolean;
   onBulkSelectVisibilityChange?: (enabled: boolean) => void;
+  bulkSelectVisible?: boolean;
   defaultFilters?: Record<string, any>;
   columnWidths?: string[];
+  orderBy?: string;
   noRecordsScreen?:
-    | React.ReactNode
-    | ((filters: Record<string, any>) => React.ReactNode);
+  | React.ReactNode
+  | ((filters: Record<string, any>) => React.ReactNode);
+  SkeletonComponent?: React.ComponentType;
+  onActiveFiltersChange?: (filters: Record<string, any>) => void;
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -78,9 +82,13 @@ const ApprovalList = ({
   isFilter = false,
   isSearch = false,
   onBulkSelectVisibilityChange,
+  bulkSelectVisible,
   defaultFilters,
   columnWidths,
   noRecordsScreen,
+  SkeletonComponent,
+  orderBy,
+  onActiveFiltersChange,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -88,7 +96,10 @@ const ApprovalList = ({
   const handleFiltersChange = useCallback((filters: Record<string, any>) => {
     const normalized = normalizeFilters(filters);
     setActiveFilters(normalized);
-  }, []);
+    if (onActiveFiltersChange) {
+      onActiveFiltersChange(normalized);
+    }
+  }, [onActiveFiltersChange]);
 
   const loading = useLoadingOverlay();
 
@@ -105,23 +116,30 @@ const ApprovalList = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
 
-  const currentStatus = activeFilters?.status || status;
+  const currentStatus = activeFilters?.status || activeFilters?.approval_status || activeFilters?.custom_final_status || activeFilters?.custom_status || status;
 
-  const isBulkSelectEnabled =
+  const statusBasedBulkEnable =
     currentStatus === "Open" ||
     currentStatus === "Pending" ||
     currentStatus === "Draft";
 
-  useEffect(() => {
-    onBulkSelectVisibilityChange?.(isBulkSelectEnabled);
-  }, [isBulkSelectEnabled, onBulkSelectVisibilityChange]);
+  // parent prop + internal logic combine
+  const finalBulkSelectVisible =
+    typeof bulkSelectVisible === "boolean"
+      ? bulkSelectVisible
+      : statusBasedBulkEnable;
 
-  const triggerRefetch = () => {
+
+  useEffect(() => {
+    onBulkSelectVisibilityChange?.(finalBulkSelectVisible);
+  }, [finalBulkSelectVisible, onBulkSelectVisibilityChange]);
+
+  const triggerRefetch = useCallback(() => {
     if (setRefetch) {
       setRefetch(true);
     }
     setRefetchAttendance(true);
-  };
+  }, [setRefetch, setRefetchAttendance]);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -136,7 +154,7 @@ const ApprovalList = ({
         handleChatClose,
       );
     };
-  }, []);
+  }, [triggerRefetch]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -153,8 +171,8 @@ const ApprovalList = ({
         allRequests.map((req) => {
           const actionsWithForm = req?.custom_doctype_actions_with_form
             ? JSON.parse(
-                req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
-              )
+              req?.custom_doctype_actions_with_form.replace(/'/g, '"'),
+            )
             : [];
           if (
             actionsWithForm?.includes("Approve") ||
@@ -265,10 +283,9 @@ const ApprovalList = ({
             {
               onSuccess: () => {
                 toast.success(
-                  `Requests ${
-                    action === "Reject"
-                      ? "rejected"
-                      : `${action.toLowerCase()}d`
+                  `Requests ${action === "Reject"
+                    ? "rejected"
+                    : `${action.toLowerCase()}d`
                   } successfully!`,
                 );
                 triggerRefetch();
@@ -302,7 +319,7 @@ const ApprovalList = ({
             include_allocated_todos: true,
             fields: ["*"],
             // status: status,
-            // ...activeFilters,
+            ...activeFilters,
           },
         }}
         // onFiltersChange={(filters) => {
@@ -311,7 +328,7 @@ const ApprovalList = ({
         noRecordsScreen={
           typeof noRecordsScreen === "function"
             ? (filters: Record<string, any>) =>
-                noRecordsScreen({ ...filters, ...activeFilters })
+              noRecordsScreen({ ...filters, ...activeFilters })
             : noRecordsScreen
         }
         onFiltersChange={handleFiltersChange}
@@ -324,9 +341,11 @@ const ApprovalList = ({
         infiniteScroll={infiniteScroll}
         loadMorePagination={loadMorePagination}
         onDataLoad={(data) => setAllRequests(data)}
+        SkeletonComponent={SkeletonComponent}
+        orderBy={orderBy}
         PreListComponent={() => (
           <div className="mb-2 lg:mb-0 lg:mt-[-8px] sm:p-0">
-            {isBulkSelectEnabled && (
+            {finalBulkSelectVisible && (
               <BulkActionBar
                 selectedIds={selectedIds}
                 pendingRequests={allRequests}
@@ -338,13 +357,13 @@ const ApprovalList = ({
             )}
           </div>
         )}
-        ItemComponent={(props: { item: any }) => {
-          const todoId = props.item?.todo_id;
+        renderItem={(item: any) => {
+          const todoId = item?.todo_id;
           return renderCardContent({
             todoId: todoId,
             isSelected: selectedIds.includes(todoId),
             onToggleSelect: handleToggleSelect,
-            data: props.item,
+            data: item,
             onAction: handleAction,
             loadingAction: loadingAction,
           });

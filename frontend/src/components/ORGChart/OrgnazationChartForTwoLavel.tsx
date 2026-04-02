@@ -332,10 +332,10 @@ export default function ThreeLevelOrgChart() {
 
   return (
     <div className="w-full rounded-md bg-white">
-      <div className="py-2 mx-0 md:mx-6 rounded-md flex items-start justify-between rounded-xl justify-between mb-6 py-2 px-6 bg-gray-50/50 border border-gray-100/50">
+      <div className="py-2 mx-0 md:mx-6 rounded-md flex items-center justify-between rounded-xl justify-between mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 border border-gray-100/50">
 
         <div className="flex items-center ">
-          <Typography variant="subheading" className="font-bold text-gray-800">
+          <Typography variant="subheading" className="font-bold text-gray-800 max-sm:text-md">
             Organizational Chart
           </Typography>
         </div>
@@ -361,7 +361,7 @@ export default function ThreeLevelOrgChart() {
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
-          maxZoom={2}
+          maxZoom={0.7}
           defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
           // zoomOnScroll={false}
           // zoomOnPinch={false}

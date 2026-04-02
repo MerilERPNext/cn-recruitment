@@ -1,5 +1,6 @@
 import { format, isValid, parseISO } from "date-fns";
 import { useState } from "react";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAllEmployeeCheckin } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -10,6 +11,7 @@ import { endOfMonth, parse, startOfMonth } from "date-fns";
 import { Select } from "../../../shared/atoms/Select";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { useSearchParams } from "react-router-dom";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const getMonthDateRange = (monthValue: string) => {
     const parsedMonth = parse(monthValue, "yyyy-MM", new Date());
@@ -34,20 +36,21 @@ const CheckInStatus = () => {
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
     );
+    const { targetEmployeeId } = useTargetUser();
 
     const monthOptions: MonthOption[] = generateMonthOptions(12);
 
     const [selectedMonth, setSelectedMonth] = useState<MonthOption>(formattedDate ? monthOptions.find((month) => month.value === formattedDate) || monthOptions[0] : monthOptions[0]);
 
 
-    const { frm_date, to_date } = getMonthDateRange(formattedDate || selectedMonth.value);
+    const { frm_date, to_date } = getMonthDateRange(selectedMonth.value);
     const {
         data: checkins,
         isLoading,
         isError,
         error,
     } = useGetAllEmployeeCheckin({
-        employee: currentEmployee?.employee,
+        employee: targetEmployeeId || currentEmployee?.employee,
         frm_date,
         to_date,
     });
@@ -86,8 +89,8 @@ const CheckInStatus = () => {
 
             {/* ================= Empty State ================= */}
             {!checkins || checkins.length === 0 ? (
-                <div className="p-4 text-sm text-gray-500">
-                    No check-ins found for the selected month.
+                <div className="p-8 flex items-center justify-center">
+                    <NoDataFound title="No Check-ins Found" subtitle="No check-ins found for the selected month." />
                 </div>
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-gray-200">

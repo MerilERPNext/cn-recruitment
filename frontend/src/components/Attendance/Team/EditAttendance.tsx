@@ -1,22 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
-import { useRef } from "react";
+import { format } from "date-fns";
+import { X } from "lucide-react";
+import { useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import "../../../formio.custom.css";
 import toast from "react-hot-toast";
+import "../../../formio.custom.css";
 import {
   useAttendanceById,
   useEditAttendance,
   useGetEmployeeShift,
 } from "../../../hooks/useAttendance";
-import CircularLoader from "../../shared/atoms/CircularLoader";
-import { format } from "date-fns";
-import Button from "../../shared/atoms/Button";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { Typography } from "../../shared/atoms/Typography";
-import { useMemo } from "react";
 import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import Button from "../../shared/atoms/Button";
+import CircularLoader from "../../shared/atoms/CircularLoader";
+import { Typography } from "../../shared/atoms/Typography";
 
 interface EditAttendanceProps {
   onClose: () => void;
@@ -35,6 +35,7 @@ export const EditAttendance = ({
   onRefetchData,
 }: EditAttendanceProps) => {
   const formInstance = useRef<any>(null);
+  const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
@@ -53,13 +54,13 @@ export const EditAttendance = ({
   const mutation = useEditAttendance();
 
   const isActuallyLoading =
-    isDataLoading || (open && !!employeeId && (isShiftLoading));
+    isDataLoading || (open && !!employeeId && isShiftLoading);
 
   const initialSubmission = useMemo(() => {
     if (!data?.[0] || isActuallyLoading) return undefined;
 
     const normalizeTimeValue = (val?: string | null) => {
-      if (!val) return undefined;
+      if (!val || typeof val !== "string") return undefined;
       // If it's already a full datetime string, parse it
       if (val.includes(" ") || val.includes("T")) {
         const d = new Date(val.replace(" ", "T"));
@@ -78,21 +79,16 @@ export const EditAttendance = ({
         employee: employeeName || employeeId || "",
         attendance_date: data[0].attendance_date,
         shift: data[0].shift || shiftData?.shift || "",
-        in_time: normalizeTimeValue(data[0].in_time || shiftData?.start_time),
-        out_time: normalizeTimeValue(data[0].out_time || shiftData?.end_time),
+
+        in_time: normalizeTimeValue(data[0].in_time) || normalizeTimeValue(shiftData?.start_time),
+        out_time: normalizeTimeValue(data[0].out_time) || normalizeTimeValue(shiftData?.end_time),
         status: data[0].status || "",
         working_hours: data[0].working_hours || 0,
         department: data[0].department || "",
         company: data[0].company || "",
       },
     };
-  }, [
-    data,
-    employeeName,
-    employeeId,
-    shiftData,
-    isActuallyLoading,
-  ]);
+  }, [data, employeeName, employeeId, shiftData, isActuallyLoading]);
 
   // Only build form after data is available
   const attendanceForm = useMemo(() => {
@@ -267,7 +263,7 @@ export const EditAttendance = ({
           onError() {
             toast.error("Failed while updating attendance.");
           },
-        }
+        },
       );
     } catch (err) {
       toast.error("Please fill in all required fields.");
@@ -279,33 +275,38 @@ export const EditAttendance = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 max-w-full overflow-hidden"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+      <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[85vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <Typography variant="h4" className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography
+            variant="h4"
+            className="text-lg font-semibold text-gray-800"
+          >
             Edit Attendance
           </Typography>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>
+          {isDesktop && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Form.io Form */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
           {isActuallyLoading ? (
             <div className="h-full w-full flex justify-center items-center">
               <CircularLoader size="lg" />
@@ -336,24 +337,38 @@ export const EditAttendance = ({
         </div>
 
         {/* Footer */}
-        <div className="fixed md:static bottom-0 right-0 w-full bg-white py-4 px-4 z-50 border-t border-gray-200">
-          <Button
-            onClick={() => {
-              handleSubmit();
-            }}
-            fullWidth
-            size="md"
-            disabled={!attendanceForm}
-          >
-            {mutation?.isPending ? (
-              <CircularLoader size="sm" color="white" />
-            ) : (
-              "Update"
-            )}{" "}
-          </Button>
+        <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
+          <div className="max-w-4xl mx-auto flex flex-row gap-3 md:gap-4 md:justify-end">
+            {!isDesktop && (
+              <Button
+                onClick={onClose}
+                size="md"
+                variant="outline"
+                className="w-full md:w-auto min-w-[150px] rounded-md font-brand"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                handleSubmit();
+              }}
+              size="md"
+              variant="contain"
+              bgColor="primary"
+              className="w-full md:w-auto min-w-[150px] rounded-md font-brand"
+              disabled={!attendanceForm}
+            >
+              {mutation?.isPending ? (
+                <CircularLoader size="sm" color="white" />
+              ) : (
+                "Update"
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };

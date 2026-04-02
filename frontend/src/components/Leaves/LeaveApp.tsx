@@ -1,21 +1,20 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab";
+import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import RequestLeave from "./RequestLeave";
 import RequestLeaveModal from "./RequestLeaveModal";
-import HeaderBar from "../HeaderBar";
-import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import {
-  useRequestLeaveModal,
   RequestLeaveModalProvider,
+  useRequestLeaveModal,
 } from "./RequestLeaveModalContext";
-import NavigationTabs, { Tab } from "../NavigationTab";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import FormDialog from "../shared/FormDialog";
-import Button from "../shared/atoms/Button";
+
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
-
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "leave-balance"
@@ -23,8 +22,6 @@ type TabName =
   | "my-requests"
   | "team-requests"
   | "compensatory";
-
-
 
 const tabRoutes: Record<TabName, string> = {
   "leave-balance": "/webapp/leave-app/leaves/leave-balance",
@@ -41,6 +38,7 @@ const LeaveAppInner: React.FC = () => {
   const { data: uiPermissions } = useGetUiPermission();
   console.log("ui permission for leave", uiPermissions);
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
+  const isRequestRoute = location.pathname === "/webapp/leave-app/request";
 
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
   const canRequestLeave = isActionEnabled(
@@ -56,7 +54,6 @@ const LeaveAppInner: React.FC = () => {
         label: "Leave Balance",
         permissionKey: "Leave Balance",
       },
-      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "my-requests",
         label: "My Requests",
@@ -67,6 +64,7 @@ const LeaveAppInner: React.FC = () => {
         label: "Team Requests",
         permissionKey: "Team Requests",
       },
+      { key: "holidays", label: "Holidays", permissionKey: "Holidays" },
       {
         key: "compensatory",
         label: "Compensatory",
@@ -139,6 +137,16 @@ const LeaveAppInner: React.FC = () => {
     };
   }, [showModal]);
 
+  useEffect(() => {
+    if (isRequestRoute && !showModal) {
+      openModal();
+    }
+
+    if (!isRequestRoute && showModal) {
+      closeModal();
+    }
+  }, [isRequestRoute]);
+
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
     navigate(tabRoutes[tab]);
@@ -188,14 +196,11 @@ const LeaveAppInner: React.FC = () => {
           </div>
         )}
 
-      <FormDialog
-        isOpen={showModal}
-        onClose={closeModal}
-        title="Request Leave"
-        size="lg"
-      >
-        <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
-      </FormDialog>
+      {showModal && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          <RequestLeave onSuccess={closeModal} onCancel={closeModal} />
+        </div>
+      )}
     </div>
   );
 

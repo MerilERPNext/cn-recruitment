@@ -1,12 +1,13 @@
 "use client";
 
 import type React from "react";
-import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import BenefitRequestItem from "./BenefitRequestItem";
-import { Typography } from "../../shared/atoms/Typography";
 import { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import BenefitRequestItem from "./BenefitRequestItem";
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -14,24 +15,24 @@ const MyTeamRequest: React.FC = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "ACTIONS",
-      ]
+      "Select",
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "ACTIONS",
+    ]
     : [
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "ACTIONS",
-      ];
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "ACTIONS",
+    ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -58,38 +59,60 @@ const MyTeamRequest: React.FC = () => {
             // setRefetch={setRefetchApprovalList}
             // onApprovalRefetchComplete={handleApprovalRefetchComplete}
             pageSize={10}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={finalColumnWidths}
             onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
             filterFields={[
               {
-                fieldname: "status",
+                fieldname: "custom_status",
                 label: "Status",
                 fieldtype: "Select",
                 options: [
-                  { label: "Pending", value: "Pending" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Pending",
+                    key: "Pending",
+                    value: "Pending",
+                    customAPIParams: { todo_status: "Open" }
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                    customAPIParams: { todo_status: "Closed" }
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected"
+                  },
                 ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"]
+                }
               },
             ]}
-            defaultFilters={{ status: "Pending" }}
-            renderCardContent={(item) => (
-              <BenefitRequestItem
-                isSelected={item?.isSelected}
-                onToggleSelect={item?.onToggleSelect}
-                data={item?.data}
-                onAction={item?.onAction}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                // onClick={handleRequestClick}
-                loadingAction={item?.loadingAction}
-                isBulkSelectEnabled={isBulkSelectEnabled}
-              />
-            )}
+            SkeletonComponent={CardSkeleton}
+            renderCardContent={(item) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return (
+                <BenefitRequestItem
+                  isSelected={item?.isSelected}
+                  onToggleSelect={item?.onToggleSelect}
+                  data={item?.data}
+                  onAction={item?.onAction}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // onClick={handleRequestClick}
+                  loadingAction={item?.loadingAction}
+                  isBulkSelectEnabled={isBulkSelectEnabled}
+                />
+              )
+            }}
           />
         </CardTable>
       </div>

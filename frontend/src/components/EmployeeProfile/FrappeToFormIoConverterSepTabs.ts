@@ -5,6 +5,19 @@ import { profileService } from "../../services/profileService";
 // Cache for table field metadata to prevent duplicate API calls
 const tableFieldsCache = new Map<string, any[]>();
 
+export const READ_ONLY_FIELDS = [
+  "custom_cxo",
+  "custom_designation_name",
+  "custom_dotted_line_manager",
+  "custom_hrbp",
+  "custom_hod",
+  "reports_to",
+  "company",
+  "department",
+  "designation",
+  "custom_functional_area",
+];
+
 /**
  * Fetches table field metadata with caching
  * @param doctype - The doctype of the table to fetch fields for
@@ -262,15 +275,15 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         const data = item?.item || {};
 
         const name = data.name || "";
-
-        const secondary =
-          data.employee_name ||
-          data.title ||
-          data.label ||
-          data.full_name ||
-          data.fullname ||
-          data.first_name ||
-          "";
+        const label = data?.reference_name || ""
+        // const secondary =
+        //   data.employee_name ||
+        //   data.title ||
+        //   data.label ||
+        //   data.full_name ||
+        //   data.fullname ||
+        //   data.first_name ||
+        //   "";
 
         const designation = data.custom_designation_name || "";
         const branch = data.branch || "";
@@ -283,8 +296,8 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
         return `
           <div class="formio-select-item">
             <div class="formio-select-item-main">
-              <span class="primary">${name}</span>
-              ${secondary ? `<span class="secondary">(${secondary})</span>` : ""}
+              <span class="primary">${label}</span>
+              ${name ? `<span class="secondary">(${name})</span>` : ""}
             </div>
 
             ${infoText
@@ -488,7 +501,11 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
   }
 
   // Handle read-only fields
-  if (field.read_only === 1 || field.read_only === true) {
+  if (
+    field.read_only === 1 ||
+    field.read_only === true ||
+    READ_ONLY_FIELDS.includes(field.fieldname)
+  ) {
     // Don't disable Table or Table MultiSelect fields - they need to load their data/options
     if (
       field.fieldtype !== "Table" &&
@@ -520,7 +537,7 @@ function mapFieldToFormio(field: any, fieldValue: any): any {
 /**
  * Formats a raw backend value into a Form.io compatible structure based on component type.
  */
-export function formatValueForFormio(value: any, component: any): any {
+export function formatValueForFormio(value: any, component: any, displayValue?: any): any {
   if (value === null || value === undefined) {
     return component?.multiple || component?.type === 'file' || component?.type === 'datagrid' ? [] : "";
   }
@@ -563,7 +580,9 @@ export function formatValueForFormio(value: any, component: any): any {
         const newRow = { ...row };
         if (component.components) {
           component.components.forEach((childComp: any) => {
-            newRow[childComp.key] = formatValueForFormio(newRow[childComp.key], childComp);
+            const childValue = newRow[childComp.key];
+            const childDisplayValue = newRow[`${childComp.key}_display`];
+            newRow[childComp.key] = formatValueForFormio(childValue, childComp, childDisplayValue);
           });
         }
         return newRow;
@@ -577,6 +596,11 @@ export function formatValueForFormio(value: any, component: any): any {
     if (Array.isArray(value)) return value;
     if (typeof value === 'string' && value.trim() !== '') return [value];
     return [];
+  }
+
+  // Combine value and displayValue if they differ and it's not a complex type
+  if (displayValue !== undefined && displayValue !== null && displayValue !== "" && displayValue !== value) {
+    return `${displayValue} (${value})`;
   }
 
   return value;
@@ -734,7 +758,7 @@ export async function convertToFormioWithTabMetadata(
             type: "htmlelement",
             key: `header_${panelKey}`,
             label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</h4>`,
+            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
             input: false,
             tableView: false,
           });
@@ -763,7 +787,11 @@ export async function convertToFormioWithTabMetadata(
 
 
     } else {
-      const fieldValue = employeeData[field?.fieldname] || "";
+      const value = employeeData[field?.fieldname];
+      const displayValue = employeeData[`${field?.fieldname}_display`];
+      const fieldValue = (displayValue !== undefined && displayValue !== null && displayValue !== "" && displayValue !== value)
+        ? `${displayValue} (${value})`
+        : (value || "");
       let mapped: any = null;
 
       if (field.fieldtype === "Table") {
@@ -1095,7 +1123,7 @@ export async function convertToFormioWithLayout(
             type: "htmlelement",
             key: `header_${panelKey}`,
             label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</h4>`,
+            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
             input: false,
             tableView: false,
           });
@@ -1361,6 +1389,7 @@ export interface SimpleTab {
   key: string;
   fields: SimpleField[];
   hidden: boolean;
+  readOnly: boolean;
 }
 
 export interface SimpleTabbedData {
@@ -1394,6 +1423,7 @@ export async function convertFieldsToSimpleTabbedData(
         key: "general",
         fields: [],
         hidden: false,
+        readOnly: false,
       };
       tabs.push(currentTab);
     }
@@ -1425,6 +1455,7 @@ export async function convertFieldsToSimpleTabbedData(
         key: field.fieldname || `tab_${tabs.length + 1}`,
         fields: [],
         hidden: !!field.hidden,
+        readOnly: !!field.read_only,
       };
       tabs.push(currentTab);
     } else if (field.fieldtype === "Section Break") {
@@ -1475,7 +1506,7 @@ export async function convertFieldsToSimpleTabbedData(
         type: simpleType, // simplified type
         hidden: !!field.hidden,
         required: !!field.reqd,
-        readOnly: !!field.read_only,
+        readOnly: !!field.read_only || READ_ONLY_FIELDS.includes(field.fieldname),
       };
 
       if (field.fieldtype === 'Table' && field.options) {

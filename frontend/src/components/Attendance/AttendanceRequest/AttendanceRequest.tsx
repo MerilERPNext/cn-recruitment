@@ -1,25 +1,23 @@
-import { Plus } from "lucide-react";
-import DataListView from "../../DataListView";
-import { useState, useCallback } from "react";
-import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
+import { useCallback, useState } from "react";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CardTable from "../../shared/CardTable";
-import { MyAttendanceRequest } from "../../../types/attendance";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyAttendanceRequest } from "../../../types/attendance";
+import DataListView from "../../DataListView";
 import Button from "../../shared/atoms/Button";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
+import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
 
 const AttendanceRequest = ({
   pageSize = 10,
-  showPagination = true,
   showAttendanceRequest = true,
 }: {
   pageSize?: number;
-  showPagination?: boolean;
   showAttendanceRequest?: boolean;
 }) => {
   const { isDesktop } = useScreenSize();
@@ -36,20 +34,6 @@ const AttendanceRequest = ({
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
-
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -72,11 +56,10 @@ const AttendanceRequest = ({
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+          <div className="flex-1 overflow-y-auto md:px-4 pb-20">
             <CardTable
               columnWidths={[
                 "1.5fr",
-                "1fr",
                 "1fr",
                 "1fr",
                 "1fr",
@@ -90,7 +73,6 @@ const AttendanceRequest = ({
                 "To Date",
                 "Due Date",
                 "Duration",
-                "Allocated To",
                 "Status",
                 "ACTIONS",
               ]}
@@ -124,10 +106,9 @@ const AttendanceRequest = ({
                   refetchTrigger={refetchAttendance}
                   pageSize={pageSize}
                   showRefreshButton={false}
-                  orderBy="modified desc"
-                  showPagination={showPagination}
-                  infiniteScroll={true}
+                  infiniteScroll={false}
                   loadMorePagination={false}
+                  showPagination={true}
                   isSearch={true}
                   isFilter={true}
                   filterFields={[
@@ -149,9 +130,7 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                  defaultFilters={{
-                    status: "Pending",
-                  }}
+                  defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>
@@ -167,7 +146,7 @@ const AttendanceRequest = ({
                   className="hover:bg-blue-700"
                   onClick={() => setShowForm(!showForm)}
                 >
-                  <Plus /> <span>Add Attendance Request</span>
+                  <span>+ Attendance Request</span>
                 </Button>
               </div>
             </div>

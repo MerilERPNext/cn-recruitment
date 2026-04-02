@@ -1,15 +1,16 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CreateLoanDialog from "./component/CreateLoanDailog";
-import LoanList from "./component/LoanListView";
-import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
-import { useLoan } from "../../../hooks/useLoan";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useLoan } from "../../../hooks/useLoan";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
-import Button from "../../shared/atoms/Button";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import { Typography } from "../../shared/atoms/Typography";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import CreateLoanDialog from "./component/CreateLoanDailog";
+import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
+import LoanList from "./component/LoanListView";
 
 export default function LoansPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,25 +20,12 @@ export default function LoansPage() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
-  const { data: loanData } = useLoan(employeeId || "");
-
-  // const filteredLoans = (loanData || []).filter((loan: { status: string }) =>
-  //   loan.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  // )
-
-  // const filteredLoans = useMemo(() => {
-  //   if (!searchTerm.trim()){
-  //     return loanData || []
-  //   }
-  //   const lowercasedSearchTerm = searchTerm.toLowerCase()
-  //   return (loanData || []).filter(
-  //     (loan) =>
-  //     loan.loan_name?.toLowerCase().includes(lowercasedSearchTerm) ||
-  //     loan.loan_type?.toLowerCase().includes(lowercasedSearchTerm) ||
-  //     loan.status?.toLowerCase().includes(lowercasedSearchTerm),
-  //   )
-  // },[loanData, searchTerm]
-  // )
+  const { data: loanData, isLoading } = useLoan(employeeId || "");
+  const [loanId, setLoanId] = useState<string | null>(null);
+  const handleEdit = (docname: string) => {
+    setLoanId(docname);
+    setIsDialogOpen(true);
+  };
 
   const filteredLoans = useMemo(() => {
     if (!loanData) return [];
@@ -49,6 +37,37 @@ export default function LoansPage() {
         loan.status?.toLowerCase().includes(lower),
     );
   }, [loanData, searchTerm]);
+
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateLoan = isActionEnabled(
+    uiPermission,
+    "create_loan",
+    "My Loan Requests",
+  );
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  useEffect(() => {
+    if (canCreateLoan) {
+      setActionButtonConfig({
+        label: "+ Request Loan",
+        onClick: () => {
+          setIsDialogOpen(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateLoan]);
 
   // Desktop Layout
   const DesktopLayout = (
@@ -68,52 +87,48 @@ export default function LoansPage() {
                 <Typography variant="h4">My Loan Requests</Typography>
               </div>
             )}
-            <Button size="md" onClick={() => setIsDialogOpen(true)}>
-              Create Loans
-            </Button>
           </div>
         </div>
-      </div>
-
-      <div className="pb-2 px-4 w-full">
-
       </div>
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        {/* Search */}
-
         <div className="max-w-screen">
-        <LoanList
-  loans={filteredLoans}
-  searchTerm={searchTerm}
-  onSearchChange={setSearchTerm}
-/>
+          {isLoading ? (
+            <CardSkeleton />
+          ) : (
+            <LoanList
+              handleEdit={handleEdit}
+              loans={filteredLoans}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
+          )}
         </div>
-
-        {filteredLoans.length === 0 && (
-          <div className="text-center py-12 px-4">
-            <p className="text-gray-500">
-              No loans found matching your search criteria.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
 
   const MobileLayout = () => (
-    <div className="min-h-screen w-full ">
-      <ListViewOfLoanForMobile />
+    <div className="min-h-screen w-full py-4">
+      {isLoading ? <CardSkeleton /> : <ListViewOfLoanForMobile />}
     </div>
   );
 
   return (
     <>
       {isDesktop ? DesktopLayout : <MobileLayout />}
-      <CreateLoanDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-      />
+
+      {isDialogOpen && (
+        <CreateLoanDialog
+          loanId={loanId}
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setLoanId(null);
+            setIsModalOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

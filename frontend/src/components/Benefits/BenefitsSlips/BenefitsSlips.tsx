@@ -28,6 +28,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 
 const BenefitsSlips = () => {
   const { data: employeeIdCard } = useCurrentEmployeeIdCard();
@@ -115,23 +116,12 @@ const BenefitsSlips = () => {
             }}
             getItemKey={(item: any, _: number) => item.name}
             ItemComponent={BenefitSlipItem}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
+            SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             // onRefetchComplete={() => setRefetchAttendance(false)}
             isSearch={false}
             isFilter={false}
             showRefreshButton={false}
-            // orderBy="creation desc"
             // pageSize={10}
             infiniteScroll={true}
             // showPagination={true}
@@ -163,31 +153,68 @@ const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
   const { data, isLoading } = useGetBenefitSlipHTML(item.name);
   const [showPDF, setShowPDF] = useState<boolean>(false);
   const benefitSlipDate = item?.claim_date;
+  const { isDesktop } = useScreenSize();
 
   return (
-    <div className="grid grid-cols-3 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {formatToIndianDate(benefitSlipDate || "")}
-      </Typography>
-      <div className="flex items-center justify-center">
-        <StatusBadge status={item?.custom_status} />
-      </div>
-      <div className="flex items-center justify-center">
-        <DropdownMenu
-          placement="center-left"
-          items={[
-            {
-              label: "View",
-              icon: <FaRegEye className="h-4 w-4" />,
-              onClick: () => setShowPDF(true),
-            },
-          ]}
-        >
-          <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
-            <MoreVertical className="h-5 w-5" />
-          </button>
-        </DropdownMenu>
-      </div>
+    <>
+      {isDesktop ? (
+        <div className="grid grid-cols-3 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+          <Typography variant="bodySmall" className="font-medium text-center">
+            {formatToIndianDate(benefitSlipDate || "")}
+          </Typography>
+          <div className="flex items-center justify-center">
+            <StatusBadge status={item?.custom_status} />
+          </div>
+          <div className="flex items-center justify-center">
+            <DropdownMenu
+              placement="center-left"
+              items={[
+                {
+                  label: "View",
+                  icon: <FaRegEye className="h-4 w-4" />,
+                  onClick: () => setShowPDF(true),
+                },
+              ]}
+            >
+              <button className="p-2 border-1 rounded-lg hover:bg-gray-200">
+                <MoreVertical className="h-5 w-5" />
+              </button>
+            </DropdownMenu>
+          </div>
+        </div>
+      ) : (
+        <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mt-2 w-full">
+          <div className="p-4 flex items-start gap-3 w-full">
+            <div className="w-full">
+              {/* Header: Claim Date + Status */}
+              <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Claim Date
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {formatToIndianDate(benefitSlipDate || "")}
+                  </Typography>
+                </div>
+                <div className="shrink-0">
+                  <StatusBadge status={item?.custom_status} />
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                  onClick={() => setShowPDF(true)}
+                >
+                  <FaRegEye className="h-4 w-4" />
+                  View Slip
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {data &&
         !isLoading &&
@@ -202,6 +229,6 @@ const BenefitSlipItem = ({ item }: { item: BenefitPayslip }) => {
           />,
           document.body,
         )}
-    </div>
+    </>
   );
 };

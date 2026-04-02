@@ -69,7 +69,8 @@ export interface MyAttendanceRequest {
   due_date: string;
   reference_document: AttendanceRequest;
   reference_type: string;
-  allocated_to: string;
+  allocated_to: string[];
+  allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
@@ -82,6 +83,22 @@ export interface MyAttendanceRequest {
       file_url: string;
     },
   ];
+}
+
+export interface WeeklyOffDoc {
+  assignment_type: string;
+  company: string;
+  consider_as_halfday: number;
+  creation: string;
+  description: string;
+  docstatus: number;
+  idx: number;
+  modified: string;
+  modified_by: string;
+  name: string;
+  owner: string;
+  weekly_off: string;
+  weekly_off_code: string;
 }
 
 export type OvertimeDetail = {
@@ -131,7 +148,8 @@ export interface MyPlannedAttendanceRequest {
   custom_open_chatnext_assistant_on_action: boolean;
   custom_approval_type: string;
   reference_type: string;
-  allocated_to: string;
+  allocated_to: string[] | string;
+  allocated_roles?: string[];
   allocated_to_emp_id: string;
   custom_allow_revoke: boolean;
   todo_id: string;
@@ -141,6 +159,9 @@ export interface MyPlannedAttendanceRequest {
   date?: string;
   description?: string;
   allocated_to_name?: string;
+  todo_status: string;
+  can_edit?: boolean;
+
 }
 export interface AttendanceRequestValidations {
   attendance_adjustment_requests: number;
@@ -308,6 +329,7 @@ export type UserRoles = {
 
 export type Policy = {
   name: string;
+  policy_name: string;
 };
 
 export type WeeklyOff = {
@@ -481,4 +503,23 @@ export interface WorkingHoursResponse {
 
 export interface WorkingHoursProps {
   data: WorkingHoursResponse;
+}
+
+
+export interface KeyValueItem {
+  field?: string;
+  label: string;
+  value: string | number | null;
+}
+
+export interface PolicyItem {
+  policy_attribute: string;
+  status: string;
+  description: string;
+}
+
+export interface OvertimeJournalData {
+  overtime_details?: KeyValueItem[];
+  comp_off_details?: KeyValueItem[];
+  policy_details?: PolicyItem[];
 }

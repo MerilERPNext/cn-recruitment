@@ -6,30 +6,85 @@ import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
+import Button from "../../shared/atoms/Button";
+import { useRef } from "react";
 import CardTable from "../../shared/CardTable";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { formatCurrency } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { useFileUpload } from "../../../hooks/useEmployee";
+import toast from "react-hot-toast";
+import { useUpdateSalarySlip } from "../../../hooks/useSalaryDetails";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import ShowHideButton from "../ui/ShowHideButton";
+import { IoMdCloudUpload } from "react-icons/io";
 
 const formatINR = (num: number) =>
-  `${RupeeSymbolPerfix(num.toLocaleString("en-IN"))}`;
+  `${formatCurrency(num.toLocaleString("en-IN"))}`;
+
 
 export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { isDesktop } = useScreenSize();
+
+  const uploadMutation = useFileUpload();
 
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
 
-  const { data: invoiceData } = useInvoiceSalarySlip(
+  const { data: invoiceData, isLoading } = useInvoiceSalarySlip(
     user?.employee || "",
     user?.company || "",
   );
 
   const invoices = Array.isArray(invoiceData) ? invoiceData : [];
+  const updateSalarySlipMutation = useUpdateSalarySlip();
 
   const handleInvoiceClick = (invoiceID: string) => {
     console.log("Clicked invoiceID:", invoiceID);
+  };
+
+  // 🔥 Upload → Salary Slip update
+  const handleUploadAndAttach = (
+    file: File | null,
+    invoiceName: string
+  ) => {
+    if (!file) return;
+
+    uploadMutation.mutate(file, {
+      onSuccess(data) {
+        const fileUrl = data?.file_url;
+
+        if (!fileUrl) {
+          toast.error("File URL not found");
+          return;
+        }
+
+        updateSalarySlipMutation.mutate(
+          {
+            salarySlipName: invoiceName,
+            fileUrl,
+          },
+          {
+            onSuccess() {
+              toast.success("File uploaded & attached successfully");
+            },
+            onError(err) {
+              console.error("Salary Slip update failed", err);
+              toast.error("Upload success but attach failed");
+            },
+          }
+        );
+      },
+
+      onError(err) {
+        console.error(err);
+        toast.error("File upload failed");
+      },
+    });
   };
 
   const amountClass = hideAmount
@@ -38,19 +93,32 @@ export default function Invoice() {
 
   const titles = [
     "Invoice No",
+    "Status",
     "Invoice Date",
     "Due Date",
     "Customer",
     "Sub Total",
     "Total Amount",
+    "Attach Proof",
     "Action",
   ];
 
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = [
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1fr",
+    "1.2fr",
+    "1fr",
+  ];
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-shrink-0">
+      {/* Header */}
+      <div className="flex-shrink-0 max-sm:mb-2">
         <div className="px-1 md:px-6 py-1 md:py-4">
           <div className="flex items-center justify-between">
             {isDesktop ? (
@@ -61,101 +129,237 @@ export default function Invoice() {
                 </Typography>
               </div>
             ) : (
-              <div>
-                <Typography variant="h4">My Invoices</Typography>
-              </div>
+              <Typography variant="h4">My Invoices</Typography>
             )}
-            <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm">
-              <span className="text-sm text-gray-600">
-                {hideAmount ? "Show Amount" : "Hide Amount"}
-              </span>
-              <button
-                onClick={() => setHideAmount((prev) => !prev)}
-                className={`w-8 h-5 rounded-xl relative transition ${
-                  hideAmount ? "bg-primary-500" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition ${
-                    hideAmount ? "right-0.5" : "left-0.5"
-                  }`}
-                />
-              </button>
-            </div>
+
+            <ShowHideButton showAmount={hideAmount} onToggleAmount={() => setHideAmount((prev) => !prev)} />
           </div>
         </div>
       </div>
 
+      {/* Content */}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={titles} columnWidths={columnWidths}>
-          {invoices.map((inv: any, idx: number) => {
-            const invoiceNo = inv.name;
+        {isLoading ? (
+          <CardSkeleton />
+        ) : invoices.length === 0 ? (
+          <div className="py-10 text-center text-gray-500">
+            No invoices found
+          </div>
+        ) : isDesktop ? (
+          /* ================= DESKTOP TABLE ================= */
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            {invoices.map((inv: any, idx: number) => {
+              const invoiceNo = inv.name;
 
-            return (
-              <div
-                key={invoiceNo || idx}
-                className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-                style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
-              >
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
+              return (
+                <div
+                  key={invoiceNo || idx}
+                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
+                  style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
-                  {invoiceNo}
-                </Typography>
+                  <Typography variant="bodySmall" className="text-center">
+                    {invoiceNo}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.start_date}
-                </Typography>
+                  <div className="flex justify-center">
+                    <StatusBadge status={inv.invoice_status} />
+                  </div>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.end_date}
-                </Typography>
+                  <Typography variant="bodySmall" className="text-center">
+                    {formatToIndianDate(inv.start_date)}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className="font-medium text-center"
-                >
-                  {inv.employee_name}
-                </Typography>
+                  <Typography variant="bodySmall" className="text-center">
+                    {formatToIndianDate(inv.end_date)}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className={`font-medium text-center ${amountClass}`}
-                >
-                  {formatINR(inv.gross_pay || 0)}
-                </Typography>
+                  <Typography variant="bodySmall" className="text-center">
+                    {inv.employee_name}
+                  </Typography>
 
-                <Typography
-                  variant="bodySmall"
-                  className={`font-medium text-center ${amountClass}`}
-                >
-                  {formatINR(inv.net_pay || 0)}
-                </Typography>
+                  <Typography
+                    variant="bodySmall"
+                    className={`text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.gross_pay || 0)}
+                  </Typography>
 
-                <div className="flex items-center justify-center">
-                  <InvoicePDFview
-                    invoiceID={invoiceNo}
-                    disabled={false}
-                    onClick={handleInvoiceClick}
-                  />
+                  <Typography
+                    variant="bodySmall"
+                    className={`text-center ${amountClass}`}
+                  >
+                    {formatINR(inv.net_pay || 0)}
+                  </Typography>
+
+                  {/* Upload */}
+                  <div className="flex justify-center">
+
+{inv?.custom_attach ? (
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => {
+      window.open(inv.custom_attach, "_blank"); // PDF new tab me open
+    }}
+  >
+    View PDF
+  </Button>
+) : (
+  <>
+    <input
+      ref={(el) => {
+        fileInputRefs.current[`desktop-${invoiceNo}`] = el;
+      }}
+      type="file"
+      className="hidden"
+      accept="application/pdf"
+      onChange={(e) => {
+        handleUploadAndAttach(
+          e.target.files?.[0] || null,
+          invoiceNo
+        );
+        e.target.value = "";
+      }}
+    />
+
+    <button
+      className="flex items-center gap-1 px-3 py-1 rounded-md border-2 border-dashed border-gray-200 text-gray-600 text-sm hover:bg-primary/10"
+      onClick={() =>
+        fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
+      }
+    >
+     <IoMdCloudUpload className="w-4 h-4" /> Upload
+    </button>
+  </>
+)}
+                  </div>
+
+                  {/* View */}
+                  <div className="flex justify-center">
+                    <InvoicePDFview
+                      invoiceID={invoiceNo}
+                      disabled={false}
+                      onClick={handleInvoiceClick}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </CardTable>
+        ) : (
+          /* ================= MOBILE CARDS ================= */
+          <div className="space-y-3 px-1">
+            {invoices.map((inv: any, idx: number) => {
+              const invoiceNo = inv.name;
 
-          {invoices.length === 0 && (
-            <div className="py-10 text-center text-gray-500">
-              No invoices found
-            </div>
-          )}
-        </CardTable>
+              return (
+                <div
+                  key={invoiceNo || idx}
+                  className="cursor-pointer border-t-4 border-x border-b 
+                    border-x-primary/20 border-b-primary/20 
+                    shadow-sm border-primary bg-white rounded-xl"
+                >
+                  <div className="p-4 flex flex-col gap-3 w-full">
+                    {/* Row 1: Invoice No + Status */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Invoice No</Typography>
+                        <Typography variant="mobileCardValue">
+                          {invoiceNo}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 items-end">
+                        <Typography variant="mobileCardLabel">Status</Typography>
+                        <StatusBadge status={inv.invoice_status} />
+                      </div>
+                    </div>
+
+                    {/* Row 2: Customer + Due Date */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Customer</Typography>
+                        <Typography variant="mobileCardValue">
+                          {inv.employee_name}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 text-right">
+                        <Typography variant="mobileCardLabel">Invoice Date</Typography>
+                        <Typography variant="mobileCardValue">
+                          {formatToIndianDate(inv.start_date)}
+                        </Typography>
+                      </div>
+                    </div>
+
+                    {/* Row 3: Sub Total + Total Amount */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Typography variant="mobileCardLabel">Sub Total</Typography>
+                        <Typography variant="mobileCardValue" className={amountClass}>
+                          {formatINR(inv.gross_pay || 0)}
+                        </Typography>
+                      </div>
+                      <div className="flex flex-col gap-1 text-right">
+                        <Typography variant="mobileCardLabel">Total Amount</Typography>
+                        <Typography variant="mobileCardValue" className={amountClass}>
+                          {formatINR(inv.net_pay || 0)}
+                        </Typography>
+                      </div>
+                    </div>
+
+                    {/* Footer: Upload + View */}
+                    <div className="flex gap-3 pt-2 border-t border-primary/10">
+                    {inv?.custom_attach ? (
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full"
+    onClick={() => {
+      window.open(inv.custom_attach, "_blank"); // PDF new tab me open
+    }}
+  >
+    View PDF
+  </Button>
+) : (
+  <>
+    <input
+      ref={(el) => {
+        fileInputRefs.current[`desktop-${invoiceNo}`] = el;
+      }}
+      type="file"
+      className="hidden"
+      accept="application/pdf"
+      onChange={(e) => {
+        handleUploadAndAttach(
+          e.target.files?.[0] || null,
+          invoiceNo
+        );
+        e.target.value = "";
+      }}
+    />
+
+    <button
+      className="flex  w-full justify-center items-center gap-1 px-3 py-1 rounded-md border-2 border-dashed border-gray-200 text-gray-600 text-sm hover:bg-primary/10"
+      onClick={() =>
+        fileInputRefs.current[`desktop-${invoiceNo}`]?.click()
+      }
+    >
+     <IoMdCloudUpload className="w-3.5 h-3.5" /> Upload
+    </button>
+  </>
+)}
+                      <InvoicePDFview
+                        invoiceID={invoiceNo}
+                        disabled={false}
+                        onClick={handleInvoiceClick}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

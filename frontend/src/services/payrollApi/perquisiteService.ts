@@ -37,8 +37,7 @@ const fetchHTML = async (method: string, args: FetchHTMLArgs) => {
     params: args, 
   });
 
-  const data = response.data?.message ?? response.data;
-  return data?.response ?? data;
+  return response.data;
 };
 
 export const getInvoiceHTMLSheet = async (invoiceID: string) => {

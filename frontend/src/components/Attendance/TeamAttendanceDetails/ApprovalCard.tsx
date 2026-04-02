@@ -1,17 +1,17 @@
-import Badge from "../../shared/Badge";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import Button, { ButtonColor } from "../../shared/atoms/Button";
-import Tooltip from "../../shared/Tooltip";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import { Typography } from "../../shared/atoms/Typography";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { Link } from "react-router-dom";
-import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
   sanitizeToPlainText,
   truncateByChars,
 } from "../../../utils/sanitizeToPlainText";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import Tooltip from "../../shared/Tooltip";
+import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
 type ApprovalCardProps = {
   isSelected?: boolean;
@@ -45,69 +45,14 @@ const ApprovalCard = ({
     ? JSON.parse(data?.custom_doctype_actions_with_form.replace(/'/g, '"'))
     : [];
 
-  const getActionStyles = (
-    action: string,
-  ): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr"
     : "1fr 1.5fr 1fr 1fr 1fr 1fr 1fr";
 
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected" || status === "Cancelled") {
-      return {
-        label: status === "Cancelled" ? "Cancelled" : "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
   const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation,
   );
   const truncatedExplaination = truncateByChars(cleanExplaination);
-  const status = getStatus(data?.status);
   return (
     <>
       {isDesktop ? (
@@ -171,45 +116,47 @@ const ApprovalCard = ({
 
           {/* Status + Actions */}
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                status?.label === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              role={data?.role}
+              position="left"
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
-              <StatusBadge status={data?.status} />
-            </Tooltip>
+              <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
+
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
-            />
+            {data?.todo_status === "Open" ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data?.reference_document?.custom_status || data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
         <div
-          className="cursor-pointer border-1 border-gray-200 bg-white rounded-xl"
-          onClick={() => {
-            if (onClick) {
-              onClick(data);
-            }
-          }}
+          className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+          onClick={() => onClick?.(data)}
         >
           <div className="p-4 flex items-start gap-3 w-full">
             {isBulkSelectEnabled && (
               <input
                 type="checkbox"
-                className="mt-1 accent-blue-500"
+                className="mt-1 accent-primary"
                 checked={isSelected}
                 onClick={(e) => e.stopPropagation()}
                 onChange={() => onToggleSelect?.(data?.todo_id)}
@@ -222,87 +169,83 @@ const ApprovalCard = ({
             )}
 
             <div className="w-full">
-              <div className="flex items-start justify-between">
-                <div className="w-full">
-                  <Link
-                    to={`/webapp/employee-profile?target_user=${data?.reference_document?.employee}`}
-                    target="_blank"
-                  >
-                    <p className="card-title">
-                      {data?.reference_document?.employee_name}
-                    </p>
-                  </Link>
-                  {/* <p className="text-sm text-gray-500">{data?.todo_id} </p> */}
+              {/* Header */}
+              <div className="flex items-start justify-between p-1">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">
+                    {data?.reference_document?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>
+
+                  <Typography variant="mobileCardValue">
+                    {data?.reference_document?.employee_name ||
+                      data?.reference_document?.employee}
+                  </Typography>
                 </div>
 
-                <Badge
-                  size="sm"
-                  label={status?.label as string}
-                  backgroundColor={status?.statusColor}
+                <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
+              </div>
+
+              {/* Info Section */}
+              <div className="flex flex-col mt-2 p-1 gap-3">
+                <div className="flex justify-between w-full">
+                  <MobileAllocatedTo
+                    users={data?.allocated_to}
+                    roles={data?.allocated_roles}
+                    username={data?.username}
+                    role={data?.role}
+                  />
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">Due Date</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.due_date)}
+                    </Typography>
+                  </div>
+                </div>
+
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-1">
+                    <Typography variant="mobileCardLabel">From</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.reference_document?.from_date)}
+                    </Typography>
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-right">
+                    <Typography variant="mobileCardLabel">To</Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(data?.reference_document?.to_date)}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+
+              {/* Explanation (if exists) */}
+              <div className="mt-3 flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Explanation</Typography>
+                <Typography variant="mobileCardValue">
+                  {truncateByChars(cleanExplaination, 40)}
+                </Typography>
+              </div>
+
+              {/* Actions */}
+              {data?.todo_status === "Open" ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.reference_document?.custom_status || data?.reference_document?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => onAction(action, data)}
                 />
-              </div>
-              <div className="my-2 py-2">
-                <div className="flex justify-between w-full ">
-                  {/* Display From Date */}
-                  {data?.reference_document?.from_date && (
-                    <p className="text-sm text-gray-500 flex flex-col justify-center items-start">
-                      <span className="card-title mb-1">From</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(
-                          data?.reference_document?.from_date,
-                        )}
-                      </span>
-                    </p>
-                  )}
-
-                  {/* Display To Date */}
-                  {data?.reference_document?.to_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-center">
-                      <span className="card-title mb-1">To</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.reference_document?.to_date)}
-                      </span>
-                    </p>
-                  )}
-                  {data?.due_date && (
-                    <p className="text-sm text-gray-500 flex flex-col items-end">
-                      <span className="card-title mb-1">Due</span>
-                      <span className="card-subtitle">
-                        {formatToIndianDate(data?.due_date)}
-                      </span>
-                    </p>
-                  )}
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex sm:flex-row sm:justify-start gap-2">
-                {actions?.length > 0 &&
-                  data?.status === "Pending" &&
-                  actions.map((action: string) => (
-                    <Button
-                      variant="soft"
-                      key={action}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(action, data);
-                      }}
-                      fullWidth
-                      bgColor={getActionStyles(action).bg}
-                      disabled={
-                        loadingAction?.id === data?.todo_id &&
-                        loadingAction?.action === action
-                      }
-                    >
-                      {loadingAction?.id === data?.todo_id &&
-                      loadingAction?.action === action ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  ))}
-              </div>
+              )}
             </div>
           </div>
         </div>

@@ -1,13 +1,14 @@
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import ApprovalList from "../../shared/ApprovalList";
-import useCurrentUser from "../../../hooks/useCurrentUser";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
-import { Typography } from "../../shared/atoms/Typography";
-import { useScreenSize } from "../../../hooks/useScreenSize";
 
 const TeamOvertimeRequests = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
@@ -20,6 +21,7 @@ const TeamOvertimeRequests = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -28,7 +30,7 @@ const TeamOvertimeRequests = () => {
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
       }
     },
     [setSearchParams],
@@ -72,9 +74,9 @@ const TeamOvertimeRequests = () => {
               pageSize={10}
               refetch={refetchApprovalList}
               setRefetch={setRefetchApprovalList}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               isSearch={true}
               isFilter={true}
@@ -86,15 +88,36 @@ const TeamOvertimeRequests = () => {
                   label: "Status",
                   fieldtype: "Select",
                   options: [
-                    { label: "Pending", value: "Open" },
-                    { label: "Approved", value: "Approved" },
-                    { label: "Rejected", value: "Rejected" },
+                    {
+                      label: "Pending",
+                      key: "Open",
+                      value: "Open",
+                      customAPIParams: { todo_status: "Open" }
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" }
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected"
+                    },
                   ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"]
+                  }
                 },
               ]}
+              SkeletonComponent={CardSkeleton}
               defaultFilters={{ status: "Open" }}
-              renderCardContent={(item) => (
-                <OvertimeApprovalCard
+              renderCardContent={(item) => {
+                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                  return null;
+                }
+                return <OvertimeApprovalCard
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
@@ -105,14 +128,15 @@ const TeamOvertimeRequests = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                 />
-              )}
+              }}
             />
           )}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <MyOvertimeDetails
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />

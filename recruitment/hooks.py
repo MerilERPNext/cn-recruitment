@@ -77,6 +77,7 @@ doctype_js = {
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
         "public/js/emp_OB_verification_table.js",
+        "public/js/emp_OB_field_level_approval.js",
     ],
     "Employee Separation": ["public/js/employee_separation.js"],
     "Employee Promotion": ["public/js/employee_promotion.js"],
@@ -210,7 +211,7 @@ doc_events = {
     },
     "Employee Onboarding": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
-        "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
+        # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
         "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
     },
     "Employee Separation": {
@@ -231,9 +232,12 @@ scheduler_events = {
         ],
         "0 6 * * *": [
             "recruitment.recruitment.scheduled_jobs.trigger_confirmation_todos",
+            "recruitment.recruitment.scheduled_jobs.create_extension_confirmations",
         ],
         "0 7 * * *": [
             "recruitment.recruitment.scheduled_jobs.auto_separate_employees_on_lwd",
+            "recruitment.recruitment.scheduled_jobs.mark_relieved_employees_as_left",
+            "recruitment.recruitment.scheduled_jobs.auto_confirm_employees_without_policy",
         ]
     }
 }

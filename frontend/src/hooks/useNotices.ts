@@ -129,11 +129,11 @@ export function useGetNoticeById(noticeId: string) {
     enabled: !!noticeId, // avoids firing when ID is undefined
   });
 }
-export function useCheckIfNoticeIsReadOrAcknowledged(noticeId: string) {
+export function useCheckIfNoticeIsReadOrAcknowledged(noticeId: string, user: string) {
   return useQuery({
-    queryKey: [QUERY_KEYS.notices, noticeId, 'readOrAcknowledged'],
-    queryFn: () => noticeService.checkIfNoticeIsReadOrAcknowledged(noticeId), // keep static usage, as getNotice is static
-    enabled: !!noticeId, // avoids firing when ID is undefined
+    queryKey: [QUERY_KEYS.notices, noticeId, 'readOrAcknowledged', user],
+    queryFn: () => noticeService.checkIfNoticeIsReadOrAcknowledged(noticeId, user), // keep static usage, as getNotice is static
+    enabled: !!noticeId && !!user, // avoids firing when ID or user is undefined
   });
 }
 

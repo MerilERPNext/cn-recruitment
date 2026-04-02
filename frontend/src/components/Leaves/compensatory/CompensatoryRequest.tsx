@@ -1,18 +1,20 @@
 import React, { useMemo, useState } from "react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useEmployeeByUserId } from "../../../hooks/useEmployee";
-import { MyLeaveRequestSkeleton } from "../LeaveSkeletons";
+import { useGetCompOffList } from "../../../hooks/useLeaves";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import CardTable from "../../shared/CardTable";
+import CustomDropdown from "../../shared/CustomDropdown";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CompensatoryRequestCard, {
   CompensatoryRequestItem,
 } from "./CompensatoryRequestCard";
 import CompOffDetailsModal from "./CompOffDetailsModal";
-import { useGetCompOffList } from "../../../hooks/useLeaves";
-import CustomDropdown from "../../shared/CustomDropdown";
-import { Typography } from "../../shared/atoms/Typography";
 
 const STATUS_OPTIONS = [
+  { label: "Pending", value: "Pending" },
   { label: "Issued", value: "Issued" },
   { label: "Allocated", value: "Allocated" },
   { label: "Expired", value: "Expired" },
@@ -29,7 +31,7 @@ const CompensatoryRequest: React.FC = () => {
     isLoading: isEmployeeLoading,
     error: employeeError,
   } = useEmployeeByUserId(userId);
-  const [selectedStatus, setSelectedStatus] = useState("Issued");
+  const [selectedStatus, setSelectedStatus] = useState("Pending");
 
   const [selectedRequest, setSelectedRequest] =
     useState<CompensatoryRequestItem | null>(null);
@@ -70,15 +72,6 @@ const CompensatoryRequest: React.FC = () => {
     );
   }
 
-  if (
-    isLoading ||
-    isUserLoading ||
-    isEmployeeLoading ||
-    !currentEmployee?.name
-  ) {
-    return <MyLeaveRequestSkeleton />;
-  }
-
   if (isError) return <p>Error: {(error as Error).message}</p>;
 
   return (
@@ -94,9 +87,7 @@ const CompensatoryRequest: React.FC = () => {
                 </Typography>
               </div>
             ) : (
-              <div>
-                <Typography variant="h4">Compensatory Requests</Typography>
-              </div>
+              <span></span>
             )}
             <CustomDropdown
               value={selectedStatus}
@@ -119,19 +110,19 @@ const CompensatoryRequest: React.FC = () => {
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1.5fr", "1fr", "1fr"]}
         >
-          {filteredData.length === 0 ? (
-            <div className="py-12 text-center text-gray-600">
-              No records found{" "}
-            </div>
-          ) : null}
-
-          {filteredData.map((item) => (
-            <CompensatoryRequestCard
-              key={item.name}
-              item={item}
-              onClick={() => handleCardClick(item)}
-            />
-          ))}
+          {isLoading || isUserLoading || isEmployeeLoading ? (
+            <CardSkeleton />
+          ) : filteredData.length === 0 ? (
+            <NoDataFound title="No Records Found" subtitle="No compensatory requests match the selected status." />
+          ) : (
+            filteredData.map((item) => (
+              <CompensatoryRequestCard
+                key={item.name}
+                item={item}
+                onClick={() => handleCardClick(item)}
+              />
+            ))
+          )}
         </CardTable>
       </div>
 

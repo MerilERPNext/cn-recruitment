@@ -91,8 +91,14 @@ const ChatIcon = () => (
   </svg>
 );
 
+interface HeaderProps {
+  title: string;
+  onBackClick: () => void;
+  onMailClick: () => void;
+}
+
 // Header Component
-const Header = ({ title, onBackClick, onMailClick }: any) => (
+const Header = ({ title, onBackClick, onMailClick }: HeaderProps) => (
   <header className="bg-white border shadow-sm">
     <div className="mx-auto flex items-center p-4">
       <button
@@ -162,18 +168,27 @@ const EmployeeAvatar = ({
   );
 };
 
-// Employee Info Row Component
-const InfoRow = ({ label, value, isLast = false }: any) => (
-  <div
-    className={`flex justify-between items-center py-3 ${
-      !isLast ? "border-b border-gray-200" : ""
-    }`}
-  >
-    <p className="text-gray-600 text-sm">{label}</p>
-    <p className="text-gray-800 text-sm font-medium">{value}</p>
-  </div>
-);
+interface InfoRowProps {
+  label: string;
+  value: string | number;
+  isLast?: boolean;
+}
 
+// Employee Info Row Component
+const InfoRow = ({ label, value, isLast = false }: InfoRowProps) => (
+  <>
+    <div className="contents">
+      <p className="text-gray-600 text-sm py-2">{label}</p>
+      <p className="pl-3 text-gray-800 text-sm font-medium text-right py-2 break-all">
+        {value}
+      </p>
+    </div>
+
+    {!isLast && (
+      <div className="col-span-2 border-b border-gray-300" />
+    )}
+  </>
+);
 // QR Code Component
 const QRCode = ({
   employee,
@@ -196,6 +211,14 @@ const QRCode = ({
   );
 };
 
+interface ActionButtonProps {
+  children: React.ReactNode;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary' | 'whatsapp';
+  icon?: React.ElementType;
+  className?: string;
+}
+
 // Action Button Component
 const ActionButton = ({
   children,
@@ -203,10 +226,10 @@ const ActionButton = ({
   variant = "primary",
   icon: Icon,
   className = "",
-}: any) => {
+}: ActionButtonProps) => {
   const baseClasses =
     "flex-1 py-3 px-4 rounded-lg font-semibold shadow transition-colors flex items-center justify-center gap-2";
-  const variantClasses: any = {
+  const variantClasses: Record<string, string> = {
     primary: "bg-blue-500 text-white hover:bg-blue-600",
     secondary: "border border-blue-500 text-blue-500 hover:bg-gray-100",
     whatsapp: "bg-green-500 text-white hover:bg-green-600",
@@ -214,9 +237,8 @@ const ActionButton = ({
 
   return (
     <button
-      className={`${baseClasses} ${
-        variantClasses[variant] as string
-      } ${className}`}
+      className={`${baseClasses} ${variantClasses[variant] as string
+        } ${className}`}
       onClick={onClick}
     >
       {Icon && <Icon />}
@@ -245,7 +267,7 @@ const EmployeeCard = ({ employee }: { employee: EmployeeIdCard }) => (
       )}
     </div>
 
-    <div className="space-y-3">
+    <div className="space-y-2  items-baseline grid grid-cols-[max-content_1fr] ">
       <InfoRow
         label="Employee ID"
         value={employee.employee_number || employee.id}
@@ -270,22 +292,25 @@ interface ActionButtonsProps {
   onWhatsApp: () => void;
   onCall: () => void;
   onAttendanceAssignments: () => void;
+  employeeContact?: number | string;
 }
 // Action Buttons Component
 const ActionButtons = ({
   onWhatsApp,
   onCall,
+  employeeContact,
 }: // onAttendanceAssignments,
-ActionButtonsProps) => (
+  ActionButtonsProps) => (
   <div className="mt-8 space-y-4">
-    <div className="flex gap-4">
+    
+    {employeeContact && (<div className="flex gap-4">
       <ActionButton variant="primary" icon={WhatsAppIcon} onClick={onWhatsApp}>
         WhatsApp
       </ActionButton>
       <ActionButton variant="secondary" icon={CallIcon} onClick={onCall}>
         Call
       </ActionButton>
-    </div>
+    </div>)}
     {/* <ActionButton
       variant="secondary"
       onClick={onAttendanceAssignments}
@@ -770,6 +795,7 @@ const EmployeeIDApp = ({ employeeId }: { employeeId?: string } = {}) => {
                 <>
                   <EmployeeCard employee={employee} />
                   <ActionButtons
+                    employeeContact={employee.contact}
                     onWhatsApp={handleWhatsApp}
                     onCall={handleCall}
                     onAttendanceAssignments={() =>

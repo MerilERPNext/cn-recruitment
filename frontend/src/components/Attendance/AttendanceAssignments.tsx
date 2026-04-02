@@ -4,14 +4,14 @@ import { Form } from "@tsed/react-formio";
 import { useRef } from "react";
 import "../../formio.custom.css";
 import toast from "react-hot-toast";
-import { useEmployeeShifts } from "../../hooks/useShift";
 import {
   useAddAttendanceAssignment,
-  useAllAttendanceAssignmentPolicies,
   useAllIpRestrictions,
   useAllShiftBlocks,
   useAllShiftLocations,
   useAllWeekOffs,
+  usePoliciesForEmployees,
+  useShiftsForEmployees,
 } from "../../hooks/useAttendance";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
@@ -50,16 +50,14 @@ const AttendanceAssignments = ({
       : [];
 
   const employeeIdForContext = employees.length > 0 ? employees[0].employee : (targetEmployeeId || currentEmployee?.employee);
-
-  const { data: shiftList } = useEmployeeShifts(employeeIdForContext || "");
-  const { data: attendancePolicy } = useAllAttendanceAssignmentPolicies(employeeIdForContext || "");
+  const { data: shifts } = useShiftsForEmployees(employeeIdForContext || "");
+  const { data: policies } = usePoliciesForEmployees(employeeIdForContext || "");
 
   const { data: weekOffs } = useAllWeekOffs();
   const { data: ipRestrictions } = useAllIpRestrictions();
   const { data: geoFencingRestrictions } = useAllShiftLocations();
   const { data: allShiftBlocks } = useAllShiftBlocks();
   const mutation = useAddAttendanceAssignment();
-
   const overtimeForm = {
     // ... (rest of the form schema remains the same, skipping for brevity but keeping structure)
     display: "form",
@@ -103,7 +101,7 @@ const AttendanceAssignments = ({
             input: true,
             placeholder: "Select Ip Restriction",
             customClass: "mb-4",
-            validate: { required: true },
+            // validate: { required: true },
             multiple: true,
             data: {
               values:
@@ -126,7 +124,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 geoFencingRestrictions?.data?.map((item) => ({
-                  label: `${item.name}`,
+                  label: `${item.location_name}`,
                   value: item.name,
                 })) || [],
             },
@@ -150,12 +148,12 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                shiftList?.data?.shifts?.map((item) => ({
-                  label: `${item.name}`,
-                  value: item.name,
+                shifts?.map((item) => ({
+                  label: `<div><div>${item?.[1] ?? "--"} (${item?.[0] ?? "--"})</div><div style="font-size:0.85em;color:#6b7280;margin-top:2px;">${item?.[4] ?? "--"} - ${item?.[5] ?? "--"}</div></div>`
+                  ,
+                  value: item?.[0],
                 })) || [],
-            },
-            customConditional: "show = !data.use_shift_blocks ;",
+            }
           },
           {
             label: "Shift Block",
@@ -185,7 +183,7 @@ const AttendanceAssignments = ({
             data: {
               values:
                 weekOffs?.data?.map((item) => ({
-                  label: `${item.name}`,
+                  label: `${item?.weekly_off} (${item.name})`,
                   value: item.name,
                 })) || [],
             },
@@ -201,9 +199,9 @@ const AttendanceAssignments = ({
             validate: { required: true },
             data: {
               values:
-                attendancePolicy?.data?.policies?.map((item) => ({
-                  label: `${item.name}`,
-                  value: item.name,
+                policies?.map((item) => ({
+                  label: `${item?.[1] ?? "--"} - ${item?.[0] ?? "--"}`,
+                  value: item?.[0],
                 })) || [],
             },
           },

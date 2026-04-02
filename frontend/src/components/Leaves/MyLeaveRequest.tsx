@@ -1,29 +1,29 @@
 import { useState } from "react";
-import DataListView from "../DataListView";
-import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import CardTable from "../shared/CardTable";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
-import { MyLeaveRequestType } from "../../types/leaves";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
   useReplaceLeave,
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
-import ReplaceLeaveModal from "./ReplaceLeaveModal";
-import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { MyLeaveRequestType } from "../../types/leaves";
+import DataListView from "../DataListView";
+import { Typography } from "../shared/atoms/Typography";
+import CardTable from "../shared/CardTable";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
+import ReplaceLeaveModal from "./ReplaceLeaveModal";
 
 const MyLeaveRequests = ({
   pageSize = 10,
-  showPagination = true,
 }: {
   pageSize?: number;
-  showPagination?: boolean;
   showLeaveRequest?: boolean;
 }) => {
   const replaceLeave = useReplaceLeave();
   const { isDesktop } = useScreenSize();
+  const [activeStatus, setActiveStatus] = useState("Open");
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
@@ -91,20 +91,6 @@ const MyLeaveRequests = ({
     );
   };
 
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -123,16 +109,37 @@ const MyLeaveRequests = ({
           <CardSkeleton />
         ) : (
           <CardTable
-            titles={[
-              "Leave Type",
-              "From Date",
-              "To Date",
-              "Description",
-              "Leave Days",
-              "Status",
-              "ACTIONS",
-            ]}
-            columnWidths={["1fr 1fr 1fr 1.5fr 1fr 1fr 1fr"]}
+            titles={
+              activeStatus === "Rejected"
+                ? [
+                  "Leave Id",
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Reason",
+                  "Leave Days",
+                  "Status",
+                  "Reject Reason",
+                  "ACTIONS",
+                ]
+                : [
+                  "Leave Id",
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Reason",
+                  "Leave Days",
+                  "Status",
+                  "ACTIONS",
+                ]
+            }
+            columnWidths={
+              activeStatus === "Rejected"
+                ? ["1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
+                : ["1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
+            }
           >
             {currentEmployee?.name && (
               <DataListView
@@ -156,8 +163,17 @@ const MyLeaveRequests = ({
                     onRevokeApproved={() =>
                       revokeLeave(props.item.reference_document?.name ?? "")
                     }
+                    showRejectReason={activeStatus === "Rejected"}
                   />
                 )}
+                onFiltersChange={(filters) => {
+                  setActiveStatus(
+                    typeof filters.status === "string"
+                      ? filters.status
+                      : "All",
+                  );
+                }}
+                defaultFilters={{ status: ["!=", "Cancelled"] }}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[
@@ -172,18 +188,15 @@ const MyLeaveRequests = ({
                     ],
                   },
                 ]}
-                defaultFilters={{
-                  status: "Open",
-                }}
+
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}
                 pageSize={pageSize}
                 showRefreshButton={false}
-                orderBy="modified desc"
-                showPagination={showPagination}
-                infiniteScroll={true}
+                infiniteScroll={false}
                 loadMorePagination={false}
+                showPagination={true}
               />
             )}
           </CardTable>

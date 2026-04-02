@@ -1,27 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactElement, Suspense } from "react";
 import { Navigate } from "react-router";
-import { useScreenSize } from "./hooks/useScreenSize";
+import { useLocation, useNavigate } from "react-router-dom";
 import EmployeeErrorBoundary from "./components/EmployeeErrorBoundary";
+import { useScreenSize } from "./hooks/useScreenSize";
 import { lazyWithRetry } from "./utils/lazyWithRetry";
-import { useLocation } from "react-router-dom";
 
 // Keep critical components as static imports for better UX
-import SearchMembers from "./components/SearchMembers";
-import IdCard from "./components/IdCard";
-import NotificationList from "./components/Notification/Notification";
+import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
+import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
+import Invoice from "./components/Compansation/Invoice/Invoice";
+import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
+import TeamProofSubmissionList from "./components/Compansation/IT Declaration/TeamApproval/TeamProofSubmissionList";
+import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanRequest";
+import Perquisite from "./components/Compansation/Perquisite/Perquisite";
+import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
-import PasswordReset from "./components/ResetPassword/ResetPassword";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
 import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
-import ExtraPayment from "./components/Compansation/Extrapayment/ExtraPayment";
-import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
-import ITDeclarationForm from "./components/Compansation/IT Declaration/ITDeclaration";
-import TeamLoanRequest from "./components/Compansation/Loan/TeamLoan/TeamLoanRequest";
-import TeamAdvanceRequest from "./components/Compansation/Advances/ApprovalAdvanceRquest";
+import IdCard from "./components/IdCard";
+import NotificationList from "./components/Notification/Notification";
 import Requests from "./components/Requests";
-import Perquisite from "./components/Compansation/Perquisite/Perquisite";
-import Invoice from "./components/Compansation/Invoice/Invoice";
+import PasswordReset from "./components/ResetPassword/ResetPassword";
+import SearchMembers from "./components/SearchMembers";
+import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
+
+const TeamApprovalListExemptionTable = lazyWithRetry(
+  () =>
+    import("./components/Compansation/IT Declaration/TeamApproval/TeamApprovalListView"),
+  "TeamApprovalListExemptionTable",
+);
 
 // Lazy load heavy components with retry mechanism
 const Expenses = lazyWithRetry(
@@ -165,6 +173,11 @@ const TeamAttendance = lazyWithRetry(
   () => import("./components/Attendance/Team/TeamAttendance"),
   "TeamAttendance",
 );
+const AttendanceRequestFormV2 = lazyWithRetry(
+  () =>
+    import("./components/Attendance/AttendanceRequest/AttendanceRequestFormV2"),
+  "AttendanceRequestFormV2",
+);
 const TeamAttendanceDetails = lazyWithRetry(
   () =>
     import("./components/Attendance/TeamAttendanceDetails/TeamAttendanceDetails"),
@@ -178,14 +191,7 @@ const SalarySlipsList = lazyWithRetry(
   () => import("./components/Compansation/SalarySlipList"),
   "SalarySlipsList",
 );
-const ShiftChangeForm = lazyWithRetry(
-  () => import("./components/ShiftRequest/AddRequestForm"),
-  "ShiftChangeForm",
-);
-const ShiftReqeustEditForm = lazyWithRetry(
-  () => import("./components/ShiftRequest/EditRequestForm"),
-  "ShiftReqeustEditForm",
-);
+
 // const ShiftRequestList = lazyWithRetry(
 //   () => import("./components/ShiftRequest/MyShiftList"),
 //   "ShiftRequestList"
@@ -454,6 +460,18 @@ const RequisitionForm = lazyWithRetry(
   () => import("./components/Recruitment/RequisitionForm"),
   "RequisitionForm",
 );
+const RecognitionPage = lazyWithRetry(
+  () => import("./components/Recognition/RecognitionPage"),
+  "RecognitionPage",
+);
+const HallOfFamePage = lazyWithRetry(
+  () => import("./components/Recognition/HallOfFamePage"),
+  "HallOfFamePage",
+);
+const LeaderboardPage = lazyWithRetry(
+  () => import("./components/Recognition/LeaderboardPage"),
+  "LeaderboardPage",
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 const AddExpensePage = () => {
@@ -461,11 +479,17 @@ const AddExpensePage = () => {
   const initialExpense = (location.state as any)?.expense || null;
   const expense_claim_name =
     (location.state as any)?.expense_claim_name || null;
+  const draft_document_name =
+    (location.state as any)?.draft_document_name || null;
+  const isResubmit = (location.state as any)?.isResubmit || false;
+  const isEditingFromDraft = Boolean(draft_document_name);
   return (
     <AddExpenseForm
       initialExpense={initialExpense}
       expense_claim_name={expense_claim_name}
-      isEditingFromDetailsPage={Boolean(initialExpense)}
+      draft_document_name={draft_document_name}
+      isEditingFromDetailsPage={Boolean(initialExpense) && !isEditingFromDraft}
+      isResubmit={isResubmit}
     />
   );
 };
@@ -480,6 +504,12 @@ const LoadingSpinner = () => (
     </div>
   </div>
 );
+
+// eslint-disable-next-line react-refresh/only-export-components
+const AttendanceRequestFormRoute = () => {
+  const navigate = useNavigate();
+  return <AttendanceRequestFormV2 onClose={() => navigate(-1)} />;
+};
 
 // HOC to wrap components with Suspense and Error Boundary
 const withLazyLoading = (
@@ -500,7 +530,7 @@ export interface AppRoute {
   path: string;
   element: ReactElement;
   children?: AppRoute[];
-  permissionKey?: string;
+  permissionKey: string;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -516,16 +546,48 @@ const ShiftRequestDefaultRoute = () => {
 
 export const routesConfig: AppRoute[] = [
   // notification page route
-  { path: "/webapp/notification-log", element: <NotificationList />, permissionKey: "Dashboard" },
+  {
+    path: "/webapp/notification-log",
+    element: <NotificationList />,
+    permissionKey: "NotificationList",
+  },
   // Standalone Routes
-  { path: "/webapp/search-members", element: <SearchMembers />, permissionKey: "Employee Directory" },
+  {
+    path: "/webapp/search-members",
+    element: <SearchMembers />,
+    permissionKey: "Employee Directory",
+  },
 
-  { path: "/webapp/requests", element: <Requests />, permissionKey: "Dashboard" },
-  { path: "/webapp/id-card", element: <IdCard />, permissionKey: "Employee Directory" },
-  { path: "/webapp/id-card/:employeeId", element: <IdCard />, permissionKey: "Employee Directory" },
-  { path: "/webapp/expenses", element: <Expenses />, permissionKey: "Expenses" },
-  { path: "/webapp/policies", element: <Policies />, permissionKey: "Policies" },
-  { path: "/webapp/policies-enforced", element: <PoliciesEnforced />, permissionKey: "Policies" },
+  {
+    path: "/webapp/requests",
+    element: <Requests />,
+    permissionKey: "Dashboard",
+  },
+  {
+    path: "/webapp/id-card",
+    element: <IdCard />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/id-card/:employeeId",
+    element: <IdCard />,
+    permissionKey: "Employee Directory",
+  },
+  {
+    path: "/webapp/expenses",
+    element: <Expenses />,
+    permissionKey: "Expenses",
+  },
+  {
+    path: "/webapp/policies",
+    element: <Policies />,
+    permissionKey: "Policies",
+  },
+  {
+    path: "/webapp/policies-enforced",
+    element: <PoliciesEnforced />,
+    permissionKey: "Policies",
+  },
   {
     path: "/webapp/policies-enforced/view/:policyId",
     element: <PolicySignOff />,
@@ -542,11 +604,31 @@ export const routesConfig: AppRoute[] = [
     element: <RecruitmentApp />,
     permissionKey: "Recruitment",
     children: [
-      { path: "requisitions", element: <JobRequisition />, permissionKey: "Requisitions" },
-      { path: "referrals", element: <ReferralList />, permissionKey: "Referrals" },
-      { path: "interviews", element: <InterviewList />, permissionKey: "Interviews" },
-      { path: "job-openings", element: <JobOpeningsUI />, permissionKey: "Job Openings" },
-      { path: "job-applicant-list", element: <JobApplicantList />, permissionKey: "Job Applicant List" },
+      {
+        path: "requisitions",
+        element: <JobRequisition />,
+        permissionKey: "Requisitions",
+      },
+      {
+        path: "referrals",
+        element: <ReferralList />,
+        permissionKey: "Referrals",
+      },
+      {
+        path: "interviews",
+        element: <InterviewList />,
+        permissionKey: "Interviews",
+      },
+      {
+        path: "job-openings",
+        element: <JobOpeningsUI />,
+        permissionKey: "Job Openings",
+      },
+      {
+        path: "job-applicant-list",
+        element: <JobApplicantList />,
+        permissionKey: "Job Applicant List",
+      },
     ],
   },
 
@@ -556,19 +638,81 @@ export const routesConfig: AppRoute[] = [
     element: <SalarySlipApp />,
     permissionKey: "Compensation",
     children: [
-      { path: "ctc-salary-breakdown", element: <CTCSalaryUI />, permissionKey: "Annual CTC" },
-      { path: "salary-slip-list", element: <SalarySlipsList />, permissionKey: "Salary Slip" },
-      { path: "income-tax-sheet", element: <IncomeTaxSheet />, permissionKey: "Tax Declaration Sheet" },
-      { path: "it-declaration-form", element: <ITDeclarationForm />, permissionKey: "IT Declaration" },
-      { path: "my-loan-requests", element: <LoansPage />, permissionKey: "My Loan Requests" },
-      { path: "team-loan-requests", element: <TeamLoanRequest />, permissionKey: "Team Loan Requests" },
-      { path: "hr-payroll", element: <HRPayroll />, permissionKey: "Payroll Documents" },
-      { path: "details-page-mobile", element: <LoanMainComponent />, permissionKey: "My Loan Requests" }, // Nested route
-      { path: "advances-list", element: <AdvancesList />, permissionKey: "My Advances" },
-      { path: "team-advances-list", element: <TeamAdvanceRequest />, permissionKey: "Team Advances" },
-      { path: "pay-package", element: <PayPackage />, permissionKey: "Pay Package" },
-      { path: "extra-payment", element: <ExtraPayment />, permissionKey: "Extra Payment" },
-      { path: "perquisite-list", element: <Perquisite />, permissionKey: "Perquisite" },
+      {
+        path: "ctc-salary-breakdown",
+        element: <CTCSalaryUI />,
+        permissionKey: "Annual CTC",
+      },
+      {
+        path: "salary-slip-list",
+        element: <SalarySlipsList />,
+        permissionKey: "Salary Slip",
+      },
+      {
+        path: "income-tax-sheet",
+        element: <IncomeTaxSheet />,
+        permissionKey: "Tax Declaration Sheet",
+      },
+      {
+        path: "it-declaration-form",
+        element: <ITDeclarationForm />,
+        permissionKey: "IT Declaration",
+      },
+      {
+        path: "team-approval-it-declaration/:proofId",
+        element: <TeamApprovalListExemptionTable />,
+        permissionKey: "Team IT Declaration",
+      },
+      {
+        path: "team-declaration-listview",
+        element: <TeamProofSubmissionList />,
+        permissionKey: "Team IT Declaration",
+      },
+      {
+        path: "my-loan-requests",
+        element: <LoansPage />,
+        permissionKey: "My Loan Requests",
+      },
+      {
+        path: "team-loan-requests",
+        element: <TeamLoanRequest />,
+        permissionKey: "Team Loan Requests",
+      },
+      {
+        path: "hr-payroll",
+        element: <HRPayroll />,
+        permissionKey: "Payroll Documents",
+      },
+      {
+        path: "details-page-mobile",
+        element: <LoanMainComponent />,
+        permissionKey: "My Loan Requests",
+      }, // Nested route
+      {
+        path: "advances-list",
+        element: <AdvancesList />,
+        permissionKey: "My Advances",
+      },
+      {
+        path: "team-advances-list",
+        element: <TeamAdvanceRequest />,
+        permissionKey: "Team Advances",
+      },
+      {
+        path: "pay-package",
+        element: <PayPackage />,
+        permissionKey: "Pay Package",
+      },
+      {
+        path: "extra-payment",
+        element: <ExtraPayment />,
+        permissionKey: "Extra Payment",
+      },
+      {
+        path: "perquisite-list",
+        element: <Perquisite />,
+        permissionKey: "Perquisite",
+      },
       { path: "invoice-page", element: <Invoice />, permissionKey: "Invoice" },
     ],
   },
@@ -588,10 +732,26 @@ export const routesConfig: AppRoute[] = [
     element: <BenefitsApp />,
     permissionKey: "Benefit",
     children: [
-      { path: "my-benefits", element: <MyBenefits />, permissionKey: "My Benefits" },
-      { path: "my-requests", element: <MyBenefitRequests />, permissionKey: "My Requests" },
-      { path: "benefits-slips", element: <BenefitsSlips />, permissionKey: "Benefit Slips" },
-      { path: "my-team-requests", element: <MyTeamBenefitsRequests />, permissionKey: "Team Requests" },
+      {
+        path: "my-benefits",
+        element: <MyBenefits />,
+        permissionKey: "My Benefits",
+      },
+      {
+        path: "my-requests",
+        element: <MyBenefitRequests />,
+        permissionKey: "My Requests",
+      },
+      {
+        path: "benefits-slips",
+        element: <BenefitsSlips />,
+        permissionKey: "Benefit Slips",
+      },
+      {
+        path: "my-team-requests",
+        element: <MyTeamBenefitsRequests />,
+        permissionKey: "Team Requests",
+      },
     ],
   },
 
@@ -606,42 +766,63 @@ export const routesConfig: AppRoute[] = [
         element: <ShiftRequestDefaultRoute />,
         permissionKey: "Shift",
       },
-      { path: "all-shifts-dashboard", element: <AllShiftsDashboardRoute />, permissionKey: "All Shifts" },
-      { path: "my-shift-assignment", element: <MyShiftsListRoute />, permissionKey: "My Shifts" },
-      { path: "team-shift", element: <TeamShiftsListRoute />, permissionKey: "Team Shifts" },
-      { path: "shift-change-request", element: <ShiftChangeRequestsRoute />, permissionKey: "Shift Change Requests" },
-      { path: "shift-list", element: <MyShiftRequestsRoute />, permissionKey: "My Shift Requests" },
+      {
+        path: "all-shifts-dashboard",
+        element: <AllShiftsDashboardRoute />,
+        permissionKey: "All Shifts",
+      },
+      {
+        path: "my-shift-assignment",
+        element: <MyShiftsListRoute />,
+        permissionKey: "My Shifts",
+      },
+      {
+        path: "team-shift",
+        element: <TeamShiftsListRoute />,
+        permissionKey: "Team Shifts",
+      },
+      {
+        path: "shift-change-request",
+        element: <ShiftChangeRequestsRoute />,
+        permissionKey: "Team Shift Requests",
+      },
+      {
+        path: "shift-list",
+        element: <MyShiftRequestsRoute />,
+        permissionKey: "My Shift Requests",
+      },
     ],
-  },
-
-  {
-    path: "/webapp/shift-request/shift-change-form",
-    element: <ShiftChangeForm />,
-    permissionKey: "Shift Change Requests",
-  },
-  {
-    path: "/webapp/shift-request/shift-change-form/:id",
-    element: <ShiftReqeustEditForm />,
-    permissionKey: "Shift Change Requests",
   },
 
   {
     path: "/webapp/notices",
     element: <NoticesLayout />,
-    permissionKey: "Dashboard",
+    permissionKey: "Notices Dashboard",
     children: [
-      { path: "all", element: <NoticesTab tab="all" />, permissionKey: "Dashboard" },
-      { path: "unread", element: <NoticesTab tab="unread" />, permissionKey: "Dashboard" },
+      {
+        path: "all",
+        element: <NoticesTab tab="all" />,
+        permissionKey: "Notices Dashboard",
+      },
+      {
+        path: "unread",
+        element: <NoticesTab tab="unread" />,
+        permissionKey: "Notices Dashboard",
+      },
       // { path: 'archived', element: <NoticesTab tab="archived" /> },
     ],
   },
 
-  { path: "/webapp/notices/:id", element: <NoticeDetails />, permissionKey: "Dashboard" },
+  {
+    path: "/webapp/notices/:id",
+    element: <NoticeDetails />,
+    permissionKey: "Notices Dashboard",
+  },
 
   {
     path: "/webapp/employee-profile",
     element: <EmployeeProfile />,
-    permissionKey: "Employee Directory",
+    permissionKey: "Employee Profile",
   },
 
   // Nested Expenses App Routes
@@ -650,14 +831,38 @@ export const routesConfig: AppRoute[] = [
     element: <ExpensesApp />,
     permissionKey: "Expenses",
     children: [
-      { path: "expenses-list", element: <ExpensesList />, permissionKey: "Expense Claims" },
-      { path: "team-requests", element: <TeamExpense />, permissionKey: "Team Requests" },
-      { path: "my-advance-expense", element: <MyAdvanceExpenseList />, permissionKey: "My Advances" },
-      { path: "team-advance-expense", element: <TeamAdvanceExpenseList />, permissionKey: "Team Advances" },
-      { path: "shared-expenses", element: <SharedExpenses />, permissionKey: "Expenses" },
+      {
+        path: "expenses-list",
+        element: <ExpensesList />,
+        permissionKey: "Expense Claims",
+      },
+      {
+        path: "team-requests",
+        element: <TeamExpense />,
+        permissionKey: "Team Requests",
+      },
+      {
+        path: "my-advance-expense",
+        element: <MyAdvanceExpenseList />,
+        permissionKey: "My Advances",
+      },
+      {
+        path: "team-advance-expense",
+        element: <TeamAdvanceExpenseList />,
+        permissionKey: "Team Advances",
+      },
+      {
+        path: "shared-expenses",
+        element: <SharedExpenses />,
+        permissionKey: "Expenses",
+      },
     ],
   },
-  { path: "/webapp/expenses-app/add-expense", element: <AddExpensePage />, permissionKey: "Expense Claims" },
+  {
+    path: "/webapp/expenses-app/add-expense",
+    element: <AddExpensePage />,
+    permissionKey: "Expense Claims",
+  },
   // Flat Recruitment Routes
   {
     path: "/webapp/recruitment-app/referrals/add-new-referral",
@@ -698,19 +903,53 @@ export const routesConfig: AppRoute[] = [
         path: "",
         index: true,
         element: <Navigate to="summary" replace />,
+        permissionKey: "Attendance Summary",
       },
-      { path: "summary", element: <AttendanceSummary />, permissionKey: "Attendance Summary" },
-      { path: "emp-attendance", element: <EmployeeAttendance />, permissionKey: "My Attendance" },
+      {
+        path: "summary",
+        element: <AttendanceSummary />,
+        permissionKey: "Attendance Summary",
+      },
+      {
+        path: "emp-attendance",
+        element: <EmployeeAttendance />,
+        permissionKey: "My Attendance",
+      },
       {
         path: "emp-attendance/all",
         element: <AllEmpAttendance />,
         permissionKey: "Team Attendance",
       },
-      { path: "team-attendance", element: <TeamAttendance />, permissionKey: "Team Attendance" },
-      { path: "attendance-request", element: <AttendanceRequest />, permissionKey: "My Requests" },
-      { path: "team-attendance-requests", element: <TeamAttendanceDetails />, permissionKey: "Team Requests" },
-      { path: "my-overtime-requests", element: <MyOvertimeRequests />, permissionKey: "My Overtime" },
-      { path: "team-overtime-requests", element: <TeamOvertimeRequests />, permissionKey: "Team Overtime" },
+      {
+        path: "team-attendance",
+        element: <TeamAttendance />,
+        permissionKey: "Team Attendance",
+      },
+      {
+        path: "attendance-request",
+        element: <AttendanceRequest />,
+        permissionKey: "My Requests",
+      },
+      {
+        path: "team-attendance-requests",
+        element: <TeamAttendanceDetails />,
+        permissionKey: "Team Requests",
+      },
+      {
+        path: "request-form",
+        element: <AttendanceRequestFormRoute />,
+        permissionKey: "Attendance Summary",
+      },
+      {
+        path: "my-overtime-requests",
+        element: <MyOvertimeRequests />,
+        permissionKey: "Planned Overtime",
+      },
+      {
+        path: "team-overtime-requests",
+        element: <TeamOvertimeRequests />,
+        permissionKey: "Team Overtime",
+      },
       {
         path: "attendance-policies",
         element: <AttendancePolicies doctype_name="Attendance Policies" />,
@@ -734,22 +973,43 @@ export const routesConfig: AppRoute[] = [
     element: <LeaveApp />,
     permissionKey: "Leaves and Holidays",
     children: [
-      { path: "leaves/leave-balance", element: <LeaveBalance />, permissionKey: "Leave Balance" },
+      {
+        path: "leaves/leave-balance",
+        element: <LeaveBalance />,
+        permissionKey: "Leave Balance",
+      },
       {
         path: "leaves/leave-requests",
         element: <LeaveRequestApp />,
         permissionKey: "Leaves and Holidays",
         children: [
-          { path: "my", element: <MyLeaveRequest />, permissionKey: "My Requests" },
-          { path: "team", element: <TeamLeaveRequest />, permissionKey: "Team Requests" },
+          {
+            path: "my",
+            element: <MyLeaveRequest />,
+            permissionKey: "My Requests",
+          },
+          {
+            path: "team",
+            element: <TeamLeaveRequest />,
+            permissionKey: "Team Requests",
+          },
         ],
       },
-      { path: "leaves/holidays", element: <Holidays />, permissionKey: "Holidays" },
+      {
+        path: "leaves/holidays",
+        element: <Holidays />,
+        permissionKey: "Holidays",
+      },
       {
         path: "compensatory-request",
         element: <CompensatoryRequest />,
         permissionKey: "Compensatory",
       },
+      {
+        path: "request",
+        element: <></>, // important: render nothing
+        permissionKey: "request-leave",
+      }
     ],
   },
 
@@ -759,8 +1019,16 @@ export const routesConfig: AppRoute[] = [
     element: <Recruitment />,
     permissionKey: "Recruitment",
     children: [
-      { path: "overview", element: <RecruitmentOverview />, permissionKey: "Overview" },
-      { path: "requisition", element: <Requisition />, permissionKey: "Requisitions" },
+      {
+        path: "overview",
+        element: <RecruitmentOverview />,
+        permissionKey: "Overview",
+      },
+      {
+        path: "requisition",
+        element: <Requisition />,
+        permissionKey: "Requisitions",
+      },
       {
         path: "requisition/new",
         element: <RequisitionForm />,
@@ -783,8 +1051,16 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Policies",
     children: [
       { path: "", element: <PoliciesCategory />, permissionKey: "Policies" },
-      { path: "policies-list", element: <PoliciesList />, permissionKey: "Policies" },
-      { path: "view-policy/:policyName", element: <ViewPolicy />, permissionKey: "Policies" },
+      {
+        path: "policies-list",
+        element: <PoliciesList />,
+        permissionKey: "Policies",
+      },
+      {
+        path: "view-policy/:policyName",
+        element: <ViewPolicy />,
+        permissionKey: "Policies",
+      },
     ],
   },
   //Approval tracker routes
@@ -794,8 +1070,16 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Flows",
     children: [
       { path: "", element: <FlowRequests />, permissionKey: "Flow Requests" },
-      { path: "initiate", element: <InitiateFlow />, permissionKey: "Flow Requests" },
-      { path: "initiate-form", element: <InitiateForm />, permissionKey: "Flow Requests" },
+      {
+        path: "initiate",
+        element: <InitiateFlow />,
+        permissionKey: "Flow Requests",
+      },
+      {
+        path: "initiate-form",
+        element: <InitiateForm />,
+        permissionKey: "Flow Requests",
+      },
       {
         path: "details/:id",
         element: <FlowRequestDetails />,
@@ -807,14 +1091,42 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/flow-app",
     element: <FlowApp />,
-    permissionKey: "Flows",
+    permissionKey: "HR Process",
     children: [
-      { path: "flow-requests", element: <FlowRequests2 />, permissionKey: "Flow Requests" },
-      { path: "separation", element: <Separation />, permissionKey: "Separation" },
-      { path: "separation-workflow/:id", element: <SeparationWorkflow />, permissionKey: "Separation" },
-      { path: "confirmation", element: <Confirmation />, permissionKey: "Confirmation" },
-      { path: "initiate-flow", element: <InitiateFlow2 />, permissionKey: "Flows" },
-      { path: "flow-request/:id", element: <RequestDetails />, permissionKey: "Flow Requests" },
+      {
+        path: "flow-requests",
+        element: <FlowRequests2 />,
+        permissionKey: "Flow Requests",
+      },
+      {
+        path: "separation",
+        element: <Separation />,
+        permissionKey: "Separation",
+      }, {
+        path: "rejected-separation-request",
+        element: <RejectedSeparationRequest />,
+        permissionKey: "Rejected Separation Request",
+      },
+      {
+        path: "separation-workflow",
+        element: <SeparationWorkflow />,
+        permissionKey: "Separation",
+      },
+      {
+        path: "confirmation",
+        element: <Confirmation />,
+        permissionKey: "Confirmation",
+      },
+      {
+        path: "initiate-flow",
+        element: <InitiateFlow2 />,
+        permissionKey: "Initiate Flow",
+      },
+      {
+        path: "flow-request/:id",
+        element: <RequestDetails />,
+        permissionKey: "Flow Requests",
+      },
     ],
   },
   {
@@ -823,8 +1135,16 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Performance",
     children: [
       { path: "overview", element: <Overview />, permissionKey: "Overview" },
-      { path: "new-goal-plan", element: <NewGoalPlan />, permissionKey: "New Goal Plan" },
-      { path: "performance-review", element: <PerformanceReviewApp />, permissionKey: "Performance Review" },
+      {
+        path: "new-goal-plan",
+        element: <NewGoalPlan />,
+        permissionKey: "New Goal Plan",
+      },
+      {
+        path: "performance-review",
+        element: <PerformanceReviewApp />,
+        permissionKey: "Performance Review",
+      },
     ],
   },
   {
@@ -850,27 +1170,42 @@ export const routesConfig: AppRoute[] = [
   {
     path: "/webapp/helpdesk/my-tickets",
     element: <HelpDeskApp />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk My Tickets",
   },
   {
     path: "/webapp/helpdesk/assigned",
     element: <HelpDeskApp />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk Assigned",
   },
   {
     path: "/webapp/helpdesk/faq",
     element: <FAQPage />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk FAQ",
   },
   {
     path: "/webapp/helpdesk/ticket/:ticketId",
     element: <TicketDetailView />,
-    permissionKey: "Help Desk",
+    permissionKey: "Help Desk Ticket",
   },
   {
     path: "/webapp/todo-app",
     element: <TodoPage />,
     permissionKey: "Todo",
+  },
+  {
+    path: "/webapp/recognition",
+    element: <RecognitionPage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/hall-of-fame",
+    element: <HallOfFamePage />,
+    permissionKey: "Recognition",
+  },
+  {
+    path: "/webapp/recognition/leaderboard",
+    element: <LeaderboardPage />,
+    permissionKey: "Recognition",
   },
 ];
 

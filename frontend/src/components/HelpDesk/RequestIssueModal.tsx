@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from "react";
-import { X, HelpCircle, Upload, Trash2, ChevronDown } from "lucide-react";
+import { X, Upload, Trash2, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
 import toast from "react-hot-toast";
@@ -212,16 +212,17 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl mx-4 bg-white rounded-xl shadow-xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative w-full sm:max-w-2xl sm:mx-4 bg-white sm:rounded-xl shadow-xl max-sm:h-[100vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <Typography variant="h3" color="primary">
             Request Issue
           </Typography>
           <div className="flex items-center gap-2">
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+            {/* commenting out unused help icon */}
+            {/* <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <HelpCircle className="w-5 h-5" />
-            </button>
+            </button> */}
             <button
               onClick={handleClose}
               className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
@@ -376,11 +377,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                isDragging
-                  ? "border-primary-500 bg-primary-50"
-                  : "border-gray-300 hover:border-gray-400"
-              }`}
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging
+                ? "border-primary-500 bg-primary-50"
+                : "border-gray-300 hover:border-gray-400"
+                }`}
             >
               <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-600">
@@ -439,6 +439,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             size="md"
             onClick={resetForm}
             disabled={createTicketMutation.isPending}
+            className="max-sm:w-full"
           >
             Reset
           </Button>
@@ -448,6 +449,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             size="md"
             onClick={handleSubmit}
             disabled={createTicketMutation.isPending || !title.trim() || !description.trim()}
+            className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}
           </Button>

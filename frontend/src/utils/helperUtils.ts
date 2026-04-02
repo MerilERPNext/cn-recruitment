@@ -194,6 +194,30 @@ export async function getDeviceLocationWeb(): Promise<Coordinates> {
   });
 }
 
+export const getLocationName = async (latitude: number, longitude: number) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+      {
+        headers: {
+          "User-Agent": "hr-management-system/1.0",
+          "Accept-Language": "en",
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    return (
+      data.display_name ||
+      `${latitude}, ${longitude}`
+    );
+  } catch (error) {
+    console.error("Error fetching location name:", error);
+    return "Unable to fetch location";
+  }
+};
+
 export const formatTimeSafe = (timeStr: string | undefined) => {
   if (!timeStr) return "--:--";
   try {

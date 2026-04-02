@@ -1,56 +1,38 @@
-import React, { useState, useMemo } from "react";
 import { ClipboardList } from "lucide-react";
-import FrappeListView from "../ListView";
-import { ViewAll } from "../shared/atoms/ViewAll";
+import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { useTodoList } from "../../hooks/useTodo";
+import type { ToDo } from "../../services/todoService";
 import { formatDateDDMonthYYYY } from "../../utils/formatToIndianDate";
-import useCurrentUser from "../../hooks/useCurrentUser";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
 import { Card } from "../shared/atoms/Card";
 import { Typography } from "../shared/atoms/Typography";
-import { useNavigate } from "react-router-dom";
+import { ViewAll } from "../shared/atoms/ViewAll";
 import CustomDropdown from "../shared/CustomDropdown";
-import { useScreenSize } from "../../hooks/useScreenSize";
-import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
-interface ToDo {
-  priority: string;
-  custom_due_datetime: string;
-  name: string;
-  description?: string;
-  owner?: string;
-  status?: string;
-  reference_type?: string;
-  reference_name?: string;
-  date?: string;
-  due_date?: string;
-  custom_redirect_url?: string;
-}
-
-const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
+const MyToDoItem: React.FC<{ item: ToDo; index?: number }> = ({ item }) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (item.custom_redirect_url) {
-      navigate(item.custom_redirect_url);
+    if (item.custom_dynamic_route) {
+      navigate(item.custom_dynamic_route);
     } else {
       navigate(`/webapp/todo-app#/${item.name}`);
     }
-  };
-
-  const handleTodoClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate("/webapp/todo-app");
   };
 
   const cleanDescription = sanitizeToPlainText(item.description);
 
   return (
     <div
-      onClick={handleClick}
-      key={item.name} // Assuming item.name is unique
+      key={item.name}
       className="flex cursor-pointer items-center justify-between p-3 rounded-xl border border-transparent hover-lift transition-all group"
     >
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+        <div className="w-10 h-10 min-w-[40px] min-h-[40px] flex-shrink-0 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
           <ClipboardList className="w-5 h-5" />
         </div>
         <div>
@@ -62,8 +44,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
           </Typography>
 
           <Typography variant="label" color="body2">
-            {item.due_date
-              ? `Due on ${formatDateDDMonthYYYY(item.due_date)}`
+            {item.custom_due_datetime
+              ? `Due on ${formatDateDDMonthYYYY(item.custom_due_datetime)}`
               : item.date
                 ? `Due on ${formatDateDDMonthYYYY(item.date)}`
                 : "No due date"}
@@ -71,7 +53,7 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
         </div>
       </div>
       <button
-        onClick={handleTodoClick}
+        onClick={handleClick}
         className="text-primary-600 text-xs font-semibold px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-colors whitespace-nowrap"
       >
         View task
@@ -81,10 +63,8 @@ const MyToDoItem: React.FC<{ item: ToDo }> = ({ item }) => {
 };
 
 const TasksAwaiting: React.FC = () => {
-  const [fullData, setFullData] = useState<ToDo[]>([]);
+  const { data: fullData = [], isLoading } = useTodoList();
   const [activeCategory, setActiveCategory] = useState("All");
-  const { data: currentEmployee } = useCurrentUser();
-  const currentEmployeeId = currentEmployee?.name;
 
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -105,28 +85,23 @@ const TasksAwaiting: React.FC = () => {
     return colors[index % colors.length];
   };
 
-  const handleDataLoad = (items: ToDo[]) => {
-    setFullData(items);
-  };
 
   const filtered = useMemo(() => {
     if (activeCategory === "All") return fullData;
 
-    if (activeCategory === "Others") {
-      return fullData.filter((item) => !item.reference_type);
+    if (activeCategory === "Uncategorized") {
+      return fullData.filter((item) => !item.custom_todo_type);
     }
 
-    return fullData.filter((item) => item.reference_type === activeCategory);
+    return fullData.filter((item) => item.custom_todo_type === activeCategory);
   }, [activeCategory, fullData]);
 
   const categoryCounts = useMemo(() => {
     const grouped: Record<string, number> = {};
 
     fullData.forEach((item) => {
-      if (item.status === "Open") {
-        const cat = item.reference_type || "Others";
-        grouped[cat] = (grouped[cat] || 0) + 1;
-      }
+      const cat = item.custom_todo_type || "Uncategorized";
+      grouped[cat] = (grouped[cat] || 0) + 1;
     });
 
     return grouped;
@@ -134,16 +109,22 @@ const TasksAwaiting: React.FC = () => {
 
   const totalCount = Object.values(categoryCounts).reduce((a, b) => a + b, 0);
 
-  const filterOptions = useMemo(
-    () => [
-      { label: `All (${totalCount})`, value: "All" },
-      ...Object.entries(categoryCounts).map(([cat, count]) => ({
+  const filterOptions = useMemo(() => {
+    const entries = Object.entries(categoryCounts);
+
+    const sorted = [
+      ...entries.filter(([cat]) => cat !== "Uncategorized"),
+      ...entries.filter(([cat]) => cat === "Uncategorized"),
+    ];
+
+    return [
+      { label: `All Tasks (${totalCount})`, value: "All" },
+      ...sorted.map(([cat, count]) => ({
         label: `${cat} (${count})`,
         value: cat,
       })),
-    ],
-    [categoryCounts, totalCount],
-  );
+    ];
+  }, [categoryCounts, totalCount]);
 
   return (
     <Card shadow="sm" className="h-fit md:h-full flex flex-col">
@@ -168,7 +149,7 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {isDesktop && (
+      {isDesktop && !isLoading && totalCount > 0 && (
         <div className="flex gap-3 mb-4 p-2 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveCategory("All")}
@@ -177,10 +158,17 @@ const TasksAwaiting: React.FC = () => {
               : "bg-primary-100 text-primary-700 hover:bg-primary-300"
               } transition-all`}
           >
-            All ({totalCount})
+            All Tasks ({totalCount})
           </button>
 
-          {Object.entries(categoryCounts).map(([cat, count], idx) => {
+          {[
+            ...Object.entries(categoryCounts).filter(
+              ([cat]) => cat !== "Uncategorized",
+            ),
+            ...Object.entries(categoryCounts).filter(
+              ([cat]) => cat === "Uncategorized",
+            ),
+          ].map(([cat, count], idx) => {
             const isActive = activeCategory === cat;
             const colors = generatePastelColor(idx);
 
@@ -200,43 +188,20 @@ const TasksAwaiting: React.FC = () => {
         </div>
       )}
 
-      {currentEmployeeId && fullData.length === 0 && (
-        <FrappeListView
-          doctype="ToDo"
-          ItemComponent={() => null}
-          isSearch={false}
-          pageSize={1000}
-          orderBy="date desc"
-          onDataLoad={handleDataLoad}
-          defaultFilters={{
-            status: "Open",
-            allocated_to: currentEmployeeId,
-          }}
-          defaultFields={[
-            "name",
-            "description",
-            "owner",
-            "status",
-            "reference_type",
-            "reference_name",
-            "date",
-            "priority",
-            "allocated_to",
-            "custom_redirect_url",
-          ]}
-          showPagination={false}
-        />
-      )}
 
-      <div className="flex-1 overflow-y-auto max-h-[280px] md:max-h-[200px]">
-        {filtered.map((item) => (
-          <MyToDoItem key={item.name} item={item} />
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="p-4 flex justify-center opacity-60">
-            <Typography variant="bodySmall">No tasks found.</Typography>
-          </div>
+      {/* Show only latest 3 items for the active category */}
+      <div className="flex-1">
+        {isLoading ? (
+          <CardSkeleton rows={2} />
+        ) : filtered.length > 0 ? (
+          filtered
+            .slice(0, 3)
+            .map((item) => <MyToDoItem key={item.name} item={item} />)
+        ) : (
+          <NoDataFound
+            title="You're all caught up 🎉"
+            subtitle="No pending tasks right now."
+          />
         )}
       </div>
     </Card>

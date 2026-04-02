@@ -15,12 +15,28 @@ export const NotificationService = {
 }
 
 export const NotificationAlertService = {
-    getNotifications: async (): Promise<NotificationLog[]> => {
-      const response = await FrappeAPI.getDocumentList("Notification Log", {
-        fields: ["name", "subject", "for_user", "type", "read", "from_user", "creation"],
+  getNotifications: async (
+    limit = 100,
+    offset = 0
+  ): Promise<NotificationLog[]> => {
+    const response = await FrappeAPI.getDocumentList(
+      "Notification Log",
+      {
+        fields: [
+          "name",
+          "subject",
+          "for_user",
+          "type",
+          "read",
+          "from_user",
+          "creation",
+        ],
         orderBy: "creation desc",
-        limit: 1000000,
-      });
-      return response.data as NotificationLog[];
-    },
-  };
+        limit: limit,
+        limitStart: offset,
+      }
+    );
+
+    return response.data as NotificationLog[];
+  },
+};

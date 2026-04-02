@@ -12,7 +12,6 @@ import {
 } from "../services/expenseService";
 import { FilterCondition } from "../types/frappe";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import {
   ExpenseTypeFieldsResponse,
   CalculateExpenseParams,
@@ -23,6 +22,7 @@ import {
   ExpenseCategoryType,
   ExpensePolicyQuestionsResponse,
 } from "../types/expense";
+import { useNavigate } from "react-router-dom";
 
 export const useExpenseTypes = (
   filters?: FilterCondition[]
@@ -78,7 +78,6 @@ export const useExpenseClaim = (filters?: FilterCondition[]) => {
 
 export function usePostExpenseClaim() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
 
   const handleError = (err: any) => {
     toast.error(
@@ -91,9 +90,6 @@ export function usePostExpenseClaim() {
       expenseService.postExpenseClaim(expenses_data),
     onSuccess: () => {
       toast.success("Expense claim submitted successfully!");
-      navigate("/webapp/expenses-app/expenses-list", {
-        state: { refresh: true },
-      });
       
       setTimeout(() => {
         queryClient.invalidateQueries({
@@ -251,42 +247,37 @@ export function useExpenseSingleItemApproval() {
 //edit expense
 
 type ExpenseItem = Record<string, any>;
-type ParticipantItem = Record<string, any>;
 
 export type UpdateExpensePayload = {
   expense_claim_name: string;
   expenses: ExpenseItem[];
-  participants: ParticipantItem[];
+  isResubmit?: boolean;
 };
 
 export function useUpdateExpense() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (params: UpdateExpensePayload) =>
-      expenseService.updateExpense(
+    mutationFn: async (params: UpdateExpensePayload) => {
+      return expenseService.updateExpense(
         params.expense_claim_name,
         params.expenses,
-        params.participants
-      ),
-    onSuccess: () => {
-      const allQueries = queryClient.getQueryCache().getAll();
-      console.log(
-        "All queries in cache:",
-        allQueries.map((q) => q.queryKey)
+        params.isResubmit
       );
+    },
+    onSuccess: () => {
       toast.dismiss();
       toast.success("Expense claim updated successfully");
 
-      queryClient.invalidateQueries({
-        queryKey: ["document", "Expense Claim"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [
-          "custom-api-infinite",
-          "cn_leave_shift_managment.api.get_open_approval_todos",
-        ],
-      });
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["custom-api-infinite"],
+        });
+      }, 1500);
+
     },
     onError: (err: any) => {
       toast.error(errorResponseFormater(err));
@@ -382,3 +373,111 @@ export const useGetExpensePolicyQuestions = (categoryName?: string) => {
     retry: 1,
   });
 };
+
+export function useGetApplicableExpenseCategoriesMutation() {
+  return useMutation({
+    mutationFn: (categoryType: string) =>
+      expenseService.getApplicableExpenseCategories(categoryType),
+  });
+}
+
+export const useGetAllExpenseCategories = () => {
+  return useQuery({
+    queryKey: ["all-expense-categories"],
+    queryFn: () => expenseService.getAllExpenseCategories(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export function useGetExpenseTypesByCategoryMutation() {
+  return useMutation({
+    mutationFn: ({
+      employee,
+      reimbursementCategory,
+    }: {
+      employee: string;
+      reimbursementCategory: string;
+    }) => expenseService.getExpenseTypesByCategory(employee, reimbursementCategory),
+  });
+}
+
+export const useGetExpenseAttachments = (documentName?: string, doctype?: string) => {
+  return useQuery({
+    queryKey: ["expense-attachments", documentName, doctype],
+    queryFn: () => {
+      if (!documentName) throw new Error("documentName is required");
+      return expenseService.getExpenseAttachments(documentName, doctype);
+    },
+    enabled: !!documentName,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export function useCreateDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload: any) => expenseService.createDraftExpenseClaim(payload),
+    onSuccess: () => {
+      toast.success("Draft expense claim saved!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      navigate("/webapp/expenses-app/expenses-list");
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to save draft."));
+    },
+  });
+}
+
+export const useGetDraftExpenseClaims = (employeeId?: string) => {
+  return useQuery({
+    queryKey: ["expense-claims-draft", employeeId],
+    queryFn: () => {
+      if (!employeeId) return [];
+      return expenseService.getDraftExpenseClaims(employeeId);
+    },
+    enabled: !!employeeId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+};
+
+export function useDeleteDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (docName: string) => expenseService.deleteDraftExpenseClaim(docName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to delete draft."));
+    },
+  });
+}
+
+export function useUpdateDraftExpenseClaim() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: ({ docName, payload }: { docName: string; payload: any }) =>
+      expenseService.updateDraftExpenseClaim(docName, payload),
+    onSuccess: () => {
+      toast.success("Draft expense claim updated!");
+      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      navigate("/webapp/expenses-app/expenses-list");
+    },
+    onError: (err: any) => {
+      toast.error(errorResponseFormater(err, "Failed to update draft."));
+    },
+  });
+}
+
+export function useUpdateFileAttachment() {
+  return useMutation({
+    mutationFn: ({ fileName, data }: { fileName: string; data: { attached_to_doctype: string; attached_to_name: string } }) =>
+      expenseService.updateFile(fileName, data),
+  });
+}

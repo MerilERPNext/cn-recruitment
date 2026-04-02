@@ -151,12 +151,12 @@ export const useGetLeaveRequestFields = (
   return useQuery<LeaveFieldResponse>({
     queryKey: ["leave-request-fields", leaveType, fromDate, toDate],
     queryFn: () => {
-      if (!leaveType || !fromDate || !toDate) {
-        throw new Error("leaveType, fromDate, and toDate are required");
+      if (!leaveType) {
+        throw new Error("leaveType is required");
       }
       return leaveService.getLeaveRequestFields(leaveType, fromDate, toDate);
     },
-    enabled: !!leaveType && !!fromDate && !!toDate,
+    enabled: !!leaveType,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -431,6 +431,11 @@ export function useCreateLeaveApplication() {
         queryClient.invalidateQueries({
           queryKey: ["custom-api-infinite"],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["leave-buttons-status"],
+        });
+        queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+        queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
       }, 1500);
     },
   });
@@ -486,6 +491,40 @@ export const useCheckAttachmentMandatory = (leaveType: string | undefined) => {
       return leaveService.checkAttachmentMandatory(leaveType);
     },
     enabled: !!leaveType,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useGetNumberOfLeaveDays = (
+  employee: string | undefined,
+  leaveType: string | undefined,
+  fromDate: string | undefined,
+  toDate: string | undefined,
+  individualDates: string | undefined,
+) => {
+  return useQuery({
+    queryKey: [
+      "number-of-leave-days",
+      employee,
+      leaveType,
+      fromDate,
+      toDate,
+      individualDates,
+    ],
+    queryFn: async () => {
+      if (!employee || !leaveType || !fromDate || !toDate || !individualDates) {
+        throw new Error("Missing parameters for get_number_of_leave_days");
+      }
+      return await leaveService.getNumberOfLeaveDays(
+        employee,
+        leaveType,
+        fromDate,
+        toDate,
+        individualDates,
+      );
+    },
+    enabled:
+      !!employee && !!leaveType && !!fromDate && !!toDate && !!individualDates,
     staleTime: 5 * 60 * 1000,
   });
 };

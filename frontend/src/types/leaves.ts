@@ -1,6 +1,7 @@
 export interface LeaveRequest {
   name: string;
   leave_type: string;
+  custom_leave_type_name: string;
   from_date: string;
   to_date: string;
   status: "Approved" | "Open" | "Rejected" | "Cancelled" | "Pending";
@@ -8,12 +9,14 @@ export interface LeaveRequest {
   description?: string;
   department?: string;
   custom_reason?: string;
+  custom_rejection_reason?: string;
   half_day: boolean;
   custom_attachment?: { url: string }[];
   half_day_date?: string;
   custom_second_half_day_date?: string;
   total_leave_days: number;
   posting_date: string;
+  reason_name?: string;
 }
 
 export interface TeamLeaveRequest {
@@ -34,6 +37,7 @@ export interface TeamLeaveRequest {
 }
 
 export interface LeaveBalance {
+  leave_id: string;
   type: string;
   annual_allocation: number;
   dont_show_in_frontend: number;
@@ -50,10 +54,12 @@ export interface LeaveBalance {
     show_carry_forward_expiry_date: number;
   };
   balance_excluding_future_transactions: number;
+  optional_leave?: number;
 }
 
 export interface LeaveTransaction {
   type: string;
+  name?: string;
   total: number;
   monthly: number[];
   dont_show_in_frontend: number;
@@ -91,6 +97,7 @@ export interface LeaveApplication {
   to_date: string;
   status: "Open" | "Approved" | "Rejected" | "Cancelled" | string;
   description?: string;
+  custom_leave_type_name?: string;
 }
 
 export interface Holiday {
@@ -107,6 +114,8 @@ export interface Holiday {
   is_repeated: boolean;
   original_doc_name: string;
   leave_type: string;
+  leave_type_name?: string;
+  optional_leave?: number;
 }
 export type HolidayGroupType = "Optional" | "National Holiday" | "Mandatory";
 
@@ -140,6 +149,9 @@ export interface CompOffResponse {
   custom_status: string;
   pay_button_required: boolean;
   docstatus: number;
+  allocated_to?: string[];
+  allocated_roles?: string[];
+  allocated_to_user: string;
 }
 
 export interface LeaveFieldFlags {
@@ -180,12 +192,16 @@ export interface LeaveReason {
 //Leave requestType
 export interface MyLeaveRequestType {
   reference_document: LeaveRequest;
-  allocated_to: string;
+  allocated_to: string[];
+  allocated_roles?: string[];
+  role: string;
   reference_type: string;
   custom_allow_revoke: boolean;
   todo_id: string;
   username: string;
   reference_name: string;
+  can_edit?: boolean;
+  send_back_user?: string;
 }
 
 // types/leaves.ts
@@ -214,6 +230,7 @@ export interface LeaveApplication {
   custom_half_day_type?: string | null;
   total_leave_days: number;
   custom_reason?: string | null;
+  custom_rejection_reason?: string | null;
   description?: string | undefined;
   custom_attachment?: string | null;
   leave_balance: number;

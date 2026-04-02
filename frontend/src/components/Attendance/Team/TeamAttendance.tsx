@@ -13,6 +13,9 @@ import {
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import CustomFilter from "./SeletedFilter";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const TeamAttendance = () => {
   const { data: userId } = useLoggedInUser();
@@ -21,12 +24,13 @@ const TeamAttendance = () => {
   const [selectedReporties, setSelectedReporties] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const { targetEmployeeId } = useTargetUser();
 
   const {
     data: employeeAttendanceDetails,
     isLoading: isEmployeeAttendanceLoading,
     isError: isEmployeeAttendanceError,
-  } = useDataOfAttendance(user?.employee || "");
+  } = useDataOfAttendance(targetEmployeeId || user?.employee || "");
 
   const {
     data: attendanceData,
@@ -89,7 +93,7 @@ const TeamAttendance = () => {
 
   return (
     <div className="h-full overflow-y-auto min-h-0">
-      <div className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4 p-0 md:p-4">
         {/* ---------------- Calendar ---------------- */}
         <div className="w-full border-gray-200">
           <Card
@@ -144,7 +148,7 @@ const TeamAttendance = () => {
 
                 navigate(
                   "/webapp/attendance/team-attendance?filters=" +
-                    encodeURIComponent(JSON.stringify(filters)),
+                  encodeURIComponent(JSON.stringify(filters)),
                 );
               }}
               renderDayContents={(day, date) => {
@@ -224,28 +228,21 @@ const TeamAttendance = () => {
             />
           </div>
 
-          {isReportiesAttendanceLoading && (
-            <div className="text-center py-4 text-gray-500">
-              Loading attendance...
-            </div>
-          )}
-
-          <div className="border border-gray-200 rounded-lg">
-            {!isReportiesAttendanceLoading &&
-              filteredAttendanceData?.map((item: EmployeeStatusItem) => (
+          <div className="border border-gray-200 rounded-lg p-2">
+            {isReportiesAttendanceLoading ? (
+              <CardSkeleton />
+            ) : filteredAttendanceData?.length ? (
+              filteredAttendanceData.map((item: EmployeeStatusItem) => (
                 <EmployeeStatusCard
                   key={item.employee}
                   data={item}
                   onRefetchData={refetchReportiesAttendance}
                 />
-              ))}
+              ))
+            ) : (
+              <NoDataFound title="No Attendance Data" subtitle="No attendance records found for the selected date." />
+            )}
           </div>
-
-          {!isReportiesAttendanceLoading && attendanceData?.length === 0 && (
-            <div className="text-center py-4 text-gray-400">
-              No attendance data found
-            </div>
-          )}
         </Card>
       </div>
     </div>

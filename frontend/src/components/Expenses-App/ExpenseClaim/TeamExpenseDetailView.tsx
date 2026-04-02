@@ -1,42 +1,42 @@
-import {
-  X,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Download,
-  ExternalLink,
-} from "lucide-react";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  useExpenseLineItemUpdate,
-  useExpenseCommentUpdate,
-} from "../../../hooks/useExpense";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import {
+  useExpenseCommentUpdate,
+  useExpenseLineItemUpdate,
+} from "../../../hooks/useExpense";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
+import { Participant } from "../../../types/expenseAdvance";
 
+import DOMPurify from "dompurify";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Button from "../../shared/atoms/Button";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../../shared/DetailViewErrorLoadingWrapper";
-import Badge from "../../shared/Badge";
-import Button from "../../shared/atoms/Button";
-import toast from "react-hot-toast";
-import DOMPurify from "dompurify";
-import useCurrentUser from "../../../hooks/useCurrentUser";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
 
 export function TeamExpenseDetailView({
   documentName,
+  referenceName,
   data: propsData,
   onClose,
   onAction,
   label = "Expense Claim",
 }: {
   documentName?: string;
+  referenceName?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   onClose: () => void;
@@ -48,15 +48,23 @@ export function TeamExpenseDetailView({
   const commentMutation = useExpenseCommentUpdate();
   const { setRefetchAttendance } = useGlobalStore();
   const { data: user } = useCurrentUser();
+  const { isDesktop } = useScreenSize();
 
   const {
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName, referenceName);
 
-  const data = documentName ? fetchedData : propsData;
+
+  const data = (documentName || referenceName) ? fetchedData : propsData;
   const ref = data?.reference_document || {};
+
+  const todoId = useMemo(() => {
+    return data?.todo_id || (data?.doctype === "ToDo" ? data?.name : null) || documentName || "";
+  }, [data, documentName]);
+
+  console.log(ref);
 
   const claimId = ref?.name || data?.reference_name || "";
 
@@ -70,9 +78,6 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
-  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
-  const [currentDocumentUrl, setCurrentDocumentUrl] = useState<string>("");
-  const [imageZoom, setImageZoom] = useState<number>(100);
 
   const loading = useLoadingOverlay();
 
@@ -187,7 +192,7 @@ export function TeamExpenseDetailView({
 
       const response = await mutation?.mutateAsync({
         action,
-        name: data?.todo_id || "",
+        name: todoId,
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,6 +227,8 @@ export function TeamExpenseDetailView({
       setCurrentAction(null);
     } catch (error) {
       setCurrentAction(null);
+      toast.error(errorResponseFormater(error));
+
       console.error("Action failed", error);
     }
   };
@@ -243,6 +250,10 @@ export function TeamExpenseDetailView({
   const handleSaveComment = async () => {
     if (!rejectionComment.trim()) {
       toast.error("Please enter a comment");
+      return;
+    }
+    if (rejectionComment.trim().length < 15) {
+      toast.error("Comment must be at least 15 characters long");
       return;
     }
 
@@ -275,30 +286,6 @@ export function TeamExpenseDetailView({
     setPendingAction(null);
   };
 
-  const handleOpenDocument = (url: string) => {
-    setCurrentDocumentUrl(url);
-    setShowDocumentViewer(true);
-    setImageZoom(100);
-  };
-
-  const handleCloseDocumentViewer = () => {
-    setShowDocumentViewer(false);
-    setCurrentDocumentUrl("");
-    setImageZoom(100);
-  };
-
-  const handleZoomIn = () => {
-    setImageZoom((prev) => Math.min(prev + 25, 200));
-  };
-
-  const handleZoomOut = () => {
-    setImageZoom((prev) => Math.max(prev - 25, 50));
-  };
-
-  const handleResetZoom = () => {
-    setImageZoom(100);
-  };
-
   const getStatus = (status: string) => {
     if (status === "Pending" || status === "Open" || status === "Draft") {
       return {
@@ -324,7 +311,9 @@ export function TeamExpenseDetailView({
 
   const statusSource = data?.status || ref?.approval_status || "";
   const status = getStatus(statusSource);
-  const isClaimEditable = ["Open", "Pending", "Draft"].includes(statusSource);
+  const isClaimEditable =
+    ["Open", "Pending", "Draft"].includes(statusSource) &&
+    !["Closed", "Cancelled"].includes(data?.todo_status);
 
   const updateSanctionedAmount = (itemId: string, value: string) => {
     const numValue = parseInt(value, 10) || 0;
@@ -350,13 +339,12 @@ export function TeamExpenseDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const { totalToBeReimbursed, totalAmount, nonReimbursableAmount } =
+  const { totalAmount } =
     useMemo(() => {
       const approved = expenseItems.filter(
         (item) => item.custom_approval_staus === "Approved",
       );
 
-      const nonReimbursable = 0;
 
       let totalReimbursed;
 
@@ -378,9 +366,7 @@ export function TeamExpenseDetailView({
       const total = totalReimbursed;
 
       return {
-        totalToBeReimbursed: totalReimbursed,
         totalAmount: total,
-        nonReimbursableAmount: nonReimbursable,
       };
     }, [expenseItems]);
 
@@ -392,7 +378,113 @@ export function TeamExpenseDetailView({
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
 
-  if (!data?.todo_id) return null;
+  if (!(todoId || data?.name || data?.reference_document?.name)) return null;
+
+  // Desktop table for participants
+  const DesktopParticipants = (
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Employee Name
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Percentage
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Allocated Amount
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-gray-100">
+          {ref?.custom_participants?.map((p: Participant) => {
+            const name =
+              p?.employee_name || p?.guest_name || p?.employee || "—";
+            return (
+              <tr
+                key={p?.name}
+                className="bg-white hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-4 py-3 text-gray-800">
+                  {p?.employee_type ?? "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">{name}</td>
+                <td className="px-4 py-3 text-gray-800">
+                  {typeof p?.percentage === "number"
+                    ? `${p?.percentage}%`
+                    : "—"}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(p?.allocated_amount)}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Mobile cards for participants
+  const MobileParticipants = (
+    <div className="grid grid-cols-1 gap-4">
+      {ref?.custom_participants?.map((p: Participant, idx: number) => {
+        const name = p?.employee_name || p?.guest_name || p?.employee || "—";
+        return (
+          <div
+            key={p?.name}
+            className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+          >
+            <div className="mb-3">
+              <Typography variant="label" className="card-title">
+                Participant {idx + 1}
+              </Typography>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Employee Type
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {p?.employee_type ?? "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Employee Name
+                </Typography>
+                <Typography variant="mobileCardValue">{name}</Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Percentage
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {typeof p?.percentage === "number"
+                    ? `${p?.percentage}%`
+                    : "—"}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Allocated Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatCurrency(p?.allocated_amount)}
+                </Typography>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <>
@@ -407,46 +499,13 @@ export function TeamExpenseDetailView({
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <div className="flex gap-2 items-center">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                {ref?.employee_name?.substring(0, 2).toUpperCase() || "AD"}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800">
-                  {ref?.employee_name || "Employee Name"}
-                </h2>
-                <p className="text-sm text-gray-500">{claimId}</p>
-              </div>
-            </div>
-
-            {actions?.length > 0 && status?.label === "Pending" && (
-              <div className="ml-auto flex gap-2">
-                {actions.map((action: string) => {
-                  const isLoading =
-                    currentAction === action && mutation?.isPending;
-                  const actionStyle = getActionStyles(action);
-
-                  return (
-                    <Button
-                      key={action}
-                      disabled={isLoading}
-                      onClick={() => handleAction(action)}
-                      size="sm"
-                      bgColor={actionStyle.bgColor}
-                      variant={actionStyle.variant}
-                    >
-                      {isLoading ? (
-                        <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        action
-                      )}
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <Typography
+              variant="bodyMedium"
+              className="font-semibold text-gray-900 leading-tight"
+            >
+              Expense Claim: {claimId}
+            </Typography>
             <button
               onClick={handleClose}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
@@ -459,9 +518,8 @@ export function TeamExpenseDetailView({
           {/* Sub-header */}
           <div className="px-6 py-3 bg-gray-50 border-b">
             <div className="flex items-center gap-4">
-              <Badge
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
+              <StatusBadge
+                status={data?.status || ref?.approval_status || ""}
               />
 
               {data?.due_date && (
@@ -480,23 +538,31 @@ export function TeamExpenseDetailView({
           {/* Body */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Report Details
-              </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-600">Policy:</span>{" "}
-                  <span className="font-medium">
-                    {ref?.custom_expense_category || "N/A"}
-                  </span>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <Typography
+                    variant="mobileCardLabel"
+                    className="text-gray-500"
+                  >
+                    {ref?.employee_name ? "Employee Name" : "Employee ID"}
+                  </Typography>
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {ref?.employee_name || ref?.employee}
+                  </Typography>
                 </div>
+                <div className="flex flex-col gap-1 min-w-0">
+                  <Typography variant="mobileCardLabel">Employee ID</Typography>
+                  <Typography variant="mobileCardValue" className="truncate">
+                    {ref?.employee || "N/A"}
+                  </Typography>
+                </div>
+
               </div>
             </div>
 
             {expenseItems.length > 0 ? (
               expenseItems.map((item) => {
-                const itemStatus = getStatus(item.custom_approval_staus || "");
-
                 const originalSanctionedAmount =
                   typeof item.sanctioned_amount === "number"
                     ? item.sanctioned_amount
@@ -507,136 +573,145 @@ export function TeamExpenseDetailView({
                 return (
                   <div
                     key={item.id}
-                    className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow"
+                    className="mb-4 p-4 border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow overflow-hidden"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-500 uppercase">
-                                EXPENSE DATE:
-                              </span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {formatToIndianDate(
-                                  item.expense_date || item.creation,
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                          {(item.custom_approval_staus === "Approved" ||
-                            item.custom_approval_staus === "Rejected") && (
-                              <Badge
-                                label={itemStatus?.label as string}
-                                backgroundColor={itemStatus?.statusColor}
-                              />
-                            )}
-                        </div>
-
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex-1 min-w-0">
                         <div className="grid grid-cols-2 gap-3 mb-3">
-                          <div className="">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              EXPENSE DATE
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {formatToIndianDate(
+                                item.expense_date || item.creation,
+                              )}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              CLAIMED DATE
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {formatToIndianDate(
+                                item?.creation,
+                              )}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
+                              EXPENSE CATEGORY
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {ref?.custom_expense_category_name || "--"}
+                            </Typography>
+                          </div>
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <Typography variant="mobileCardLabel">
                               EXPENSE TYPE
-                            </p>
-                            <p className="text-sm font-medium text-gray-800">
-                              {item.expense_type}
-                            </p>
+                            </Typography>
+                            <Typography variant="mobileCardValue" className="truncate">
+                              {item?.custom_claim_type_name || "--"}
+                            </Typography>
                           </div>
 
                           {item.custom_invoice_number && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 INVOICE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_invoice_number}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_mercent && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 MERCHANT
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_mercent}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_from_location && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 FROM LOCATION
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_from_location}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_to_location && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 TO LOCATION
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_to_location}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_vehicle_type && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 VEHICLE TYPE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_vehicle_type}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_units && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 UNITS
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {item.custom_units}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_start_datetime && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 START DATE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {formatToIndianDate(item.custom_start_datetime)}
-                              </p>
+                              </Typography>
                             </div>
                           )}
 
                           {item.custom_end_datetime && (
-                            <div>
-                              <p className="text-xs text-gray-500 uppercase mb-1">
+                            <div className="flex flex-col gap-1">
+                              <Typography variant="mobileCardLabel">
                                 END DATE
-                              </p>
-                              <p className="text-sm font-medium text-gray-800">
+                              </Typography>
+                              <Typography variant="mobileCardValue">
                                 {formatToIndianDate(item.custom_end_datetime)}
-                              </p>
+                              </Typography>
                             </div>
                           )}
                         </div>
 
                         {item.description && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
+                            <Typography
+                              variant="mobileCardLabel"
+                              className="mb-1"
+                            >
                               DESCRIPTION
-                            </p>
+                            </Typography>
                             <div
                               className="text-sm text-gray-700 [&_p]:m-0 [&_p]:mb-1 [&_p:last-child]:mb-0"
                               dangerouslySetInnerHTML={{
@@ -647,120 +722,140 @@ export function TeamExpenseDetailView({
                         )}
 
                         <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">
-                              Claimed Amount:
-                            </p>
-                            <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.amount)}
-                            </p>
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              Claimed Amount
+                            </Typography>
+                            <Typography variant="mobileCardValue">
+                              {formatCurrency(item.amount)}
+                            </Typography>
                           </div>
-                          <div>
-                            <p className="text-xs text-gray-500 mb-1">
-                              Sanctioned Amount:
-                            </p>
-                            <p className="text-sm font-medium">
-                              {RupeeSymbolPerfix(item.sanctioned_amount)}
-                            </p>
+                          <div className="flex flex-col gap-1">
+                            <Typography variant="mobileCardLabel">
+                              Sanctioned Amount
+                            </Typography>
+                            <Typography variant="mobileCardValue">
+                              {formatCurrency(item.sanctioned_amount)}
+                            </Typography>
                           </div>
                         </div>
 
                         {item.custom_attach_receipt && (
                           <div className="mb-3">
-                            <p className="text-xs text-gray-500 uppercase mb-1">
-                              DOCUMENTS
-                            </p>
-                            <button
-                              onClick={() =>
-                                handleOpenDocument(item.custom_attach_receipt)
-                              }
-                              className="text-sm text-blue-600 hover:underline cursor-pointer bg-transparent border-none p-0 text-left"
+                            <Typography
+                              variant="mobileCardLabel"
+                              className="mb-1"
                             >
-                              {item.custom_attach_receipt.split("/").pop()}
-                            </button>
+                              DOCUMENTS
+                            </Typography>
+                            <AttachmentCard
+                              fileUrl={item.custom_attach_receipt}
+                              compact={false}
+                            />
                           </div>
                         )}
 
                         <div className="mb-3">
-                          <label className="text-xs text-gray-500 uppercase mb-1 block">
-                            SANCTIONED AMOUNT (RupeeSymbolPerfix("")) *
+                          <label className="text-xs text-gray-500 uppercase mb-1 block font-medium">
+                            SANCTIONED AMOUNT ({CURRENCY_SYMBOL}) *
                           </label>
 
-                          <input
-                            type="number"
-                            value={item.sanctionedAmountInput}
-                            onChange={(e) =>
-                              updateSanctionedAmount(item.id, e.target.value)
-                            }
-                            disabled={!isClaimEditable}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                            step="1"
-                            min="0"
-                            onKeyDown={(e) => {
-                              if (e.key === "." || e.key === ",") {
-                                e.preventDefault();
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={item.sanctionedAmountInput}
+                              onChange={(e) =>
+                                updateSanctionedAmount(item.id, e.target.value)
                               }
-                            }}
-                          />
-                        </div>
-
-                        {isClaimEditable && isItemDirty && (
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => handleSaveItem(item.id)}
-                              disabled={savingItem === item.id}
-                              variant="contain"
-                              bgColor="primary"
-                              size="sm"
-                              className="px-4"
-                            >
-                              {savingItem === item.id ? (
-                                <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                "Save"
-                              )}
-                            </Button>
+                              disabled={!isClaimEditable}
+                              className="w-48 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                              step="1"
+                              min="0"
+                              onKeyDown={(e) => {
+                                if (e.key === "." || e.key === ",") {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            {isClaimEditable && isItemDirty && (
+                              <Button
+                                onClick={() => handleSaveItem(item.id)}
+                                disabled={savingItem === item.id}
+                                variant="contain"
+                                bgColor="primary"
+                                size="sm"
+                                className="px-4 py-2 h-[38px] min-w-[70px] text-sm"
+                              >
+                                {savingItem === item.id ? (
+                                  <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  "Save"
+                                )}
+                              </Button>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                No expense items found
+              <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">
+                <Typography variant="mobileCardValue" className="text-gray-500">
+                  No expense items found.
+                </Typography>
               </div>
             )}
+
+            {/* Participants */}
+            {Array.isArray(ref?.custom_participants) &&
+              ref.custom_participants.length > 0 && (
+                <div className="mt-6 mb-6 px-0 md:px-0">
+                  <Typography
+                    variant="bodySmall"
+                    className="base-title mb-2 font-bold block"
+                  >
+                    Participants
+                  </Typography>
+                  {isDesktop ? DesktopParticipants : MobileParticipants}
+                </div>
+              )}
           </div>
 
           {/* Footer totals */}
           <div className="border-t bg-white px-6 py-4">
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Non Reimbursable Amount</span>
-                <span className="font-medium">
-                  {RupeeSymbolPerfix(nonReimbursableAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">
-                  Total Amount To Be Reimbursed
-                </span>
-                <span className="font-medium">
-                  {RupeeSymbolPerfix(totalToBeReimbursed)}
-                </span>
-              </div>
-              <div className="flex justify-between pt-2 border-t">
+
+              <div className="flex justify-between pt-2">
                 <span className="font-semibold text-lg text-gray-900">
-                  Total Amount
+                  Total Approved Amount
                 </span>
                 <span className="font-bold text-lg text-gray-900">
-                  {RupeeSymbolPerfix(totalAmount)}
+                  {formatCurrency(totalAmount)}
                 </span>
               </div>
             </div>
           </div>
+
+          {actions?.length > 0 &&
+            status?.label === "Pending" &&
+            data?.todo_status !== "Closed" && (
+              <div className="w-full bg-white border-t shadow-md p-4 z-20">
+                <TeamApprovalActionPill
+                  variant={isDesktop ? "modal" : "buttons"}
+                  actions={actions}
+                  status={data?.status || ref?.approval_status || ""}
+                  recordId={todoId}
+                  loadingAction={
+                    currentAction
+                      ? { id: todoId, action: currentAction }
+                      : null
+                  }
+                  onAction={(action) => handleAction(action)}
+                />
+              </div>
+            )}
 
           {/* Comment modal */}
           {showCommentModal && (
@@ -784,6 +879,11 @@ export function TeamExpenseDetailView({
                     rows={4}
                     autoFocus
                   />
+                  {rejectionComment.trim().length < 15 && (
+                    <p className="text-[10px] mt-1 text-right text-gray-400">
+                      {rejectionComment.trim().length}/15 characters minimum
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-3 justify-end">
                   <Button
@@ -798,11 +898,11 @@ export function TeamExpenseDetailView({
                     size="sm"
                     bgColor="primary"
                     disabled={
-                      !rejectionComment.trim() || commentMutation.isPending
+                      rejectionComment.trim().length < 15 || commentMutation.isPending
                     }
                   >
                     {commentMutation.isPending ? (
-                      <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       "Save & Continue"
                     )}
@@ -876,145 +976,6 @@ export function TeamExpenseDetailView({
           )}
         </div>
       </div>
-
-      {/* Document Viewer Modal - Helpdesk Style */}
-      {showDocumentViewer && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn"
-          onClick={handleCloseDocumentViewer}
-        >
-          <div
-            className="relative bg-white rounded-xl w-[95vw] h-[90vh] max-w-xl flex flex-col overflow-hidden shadow-2xl animate-slideUp"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Compact Header Toolbar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gray-50">
-              {/* File name */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium text-gray-900 truncate">
-                  {currentDocumentUrl.split("/").pop()}
-                </span>
-              </div>
-
-              {/* Controls */}
-              <div className="flex items-center gap-1.5">
-                {/* Zoom controls for images */}
-                {currentDocumentUrl.match(
-                  /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                ) && (
-                    <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5 mr-1">
-                      <button
-                        onClick={handleZoomOut}
-                        disabled={imageZoom <= 50}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Zoom Out"
-                      >
-                        <ZoomOut className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                      <span className="text-xs font-medium text-gray-600 min-w-[36px] text-center">
-                        {imageZoom}%
-                      </span>
-                      <button
-                        onClick={handleZoomIn}
-                        disabled={imageZoom >= 200}
-                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Zoom In"
-                      >
-                        <ZoomIn className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                      <div className="w-px h-3.5 bg-gray-300 mx-0.5" />
-                      <button
-                        onClick={handleResetZoom}
-                        className="p-1 rounded hover:bg-gray-100 transition-colors"
-                        title="Reset Zoom"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5 text-gray-600" />
-                      </button>
-                    </div>
-                  )}
-
-                <a
-                  href={currentDocumentUrl}
-                  download
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Download"
-                >
-                  <Download className="h-4 w-4 text-gray-600" />
-                </a>
-                <a
-                  href={currentDocumentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-md hover:bg-gray-200 transition-colors"
-                  title="Open in New Tab"
-                >
-                  <ExternalLink className="h-4 w-4 text-gray-600" />
-                </a>
-                <div className="w-px h-4 bg-gray-300 mx-0.5" />
-                <button
-                  onClick={handleCloseDocumentViewer}
-                  className="p-1.5 rounded-md hover:bg-red-100 transition-colors"
-                  title="Close"
-                >
-                  <X className="h-4 w-4 text-gray-500 hover:text-red-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Preview Area */}
-            <div className="flex-1 overflow-auto bg-gray-100">
-              {currentDocumentUrl && (
-                <>
-                  {currentDocumentUrl.toLowerCase().endsWith(".pdf") ? (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  ) : currentDocumentUrl.match(
-                    /\.(jpg|jpeg|png|gif|bmp|webp)$/i,
-                  ) ? (
-                    <div className="w-full h-full flex items-center justify-center p-6 overflow-auto">
-                      <div
-                        className="transition-transform duration-200 ease-out"
-                        style={{ transform: `scale(${imageZoom / 100})` }}
-                      >
-                        <img
-                          src={currentDocumentUrl}
-                          alt="Document"
-                          className="max-w-full object-contain rounded shadow-lg"
-                          style={{ maxHeight: "80vh" }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <iframe
-                      src={currentDocumentUrl}
-                      className="w-full h-full border-0"
-                      title="Document Viewer"
-                    />
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }

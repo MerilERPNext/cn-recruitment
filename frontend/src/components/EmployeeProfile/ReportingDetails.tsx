@@ -65,15 +65,15 @@ const ReportingDetails = () => {
 
     return (
       <div className="bg-white rounded-xl shadow-sm border p-6 relative min-w-[450px] hover-lift">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-3 md:mb-6">
           <div className="p-2 bg-blue-50 rounded-lg">
             <Building2 className="w-5 h-5 text-blue-600" />
           </div>
           <div className="flex flex-col gap-1">
             <Link to={`/webapp/employee-profile?target_user=${id}`} target="_blank">
-              <h3 className="font-medium text-gray-900 truncate flex gap-1 items-center hover:text-primary">
+              <Typography variant="bodyMedium" className="font-bold text-gray-900 truncate flex gap-1 items-center hover:text-primary">
                 <span>{name}</span><ExternalLink className="h-4 w-4" />
-              </h3>
+              </Typography>
             </Link>
             <div className="flex flex-wrap gap-4">
               {id && (
@@ -143,16 +143,16 @@ const ReportingDetails = () => {
   const hierarchySections = hierarchyData?.data || {};
   return (
     <div className="address-form-container bg-white rounded-lg gray-200">
-      <div className="px-0 md:p-6">
+      <div className="px-0 py-3 md:p-6">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8">
+        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8">
           <div className="">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Reporting Details
-            </h2>
-            <p className="text-gray-600">
+            </Typography>
+            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
               Your reporting hierarchy information
-            </p>
+            </Typography>
           </div>
           <div className="flex gap-2 ">
             {canEditReportingDetails && <Button
@@ -225,10 +225,10 @@ const ReportingDetails = () => {
             });
 
             return (
-              <div key={category} className="mb-10">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <div key={category} className="mb-5 md:mb-10">
+                <Typography variant="h4" className="font-bold text-gray-900 mb-4 text-lg">
                   {category}
-                </h3>
+                </Typography>
 
                 <div className="flex gap-2 overflow-auto">
                   {sortedItems.map((item: any) => (
@@ -240,9 +240,9 @@ const ReportingDetails = () => {
                         name={item.reporting_employee_name}
                         startDate={item.start_date}
                         endDate={item.end_date}
-                        department={item.department}
+                        department={item.department_name}
                         id={item.records}
-                        location={item.branch}
+                        location={item.branch_name}
                       />
                     </div>
                   ))}

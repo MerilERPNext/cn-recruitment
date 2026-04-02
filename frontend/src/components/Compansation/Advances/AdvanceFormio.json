@@ -22,10 +22,10 @@
           "validate": {},
           "dataSrc": "url",
           "data": {
-            "url": "/api/resource/Advance Type?fields=[\"name\"]"
+            "url": "/api/resource/Advance Type?fields=[\"name\"]&filters=[[\"Advance Type\",\"name\",\"=\",\"Salary Advance\"]]"
           },
           "valueProperty": "name",
-          "template": "<span>{{ item.name }}</span>",
+          "template": "<span>{{ item.name}}</span>",
           "selectValues": "data",
           "lazyLoad": false,
           "refreshOn": "employee",

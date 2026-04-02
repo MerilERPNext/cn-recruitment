@@ -1,17 +1,20 @@
 import { format } from "date-fns";
+import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAllEmployeeOvertimeLog } from "../../../../hooks/useAttendance";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { IOvertimeLog } from "../../../../types/attendance";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
+import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const OvertimeLog = () => {
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string
     );
+    const { targetEmployeeId } = useTargetUser();
     const { data: overtimeLog, isError, isLoading, error } = useGetAllEmployeeOvertimeLog({
-        employee: currentEmployee?.name as string,
+        employee: targetEmployeeId || currentEmployee?.name as string,
     });
 
     if (isLoading) {
@@ -36,8 +39,8 @@ const OvertimeLog = () => {
         <div>
             {
                 !overtimeLog || overtimeLog.length === 0 ?
-                    <div className="flex items-center justify-center">
-                        <p className="text-gray-500">No Overtime Log Found</p>
+                    <div className="flex items-center justify-center p-8">
+                        <NoDataFound title="No Overtime Log Found" subtitle="You haven't logged any overtime yet." />
                     </div>
                     :
                     <div className="overflow-x-auto rounded-lg border border-gray-200">

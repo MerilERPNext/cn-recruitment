@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.full.css";
 import {
@@ -13,7 +13,7 @@ import {
 } from "../../../hooks/useAttendance";
 import { formatDateToYYYYMMDD } from "../../../utils/helperUtils";
 import { endOfDay, format, isValid, startOfDay } from "date-fns";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useAttendanceFieldReasonAndMessagePermissions, useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { toast } from "react-hot-toast";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { X } from "lucide-react";
@@ -32,6 +32,8 @@ import {
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { isActionEnabled } from "../../../utils/uiPermission";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -139,6 +141,7 @@ interface AttendanceRequestFormV2Props {
     in_time: string;
     out_time: string;
   };
+  isFromCalView?: boolean;
 }
 
 const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
@@ -149,15 +152,24 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   defaultAttendanceData,
   forActionType = "create",
   latestInAndOutTime,
+  isFromCalView = false
 }) => {
   const selectedDate = useMemo(() => {
     if (!propSelectedDate) return new Date();
-    return propSelectedDate instanceof Date ? propSelectedDate : new Date(propSelectedDate);
+    return propSelectedDate instanceof Date
+      ? propSelectedDate
+      : new Date(propSelectedDate);
   }, [propSelectedDate]);
 
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Attendance");
 
+  const canCreateAttendanceRequestForOthers = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request_for_others",
+    "Attendance Summary",
+  );
   const formAddressInstance = useRef<FormioFormInstance | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [fromDateChanged, setFromDateChanged] = useState<string>("");
@@ -177,30 +189,48 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
   );
+  const { data: attendanceFieldReasonAndMessagePermissions } = useAttendanceFieldReasonAndMessagePermissions();
   const { data: userRoles } = useGetUserRoles();
 
-  const shiftFilters = useMemo(() => ({
-    date: selectedDate,
-  }), [selectedDate]);
+  const shiftFilters = useMemo(
+    () => ({
+      date: selectedDate,
+    }),
+    [selectedDate],
+  );
 
   const shiftEmployeeId = isForOthers
-    ? (typeof currentlySelectedEmployee === "string" ? currentlySelectedEmployee : currentlySelectedEmployee?.user_id || currentlySelectedEmployee?.name)
+    ? typeof currentlySelectedEmployee === "string"
+      ? currentlySelectedEmployee
+      : currentlySelectedEmployee?.user_id || currentlySelectedEmployee?.name
     : currentEmployee?.user_id || currentUser?.name;
 
-  const { data: shiftData } = useGetEmployeeShift(shiftEmployeeId || "", shiftFilters);
+  const { data: shiftData } = useGetEmployeeShift(
+    shiftEmployeeId || "",
+    shiftFilters,
+  );
 
   const queryClient = useQueryClient();
 
-  const activeEmployeeId =
-    currentlySelectedEmployee?.name || currentEmployee?.employee || "";
+  // Memoize activeEmployeeId to prevent unnecessary refetches
+  const activeEmployeeId = useMemo(
+    () => currentlySelectedEmployee?.name || currentEmployee?.employee || "",
+    [currentlySelectedEmployee?.name, currentEmployee?.employee]
+  );
 
   const reqValidationmutation =
     useReqValidationsForAttendanceRequest(activeEmployeeId);
+
+  // Memoize the date parameter to prevent unnecessary refetches
+  const attachmentQueryDate = useMemo(
+    () => format(new Date(), "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    [] // Only compute once on mount
+  );
+
   const { data: attendanceRequestAttachmentsMandatory } =
     useAttendanceRequestAttachments(
       activeEmployeeId,
-      fromDateChanged ||
-      formatDateToYYYYMMDD(new Date(selectedDate || new Date())),
+      attachmentQueryDate,
       requestTypeChanged,
     );
   const mutation = useCreateNewAttendanceRequest();
@@ -213,8 +243,24 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     requiredFields.fields.forEach((f) => {
       if (f.fieldname) map[f.fieldname] = f.reqd === 1 && f.hidden === 0;
     });
+
+    if (attendanceFieldReasonAndMessagePermissions) {
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_attendance_message_optional ===
+        false
+      ) {
+        map["explanation"] = true;
+      }
+      if (
+        attendanceFieldReasonAndMessagePermissions.make_reason_non_mandate ===
+        false
+      ) {
+        map["custom__request_reason"] = true;
+      }
+    }
+
     return map;
-  }, [requiredFields]);
+  }, [requiredFields, attendanceFieldReasonAndMessagePermissions]);
 
   // Fetch schema from backend if schemaUrl is provided
   useEffect(() => {
@@ -403,15 +449,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
           defaultAttendanceData?.reference_document?.custom_request_type,
         employee: defaultAttendanceData?.reference_document?.employee,
         company: "",
-        checkin_time: defaultAttendanceData?.reference_document?.custom_from_time
+        checkin_time: defaultAttendanceData?.reference_document
+          ?.custom_from_time
           ? new Date(
             `1970-01-01T${normalizeTime(
               defaultAttendanceData?.reference_document.custom_from_time,
             )}`,
           )
           : undefined,
-        checkout_time: defaultAttendanceData?.reference_document
-          ?.custom_to_time
+        checkout_time: defaultAttendanceData?.reference_document?.custom_to_time
           ? new Date(
             `1970-01-01T${normalizeTime(
               defaultAttendanceData?.reference_document?.custom_to_time,
@@ -599,244 +645,280 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
 
   const loading = useLoadingOverlay();
 
-  const handleSubmit = async (submission: { data: AttendanceFormData }) => {
-    await loading?.wrap(() => {
-      return new Promise<void>((resolve, reject) => {
-        // Logic to determine employee: Use selected from form (if any) or fallback to current
-        const selectedEmpId =
-          submission.data.employee?.name || currentEmployee?.employee;
+  const handleSubmit = useCallback(
+    async (submission: { data: AttendanceFormData }) => {
+      await loading?.wrap(() => {
+        return new Promise<void>((resolve, reject) => {
+          // Logic to determine employee: Use selected from form (if any) or fallback to current
+          const selectedEmpId =
+            submission.data.employee?.name || currentEmployee?.employee;
 
-        const baseBody = {
-          custom_request_type: submission.data.request_type,
-          // If employee is selected (i.e. for others), use form company? Or always use current employee company?
-          // Usually if applying for someone else, might want their company.
-          // But let's stick to safe defaults or existing logic.
-          // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
-          // Let's keep existing logic for company or maybe infer from employee if we had that data.
-          company: isForOthers
-            ? submission.data.company
-            : currentEmployee?.company,
-          employee: selectedEmpId,
-          explanation: submission.data.explanation,
-          ...(submission.data.from_date && {
-            from_date: formatDateToYYYYMMDD(
-              new Date(submission.data.from_date),
-            ),
-          }),
-          ...((submission.data.to_date ||
-            (submission.data.request_type === "Out Duty" &&
-              submission.data.from_date)) && {
-            to_date:
-              submission.data.request_type === "Out Duty" &&
-                submission.data.from_date
-                ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
-                : formatDateToYYYYMMDD(
-                  new Date(submission.data.to_date as string),
-                ),
-          }),
-        };
+          const baseBody = {
+            custom_request_type: submission.data.request_type,
+            // If employee is selected (i.e. for others), use form company? Or always use current employee company?
+            // Usually if applying for someone else, might want their company.
+            // But let's stick to safe defaults or existing logic.
+            // Existing: company: isForOthers ? submission.data.company : currentEmployee?.company
+            // Let's keep existing logic for company or maybe infer from employee if we had that data.
+            company: isForOthers
+              ? submission.data.company
+              : currentEmployee?.company,
+            employee: selectedEmpId,
+            explanation: submission.data.explanation,
+            ...(submission.data.from_date && {
+              from_date: formatDateToYYYYMMDD(
+                new Date(submission.data.from_date),
+              ),
+            }),
+            ...((submission.data.to_date ||
+              (submission.data.request_type === "Out Duty" &&
+                submission.data.from_date)) && {
+              to_date:
+                submission.data.request_type === "Out Duty" &&
+                  submission.data.from_date
+                  ? formatDateToYYYYMMDD(new Date(submission.data.from_date))
+                  : formatDateToYYYYMMDD(
+                    new Date(submission.data.to_date as string),
+                  ),
+            }),
+          };
 
-        let requestBody: Record<string, unknown> = { ...baseBody };
+          let requestBody: Record<string, unknown> = { ...baseBody };
 
-        const formatForPayload = (val: string | Date | undefined) => {
-          if (!val) return undefined;
-          if (val instanceof Date) {
-            const h = val.getHours().toString().padStart(2, "0");
-            const m = val.getMinutes().toString().padStart(2, "0");
-            const s = val.getSeconds().toString().padStart(2, "0");
-            return `${h}:${m}:${s}`;
-          }
-          if (typeof val === "string" && val.includes("T")) {
-            const d = new Date(val);
-            if (!isNaN(d.getTime())) {
-              const h = d.getHours().toString().padStart(2, "0");
-              const m = d.getMinutes().toString().padStart(2, "0");
-              const s = d.getSeconds().toString().padStart(2, "0");
+          const formatForPayload = (val: string | Date | undefined) => {
+            if (!val) return undefined;
+            if (val instanceof Date) {
+              const h = val.getHours().toString().padStart(2, "0");
+              const m = val.getMinutes().toString().padStart(2, "0");
+              const s = val.getSeconds().toString().padStart(2, "0");
               return `${h}:${m}:${s}`;
             }
+            if (typeof val === "string" && val.includes("T")) {
+              const d = new Date(val);
+              if (!isNaN(d.getTime())) {
+                const h = d.getHours().toString().padStart(2, "0");
+                const m = d.getMinutes().toString().padStart(2, "0");
+                const s = d.getSeconds().toString().padStart(2, "0");
+                return `${h}:${m}:${s}`;
+              }
+            }
+            return val;
+          };
+
+          switch (submission.data.request_type) {
+            case "Clockin":
+              requestBody = {
+                ...baseBody,
+                to_date: baseBody.from_date,
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                custom_location: submission?.data?.custom_location,
+              };
+              break;
+            case "Out Duty":
+              requestBody = {
+                ...baseBody,
+                to_date: baseBody.to_date,
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                overnight_out_duty: submission.data.overnight_out_duty || false,
+              };
+              break;
+
+            case "Short Attendance Request":
+              requestBody = {
+                ...baseBody,
+                from_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.from_date || ""),
+                ),
+                to_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.to_date || ""),
+                ),
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+              };
+              break;
+
+            case "Attendance Adjustment":
+              requestBody = {
+                ...baseBody,
+                from_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.from_date || new Date()),
+                ),
+                to_date: formatDateToYYYYMMDD(
+                  new Date(submission.data.to_date || new Date()),
+                ),
+                custom_from_time: formatForPayload(submission.data.checkin_time),
+                custom_to_time: formatForPayload(submission.data.checkout_time),
+                custom__request_reason: submission.data.custom__request_reason,
+                custom_location: submission?.data?.custom_location,
+              };
+              break;
+
+            case "Shift Change":
+              requestBody = {
+                ...baseBody,
+                select_shift: submission.data.select_shift,
+              };
+              break;
           }
-          return val;
-        };
 
-        switch (submission.data.request_type) {
-          case "Clockin":
-            requestBody = {
-              ...baseBody,
-              to_date: baseBody.from_date,
-              custom_from_time: formatForPayload(submission.data.checkin_time),
-              custom__request_reason: submission.data.custom__request_reason,
-              custom_location: submission?.data?.custom_location,
-            };
-            break;
-          case "Out Duty":
-            requestBody = {
-              ...baseBody,
-              to_date: baseBody.to_date,
-              custom_from_time: formatForPayload(submission.data.checkin_time),
-              custom_to_time: formatForPayload(submission.data.checkout_time),
-              custom__request_reason: submission.data.custom__request_reason,
-              overnight_out_duty: submission.data.overnight_out_duty || false,
-            };
-            break;
+          if (
+            submission.data.attachments?.[0] &&
+            submission?.data?.attachments?.length > 0
+          ) {
+            requestBody.custom_attachment =
+              submission.data?.attachments?.[0]?.url;
+          }
 
-          case "Short Attendance Request":
-            requestBody = {
-              ...baseBody,
-              from_date: formatDateToYYYYMMDD(
-                new Date(submission.data.from_date || ""),
-              ),
-              to_date: formatDateToYYYYMMDD(
-                new Date(submission.data.to_date || ""),
-              ),
-              custom_from_time: formatForPayload(submission.data.checkin_time),
-              custom_to_time: formatForPayload(submission.data.checkout_time),
-              custom__request_reason: submission.data.custom__request_reason,
-            };
-            break;
+          const handleSuccess = (message: string) => {
+            resolve();
+            onClose();
+            setTimeout(() => {
+              queryClient.invalidateQueries({
+                queryKey: [`attendance-requests-${activeEmployeeId}`],
+              });
+              setRefetchAttendance(true);
+            }, 4000);
+            toast.success(message);
+          };
 
-          case "Attendance Adjustment":
-            requestBody = {
-              ...baseBody,
-              from_date: formatDateToYYYYMMDD(
-                new Date(submission.data.from_date || new Date()),
-              ),
-              to_date: formatDateToYYYYMMDD(
-                new Date(submission.data.to_date || new Date()),
-              ),
-              custom_from_time: formatForPayload(submission.data.checkin_time),
-              custom_to_time: formatForPayload(submission.data.checkout_time),
-              custom__request_reason: submission.data.custom__request_reason,
-              custom_location: submission?.data?.custom_location,
-            };
-            break;
+          const handleError = (error: CustomError) => {
+            const formatedError = errorResponseFormater(
+              error,
+              "Submission failed. Please try again.",
+            );
+            reject(error);
+            toast.error(formatedError);
+            console.error(error);
+          };
 
-          case "Shift Change":
-            requestBody = {
-              ...baseBody,
-              select_shift: submission.data.select_shift,
-            };
-            break;
-        }
-
-        if (
-          submission.data.attachments?.[0] &&
-          submission?.data?.attachments?.length > 0
-        ) {
-          requestBody.custom_attachment =
-            submission.data?.attachments?.[0]?.url;
-        }
-
-        const handleSuccess = (message: string) => {
-          resolve();
-          onClose();
-          setTimeout(() => {
-            queryClient.invalidateQueries({ queryKey: [`attendance-requests-${activeEmployeeId}`] });
-            setRefetchAttendance(true)
-          }, 4000);
-          toast.success(message);
-        };
-
-        const handleError = (error: CustomError) => {
-          const formatedError = errorResponseFormater(
-            error,
-            "Submission failed. Please try again.",
-          );
-          reject(error);
-          toast.error(formatedError);
-          console.error(error);
-        };
-
-        if (
-          forActionType &&
-          forActionType === "edit" &&
-          defaultAttendanceData
-        ) {
-          updateAttendanceRequest(
-            {
-              doctype: "Attendance Request",
-              name: defaultAttendanceData?.reference_document.name,
-              data: requestBody as Record<string, unknown>,
-            },
-            {
+          if (
+            forActionType &&
+            forActionType === "edit" &&
+            defaultAttendanceData
+          ) {
+            updateAttendanceRequest(
+              {
+                doctype: "Attendance Request",
+                name: defaultAttendanceData?.reference_document.name,
+                data: requestBody as Record<string, unknown>,
+              },
+              {
+                onSuccess: async (data: any) => {
+                  if (attachments?.length > 0) {
+                    await uploadFiles(attachments, data.doctype, data.name);
+                  }
+                  handleSuccess("Updated Attendance Request successfully!");
+                },
+                onError: handleError,
+              },
+            );
+          } else {
+            mutation.mutate(requestBody as Record<string, unknown>, {
               onSuccess: async (data: any) => {
                 if (attachments?.length > 0) {
                   await uploadFiles(attachments, data.doctype, data.name);
                 }
-                handleSuccess("Updated Attendance Request successfully!");
+                handleSuccess("Added Attendance Request successfully!");
               },
               onError: handleError,
-            },
-          );
-        } else {
-          mutation.mutate(requestBody as Record<string, unknown>, {
-            onSuccess: async (data: any) => {
-              if (attachments?.length > 0) {
-                await uploadFiles(attachments, data.doctype, data.name);
-              }
-              handleSuccess("Added Attendance Request successfully!");
-            },
-            onError: handleError,
-          });
-        }
-      });
-    }, "Submitting Attendance Request…");
-  };
+            });
+          }
+        });
+      }, "Submitting Attendance Request…");
+    },
+    [
+      loading,
+      currentEmployee,
+      isForOthers,
+      onClose,
+      queryClient,
+      activeEmployeeId,
+      setRefetchAttendance,
+      forActionType,
+      defaultAttendanceData,
+      attachments,
+      uploadFiles,
+      updateAttendanceRequest,
+      mutation,
+    ],
+  );
 
   // Handle form change
-  const handleFormChange = (submission: FormChangeSubmission) => {
-    if (
-      submission?.changed?.component?.key === "from_date" ||
-      submission?.changed?.component?.key === "request_type"
-    ) {
-      const formInstance = formAddressInstance.current;
+  const handleFormChange = useCallback(
+    (submission: FormChangeSubmission) => {
+      if (
+        submission?.changed?.component?.key === "from_date" ||
+        submission?.changed?.component?.key === "request_type"
+      ) {
+        const formInstance = formAddressInstance.current;
 
-      if (formInstance) {
-        const showAttachmentsComponent =
-          formInstance.getComponent("show_attachment");
-        if (
-          showAttachmentsComponent &&
-          attendanceRequestAttachmentsMandatory?.is_mandatory
-        ) {
-          showAttachmentsComponent.setValue(
-            String(!!attendanceRequestAttachmentsMandatory?.is_mandatory),
-            {
-              noUpdateEvent: true,
-            },
-          );
-          showAttachmentsComponent.redraw();
+        if (formInstance) {
+          const showAttachmentsComponent =
+            formInstance.getComponent("show_attachment");
+          if (
+            showAttachmentsComponent &&
+            attendanceRequestAttachmentsMandatory?.is_mandatory
+          ) {
+            showAttachmentsComponent.setValue(
+              String(!!attendanceRequestAttachmentsMandatory?.is_mandatory),
+              {
+                noUpdateEvent: true,
+              },
+            );
+            showAttachmentsComponent.redraw();
+          }
         }
       }
-    }
 
-    if (submission?.data?.from_date) {
-      const newFrom = submission.data.from_date.toString();
-      if (newFrom !== fromDateChanged) setFromDateChanged(newFrom);
-    }
-    if (submission?.data?.to_date) {
-      const newTo = submission.data.to_date.toString();
-      if (newTo !== toDateChanged) setToDateChanged(newTo);
-    }
-    if (submission?.changed?.component?.key === "employee") {
-      setCurrentlySelectedEmployee(submission.changed.value as any);
-    }
-    if (submission?.changed?.component?.key === "request_type") {
-      setRequestTypeChanged(submission.changed.value?.toString() || "");
-    }
-    if (submission?.changed?.component?.key === "isForOthers") {
-      setIsForOthers(!!submission.changed.value);
-    }
-    // Also sync from submission.data just in case
-    if (submission?.data?.isForOthers !== undefined && !!submission.data.isForOthers !== isForOthers) {
-      setIsForOthers(!!submission.data.isForOthers);
-    }
+      if (submission?.data?.from_date) {
+        const newFrom = submission.data.from_date.toString();
+        if (newFrom !== fromDateChanged) setFromDateChanged(newFrom);
+      }
+      if (submission?.data?.to_date) {
+        const newTo = submission.data.to_date.toString();
+        if (newTo !== toDateChanged) setToDateChanged(newTo);
+      }
+      if (submission?.changed?.component?.key === "employee") {
+        setCurrentlySelectedEmployee(submission.changed.value as any);
+      }
+      if (submission?.changed?.component?.key === "request_type") {
+        setRequestTypeChanged(submission.changed.value?.toString() || "");
+      }
+      if (submission?.changed?.component?.key === "isForOthers") {
+        setIsForOthers(!!submission.changed.value);
+      }
+      // Also sync from submission.data just in case
+      if (
+        submission?.data?.isForOthers !== undefined &&
+        !!submission.data.isForOthers !== isForOthers
+      ) {
+        setIsForOthers(!!submission.data.isForOthers);
+      }
 
-    if (submission?.changed?.component?.key === "attachments")
-      setAttachments([
-        ...attachments,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...((submission?.data?.attachments as any) || []),
-      ]);
-  };
+      if (submission?.changed?.component?.key === "attachments")
+        setAttachments((prev) => [
+          ...prev,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...((submission?.data?.attachments as any) || []),
+        ]);
+    },
+    [
+      attendanceRequestAttachmentsMandatory,
+      fromDateChanged,
+      toDateChanged,
+      isForOthers,
+      setFromDateChanged,
+      setToDateChanged,
+      setCurrentlySelectedEmployee,
+      setRequestTypeChanged,
+      setIsForOthers,
+      setAttachments,
+    ],
+  );
 
   const sortedLogs = useMemo(() => {
     const rawLogs = homeSummary || [];
@@ -851,13 +933,18 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     sortedLogs.find((c) => c.log_type === "IN")?.time || null;
 
   const latestCheckout =
-    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time ||
-    null;
+    [...sortedLogs].reverse().find((c) => c.log_type === "OUT")?.time || null;
 
   // 3️⃣ Sync times whenever data or form instance is ready
   useEffect(() => {
     const instance = formAddressInstance.current;
-    if (!instance || !isFormReady || isHomeSummaryLoading || isHomeSummaryFetching) return;
+    if (
+      !instance ||
+      !isFormReady ||
+      isHomeSummaryLoading ||
+      isHomeSummaryFetching
+    )
+      return;
 
     // In edit mode, we want to keep the values from the existing record initialized in onFormReady
     if (forActionType === "edit" && defaultAttendanceData) return;
@@ -877,8 +964,8 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
       ? normalizeTime(latestCheckout)
       : normalizeTime(latestInAndOutTime?.out_time);
 
-    const finalCheckin = normalizedCheckin || shiftStart;
-    const finalCheckout = normalizedCheckout || shiftEnd;
+    const finalCheckin = normalizedCheckin || normalizeTime(shiftStart);
+    const finalCheckout = normalizedCheckout || normalizeTime(shiftEnd);
 
     let changed = false;
     if (checkinComp && finalCheckin) {
@@ -912,6 +999,124 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     latestInAndOutTime,
   ]);
 
+  const onFormReady = useCallback(
+    (instance: FormioFormInstance) => {
+      formAddressInstance.current = instance;
+      if (!initialSubmissionSet.current) {
+        try {
+          // use setSubmission to initialize the form once
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (instance as any).setSubmission?.(initialSubmission);
+          initialSubmissionSet.current = true;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (err) {
+          // fallback if setSubmission not available
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (instance as any).submission = initialSubmission;
+            initialSubmissionSet.current = true;
+          } catch (e) {
+            console.warn(
+              "Could not set initial submission on form instance",
+              e,
+            );
+          }
+        }
+      }
+
+      // 5️⃣ Redraw once (initial)
+      instance.redraw();
+
+      // Signal that form is ready
+      setIsFormReady(true);
+
+      // Improve initial state detection
+      const data = initialSubmission?.data as any;
+      if (
+        data?.isForOthers === true ||
+        data?.isForOthers === "1" ||
+        data?.isForOthers === 1
+      ) {
+        setIsForOthers(true);
+      }
+      if (data?.employee) {
+        setCurrentlySelectedEmployee(data.employee);
+      }
+      if (data?.request_type) {
+        setRequestTypeChanged(data.request_type.toString() || "");
+      }
+      // Disable dataSrc behavior on company field
+      const companyComponent = instance.getComponent("company");
+      if (companyComponent) {
+        // Override the component's data source to prevent auto-fetching
+        const comp = companyComponent as any;
+        if (comp.component) {
+          delete comp.component.dataSrc;
+          delete comp.component.data;
+          delete comp.component.valueProperty;
+          delete comp.component.selectValues;
+          delete comp.component.refreshOn;
+        }
+      }
+
+      try {
+        const rootEl: HTMLElement | Document =
+          (instance && instance.element) || document;
+
+        const flatInputs: NodeListOf<FlatpickrInput> = (
+          rootEl as HTMLElement
+        ).querySelectorAll
+          ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
+            "input.flatpickr-input",
+          )
+          : document.querySelectorAll<FlatpickrInput>("input.flatpickr-input");
+
+        flatInputs.forEach((input) => {
+          const handler = () => {
+            flatInputs.forEach((other) => {
+              if (other !== input && other._flatpickr) {
+                try {
+                  other._flatpickr.close();
+                } catch (err) {
+                  console.error("flatpickr close failed", err);
+                }
+              }
+            });
+          };
+
+          // avoid adding duplicate listeners
+          if (!input.__closeOtherFPHandler) {
+            input.addEventListener("focus", handler);
+            input.__closeOtherFPHandler = handler;
+          }
+        });
+      } catch (err) {
+        // non-fatal: attach failed, but app continues
+        console.warn("flatpickr focus bind failed", err);
+      }
+    },
+    [
+      initialSubmission,
+      setIsForOthers,
+      setCurrentlySelectedEmployee,
+      setRequestTypeChanged,
+      setIsFormReady,
+    ],
+  );
+
+  const formOptions = useMemo(
+    () => ({
+      builder: { styles: false },
+      submitButton: false,
+      noAlerts: true,
+      clearOnSubmit: false,
+      keepAlive: true,
+      shiftData: shiftData,
+      shiftRedraw: shiftData?.shift,
+    }),
+    [shiftData],
+  );
+
   if (isSchemaLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -935,20 +1140,22 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
           <h2 className="text-lg font-semibold text-gray-800">
-            {forActionType === "edit" ? "Edit" : "Create"} Attendance Request
+            {forActionType === "edit" ? "Edit" : ""} Attendance Request
           </h2>
-          {isDesktop && (<button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5 text-gray-600" />
-          </button>)}
+          {isDesktop && (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </button>
+          )}
         </div>
 
         {/* Content Area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-2 md:px-4 pt-4 pb-32 md:pb-6">
-          {userRoles?.roles["Employee Direct Manager"] ? (
+          {userRoles?.roles["Employee Direct Manager"] && canCreateAttendanceRequestForOthers && !isFromCalView ? (
             <div className="flex bg-white rounded-lg p-1 mt-2 border border-gray-200">
               <Button
                 size="md"
@@ -958,122 +1165,22 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               >
                 Self
               </Button>
-              <Button
+              {<Button
                 size="md"
                 fullWidth
                 variant={!isForOthers ? "subtle" : "contain"}
                 onClick={() => setIsForOthers(true)}
               >
                 For Others
-              </Button>
+              </Button>}
             </div>
           ) : null}
           <Form
             form={formSchema}
             onSubmit={handleSubmit}
-            options={{
-              builder: { styles: false },
-              submitButton: false,
-              noAlerts: true,
-              clearOnSubmit: false,
-              keepAlive: true,
-              shiftData: shiftData,
-              shiftRedraw: shiftData?.shift,
-            }}
+            options={formOptions}
             onChange={handleFormChange}
-            onFormReady={(instance: FormioFormInstance) => {
-              formAddressInstance.current = instance;
-              if (!initialSubmissionSet.current) {
-                try {
-                  // use setSubmission to initialize the form once
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (instance as any).setSubmission?.(initialSubmission);
-                  initialSubmissionSet.current = true;
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                } catch (err) {
-                  // fallback if setSubmission not available
-                  try {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (instance as any).submission = initialSubmission;
-                    initialSubmissionSet.current = true;
-                  } catch (e) {
-                    console.warn(
-                      "Could not set initial submission on form instance",
-                      e,
-                    );
-                  }
-                }
-              }
-
-              // 5️⃣ Redraw once (initial)
-              instance.redraw();
-
-              // Signal that form is ready
-              setIsFormReady(true);
-
-              // Improve initial state detection
-              const data = initialSubmission?.data as any;
-              if (data?.isForOthers === true || data?.isForOthers === "1" || data?.isForOthers === 1) {
-                setIsForOthers(true);
-              }
-              if (data?.employee) {
-                setCurrentlySelectedEmployee(data.employee);
-              }
-              if (data?.request_type) {
-                setRequestTypeChanged(data.request_type.toString() || "");
-              }
-              // Disable dataSrc behavior on company field
-              const companyComponent = instance.getComponent("company");
-              if (companyComponent) {
-                // Override the component's data source to prevent auto-fetching
-                const comp = companyComponent as any;
-                if (comp.component) {
-                  delete comp.component.dataSrc;
-                  delete comp.component.data;
-                  delete comp.component.valueProperty;
-                  delete comp.component.selectValues;
-                  delete comp.component.refreshOn;
-                }
-              }
-
-              try {
-                const rootEl: HTMLElement | Document =
-                  (instance && instance.element) || document;
-
-                const flatInputs: NodeListOf<FlatpickrInput> = (
-                  rootEl as HTMLElement
-                ).querySelectorAll
-                  ? (rootEl as HTMLElement).querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input",
-                  )
-                  : document.querySelectorAll<FlatpickrInput>(
-                    "input.flatpickr-input",
-                  );
-
-                flatInputs.forEach((input) => {
-                  const handler = () => {
-                    flatInputs.forEach((other) => {
-                      if (other !== input && other._flatpickr) {
-                        try {
-                          other._flatpickr.close();
-                        } catch (err) {
-                          console.error("flatpickr close failed", err);
-                        }
-                      }
-                    });
-                  };
-
-                  // avoid adding duplicate listeners
-                  if (!input.__closeOtherFPHandler) {
-                    input.addEventListener("focus", handler);
-                    input.__closeOtherFPHandler = handler;
-                  }
-                });
-              } catch (err) {
-                // non-fatal: attach failed, but app continues
-                console.warn("flatpickr focus bind failed", err);
-              }
-            }}
+            onFormReady={onFormReady}
             className="formio-no-border address-form-container mt-4"
           />
         </div>
@@ -1081,15 +1188,16 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         {/* Submit Bar */}
         <div className="fixed md:static bottom-0 w-full border-gray-200 bg-white border-t shadow-md p-4 z-20">
           <div className="max-w-4xl mx-auto flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-
-            {!isDesktop && (<Button
-              onClick={onClose}
-              size="md"
-              variant="outline"
-              className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
-            >
-              Cancel
-            </Button>)}
+            {!isDesktop && (
+              <Button
+                onClick={onClose}
+                size="md"
+                variant="outline"
+                className="w-full md:w-auto min-w-[150px] md:px-4 md:py-2.5 rounded-md font-brand"
+              >
+                Cancel
+              </Button>
+            )}
 
             <Button
               onClick={() => formAddressInstance.current?.submit()}
@@ -1104,13 +1212,11 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
                 "Submit"
               )}
             </Button>
-
           </div>
         </div>
-
       </div>
     </div>
   );
 };
 
-export default AttendanceRequestFormV2;
+export default React.memo(AttendanceRequestFormV2);

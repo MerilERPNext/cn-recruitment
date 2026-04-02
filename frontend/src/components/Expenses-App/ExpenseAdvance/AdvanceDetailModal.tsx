@@ -1,54 +1,228 @@
-import React from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
-import { formatCurrency } from "../../../utils/currencyFormatter";
+import React from "react";
 import { useFrappeDocument } from "../../../hooks/useFrappeQuery";
-import { ApprovalStage } from "../../../types/expenseAdvance";
-import ApprovalStagesProgress from "../ExpenseClaim/ApprovalStagesProgress";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { ApprovalStage, Expense } from "../../../types/expenseAdvance";
+import { formatCurrency } from "../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import Button from "../../shared/atoms/Button";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import ApprovalStagesProgress from "../ExpenseClaim/ApprovalStagesProgress";
 
 interface AdvanceDetailModalProps {
   id: string;
   onClose: () => void;
   selectedStages: ApprovalStage[];
+  status?: string;
 }
 
 const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
   id,
   onClose,
   selectedStages,
+  status,
 }) => {
   const raw = useFrappeDocument("Employee Advance", id as string);
 
-  const advanceDetails = raw.data as any | undefined;
+  interface EmployeeAdvance {
+    employee_name: string;
+    employee: string;
+    status: string;
+    posting_date: string;
+    advance_amount: number;
+    company: string;
+    department: string;
+    expenses?: Expense[];
+    custom_advance_policy?: string;
+    custom_advance_type?: string;
+  }
+
+  const advanceDetails = raw.data as EmployeeAdvance | undefined;
   const isLoading = raw.isLoading;
   const error = raw.error;
+  const { isDesktop } = useScreenSize();
+
+  const finalStatus = status || advanceDetails?.status;
 
   if (!id) return null;
 
+  // Desktop table for expense breakup
+  const DesktopBreakup = (
+    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Advance Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Advance Date
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Sanctioned Amount
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Claimed Amount
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Approval Status
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Description
+            </th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-gray-100">
+          {Array.isArray(advanceDetails?.expenses) &&
+          advanceDetails.expenses.length > 0 ? (
+            advanceDetails.expenses.map((item: any, index: number) => (
+              <tr
+                key={item.name || index}
+                className="bg-white hover:bg-gray-50 transition-colors duration-150"
+              >
+                <td className="px-4 py-3 text-gray-800">{item.expense_type}</td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatToIndianDate(item.expense_date)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(item.sanctioned_amount)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {formatCurrency(item.amount)}
+                </td>
+                <td className="px-4 py-3 text-gray-800">
+                  {<StatusBadge status={finalStatus} />}
+                </td>
+                <td className="px-4 py-3 text-gray-800">{item.description}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td
+                className="px-4 py-8 text-center text-gray-400 italic"
+                colSpan={6}
+              >
+                No specific breakup items found for this advance.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  // Mobile card-based breakup
+  const MobileBreakup = (
+    <div className="grid grid-cols-1 gap-4">
+      {Array.isArray(advanceDetails?.expenses) &&
+      advanceDetails.expenses.length > 0 ? (
+        advanceDetails.expenses.map((item: any, index: number) => (
+          <div
+            key={item.name || index}
+            className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+          >
+            {/* Header */}
+            <div className="mb-3 flex justify-between items-center">
+              <Typography variant="label" className="card-title">
+                Breakup Entry {index + 1}
+              </Typography>
+
+              {/* Approval Status */}
+              <StatusBadge status={finalStatus} />
+            </div>
+
+            {/* Content */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {/* Advance Type */}
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Advance Type</Typography>
+                <Typography variant="mobileCardValue">
+                  {item.expense_type ?? "—"}
+                </Typography>
+              </div>
+
+              {/* Advance Date */}
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Advance Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(item.expense_date)}
+                </Typography>
+              </div>
+
+              {/* Sanctioned Amount */}
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">
+                  Sanctioned Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatCurrency(item.sanctioned_amount)}
+                </Typography>
+              </div>
+
+              {/* Claimed Amount */}
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">
+                  Claimed Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatCurrency(item.amount)}
+                </Typography>
+              </div>
+
+              {/* Description (full width) */}
+              <div className="col-span-2 flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Description</Typography>
+                <Typography variant="mobileCardValue">
+                  {item.description || "—"}
+                </Typography>
+              </div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <Typography
+          variant="mobileCardValue"
+          className="text-center text-gray-500 py-4"
+        >
+          No specific breakup items found for this advance.
+        </Typography>
+      )}
+    </div>
+  );
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
-      onClick={onClose}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={onClose}
     >
       <div
-        className="bg-white w-full max-w-xl rounded-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-5 border-b">
-          <h3 className="text-lg font-semibold text-gray-800">
-            Advance Details: {id}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 p-2 rounded-full hover:bg-gray-200"
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography
+            variant="bodyMedium"
+            className="font-semibold text-gray-900 leading-tight"
           >
-            <X size={20} />
-          </button>
+            Advance Details: {id}
+          </Typography>
+
+          <Button
+            variant="subtle"
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {isLoading ? (
             <p className="text-gray-500 text-center py-10">
               Loading details...
@@ -59,107 +233,90 @@ const AdvanceDetailModal: React.FC<AdvanceDetailModalProps> = ({
             </p>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-6 mb-6 text-sm">
-                <p>
-                  <strong className="text-gray-600">Employee:</strong>{" "}
-                  {`${advanceDetails.employee_name}: ${advanceDetails.employee}`}
-                </p>
-                <p>
-                  <strong className="text-gray-600">Posting Date:</strong>{" "}
-                  {formatToIndianDate(advanceDetails.posting_date)}
-                </p>
-
-                <p>
-                  <strong className="text-gray-600">Company:</strong>{" "}
-                  {advanceDetails.company}
-                </p>
-                <p>
-                  <strong className="text-gray-600">Department:</strong>{" "}
-                  {advanceDetails.department}
-                </p>
-
-                <p className="flex items-center gap-2">
-                  <strong className="text-gray-600">Status:</strong>
-                  <StatusBadge status={advanceDetails.status} />
-                </p>
-
-                <p className="text-base font-bold text-blue-700">
-                  <strong className="text-gray-600">Amount:</strong>{" "}
-                  {formatCurrency(advanceDetails.advance_amount)}
-                </p>
+              {/* Employee + Status */}
+              <div className="flex gap-2 justify-between p-1">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel">
+                    {advanceDetails?.employee_name
+                      ? "Employee Name"
+                      : "Employee ID"}
+                  </Typography>{" "}
+                  <Typography variant="mobileCardValue">
+                    {advanceDetails?.employee_name || advanceDetails?.employee}
+                  </Typography>
+                </div>
+                <div>
+                  <StatusBadge status={finalStatus} />
+                </div>
               </div>
 
+              {/* Paired data rows */}
+              <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Advance Policy
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {advanceDetails?.custom_advance_policy}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Posting Date
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {formatToIndianDate(advanceDetails?.posting_date ?? "")}
+                    </Typography>
+                  </div>
+                </div>
+                <div className="flex justify-between w-full">
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Advance Category
+                    </Typography>
+                    <Typography variant="mobileCardValue">
+                      {advanceDetails?.custom_advance_type}
+                    </Typography>
+                  </div>
+                  <div className="flex flex-col gap-2 text-right">
+                    <Typography variant="mobileCardLabel" className="block">
+                      Amount
+                    </Typography>
+                    <Typography
+                      variant="mobileCardValue"
+                      className="font-bold text-blue-700"
+                    >
+                      {formatCurrency(advanceDetails?.advance_amount ?? 0)}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+
+              {/* Approval Stages */}
               {Array.isArray(selectedStages) && selectedStages.length > 0 && (
                 <div className="mb-4 pt-2">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  <Typography
+                    variant="bodySmall"
+                    className="base-title mb-1 font-bold block"
+                  >
                     Approval Stages
-                  </h4>
+                  </Typography>
                   <ApprovalStagesProgress stages={selectedStages} />
                 </div>
               )}
 
+              {/* Expense Breakup */}
               <div className="mt-6 border-t pt-4">
-                <h4 className="text-md font-semibold mb-3">
-                  Expense Breakup Items ({advanceDetails.expenses?.length || 0})
-                </h4>
+                <Typography
+                  variant="bodySmall"
+                  className="base-title mb-1 font-bold block"
+                >
+                  Advance Breakup Items ({advanceDetails?.expenses?.length || 0}
+                  )
+                </Typography>
 
-                <div className="overflow-x-auto border border-gray-200 rounded-lg whitespace-nowrap">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                    <thead className="bg-gray-100 text-gray-700">
-                      <tr>
-                        <th className="px-4 py-3 border-b">Advance Type</th>
-                        <th className="px-4 py-3 border-b">Date</th>
-                        <th className="px-4 py-3 border-b text-right">
-                          Sanctioned Amount
-                        </th>
-                        <th className="px-4 py-3 border-b text-right">
-                          Claimed Amount
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody className="divide-y divide-gray-100">
-                      {Array.isArray(advanceDetails.expenses) &&
-                      advanceDetails.expenses.length > 0 ? (
-                        advanceDetails.expenses.map(
-                          (item: any, index: number) => {
-                            return (
-                              <tr
-                                key={item.name || index}
-                                className="even:bg-white odd:bg-gray-50 hover:bg-gray-100"
-                              >
-                                <td className="px-4 py-3 align-top">
-                                  {item.expense_type ?? "—"}
-                                </td>
-
-                                <td className="px-4 py-3 align-top">
-                                  {formatToIndianDate(item.expense_date)}
-                                </td>
-
-                                <td className="px-4 py-3 text-right align-top font-medium">
-                                  {formatCurrency(item.sanctioned_amount)}
-                                </td>
-
-                                <td className="px-4 py-3 text-right align-top font-medium">
-                                  {formatCurrency(item.amount)}
-                                </td>
-                              </tr>
-                            );
-                          }
-                        )
-                      ) : (
-                        <tr>
-                          <td
-                            className="px-4 py-6 text-center text-gray-500"
-                            colSpan={4}
-                          >
-                            No specific breakup items found for this advance.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                {isDesktop ? DesktopBreakup : MobileBreakup}
               </div>
             </>
           )}

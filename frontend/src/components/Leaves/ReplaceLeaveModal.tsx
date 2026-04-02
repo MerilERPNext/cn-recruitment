@@ -61,11 +61,11 @@ const ReplaceLeaveOverlay: React.FC<ReplaceLeaveOverlayProps> = ({
       ...leaveBalanceData.leave_balance
         .filter(
           (entry) =>
-            entry.dont_show_in_frontend === 0 && entry.type !== currentLeaveType
+            entry.dont_show_in_frontend === 0 && entry.leave_id !== currentLeaveType
         )
         .map((entry) => ({
-          label: entry.type,
-          value: entry.type,
+          label: `${entry.type} (${entry.leave_id})`,
+          value: entry.leave_id,
         })),
     ];
   }, [leaveBalanceData, currentLeaveType]);

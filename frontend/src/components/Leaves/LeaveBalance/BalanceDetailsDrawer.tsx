@@ -18,6 +18,7 @@ interface BalanceDetailsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   leaveType: string;
+  leaveId: string;
   leaveData: LeaveBalance;
   size?: DrawerSize;
 }
@@ -42,6 +43,7 @@ const BalanceDetailsDrawer: React.FC<BalanceDetailsDrawerProps> = ({
   isOpen,
   onClose,
   leaveType,
+  leaveId,
   leaveData,
   size = "xxl",
 }) => {
@@ -75,7 +77,7 @@ const BalanceDetailsDrawer: React.FC<BalanceDetailsDrawerProps> = ({
         `}
       >
         <div className="flex items-center justify-between p-4 border-b bg-white flex-shrink-0">
-          <Typography variant="subheading">{leaveType}</Typography>
+          <Typography variant="subheading">{leaveType} ({leaveId})</Typography>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full"

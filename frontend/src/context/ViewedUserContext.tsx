@@ -14,14 +14,14 @@ interface ViewedUserContextType {
   setTargetEmployee: (
     employeeId: string | null,
     targetPath?: string,
-    openInNewTab?: boolean
+    openInNewTab?: boolean,
   ) => void;
   clearTargetEmployee: () => void;
   isViewingOtherUser: boolean;
 }
 
 const ViewedUserContext = createContext<ViewedUserContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const TARGET_USER_PARAM = "target_user";
@@ -47,7 +47,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
         return urlParam;
       }
       return sessionStorage.getItem(SESSION_STORAGE_KEY);
-    }
+    },
   );
 
   // Sync URL -> State when URL changes manually (e.g., bookmark, back button)
@@ -75,7 +75,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
           pathname: location.pathname,
           search: newParams.toString(),
         },
-        { replace: true }
+        { replace: true },
       );
     } else if (!urlParam && !targetEmployeeId) {
       // Both are null, we're in a clean state
@@ -86,13 +86,8 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const hasReloadedRef = useRef(false);
 
-
   useEffect(() => {
-    if (
-      !currentEmployee?.name ||
-      !targetEmployeeId ||
-      hasReloadedRef.current
-    ) {
+    if (!currentEmployee?.name || !targetEmployeeId || hasReloadedRef.current) {
       return;
     }
 
@@ -114,7 +109,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
           pathname: location.pathname,
           search: newParams.toString(),
         },
-        { replace: true }
+        { replace: true },
       );
 
       // Force full reload (after URL cleanup)
@@ -123,13 +118,17 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
       }, 0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentEmployee?.name, targetEmployeeId, location.pathname, searchParams.toString()]);
-
+  }, [
+    currentEmployee?.name,
+    targetEmployeeId,
+    location.pathname,
+    searchParams.toString(),
+  ]);
 
   const setTargetEmployee = (
     employeeId: string | null,
     targetPath?: string,
-    openInNewTab: boolean = false
+    openInNewTab: boolean = false,
   ) => {
     // Clear any pending navigation timeout
     if (navigateTimeoutRef.current) {
@@ -144,8 +143,9 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newParams = new URLSearchParams(searchParams);
       newParams.set(TARGET_USER_PARAM, employeeId);
-      const fullPath = `${targetPath || location.pathname
-        }?${newParams.toString()}`;
+      const fullPath = `${
+        targetPath || location.pathname
+      }?${newParams.toString()}`;
 
       if (openInNewTab) {
         // Only open in new tab - don't modify current tab's state or sessionStorage
@@ -162,7 +162,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
               pathname: targetPath || location.pathname,
               search: newParams.toString(),
             },
-            { replace: true }
+            { replace: true },
           );
         }, 100);
       }
@@ -179,8 +179,18 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
     // Remove param from URL
     const newParams = new URLSearchParams(searchParams);
     newParams.delete(TARGET_USER_PARAM);
+
     queryClient.invalidateQueries({
-      queryKey: ["ui-permission"],
+      predicate: (query) => {
+        // queyKeys for apis which only get data for current Logged in Uer Only
+        const excludedKeys = [
+          ["currentEmployee"],
+          ["currentUser"],
+          ["currentEmployeeIdCard"],
+        ];
+
+        return !excludedKeys.some((key) => query.queryKey[0] === key[0]);
+      },
     });
 
     navigate(
@@ -188,7 +198,7 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
         pathname: location.pathname,
         search: newParams.toString(),
       },
-      { replace: true }
+      { replace: true },
     );
   };
 

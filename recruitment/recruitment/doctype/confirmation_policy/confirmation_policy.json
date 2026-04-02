@@ -1,12 +1,13 @@
 {
  "actions": [],
  "allow_rename": 1,
- "autoname": "CP.#####",
+ "autoname": "CONFFLOW-.#####",
  "creation": "2025-10-16 14:50:53.021360",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
   "basic_details_tab",
+  "status",
   "policy_title",
   "description",
   "applicability_section",
@@ -33,6 +34,8 @@
   "confirmation_extension_workflow",
   "column_break_qbus",
   "confirmation_form",
+  "configure_initiator",
+  "initiator",
   "confirmation_extension_form",
   "extension_workflow_section",
   "extension_workflow_configurations",
@@ -139,6 +142,7 @@
   {
    "fieldname": "number_of_days_to_hold_confirmation_from_probation_end",
    "fieldtype": "Int",
+   "hidden": 1,
    "label": "Number of days to hold Confirmation from Probation end",
    "non_negative": 1
   },
@@ -224,6 +228,17 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "initiator",
+   "fieldtype": "Small Text",
+   "label": "Initiator",
+   "read_only": 1
+  },
+  {
+   "fieldname": "configure_initiator",
+   "fieldtype": "Button",
+   "label": "Configure Initiator"
+  },
+  {
    "depends_on": "eval:doc.maximum_number_of_extensions_to_probation_period != '0'",
    "fieldname": "extension_workflow_section",
    "fieldtype": "Section Break",
@@ -235,12 +250,18 @@
    "fieldtype": "Table",
    "label": "Extension Workflow Configurations",
    "options": "Extension Workflow Configuration"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "\nActive\nInactive"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-01-17 12:51:06.586909",
+ "modified": "2026-03-13 18:12:50.102724",
  "modified_by": "Administrator",
  "module": "Recruitment",
  "name": "Confirmation Policy",
@@ -262,7 +283,9 @@
  ],
  "row_format": "Dynamic",
  "search_fields": "policy_title",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "policy_title"
 }

@@ -1,27 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  Calendar,
-  FileText,
-  User,
-  CheckCircle,
-  XCircle,
-  LogOut,
-  ChevronDown,
-  Timer,
-  ArrowUpDown,
-  Dock,
-  RotateCcwKey,
-} from "lucide-react";
-import {
-  useCanShowClockIn,
-  useClockInOutService,
-  useGetEmployeeShift,
-  useHomeSummaryDetails,
-} from "../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
-import {
   compareAsc,
   compareDesc,
   differenceInMinutes,
@@ -30,39 +8,71 @@ import {
   parseISO,
   startOfDay,
 } from "date-fns";
+import {
+  ArrowUpDown,
+  Calendar,
+  CheckCircle,
+  ChevronDown,
+  Dock,
+  FileText,
+  IndianRupee,
+  LogOut,
+  ReceiptIndianRupeeIcon,
+  RotateCcwKey,
+  Timer,
+  User,
+  Wallet,
+  XCircle,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import CollapsibleSidebar from "./shared/CollapsibleSidebar";
-import NotificationBell from "./Notification/NotificationBell";
-import defaultProfile from "../assets/face-rec.png";
-import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
-import EmployeeFallback from "./EmployeeFallback";
-import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import { toast } from "react-hot-toast";
-import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
-import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
-import ExpenseFormModal from "./Expenses-App/ExpenseFormModal";
-import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
-import useCurrentUser from "../hooks/useCurrentUser";
-import useLogout from "../hooks/useLogout";
-import { useRequestPasswordReset } from "../hooks/useResetPassword";
-import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
-import { errorResponseFormater } from "../utils/errorResponseFormater";
-import { CustomError } from "../types/attendance";
-import ViewingAsBanner from "./ViewingAsBanner";
+import { useNavigate } from "react-router-dom";
+import defaultProfile from "../assets/face-rec.png";
 import { useTargetUser } from "../context/ViewedUserContext";
-import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import {
+  useCanShowClockIn,
+  useClockInOutService,
+  useGetEmployeeShift,
+  useHomeSummaryDetails,
+  usePlannedOvertimeAllowed,
+} from "../hooks/useAttendance";
+import useCurrentUser from "../hooks/useCurrentUser";
+import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
+import { useLoggedInUser } from "../hooks/useLoggedInUser";
+import useLogout from "../hooks/useLogout";
 import { useGetUserNotices } from "../hooks/useNotices";
-import { NoticeSlide } from "./shared/molecules/NoticeSlide";
-import SearchMembers from "./shared/SearchMembers";
-import Button from "./shared/atoms/Button";
-import { Typography } from "./shared/atoms/Typography";
-import { Card } from "./shared/atoms/Card";
-import Events from "./Events/Events";
+import { useRequestPasswordReset } from "../hooks/useResetPassword";
+import { CustomError } from "../types/attendance";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
+import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
+import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
+import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
+import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
+import EmployeeFallback from "./EmployeeFallback";
+import Events from "./Events/Events";
+import { useRequestLeaveModal } from "./Leaves/RequestLeaveModalContext";
+import NotificationBell from "./Notification/NotificationBell";
+import Button from "./shared/atoms/Button";
+import { Card } from "./shared/atoms/Card";
+import CircularLoader from "./shared/atoms/CircularLoader";
+import { Typography } from "./shared/atoms/Typography";
 import { ViewAll } from "./shared/atoms/ViewAll";
 import Badge from "./shared/Badge";
-import CircularLoader from "./shared/atoms/CircularLoader";
+import CollapsibleSidebar from "./shared/CollapsibleSidebar";
+import Carousel, { CarouselSlide } from "./shared/molecules/Carousel";
+import { NoticeSlide } from "./shared/molecules/NoticeSlide";
+import SearchMembers from "./shared/SearchMembers";
+import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
+import ViewingAsBanner from "./ViewingAsBanner";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { isActionEnabled } from "../utils/uiPermission";
+import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
+import Modal from "./Compansation/Advances/commonModal";
+import AdvanceForm from "./Compansation/Advances/AdvanceForm";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
+import { useShiftRequestConfig } from "../hooks/useShift";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -75,8 +85,11 @@ export default function DesktopDashboard() {
   const [showAttendanceRequest, setShowAttendanceRequest] = useState(false);
   const [showOvertimeRequest, setShowOvertimeRequest] = useState(false);
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
-  const { clearTargetEmployee } = useTargetUser();
+  const { clearTargetEmployee, targetEmployeeId } = useTargetUser();
   const { openModal } = useRequestLeaveModal();
+  const [isLoanDialogOpen, setIsLoanDialogOpen] = useState(false);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const handleCloseAdvanceModal = () => setShowAdvanceForm(false);
 
   const handleCloseShiftModal = () => {
     setShowShiftRequestModal(false);
@@ -138,29 +151,29 @@ export default function DesktopDashboard() {
   const checkOuts = homeSummary?.filter((log) => log.log_type === "OUT") ?? [];
   const firstCheckIn = checkIns.length
     ? checkIns.sort((a, b) =>
-      compareAsc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
+        compareAsc(
+          parseISO(a.time.replace(" ", "T")),
+          parseISO(b.time.replace(" ", "T"))
+        )
+      )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
-      compareDesc(
-        parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
-    )[0]
-    : undefined;
-
-  const lastLog =
-    homeSummary && homeSummary.length > 0
-      ? [...homeSummary].sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
           parseISO(b.time.replace(" ", "T"))
         )
       )[0]
+    : undefined;
+
+  const lastLog =
+    homeSummary && homeSummary.length > 0
+      ? [...homeSummary].sort((a, b) =>
+          compareDesc(
+            parseISO(a.time.replace(" ", "T")),
+            parseISO(b.time.replace(" ", "T"))
+          )
+        )[0]
       : undefined;
 
   const isCurrentlyCheckedIn = lastLog?.log_type === "IN";
@@ -168,7 +181,13 @@ export default function DesktopDashboard() {
 
   const logoutHandler = async () => {
     try {
-      await logout();
+      if (window.isApp) {
+        window.nativeInterface.execute("logout").then(() => {
+          alert("Logged out");
+        });
+      } else {
+        await logout();
+      }
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -329,14 +348,6 @@ export default function DesktopDashboard() {
     return Math.min(percentage, 100);
   };
 
-  // const handleTodoClick = () => {
-  //   window.location.href = "/app/task_manager";
-  // };
-
-  // const handleHelpDeskClick = () => {
-  //   window.location.href = "/helpdesk/my-tickets";
-  // };
-
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
@@ -346,9 +357,127 @@ export default function DesktopDashboard() {
   const currentUserIsAdmin = currentUser?.roles?.some(
     (role) => "Administrator" === role.role
   );
+  const { data: userUiPermission } = useGetUiPermission();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const effectiveEmployeeId = targetEmployeeId || user?.employee;
+
+  const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
+    effectiveEmployeeId || ""
+  );
+  const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
+    effectiveEmployeeId || ""
+  );
+  const { data: shiftRequestConfig } = useShiftRequestConfig(
+    effectiveEmployeeId || "");
+
+  const isShiftConfigEnabled =
+    shiftRequestConfig?.shift_change_requests ||
+    shiftRequestConfig?.shift_change_and_attendance_requests;
+    
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Planned Overtime"
+  );
+
+  const canLeaveRequest = isActionEnabled(
+    userUiPermission,
+    "request_leave",
+    "My Requests"
+  );
+  const canAttendaneRequest = isActionEnabled(
+    userUiPermission,
+    "create_attendance_request",
+    "Attendance Summary"
+  );
+  const canShiftChangeRequest = isActionEnabled(
+    userUiPermission,
+    "request_shift_change",
+    "All Shift"
+  );
+  const canLoanRequest = isActionEnabled(
+    userUiPermission,
+    "create_loan",
+    "My Loan Requests"
+  );
+  const canEmployeeAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "create_advance",
+    "My Advances"
+  );
+  const canExpenseRequest = isActionEnabled(
+    userUiPermission,
+    "expense_claim_request",
+    "Expense Claims"
+  );
+
+  const canExpenseAdvanceRequest = isActionEnabled(
+    userUiPermission,
+    "request_expense_advance",
+    "My Advances"
+  );
+
+  const actions = [
+    {
+      label: "Apply Leave",
+      icon: Calendar,
+      color: "primary",
+      onClick: () => openModal(),
+      permission: canLeaveRequest,
+    },
+    {
+      label: "Attendance Request",
+      icon: FileText,
+      color: "secondary",
+      onClick: () => setShowAttendanceRequest(true),
+      permission: canAttendaneRequest,
+    },
+    {
+      label: "Planned Overtime",
+      icon: Timer,
+      color: "purple",
+      onClick: () => setShowOvertimeRequest(true),
+      permission: canRequestOvertime && plannedOvertimAllowed,
+    },
+    {
+      label: "Shift Change",
+      icon: ArrowUpDown,
+      color: "success",
+      onClick: handleShiftForm,
+      permission: canShiftChangeRequest && isShiftConfigEnabled,
+    },
+    {
+      label: "Create Loan Request",
+      icon: Wallet,
+      bg: "bg-pink-100",
+      onClick: () => setIsLoanDialogOpen(true),
+      permission: canLoanRequest,
+    },
+    {
+      label: "Create Advance",
+      icon: IndianRupee,
+      bg: "bg-orange-100",
+      onClick: () => setShowAdvanceForm(true),
+      permission: canEmployeeAdvanceRequest,
+    },
+    {
+      label: "Create Expense",
+      icon: ReceiptIndianRupeeIcon,
+      bg: "bg-green-100",
+      onClick: () => navigate("/webapp/expenses-app/add-expense"),
+      permission: canExpenseRequest,
+    },
+    {
+      label: "Expense Advance",
+      icon: IndianRupee,
+      bg: "bg-amber-100",
+      onClick: () => navigate("/webapp/expenses-app/new-expense-advance"),
+      permission: canExpenseAdvanceRequest && ExpenseAdvanceAllowed,
+    },
+  ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex">
       {/* Collapsible Sidebar */}
       <CollapsibleSidebar
         isExpanded={isSidebarExpanded}
@@ -360,11 +489,7 @@ export default function DesktopDashboard() {
         className={`flex-1 ${contentMarginLeft} flex flex-col min-h-screen transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div
-          className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500
-  border-b border-gray-200 px-6 py-[0.3rem]
-  flex items-center sticky top-0 z-10 gap-4"
-        >
+        <div className="bg-gradient-to-r from-primary-500 via-primary-400 to-primary-500 border-b border-gray-200 px-6 py-[0.3rem] flex items-center sticky top-0 z-10 gap-4">
           <div className="flex flex-col min-w-0">
             {currentEmployee?.employee_name || currentUserIsAdmin ? (
               <>
@@ -434,8 +559,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               ) : currentEmpIsLoading || !currentEmployee ? (
@@ -472,8 +598,9 @@ export default function DesktopDashboard() {
                     />
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-white transition-transform ${showProfileDropdown ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 text-white transition-transform ${
+                      showProfileDropdown ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
               )}
@@ -633,6 +760,7 @@ export default function DesktopDashboard() {
                       bgColor="error"
                       onClick={async () => {
                         await logoutHandler();
+                        sessionStorage.removeItem("viewed_employee_id");
                         setShowProfileDropdown(false);
                       }}
                     >
@@ -837,10 +965,11 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div
-                  className={`flex  h-full ${homeSummary && !homeSummary?.length
-                    ? "flex-col-reverse gap-3"
-                    : "flex-row gap-3 mt-2"
-                    }`}
+                  className={`flex  h-full ${
+                    homeSummary && !homeSummary?.length
+                      ? "flex-col-reverse gap-3"
+                      : "flex-row gap-3 mt-2"
+                  }`}
                 >
                   {canShowClockIn?.can_show && (
                     <div className="flex-1">
@@ -862,8 +991,8 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                            ? "Clock Out"
-                            : "Clock In"}
+                          ? "Clock Out"
+                          : "Clock In"}
                       </Button>
                     </div>
                   )}
@@ -908,55 +1037,35 @@ export default function DesktopDashboard() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    {
-                      label: "Apply Leave",
-                      icon: Calendar,
-                      color: "primary",
-                      onClick: () => openModal(),
-                    },
-                    {
-                      label: "Attendance Request",
-                      icon: FileText,
-                      color: "secondary",
-                      onClick: () => setShowAttendanceRequest(true),
-                    },
-                    {
-                      label: "Planned Overtime",
-                      icon: Timer,
-                      color: "purple",
-                      onClick: () => setShowOvertimeRequest(true),
-                    },
-                    {
-                      label: "Shift Change",
-                      icon: ArrowUpDown,
-                      color: "success",
-                      onClick: handleShiftForm,
-                    },
-                  ].map((action, idx) => (
-                    <div
-                      key={idx}
-                      className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
-                      onClick={action.onClick}
-                    >
+                  {actions
+                    .filter((action) => action.permission)
+                    .slice(0, 4)
+                    .map((action, idx) => (
                       <div
-                        className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${action.color === "primary"
-                          ? "bg-primary-100 text-primary-600"
-                          : action.color === "purple"
-                            ? "bg-purple-100 text-purple-600"
-                            : "bg-success-100 text-success"
+                        key={idx}
+                        className="group flex flex-col items-center justify-center p-4 rounded-xl hover-lift transition-all cursor-pointer text-center"
+                        onClick={action.onClick}
+                      >
+                        <div
+                          className={`w-12 h-12 mb-3 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                            action.color === "primary"
+                              ? "bg-primary-100 text-primary-600"
+                              : action.color === "purple"
+                              ? "bg-purple-100 text-purple-600"
+                              : "bg-success-100 text-success"
                           }`}
-                      >
-                        <action.icon className="w-5 h-5 shadow-sm" />
+                        >
+                          <action.icon className="w-5 h-5 shadow-sm" />
+                        </div>
+
+                        <Typography
+                          variant="bodySmall"
+                          className="font-semibold leading-tight line-clamp-2"
+                        >
+                          {action.label}
+                        </Typography>
                       </div>
-                      <Typography
-                        variant="bodySmall"
-                        className="font-semibold leading-tight line-clamp-2"
-                      >
-                        {action.label}
-                      </Typography>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </Card>
             </div>
@@ -981,13 +1090,22 @@ export default function DesktopDashboard() {
           </div>
         </div>
       )}
-      <ExpenseFormModal
+      <ShiftRequestFormModal
+        className="h-full"
         isOpen={showShiftRequestModal}
         onClose={handleCloseShiftModal}
-        title="R"
-      >
-        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      </ExpenseFormModal>
+      />
+      {/*loan request */}
+      <CreateLoanDialog
+        isOpen={isLoanDialogOpen}
+        onClose={() => setIsLoanDialogOpen(false)}
+      />
+
+      {showAdvanceForm && (
+        <Modal onClose={handleCloseAdvanceModal}>
+          <AdvanceForm user={user} onClose={handleCloseAdvanceModal} />
+        </Modal>
+      )}
     </div>
   );
 }

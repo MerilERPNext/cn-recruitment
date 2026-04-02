@@ -1,23 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import ApprovalList from "../shared/ApprovalList";
-import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
-import formatToIndianDate, {
-  formatEndDate,
-} from "../../utils/formatToIndianDate";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { MyShiftRequest } from "../../types/shift";
-import EmpShiftRequestCard from "./EmpShiftRequestCard";
-import DataListView from "../DataListView";
-import CardTable from "../shared/CardTable";
-import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
-import { ShiftDetailView } from "./ShiftDetailView";
+import { MyShiftRequest } from "../../types/shift";
+import { ApiShiftAssignment } from "../../types/shiftAssignmentType";
+import formatToIndianDate, {
+  formatEndDate,
+} from "../../utils/formatToIndianDate";
+import DataListView from "../DataListView";
+import ApprovalList from "../shared/ApprovalList";
+import CardTable from "../shared/CardTable";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import StatusBadge from "../shared/atoms/statusBadge";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import EmpShiftRequestCard from "./EmpShiftRequestCard";
+import { ShiftDetailView } from "./ShiftDetailView";
+import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 
 const Card = ({
   children,
@@ -44,12 +45,11 @@ const MyShiftItem: React.FC<{
   item: ApiShiftAssignment;
   index?: number;
 }> = ({ item }) => {
-
   return (
     <li className="my-list-item-card">
       <div className="text-xs text-gray-600">
         <p>
-          <span className="font-medium">{item.shift_type}</span>
+          <span className="font-medium">{item.shift_name}</span>
         </p>
         <p>
           <span className="font-medium">
@@ -67,21 +67,26 @@ const MyShiftItem: React.FC<{
 
 const MyShifts: React.FC = () => {
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
+
   const myShifts = data?.filter((s) => s.is_self === 1).slice(0, 4) ?? [];
 
   return (
     <Card>
       <CardHeader
-        title="My Shift"
+        title="My Shift Assignments"
         onSeeAll={() => navigate("/webapp/shift-request/my-shift-assignment")}
       />
       <div className="max-h-96 overflow-y-auto my-shifts-dashboard">
-        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-          {myShifts.map((shift, idx) => (
-            <MyShiftItem key={shift.name} item={shift} index={idx} />
-          ))}
-        </ul>
+        {isLoading ? (
+          <CardSkeleton rows={3} />
+        ) : (
+          <ul>
+            {myShifts.map((shift, idx) => (
+              <MyShiftItem key={shift.name} item={shift} index={idx} />
+            ))}
+          </ul>
+        )}
       </div>
     </Card>
   );
@@ -101,7 +106,7 @@ const TeamShiftItem: React.FC<{
         </div>
         <div className="text-xs text-gray-600">
           <p>
-            <span className="font-medium">{item.shift_type}</span>
+            <span className="font-medium">{item.shift_name}</span>
           </p>
           <p>
             <span className="font-medium">
@@ -124,20 +129,24 @@ const TeamShiftItem: React.FC<{
 
 const TeamShiftList = () => {
   const navigate = useNavigate();
-  const { data } = useShiftAssignments();
+  const { data, isLoading } = useShiftAssignments();
   const teamShifts = data?.filter((s) => s.is_self === 0).slice(0, 3) ?? [];
   return (
     <Card>
       <CardHeader
-        title="Team Shift List"
+        title="Team Shift Assignments"
         onSeeAll={() => navigate("/webapp/shift-request/team-shift")}
       />
       <div className="max-h-96 overflow-y-auto team-shift-dashboard">
-        <ul className="max-h-96 overflow-y-auto my-shifts-dashboard">
-          {teamShifts.map((shift, idx) => (
-            <TeamShiftItem key={shift.name} item={shift} index={idx} />
-          ))}
-        </ul>
+        {isLoading ? (
+          <CardSkeleton rows={3} />
+        ) : (
+          <ul>
+            {teamShifts.map((shift, idx) => (
+              <TeamShiftItem key={shift.name} item={shift} index={idx} />
+            ))}
+          </ul>
+        )}
       </div>
     </Card>
   );
@@ -154,19 +163,6 @@ const AllMyShiftRequestsList = () => {
   const handleRefetchComplete = useCallback(() => {
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
-  const CardSkeleton = () => (
-    <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-between gap-1">
-          <div>
-            <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-            <div className="h-3 w-24 bg-gray-300 rounded"></div>
-          </div>
-          <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -198,7 +194,7 @@ const AllMyShiftRequestsList = () => {
                   />
                 );
               }}
-              SkeletonComponent={CardSkeleton}
+              SkeletonComponent={() => <CardSkeleton rows={3} />}
               onItemClick={(data) => {
                 console.log(data);
               }}
@@ -206,9 +202,9 @@ const AllMyShiftRequestsList = () => {
               refetchTrigger={refetchAttendance}
               isSearch={false}
               isFilter={false}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
               pageSize={4}
               showRefreshButton={false}
-              orderBy="modified desc"
               infiniteScroll={false}
               loadMorePagination={true}
               showPagination={false}
@@ -225,14 +221,20 @@ const AllMyShiftRequestsList = () => {
 export default function AllShiftsDashboard() {
   const navigate = useNavigate();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
+    const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: any) => {
-      if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+      if (request?.todo_id || request?.reference_name) {
+        const params: Record<string, string> = {};
+        if (request?.todo_id) params.requestId = request.todo_id;
+        if (request?.reference_name) params.reference_name = request.reference_name;
+        setSearchParams(params);
       }
     },
     [setSearchParams],
@@ -252,27 +254,30 @@ export default function AllShiftsDashboard() {
     setRefetchApprovalList(false);
   }, []);
 
-  const tableTitles = [
-    "Select",
-    "Employee",
-    "Shift Type",
-    "From Date",
-    "To Date",
-    "Due Date",
-    "Status",
-    "ACTIONS",
-  ];
+ const tableTitles = isBulkSelectEnabled
+    ? [
+        "Select",
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ]
+    : [
+        "Employee",
+        "Shift Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Status",
+        "ACTIONS",
+      ];
 
-  const tableColumnWidths = [
-    "0.5fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-  ];
+  const tableColumnWidths = isBulkSelectEnabled
+    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div className="h-screen pb-22 overflow-hidden font-sans text-sm">
@@ -300,6 +305,9 @@ export default function AllShiftsDashboard() {
                     setRefetch={setRefetchApprovalList}
                     onApprovalRefetchComplete={handleApprovalRefetchComplete}
                     columnWidths={tableColumnWidths}
+                    SkeletonComponent={() => <CardSkeleton rows={3} />}
+                                onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
+
                     renderCardContent={(item) => (
                       <ApprovalRejectionQueue
                         isSelected={item?.isSelected}
@@ -308,15 +316,18 @@ export default function AllShiftsDashboard() {
                         onAction={item?.onAction}
                         onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
+                                        isBulkSelectEnabled={isBulkSelectEnabled}
+
                       />
                     )}
                   />
                 </CardTable>
               </div>
             </Card>
-            {requestId && (
+            {(requestId || referenceName) && (
               <ShiftDetailView
-                documentName={requestId}
+                documentName={requestId || ""}
+                referenceName={referenceName || undefined}
                 onClose={handleCloseModal}
                 onAction={handleActionComplete}
               />

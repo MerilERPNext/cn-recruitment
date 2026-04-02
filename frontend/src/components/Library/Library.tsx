@@ -1,13 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useMemo, useState } from "react";
-import { useEmployeeDocument, useSubmitAcknowledgement } from "../../hooks/useEmployeeDocuments";
+import {
+  useEmployeeDocument,
+  useSubmitAcknowledgement,
+} from "../../hooks/useEmployeeDocuments";
 import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import Button from "../shared/atoms/Button";
 import { useTargetUser } from "../../context/ViewedUserContext";
+import { LibraryTableSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import { Typography } from "../shared/atoms/Typography";
 
 const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
@@ -22,27 +27,24 @@ const DocumentLibrary = () => {
     }
     return user?.employee || "";
   }, [targetEmployeeId, user?.employee]);
-  
-  const { data } = useEmployeeDocument(employeeId);
+
+  const { data, isLoading } = useEmployeeDocument(employeeId);
   const [isMobile, setIsMobile] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
 
-  const {
-    mutate: submitAcknowledgement,
-  } = useSubmitAcknowledgement();
+  const { mutate: submitAcknowledgement } = useSubmitAcknowledgement();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canViewDocument = isActionEnabled(
     userUiPermission,
     "view_employee_document",
-    "Employee Profile"
+    "Employee Profile",
   );
   console.log("userUiPermission:", userUiPermission, canViewDocument);
   const canDownloadDocument = isActionEnabled(
     userUiPermission,
     "download_employee_document",
-    "Employee Profile"
+    "Employee Profile",
   );
-
 
   const handleSubmit = () => {
     if (!selectedDocId) return;
@@ -85,24 +87,25 @@ const DocumentLibrary = () => {
   const showAcknowledgement = filteredDocuments.some(
     (doc: any) =>
       doc.file_name === selectedFile &&
-      doc.status === "Acknowledgement Required"
+      doc.status === "Acknowledgement Required",
   );
 
-  const getFileUrl = (path: string) => `${path}`;
-
-
-
+  const getFileUrl = (path: string) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `${window.location.origin}${path}`;
+  };
 
   return (
-    <div className="bg-white px-0 md:p-6 ">
+    <div className="bg-white px-0 py-3 md:p-6 ">
       <div className="flex items-start justify-between">
         <div className="border-gray-200 my-2 pb-2">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
             Document Library
-          </h2>
-          <p className="text-gray-600">
+          </Typography>
+          <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
             Your document library
-          </p>
+          </Typography>
         </div>
       </div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -122,7 +125,7 @@ const DocumentLibrary = () => {
                 Awaiting My Acknowledgment (
                 {
                   documents.filter(
-                    (doc) => doc.status === "Acknowledgement Required"
+                    (doc) => doc.status === "Acknowledgement Required",
                   ).length
                 }
                 )
@@ -156,7 +159,7 @@ const DocumentLibrary = () => {
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
                 {
                   documents.filter(
-                    (doc) => doc.status === "Acknowledgement Required"
+                    (doc) => doc.status === "Acknowledgement Required",
                   ).length
                 }
               </span>
@@ -169,11 +172,13 @@ const DocumentLibrary = () => {
             >
               Documents Approved{" "}
               <span className="ml-2 inline-block bg-white text-blue-600 rounded-full px-2 text-sm">
-                {documents.filter(
-                  (doc) =>
-                    doc.type?.trim().toLowerCase() !== "personal" &&
-                    doc.status === "Approved"
-                ).length}
+                {
+                  documents.filter(
+                    (doc) =>
+                      doc.type?.trim().toLowerCase() !== "personal" &&
+                      doc.status === "Approved",
+                  ).length
+                }
               </span>
             </Button>
           </div>
@@ -191,78 +196,88 @@ const DocumentLibrary = () => {
               <th className="py-3 px-6">Action</th>
             </tr>
           </thead>
-          <tbody className="text-gray-800">
-            {filteredDocuments.length > 0 ? (
-              filteredDocuments.map((doc: any, i: number) => (
-                <tr
-                  key={i}
-                  className="border-t hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-4 px-6 font-medium">{doc.name}</td>
-                  <td className="py-4 px-6 text-gray-600">
-                    {doc.employee_name}
-                  </td>
-                  <td className="py-4 px-6 text-gray-600">
-                    {new Date(doc.creation).toLocaleDateString()}
-                  </td>
-                  <td className="py-4 px-6">
-                    <span
-                      className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
-                        ? "bg-green-100 text-green-700"
-                        : doc.status === "Acknowledgement Required"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-red-100 text-red-700"
-                        }`}
-                    >
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    {/* Acknowledgement Required → show Acknowledge button */}
-                    {doc.status === "Acknowledgement Required" && (
-                      <button
-                        onClick={() => {
-                          setSelectedFile(doc.file_name); // preview ke liye
-                          setSelectedDocId(doc.name);     // 👈 acknowledgement ke liye
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
-                      >
-                        Acknowledge
-                      </button>
-                    )}
 
-                    {/* Draft or Approved → show View + Download buttons */}
-                    {(doc.type === "Personal" || doc.status === "Approved") && (
-                      <div className="flex gap-2">
-                        {canViewDocument && <button
-                          onClick={() => setSelectedFile(doc.file_name)}
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all"
-                        >
-                          View
-                        </button>}
-                        {canDownloadDocument && <a
-                          href={getFileUrl(doc.file_name)}
-                          download
+          {isLoading ? (
+            <LibraryTableSkeleton />
+          ) : (
+            <tbody className="text-gray-800">
+              {filteredDocuments.length > 0 ? (
+                filteredDocuments.map((doc: any, i: number) => (
+                  <tr
+                    key={i}
+                    className="border-t hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="py-4 px-6 font-medium">{doc.name}</td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {doc.employee_name}
+                    </td>
+                    <td className="py-4 px-6 text-gray-600">
+                      {new Date(doc.creation).toLocaleDateString()}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`text-sm font-medium px-3 py-1 whitespace-nowrap rounded-xl ${doc.status === "Approved"
+                          ? "bg-green-100 text-green-700"
+                          : doc.status === "Acknowledgement Required"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700"
+                          }`}
+                      >
+                        {doc.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      {/* Acknowledgement Required → show Acknowledge button */}
+                      {doc.status === "Acknowledgement Required" && (
+                        <button
+                          onClick={() => {
+                            setSelectedFile(doc.file_name); // preview ke liye
+                            setSelectedDocId(doc.name); // 👈 acknowledgement ke liye
+                          }}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
                         >
-                          Download
-                        </a>}
-                      </div>
-                    )}
+                          Acknowledge
+                        </button>
+                      )}
+
+                      {/* Draft or Approved → show View + Download buttons */}
+                      {(doc.type === "Personal" ||
+                        doc.status === "Approved") && (
+                          <div className="flex gap-2">
+                            {canViewDocument && (
+                              <button
+                                onClick={() => setSelectedFile(doc.file_name)}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all"
+                              >
+                                View
+                              </button>
+                            )}
+                            {canDownloadDocument && (
+                              <a
+                                href={getFileUrl(doc.file_name)}
+                                download
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all"
+                              >
+                                Download
+                              </a>
+                            )}
+                          </div>
+                        )}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="text-center text-gray-500 py-6 font-medium"
+                  >
+                    No documents found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="text-center text-gray-500 py-6 font-medium"
-                >
-                  No documents found.
-                </td>
-              </tr>
-            )}
-          </tbody>
+              )}
+            </tbody>
+          )}
         </table>
       </div>
 
@@ -271,9 +286,9 @@ const DocumentLibrary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50  flex items-center justify-center z-50">
           <div className="bg-white  shadow-lg w-full h-screen flex flex-col">
             <div className="flex justify-between items-center border-b p-4">
-              <h2 className="text-lg font-semibold text-gray-800">
+              <Typography variant="h3" className="font-semibold text-gray-800 text-lg">
                 Document Preview
-              </h2>
+              </Typography>
               <button
                 onClick={closeModal}
                 className="text-gray-500 hover:text-gray-700 text-xl"
@@ -285,7 +300,7 @@ const DocumentLibrary = () => {
             {/* PDF viewer */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={selectedFile + "#toolbar=0"}
+                src={getFileUrl(selectedFile) + "#toolbar=0"}
                 title="Document PDF"
                 className="w-full h-[80vh]"
               ></iframe>

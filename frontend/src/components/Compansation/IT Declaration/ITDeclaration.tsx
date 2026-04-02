@@ -18,17 +18,22 @@ import HRAForm, { type HRAData } from "./Component/HraExemptio";
 import CompareTaxSheetHandler from "./Component/TaxCompare";
 import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
 import CustomDropdown from "../../shared/CustomDropdown";
-import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import toast from "react-hot-toast";
 import CategorySection from "./Component/CategoryDeclarationSelectable";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Form12B from "./Component/Form12B";
 import PreviewOfITDeclaration from "./Component/PerviewOfITDeclaration";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { getActionsEnabled } from "../../../utils/uiPermission";
+import { validateITDeclarationProofs } from "./util/Validation";
+import EditITDeclarationAccess from "./Component/EditITDeclarationAccess";
+import { SquarePen } from "lucide-react";
+import Button from "../../shared/atoms/Button";
 
 type PayrollPeriod = {
   name: string;
-  start_date: string; 
+  start_date: string;
   end_date: string;
 };
 
@@ -37,7 +42,12 @@ const ITDeclarationForm = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
-
+  const { data: userUiPermission } = useGetUiPermission("Compensation");
+  const actionsEnabled = getActionsEnabled(
+    userUiPermission,
+    ["compare_tax", "form_12b", "preview", "edit_decalaration"],
+    "IT Declaration"
+  );
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
   ) as {
@@ -51,10 +61,11 @@ const ITDeclarationForm = () => {
   const [activeMainTab, setActiveMainTab] = useState<"category" | "hra">(
     "category"
   );
-
   const [groupedCategories, setGroupedCategories] = useState<any[]>([]);
   const [activeSection, setActiveSection] = useState("");
+  const [openModal, setOpenModal] = useState(false);
   const [hraData, setHraData] = useState<HRAData | null>(null);
+  console.log(hraData, "hraData-------");
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   useEffect(() => {
     const el = tabRefs.current[activeMainTab];
@@ -66,19 +77,14 @@ const ITDeclarationForm = () => {
       });
     }
   }, [activeMainTab]);
-  console.log("hragggggg", hraData);
-
-
   /* ---------------- Regime ---------------- */
   const newRegimeResponse = useNewRegime(
     user?.employee || null,
     user?.company || null,
     selectedPeriod || null
   ).data as any;
-
   const declarationId = newRegimeResponse?.declaration_id;
   const goHeadWithNewRegimeBool = goHeadWithNewRegime === 1;
-
   /* ---------------- IT Declaration API ---------------- */
   const { data: responseData } = useITDeclarationTabData(
     goHeadWithNewRegimeBool,
@@ -88,7 +94,7 @@ const ITDeclarationForm = () => {
   ) as { data?: any };
   const declarationDoctype = responseData?.doctype;
   const proofId = responseData?.proof_id;
-  const declarationIdFromITDeclaration = proofId || declarationId ;
+  const declarationIdFromITDeclaration = proofId || declarationId;
   const currentDate = new Date().toISOString().split("T")[0];
   const { data: PrrofOfITDeclaration } = useProofDateForITDeclaration(
     currentDate,
@@ -96,36 +102,24 @@ const ITDeclarationForm = () => {
     declarationDoctype || null,
     selectedPeriod || null
   ) as { data?: any };
-  const {data: LTABreakup } = useLTABrakup(user?.employee || "");
-
-  console.log("ProofOfITDeclaration DATA", groupedCategories, );
-
-  // Initial payroll period 
-useEffect(() => {
-  if (!payrollPeriods?.length || selectedPeriod) return;
-
-  const today = new Date(); 
-
-  const matchedPeriod = payrollPeriods.find((p) => {
-    const start = new Date(p.start_date);
-    const end = new Date(p.end_date);
-
-    // inclusive range check
-    return today >= start && today <= end;
-  });
-
-  setSelectedPeriod(
-    matchedPeriod?.name || payrollPeriods[0].name
-  );
-}, [payrollPeriods, selectedPeriod]);
-
-
+  const { data: LTABreakup } = useLTABrakup(user?.employee || "");
+  // Initial payroll period
+  useEffect(() => {
+    if (!payrollPeriods?.length || selectedPeriod) return;
+    const today = new Date();
+    const matchedPeriod = payrollPeriods.find((p) => {
+      const start = new Date(p.start_date);
+      const end = new Date(p.end_date);
+      // inclusive range check
+      return today >= start && today <= end;
+    });
+    setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+  }, [payrollPeriods, selectedPeriod]);
   useEffect(() => {
     if (goHeadWithNewRegimeBool && activeMainTab === "hra") {
       setActiveMainTab("category");
     }
   }, [goHeadWithNewRegimeBool, activeMainTab]);
-
   /* ---------------- Regime flag ---------------- */
   useEffect(() => {
     if (
@@ -135,38 +129,30 @@ useEffect(() => {
       setGoHeadWithNewRegime(newRegimeResponse.go_head_with_new_regime);
     }
   }, [newRegimeResponse]);
-
   /* ---------------- Normalize data ---------------- */
   useEffect(() => {
     if (!responseData) return;
-
     const normalized = normalizeITCategories(responseData);
     setGroupedCategories(normalized);
-
     if (normalized.length) {
       setActiveSection(normalized[0].section);
     }
-
     if (responseData?.hra_exemption) {
       setHraData(responseData.hra_exemption);
     }
   }, [responseData]);
-
   /* ---------------- Derived ---------------- */
   const activeSectionData = groupedCategories.find(
     (sec) => sec.section === activeSection
   );
-
   const sectionCategories = activeSectionData?.categories || [];
   /* ---------------- Handlers ---------------- */
   const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPeriod(e.target.value);
   };
-
   const handleHraChange = (field: keyof HRAData, value: string | number) => {
     setHraData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
-
   /* ---------------- Reset ---------------- */
   const resetForm = () => {
     setGroupedCategories((prev) =>
@@ -183,13 +169,16 @@ useEffect(() => {
     );
   };
   /* ---------------- Submit ---------------- */
- 
   const LTAData = (hraData as unknown as any[])?.[1];
-  console.log("LTA BREAKUP", LTAData );
-  console.log(   LTAData?.items, "LTA items")
   const handleSubmit = () => {
-    const ltaDeclarations =
-    LTAData?.items?.flatMap((cat: any) =>
+    const isValid = validateITDeclarationProofs({
+      groupedCategories,
+      hraData,
+      goHeadWithNewRegimeBool,
+      toast
+    });
+      if (!isValid) return;
+    const ltaDeclarations = LTAData?.items?.flatMap((cat: any) =>
       cat.items
         .filter((item: any) => Number(item?.amount) > 0)
         .map((item: any) => ({
@@ -197,12 +186,12 @@ useEffect(() => {
           exemption_sub_category: item.exemption_sub_category,
           amount: Number(item.amount),
           max_amount: Number(item.max_amount),
-  
+
           attach_proof:
             typeof item.proof_file === "string" && item.proof_file.length > 0
-              ? item.proof_file        // new uploaded file
-              : item.attach_proof || null,   // existing API file
-  
+              ? item.proof_file // new uploaded file
+              : item.attach_proof || null, // existing API file
+
           note: "",
         }))
     );
@@ -211,7 +200,8 @@ useEffect(() => {
         cat.items
           .filter(
             (item: any) =>
-              item.is_selected === true || item.editable === 0 ||
+              item.is_selected === true ||
+              item.editable === 0 ||
               Number(item?.amount) > 0
           )
           .map((item: any) => ({
@@ -220,9 +210,9 @@ useEffect(() => {
             amount: Number(item.amount),
             max_amount: Number(item.max_amount),
             attach_proof:
-              typeof item.proof_file === "string"
-                ? item.proof_file
-                : null,
+              typeof item.proof_file === "string" && item.proof_file.length > 0
+                ? item.proof_file // new uploaded file
+                : item.attach_proof || null,
             note: item.proof_comment || "",
           }))
       )
@@ -239,53 +229,43 @@ useEffect(() => {
         monthly_house_rent: goHeadWithNewRegimeBool
           ? 0
           : Number(hraData?.monthly_hra || 0),
-      
+
         rented_in_metro_city: goHeadWithNewRegimeBool
           ? 0
           : Number(hraData?.rented_in_metro_city || 0),
-      
-        start_date: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.start_date || "",
-      
-        end_date: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.end_date || "",
-      
-        pan: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.pan || "",
-      
-        cunstom_name: goHeadWithNewRegimeBool
-          ? ""
-          : hraData?.owner_name || "",
-      
+
+        start_date: goHeadWithNewRegimeBool ? "" : hraData?.start_date || "",
+
+        end_date: goHeadWithNewRegimeBool ? "" : hraData?.end_date || "",
+
+        pan: goHeadWithNewRegimeBool ? "" : hraData?.pan || "",
+
+        custom_name: goHeadWithNewRegimeBool ? "" : hraData?.owner_name || "",
+
         address_title1: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line1 || "",
-      
+
         address_title2: goHeadWithNewRegimeBool
           ? ""
           : hraData?.address_line2 || "",
-      
+
         attach_proof: goHeadWithNewRegimeBool
           ? null
           : hraData?.proof_file || null,
-      
+
         payroll_period: selectedPeriod,
         employee: user?.employee,
         go_head_with_new_regime: goHeadWithNewRegime,
         declarations,
-      }
-      
+      },
     };
-console.log("Submitting payload", payload);
+    console.log("Submitting payload", payload);
     mutation.mutate(payload, {
       onSuccess: () => {
         toast.success("Declaration submitted successfully");
         resetForm();
         // window.location.reload();
-        
       },
       onError: () => toast.error("Submission failed"),
     });
@@ -298,14 +278,19 @@ console.log("Submitting payload", payload);
 
   const parts = message.split(dateRegex);
 
+  // Register action button in central SalarySlipApp via ref pattern
+
+
+
+
   return (
     <div className="bg-white min-h-screen">
       <header className=" md:p-4  rounded-lg">
         <div
           className={`p-2 mb-2 rounded ${
             PrrofOfITDeclaration?.status === "failed"
-              ? "bg-red-100 text-error"
-              : "bg-green-100 text-success"
+              ? "bg-error-50 text-error"
+              : "bg-success-50 text-success"
           }`}
         >
           <Typography variant="bodySmall">
@@ -319,49 +304,101 @@ console.log("Submitting payload", payload);
           </Typography>
         </div>
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-          <div className="flex flex-col">
-            <Typography variant="h4">IT Declaration</Typography>
-            <Typography variant="bodySmall" color="body2">
-            Track and manage your IT Declarations.
-            </Typography>
+          <div className="flex flex-row justify-between items-start">
+            <div className="flex flex-col">
+              <Typography variant="h4">IT Declaration</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage your IT Declarations.
+              </Typography>
+            </div>
+            {/* Mobile: year dropdown aligned right next to title */}
+            {!isDesktop && (
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+            )}
           </div>
-          <div className="flex flex-col md:flex-row gap-2 md:items-center w-full md:w-auto">
-            <CustomDropdown
-              value={selectedPeriod}
-              onChange={handlePeriodChange}
-              options={
-                payrollPeriods?.map((p) => ({
-                  value: p.name,
-                  label: p.name,
-                })) || []
-              }
-            />
-            <CompareTaxSheetHandler
-              declarationId={declarationId}
-              disabled={false}
-            />
-            <Form12B
-              declarationId={declarationIdFromITDeclaration}
-               docName={declarationDoctype}
-              disabled={false}
-            />
-            <PreviewOfITDeclaration
-              declarationId={declarationIdFromITDeclaration}
-              disabled={false}
-            />
+          {/* Desktop: single horizontal row */}
+          {isDesktop ? (
+            <div className="flex flex-row gap-2 items-center w-auto">
+              <CustomDropdown
+                value={selectedPeriod}
+                onChange={handlePeriodChange}
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+              {actionsEnabled.compare_tax && (
+                <CompareTaxSheetHandler
+                  declarationId={declarationId}
+                  disabled={false}
+                />
+              )}
+              {actionsEnabled.form_12b && (
+                <Form12B
+                  declarationId={declarationIdFromITDeclaration}
+                  docName={declarationDoctype}
+                  disabled={false}
+                />
+              )}
+              {(actionsEnabled.preview && declarationDoctype === "Employee Tax Exemption Proof Submission") &&   (
+                <PreviewOfITDeclaration
+                  declarationId={declarationIdFromITDeclaration}
+                  disabled={false}
+                />
+              )}
             <Button
-              onClick={handleSubmit}
-              disabled={PrrofOfITDeclaration?.status === "failed"}
-              className="bg-primary text-white py-2 rounded text-xs w-full md:w-auto"
-            >
-              Submit
-            </Button>
-          </div>
+            variant="contain"
+            size="md"
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
+            </div>
+          ) : (
+            /* Mobile: stacked layout for action buttons */
+            <div className="flex flex-col gap-3 w-full">
+              {/* Action buttons — evenly spaced row */}
+              <div className="flex flex-row gap-2 [&>button]:flex-1 [&>button]:w-0 [&>button]:min-w-0">
+                <CompareTaxSheetHandler
+                  declarationId={declarationId}
+                  disabled={false}
+                />
+                <Form12B
+                  declarationId={declarationIdFromITDeclaration}
+                  docName={declarationDoctype}
+                  disabled={false}
+                />
+                <PreviewOfITDeclaration
+                  declarationId={declarationIdFromITDeclaration}
+                  disabled={false}
+                />
+              <Button
+                onClick={handleSubmit}
+                disabled={PrrofOfITDeclaration?.status === "failed"}
+              >
+                Submit
+              </Button>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex flex-col md:flex-row gap-2 md:items-center mt-4">
           {isDesktop && <p className="text-gray-500">Tax Regime</p>}
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
+            disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(1)}
               className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
                 goHeadWithNewRegime === 1
@@ -372,6 +409,7 @@ console.log("Submitting payload", payload);
               New Regime
             </button>
             <button
+             disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(0)}
               className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
                 goHeadWithNewRegime === 0
@@ -381,66 +419,110 @@ console.log("Submitting payload", payload);
             >
               Old Regime
             </button>
+            
+           
+
           </div>
+          <div className=" flex gap-2 items-center">
+      
+      {/* Open Button */}
+     {actionsEnabled?.edit_decalaration && ( <button
+        onClick={() => setOpenModal(true)}
+        className=" text-gray-500 rounded-xl"
+      >
+        <SquarePen className="h-5 w-5" />
+      </button>)}
+
+      {/* Modal */}
+      <EditITDeclarationAccess
+              isOpen={openModal}
+              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}/>
+    </div>
         </div>
-
         {/* Tabs */}
-
         <div className="w-full">
-          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-2 mt-4 border-b px-20 md:px-0">
-            <button
-             ref={(el) => {tabRefs.current["category"] = el;}}
-              onClick={() => setActiveMainTab("category")}
-              className={`px-4 whitespace-nowrap py-2 ${
-                activeMainTab === "category"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-gray-600"
-              }`}
-            >
-              Other Investment Declaration
-            </button>
+        <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-6 mt-4 border-b border-gray-200">
+  <button
+    ref={(el) => {
+      tabRefs.current["category"] = el;
+    }}
+    onClick={() => setActiveMainTab("category")}
+    className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+    ${
+      activeMainTab === "category"
+        ? "text-primary"
+        : "text-gray-500 hover:text-gray-800"
+    }`}
+  >
+    Other Investment Declaration
 
-            {!goHeadWithNewRegimeBool && (
-              <button
-                ref={(el) => {tabRefs.current["hra"] = el;}}
-                onClick={() => setActiveMainTab("hra")}
-                className={`px-4 whitespace-nowrap py-2 ${
-                  activeMainTab === "hra"
-                    ? "border-b-2 border-primary text-primary"
-                    : "text-gray-600"
-                }`}
-              >
-                HRA & Other (U/S 10)
-              </button>
-            )}
-          </div>
+    {activeMainTab === "category" && (
+      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+    )}
+  </button>
+
+  {!goHeadWithNewRegimeBool && (
+    <button
+      ref={(el) => {
+        tabRefs.current["hra"] = el;
+      }}
+      onClick={() => setActiveMainTab("hra")}
+      className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+      ${
+        activeMainTab === "hra"
+          ? "text-primary"
+          : "text-gray-500 hover:text-gray-800"
+      }`}
+    >
+      HRA & Other (U/S 10)
+
+      {activeMainTab === "hra" && (
+        <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+      )}
+    </button>
+  )}
+</div>
           {activeMainTab === "hra" && hraData && (
-            <HRAForm hraData={hraData} onChange={handleHraChange} LATABreakup = { LTABreakup}/>
+            <HRAForm
+              hraData={hraData}
+              onChange={handleHraChange}
+              LATABreakup={LTABreakup}
+            />
           )}
           {activeMainTab === "category" && (
             <>
-              <div className="flex flex-wrap md:flex-nowrap gap-2 mt-4">
-                {groupedCategories.map((sec) => (
-                  <button
-                    key={sec.section}
-                    onClick={() => setActiveSection(sec.section)}
-                    className={`px-4 py-1 rounded-3xl text-xs ${
-                      activeSection === sec.section
-                        ? "bg-primary text-white"
-                        : "bg-gray-200"
-                    }`}
-                  >
-                    {sec.section}
-                  </button>
-                ))}
-              </div>
+<div className="flex flex-wrap md:flex-nowrap items-center gap-2 mt-4 p-1 bg-gray-100/70 backdrop-blur-sm rounded-xl w-fit">
+  {groupedCategories.map((sec, index) => {
+    const active = activeSection === sec.section;
+
+    return (
+      <div key={sec.section} className="flex items-center">
+        <button
+          onClick={() => setActiveSection(sec.section)}
+          className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200
+          ${
+            active
+              ? "bg-white text-primary shadow-sm"
+              : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
+          }`}
+        >
+          {sec.section}
+        </button>
+
+        {index !== groupedCategories.length - 1 && (
+          <div className="w-px h-5 bg-gray-300 mx-1"></div>
+        )}
+      </div>
+    );
+  })}
+</div>
               <CategorySection
-      sectionCategories={sectionCategories}
-      activeSection={activeSection}
-      lockingDate={PrrofOfITDeclaration?.status}
-      responseDoctype={responseData?.doctype}
-      setGroupedCategories={setGroupedCategories}
-    />
+                sectionCategories={sectionCategories}
+                activeSection={activeSection}
+                lockingDate={PrrofOfITDeclaration?.status}
+                responseDoctype={responseData?.doctype}
+                setGroupedCategories={setGroupedCategories}
+              />
             </>
           )}
         </div>

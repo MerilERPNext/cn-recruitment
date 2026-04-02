@@ -12,7 +12,6 @@ import {
   getAllShiftBlocks,
   getAllShiftLocations,
   getAllWeekOffs,
-  getAttendanceAssignmentPolicies,
 } from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
@@ -28,8 +27,10 @@ import type {
   EmployeeShiftSummary,
   EmployeeTeamCheckIns,
   IOvertimeLog,
+  OvertimeJournalData,
   PolicyQuestion,
   UserRoles,
+  WeeklyOffDoc,
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
@@ -195,6 +196,20 @@ export const useAllAttendanceRequests = (
     ...options,
   });
 };
+export const useWeeklyOff = (
+  filters?: FilterCondition[],
+  options?: any
+): UseQueryResult<WeeklyOffDoc[], Error> => {
+  return useQuery<WeeklyOffDoc[], Error>({
+    enabled: !!filters,
+    queryKey: ["weekly-off", "all", filters],
+    queryFn: () =>
+      attendanceService.getWeeklyOff(filters),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+    ...options,
+  });
+};
 export const useGetUserRoles = (
   filters?: FilterCondition[]
 ): UseQueryResult<UserRoles, Error> => {
@@ -205,13 +220,26 @@ export const useGetUserRoles = (
     ...defaultQueryOptions,
   });
 };
+
+export const useGetOvertimeJournal = (
+  employee: string,
+  date: string
+): UseQueryResult<OvertimeJournalData, Error> => {
+  return useQuery<OvertimeJournalData, Error>({
+    queryKey: ["overtime-journal", employee, date],
+    queryFn: () => attendanceService.getOvertimeJournal(employee, date),
+    refetchOnWindowFocus: true,
+    ...defaultQueryOptions,
+  });
+};
 export const useGetToDoWithReferenceDoc = (
-  todo_id: string
+  todo_id?: string,
+  reference_name?: string
 ): UseQueryResult<any, Error> => {
   return useQuery<any, Error>({
-    queryKey: ["todo-refdocs", todo_id],
-    queryFn: () => attendanceService.getToDoWithReferenceDoc(todo_id),
-    enabled: !!todo_id,
+    queryKey: ["todo-refdocs", todo_id, reference_name],
+    queryFn: () => attendanceService.getToDoWithReferenceDoc(todo_id, reference_name),
+    enabled: !!todo_id || !!reference_name,
     refetchOnWindowFocus: true,
     ...defaultQueryOptions,
   });
@@ -319,10 +347,16 @@ export const useGetAllEmployeeRegularize = (
 
 
 export function useMarkBulkAttendance() {
-
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
       attendanceService.markBulkAttendance(body),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+    },
     onError: (e) => {
       console.log(e);
     },
@@ -504,6 +538,9 @@ export const useAttendanceRequestAttachments = (employee: string, date: string, 
     },
     enabled: !!employee && !!request_type && !!date,
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 };
 
@@ -596,19 +633,38 @@ export function useCreatePlannedOvertimeRequest() {
     },
   });
 }
+
+export function useUpdatePlannedOvertimeRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) =>
+      attendanceService.updatePlannedOvertimeRequest(body),
+    onSuccess: () => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
+      queryClient.invalidateQueries({ queryKey: ["employee-attendance-summary"] });
+      queryClient.invalidateQueries({ queryKey: ["get-All-Events-And-Attendance"] });
+    },
+    onError: (e) => {
+      console.log(e);
+    },
+  });
+}
+
 export const useAllAttendancePolicies = (filters?: FilterCondition[]) => {
   return useQuery({
     queryKey: ["all-attendance-policies", filters],
     queryFn: () => getAllAttendancePolicies(filters),
   });
 };
-export const useAllAttendanceAssignmentPolicies = (employee: string) => {
-  return useQuery({
-    queryKey: ["all-attendance-assignment-policies", employee],
-    queryFn: () => getAttendanceAssignmentPolicies(employee),
-    enabled: !!employee,
-  });
-};
+// export const useAllAttendanceAssignmentPolicies = (employee: string) => {
+//   return useQuery({
+//     queryKey: ["all-attendance-assignment-policies", employee],
+//     queryFn: () => getAttendanceAssignmentPolicies(employee),
+//     enabled: !!employee,
+//   });
+// };
 
 export const useAllWeekOffs = (filters?: FilterCondition[]) => {
   return useQuery({
@@ -658,5 +714,22 @@ export const useDataOfAttendanceDetails = (selectedReporties: string, selectedDa
       // ✅ handle frappe-style response
       return Array.isArray(res?.data) ? res.data : [];
     },
+  });
+};
+
+
+export const useShiftsForEmployees = (empId: string) => {
+  return useQuery({
+    queryKey: ["shifts-for-employees", empId],
+    queryFn: () => attendanceService.getShiftsForEmployees(empId),
+    enabled: !!empId,
+  });
+};
+
+export const usePoliciesForEmployees = (empId: string) => {
+  return useQuery({
+    queryKey: ["policies-for-employees", empId],
+    queryFn: () => attendanceService.getPoliciesForEmployees(empId),
+    enabled: !!empId,
   });
 };

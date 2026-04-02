@@ -1,9 +1,12 @@
 import React from "react";
-import HeaderBar from "../../HeaderBar";
 import { CompensatoryRequestItem } from "./CompensatoryRequestCard";
 import { format } from "date-fns";
 import { usePayCompOff } from "../../../hooks/useLeaves";
 import toast from "react-hot-toast";
+import { Typography } from "../../shared/atoms/Typography";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import { Wallet } from "lucide-react";
+import Button from "../../shared/atoms/Button";
 
 interface CompOffDetailsModalProps {
   compOff: CompensatoryRequestItem;
@@ -21,12 +24,12 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
       onSuccess: (response: any) => {
         onClose();
         toast.success(
-          `Payment request successful: ${response.message || compOff.name}`
+          `Payment request successful: ${response.message || compOff.name}`,
         );
       },
       onError: (error: any) => {
         toast.error(
-          `Payment request failed: ${error.message || "Unknown error"}`
+          `Payment request failed: ${error.message || "Unknown error"}`,
         );
       },
     });
@@ -41,56 +44,85 @@ const CompOffDetailsModal: React.FC<CompOffDetailsModalProps> = ({
     : "N/A";
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <HeaderBar title="Compensatory Off Details" onBack={onClose} />
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-full h-full md:h-auto md:max-w-xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography variant="h4" className="font-semibold text-gray-900">
+            Compensatory Off Details
+          </Typography>
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="bg-white shadow-md rounded-xl p-4 space-y-3 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="base-title">{compOff.leave_type}</div>
-            <span
-              className={`px-2 py-1 text-xs font-medium rounded-xl ${
-                compOff.custom_status?.toLowerCase() === "issued"
-                  ? "bg-yellow-100 text-yellow-800"
-                  : compOff.custom_status?.toLowerCase() === "allocated"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {compOff.custom_status}
-            </span>
-          </div>
-
-          <div className="flex justify-between text-sm text-gray-700 border-t pt-3">
-            <div className="flex flex-col gap-1">
-              <p className="card-title">From</p>
-              <p className="card-subtitle">{formattedFromDate}</p>
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="card-title">To</p>
-              <p className="card-subtitle">{formattedToDate}</p>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <p className="card-title mb-1">Reason</p>
-            <div className="bg-gray-100 rounded-md p-2 text-sm text-gray-800">
-              {compOff.reason || "—"}
-            </div>
-          </div>
-
-          {compOff?.pay_button_required && (
-            <div className=" pt-3 flex justify-end">
-              <button
-                onClick={handlePay}
-                disabled={isPending}
-                className="bg-blue-600 rounded-md text-white px-4 py-1"
-              >
-                {isPending ? "Processing..." : "Pay"}
-              </button>
-            </div>
-          )}
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition"
+          >
+            ✕
+          </button>
         </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+          {/* Leave Type + Status */}
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Leave Type</Typography>
+
+              <Typography variant="mobileCardValue" className="font-semibold">
+                {compOff.leave_type}
+              </Typography>
+            </div>
+
+            <StatusBadge status={compOff.custom_status} />
+          </div>
+
+          {/* Date Section */}
+          <div className="flex justify-between w-full">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">From</Typography>
+              <Typography variant="mobileCardValue">
+                {formattedFromDate}
+              </Typography>
+            </div>
+
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel">To</Typography>
+              <Typography variant="mobileCardValue">
+                {formattedToDate}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Reason */}
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel">Reason</Typography>
+
+            <Typography variant="mobileCardValue">
+              {compOff.reason || "—"}
+            </Typography>
+          </div>
+        </div>
+
+        {/* Bottom Action */}
+        {compOff?.pay_button_required && (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <Button
+              fullWidth
+              size="md"
+              variant="contain"
+              onClick={handlePay}
+              disabled={isPending}
+              icon={<Wallet className="w-4 h-4" />}
+            >
+              {isPending ? "Processing..." : "Pay"}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

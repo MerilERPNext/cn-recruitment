@@ -1,3 +1,4 @@
+import { formatCurrency } from "../../../../utils/currency"
 import { Card } from "../../../shared/atoms/Card"
 import { Typography } from "../../../shared/atoms/Typography"
 import { Loan } from "../Type/loan"
@@ -7,14 +8,7 @@ interface LoanDetailsProps {
 }
 
 export default function LoanDetails({ loan }: LoanDetailsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount)
-  }
+
 
   return (
     // CHANGED: Using the reusable .my-info-card class for consistency.

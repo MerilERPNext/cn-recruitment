@@ -25,6 +25,7 @@ export interface Action {
     label: string;
     type: ActionType;
     href?: string;
+    disabled?: boolean;
     onClick?: () => void;
 }
 
@@ -126,6 +127,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
                             key={idx}
                             onClick={action.onClick}
                             size="sm"
+                            disabled={action.disabled}
                             variant={action.type === "primary" ? "soft" : "subtle"}
                             className="font-bold text-[9px] uppercase tracking-widest px-3 py-1 h-auto"
                         >

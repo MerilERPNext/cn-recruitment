@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
 
@@ -56,7 +56,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
             {
               name:
                 storedData.custom_attach_receipt.substring(
-                  storedData.custom_attach_receipt.lastIndexOf("/") + 1
+                  storedData.custom_attach_receipt.lastIndexOf("/") + 1,
                 ) || "Attached File",
               originalName: "Attached File",
               size: 1,
@@ -70,7 +70,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     };
 
     return Object.fromEntries(
-      Object.entries(formReadyData).filter(([, value]) => value !== undefined)
+      Object.entries(formReadyData).filter(([, value]) => value !== undefined),
     );
   };
 
@@ -115,7 +115,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           }
         }
       } else if (calcParams?.units) {
-        toast.error("Failed to calculate amount.");
+        toast.error(`Failed to calculate amount.`);
       }
     }
   }, [calcData, calcParams]);
@@ -183,6 +183,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
                 key: field.fieldname,
                 label: labelWithAsterisk,
                 input: true,
+                hidden: !field.required,
                 validate: {
                   required: !!field.required,
                   customMessage: `${field?.label} is required`,
@@ -245,7 +246,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
                 data: {
                   url: `/api/method/chatnext_expense_trips.employee_advance.get_allowed_currencies?employee=${employeeId}&advance_type=${encodeURIComponent(
-                    advanceType || ""
+                    advanceType || "",
                   )}`,
                   headers: [{ key: "Accept", value: "application/json" }],
                 },
@@ -323,18 +324,18 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           placeholder: "Select Expense Advance Type",
           dataSrc: "url",
           data: {
-            url: `/api/resource/Expense%20Claim%20Type?fields=["name"]&limit_page_length=100`,
+            url: `/api/resource/Expense%20Claim%20Type?fields=["name","expense_type"]&limit_page_length=100`,
             headers: [{ key: "Accept", value: "application/json" }],
           },
           selectValues: "data",
           valueProperty: "name",
-          template: "<span>{{ item.name }}</span>",
+          template: "<span>{{ item.expense_type }}</span>",
           validate: { required: true },
           input: true,
         },
       ],
     }),
-    []
+    [],
   );
 
   const [formSchema, setFormSchema] = useState<any>(initialSchema);
@@ -347,8 +348,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     try {
       const res = await fetch(
         `/api/method/chatnext_expense_trips.expense_claim.advance_get_expense_type_fields?expense_type=${encodeURIComponent(
-          expenseType
-        )}`
+          expenseType,
+        )}`,
       );
       const data = await res.json();
       const fields = data.message?.fields || [];
@@ -366,7 +367,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
             return { ...comp, disabled: true };
           }
           return comp;
-        }
+        },
       );
 
       const twoColumnRows = [];
@@ -429,8 +430,8 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
     : "Add Expense Advance Breakup";
 
   return (
-    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-xl rounded-lg shadow-xl overflow-visible p-4">
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-end md:items-center justify-center md:p-4">
+      <div className="bg-white w-full h-full md:h-auto md:max-w-xl md:min-h-[520px] md:rounded-lg shadow-xl overflow-hidden flex flex-col">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="font-semibold text-lg">{modalTitle}</h2>
           <button
@@ -442,7 +443,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
           </button>
         </div>
 
-        <div className="p-2 max-h-[70vh] min-h-[50vh] overflow-y-auto">
+        <div className="p-2 flex-1 overflow-y-auto">
           <Form
             key={formKey}
             form={formSchema}
@@ -524,10 +525,10 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
               }
 
               const startDatetime = formatMySQLDatetime(
-                combinedData.start_datetime
+                combinedData.start_datetime,
               );
               const endDatetime = formatMySQLDatetime(
-                combinedData.end_datetime
+                combinedData.end_datetime,
               );
               let finalAttachValue = attachReceiptValue;
 

@@ -16,9 +16,9 @@ frappe.ui.form.on("Employee Separation", {
             });
         }
     },
-    custom_actual_last_working_date: async function (frm) {
-        if (frm.doc.custom_actual_last_working_date) {
-            let boardingDate = frappe.datetime.add_days(frm.doc.custom_actual_last_working_date, -2);
+    custom_final_last_working_day: async function (frm) {
+        if (frm.doc.custom_final_last_working_day) {
+            let boardingDate = frappe.datetime.add_days(frm.doc.custom_final_last_working_day, -2);
 
             if (frm.doc.employee) {
                 // Call Frappe API to check holidays
@@ -44,7 +44,7 @@ frappe.ui.form.on("Employee Separation", {
                 callback: function (r) {
                     if (r.message) {
                         console.log(r.message)
-                        frm.set_value("custom_actual_last_working_date", r.message.relieving_date);
+                        frm.set_value("custom_final_last_working_day", r.message.relieving_date);
                         frm.set_value("custom_number_days_served", r.message.days_served);
                         frm.set_value("custom_exceeding_noof_days", r.message.days_exceeded === 0 ? "" : r.message.days_exceeded);
                         frm.set_value("custom_notice_period_served_", r.message.custom_notice_period_served);
@@ -52,7 +52,7 @@ frappe.ui.form.on("Employee Separation", {
                 }
             })
         } else {
-            frm.set_value("custom_actual_last_working_date", frm.doc.custom_last_working_date);
+            frm.set_value("custom_final_last_working_day", frm.doc.custom_last_working_date);
             frm.set_value("custom_number_days_served", "");
             frm.set_value("custom_exceeding_noof_days", "");
             frm.set_value("custom_notice_period_served_","");
@@ -80,7 +80,7 @@ frappe.ui.form.on("Employee Separation", {
         await set_actual_last_working_date(frm);
     },
     before_save: async function(frm) {
-        if (!frm.doc.custom_actual_last_working_date) {
+        if (!frm.doc.custom_final_last_working_day) {
             await set_actual_last_working_date(frm);
         }
     }
@@ -90,21 +90,17 @@ async function set_actual_last_working_date(frm) {
     if (!frm.doc.employee) return;
 
     let resignation_date = frm.doc.custom_resignation_date || frappe.datetime.get_today();
-    console.log("Resignation Date:", resignation_date);
 
-    let emp = await frappe.db.get_value("Employee", frm.doc.employee, "employment_type");
-    if (emp && emp.message && emp.message.employment_type) {
-        let type = await frappe.db.get_value("Employment Type", emp.message.employment_type, "custom_notice_period_days");
-        if (type && type.message) {
-            let notice_period_days = type.message.custom_notice_period_days || 0;
-            console.log("Notice Period:", notice_period_days);
-
-            let last_working_date = frappe.datetime.add_days(resignation_date, notice_period_days);
-            console.log("Final LWD:", last_working_date);
-
-            await frm.set_value("custom_actual_last_working_date", last_working_date);
-            console.log("Value Set");
+    let r = await frappe.call({
+        method: "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_api",
+        args: {
+            employee: frm.doc.employee,
+            resignation_date: resignation_date
         }
+    });
+
+    if (r && r.message) {
+        await frm.set_value("custom_final_last_working_day", r.message);
     }
 }
 

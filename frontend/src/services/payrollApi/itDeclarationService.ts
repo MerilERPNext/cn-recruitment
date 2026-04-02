@@ -3,7 +3,7 @@ import axios from "axios";
 import FrappeAPI from "../../utils/frappeAPI";
 
 type FetchHTMLArgs = {
-  declaration_id: string;
+  declaration_id?: string;
   doctype?: string;
   docname?: string;
   proof_id?: string;
@@ -86,7 +86,6 @@ export const getPerviewOfITDeclaration = async (declarationId: string,) => {
     "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.tds_projection.get_tds_projection_poi_print_html",
     {
       proof_id: declarationId,
-      declaration_id: ""
     }
   );
 };
@@ -117,8 +116,5 @@ export const getLTABrakup = async (employee: string | null) => {
         employee: employee,
     }
   );
-
-console.log("LTA BREAKUP RESPONSE", response);
-
   return response;
 };

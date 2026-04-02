@@ -46,7 +46,13 @@ const AttendanceLayoutContent: React.FC = () => {
     "create_attendance_request",
     "Attendance Summary",
   );
+  const canRequestOvertime = isActionEnabled(
+    userUiPermission,
+    "create_overtime_request",
+    "Planned Overtime",
+  );
 
+  
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
@@ -69,26 +75,53 @@ const AttendanceLayoutContent: React.FC = () => {
     };
   }, [showActionsDropdown]);
 
-  const tabs: Tab[] = useMemo(
-    () => {
-      if (permittedPages && permittedPages?.length > 0) {
-        const tabList = [
-          { label: "Attendance Summary", key: "summary", permissionKey: "Attendance Summary" },
-          { label: "My Attendance", key: "calendar-views", permissionKey: "My Attendance" },
-          { label: "Team Attendance", key: "team-attendance", permissionKey: "Team Attendance" },
-          { label: "My Requests", key: "attendance-request", permissionKey: "My Requests" },
-          { label: "Team Requests", key: "team-attendance-requests", permissionKey: "Team Requests" },
-          { label: "Planned Overtime", key: "my-overtime-requests", permissionKey: "My Overtime" },
-          { label: "Team Overtime", key: "team-overtime-requests", permissionKey: "Team Overtime" },
-        ]
-        // return tabList
-        return tabList.filter((tab) => permittedPages?.includes(tab?.permissionKey))
-      } else {
-        return []
-      }
-    },
-    [permittedPages],
-  );
+  const tabs: Tab[] = useMemo(() => {
+    if (permittedPages && permittedPages?.length > 0) {
+      const tabList = [
+        {
+          label: "Attendance Summary",
+          key: "summary",
+          permissionKey: "Attendance Summary",
+        },
+        {
+          label: "My Attendance",
+          key: "calendar-views",
+          permissionKey: "My Attendance",
+        },
+        {
+          label: "Team Attendance",
+          key: "team-attendance",
+          permissionKey: "Team Attendance",
+        },
+        {
+          label: "My Requests",
+          key: "attendance-request",
+          permissionKey: "My Requests",
+        },
+        {
+          label: "Team Requests",
+          key: "team-attendance-requests",
+          permissionKey: "Team Requests",
+        },
+        {
+          label: "Planned Overtime",
+          key: "my-overtime-requests",
+          permissionKey: "Planned Overtime",
+        },
+        {
+          label: "Team Overtime",
+          key: "team-overtime-requests",
+          permissionKey: "Team Overtime",
+        },
+      ];
+      // return tabList
+      return tabList.filter((tab) =>
+        permittedPages?.includes(tab?.permissionKey),
+      );
+    } else {
+      return [];
+    }
+  }, [permittedPages]);
 
   const calendarSubTabs = useMemo(
     () => [{ label: "My Attendance Details", key: "emp-attendance" }],
@@ -99,7 +132,9 @@ const AttendanceLayoutContent: React.FC = () => {
   const navigate = useNavigate();
 
   // Initialize state with default values
-  const [activeTab, setActiveTab] = useState<Tab>(tabs[0] || { key: "", label: "" });
+  const [activeTab, setActiveTab] = useState<Tab>(
+    tabs[0] || { key: "", label: "" },
+  );
   const [activeSubTab, setActiveSubTab] = useState<string>("emp-attendance");
 
   useEffect(() => {
@@ -140,7 +175,10 @@ const AttendanceLayoutContent: React.FC = () => {
   const mobileLayout = (
     <div className="min-h-screen">
       {/* Fixed Header */}
-      <HeaderBar title={activeTab?.label || "Attendance"} onBack={() => navigate("/webapp")} />
+      <HeaderBar
+        title={activeTab?.label || "Attendance"}
+        onBack={() => navigate("/webapp")}
+      />
       {tabs.some((tab) => tab.key === activeTab?.key) && (
         <div className="sticky top-[58px] z-40 border-t border-gray-200">
           <NavigationTabs
@@ -182,6 +220,8 @@ const AttendanceLayoutContent: React.FC = () => {
   const isOvertimePage =
     currentPathSegment === "my-overtime-requests" ||
     currentPathSegment === "team-overtime-requests";
+
+    console.log(isOvertimePage && plannedOvertimAllowed && canRequestOvertime, "can show overtime request")
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (
@@ -191,7 +231,7 @@ const AttendanceLayoutContent: React.FC = () => {
             // onClick={() => setShowActionsDropdown(!showActionsDropdown)}
             variant="contain"
             onClick={() => {
-              if (isOvertimePage && plannedOvertimAllowed) {
+              if (isOvertimePage && plannedOvertimAllowed && canRequestOvertime) {
                 setShowOvertimeRequest(true);
               } else {
                 setShowAttendanceRequest(true);
@@ -199,8 +239,8 @@ const AttendanceLayoutContent: React.FC = () => {
             }}
             size="lg"
           >
-            {isOvertimePage && plannedOvertimAllowed
-              ? "+ Overtime"
+            {isOvertimePage && plannedOvertimAllowed && canRequestOvertime
+              ? "+ Overtime Request"
               : "+ Attendance Request"}
             {/* <ChevronDown
             className={`w-4 h-4 transition-transform duration-200 ${

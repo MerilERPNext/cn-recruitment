@@ -3,7 +3,6 @@ import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
 import {
   useCurrentEmployeeAllDetails,
-  useShowAttendanaceAssignmentButton,
   useFileUpload,
   useGetEmployeeDetailsByEmpIdForProfile,
 } from "../../hooks/useEmployee";
@@ -54,12 +53,18 @@ const EMPLOYEMENT_STATUS = {
 
 const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { targetEmployeeId } = useTargetUser();
+  const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
+    useTargetUser();
   const { data: userId } = useLoggedInUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canAttendanceAssignments = isActionEnabled(
     userUiPermission,
     "attendance_assignments",
+    "Employee Profile",
+  );
+  const canShowEmployeeStatus = isActionEnabled(
+    userUiPermission,
+    "show_employee_status",
     "Employee Profile",
   );
   const canAppreciate = isActionEnabled(
@@ -85,10 +90,7 @@ const EmployeeProfile: React.FC = () => {
     isLoading: userIsLoading,
   } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
   const user = empData?.employee;
-  const { data: showAttendanceAssignment } = useShowAttendanaceAssignmentButton(
-    employeeId,
-    currentUser?.employee || "",
-  );
+
   const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
     useState(false);
   const navigate = useNavigate();
@@ -136,18 +138,37 @@ const EmployeeProfile: React.FC = () => {
     }
   };
 
+
+
   const tabs: Tab[] = useMemo(
     () => [
-      { key: "overview", label: "Overview" },
-      { key: "personal-information", label: "Personal Information" },
-      { key: "employment-history", label: "Employment History" },
-      { key: "reporting-details", label: "Reporting Details" },
-      { key: "employee-holidays", label: "Employee Holidays" },
-      { key: "employee-documents", label: "Employee Documents" },
+      { key: "overview", label: "Overview", permissionKey: 'show_overview' },
+      { key: "personal-information", label: "Personal Information", permissionKey: "show_personal_information" },
+      { key: "employment-history", label: "Employment History", permissionKey: "show_employment_history" },
+      { key: "reporting-details", label: "Reporting Details", permissionKey: "show_reporting_details" },
+      { key: "employee-holidays", label: "Employee Holidays", permissionKey: "show_employee_holidays" },
+      { key: "employee-documents", label: "Employee Documents", permissionKey: "show_employee_documents" },
     ],
     [],
   );
-  const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
+  const permittedTabs = useMemo(() => {
+    return tabs.filter((tab) => {
+      if (!tab.permissionKey) return true;
+      return isActionEnabled(
+        userUiPermission,
+        tab.permissionKey,
+        "Employee Profile",
+      );
+    });
+  }, [tabs, userUiPermission]);
+
+  const [activeTab, setActiveTab] = useState<string>("");
+
+  useEffect(() => {
+    if (permittedTabs.length > 0 && !activeTab) {
+      setActiveTab(permittedTabs[0].key);
+    }
+  }, [permittedTabs, activeTab]);
 
   // Create refs for each section
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -243,7 +264,7 @@ const EmployeeProfile: React.FC = () => {
     return () => {
       observer.disconnect();
     };
-  }, [isDesktop]); // Re-run when layout changes
+  }, [isDesktop, permittedTabs]); // Re-run when layout OR tabs change
   const HeaderInfoSkeleton = () => {
     return (
       <div className="border rounded-tl-lg rounded-tr-lg p-6">
@@ -278,7 +299,15 @@ const EmployeeProfile: React.FC = () => {
           <HeaderInfoSkeleton />
         ) : (
           <div className="bg-white shadow">
-            <HeaderBar title="Profile" onBack={() => navigate(-1)} />
+            <HeaderBar
+              title="Profile"
+              onBack={() => {
+                if (isViewingOtherUser) {
+                  clearTargetEmployee();
+                }
+                navigate("/webapp/");
+              }}
+            />
             <input
               ref={fileInputRef}
               type="file"
@@ -308,8 +337,8 @@ const EmployeeProfile: React.FC = () => {
               </div>
               <div className="flex flex-col flex-1 min-w-0">
                 <Typography
-                  variant="h3"
-                  className="font-bold truncate tracking-tight"
+                  variant="h4"
+                  className="font-bold truncate tracking-tight text-lg sm:text-xl"
                 >
                   {user?.employee_name}
                 </Typography>
@@ -359,7 +388,7 @@ const EmployeeProfile: React.FC = () => {
                   </Typography>
                 )}
                 <div className="flex flex-wrap items-center gap-3 mt-4">
-                  {user?.custom_employment_status && (
+                  {user?.custom_employment_status && canShowEmployeeStatus && (
                     <Badge
                       label={
                         EMPLOYEMENT_STATUS[
@@ -384,20 +413,26 @@ const EmployeeProfile: React.FC = () => {
                       }
                     />
                   )}
-                  {showAttendanceAssignment && (
-                    <Button
-                      icon={<NotebookPen size={12} />}
-                      size="sm"
-                      variant="subtle"
-                      onClick={() => setIsAttendanceAssignmentsOpen(true)}
-                      className="text-[10px] font-bold uppercase tracking-wider"
-                    >
-                      Attendance
-                    </Button>
-                  )}
-                  {canAppreciate && <Appreciations />}
+
                 </div>
               </div>
+            </div>
+            <div className="flex gap-2 mt-4 mx-2">
+              {canAppreciate && <Appreciations />}
+              {
+                canAttendanceAssignments && (
+                  <Button
+                    icon={<NotebookPen size={14} />}
+                    size="sm"
+                    variant="soft"
+                    onClick={() =>
+                      setIsAttendanceAssignmentsOpen(true)
+                    }
+                    className="text-[10px] font-bold uppercase tracking-wider"
+                  >
+                    Attendance Assignment
+                  </Button>
+                )}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -405,7 +440,7 @@ const EmployeeProfile: React.FC = () => {
         {/* Horizontal Tabs */}
         <div className="bg-white border-b sticky top-0 z-10">
           <div className="flex overflow-x-auto scrollbar-hide px-4 py-2">
-            {tabs.map((tab) => (
+            {permittedTabs?.map((tab) => (
               <Button
                 key={tab.key}
                 variant="subtle"
@@ -422,14 +457,14 @@ const EmployeeProfile: React.FC = () => {
         </div>
         {/* All Sections Rendered */}
         <div className="bg-white-100">
-          {tabs.map((tab) => (
+          {permittedTabs?.map((tab) => (
             <div
               key={tab.key}
               ref={(el) => {
                 sectionRefs.current[tab.key] = el;
               }}
               data-section={tab.key}
-              className="px-4 py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
+              className="px-4 py-3 md:py-6 scroll-mt-40 border-b border-gray-50 last:border-0"
             >
               {tabContent[tab.key]}
             </div>
@@ -509,7 +544,7 @@ const EmployeeProfile: React.FC = () => {
                         )}
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
-                        {user?.custom_employment_status && (
+                        {canShowEmployeeStatus && user?.custom_employment_status && (
                           <Badge
                             label={
                               EMPLOYEMENT_STATUS[
@@ -577,7 +612,7 @@ const EmployeeProfile: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
-                          {showAttendanceAssignment &&
+                          {
                             canAttendanceAssignments && (
                               <Button
                                 icon={<NotebookPen size={14} />}
@@ -597,7 +632,7 @@ const EmployeeProfile: React.FC = () => {
                     </div>
                   </div>
                 </Card>
-                <Card className="flex items-center gap-8 flex-1" shadow="none">
+                <Card className="flex items-center gap-8  flex-1" shadow="none">
                   <AwardsSection isDesktop={true} />
                 </Card>
               </div>
@@ -607,7 +642,7 @@ const EmployeeProfile: React.FC = () => {
           <div className="rounded-md">
             <div className="bg-white sticky top-0 rounded-t-md z-10">
               <div className="flex overflow-x-auto scrollbar-hide px-6 py-2 tracking-wide">
-                {tabs.map((tab) => (
+                {permittedTabs?.map((tab) => (
                   <button
                     key={tab.key}
                     onClick={() => scrollToSection(tab.key)}
@@ -622,7 +657,7 @@ const EmployeeProfile: React.FC = () => {
               </div>
             </div>
 
-            {tabs.map((tab) => (
+            {permittedTabs?.map((tab) => (
               <div
                 key={tab.key}
                 ref={(el) => {

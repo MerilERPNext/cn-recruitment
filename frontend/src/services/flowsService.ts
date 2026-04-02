@@ -10,6 +10,25 @@ export const getDifinitionNameForSeparation = async (): Promise<string> => {
 };
 
 
+export const getFlowConfigSelfTriggerList = async (): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_self_initiate_trigger_list",
+    { doctype: "Employee" }
+  );
+  return response as string;
+};
+
+export const getFlowConfigOthersTriggerList = async (
+  employee: string
+): Promise<string> => {
+  const response = await FrappeAPI.getMethod(
+    "nextai.funnel.doctype.flow_config.flow_config.get_flow_config_other_employee_initiate_trigger_list",
+    { doctype: "Employee", employee }
+  );
+  return response as string;
+};
+
+
 export const getChatAssistantData = async (
   doctype_name: string,
   document_name: string,
@@ -63,17 +82,18 @@ export const getSeparationWorkflow = async (
   return response as any;
 };
 
+
 export const getSeparationFunnelData = async (
   docname: string
 ) => {
-  const response = FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
+  const response = await FrappeAPI.callMethod('nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_assistant_multi_actions.get_permitted_multi_actions',
     {
       doctype: "Employee Separation",
       docname
     },
   );
 
-  return response as any;
+  return response ?? [] as any;
 };
 
 export const postSelectEventFromOptions = async (
@@ -94,5 +114,32 @@ export const postSelectEventFromOptions = async (
 export const getShouldShowConfirmationButton = async (
 ) => {
   const response = FrappeAPI.callMethod('recruitment.recruitment.scheduled_jobs.should_show_confirmation_button');
+  return response as any;
+};
+
+
+// ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
+export const getFlowRequests = async (
+) => {
+  const response = FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_details',
+    {
+      doctype: "Employee"
+    },
+  );
+
+  return response as any;
+};
+
+
+// ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
+export const getOpenApprovalTodos = async (
+  filters: Record<string, string>
+) => {
+  const response = FrappeAPI.callMethod('cn_leave_shift_managment.api.get_open_approval_todos',
+    {
+      filters: JSON.stringify(filters)
+    },
+  );
+
   return response as any;
 };

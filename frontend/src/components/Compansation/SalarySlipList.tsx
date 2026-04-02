@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import type React from "react";
-import { useEffect, useState, useRef, useMemo } from "react";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
 import { MoreVertical } from "lucide-react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
-import FrappeListView from "../ListView";
+import { useTargetUser } from "../../context/ViewedUserContext";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
@@ -14,21 +16,20 @@ import {
   usePrintFormatMenuOptions,
   useTDSPRintViewPDF,
 } from "../../hooks/useSalaryDetails";
-import SalarySlipPDFModal from "./SalarySlipPDFModal";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import { FaRegEye } from "react-icons/fa";
-import CardTable from "../shared/CardTable";
-import ContextualPopup from "../shared/molecules/ContextualPopup";
-import WrapperHoverCard from "../shared/WrapperHoverCard";
-import Button from "../shared/atoms/Button";
-import { useTargetUser } from "../../context/ViewedUserContext";
-import CustomDropdown from "../shared/CustomDropdown";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { Typography } from "../shared/atoms/Typography";
+import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import { RupeeSymbolPerfix } from "../../utils/currency";
+import FrappeListView from "../ListView";
+import Button from "../shared/atoms/Button";
+import { Typography } from "../shared/atoms/Typography";
+import CardTable from "../shared/CardTable";
+import CustomDropdown from "../shared/CustomDropdown";
+import ContextualPopup from "../shared/molecules/ContextualPopup";
+import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
+import WrapperHoverCard from "../shared/WrapperHoverCard";
+import SalarySlipPDFModal from "./SalarySlipPDFModal";
+import ShowHideButton from "./ui/ShowHideButton";
 
 type PayrollPeriod = {
   name: string;
@@ -187,10 +188,19 @@ const SalarySlipsList = () => {
   // ---------------- FILTER ----------------
   const filter = useMemo(() => {
     const f: Record<string, string> = {};
-    if (targetEmployeeId) f.employee = targetEmployeeId;
-    if (selectedPeriod) f.custom_payroll_period = selectedPeriod; // optional backend support
+
+    const employeeId = targetEmployeeId || user?.employee;
+    if (employeeId) {
+      f.employee = employeeId;
+    }
+
+    if (selectedPeriod) {
+      f.custom_payroll_period = selectedPeriod; // optional backend support
+    }
+
     return f;
-  }, [targetEmployeeId, selectedPeriod]);
+  }, [targetEmployeeId, selectedPeriod, user?.employee]);
+
 
   return (
     <div className="flex flex-col h-full">
@@ -206,27 +216,7 @@ const SalarySlipsList = () => {
               </div>
             )}
             <div className="flex items-center justify-between gap-2 w-full md:w-auto">
-              <button
-                onClick={() => setMaskSalary((prev) => !prev)}
-                className="flex items-center gap-2 bg-white border rounded-lg px-3 py-2 shadow-sm"
-                title={maskSalary ? "Show amount" : "Hide amount"}
-              >
-                {maskSalary ? (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Show Amount
-                    </span>
-                    <BsToggleOff className="w-6 h-6 text-gray-400" />
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-medium text-gray-700">
-                      Hide Amount
-                    </span>
-                    <BsToggleOn className="w-6 h-6 text-primary" />
-                  </>
-                )}
-              </button>
+              <ShowHideButton showAmount={maskSalary} onToggleAmount={() => setMaskSalary((prev) => !prev)} />
               <CustomDropdown
                 value={selectedPeriod}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -271,7 +261,7 @@ const SalarySlipsList = () => {
                 isDownloading={isDownloading}
               />
             )}
-            isSearch={false}
+            isSearch={true}
             pageSize={10}
             defaultFields={[
               "name",
@@ -285,9 +275,15 @@ const SalarySlipsList = () => {
               "posting_date",
             ]}
             searchFields={["employee", "status", "posting_date"]}
-            infiniteScroll={true}
+            infiniteScroll={false}
+            showPagination={true}
+            SkeletonComponent={CardSkeleton}
             isFilter={false}
-            defaultFilters={filter as any}
+            // defaultFilters={filter as any}
+            defaultFilters={{
+              status: "Submitted",
+              ...filter,
+            }}
           />
         </CardTable>
       </div>
@@ -393,9 +389,9 @@ const SalarySlipItemDesktop = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  if (item.status.toLowerCase() !== "submitted") return null;
+  // if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -408,7 +404,6 @@ const SalarySlipItemDesktop = ({
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
     item.employee,
@@ -443,21 +438,19 @@ const SalarySlipItemDesktop = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
-          <span className="blur-sm text-gray-400">
-            {RupeeSymbolPerfix("XX,XXX")}
-          </span>
+          <span className="blur-sm text-gray-400">₹XX,XXX</span>
         ) : (
-          formatCurrency(item.gross_pay)
+          formatCurrency2(item.gross_pay)
         )}
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskSalary ? (
           <span className="blur-sm text-gray-400">
-            {RupeeSymbolPerfix("XX,XXX")}
+            {formatCurrency("XX,XXX")}
           </span>
         ) : (
-          formatCurrency(item.net_pay)
+          formatCurrency2(item.net_pay)
         )}
       </Typography>
 
@@ -485,9 +478,9 @@ const SalarySlipItemMobile = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  if (item.status.toLowerCase() !== "submitted") return null;
+  // if (item.status.toLowerCase() !== "submitted") return null;
 
-  const formatCurrency = (amount: number) =>
+  const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -507,54 +500,67 @@ const SalarySlipItemMobile = ({
   );
 
   return (
-    <div className="border rounded-lg mb-3 bg-white">
-      <div className="flex justify-between p-4 items-center border-b">
-        <div className="flex flex-col">
-          <span className="font-semibold text-gray-800">
-            {item.employee_name}
-          </span>
-          <span className="flex flex-row gap-2 text-xs text-gray-600">
-            <p>{formatToIndianDate(item.start_date)}</p>To
-            <p>{formatToIndianDate(item.end_date)}</p>
-          </span>
+    <div
+      className="cursor-pointer border-t-4 border-x border-b mt-2
+        border-x-primary/20 border-b-primary/20 
+        shadow-sm border-primary bg-white rounded-xl"
+    >
+      <div className="p-4 flex flex-col gap-3 w-full">
+        {/* Header: Employee Name + Actions */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Employee</Typography>
+            <Typography variant="mobileCardValue">
+              {item.employee_name}
+            </Typography>
+          </div>
+          <DownloadMenu
+            itemName={item.name}
+            isDownloading={isDownloading}
+            onType1={onDownloadType1}
+            onType2={onDownloadType2}
+            onType3={onDownloadType3}
+            onType4={onDownloadType4}
+            onShowPrintFormatMenu={printFormatMenuRef}
+          />
         </div>
 
-        <DownloadMenu
-          itemName={item.name}
-          isDownloading={isDownloading}
-          onType1={onDownloadType1}
-          onType2={onDownloadType2}
-          onType3={onDownloadType3}
-          onType4={onDownloadType4}
-          onShowPrintFormatMenu={printFormatMenuRef}
-        />
-      </div>
-
-      <div className="text-sm text-gray-600 p-4">
-        <div className="flex justify-between pb-2">
-          <span className="font-medium text-gray-700">Gross Pay</span>
-          <span className="font-semibold">
-            {maskSalary ? (
-              <span className="blur-sm text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
-              </span>
-            ) : (
-              formatCurrency(item.gross_pay)
-            )}
-          </span>
+        {/* Duration Row */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Duration</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(item.start_date)} to {formatToIndianDate(item.end_date)}
+            </Typography>
+          </div>
         </div>
 
-        <div className="flex justify-between">
-          <span className="font-medium text-gray-700">Net Pay</span>
-          <span className="text-blue-600 font-semibold">
-            {maskSalary ? (
-              <span className="blur-sm text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
-              </span>
-            ) : (
-              formatCurrency(item.net_pay)
-            )}
-          </span>
+        {/* Amounts */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Gross Pay</Typography>
+            <Typography variant="mobileCardValue">
+              {maskSalary ? (
+                <span className="blur-sm select-none text-gray-400">
+                  {formatCurrency("XX,XXX")}
+                </span>
+              ) : (
+                formatCurrency2(item.gross_pay)
+              )}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Net Pay</Typography>
+            <Typography variant="mobileCardValue" className="text-blue-600">
+              {maskSalary ? (
+                <span className="blur-sm select-none text-gray-400">
+                  {formatCurrency("XX,XXX")}
+                </span>
+              ) : (
+                formatCurrency2(item.net_pay)
+              )}
+            </Typography>
+          </div>
         </div>
       </div>
     </div>

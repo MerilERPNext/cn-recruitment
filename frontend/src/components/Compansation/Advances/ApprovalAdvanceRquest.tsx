@@ -1,28 +1,54 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
-import ApprovalList from "../../shared/ApprovalList";
-import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
-import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
-import { Typography } from "../../shared/atoms/Typography";
+import { useCallback, useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import ApprovalList from "../../shared/ApprovalList";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceDetailsModal from "./Component/AdvanceViewDetailsModel";
+import ApprovalRejectionAdvanceList from "./Component/ApprovalAdvanceList";
+import { useSearchParams } from "react-router-dom";
 
 const TeamAdvanceRequest = () => {
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const { isDesktop } = useScreenSize();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
   }, []);
 
-  const handleRequestClick = useCallback((item: any) => {
-    setSelectedItem(item);
-  }, []);
+  const handleRequestClick = useCallback(
+    (request: any) => {
+      const data = request?.data || request;
+      const todoId = data?.todo_id || request?.todo_id;
+      const refName = data?.reference_name || request?.reference_name;
 
+      if (todoId || refName) {
+        setSearchParams({
+          ...(todoId ? { requestId: todoId } : {}),
+          ...(refName ? { reference_name: refName } : {}),
+        });
+        setSelectedItem(request);
+      }
+    },
+    [setSearchParams],
+  );
+
+  // 👉 Close: clear URL params AND selectedItem
+  const handleClose = useCallback(() => {
+    setSelectedItem(null);
+    setSearchParams({});
+  }, [setSearchParams]);
+
+  // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
+  const isModalOpen = !!selectedItem || !!(requestId || referenceName);
+  console.log({ requestId, referenceName, isModalOpen, selectedItem }, "URL Params and Modal State");
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -51,8 +77,8 @@ const TeamAdvanceRequest = () => {
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
-        <div className="flex-shrink-0">
-          <div className="px-2 py-1 md:py-4">
+        <div className="flex-shrink-0 px-2">
+          <div className="px-4 py-1 md:py-4">
             <Typography variant="h4">Team Advance Requests</Typography>
             <Typography variant="bodySmall" color="body2">
               Track and manage team advance requests
@@ -61,7 +87,7 @@ const TeamAdvanceRequest = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-2 pb-5 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
           <ApprovalList
             status="Pending"
@@ -70,9 +96,9 @@ const TeamAdvanceRequest = () => {
             refetch={refetchApprovalList}
             setRefetch={setRefetchApprovalList}
             onApprovalRefetchComplete={handleApprovalRefetchComplete}
-            showPagination={true}
-            infiniteScroll={true}
+            infiniteScroll={false}
             loadMorePagination={false}
+            showPagination={true}
             isSearch={true}
             isFilter={true}
             columnWidths={tableColumnWidths}
@@ -83,15 +109,36 @@ const TeamAdvanceRequest = () => {
                 label: "Status",
                 fieldtype: "Select",
                 options: [
-                  { label: "Pending", value: "Pending" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Pending",
+                    key: "Pending",
+                    value: "Pending",
+                    customAPIParams: { todo_status: "Open" }
+                  },
+                  {
+                    label: "Approved",
+                    key: "Approved",
+                    value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                    customAPIParams: { todo_status: "Closed" }
+                  },
+                  {
+                    label: "Rejected",
+                    key: "Rejected",
+                    value: "Rejected"
+                  },
                 ],
+                emptyValueConfig: {
+                  filterValue: ["!=", "Cancelled"]
+                }
               },
             ]}
-            defaultFilters={{ status: "Pending" }}
-            renderCardContent={(item: any) => (
-              <ApprovalRejectionAdvanceList
+            defaultFilters={{ status: "Draft" }}
+            SkeletonComponent={CardSkeleton}
+            renderCardContent={(item: any) => {
+              if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                return null;
+              }
+              return <ApprovalRejectionAdvanceList
                 isSelected={item?.isSelected}
                 onToggleSelect={item?.onToggleSelect}
                 data={item?.data}
@@ -100,15 +147,17 @@ const TeamAdvanceRequest = () => {
                 loadingAction={item?.loadingAction}
                 isBulkSelectEnabled={isBulkSelectEnabled}
               />
-            )}
+            }}
           />
         </CardTable>
       </div>
 
       <AdvanceDetailsModal
-        open={!!selectedItem}
-        item={selectedItem}
-        onClose={() => setSelectedItem(null)}
+        documentName={requestId || ""}
+        referenceName={referenceName || ""}
+        open={isModalOpen}
+        item={selectedItem}   // null when opened via direct URL — modal fetches data itself
+        onClose={handleClose}
       />
     </div>
   );

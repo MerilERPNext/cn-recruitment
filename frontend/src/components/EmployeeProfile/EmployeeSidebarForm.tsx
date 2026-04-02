@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect, useRef } from "react";
 import { Form } from "@tsed/react-formio";
 import SideDrawer from "../shared/SideDrawer";
 import toast from "react-hot-toast";
@@ -41,6 +41,13 @@ const EmployeeSidebarForm = ({
     employeeIsLoading: boolean | null
 }) => {
     const mutation = useUpdateFrappeDocument();
+    const [isDirty, setIsDirty] = useState(false);
+    const isInitializing = useRef(true);
+
+    useEffect(() => {
+        setIsDirty(false);
+        isInitializing.current = true;
+    }, [edit]);
     const { data: employeeDataQueryResult } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
     const employee = employeeDataQueryResult?.employee;
 
@@ -105,8 +112,9 @@ const EmployeeSidebarForm = ({
                     Object.assign(fixed, recursiveFixFileData(fixed, col.components));
                 });
             } else {
-                // Use the shared formatter for all fields
-                fixed[key] = formatValueForFormio(fixed[key], comp);
+                // Use the shared formatter for all fields, passing display value if available
+                const displayValue = data[`${key}_display`];
+                fixed[key] = formatValueForFormio(fixed[key], comp, displayValue);
             }
         });
 
@@ -124,7 +132,8 @@ const EmployeeSidebarForm = ({
                 data = recursiveFixFileData(row, component?.components || []);
             } else {
                 const val = (employee as any)[edit.fieldname];
-                data = { [edit.fieldname]: formatValueForFormio(val, component) };
+                const displayVal = (employee as any)[`${edit.fieldname}_display`];
+                data = { [edit.fieldname]: formatValueForFormio(val, component, displayVal) };
             }
         } else {
             data = recursiveFixFileData(employee, schema.components || []);
@@ -202,6 +211,14 @@ const EmployeeSidebarForm = ({
                     return cleansed;
                 }
 
+                // Extract original value if it's in "displayValue (value)" format
+                if (typeof data === 'string') {
+                    const match = data.match(/^(.+?)\s\((.+?)\)$/);
+                    if (match) {
+                        return match[2];
+                    }
+                }
+
                 return data;
             };
 
@@ -245,12 +262,22 @@ const EmployeeSidebarForm = ({
                             className="profile-form w-full max-w-full bg-white"
                             form={schema}
                             submission={submissionData}
+                            onChange={(payload: any) => {
+                                if (payload.changed && !isInitializing.current) {
+                                    setIsDirty(true);
+                                }
+                            }}
                             onFormReady={(instance: any) => {
                                 if (!edit) return;
                                 const storageKey = edit.fieldname
                                     ? `${edit.key}-${edit.fieldname}${edit.rowIndex !== undefined ? `-${edit.rowIndex}` : ""}`
                                     : edit.key;
                                 formInstances.current[storageKey] = instance;
+
+                                // Ignore initial change events during data population
+                                setTimeout(() => {
+                                    isInitializing.current = false;
+                                }, 500);
                             }}
                             options={{
                                 builder: { styles: false },
@@ -270,7 +297,7 @@ const EmployeeSidebarForm = ({
                         <div className="w-full bg-white pt-4">
                             <Button
                                 onClick={handleSubmit}
-                                disabled={mutation?.isPending || false}
+                                disabled={mutation?.isPending || !isDirty}
                                 size="md"
                                 fullWidth
                                 className="bg-primary-600 hover:bg-primary-700 text-white font-bold"

@@ -1,25 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import image from "../../../assets/welcome-sep.svg";
-import { useSeparation } from "../../../hooks/useConfiremnation";
 import {
   useCurrentEmployeeAllDetails,
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
-  useChatAssistant,
+  useChatAssistantLazy,
   useDifinitaionNameForSeparation,
-  useGetSeparationWorkflow,
 } from "../../../hooks/useFlows";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { SeparationSvgs } from "./consts";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { getActionsEnabled } from "../../../utils/uiPermission";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { FlowRequestItem } from "../../../types/flows";
 
 type cardDataType = {
   icon: React.ReactNode;
@@ -45,78 +50,118 @@ const Separation = () => {
   const { data: userId } = useLoggedInUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
   const doctype_name = "Employee";
-  const doctype = "Employee Separation";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
   const activeEmployee = isViewingOtherUser ? targetEmployee : currentEmployee;
   const document_name = activeEmployee?.name ?? "";
   const { data: definitionName } = useDifinitaionNameForSeparation();
-  const {
-    data: confirmationCreationData,
-    isLoading,
-    refetch: refetchSeparation,
-  } = useSeparation(doctype);
-  const item = confirmationCreationData?.[0];
-  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
-  function getFunnelData(trigger_category: string) {
-    return Array.isArray(definitionName)
-      ? definitionName.filter(
-          (item: any) => item?.trigger_category?.name === trigger_category,
-        )
-      : [];
-  }
-
-  const separationData = getFunnelData("Separation");
-  console.log("separationData", separationData);
-  const definition_name = separationData?.[0]?.name || "";
-  const l = "true";
-
-  useEffect(() => {
-    refetchSeparation();
-  }, [refetchSeparation, isViewingOtherUser]);
-
-  const { data } = useChatAssistant(
-    doctype_name,
-    document_name,
-    definition_name,
-    l,
+  const { data: userUiPermission } = useGetUiPermission("HR Process");
+  const enabledActions = getActionsEnabled(
+    userUiPermission,
+    ["view_workflow", "initiate_separation", "terminate"],
+    "Separation",
   );
 
-  const handleTriggerChat = () => {
-    const maxAttempts = 50; // 5 seconds max (50 * 100ms)
-    let attempts = 0;
-    setIsTriggeringChat(true);
 
-    const checkAndTrigger = () => {
-      if (
-        typeof window !== "undefined" &&
-        typeof window.trigger_chatnext_assistant === "function"
-      ) {
-        window.trigger_chatnext_assistant(true, data?.session);
-        setIsTriggeringChat(false);
-        return;
-      }
+  const {
+    data: separationFunnelDetails,
+    refetch: refetchSeparationFunnelDetails,
+    isLoading: isLoadingSeparationFunnelDetails,
+  } = useGetSeparationFunnelDetails();
 
-      attempts++;
-      if (attempts < maxAttempts) {
-        setTimeout(checkAndTrigger, 100);
-      } else {
-        console.warn(
-          "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
-        );
-        setIsTriggeringChat(false);
-      }
+
+
+  const item = separationFunnelDetails?.data?.[0];
+  const isLoading = isLoadingSeparationFunnelDetails;
+  const [isTriggeringChat, setIsTriggeringChat] = useState(false);
+
+  function getFunnelData() {
+    const result: any = {
+      termination_funnel_data: null,
+      separation_funnel_data: null,
     };
 
-    checkAndTrigger();
+    if (!Array.isArray(definitionName)) return result;
+
+    definitionName.forEach((item: any) => {
+      const category = item?.trigger_category?.name;
+      if (category === "Termination") result.termination_funnel_data = item;
+      if (category === "Separation") result.separation_funnel_data = item;
+    });
+
+    return result;
+  }
+
+  const { termination_funnel_data, separation_funnel_data } = getFunnelData();
+
+  const l = "true";
+
+  const { mutateAsync: fetchChatAssistantData } = useChatAssistantLazy();
+
+  const handleTriggerChat = async (For: "Separation" | "Termination") => {
+    setIsTriggeringChat(true);
+
+    try {
+      const definition_name =
+        For === "Separation"
+          ? separation_funnel_data?.name
+          : termination_funnel_data?.name;
+
+      if (!definition_name) {
+        throw new Error("Missing funnel data for " + For);
+      }
+
+      const data = await fetchChatAssistantData({
+        doctype_name,
+        document_name,
+        definition_name,
+        l,
+      });
+
+      const maxAttempts = 50; // 5 seconds max (50 * 100ms)
+      let attempts = 0;
+
+      const checkAndTrigger = () => {
+        if (
+          typeof window !== "undefined" &&
+          typeof window.trigger_chatnext_assistant === "function"
+        ) {
+          window.trigger_chatnext_assistant(true, data?.session);
+          setIsTriggeringChat(false);
+          return;
+        }
+
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(checkAndTrigger, 100);
+        } else {
+          console.warn(
+            "⚠️ trigger_chatnext_assistant is not available on window after 5 seconds.",
+          );
+          setIsTriggeringChat(false);
+        }
+      };
+
+      checkAndTrigger();
+    } catch (e) {
+      console.error("Failed to trigger chat:", e);
+      setIsTriggeringChat(false);
+    }
   };
+
+  const showTerminationButton =
+    isViewingOtherUser &&
+    !!termination_funnel_data?.name &&
+    enabledActions.terminate;
+  const showSeparationButton =
+    !!separation_funnel_data?.name && enabledActions.initiate_separation;
 
   const cardData: cardDataType[] = [
     {
       icon: SeparationSvgs[0],
       label: "Notice Period",
-      value: `Remember to serve your notice period ${activeEmployee?.notice_number_of_days ? "of " + activeEmployee?.notice_number_of_days + " days" : ""}`,
+      value: `Remember to serve your notice period ${(activeEmployee as any)?.notice_number_of_days ? "of " + (activeEmployee as any)?.notice_number_of_days + " days" : ""}`,
     },
     {
       icon: SeparationSvgs[1],
@@ -124,10 +169,12 @@ const Separation = () => {
       value: `We'll process your full & final settlement soon`,
     },
   ];
-
+  const queryClient = useQueryClient();
   useEffect(() => {
     const handleChatClose = () => {
-      refetchSeparation();
+      refetchSeparationFunnelDetails()
+      queryClient.invalidateQueries({ queryKey: ["separation-workflow"] });
+      queryClient.invalidateQueries({ queryKey: ["employee", activeEmployee?.name] });
     };
 
     document.addEventListener("chatnext:modal:chat:close", handleChatClose);
@@ -138,37 +185,45 @@ const Separation = () => {
         handleChatClose,
       );
     };
-  }, [refetchSeparation]);
+  }, [refetchSeparationFunnelDetails, queryClient, activeEmployee?.name]);
 
-  const showInitiatePage = !item;
 
-  const { data: separationWorkflow } = useGetSeparationWorkflow(
-    doctype,
-    item?.reference_document?.name || "",
-  );
   const navigate = useNavigate();
   const handleShowWorkflow = () => {
     navigate(
-      "/webapp/flow-app/separation-workflow/" + item?.reference_document?.name,
+      "/webapp/flow-app/separation-workflow",
     );
   };
 
+
+  const showRequestPage = useMemo(() => {
+    if (!item) return false;
+    if (item.approval_status === "Rejected") {
+      return false;
+    }
+    return true;
+  }, [item]);
+
+  const showRejectStatus = item && item?.approval_status === "Rejected";
+
+
+  const canViewWorkflow = useMemo(() => {
+    if (!showRequestPage) return false;
+    if (!separationFunnelDetails?.data?.[0]) return false;
+    if (separationFunnelDetails?.data?.[0].workflow_stages?.length === 0) return false;
+    if (!enabledActions.view_workflow) return false;
+    return true;
+  }, [separationFunnelDetails, enabledActions, showRequestPage])
+
   const { isDesktop } = useScreenSize();
-  /* -------------------- LOADING Spinner -------------------- */
+  /* -------------------- LOADING Skeleton -------------------- */
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <span className="text-sm text-gray-600">Loading...</span>
-        </div>
-      </div>
-    );
+    return <SeparationSkeleton />;
   }
   /* ---------------------------------------------------------- */
 
   return (
-    <div className="min-h-screen md:p-4 md:gap-4 md:bg-blue-50">
+    <div className="min-h-screen md:p-4 md:gap-4">
       <div className="flex items-baseline">
         <div className="flex flex-col md:mb-4 max-md:px-4">
           {isDesktop && <Typography variant="h4">Separation</Typography>}
@@ -176,21 +231,21 @@ const Separation = () => {
             View Your Separation Process
           </Typography>
         </div>
-        {separationWorkflow?.show_workflow && (
+        {canViewWorkflow && (
           <Button
             onClick={handleShowWorkflow}
             size="md"
             bgColor="primary"
-            className="hover:bg-primary my-2 text-white ml-auto"
+            className="hover:bg-primary my-2 text-white ml-auto mr-4"
           >
-            View Wrokflow
+            View Workflow
           </Button>
         )}
       </div>
-      {!showInitiatePage ? (
+      {showRequestPage ? (
         <main className="min-h-full mb-2">
           <div className="max-w-full">
-            <ApprovalTracker For="Employee Separation" data={item} />
+            <ApprovalTracker For="Employee Separation" data={item as FlowRequestItem} />
           </div>
         </main>
       ) : (
@@ -226,10 +281,26 @@ const Separation = () => {
             </div>
           </div>
           {/* Button */}
-          {definition_name && (
-            <div className="flex items-center py-6 gap-2 flex-col">
+
+          {showRejectStatus &&
+            <div className="flex w-full mt-4 mb-2">
+              <div className="flex flex-col sm:flex-row items-center w-full bg-red-50 border border-red-100 p-4 rounded-xl gap-3 text-center sm:text-left shadow-sm">
+                <div className="bg-red-100 p-2 rounded-full shrink-0 text-red-500">
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <Typography variant="bodyMedium" color="body1" className="text-red-800">
+                    Your separation request initiated on <span className="font-semibold">{formatToIndianDate(item?.initiated_on)}</span> has been <Link to="/webapp/flow-app/rejected-separation-request" className="font-semibold text-red-600 hover:text-red-700 underline decoration-red-300 underline-offset-4 transition-colors">Rejected</Link>.
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div className="flex items-center py-6 gap-2 flex-col">
+            {showSeparationButton && (
               <Button
-                onClick={handleTriggerChat}
+                onClick={() => handleTriggerChat("Separation")}
                 size="md"
                 bgColor="blue-500"
                 className="hover:bg-blue-600 text-white"
@@ -238,19 +309,22 @@ const Separation = () => {
               >
                 Initiate Separation
               </Button>
+            )}
 
-              <Button
-                size="md"
-                bgColor="black"
-                className="hover:bg-gray-900 text-white"
-                loading={isTriggeringChat}
-                disabled={isTriggeringChat}
-              >
-                Terminate
-              </Button>
-            </div>
-          )}
+          </div>
         </div>
+      )}
+      {showTerminationButton && (
+        <Button
+          onClick={() => handleTriggerChat("Termination")}
+          size="md"
+          bgColor="black"
+          className="hover:bg-gray-900 text-white"
+          loading={isTriggeringChat}
+          disabled={isTriggeringChat}
+        >
+          Terminate
+        </Button>
       )}
     </div>
   );

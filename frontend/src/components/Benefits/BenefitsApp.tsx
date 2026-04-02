@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import NavigationTabs, { Tab } from "../NavigationTab";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
+import { useGetUiPermission } from "../../hooks/userUiPermission";
+import Button from "../shared/atoms/Button";
 
 type TabName =
   | "My Benefits"
@@ -22,11 +24,60 @@ const BenefitsApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const [activeTab, setActiveTab] = useState<TabName>("My Benefits");
   const navigate = useNavigate();
-  const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
-    key,
-    label: key,
-  }));
   const location = useLocation();
+  const [actionButtonConfig, setActionButtonConfig] = useState<{
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  } | null>(null);
+
+  const { data: userUiPermission } = useGetUiPermission("Benefits");
+
+  const tabs: Tab[] = useMemo(() => {
+    const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
+      {
+        key: "My Benefits",
+        label: "My Benefits",
+        permissionKey: "My Benefits",
+      },
+      {
+        key: "My Requests",
+        label: "My Requests",
+        permissionKey: "My Requests",
+      },
+      {
+        key: "Team Requests",
+        label: "Team Requests",
+        permissionKey: "Team Requests",
+      },
+      {
+        key: "Benefits Slips",
+        label: "Benefits Slips",
+        permissionKey: "Benefit Slips",
+      },
+    ];
+
+    if (!userUiPermission || userUiPermission.length === 0) {
+      return allTabs.map(({ key, label }) => ({ key, label }));
+    }
+
+    const benefitsAppPermission = userUiPermission.find(
+      (perm) => perm.app_name === "Benefits",
+    );
+
+    if (!benefitsAppPermission || !benefitsAppPermission.enabled) {
+      return [];
+    }
+
+    return allTabs
+      .filter((tab) => {
+        const pagePermission = benefitsAppPermission.pages?.find(
+          (page) => page.page_name === tab.permissionKey,
+        );
+        return pagePermission && pagePermission.enabled;
+      })
+      .map(({ key, label }) => ({ key, label }));
+  }, [userUiPermission]);
 
   const handleTabChange = (tab: TabName) => {
     setActiveTab(tab);
@@ -44,12 +95,11 @@ const BenefitsApp: React.FC = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (location.pathname === "/webapp/benefits-app") {
-      const fallback = "My Benefits";
-      setActiveTab(fallback);
-      navigate(tabRoutes[fallback], { replace: true });
+    if (location.pathname === "/webapp/benefits-app" && tabs.length > 0) {
+      const firstTab = tabs[0].key as TabName;
+      navigate(tabRoutes[firstTab], { replace: true });
     }
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, tabs]);
 
   const mobileLayout = (
     <div className="flex flex-col min-h-screen bg-white">
@@ -62,14 +112,38 @@ const BenefitsApp: React.FC = () => {
         />
       </header>
       <main className="z-10 p-2 flex-grow">
-        <Outlet />
+        <Outlet context={{ setActionButtonConfig }} />
       </main>
+      {actionButtonConfig && (
+        <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50 p-2">
+          <Button
+            fullWidth
+            size="lg"
+            bgColor="primary"
+            onClick={actionButtonConfig.onClick}
+            disabled={actionButtonConfig.disabled}
+          >
+            {actionButtonConfig.label}
+          </Button>
+        </div>
+      )}
     </div>
   );
 
+  const actionButton = actionButtonConfig ? (
+    <Button
+      size="lg"
+      bgColor="primary"
+      onClick={actionButtonConfig.onClick}
+      disabled={actionButtonConfig.disabled}
+    >
+      {actionButtonConfig.label}
+    </Button>
+  ) : null;
+
   const desktopLayout = (
-    <DesktopLayoutWrapper title="Benefits">
-      <Outlet />
+    <DesktopLayoutWrapper title="Benefits" actionButton={actionButton}>
+      <Outlet context={{ setActionButtonConfig }} />
     </DesktopLayoutWrapper>
   );
 

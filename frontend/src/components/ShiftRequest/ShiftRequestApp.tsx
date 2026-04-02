@@ -1,26 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import HeaderBar from "../HeaderBar";
-import RequestShiftChangeButton from "./RequestShiftChangeButton";
-import NavigationTabs, { Tab } from "../NavigationTab";
-import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
-import ExpenseFormModal from "../Expenses-App/ExpenseFormModal";
-import ShiftRequestFormModal from "./ShiftRequestFormModal";
+import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
+import HeaderBar from "../HeaderBar";
+import NavigationTabs, { Tab } from "../NavigationTab";
+import RequestShiftChangeButton from "./RequestShiftChangeButton";
+
+import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useShiftRequestConfig } from "../../hooks/useShift";
 import Button from "../shared/atoms/Button";
+import ShiftRequestFormModal from "./ShiftRequestFormModal";
 
 type TabName =
   | "My Shift Assignment"
   | "Team Shift Assignment"
   | "My Shift Requests"
-  | "Shift Change Request";
+  | "Team Shift Requests";
 
 const tabRoutes: Record<TabName, string> = {
   "My Shift Assignment": "/webapp/shift-request/my-shift-assignment",
   "Team Shift Assignment": "/webapp/shift-request/team-shift",
   "My Shift Requests": "/webapp/shift-request/shift-list",
-  "Shift Change Request": "/webapp/shift-request/shift-change-request",
+  "Team Shift Requests": "/webapp/shift-request/shift-change-request",
 };
 
 const ShiftRequestApp: React.FC = () => {
@@ -30,11 +33,66 @@ const ShiftRequestApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
+  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: shiftRequestConfig, isLoading: isShiftConfigLoading } =
+    useShiftRequestConfig(currentEmployee?.name || null);
 
   const tabs: Tab[] = (Object.keys(tabRoutes) as TabName[]).map((key) => ({
     key,
     label: key,
   }));
+
+  const { data: attendnacePermission, isLoading: attendancePermissionLoading } =
+    useGetUiPermission("Attendance");
+  const { data: ShiftAppPermission, isLoading: ShiftAppPermissionLoading } =
+    useGetUiPermission("My Shift Assignment");
+
+  const showShiftChangeButton = useMemo(() => {
+    const For = { Desktop: false, Mobile: false };
+    if (!attendancePermissionLoading) {
+      For.Desktop = Boolean(
+        attendnacePermission?.[0]?.pages?.find(
+          (page) =>
+            page.page_name === "All Shifts" &&
+            page?.actions?.find(
+              (action) =>
+                action.action_name === "request_shift_change" && action.enabled,
+            ),
+        ) ?? false,
+      );
+    }
+
+    if (!ShiftAppPermissionLoading) {
+      For.Mobile = Boolean(
+        ShiftAppPermission?.[0]?.pages?.find(
+          (page) =>
+            page.page_name === "My Shift Assignment" &&
+            page?.actions?.find(
+              (action) =>
+                action.action_name === "request_shift_change" && action.enabled,
+            ),
+        ) ?? false,
+      );
+    }
+
+    const isShiftConfigEnabled =
+      shiftRequestConfig?.shift_change_requests ||
+      shiftRequestConfig?.shift_change_and_attendance_requests;
+
+    if (isShiftConfigLoading || (shiftRequestConfig && !isShiftConfigEnabled)) {
+      For.Desktop = false;
+      For.Mobile = false;
+    }
+
+    return For;
+  }, [
+    attendnacePermission,
+    ShiftAppPermission,
+    ShiftAppPermissionLoading,
+    attendancePermissionLoading,
+    shiftRequestConfig,
+    isShiftConfigLoading,
+  ]);
 
   useEffect(() => {
     const matchedTab = (Object.keys(tabRoutes) as TabName[]).find((tab) =>
@@ -74,11 +132,7 @@ const ShiftRequestApp: React.FC = () => {
   };
 
   const handleShiftForm = () => {
-    if (isDesktop) {
-      setShowShiftRequestModal(true);
-    } else {
-      navigate(`/webapp/shift-request/shift-change-form`);
-    }
+    setShowShiftRequestModal(true);
   };
 
   const handleCloseShiftModal = () => {
@@ -121,14 +175,15 @@ const ShiftRequestApp: React.FC = () => {
         <Outlet />
       </main>
 
-      {activeTab === "My Shift Assignment" && (
+      {showShiftChangeButton.Mobile && activeTab === "My Shift Assignment" && (
         <RequestShiftChangeButton onClick={handleShiftForm} />
       )}
+      <ShiftRequestFormModal isOpen={showShiftRequestModal} onClose={handleCloseShiftModal} />
     </div>
   );
 
   // Create the action button for desktop - positioned bottom-right by DesktopLayoutWrapper
-  const actionButton = (
+  const actionButton = showShiftChangeButton.Desktop && (
     <Button size="lg" onClick={handleShiftForm}>
       + Request Shift Change
     </Button>
@@ -137,13 +192,7 @@ const ShiftRequestApp: React.FC = () => {
   const desktopLayout = (
     <DesktopLayoutWrapper title="Shifts" actionButton={actionButton}>
       <Outlet />
-      <ExpenseFormModal
-        isOpen={showShiftRequestModal}
-        onClose={handleCloseShiftModal}
-        title="Request Shift Change"
-      >
-        <ShiftRequestFormModal onClose={handleCloseShiftModal} />
-      </ExpenseFormModal>
+      <ShiftRequestFormModal isOpen={showShiftRequestModal} onClose={handleCloseShiftModal} />
     </DesktopLayoutWrapper>
   );
 

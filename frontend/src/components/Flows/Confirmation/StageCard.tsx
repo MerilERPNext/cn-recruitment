@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Attachment } from "../../../types/flows";
+
 import { FormIOComponent } from "../../../types/formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
@@ -7,8 +9,11 @@ import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusTimelineItem from "./components/StatusTimelineItem";
 import { ApprovalStage } from "../../../types/todos";
-import { Eye } from "lucide-react";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import ViewFormButton from "../ViewFormButton";
+import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../utils/flowUtils";
+import AttachmentPreview from "../RequestDetails/AttachmentPreview";
 
 type handleActPropsType = {
   name: string;
@@ -20,7 +25,7 @@ type handleActPropsType = {
 interface StageCardProps {
   stages: ApprovalStage[];
   idx: number;
-  canPerformAction: boolean;
+  showActButton?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   item: any;
   handleAct: (handleActPropsType: handleActPropsType) => void;
@@ -29,11 +34,12 @@ interface StageCardProps {
 const StageCard: React.FC<StageCardProps> = ({
   stages,
   idx,
-  canPerformAction,
+  showActButton = false,
   item,
   handleAct,
 }) => {
   const stage = stages[idx];
+  const { data: currentUser } = useCurrentUser();
   const getStageStatus = (stage: { status: string }, idx: number) => {
     const isPending = stage?.status === "Pending";
     const prevIsPending = stages[idx - 1]?.status === "Pending";
@@ -50,44 +56,71 @@ const StageCard: React.FC<StageCardProps> = ({
   };
   const status = getStageStatus(stage, idx);
 
-  const [formSchema, setFormSchema] = useState(null);
+  const canPerformAction = useMemo(() => {
+    if (!showActButton) return false;
+    let actionPermission = false;
+
+    if (!item?.custom_doctype_actions) return false;
+    if (stage?.user_id && currentUser?.name)
+      actionPermission = stage.user_id === currentUser.name;
+
+    if (currentUser?.roles && stage?.role)
+      actionPermission ||= currentUser.roles.some(
+        (role) => role.role === stage.role,
+      );
+
+    return actionPermission;
+  }, [stage, currentUser, item, showActButton]);
+
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
+  const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
     approval_response_data: string,
+    parsedData?: Record<string, unknown>
   ) => {
-    const data = JSON.parse(approval_response_data);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setFormSchema((prev: any) => {
-      if (!schema) return prev;
+    if (!schema) return;
 
-      const updatedSchema = schema.map((component) => {
-        const key = component.key;
+    let data: Record<string, unknown> = parsedData || {};
 
-        if (key && data[key] !== undefined) {
-          return {
-            ...component,
-            defaultValue: data[key],
-          };
-        }
 
-        return component;
-      });
+    if (!data) {
+      try {
+        data = JSON.parse(approval_response_data);
+      } catch (error) {
+        console.error("Invalid approval_response_data JSON:", error);
+        data = {};
+      }
+    }
 
-      return {
-        display: "form",
-        components: updatedSchema,
-      };
-    });
+    setFormSchema(buildFormFromSchemaAndAnswer(schema, data));
     setShow(true);
   };
+
+  const handleShowFormWithResponse = (
+    schema: FormIOComponent[] | undefined,
+    approval_response_data: string
+  ) => {
+    let data = null;
+    try {
+      data = JSON.parse(approval_response_data);
+    } catch (error) {
+      console.error("Invalid approval_response_data JSON:", error);
+    }
+    setResponseData(data);
+    handleShowForm(schema, approval_response_data, data);
+  }
+
 
   const approverPerfix =
     status == "pending"
       ? "Process yet to be trigger for"
       : status == "completed"
         ? "Approved by "
-        : "Pending inputs from ";
+        : "Pending input from ";
+
 
   return (
     <>
@@ -99,25 +132,19 @@ const StageCard: React.FC<StageCardProps> = ({
           <Typography variant="bodySmall">
             {approverPerfix} {stage?.role || stage?.user}
           </Typography>
+        </div>
 
+        <div className="flex max-lg:flex-row-reverse justify-between items-center px-4 pt-1 pb-3">
           {stage?.approval_response_data && stage?.status != "pending" && (
-            <Button
-              variant="subtle"
-              size="md"
+            <ViewFormButton
               onClick={() =>
-                handleShowForm(
+                handleShowFormWithResponse(
                   stage?.form_json?.components,
                   stage?.approval_response_data,
                 )
               }
-            >
-              <Eye className="w-4 h-4" />
-              View Form
-            </Button>
+            />
           )}
-        </div>
-
-        <div className="flex max-lg:flex-row-reverse justify-between items-start px-4 pt-1 pb-3">
           {canPerformAction && status == "action_required" ? (
             <Button
               variant="contain"
@@ -139,7 +166,7 @@ const StageCard: React.FC<StageCardProps> = ({
           </div>
         </div>
 
-        <div>{stage?.user_id}</div>
+        {/* <div>{stage?.user_id}</div> */}
       </div>
       {formSchema &&
         show &&
@@ -153,6 +180,7 @@ const StageCard: React.FC<StageCardProps> = ({
               }}
               submit={false}
             />
+            <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,
           document.body,
         )}

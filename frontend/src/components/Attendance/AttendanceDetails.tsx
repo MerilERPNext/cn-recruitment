@@ -1,25 +1,28 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
-import DOMPurify from "dompurify";
-import Badge from "../shared/Badge";
-import Button, { ButtonColor } from "../shared/atoms/Button";
-import { Typography } from "../shared/atoms/Typography";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import FileRenderer from "../shared/molecules/FileRenderer";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
+import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import formatToIndianDate from "../../utils/formatToIndianDate";
+import { sanitizeToPlainText } from "../../utils/sanitizeToPlainText";
+import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../shared/atoms/Typography";
 import {
   ErrorView,
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
-import formatToIndianDate from "../../utils/formatToIndianDate";
-import { useLoadingOverlay } from "../../context/OverlayContext";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
-import toast from "react-hot-toast";
+import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 export function AttendanceDetailView({
   data: propData,
   documentName,
+  referenceName,
   onClose,
   onAction,
   label = "Attendance Request",
@@ -27,6 +30,7 @@ export function AttendanceDetailView({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any;
   documentName?: string;
+  referenceName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
@@ -36,45 +40,23 @@ export function AttendanceDetailView({
     data: fetchedData,
     isLoading,
     error,
-  } = useGetToDoWithReferenceDoc(documentName || "");
+  } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   // Use fetched data if documentName is provided, otherwise use prop data
-  const data = documentName ? fetchedData : propData;
+  const data = documentName || referenceName ? fetchedData : propData;
   const mutation = useApprovalListActions();
   const { setRefetchAttendance } = useGlobalStore();
+  const { isDesktop } = useScreenSize();
 
   // Don't render anything if neither documentName nor data is provided
   // When documentName is provided, we should render even if data isn't loaded yet
-  const shouldRender = !!documentName || !!data?.todo_id;
+  const shouldRender = !!documentName || !!data?.todo_id || !!referenceName;
 
-  const cleanDescription = DOMPurify.sanitize(data?.description || "");
-  const cleanExplaination = DOMPurify.sanitize(
+  const cleanDescription = sanitizeToPlainText(data?.description || "");
+  const cleanExplaination = sanitizeToPlainText(
     data?.reference_document?.explanation || "",
   );
-  const getStatus = (status: string) => {
-    if (status === "Pending" || status === "Open") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-600",
-      };
-    } else if (status === "Approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-600",
-      };
-    } else if (status === "Rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-600",
-      };
-    }
-    return {
-      label: status || "Unknown",
-      statusColor: "bg-gray-100 text-gray-600",
-    };
-  };
 
-  const status = getStatus(data?.status);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const loading = useLoadingOverlay();
@@ -151,38 +133,6 @@ export function AttendanceDetailView({
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const getActionStyles = (
-    action: string,
-  ): { bg: ButtonColor; text: string } => {
-    const parsedAction = action.toLowerCase().trim();
-    let styles = {
-      bg: "disabled" as ButtonColor,
-      text: "gray-600",
-    };
-    switch (parsedAction) {
-      case "approve":
-        styles = {
-          bg: "success" as ButtonColor,
-          text: "green-600",
-        };
-        break;
-      case "reject":
-        styles = {
-          bg: "error" as ButtonColor,
-          text: "red-600",
-        };
-
-        break;
-      default:
-        styles = {
-          bg: "disabled" as ButtonColor,
-          text: "gray-600",
-        };
-        break;
-    }
-    return styles;
-  };
-
   // Loading state
   if (isLoading && documentName) {
     return <LoadingView onClose={onClose} label={label} />;
@@ -223,143 +173,119 @@ export function AttendanceDetailView({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-32 md:pb-6">
-          {/* Employee Info */}
-          <div className="py-4">
-            <Badge
-              label={status?.label as string}
-              backgroundColor={status?.statusColor}
-            />{" "}
-          </div>
-          <div className="py-2">
-            <div className="flex gap-2 justify-between">
-              {/* Display From Date */}
-              {data?.reference_document?.from_date && (
-                <div className="flex flex-col gap-1">
-                  <Typography
-                    variant="label"
-                    color="body2"
-                    className="card-title"
-                  >
-                    From Date
-                  </Typography>
-                  <Typography variant="bodySmall" className="card-subtitle">
-                    {formatToIndianDate(data?.reference_document?.from_date)}
-                  </Typography>
-                </div>
-              )}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 md:pb-6">
+          {/* Header Info */}
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                {data?.reference_document?.employee_name
+                  ? "Employee Name"
+                  : "Employee ID"}
+              </Typography>
 
-              {/* Display To Date */}
-              {data?.reference_document?.to_date && (
-                <div className=" flex flex-col gap-1">
-                  <Typography
-                    variant="label"
-                    color="body2"
-                    className="card-title"
-                  >
-                    To Date
-                  </Typography>
-                  <Typography variant="bodySmall" className="card-subtitle">
-                    {formatToIndianDate(data?.reference_document?.to_date)}
-                  </Typography>
-                </div>
-              )}
+              <Typography variant="mobileCardValue">
+                {data?.reference_document?.employee_name ||
+                  data?.reference_document?.employee}
+              </Typography>
+            </div>
+
+            <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
+          </div>
+
+          {/* Dates Section */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">From Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.from_date)}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">To Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.reference_document?.to_date)}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(data?.due_date || data?.date)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Reason</Typography>
+                <Typography variant="mobileCardValue">
+                  {label === "Leave Application"
+                    ? data?.reference_document?.custom_reason
+                    : data?.reference_document?.reason}
+                </Typography>
+              </div>
             </div>
           </div>
-          {data?.due_date && (
-            <div className=" flex flex-col gap-1">
-              <Typography variant="label" color="body2" className="card-title">
-                Due Date
-              </Typography>
-              <Typography variant="bodySmall" className="card-subtitle">
-                {formatToIndianDate(data?.due_date)}
-              </Typography>
+
+          {/* Explanation */}
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel">Explanation</Typography>
+
+            <Typography variant="mobileCardValue">
+              {cleanExplaination}
+            </Typography>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-2">
+            <Typography variant="mobileCardLabel">Description</Typography>
+
+            <Typography variant="mobileCardValue">
+              {cleanDescription}
+            </Typography>
+          </div>
+
+          {/* Attachments */}
+          {data?.attachments?.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Attachments</Typography>
+
+              <div className="space-y-2">
+                {data.attachments.map((item: any) => (
+                  <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
+                ))}
+              </div>
             </div>
           )}
-          <div className="py-2 flex flex-col gap-1">
-            <Typography variant="label" color="body2" className="card-title">
-              Reason
-            </Typography>
-            <Typography variant="bodySmall" className="card-subtitle">
-              {label === "Leave Application"
-                ? data?.reference_document?.custom_reason
-                : data?.reference_document?.reason}
-            </Typography>
-          </div>
-          {/* description */}
-          <div className="py-2">
-            <Typography
-              variant="label"
-              color="body2"
-              className="card-title mb-2 block"
-            >
-              Description
-            </Typography>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
-              <div dangerouslySetInnerHTML={{ __html: cleanDescription }} />
-            </div>
-          </div>
-          {/* explanation */}
-          <div className="py-2">
-            <Typography
-              variant="label"
-              color="body2"
-              className="card-title mb-2 block"
-            >
-              Explanation
-            </Typography>
-            <div className="text-sm bg-gray-100 p-3 rounded-lg">
-              <div dangerouslySetInnerHTML={{ __html: cleanExplaination }} />
-            </div>
-          </div>
-          {data?.attachments && data?.attachments?.length > 0 ? (
-            <div className="py-2">
-              <Typography
-                variant="label"
-                color="body2"
-                className="card-title mb-2 block"
-              >
-                Attachment
-              </Typography>
-              {data?.attachments?.map((item: { file_url: string }) => (
-                <FileRenderer filePath={item?.file_url || ""} />
-              ))}
-            </div>
-          ) : null}
         </div>
 
         {/* Actions */}
         {actions?.length > 0 &&
-          (data?.status === "Pending" || data?.status === "Open") && (
-            <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
-              <div className="flex sm:flex-row sm:justify-start gap-2 mt-3">
-                {actions?.length &&
-                  actions?.map((action: string) => {
-                    const isLoading =
-                      currentAction === action && mutation.isPending;
-                    return (
-                      <Button
-                        key={action}
-                        variant="soft"
-                        fullWidth
-                        disabled={isLoading}
-                        onClick={() => {
-                          handleAction(action);
-                        }}
-                        size="md"
-                        bgColor={getActionStyles(action).bg}
-                      >
-                        {isLoading ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          action
-                        )}
-                      </Button>
-                    );
-                  })}
+          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") ? (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <TeamApprovalActionPill
+              variant={isDesktop ? "modal" : "buttons"}
+              actions={actions}
+              status={data?.reference_document?.custom_status}
+              recordId={data?.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data?.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={(action) => handleAction(action)}
+            />
+          </div>
+        ) : (
+          <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
               </div>
             </div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -2,15 +2,18 @@
 import {
     useMutation,
     useQuery,
+    useQueryClient,
     UseQueryResult,
 } from "@tanstack/react-query";
 
 import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
+import FrappeAPI from "../utils/frappeAPI";
 
 
 export interface BenefitPayslip {
     name: string;
     employee: string;
+    can_edit: number;
     employee_name: string;
     custom_payroll_period: string;
     claim_date: string | null;
@@ -97,7 +100,7 @@ export const useGetAllAccruedReimbursements = (employee: string, company: string
     return useQuery<any, Error>({
         queryKey: ["benefit", "my-benefits", employee, company, payroll_period],
         queryFn: () => getAllAccruedReimbursements(employee, company, payroll_period),
-        enabled: !!employee && !!company
+        enabled: !!employee && !!company && !!payroll_period
         // ...defaultQueryOptions,
     });
 };
@@ -150,3 +153,28 @@ export const useGetYearFilterOptions = (company: string): UseQueryResult<
     });
 };
 
+export const useGetBenefitDoc = (
+    docname: string
+) => {
+    return useQuery({
+        queryKey: ["benefit-doc-data", docname],
+        queryFn: () => FrappeAPI.getDocument("Employee Benefit Claim", docname!),
+        enabled: !!docname,
+    });
+};
+
+export const useUpdateBenefitDoc = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ docname, data }: { docname: string; data: Record<string, unknown> }) =>
+            FrappeAPI.updateDocument("Employee Benefit Claim", docname, data),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["advance-doc-data", variables.docname] });
+            queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
+            queryClient.invalidateQueries({ queryKey: ["benifit-request"] });
+        },
+        onError: (error: any) => {
+            console.error("Benefit claim update failed:", error);
+        },
+    });
+};

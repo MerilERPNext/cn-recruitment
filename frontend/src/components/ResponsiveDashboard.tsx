@@ -1,4 +1,4 @@
-import MobileDashboard from "./MobileDashboard";
+import MobileDashboard from "../components/MobileDashboard/MobileDashboard";
 import DesktopDashboard from "./DesktopDashboard";
 import { useScreenSize } from "../hooks/useScreenSize";
 

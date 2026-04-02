@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect, useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
@@ -10,6 +9,8 @@ import { TaxSheetData, SeriesItem } from "../../../../types/taxSheet";
 import CustomDropdown from "../../../shared/CustomDropdown";
 import { Card } from "../../../shared/atoms/Card";
 import { Typography } from "../../../shared/atoms/Typography";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 
 /* ---------------- Types ---------------- */
 
@@ -29,16 +30,19 @@ type PayrollPeriod = {
 export default function TaxSheet() {
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
-    user?.company || null,
-  ) as {
+
+  const {
+    data: payrollPeriods,
+    isLoading: payrollLoading,
+  } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined;
+    isLoading: boolean;
   };
-  const [selectedPeriod, setSelectedPeriod] = useState<string>(
-    payrollPeriods?.[0]?.name || "",
-  );
+
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+
   useEffect(() => {
-    if (!payrollPeriods?.length || selectedPeriod) return;
+    if (!payrollPeriods?.length) return;
 
     const today = new Date();
 
@@ -49,7 +53,7 @@ export default function TaxSheet() {
     });
 
     setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
-  }, [payrollPeriods, selectedPeriod]);
+  }, [payrollPeriods]);
 
   const payrollPeriodOptions =
     payrollPeriods?.map((p) => ({
@@ -61,28 +65,41 @@ export default function TaxSheet() {
     setSelectedPeriod(e.target.value);
   };
 
-  const { data: taxsheetData } = useTaxSheetData(
+  const {
+    data: taxsheetData,
+    isLoading: taxLoading,
+  } = useTaxSheetData(
     user?.employee || null,
     user?.company || null,
     selectedPeriod || null,
-  ) as { data: TaxSheetData | undefined };
+  ) as {
+    data: TaxSheetData | undefined;
+    isLoading: boolean;
+  };
 
-  useEffect(() => {
-    if (selectedPeriod) {
-      console.log("API called for payroll period:", selectedPeriod);
-    }
-  }, [selectedPeriod]);
+  /* ---------------- Loading State ---------------- */
 
-  if (!taxsheetData) {
+  if (payrollLoading || taxLoading) {
+    return <CardSkeleton />;
+  }
+
+  /* ---------------- No Payroll Period ---------------- */
+
+  if (!payrollPeriods?.length) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-          <span className="text-sm text-gray-500">Loading tax sheet...</span>
-        </div>
-      </div>
+      <NoDataFound title="No Payroll Periods" subtitle="No payroll periods available for this company." />
     );
   }
+
+  /* ---------------- No Tax Data ---------------- */
+
+  if (!taxsheetData || !taxsheetData.months?.length) {
+    return (
+      <NoDataFound title="No Tax Sheet Records" subtitle="No tax data available for selected payroll period." />
+    );
+  }
+
+  /* ---------------- Build Sections ---------------- */
 
   const buildSections = (data: TaxSheetData) => {
     const keys = Object.keys(data) as SectionKey[];
@@ -137,6 +154,7 @@ export default function TaxSheet() {
       />
     </div>
   );
+
   return (
     <div className="space-y-1">
       <Card padding="sm">
@@ -147,9 +165,7 @@ export default function TaxSheet() {
               Selected Pay Roll Period {selectedPeriod}
             </Typography>
           </div>
-          <div className="flex flex-row md:flex-row md:items-center md:gap-4">
-            <FilterDropdowns />
-          </div>
+          <FilterDropdowns />
         </div>
       </Card>
 
@@ -158,7 +174,7 @@ export default function TaxSheet() {
           className="min-w-max"
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${(taxsheetData?.months?.length || 0) + 2}, minmax(120px, 1fr))`,
+            gridTemplateColumns: `repeat(${(taxsheetData.months?.length || 0) + 2}, minmax(120px, 1fr))`,
           }}
         >
           <div className="bg-gray-50 border-b px-4 py-2 text-sm font-semibold">

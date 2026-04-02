@@ -10,12 +10,14 @@ import {
   getCurrencies,
   getExpenseAdvanceList,
   getExpenseTableFieldSettings,
+  getCheckAdvancePolicy,
   getExpenseTypeFields,
   getExpenseTypes,
   getProjects,
   updateEmployeeAdvance,
 } from "../services/employeeAdvances";
 import { ApiAdvance } from "../types/employeeAttendance";
+import FrappeAPI from "../utils/frappeAPI";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
   return useQuery<ApiAdvance[]>({
@@ -117,6 +119,14 @@ export const useExpenseTableFieldSettings = (
   });
 };
 
+export const useCheckAdvancePolicy = (employeeId: string | null) => {
+  return useQuery({
+    queryKey: ["check-advance-policy", employeeId],
+    queryFn: () => getCheckAdvancePolicy(employeeId!),
+    enabled: !!employeeId,
+  });
+};
+
 export const useAdvanceTypes = () => {
   return useQuery({
     queryKey: ["advance-types"],
@@ -143,3 +153,16 @@ export const useEmployeeAdvanceUpdate = () => {
     },
   });
 };
+
+
+export const useGetEmployeeAdvanceDoc = (
+  docname: string
+) => {
+  return useQuery({
+    queryKey: ["advance-doc-data", docname],
+    queryFn: () => FrappeAPI.getDocument("Employee Advance", docname!),
+    enabled: !!docname,
+  });
+};
+
+

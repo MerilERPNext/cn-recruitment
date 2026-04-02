@@ -9,7 +9,8 @@ import {
         getOffCyclePayslipHTML,
         getSalarySlipHTML,
         PrintFormatMenuOptionsService,
-        getSalarySlipName
+        getSalarySlipName,
+        updateSalarySlip
      } from "../services/salaryDetailsService"
 
 const isPermissionError = (error: unknown): error is PermissionError => {
@@ -78,5 +79,21 @@ export const useSalarySlipName = () => {
   return useQuery({
     queryKey: ["salary-slip-name"],
     queryFn: () => getSalarySlipName(),
+  });
+};
+
+
+// hooks/useUpdateSalarySlip.ts
+
+
+export const useUpdateSalarySlip = () => {
+  return useMutation({
+    mutationFn: ({
+      salarySlipName,
+      fileUrl,
+    }: {
+      salarySlipName: string;
+      fileUrl: string;
+    }) => updateSalarySlip(salarySlipName, fileUrl),
   });
 };

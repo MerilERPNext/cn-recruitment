@@ -1,23 +1,29 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
+import toast from "react-hot-toast";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
-import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import {
-  LoadingView,
-  ErrorView,
-} from "../../shared/DetailViewErrorLoadingWrapper";
-import Badge from "../../shared/Badge";
-import Button from "../../shared/atoms/Button";
+import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { getActionStyles } from "../../../utils/actionButtonStyles";
+import { formatCurrency } from "../../../utils/currencyFormatter";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import StatusBadge from "../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../shared/atoms/Typography";
+import {
+  ErrorView,
+  LoadingView,
+} from "../../shared/DetailViewErrorLoadingWrapper";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 type TeamAdvanceDetailViewProps = {
-  documentName: string;
+  documentName?: string;
+  referenceName?: string;
   onClose: () => void;
   onAction?: () => void;
   label?: string;
+  status?: string;
 };
 
 const formatINR = (amount: number | undefined | null) =>
@@ -25,26 +31,20 @@ const formatINR = (amount: number | undefined | null) =>
     amount ?? 0,
   );
 
-const getStatus = (status: string | undefined) => {
-  switch (status) {
-    case "Approved":
-      return { label: "Approved", statusColor: "bg-green-100 text-green-600" };
-    case "Rejected":
-      return { label: "Rejected", statusColor: "bg-red-100 text-red-600" };
-    default:
-      return { label: "Pending", statusColor: "bg-yellow-100 text-yellow-600" };
-  }
-};
-
 export default function TeamAdvanceDetailView({
   documentName,
+  referenceName,
   onClose,
   onAction,
   label = "Employee Advance",
+  status,
 }: TeamAdvanceDetailViewProps) {
   const { isDesktop } = useScreenSize();
   const { setRefetchAttendance } = useGlobalStore();
-  const { data, isLoading, error } = useGetToDoWithReferenceDoc(documentName);
+  const { data, isLoading, error } = useGetToDoWithReferenceDoc(
+    documentName,
+    referenceName,
+  );
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -58,9 +58,14 @@ export default function TeamAdvanceDetailView({
         });
 
         setRefetchAttendance(true);
-        if (onAction) onAction();
-        onClose();
+        if (onAction) {
+          onAction();
+        } else {
+          onClose();
+        }
       } catch (e) {
+        toast.error(errorResponseFormater(e));
+
         console.error(e);
       } finally {
         setCurrentAction(null);
@@ -71,7 +76,8 @@ export default function TeamAdvanceDetailView({
 
   if (isLoading) return <LoadingView onClose={onClose} label={label} />;
   if (error) return <ErrorView onClose={onClose} label={label} error={error} />;
-  if (!data?.reference_document) return null;
+  if (!(data?.todo_id || data?.name || data?.reference_document?.name))
+    return null;
 
   const ref = data.reference_document;
   const actions = (() => {
@@ -83,53 +89,60 @@ export default function TeamAdvanceDetailView({
       return [];
     }
   })();
-  const status = getStatus(ref.status);
+
+  const finalStatus =
+    status ||
+    (data.todo_status === "Closed" && ref.custom_final_status !== "Rejected"
+      ? "Approved"
+      : ref.custom_final_status);
 
   const DesktopBreakup = (
-    <div className="mt-2 border border-gray-200 rounded-lg overflow-x-auto bg-white shadow-sm">
-      <table className="min-w-full text-sm text-gray-800">
-        <thead className="bg-gray-50">
-          <tr className="text-left">
-            <th className="px-4 py-2 font-semibold">Expense Type</th>
-            <th className="px-4 py-2 font-semibold">Date</th>
-            <th className="px-4 py-2 font-semibold">Merchant</th>
-            <th className="px-4 py-2 font-semibold">Invoice No.</th>
-            <th className="px-4 py-2 font-semibold text-right">Amount</th>
-            <th className="px-4 py-2 font-semibold text-center">Attachment</th>
+    <div className="mt-2 rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
+      <table className="min-w-full text-sm text-center">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Advance Type
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Advance Date
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Sanctioned Amount
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Claimed Amount
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Approval Status
+            </th>
+            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
+              Description
+            </th>
           </tr>
         </thead>
 
-        <tbody>
+        <tbody className="divide-y divide-gray-100">
           {ref.expenses?.map((item: any, idx: number) => (
             <tr
               key={item.name || idx}
-              className="border-t border-gray-200 hover:bg-gray-50 transition-colors"
+              className="bg-white hover:bg-gray-50 transition-colors duration-150"
             >
-              <td className="px-4 py-2">{item.expense_type || "-"}</td>
-              <td className="px-4 py-2">
+              <td className="px-4 py-3 text-gray-800">{item.expense_type}</td>
+              <td className="px-4 py-3 text-gray-800">
                 {formatToIndianDate(item.expense_date)}
               </td>
-              <td className="px-4 py-2">{item.custom_mercent || "-"}</td>
-              <td className="px-4 py-2">{item.custom_invoice_number || "-"}</td>
-
-              <td className="px-4 py-2 text-right">
-                {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
+              <td className="px-4 py-3 text-gray-800">
+                {formatCurrency(item.sanctioned_amount)}
               </td>
-
-              <td className="px-4 py-2 text-center">
-                {item.custom_attach_receipt ? (
-                  <a
-                    href={item.custom_attach_receipt}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 underline"
-                  >
-                    View Attachment
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-400">-</span>
-                )}
+              <td className="px-4 py-3 text-gray-800">
+                {formatCurrency(item.amount)}
               </td>
+              <td className="px-4 py-3 text-gray-800">
+                {" "}
+                {<StatusBadge status={finalStatus} />}
+              </td>
+              <td className="px-4 py-3 text-gray-800">{item.description}</td>
             </tr>
           ))}
         </tbody>
@@ -138,79 +151,91 @@ export default function TeamAdvanceDetailView({
   );
 
   const MobileBreakup = (
-    <div className="space-y-3 mt-2">
+    <div className="grid grid-cols-1 gap-4 mt-2">
       {ref.expenses?.map((item: any, idx: number) => (
         <div
           key={item.name || idx}
-          className="border border-gray-200 rounded-lg bg-white shadow-sm p-3"
+          className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
         >
-          <div className="flex justify-between items-center mb-1">
-            <p className="text-sm font-semibold text-gray-800">
-              {item.expense_type}
-            </p>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatINR(item.amount ?? item.custom_amount_in_other_currency)}
-            </p>
+          {/* Header */}
+          <div className="mb-3 flex justify-between items-center">
+            <Typography variant="label" className="card-title">
+              Breakup Entry {idx + 1}
+            </Typography>
+
+            {/* Approval Status */}
+            <StatusBadge status={finalStatus} />
           </div>
 
-          <div className="text-xs text-gray-600 space-y-1">
-            <p>
-              <span className="font-medium">Date:</span>{" "}
-              {formatToIndianDate(item.expense_date)}
-            </p>
-            <p>
-              <span className="font-medium">Merchant:</span>{" "}
-              {item.custom_mercent || "-"}
-            </p>
-            <p>
-              <span className="font-medium">Invoice:</span>{" "}
-              {item.custom_invoice_number || "-"}
-            </p>
-          </div>
+          {/* Content */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            {/* Advance Type */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Advance Type</Typography>
+              <Typography variant="mobileCardValue">
+                {item.expense_type || "—"}
+              </Typography>
+            </div>
 
-          {item.custom_attach_receipt && (
-            <button
-              type="button"
-              className="mt-2 text-xs font-medium text-blue-600 underline"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(item.custom_attach_receipt, "_blank");
-              }}
-            >
-              View Attachment
-            </button>
-          )}
+            {/* Date */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Advance Date</Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(item.expense_date)}
+              </Typography>
+            </div>
+
+            {/* Sanctioned Amount */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">
+                Sanctioned Amount
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(item.sanctioned_amount)}
+              </Typography>
+            </div>
+
+            {/* Claimed Amount */}
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Claimed Amount</Typography>
+              <Typography variant="mobileCardValue">
+                {formatCurrency(item.amount)}
+              </Typography>
+            </div>
+
+            {/* Description - full width */}
+            <div className="col-span-2 flex flex-col gap-1">
+              <Typography variant="mobileCardLabel">Description</Typography>
+              <Typography variant="mobileCardValue">
+                {item.description || "—"}
+              </Typography>
+            </div>
+          </div>
         </div>
       ))}
     </div>
   );
 
-  const ActionButtons = actions?.length ? (
-    <div className="border-t bg-white p-4 flex flex-col md:flex-row gap-3">
-      {actions.map((action: string) => {
-        const isLoading = currentAction === action && mutation.isPending;
-        const actionStyle = getActionStyles(action);
-
-        return (
-          <Button
-            key={action}
-            disabled={isLoading}
-            onClick={() => handleAction(action)}
-            bgColor={actionStyle.bgColor}
-            variant={actionStyle.variant}
-            fullWidth
-            size="md"
-          >
-            {isLoading ? (
-              <span className="inline-block w-4 h-4 border-2 border-gray-500 border-t-transparent animate-spin rounded-full" />
-            ) : (
-              action
-            )}
-          </Button>
-        );
-      })}
-    </div>
-  ) : null;
+  const ActionButtons =
+    actions?.length &&
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) ? (
+      <div className="border-t bg-white p-4">
+        <TeamApprovalActionPill
+          variant={isDesktop ? "modal" : "buttons"}
+          actions={actions}
+          status={data?.status}
+          recordId={data?.todo_id}
+          loadingAction={
+            currentAction ? { id: data?.todo_id, action: currentAction } : null
+          }
+          onAction={(action) => handleAction(action)}
+        />
+      </div>
+    ) : (
+      <div className="border-t bg-white p-4 flex justify-end">
+        <StatusBadge status={"Action taken"} />
+      </div>
+    );
 
   return (
     <div
@@ -222,71 +247,129 @@ export default function TeamAdvanceDetailView({
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
-        <div className="flex items-center justify-between px-5 py-4 border-b bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center font-semibold text-blue-600">
-              {ref.employee_name?.substring(0, 2).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900">
-                {ref.employee_name}
-              </p>
-              <p className="text-xs text-gray-500">{ref.name}</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <Badge label={status.label} backgroundColor={status.statusColor} />
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full"
-            >
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+          <Typography
+            variant="bodyMedium"
+            className="font-semibold text-gray-900 leading-tight"
+          >
+            Advance Details: {ref.name}
+          </Typography>
+
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
         </div>
 
         {/* CONTENT */}
         <div className="px-5 py-4 overflow-y-auto flex-1 space-y-6">
           {/* Advance Details */}
-          <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700">
-              Advance Details
-            </h3>
-            <div className="text-sm text-gray-700 grid md:grid-cols-2 gap-y-1 gap-x-8">
-              <p>
-                <span className="font-medium">Advance Amount:</span>{" "}
-                {formatINR(ref.advance_amount)}
-              </p>
-              <p>
-                <span className="font-medium">Department:</span>{" "}
-                {ref.department || "N/A"}
-              </p>
-              <p>
-                <span className="font-medium">Company:</span> {ref.company}
-              </p>
-              <p>
-                <span className="font-medium">Posting Date:</span>{" "}
-                {formatToIndianDate(ref.posting_date)}
-              </p>
-              {ref.purpose && (
-                <p className="md:col-span-2">
-                  <span className="font-medium">Purpose:</span> {ref.purpose}
-                </p>
+          <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="text-gray-500">
+                  {ref?.employee_name ? "Employee Name" : "Employee ID"}
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {ref?.employee_name || ref?.employee}
+                </Typography>
+              </div>
+              <div>
+                <StatusBadge status={finalStatus} />
+              </div>
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Advance Amount
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatINR(ref.advance_amount)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <Typography variant="mobileCardLabel" className="block">
+                  Department
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {ref.department || "N/A"}
+                </Typography>
+              </div>
+            </div>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Company
+                </Typography>
+                <Typography variant="mobileCardValue">{ref.company}</Typography>
+              </div>
+              {finalStatus === "Approved" && (
+                <div className="flex flex-col gap-2 text-right">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Paid Status
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    <StatusBadge
+                      status={data?.status === "Paid" ? "Paid" : "Unpaid"}
+                    />
+                  </Typography>
+                </div>
               )}
             </div>
-          </section>
+
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel" className="block">
+                  Posting Date
+                </Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(ref.posting_date)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-2 text-right">
+                <MobileAllocatedTo
+                  users={data?.allocated_to}
+                  roles={data?.allocated_roles}
+                  username={data?.username}
+                />
+              </div>
+            </div>
+            {ref.purpose && (
+              <div className="flex flex-col gap-2">
+                <Typography variant="mobileCardLabel">Purpose</Typography>
+                <Typography variant="mobileCardValue">{ref.purpose}</Typography>
+              </div>
+            )}
+          </div>
 
           {/* BREAKUP */}
-          {ref.expenses?.length > 0 && (
-            <section>
-              <h3 className="text-sm font-semibold text-gray-700">
-                Advance Breakup
-              </h3>
+          <section>
+            <Typography
+              variant="bodySmall"
+              className="base-title mb-1 font-bold block"
+            >
+              Advance Breakup Items ({ref?.expenses?.length || 0})
+            </Typography>
 
-              {isDesktop ? DesktopBreakup : MobileBreakup}
-            </section>
-          )}
+            {ref.expenses?.length > 0 ? (
+              isDesktop ? (
+                DesktopBreakup
+              ) : (
+                MobileBreakup
+              )
+            ) : (
+              <div className="py-6 text-center border border-gray-200 rounded-lg bg-gray-50 mt-2">
+                <Typography variant="mobileCardValue" className="text-gray-500">
+                  No breakup items found for this advance.
+                </Typography>
+              </div>
+            )}
+          </section>
         </div>
 
         {/* ACTION BUTTONS */}

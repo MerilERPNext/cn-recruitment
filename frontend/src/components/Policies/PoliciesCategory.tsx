@@ -6,6 +6,7 @@ import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
+import { NoDataFound } from "../shared/atoms/NoDataFound";
 
 type CategoryCardProps = {
   name: string;
@@ -89,7 +90,10 @@ const PoliciesCategory: React.FC = () => {
         </Typography>
       )}
       {categories.length === 0 ? (
-        <p className="text-gray-500 text-center mt-4">No categories found.</p>
+        <NoDataFound
+          title="No Policy Categories"
+          subtitle="No categories found."
+        />
       ) : (
         categories.map((item: CategoryDoc) => (
           <CategoryCard

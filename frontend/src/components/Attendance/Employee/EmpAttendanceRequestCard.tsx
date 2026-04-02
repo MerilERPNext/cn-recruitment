@@ -1,25 +1,22 @@
-import { MyAttendanceRequest } from "../../../types/attendance";
-import Badge from "../../shared/Badge";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { RotateCcw } from "lucide-react";
-import Tooltip from "../../shared/Tooltip";
-import { useRevokeEvent } from "../../../hooks/userApprovalList";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import Button from "../../shared/atoms/Button";
+import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
-import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
-import { Link } from "react-router-dom";
-import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
-import { differenceInCalendarDays, parse, startOfDay } from "date-fns";
-import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
-import { Typography } from "../../shared/atoms/Typography";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyAttendanceRequest } from "../../../types/attendance";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { truncateByChars } from "../../../utils/sanitizeToPlainText";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import StatusBadge from "../../shared/atoms/statusBadge";
+import { Typography } from "../../shared/atoms/Typography";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import Tooltip from "../../shared/Tooltip";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 
 const EmpAttendanceRequestCard = ({
   data,
@@ -62,38 +59,12 @@ const EmpAttendanceRequestCard = ({
     }
   };
 
-  const getStatus = (rawStatus: string) => {
-    const status = rawStatus?.toLowerCase().trim();
-
-    if (status === "pending") {
-      return {
-        label: "Pending",
-        statusColor: "bg-yellow-100 text-yellow-800",
-      };
-    } else if (status === "approved") {
-      return {
-        label: "Approved",
-        statusColor: "bg-green-100 text-green-800",
-      };
-    } else if (status === "rejected") {
-      return {
-        label: "Rejected",
-        statusColor: "bg-red-100 text-red-800",
-      };
-    } else {
-      return {
-        statusColor: "bg-gray-100 text-gray-800",
-        label: rawStatus || "Unknown",
-      };
-    }
-  };
-
-  const status = getStatus(data?.reference_document?.custom_status);
   function getDays(from_date: string, to_date: string) {
     const format = "dd-MM-yyyy";
 
     const fromDate = startOfDay(parse(from_date, format, new Date()));
     const toDate = startOfDay(parse(to_date, format, new Date()));
+
 
     const diff = differenceInCalendarDays(toDate, fromDate);
 
@@ -105,8 +76,8 @@ const EmpAttendanceRequestCard = ({
   );
   const formattedToDate = formatToIndianDate(data?.reference_document?.to_date);
   const formattedDueDate = formatToIndianDate(data?.due_date);
-  const duration = getDays(formattedToDate, formattedFromDate);
-  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+  const duration = getDays(formattedFromDate, formattedToDate);
+  const gridTemplateColumns = "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
   return (
     <>
@@ -143,36 +114,17 @@ const EmpAttendanceRequestCard = ({
             {duration > 1 ? duration + " Days" : duration + " Day"}
           </Typography>
 
-          <Link
-            to={`/webapp/employee-profile?target_user=${data?.allocated_to_emp_id}`}
-            target="_blank"
-          >
-            <Typography
-              variant="bodySmall"
-              className="font-medium text-center truncate"
-            >
-              {" "}
-              <WrapperHoverCard employeeId={data?.allocated_to_emp_id}>
-                {data?.username}
-              </WrapperHoverCard>
-            </Typography>
-          </Link>
+
           {/* Status */}
           <div className="flex items-center justify-center">
-            <Tooltip
-              content={
-                status?.label === "Pending"
-                  ? `Allocated to : ${data?.allocated_to}`
-                  : ""
-              }
+            <AllocatedToTooltip
+              users={data?.allocated_to}
+              roles={data?.allocated_roles}
+              allocated_to_user={data?.username}
+              position="left"
             >
-              {/* <Badge
-                size="md"
-                label={status?.label as string}
-                backgroundColor={status?.statusColor}
-              /> */}
               <StatusBadge status={data?.reference_document?.custom_status} />
-            </Tooltip>
+            </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
@@ -186,62 +138,65 @@ const EmpAttendanceRequestCard = ({
           </div>
         </div>
       ) : (
-        <div className="w-full px-1 flex border border-gray-200 items-center justify-between bg-white rounded-xl cursor-pointer hover-lift transition-shadow">
-          <div className=" flex items-start justify-between gap-4 w-full">
-            <div className="flex gap-1 flex-col justify-around w-full p-2">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-between w-full py-1">
-                  <div className="flex items-center gap-2">
-                    <p className="whitespace-nowrap card-title">
-                      {data?.reference_document?.custom_request_type}
-                    </p>
-                    <Badge
-                      size="sm"
-                      backgroundColor={"bg-blue-100 text-blue-800"}
-                      label={
-                        duration > 1 ? duration + " Days" : duration + " Day"
-                      }
-                    />
-                  </div>
-                  <div className="text-sm text-gray-900 text-start flex gap-2">
-                    {data?.custom_allow_revoke && type === "pending" ? (
-                      <Button
-                        icon={<RotateCcw className="h-3 w-3" />}
-                        variant="contain"
-                        size="sm"
-                        onClick={handleRevokeClick}
-                        disabled={revokeEventMutation.isPending}
-                      >
-                        {revokeEventMutation.isPending ? "Revoking..." : ""}
-                      </Button>
-                    ) : (
-                      <></>
-                    )}
-                    {type == "pending" && data?.can_edit && (
-                      <Button
-                        onClick={() => {
-                          setEdit(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <Badge
-                  size="sm"
-                  backgroundColor={status?.statusColor}
-                  label={status?.label || ""}
-                />
-                {/* <div className="text-sm text-gray-600">{data?.reason}</div> */}
+        <div
+          className="cursor-pointer border-t-4 border-x border-b 
+      border-x-primary/20 border-b-primary/20 
+      shadow-sm border-primary bg-white rounded-xl"
+        >
+          <div className="p-4 flex flex-col gap-4 w-full">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <MobileAllocatedTo
+                users={data?.allocated_to}
+                roles={data?.allocated_roles}
+                username={data?.username}
+              />
+
+              <StatusBadge status={data?.reference_document?.custom_status} />
+            </div>
+
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Request Type</Typography>
+                <Typography variant="mobileCardValue">
+                  {data?.reference_document?.custom_request_type}
+                </Typography>
               </div>
-              <div className="card-subtitle">
-                {formattedFromDate}
-                {data?.reference_document?.to_date && formattedToDate !== "N/A"
-                  ? ` - ${formattedToDate}`
-                  : ""}
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Days</Typography>
+                <Typography variant="mobileCardValue">
+                  {duration > 1 ? duration + " Days" : duration + " Day"}
+                </Typography>
               </div>
             </div>
+
+            {/* Dates Section */}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Duration</Typography>
+                <Typography variant="mobileCardValue">
+                  {formattedFromDate} to {formattedToDate}
+                </Typography>
+              </div>
+
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Due Date</Typography>
+                <Typography variant="mobileCardValue">
+                  {formattedDueDate}
+                </Typography>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={type === "pending"}
+              canRevoke={type === "pending" && !!data?.custom_allow_revoke}
+              canEdit={type === "pending" && !!data?.can_edit}
+              revokeLoading={revokeEventMutation.isPending}
+              onRevoke={handleRevokeClick}
+              onEdit={() => setEdit(true)}
+            />
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Typography } from "../shared/atoms/Typography";
 import EmploymentHistoryCard from "./EmploymentHistoryCard";
 import Button from "../shared/atoms/Button";
 import { EditIcon, PlusIcon } from "lucide-react";
@@ -13,6 +14,7 @@ interface EmploymentHistoryProps {
 
 export interface CustomWorkHistory {
   doctype_name: string;
+  field_label: string;
   records: string;
   start_date: string | null;
   end_date: string | null;
@@ -32,7 +34,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   employeeId,
 }) => {
   const { data, isLoading, error } = useGetEmploymentHistoryData(employeeId || "")
-  const history = data?.custom_work_history || [];
+  const history = data?.custom_work_history?.filter((item) => item.history_type !== "Reporting") || [];
   const hasEmploymentHistory = history.length > 0;
 
   const defaultStartDateForAdd = !hasEmploymentHistory
@@ -55,8 +57,9 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
 
   const groupedHistory = history.reduce<Record<string, CustomWorkHistory[]>>(
     (acc, item) => {
-      if (!acc[item.doctype_name]) acc[item.doctype_name] = [];
-      acc[item.doctype_name].push(item);
+      const groupKey = item.field_label;
+      if (!acc[groupKey]) acc[groupKey] = [];
+      acc[groupKey].push(item);
       return acc;
     },
     {},
@@ -65,14 +68,14 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
   return (
     <div className="address-form-container bg-white rounded-md">
       <div className="px-0 md:px-6 py-2 md:p-8">
-        <div className="flex items-start justify-between border-b border-gray-200 pb-4 mb-8 rounded-md ">
+        <div className="flex items-start justify-between border-b border-gray-200 pb-2 mb-4 md:pb-4 md:mb-8 rounded-md ">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
               Employment History
-            </h2>
-            <p className="text-gray-600">
+            </Typography>
+            <Typography variant="bodyMedium" color="body2" className="max-sm:text-sm">
               Your employment history and organizational information
-            </p>
+            </Typography>
           </div>
           <div className="flex">
             {canEditEmploymentHistory && (
@@ -151,7 +154,7 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                 if (diff < minDiff) {
                   minDiff = diff;
                   overallClosestItem = item;
-                  overallClosestCategory = item.doctype_name;
+                  overallClosestCategory = item.field_label;
                 }
               });
             }
@@ -184,10 +187,10 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
               });
 
               return (
-                <div key={category} className="mb-10">
-                  <h3 className="md:text-xl font-semibold text-gray-800 mb-4">
-                    {category}
-                  </h3>
+                <div key={category} className="mb-5 md:mb-10">
+                  <Typography variant="h4" className="font-bold text-gray-800 mb-4 text-lg">
+                    {category !== "null" && category !== null && category !== undefined ? category : "Others"}
+                  </Typography>
 
                   <div className="flex gap-2 overflow-auto">
                     {sortedItems.map((item) => (
@@ -197,13 +200,13 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
                           }`}
                       >
                         <EmploymentHistoryCard
-                          title={item.doctype_name === 'Employee' ? item.records_details?.fullname : item.records}
+                          title={item.records_details?.name || item.records}
                           start_date={item.start_date}
                           end_date={item.end_date}
                           isCurrent={!item.end_date}
                           department={item.doctype_name === 'Employee' ? item.records_details?.department?.department_name : null}
                           location={item.doctype_name === 'Employee' ? item.records_details?.branch?.branch_value : null}
-                          id={item.records}
+                          id={item?.records_details?.id || ""}
                           doctype_name={item.doctype_name}
                         />
                       </div>

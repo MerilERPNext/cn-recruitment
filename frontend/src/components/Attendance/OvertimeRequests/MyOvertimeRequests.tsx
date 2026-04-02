@@ -1,22 +1,22 @@
-import { useState, useCallback } from "react";
-import CardTable from "../../shared/CardTable";
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { useTargetUser } from "../../../context/ViewedUserContext";
+import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { MyPlannedAttendanceRequest } from "../../../types/attendance";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
+import Button from "../../shared/atoms/Button";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
-import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import Button from "../../shared/atoms/Button";
-import { Plus } from "lucide-react";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import CreateOvertimeRequest from "./CreateOvertimeRequest";
-import { usePlannedOvertimeAllowed } from "../../../hooks/useAttendance";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import { useGetUiPermission } from "../../../hooks/userUiPermission";
-import { isActionEnabled } from "../../../utils/uiPermission";
-import { Typography } from "../../shared/atoms/Typography";
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -32,29 +32,32 @@ const MyOvertimeRequests = () => {
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    currentEmployee?.employee || "",
+    effectiveEmployeeId || "",
   );
   const { data: userUiPermission } = useGetUiPermission("Attendance");
   const canRequestAttendance = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "My Overtime",
+    "Planned Overtime",
   );
 
   const [showForm, setShowForm] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<MyPlannedAttendanceRequest | null>(null);
 
   const handleMyRequestsRefetchComplete = useCallback(() => {
     setRefetchMyRequestsList(false);
     setRefetchAttendance(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
 
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
       }
     },
     [setSearchParams],
@@ -67,6 +70,20 @@ const MyOvertimeRequests = () => {
   const handleActionComplete = useCallback(() => {
     setSearchParams({});
   }, [setSearchParams]);
+
+  const handleEditRequest = useCallback((request: MyPlannedAttendanceRequest) => {
+    setEditingRequest(request);
+    setShowForm(true);
+  }, []);
+
+  const handleCloseForm = useCallback(() => {
+    setShowForm(false);
+    setEditingRequest(null);
+  }, []);
+
+  const handleRevokeComplete = useCallback(() => {
+    setRefetchMyRequestsList(true);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -81,15 +98,15 @@ const MyOvertimeRequests = () => {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+      <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
-          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.5fr"]}
           titles={[
             "Description",
             "Creation",
             "Due Date",
-            "Allocated To",
             "Status",
+            "Actions"
           ]}
         >
           {effectiveEmployeeId ? (
@@ -109,6 +126,8 @@ const MyOvertimeRequests = () => {
                     onClick={(request: MyPlannedAttendanceRequest) =>
                       handleRequestClick(request)
                     }
+                    onEdit={handleEditRequest}
+                    onActionComplete={handleRevokeComplete}
                   />
                 );
               }}
@@ -128,13 +147,13 @@ const MyOvertimeRequests = () => {
                   ],
                 },
               ]}
-              defaultFilters={{ status: "Open" }}
+              defaultFilters={{ status: ["!=", "Cancelled"] }}
+              SkeletonComponent={CardSkeleton}
               pageSize={10}
               showRefreshButton={false}
-              orderBy="modified desc"
-              showPagination={true}
-              infiniteScroll={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
             />
           ) : null}
         </CardTable>
@@ -149,7 +168,7 @@ const MyOvertimeRequests = () => {
               className="hover:bg-blue-700"
               onClick={() => setShowForm(!showForm)}
             >
-              <Plus /> <span>Add Overtime Request</span>
+              <span>+ Overtime Request</span>
             </Button>
           </div>
         </div>
@@ -157,13 +176,22 @@ const MyOvertimeRequests = () => {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <CreateOvertimeRequest onCancel={() => setShowForm(false)} />
+            <CreateOvertimeRequest
+              onCancel={handleCloseForm}
+              isEditMode={!!editingRequest}
+              editData={editingRequest ? {
+                name: editingRequest.reference_name,
+                overtime_details: editingRequest.reference_document?.overtime_details || [],
+                attachments: editingRequest.attachments || []
+              } : undefined}
+            />
           </div>
         </div>
       )}
-      {requestId && (
+      {(requestId || referenceName) && (
         <MyOvertimeDetails
-          documentName={requestId}
+          documentName={requestId || ""}
+          referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
         />

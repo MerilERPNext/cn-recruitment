@@ -1,29 +1,37 @@
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import InstallmentsList from "./InstallmentsList";
-import AdvanceForm from "./AdvanceForm";
-import { useScreenSize } from "../../../hooks/useScreenSize";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
-import { formatCurrency } from "../../../utils/currencyFormatter";
-import Modal from "./commonModal";
-import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
+import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
+import { formatCurrency } from "../../../utils/currency";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { isActionEnabled } from "../../../utils/uiPermission";
 import CardTable from "../../shared/CardTable";
-import Button from "../../shared/atoms/Button";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import Tooltip from "../../shared/Tooltip";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
-import { Search } from "lucide-react";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceForm from "./AdvanceForm";
+import InstallmentsList from "./InstallmentsList";
+import Modal from "./commonModal";
+import ShowHideButton from "../ui/ShowHideButton";
+import SearchInputWrapper from "../../shared/SearchBar";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+
 
 const AdvancesList: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
-  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(null);
+  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(
+    null,
+  );
   const [showInstallments, setShowInstallments] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
 
@@ -35,27 +43,41 @@ const AdvancesList: React.FC = () => {
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: advancesData, refetch } = useEmployeeAdvances(employeeId || "");
+  const {
+    data: advancesData,
+    refetch,
+    isLoading,
+  } = useEmployeeAdvances(employeeId || "");
 
   type AmountRowProps = {
     label: string;
     value: number;
     maskAmounts: boolean;
   };
+  const [editAdvanceId, setEditAdvanceId] = useState<string | null>(null);
+  const handleEdit = (docname: string) => {
+    setEditAdvanceId(docname);
+    setShowAdvanceForm(true);
+  };
 
   const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
     return (
-      <div className="mt-0 pt-3">
-        <div className="flex justify-between text-sm text-gray-600">
-          <span className="text-gray-600 text-xs uppercase tracking-wide">
-            {label}
-          </span>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <Typography variant="mobileCardLabel">{label}</Typography>
+        </div>
+        <div className="flex flex-col gap-1 text-right">
           {maskAmounts ? (
-            <span className="blur-sm select-none text-gray-400">
-              {RupeeSymbolPerfix("XX,XXX")}
-            </span>
+            <Typography
+              variant="mobileCardValue"
+              className="blur-sm select-none text-gray-400"
+            >
+              {formatCurrency(0).replace("0", "XX,XXX")}
+            </Typography>
           ) : (
-            <span className="font-medium">{formatCurrency(value)}</span>
+            <Typography variant="mobileCardValue">
+              {formatCurrency(value)}
+            </Typography>
           )}
         </div>
       </div>
@@ -72,6 +94,11 @@ const AdvancesList: React.FC = () => {
   const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     return apiData.map((a) => ({
       name: a.advance_type,
+      docname: a.name,
+      can_edit: a.can_edit,
+      allocated_to: a.allocated_to,
+      allocated_to_roles: a.allocated_to_roles,
+      allocated_to_user: a.allocated_to_user,
       amount: a.total_advance_amount,
       numberOfDeductions: a.total_paid_amount,
       startDate: a.start_date,
@@ -93,10 +120,19 @@ const AdvancesList: React.FC = () => {
     : [];
 
   // ✅ FILTERED DATA (SEARCH)
-  const filteredData = formattedData.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // const filteredData = formattedData.filter(
+  //   (item) =>
+  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
+  // );
+
+  const filteredData = formattedData.filter((item) => {
+    const name = item.name?.toLowerCase() || "";
+    const status = item.advanceStatus?.toLowerCase() || "";
+    const search = searchTerm.toLowerCase();
+
+    return name.includes(search) || status.includes(search);
+  });
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -108,13 +144,42 @@ const AdvancesList: React.FC = () => {
     setSelectedAdvance(null);
   };
 
-  const handleCreateAdvance = () => {
-    setShowAdvanceForm(true);
-  };
-
   const handleCloseModal = () => {
     setShowAdvanceForm(false);
+    setEditAdvanceId(null);
+    setIsModalOpen(false);
   };
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateAdvance = isActionEnabled(
+    uiPermission,
+    "create_advance",
+    "My Advances",
+  );
+
+  useEffect(() => {
+    if (canCreateAdvance) {
+      setActionButtonConfig({
+        label: "+ Request Advance",
+        onClick: () => {
+          setShowAdvanceForm(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateAdvance]);
 
   if (showInstallments && selectedAdvance) {
     return (
@@ -134,17 +199,21 @@ const AdvancesList: React.FC = () => {
     "Start Date",
     "End Date",
     "Status",
+    "Actions",
   ];
 
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  const DesktopLayout = () => (
+  interface DesktopLayoutProps {
+    handleEdit: (docname: string) => void;
+  }
+  const DesktopLayout = ({ handleEdit }: DesktopLayoutProps) => (
     <>
       {filteredData.map((advance, index) => (
         <div
           key={`${advance.name}-${index}`}
           className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
           onClick={() => handleViewInstallments(advance)}
         >
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -154,7 +223,7 @@ const AdvancesList: React.FC = () => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
               <span className="blur-sm select-none text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
               <span>{formatCurrency(advance.amount)}</span>
@@ -164,10 +233,10 @@ const AdvancesList: React.FC = () => {
           <Typography variant="bodySmall" className="font-medium text-center">
             {maskAmounts ? (
               <span className="blur-sm select-none text-gray-400">
-                {RupeeSymbolPerfix("XX,XXX")}
+                {formatCurrency("XX,XXX")}
               </span>
             ) : (
-              <span>{advance.numberOfDeductions}</span>
+              <span>{formatCurrency(advance.numberOfDeductions)}</span>
             )}
           </Typography>
 
@@ -180,9 +249,21 @@ const AdvancesList: React.FC = () => {
           </Typography>
 
           <div className="flex items-center justify-center">
-            <Tooltip content={advance.employee_name}>
+            <AllocatedToTooltip
+              users={advance.allocated_to}
+              roles={advance.allocated_to_roles}
+            >
               <StatusBadge status={advance.advanceStatus} />
-            </Tooltip>
+            </AllocatedToTooltip>
+
+          </div>
+
+          <div className="flex items-center justify-center">
+            <MyApprovalActionPill
+              isPending={advance.advanceStatus === "Pending"}
+              canEdit={!!advance.can_edit}
+              onEdit={() => handleEdit(advance.docname)}
+            />
           </div>
         </div>
       ))}
@@ -194,34 +275,61 @@ const AdvancesList: React.FC = () => {
       {filteredData.map((advance, index) => (
         <div
           key={`${advance.name}-${index}`}
-          className="my-content-card cursor-pointer"
+          className="cursor-pointer border-t-4 border-x border-b mt-2
+            border-x-primary/20 border-b-primary/20 
+            shadow-sm border-primary bg-white rounded-xl"
           onClick={() => handleViewInstallments(advance)}
         >
-          <div className="flex justify-between items-start">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {advance.name}
-            </h3>
-            <StatusBadge status={advance.advanceStatus} />
-          </div>
+          <div className="p-4 flex flex-col gap-3 w-full">
+            {/* Header: Advance Name + Status */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Advance Name</Typography>
+                <Typography variant="mobileCardValue">
+                  {advance.name}
+                </Typography>
+              </div>
+              <StatusBadge status={advance.advanceStatus} />
+            </div>
 
-          <AmountRow
-            label="Total Amount"
-            value={advance.amount}
-            maskAmounts={maskAmounts}
-          />
+            {/* Amount rows */}
+            <AmountRow
+              label="Total Amount"
+              value={advance.amount}
+              maskAmounts={maskAmounts}
+            />
+            <AmountRow
+              label="Deduction Amount"
+              value={advance.numberOfDeductions}
+              maskAmounts={maskAmounts}
+            />
 
-          <AmountRow
-            label="Deduction Amount"
-            value={advance.numberOfDeductions}
-            maskAmounts={maskAmounts}
-          />
-
-          <div className="mt-0 pt-3 flex justify-between text-sm text-gray-600">
-            <span>
-              <strong>{formatToIndianDate(advance.startDate)}</strong> to{" "}
-              <strong>{formatToIndianDate(advance.endDate)}</strong>
-            </span>
-            <span>{advance.installments.length} installments</span>
+            {/* Duration + Installments */}
+            <div className="flex items-start justify-between">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel">Duration</Typography>
+                <Typography variant="mobileCardValue">
+                  {formatToIndianDate(advance.startDate)} to{" "}
+                  {formatToIndianDate(advance.endDate)}
+                </Typography>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                <Typography variant="mobileCardLabel">Installments</Typography>
+                <Typography variant="mobileCardValue">
+                  {advance.installments.length}
+                </Typography>
+              </div>
+            </div>
+            <MobileAllocatedTo
+              users={advance.allocated_to}
+              roles={advance.allocated_to_roles}
+            />
+            <MyApprovalActionPill
+              variant="buttons"
+              isPending={advance.advanceStatus === "Pending"}
+              canEdit={!!advance.can_edit}
+              onEdit={() => handleEdit(advance.docname)}
+            />
           </div>
         </div>
       ))}
@@ -230,80 +338,69 @@ const AdvancesList: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-1 md:px-2 py-2">
+      {/* ===== Header ===== */}
+      <div className="flex-shrink-0">
+        <div className="px-1 md:px-6 py-1 md:py-4">
+          <div className="flex items-center justify-between max-sm:mb-2">
+            {isDesktop ? (
+              <div>
+                <Typography variant="h4">My Advance Request</Typography>
+                <Typography variant="bodySmall" color="body2">
+                  Track and manage your advance requests
+                </Typography>
+              </div>
+            ) : (
+              <span></span>
+            )}
 
-        {/* HEADER + SEARCH */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-
-          {isDesktop && (
-            <div>
-              <Typography variant="h4">My Advance Request</Typography>
-              <Typography variant="bodySmall" color="body2">
-                Track and manage your advance requests
-              </Typography>
-            </div>
-          )}
-
-          <div className="flex gap-2 w-full md:w-auto">
-
-            <button
-              onClick={() => setMaskAmounts(!maskAmounts)}
-              className="my-btn-secondary flex items-center gap-2"
-            >
-              {maskAmounts ? (
-                <>
-                  <span className="text-sm">Show Amount</span>
-                  <BsToggleOff className="w-6 h-6" />
-                </>
-              ) : (
-                <>
-                  <span className="text-sm">Hide Amount</span>
-                  <BsToggleOn className="w-6 h-6 text-primary" />
-                </>
-              )}
-            </button>
-
-            <Button
-              bgColor="primary"
-              size="md"
-              onClick={handleCreateAdvance}
-            >
-              Create Advance
-            </Button>
+            <ShowHideButton
+              showAmount={maskAmounts}
+              onToggleAmount={() => setMaskAmounts((prev) => !prev)}
+            />
           </div>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto md:px-1 pb-4">
-        <CardTable titles={titles} columnWidths={columnWidths}>
-  
-            <div className="relative w-full ">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-4 py-2 border border-gray-100  w-full "
-          />
+        <div className="flex-1 overflow-y-auto md:px-4 pb-4">
+          <CardTable titles={titles} columnWidths={columnWidths}>
+            <>
+              <div className="flex items-center w-full border border-gray-300 bg-white">
+                <SearchInputWrapper
+                  searchTerm={searchTerm}
+                  handleSearch={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              {isLoading ? (
+                <CardSkeleton />
+              ) : formattedData.length === 0 ? (
+                <NoDataFound title="No Advance Records" subtitle="You have not requested any advance yet." />
+              ) : (
+                <>
+
+
+                  {filteredData.length === 0 ? (
+                    <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
+                  ) : isDesktop ? (
+                    <DesktopLayout handleEdit={handleEdit} />
+                  ) : (
+                    <MobileLayout />
+                  )}
+                </>
+              )}
+            </>
+          </CardTable>
         </div>
-          {isDesktop ? <DesktopLayout /> : <MobileLayout />}
 
-          {filteredData.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
-              No advances found.
-            </div>
-          )}
-        </CardTable>
+        {showAdvanceForm && (
+          <Modal onClose={handleCloseModal}>
+            <AdvanceForm
+              docname={editAdvanceId}
+              user={user}
+              onClose={handleCloseModal}
+            />
+          </Modal>
+        )}
       </div>
-
-      {showAdvanceForm && (
-        <Modal onClose={handleCloseModal}>
-          <AdvanceForm user={user} onClose={handleCloseModal} />
-        </Modal>
-      )}
     </div>
   );
 };
-
 export default AdvancesList;

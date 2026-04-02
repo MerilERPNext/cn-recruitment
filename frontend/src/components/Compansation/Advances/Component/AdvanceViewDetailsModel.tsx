@@ -1,35 +1,50 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
-import { useState } from "react";
+import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import Button from "../../../shared/atoms/Button";
-import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
-import { EmployeeAdvanceUpdatePayload, useEmployeeAdvanceUpdate } from "../../../../hooks/useEmployeeAdvances";
-import { Typography } from "../../../shared/atoms/Typography";
+import {
+  EmployeeAdvanceUpdatePayload,
+  useEmployeeAdvanceUpdate,
+} from "../../../../hooks/useEmployeeAdvances";
+import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
+import { useScreenSize } from "../../../../hooks/useScreenSize";
+import { getActionStyles } from "../../../../utils/actionButtonStyles";
+import Button from "../../../shared/atoms/Button";
 import StatusBadge from "../../../shared/atoms/statusBadge";
+import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
+import { Typography } from "../../../shared/atoms/Typography";
+import { useGetToDoWithReferenceDoc } from "../../../../hooks/useAttendance";
 
 type Props = {
   open: boolean;
   item: any;
+  documentName: string | null;
+  referenceName: string | null;
   onClose: () => void;
 };
 
-const getActionStyles = (action: string) => {
-  const a = action.toLowerCase();
-  if (a === "approve") return { bg: "success-50", text: "success" };
-  if (a === "reject") return { bg: "error-50", text: "error" };
-  return { bg: "gray-200", text: "gray-600" };
-};
+const AdvanceDetailsModal = ({ 
+  documentName,
+  referenceName,
+  open,
+  item,
+  onClose,
+}: Props) => {
+  const { isDesktop } = useScreenSize();
+    const {
+      data: fetchedData,
+      isLoading,
+      error,
+    } = useGetToDoWithReferenceDoc(
+      documentName || "",
+      referenceName || "",
+    );
 
-const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
-  if (!open || !item) return null;
-
-  const data = item.data;
-  const ref = data?.reference_document;
-  const loadingAction = item.loadingAction;
+  const data = item?.data || fetchedData;
+  const ref = data?.reference_document || item?.data;
+  const loadingAction = item?.loadingAction;
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -37,14 +52,24 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
   const advanceFormUpdate = useEmployeeAdvanceUpdate();
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
-
-  /* Editable fields */
   const [form, setForm] = useState({
     advance_amount: ref?.advance_amount || "",
     purpose: ref?.purpose || "",
     start_date: ref?.custom_repayment_start_date || "",
     posting_date: ref?.posting_date || "",
   });
+
+    useEffect(() => {
+      if (ref) {
+        setForm({
+          advance_amount: ref?.advance_amount || "",
+          purpose: ref?.purpose || "",
+          posting_date: ref?.posting_date || "",
+          start_date: ref?.custom_repayment_start_date || "",
+        });
+
+      }
+    }, [ref]);
 
   /* Comment modal */
   const [commentOpen, setCommentOpen] = useState(false);
@@ -117,52 +142,149 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
       toast.error("Failed to save comment or update advance");
     }
   };
+  if (!open) return null;
+  if (!item && isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8">
+          <Typography variant="bodySmall">Loading...</Typography>
+        </div>
+      </div>
+    );
+  }
+
+  if (!item && error) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+        <div className="bg-white rounded-lg p-8 flex flex-col gap-4">
+          <Typography variant="bodySmall" color="body2">
+            Error loading loan details.
+          </Typography>
+          <Button bgColor="gray-200" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       {/* MAIN MODAL */}
       <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-        <div className="bg-white w-full max-w-3xl rounded-xl p-6">
-          <div className="flex justify-between items-center border-b pb-3">
-            <h2 className="text-lg font-semibold">Advance Details</h2>
-            <button onClick={onClose} className="text-xl">✕</button>
-          </div>
-          <div className="bg-primary/20 flex justify-between items-center px-4 py-2 rounded mt-1">
-            <Typography variant="bodySmall" color="body1">
-              Status
+        <div className="w-full h-full md:h-auto md:max-w-2xl md:max-h-[80vh] md:rounded-lg bg-white flex flex-col overflow-hidden relative">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+            <Typography
+              variant="h4"
+              className="font-semibold text-gray-900 leading-tight"
+            >
+              Advance Details
             </Typography>
-            <StatusBadge status={ref?.status} />
+
+            <Button
+              variant="subtle"
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-600" />
+            </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
-            <ReadOnly label="Employee">{ref?.employee_name}</ReadOnly>
-            <ReadOnly label="Advance Type">{ref?.custom_advance_type}</ReadOnly>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Status bar */}
+            <div className="bg-primary/20 flex justify-between items-center px-4 py-2 rounded">
+              <Typography variant="bodySmall" color="body1">
+                Status
+              </Typography>
+              <StatusBadge status={ref?.status} />
+            </div>
+
+            {/* Read-only fields — paired rows */}
+            <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
+              <div className="flex justify-between w-full">
+                <div className="flex flex-col gap-1">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Employee
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {ref?.employee_name}
+                  </Typography>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <Typography variant="mobileCardLabel" className="block">
+                    Advance Type
+                  </Typography>
+                  <Typography variant="mobileCardValue">
+                    {ref?.custom_advance_type}
+                  </Typography>
+                </div>
+              </div>
+            </div>
 
             {/* Editable fields */}
-            <Input label="Advance Amount" name="advance_amount" value={form.advance_amount} onChange={handleChange} />
-            <Input label="Purpose" name="purpose" value={form.purpose} onChange={handleChange} />
-            <Input type="date" label="Start Date" name="start_date" value={form.start_date} onChange={handleChange} />
-            <Input type="date" label="Posting Date" name="posting_date" value={form.posting_date} onChange={handleChange} />
-
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Advance Amount
+                </Typography>
+                <input
+                  name="advance_amount"
+                  value={form.advance_amount}
+                  onChange={handleChange}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Purpose
+                </Typography>
+                <input
+                  name="purpose"
+                  value={form.purpose}
+                  onChange={handleChange}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Start Date
+                </Typography>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={form.start_date}
+                  onChange={handleChange}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Typography variant="mobileCardLabel" className="block">
+                  Posting Date
+                </Typography>
+                <input
+                  type="date"
+                  name="posting_date"
+                  value={form.posting_date}
+                  onChange={handleChange}
+                  className="w-full border rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="mt-6 flex gap-3 border-t pt-4">
-            {actions.map((action: string) => (
-              <Button
-                key={action}
-                onClick={() => handleActionClick(action)}
-                bgColor={getActionStyles(action).bg}
-                className={`text-${getActionStyles(action).text}`}
-                disabled={
-                  loadingAction?.id === data?.todo_id &&
-                  loadingAction?.action === action
-                }
-              >
-                {action}
-              </Button>
-            ))}
+          {/* ACTION BUTTONS — sticky at bottom */}
+          <div className="border-t bg-white p-4">
+            <TeamApprovalActionPill
+              variant={isDesktop ? "modal" : "buttons"}
+              actions={actions}
+              status={ref?.status || data?.status || ""}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => handleActionClick(action)}
+            />
           </div>
         </div>
       </div>
@@ -170,10 +292,12 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
       {/* COMMENT MODAL */}
       {commentOpen && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md rounded-xl p-5">
-            <h3 className="font-semibold mb-2">
-              {selectedAction === "Reject" ? "Reject Reason" : "Approval Comment"}
-            </h3>
+          <div className="w-full h-full md:h-auto md:max-w-md md:rounded-xl bg-white flex flex-col overflow-hidden p-5">
+            <Typography variant="h4" className="font-semibold mb-2">
+              {selectedAction === "Reject"
+                ? "Reject Reason"
+                : "Approval Comment"}
+            </Typography>
 
             <textarea
               value={comment}
@@ -184,13 +308,13 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
             />
 
             <div className="flex justify-end gap-3 mt-4">
-              <Button bgColor="gray-200"  onClick={() => setCommentOpen(false)}>
+              <Button bgColor="gray-200" onClick={() => setCommentOpen(false)}>
                 Cancel
               </Button>
 
               <Button
-                bgColor={getActionStyles(selectedAction!).bg}
-                className={`text-${getActionStyles(selectedAction!).text}`}
+                bgColor={getActionStyles(selectedAction!).bgColor}
+                variant={getActionStyles(selectedAction!).variant}
                 onClick={handleConfirmAction}
                 disabled={commentMutation.isPending}
               >
@@ -203,19 +327,5 @@ const AdvanceDetailsModal = ({ open, item, onClose }: Props) => {
     </>
   );
 };
-
-const ReadOnly = ({ label, children }: any) => (
-  <div>
-    <p className="text-xs text-gray-400">{label}</p>
-    <p className="font-medium">{children}</p>
-  </div>
-);
-
-const Input = ({ label, ...props }: any) => (
-  <div>
-    <p className="text-xs text-gray-400 mb-1">{label}</p>
-    <input {...props} className="w-full border rounded-md px-2 py-1 text-sm" />
-  </div>
-);
 
 export default AdvanceDetailsModal;

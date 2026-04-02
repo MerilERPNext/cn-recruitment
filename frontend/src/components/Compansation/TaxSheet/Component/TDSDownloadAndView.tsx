@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import {
   useTaxSheetPayrollPriodsData,
@@ -20,7 +20,7 @@ const TDSSlipHandler = ({ disabled }: Props) => {
   const [html, setHtml] = useState("");
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  
+
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company ?? null
@@ -28,9 +28,29 @@ const TDSSlipHandler = ({ disabled }: Props) => {
     data: any[] | undefined;
     refetch: () => void;
   };
+    const [selectedPeriod, setSelectedPeriod] = useState<string>(
+      payrollPeriods?.[0]?.name || "",
+    );
+    useEffect(() => {
+      if (!payrollPeriods?.length) return;
+  
+      const today = new Date();
+  
+      const matchedPeriod = payrollPeriods.find((p) => {
+        const start = new Date(p.start_date);
+        const end = new Date(p.end_date);
+  
+        // inclusive range check
+        return today >= start && today <= end;
+      });
+  
+      setSelectedPeriod(
+        matchedPeriod?.name || payrollPeriods[0].name
+      );
+    }, [payrollPeriods, selectedPeriod]);
 
   const { mutate, isPending } = useTDSPRintViewPDF(
-    payrollPeriods?.[0]?.name || "",
+    selectedPeriod,
     user?.company || ""
   );
 

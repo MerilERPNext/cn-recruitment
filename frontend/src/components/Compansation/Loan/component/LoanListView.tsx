@@ -1,39 +1,37 @@
 "use client";
 import { useState } from "react";
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
+import { formatCurrency } from "../../../../utils/currency";
+import formatToIndianDate from "../../../../utils/formatToIndianDate";
+import AllocatedToTooltip from "../../../shared/AllocatedToTooltip";
+import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
+import StatusBadge from "../../../shared/atoms/statusBadge";
+import { Typography } from "../../../shared/atoms/Typography";
+import CardTable from "../../../shared/CardTable";
 import { Loan } from "../Type/loan";
 import LoanDetails from "./LoanDetails";
 import LoanInstallments from "./LoanInstallment";
-import CardTable from "../../../shared/CardTable";
-import formatToIndianDate from "../../../../utils/formatToIndianDate";
-import { Typography } from "../../../shared/atoms/Typography";
-import Tooltip from "../../../shared/Tooltip";
-import StatusBadge from "../../../shared/atoms/statusBadge";
-import { SearchIcon } from "lucide-react";
+import SearchInputWrapper from "../../../shared/SearchBar";
+import { NoDataFound } from "../../../shared/atoms/NoDataFound";
+
 
 interface LoanListProps {
   loans: Loan[];
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
+  handleEdit: (docname: string) => void;
+  searchTerm?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 export default function LoanList({
+  handleEdit,
   loans,
   searchTerm,
-  onSearchChange, }: LoanListProps) {
+  onSearchChange,
+}: LoanListProps) {
   const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
   const toggleLoanExpansion = (loan_name: string) => {
     setExpandedLoan(expandedLoan === loan_name ? null : loan_name);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   function calculateEndMonth(startDate: string, tenure: number) {
@@ -56,14 +54,16 @@ export default function LoanList({
     "Rate of Interest",
     "Standard Interest",
     "EMI Type",
-    "Installments",
+    "Tenure",
     "Start Date",
     "End Month",
     "Status",
+    "Actions",
   ];
 
   const columnWidths = [
-    "3rem",
+    "0.1rem",
+    "1fr",
     "1fr",
     "1fr",
     "1fr",
@@ -78,20 +78,16 @@ export default function LoanList({
 
   return (
     <CardTable titles={titles} columnWidths={columnWidths}>
-<div className="relative w-full">
-  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-    <SearchIcon />
-  </div>
-
-  <input
-    type="text"
-    placeholder="Search loans..."
-    value={searchTerm}
-    onChange={(e) => onSearchChange(e.target.value)}
-    className="w-full pl-10 pr-4 py-2 border border-gray-300
-       focus:ring-primary-500 focus:border-primary-500 outline-none"
-  />
-</div>
+      {onSearchChange && (
+        <div className="">
+          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            <SearchInputWrapper
+              searchTerm={searchTerm || ""}
+              handleSearch={(e) => onSearchChange(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
       <div className="border bg-app divide-y">
         {loans.map((loan) => (
           <div
@@ -199,9 +195,21 @@ export default function LoanList({
 
               {/* Status + Tooltip */}
               <div className="flex items-center justify-center">
-                <Tooltip content={`Allocated to : ${loan?.employee_name}`}>
+                <AllocatedToTooltip
+                  users={loan?.allocated_to}
+                  roles={loan?.allocated_to_roles}
+                  allocated_to_user={loan?.allocated_to_user}
+                  position="left">
                   <StatusBadge status={loan.status} />
-                </Tooltip>
+                </AllocatedToTooltip>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <MyApprovalActionPill
+                  isPending={loan.status === "Open"}
+                  canEdit={!!loan.can_edit}
+                  onEdit={() => handleEdit(loan.name)}
+                />
               </div>
             </div>
 
@@ -216,9 +224,12 @@ export default function LoanList({
           </div>
         ))}
         {loans.length === 0 && (
-          <div className="my-empty-state-card py-10 text-center text-gray-500">
-            No loans available.
-          </div>
+          <NoDataFound
+            title="No Loan Requests"
+            subtitle={searchTerm
+              ? "No loans found matching your search criteria."
+              : "No loans available."}
+          />
         )}
       </div>
     </CardTable>

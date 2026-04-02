@@ -1,37 +1,41 @@
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-} from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useEmployeeByUserId } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+import { X } from "lucide-react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-hot-toast";
-import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useLoadingOverlay } from "../../context/OverlayContext";
+import { useEmployeeByUserId } from "../../hooks/useEmployee";
+import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
+  useCheckAttachmentMandatory,
   useCreateLeaveApplication,
   useEditApprovedLeave,
+  useGetLeaveBalance,
   useGetLeaveReason,
   useGetLeaveRequestFields,
-  useCheckAttachmentMandatory,
+  useGetNumberOfLeaveDays,
 } from "../../hooks/useLeaves";
-import { LeaveFieldFlags } from "../../types/leaves";
-import { useGetLeaveBalance } from "../../hooks/useLeaves";
-import { useGlobalStore } from "../../hooks/useGlobalStore";
-import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
-import Button from "../shared/atoms/Button";
-import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useRequiredFields } from "../../hooks/useRequiredFields";
-import DailyConfiguration from "./DailyConfiguration";
-import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
-import AttendanceStatusModal from "./AttendanceStatusModal";
-import { X } from "lucide-react";
-import { useLoadingOverlay } from "../../context/OverlayContext";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { LeaveFieldFlags } from "../../types/leaves";
+import { expenseService } from "../../services/expenseService";
+import FrappeAPI from "../../utils/frappeAPI";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { buildLeavePayload, getDatesBetween } from "../../utils/helperUtils";
+import { useRequestLeaveModal } from "../Leaves/RequestLeaveModalContext";
+import Button from "../shared/atoms/Button";
+import AttendanceStatusModal from "./AttendanceStatusModal";
+import DailyConfiguration from "./DailyConfiguration";
+import { useLeaveRequestRefresh } from "./LeaveRequestRefreshContext";
 
 interface FormSubmissionData {
   leaveType?: string;
@@ -66,10 +70,13 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   const editLeaveMutation = useEditApprovedLeave();
   const { triggerRefetch } = useLeaveRequestRefresh();
   const { isDesktop } = useScreenSize();
-
+  const location = useLocation();
+  const isRequestRoute = location.pathname === "/webapp/leave-app/request";
+  const navigate = useNavigate();
   const [dailyConfig, setDailyConfig] = useState<
     Record<string, "Full Day" | "First Half" | "Second Half">
   >({});
+  const loading = useLoadingOverlay();
 
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
@@ -88,21 +95,42 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         submission.data.fromDate.split("T")[0] !==
         submission.data.toDate.split("T")[0];
 
-      await editLeaveMutation.mutateAsync({
-        leave_application: defaults?.leave_application || "",
-        new_values: {
-          employee: currentEmployee.name,
-          leave_type: submission.data.leaveType,
-          from_date: submission.data.fromDate?.split("T")[0],
-          to_date: submission.data.toDate?.split("T")[0],
-          half_day: submission.data.halfDay ? 1 : 0,
-          description: submission.data.description,
-          custom_reason: submission.data.custom_reason,
-          custom_attachment: submission.data?.custom_attachment?.[0]?.url,
-          daily_half_day_config:
-            submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
-        },
+      const payload = buildLeavePayload({
+        employee: currentEmployee.name,
+        submission: submission.data,
+        dailyConfig:
+          submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
       });
+
+      if (defaults?.isResubmit) {
+        await loading?.wrap(async () => {
+          await FrappeAPI.updateDocument(
+            "Leave Application",
+            defaults.leave_application || "",
+            payload,
+          );
+          await expenseService.resubmitApprovalEvent(
+            "Leave Application",
+            defaults?.leave_application || "",
+          );
+        }, "Resubmitting Leave Request...");
+      } else {
+        await editLeaveMutation.mutateAsync({
+          leave_application: defaults?.leave_application || "",
+          new_values: {
+            employee: currentEmployee.name,
+            leave_type: submission.data.leaveType,
+            from_date: submission.data.fromDate?.split("T")[0],
+            to_date: submission.data.toDate?.split("T")[0],
+            half_day: submission.data.halfDay ? 1 : 0,
+            description: submission.data.description,
+            custom_reason: submission.data.custom_reason,
+            custom_attachment: submission.data?.custom_attachment?.[0]?.url,
+            daily_half_day_config:
+              submission.data.halfDay && isMultipleDays ? dailyConfig : undefined,
+          },
+        });
+      }
 
       setTimeout(() => {
         setRefetchAttendance(true);
@@ -124,6 +152,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     dailyConfig,
     queryClient,
     setRefetchAttendance,
+    loading,
   ]);
 
   const createLeaveMutation = useCreateLeaveApplication();
@@ -145,22 +174,35 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   );
 
   const leaveTypeOptions = useMemo(() => {
+    if (defaults?.source === "holiday" && defaults?.leaveType) {
+      return [
+        {
+          label: `${defaults.leaveTypeName || "Optional Holiday"} (${defaults.leaveType})`,
+          value: defaults.leaveType,
+        },
+      ];
+    }
+
     if (!leaveBalanceData?.leave_balance) return [];
 
     return leaveBalanceData.leave_balance
       .filter((entry) => entry.dont_show_in_frontend === 0)
       .map((entry) => ({
-        label: entry.type,
-        value: entry.type,
+        label: `${entry.type} (${entry.leave_id})`,
+        value: entry.leave_id,
       }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [leaveBalanceData, defaults?.leaveType]);
+  }, [
+    leaveBalanceData,
+    defaults?.source,
+    defaults?.leaveType,
+    defaults?.leaveTypeName,
+  ]);
 
   const leaveBalanceMap = useMemo(() => {
     if (!leaveBalanceData?.leave_balance) return {};
     return leaveBalanceData.leave_balance.reduce(
       (acc: Record<string, number>, entry) => {
-        acc[entry.type] = entry.balance;
+        acc[entry.leave_id] = entry.balance;
         return acc;
       },
       {},
@@ -172,53 +214,48 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       ? leaveBalanceMap[formData.leaveType]
       : null;
 
-  const calculateLeaveDays = useCallback(
-    (data: FormSubmissionData, dailyCfg?: typeof dailyConfig) => {
-      const { fromDate, toDate, halfDay } = data;
+  const individualDatesStr = useMemo(() => {
+    if (!formData.fromDate || !formData.toDate) return undefined;
+    const dates = getDatesBetween(formData.fromDate, formData.toDate);
 
-      if (!fromDate || !toDate) {
-        setLeaveDays(null);
-        return;
+    const fromDateOnly = formData.fromDate.split("T")[0];
+    const toDateOnly = formData.toDate.split("T")[0];
+
+    const individualDates = dates.map((d) => {
+      let isHalfDay = 0;
+      if (formData.halfDay) {
+        if (fromDateOnly === toDateOnly) {
+          isHalfDay = 1;
+        } else {
+          const config = dailyConfig[d];
+          if (config === "First Half" || config === "Second Half") {
+            isHalfDay = 1;
+          }
+        }
       }
+      return { date: d, half_day: isHalfDay };
+    });
+    return JSON.stringify(individualDates);
+  }, [formData.fromDate, formData.toDate, formData.halfDay, dailyConfig]);
 
-      if (
-        halfDay &&
-        fromDate !== toDate &&
-        dailyCfg &&
-        Object.keys(dailyCfg).length > 0
-      ) {
-        let total = 0;
-        Object.values(dailyCfg).forEach((v) => {
-          if (v === "Full Day") total += 1;
-          else total += 0.5;
-        });
-        setLeaveDays(total);
-        return;
-      }
-
-      const from = new Date(fromDate);
-      const to = new Date(toDate);
-
-      if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) {
-        setLeaveDays(null);
-        return;
-      }
-
-      let days = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24) + 1;
-
-      if (halfDay && fromDate === toDate) {
-        days -= 0.5;
-      }
-
-      setLeaveDays(days);
-    },
-    [],
+  const { data: leaveDaysResponse } = useGetNumberOfLeaveDays(
+    currentEmployee?.name,
+    formData.leaveType,
+    formData.fromDate?.split("T")[0],
+    formData.toDate?.split("T")[0],
+    individualDatesStr,
   );
+
+  useEffect(() => {
+    if (leaveDaysResponse !== undefined) {
+      setLeaveDays(leaveDaysResponse);
+    }
+  }, [leaveDaysResponse]);
 
   const { data: fields } = useGetLeaveRequestFields(
     formData.leaveType,
-    formData.fromDate || "",
-    formData.toDate || "",
+    formData.fromDate || undefined,
+    formData.toDate || undefined,
   );
 
   const { data: requiredFields } = useRequiredFields("Leave Application");
@@ -241,8 +278,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
     formData.leaveType,
   );
 
-  const isAttachmentMandatory =
-    attachmentMandatoryData?.is_mandatory === 1;
+  const isAttachmentMandatory = attachmentMandatoryData?.is_mandatory === 1;
 
   useEffect(() => {
     if (defaults) {
@@ -260,7 +296,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       };
 
       setFormData(initial);
-      calculateLeaveDays(initial);
     } else {
       const todayWithTime = `${today}T00:00:00+05:30`;
       const initial: FormSubmissionData = {
@@ -268,25 +303,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       };
       setFormData(initial);
     }
-  }, [defaults, calculateLeaveDays, today]);
-
-  useEffect(() => {
-    if (
-      formData.halfDay &&
-      formData.fromDate &&
-      formData.toDate &&
-      formData.fromDate !== formData.toDate &&
-      Object.keys(dailyConfig).length > 0
-    ) {
-      calculateLeaveDays(formData, dailyConfig);
-    }
-  }, [dailyConfig, formData, calculateLeaveDays]);
+  }, [defaults, today]);
 
   useEffect(() => {
     setShowAttendanceButton(Boolean(formData.fromDate && formData.toDate));
   }, [formData.fromDate, formData.toDate]);
 
-  const loading = useLoadingOverlay();
   const handleSubmit = useCallback(async () => {
     if (!currentEmployee?.name || !formInstance.current) return;
 
@@ -535,7 +557,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                   !defaults?.isEdit &&
                   defaults?.source !== "other" &&
                   Boolean(defaults?.fromDate),
-
               },
             ],
           },
@@ -564,7 +585,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                   !defaults?.isEdit &&
                   defaults?.source !== "other" &&
                   Boolean(defaults?.toDate),
-
               },
             ],
           },
@@ -604,22 +624,25 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-
-      {isDesktop && <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-20">
         <h2 className="text-lg font-semibold text-gray-800">Request Leave</h2>
-        {isDesktop && (<button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCancel?.();
-            onSuccess?.();
-          }}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-          aria-label="Close"
-        >
-          <X className="h-5 w-5 text-gray-600" />
-        </button>
+        {isDesktop && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isRequestRoute) {
+                navigate(-1);
+              }
+              onCancel?.();
+              onSuccess?.();
+            }}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
         )}
-      </div>}
+      </div>
 
       <div className="flex justify-between items-center ml-6 my-2 text-sm text-gray-700">
         <div style={{ visibility: leaveDays !== null ? "visible" : "hidden" }}>
@@ -644,6 +667,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
           )}
         </div>
       </div>
+
 
       <div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0">
         <Form
@@ -682,7 +706,6 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             changed?: { component?: { key?: string } };
           }) => {
             setFormData(data);
-            calculateLeaveDays(data);
             if (
               data.halfDay &&
               data.fromDate &&
@@ -716,13 +739,16 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         )}
       </div>
       <div className="border-gray-200 border-t py-3 px-2 flex flex-row md:flex-row gap-3 md:gap-4 md:justify-end">
-
         {!isDesktop && (
           <Button
             onClick={(e) => {
               e.stopPropagation();
+
               if (onCancel) {
                 onCancel();
+              }
+              if (isRequestRoute) {
+                navigate(-1);
               }
             }}
             size="md"
@@ -752,12 +778,14 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
             disabled={editLeaveMutation.isPending}
             className="w-full md:w-auto min-w-[201px] md:px-4 md:py-2.5 rounded-md font-brand"
           >
-            {editLeaveMutation.isPending ? "Updating..." : "Update Request"}
+            {editLeaveMutation.isPending
+              ? "Updating..."
+              : defaults?.isResubmit
+                ? "Resubmit Request"
+                : "Update Request"}
           </Button>
         )}
-
       </div>
-
 
       {isAttendanceModalOpen && (
         <AttendanceStatusModal

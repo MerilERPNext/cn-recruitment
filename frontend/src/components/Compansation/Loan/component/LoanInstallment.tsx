@@ -1,3 +1,4 @@
+import { formatCurrency } from "../../../../utils/currency";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import { Typography } from "../../../shared/atoms/Typography";
 import CardTable from "../../../shared/CardTable";
@@ -10,45 +11,16 @@ interface LoanInstallmentsProps {
 export default function LoanInstallments({
   installments,
 }: LoanInstallmentsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat("en-IN").format(num);
-  };
   const titles = [
     "#",
-    "Loan Name",
-    "Loan Type",
+    "Payment Date",
     "Loan Amount",
-    "Rate of Interest",
-    "Standard Interest",
-    "EMI Type",
-    "Installments",
-    "Start Date",
-    "End Month",
-    // "Status",
+    "EMI Amount",
+    "Interest",
+    "Principal",
   ];
 
-  const columnWidths = [
-    "3rem",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    "1fr",
-    // "1fr",
-  ];
+  const columnWidths = ["3rem", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   return (
     <div>
@@ -60,89 +32,42 @@ export default function LoanInstallments({
         {installments.length > 0 ? (
           installments.map((installment, index) => (
             <div
-              key={installment.id || index}
+              key={index}
               className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
               style={{ gridTemplateColumns: columnWidths.join(" ") }}
             >
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {index + 1}{" "}
+              {/* # */}
+              <Typography variant="bodySmall" className="text-center">
+                {index + 1}
               </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
+              {/* Payment Date */}
+              <Typography variant="bodySmall" className="text-center">
                 {formatToIndianDate(installment.payment_date)}
               </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
+              {/* Loan Amount */}
+              <Typography variant="bodySmall" className="text-center">
                 {formatCurrency(
                   installment.balance_loan_amount +
                     installment.principal_amount,
                 )}
               </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
+              {/* EMI */}
+              <Typography variant="bodySmall" className="text-center">
                 {formatCurrency(installment.total_payment)}
               </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {formatNumber(installment.interest_amount)}
+              {/* Interest Amount */}
+              <Typography variant="bodySmall" className="text-center">
+                {formatCurrency(installment.interest_amount)}
               </Typography>
 
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {formatCurrency(installment.total_payment)}
-              </Typography>
-
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {formatNumber(installment.interest_amount)}
-              </Typography>
-
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
+              {/* Principal */}
+              <Typography variant="bodySmall" className="text-center">
                 {formatCurrency(installment.principal_amount)}
               </Typography>
-
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {installment?.loan_start_date}
-              </Typography>
-
-              <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                {installment?.loan_end_date}
-              </Typography>
-
-              {/* <Typography
-                variant="bodySmall"
-                className="font-medium text-center"
-              >
-                0
-              </Typography> */}
             </div>
           ))
         ) : (

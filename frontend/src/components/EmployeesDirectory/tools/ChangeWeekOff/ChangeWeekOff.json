@@ -1,0 +1,56 @@
+{
+    "title": "Change Week Off",
+    "name": "changeWeekOffForm",
+    "path": "change-week-off-form",
+    "display": "form",
+    "components": [
+        {
+            "label": "Current Week Off",
+            "key": "current_week_off",
+            "type": "textfield",
+            "placeholder": "Current Week Off",
+            "input": true,
+            "customClass": "mb-4",
+            "disabled": true,
+            "errorLabel": "Current Week Off",
+            "allowCalculateOverride": true,
+            "applyMaskOn": "change"
+        },
+        {
+            "label": "New Week Off",
+            "key": "new_week_off",
+            "type": "select",
+            "input": true,
+            "placeholder": "New Week Off",
+            "customClass": "mb-4",
+            "refreshOn": "doctype",
+            "dataSrc": "url",
+            "data": {
+                "url": "/api/resource/Week Off?fields=[\"*\"]"
+            },
+            "validate": {
+                "required": true
+            },
+            "valueProperty": "name",
+            "template": "<span>{{ item.weekly_off }} ({{ item.name }})</span>",
+            "selectValues": "data",
+            "lazyLoad": false
+        },
+        {
+            "label": "Effective From",
+            "key": "effective_from",
+            "type": "datetime",
+            "input": true,
+            "widget": {
+                "type": "calendar"
+            },
+            "validate": {
+                "required": true
+            },
+            "format": "dd-MM-yyyy",
+            "placeholder": "dd-mm-yyyy",
+            "customClass": "mb-4",
+            "enableTime": false
+        }
+    ]
+}

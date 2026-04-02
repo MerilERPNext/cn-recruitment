@@ -2,45 +2,48 @@
 
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import Modal from "../CommonModel";
-import BenefitRequestForm from "./BenefitsRequestForm";
-import CardTable from "../../shared/CardTable";
-import { BsToggleOff, BsToggleOn } from "react-icons/bs";
-import Button from "../../shared/atoms/Button";
-import {
-  useCurrentEmployeeIdCard,
-  useEmployee,
-} from "../../../hooks/useEmployee";
-import DataListView from "../../DataListView";
 import { createPortal } from "react-dom";
+import { BsToggleOff, BsToggleOn } from "react-icons/bs";
+import { Link, useOutletContext } from "react-router-dom";
+import { useTargetUser } from "../../../context/ViewedUserContext";
 import {
   BenefitPayslip,
   useGetBenefitClaimLockingPeriod,
   useGetBenefitRequestLockView,
   useGetYearFilterOptions,
 } from "../../../hooks/useBenefit";
+import {
+  useCurrentEmployeeIdCard,
+  useEmployee,
+} from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
+import { useGetUiPermission } from "../../../hooks/userUiPermission";
+import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
+import { isActionEnabled } from "../../../utils/uiPermission";
+import DataListView from "../../DataListView";
+import CardTable from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
+import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
-import { useTargetUser } from "../../../context/ViewedUserContext";
-import { Link } from "react-router-dom";
-import { getCurrentPeriod } from "../shared/logic";
 import StatusBadge from "../../shared/atoms/statusBadge";
-import { RupeeSymbolPerfix } from "../../../utils/currency";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import { getCurrentPeriod } from "../shared/logic";
+import BenefitRequestForm from "./BenefitsRequestForm";
 
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [showBenefitForm, setShowBenefitForm] = useState(false);
   const { isDesktop } = useScreenSize();
+  const { data: userUiPermission } = useGetUiPermission("Benefits");
+  const canRequestBenefit = isActionEnabled(
+    userUiPermission,
+    "request_benefit",
+    "My Requests",
+  );
 
-  // const [refetch, setRefetch] = useState(false);
-  const handleRequestBenefit = () => {
-    setShowBenefitForm(true);
-  };
-
-  const { data: employeeIdCard } = useCurrentEmployeeIdCard();
+  const { data: employeeIdCard, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
   const { data: employee } = useCurrentEmployeeIdCard();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);
@@ -52,7 +55,14 @@ const MyRequests: React.FC = () => {
 
   const handleCloseModal = () => {
     setShowBenefitForm(false);
+    setBenefitId(null);
   };
+
+  const { setActionButtonConfig } = useOutletContext<{
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
+  }>();
 
   const { data: optionYearsData, isLoading: YearsLoading } =
     useGetYearFilterOptions(effectiveEmployee?.company || "");
@@ -67,6 +77,12 @@ const MyRequests: React.FC = () => {
   }, [optionYearsData, YearsLoading]);
 
   const [selectedYear, setSelectedYear] = useState("");
+
+  const [benefitId, setBenefitId] = useState<string | null>(null);
+  const handleEdit = (BenefitId: string) => {
+    setBenefitId(BenefitId);
+    setShowBenefitForm(true);
+  };
 
   useEffect(() => {
     setSelectedYear(() => getCurrentPeriod(optionYears));
@@ -86,14 +102,30 @@ const MyRequests: React.FC = () => {
       today,
     );
   const showBenefitRequestButton =
-    !benefitClaimLockLoading && benefitClaimLock?.status === "success";
+    canRequestBenefit &&
+    !benefitClaimLockLoading &&
+    benefitClaimLock?.status === "success";
+
+  useEffect(() => {
+    if (showBenefitRequestButton) {
+      setActionButtonConfig({
+        label: "+ Request Benefit",
+        onClick: () => {
+          setShowBenefitForm(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, showBenefitRequestButton]);
+
   const LockRequestMessage = useMemo(() => {
     if (!data || isLoading) return null;
     return (
       <div
-        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${
-          data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
-        }`}
+        className={` text-sm rounded-lg p-4 mt-2 mb-4 ${data?.status === "success" ? "bg-green-300/40" : "bg-red-300/40"
+          }`}
       >
         {data?.message}
       </div>
@@ -143,16 +175,6 @@ const MyRequests: React.FC = () => {
                 onChange={(event) => setSelectedYear(event?.target.value)}
                 options={optionYears}
               />
-              {showBenefitRequestButton && (
-                <Button
-                  bgColor="blue-600"
-                  size="md"
-                  className="hover:bg-blue-700 py-[0.55rem] font-semibold px-4 text-white"
-                  onClick={handleRequestBenefit}
-                >
-                  Request Benefit
-                </Button>
-              )}
             </div>
           </div>
         </div>
@@ -170,6 +192,7 @@ const MyRequests: React.FC = () => {
             "Taxable Amount",
             "Non Taxable Amount",
             "Status",
+            "Actions",
           ]}
         >
           <DataListView
@@ -188,46 +211,50 @@ const MyRequests: React.FC = () => {
                 payroll_period: selectedYear,
               },
             }}
+
             ItemComponent={(props: { item: BenefitPayslip }) => {
               return (
-                <BenefitSlipItem item={props?.item} maskAmounts={maskAmounts} />
+                <BenefitSlipItem
+                  handleEdit={handleEdit}
+                  item={props?.item}
+                  maskAmounts={maskAmounts}
+                />
               );
             }}
-            SkeletonComponent={() => (
-              <div className="rounded-xl bg-gray-100 animate-pulse my-4">
-                <div className="px-4 py-2 flex justify-between">
-                  <div>
-                    <div className="h-4 w-32 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 w-24 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="h-6 w-16 bg-gray-300 rounded-md"></div>
-                </div>
-              </div>
-            )}
+            isLoading={YearsLoading || EmployeeIdCardLoading}
+            SkeletonComponent={CardSkeleton}
             // refetchTrigger={refetchAttendance}
             isSearch={false}
             isFilter={false}
             showRefreshButton={false}
-            // orderBy="creation desc"
             pageSize={10}
-            infiniteScroll={true}
+            infiniteScroll={false}
+            loadMorePagination={false}
             showPagination={true}
-            // loadMorePagination={false}
             getItemKey={(item) => item.name}
           />
         </CardTable>
       </div>
       {showBenefitForm &&
         createPortal(
-          <Modal onClose={handleCloseModal}>
-            <BenefitRequestForm
-              isOpen={showBenefitForm}
-              onClose={handleCloseModal}
-              onSuccess={() => {
-                // setRefetch(true);
-              }}
-            />
-          </Modal>,
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div
+              className={
+                isDesktop
+                  ? "relative bg-white rounded-xl shadow-xl w-[70%] max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+                  : "relative bg-white w-full h-full flex flex-col overflow-hidden"
+              }
+            >
+              <BenefitRequestForm
+                docname={benefitId}
+                isOpen={showBenefitForm}
+                onClose={handleCloseModal}
+                onSuccess={() => {
+                  // setRefetch(true);
+                }}
+              />
+            </div>
+          </div>,
           document.body,
         )}
     </div>
@@ -237,14 +264,16 @@ const MyRequests: React.FC = () => {
 const BenefitSlipItem = ({
   item,
   maskAmounts,
+  handleEdit,
 }: {
   item: BenefitPayslip;
   maskAmounts: boolean;
+  handleEdit: (benefitId: string) => void;
 }) => {
   const { isDesktop } = useScreenSize();
 
   return isDesktop ? (
-    <div className="grid grid-cols-8 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+    <div className="grid grid-cols-9 max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
       <Link
         to={`/webapp/employee-profile?target_user=${item?.employee}`}
         target="_blank"
@@ -271,23 +300,19 @@ const BenefitSlipItem = ({
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
-            maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
-          )}
+          {maskAmounts ? "₹#####" : formatCurrency(item?.claimed_amount ?? 0)}
         </span>
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={` ${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
-            maskAmounts ? "#####" : item?.custom_taxable_amount,
-          )}
+          {formatCurrency(maskAmounts ? "#####" : item?.custom_taxable_amount)}
         </span>
       </Typography>
 
       <Typography variant="bodySmall" className="font-medium text-center">
         <span className={`${maskAmounts ? "blur-[3px]" : ""}`}>
-          {RupeeSymbolPerfix(
+          {formatCurrency(
             maskAmounts ? "#####" : item?.custom_non_taxable_amount,
           )}
         </span>
@@ -296,54 +321,123 @@ const BenefitSlipItem = ({
       <div className="flex items-center justify-center">
         <StatusBadge status={item?.custom_status} />
       </div>
+
+      <div className="flex items-center justify-center">
+        <MyApprovalActionPill
+          isPending={item.custom_status === "Pending"}
+          canEdit={!!item.can_edit}
+          onEdit={() => handleEdit(item.name)}
+        />
+      </div>
     </div>
   ) : (
-    <div className="px-6 flex flex-col items-center cursor-pointer border-t border-gray-300 pt-2 mt-4">
-      <div className="flex w-full">
-        <div className="flex flex-col">
-          <Link
-            to={`/webapp/employee-profile?target_user=${item?.employee}`}
-            target="_blank"
-          >
-            <span className="text-sm font-medium text-gray-700 text-start truncate">
-              {item?.employee_name}
-            </span>
-          </Link>
-          <span className="text-sm font-medium text-gray-700 text-start truncate">
-            {item?.company}
-          </span>
-        </div>
-        <span className="ml-auto">
-          {" "}
-          <StatusBadge status={item?.custom_status} />
-        </span>
-      </div>
-      <div className="grid grid-cols-3 w-full mt-2">
-        <div className="flex flex-col">
-          <label className="text-gray-500 text-sm">Benefit For</label>
-          <span className="text-sm justify-self-center font-medium text-gray-700 text-start truncate">
-            {item?.earning_component}
-          </span>
-        </div>
-        <div className="flex flex-col justify-center">
-          <label className="text-gray-500 text-center text-sm">
-            Claime Date
-          </label>
-          <span className="text-sm justify-self-center font-medium text-gray-700 text-center truncate">
-            {formatToIndianDate(item?.claim_date || "")}
-          </span>
-        </div>
-        <div className="flex ml-auto flex-col">
-          <label className="text-gray-500 text-sm">Claim Amount</label>
-          <span
-            className={`text-sm justify-self-end font-medium text-gray-700 text-end truncate ${
-              maskAmounts ? "blur-[3px]" : ""
-            }`}
-          >
-            {RupeeSymbolPerfix(
-              maskAmounts ? "#####" : (item?.claimed_amount ?? 0),
-            )}
-          </span>
+    <div className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl mt-2 w-full">
+      <div className="p-4 flex items-start gap-3 w-full">
+        <div className="w-full">
+          {/* Header: Benefit For + Status */}
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-1 min-w-0 flex-1 mr-3">
+              <Typography variant="mobileCardLabel" className="block">
+                Benefit For
+              </Typography>
+              <Typography variant="mobileCardTitle" className="break-words">
+                {item?.earning_component}
+              </Typography>
+            </div>
+            <div className="shrink-0">
+              <StatusBadge status={item?.custom_status} />
+            </div>
+          </div>
+
+          {/* Row: Employee Name + Company */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Employee Name
+              </Typography>
+              <Link
+                to={`/webapp/employee-profile?target_user=${item?.employee}`}
+                target="_blank"
+              >
+                <Typography variant="mobileCardValue">
+                  {item?.employee_name}
+                </Typography>
+              </Link>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Company
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {item?.company}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Row: Claim Date + Claim Amount */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Claim Date
+              </Typography>
+              <Typography variant="mobileCardValue">
+                {formatToIndianDate(item?.claim_date || "")}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Claim Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.claimed_amount ?? 0)}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Row: Taxable Amount + Non Taxable Amount */}
+          <div className="flex justify-between mt-4">
+            <div className="flex flex-col gap-1">
+              <Typography variant="mobileCardLabel" className="block">
+                Taxable Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.custom_taxable_amount ?? 0)}
+              </Typography>
+            </div>
+            <div className="flex flex-col gap-1 text-right">
+              <Typography variant="mobileCardLabel" className="block">
+                Non Taxable Amount
+              </Typography>
+              <Typography
+                variant="mobileCardValue"
+                className={maskAmounts ? "blur-[3px]" : ""}
+              >
+                {maskAmounts
+                  ? "#####"
+                  : formatCurrency(item?.custom_non_taxable_amount ?? 0)}
+              </Typography>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="mt-4">
+            <MyApprovalActionPill
+              isPending={item.custom_status === "Pending"}
+              canEdit={!!item.can_edit}
+              canReplace={true}
+              variant="buttons"
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -1,22 +1,27 @@
-import { useState, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import ApprovalList from "../../shared/ApprovalList";
-import CardTable from "../../shared/CardTable";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
-import AdvanceApprovalCard from "./AdvanceApprovalCard";
-import { Typography } from "../../shared/atoms/Typography";
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import { FileText } from "lucide-react";
+import ApprovalList from "../../shared/ApprovalList";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
+import { Typography } from "../../shared/atoms/Typography";
+import CardTable from "../../shared/CardTable";
+import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import AdvanceApprovalCard from "./AdvanceApprovalCard";
+import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const [activeStatus, setActiveStatus] = useState("Pending");
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
+  const referenceName = searchParams.get("reference_name");
+  const status = searchParams.get("status");
 
   const handleApprovalRefetchComplete = useCallback(() => {
     setRefetchApprovalList(false);
@@ -25,7 +30,17 @@ const TeamAdvanceExpenseList = () => {
   const handleRequestClick = useCallback(
     (request: any) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id });
+        const computedStatus =
+          request.todo_status === "Closed" &&
+          request.reference_document.custom_final_status !== "Rejected"
+            ? "Approved"
+            : request.reference_document.custom_final_status;
+
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request?.reference_document?.name || "",
+          status: computedStatus,
+        });
       }
     },
     [setSearchParams],
@@ -43,26 +58,36 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-      "Select",
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ]
+        "Select",
+        "Advance ID",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
+        "ACTIONS",
+      ]
     : [
-      "Employee",
-      "Department",
-      "Advance Amount",
-      "Due Date",
-      "Status",
-      "ACTIONS",
-    ];
+        "Advance ID",
+        "Employee",
+        "Department",
+        "Advance Amount",
+        "Due Date",
+        "Status",
+        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+
+        "ACTIONS",
+      ];
 
   const tableColumnWidths = isBulkSelectEnabled
-    ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
-    : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+    ? activeStatus === "Approved"
+      ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+    : activeStatus === "Approved"
+      ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
+      : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   const noRecordsScreen = (filters: Record<string, any>) => {
     if (isDesktop) return null;
@@ -94,27 +119,7 @@ const TeamAdvanceExpenseList = () => {
 
     const message = getEmptyStateMessage();
 
-    return (
-      <div className="flex items-center justify-center px-4 py-16">
-        <div className="max-w-sm w-full mx-auto text-center p-6">
-          <div className="space-y-5">
-            <div className="flex items-center justify-center">
-              <div className="p-4 bg-blue-50 rounded-full">
-                <FileText className="h-10 w-10 text-blue-500" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {message.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {message.description}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <NoDataFound title={message.title} subtitle={message.description} />;
   };
 
   return (
@@ -138,44 +143,81 @@ const TeamAdvanceExpenseList = () => {
               refetch={refetchApprovalList}
               onApprovalRefetchComplete={handleApprovalRefetchComplete}
               pageSize={10}
-              infiniteScroll={true}
-              showPagination={true}
+              infiniteScroll={false}
               loadMorePagination={false}
+              showPagination={true}
               isSearch={true}
               isFilter={true}
               columnWidths={tableColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
               filterFields={[
                 {
-                  fieldname: "status",
+                  fieldname: "custom_final_status",
                   label: "Status",
                   fieldtype: "Select",
-                  options: ["Pending", "Approved", "Rejected"],
+                  options: [
+                    {
+                      label: "Pending",
+                      key: "Pending",
+                      value: "Pending",
+                      customAPIParams: { todo_status: "Open" },
+                    },
+                    {
+                      label: "Approved",
+                      key: "Approved",
+                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+                      customAPIParams: { todo_status: "Closed" },
+                    },
+                    {
+                      label: "Rejected",
+                      key: "Rejected",
+                      value: "Rejected",
+                    },
+                  ],
+                  emptyValueConfig: {
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
               ]}
-              defaultFilters={{ status: "Pending" }}
+              defaultFilters={{ custom_final_status: "Pending" }}
+              orderBy="posting_date desc"
+              SkeletonComponent={CardSkeleton}
+              onActiveFiltersChange={(filters) => {
+                setActiveStatus(filters?.custom_final_status || "Pending");
+              }}
               noRecordsScreen={noRecordsScreen}
-              renderCardContent={(item) => (
-                <AdvanceApprovalCard
-                  data={item?.data}
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                  onClick={(request: any) => handleRequestClick(request)}
-                  onAction={item?.onAction}
-                />
-              )}
+              renderCardContent={(item) => {
+                if (
+                  item?.data?.custom_selected_doctype_action === "Send Back"
+                ) {
+                  return null;
+                }
+
+                return (
+                  <AdvanceApprovalCard
+                    data={item?.data}
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                    onClick={(request: any) => handleRequestClick(request)}
+                    onAction={item?.onAction}
+                    activeStatus={activeStatus}
+                  />
+                );
+              }}
             />
           )}
         </CardTable>
       </div>
-      {requestId && (
+      {(requestId || referenceName) && (
         <TeamAdvanceDetailView
-          documentName={requestId}
+          documentName={requestId || undefined}
+          referenceName={referenceName || undefined}
           label="Employee Advance"
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          status={status || undefined}
         />
       )}
     </div>

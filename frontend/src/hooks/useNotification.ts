@@ -7,13 +7,14 @@ export const useGetUnreadNotificationCount = (
 ) => {
   return useQuery<UnreadNotificationCountResponse>({
     queryKey: ["unread-notification-count", userEmail],
-    queryFn: () => {
+    queryFn: async () => {
       if (!userEmail) {
         throw new Error("User email is required");
       }
-      return notificationService.getUnreadNotificationCount(userEmail);
+      const data = await notificationService.getUnreadNotificationCount(userEmail);
+      return data;
     },
     enabled: !!userEmail,
-    staleTime: 60 * 1000, // 1 minute
+     // 1 minute
   });
 };

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Wallet, TrendingUp, TriangleAlert } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ChevronDown, Wallet, TrendingUp, TriangleAlert, X, Eye } from "lucide-react";
 import DataListView from "../../DataListView";
 import CardTable from "../../shared/CardTable";
 import { FetchParams } from "../../../services/customApiService";
@@ -10,14 +11,17 @@ import {
   useEmployee,
 } from "../../../hooks/useEmployee";
 import {
+  SalaryComponent,
   SalaryComponentDetail,
   useGetAllAccruedReimbursements,
   useGetYearFilterOptions,
 } from "../../../hooks/useBenefit";
 import { SkeletonStat } from "./Skeletons";
 import { AccrualItem, StatItem } from "./CommonItems";
+import { CURRENCY_SYMBOL, formatCurrency } from "../../../utils/currency";
 import CustomDropdown from "../../shared/CustomDropdown";
 import { Typography } from "../../shared/atoms/Typography";
+import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import Button from "../../shared/atoms/Button";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { getCurrentPeriod } from "../shared/logic";
@@ -27,7 +31,7 @@ export const COLUMN_LAYOUT =
   "minmax(100px, 1.5fr) 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr";
 
 const MyBenefits: React.FC = () => {
-  const { data: employee } = useCurrentEmployeeIdCard();
+  const { data: employee, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
   const { isDesktop } = useScreenSize();
 
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
@@ -59,14 +63,18 @@ const MyBenefits: React.FC = () => {
     setSelectedYear(() => getCurrentPeriod(optionYears));
   }, [optionYears]);
 
-  const { data: allAccruedReimbursements, isLoading } =
+  const { data: allAccruedReimbursements, isLoading: AllAccruedReimbursementsLoading } =
     useGetAllAccruedReimbursements(
       effectiveEmployeeId || "",
       effectiveEmployee?.company || "",
       selectedYear,
     );
+
+  const isLoading = EmployeeIdCardLoading || YearsLoading || AllAccruedReimbursementsLoading;
   // Keep track of which benefit cards are expanded — map by component name
   const [expandedMap, setExpandedMap] = useState<Record<string, boolean>>({});
+  // Mobile: selected component for detail modal
+  const [selectedComponent, setSelectedComponent] = useState<SalaryComponent | null>(null);
 
   const toggleExpanded = (key: string) =>
     setExpandedMap((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -115,7 +123,7 @@ const MyBenefits: React.FC = () => {
   if (isLoading) {
     const skeletonCount = 4;
     return (
-      <div className="min-h-screen font-sans text-slate-800">
+      <div className="min-h-screen font-sans text-slate-800 p-5">
         <div className="flex flex-col mb-2">
           <Typography variant="h4">
             My Benefits for FY {selectedYear}
@@ -192,11 +200,7 @@ const MyBenefits: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {!components || components.length === 0 ? (
-          <div className="w-full">
-            <div className="rounded-xl bg-white shadow-sm border border-gray-200 p-12 text-center">
-              <p className="text-gray-600">No data found</p>
-            </div>
-          </div>
+          <NoDataFound title="No Benefits Found" subtitle="No benefit data is available for the selected period." />
         ) : null}
 
         <main className="w-full pb-10 md:pb-20 space-y-4">
@@ -219,10 +223,10 @@ const MyBenefits: React.FC = () => {
               const filtered = !params.searchTerm
                 ? details
                 : details.filter((r) =>
-                    r.month
-                      .toLowerCase()
-                      .includes(params.searchTerm!.toLowerCase()),
-                  );
+                  r.month
+                    .toLowerCase()
+                    .includes(params.searchTerm!.toLowerCase()),
+                );
 
               const response: FrappePageResponse = {
                 data: filtered,
@@ -233,10 +237,63 @@ const MyBenefits: React.FC = () => {
               return response;
             };
 
+            if (!isDesktop) {
+              // Mobile: Compact card with key stats + View Details button
+              return (
+                <div
+                  key={`${component.salary_component}-${compIdx}`}
+                  className="cursor-pointer border-t-4 border-x-1 border-b-1 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl w-full"
+                >
+                  <div className="p-4 w-full">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-emerald-50 rounded-lg">
+                        <Wallet className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <h2 className="text-base font-bold text-slate-800 leading-tight">
+                        {component.salary_component}
+                      </h2>
+                    </div>
+
+                    {/* Key Stats - 2 col grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                        <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Total Accrual</span>
+                        <span className="text-base font-bold text-blue-700">{CURRENCY_SYMBOL}{totalAccrual.toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                        <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Total Balance</span>
+                        <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{totalBalance.toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                        <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Total Claim</span>
+                        <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{totalClaim.toLocaleString()}</span>
+                      </div>
+                      <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                        <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Carry Forward</span>
+                        <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{carryForward.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    {/* View Details button */}
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
+                        onClick={() => setSelectedComponent(component)}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={`${component.salary_component}-${compIdx}`}
-                className="rounded-xl bg-white shadow-sm border border-gray-200 overflow-hidden"
+                className="rounded-xl bg-white shadow-sm border border-gray-50 overflow-hidden"
               >
                 {/* Header */}
                 <div
@@ -255,9 +312,8 @@ const MyBenefits: React.FC = () => {
                       </div>
                     </div>
                     <div
-                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${
-                        isExpanded ? "rotate-180 bg-gray-50" : ""
-                      }`}
+                      className={`flex items-center justify-center w-8 h-8 rounded-full bg-white border border-gray-200 transition-all duration-300 ${isExpanded ? "rotate-180 bg-gray-50" : ""
+                        }`}
                     >
                       <ChevronDown className="h-5 w-5 text-slate-500" />
                     </div>
@@ -301,11 +357,11 @@ const MyBenefits: React.FC = () => {
                 </div>
 
                 {/* Divider */}
-                {isExpanded && <div className="h-px w-full bg-gray-100"></div>}
+                {isExpanded && isDesktop && <div className="h-px w-full bg-gray-100"></div>}
 
                 {/* Expanded details (list) */}
                 {isExpanded && (
-                  <div className="bg-gray-100 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="bg-slate-50 p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
                     <div className="flex items-center gap-2 mb-6">
                       <TrendingUp className="h-4 w-4 text-slate-500" />
                       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
@@ -327,6 +383,7 @@ const MyBenefits: React.FC = () => {
                       ]}
                       columnWidths={[COLUMN_LAYOUT]}
                     >
+
                       <DataListView<SalaryComponentDetail>
                         queryKey={`accrualData-${component.salary_component}`}
                         fetchFunction={fetchFunction}
@@ -334,6 +391,7 @@ const MyBenefits: React.FC = () => {
                         isSearch={false}
                         showPagination={false}
                         pageSize={20}
+                        isLoading={YearsLoading}
                       />
                     </CardTable>
                   </div>
@@ -342,6 +400,148 @@ const MyBenefits: React.FC = () => {
             );
           })}
         </main>
+      </div>
+
+      {/* Mobile: Accrual Detail Modal */}
+      {selectedComponent && !isDesktop && createPortal(
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 bg-emerald-50 rounded-lg shrink-0">
+                <Wallet className="h-5 w-5 text-emerald-600" />
+              </div>
+              <h2 className="text-base font-bold text-slate-800 truncate">
+                {selectedComponent.salary_component}
+              </h2>
+            </div>
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors shrink-0"
+              onClick={() => setSelectedComponent(null)}
+            >
+              <X className="h-5 w-5 text-slate-500" />
+            </button>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="p-4 border-b border-gray-100">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-blue-50/50 border border-blue-100">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Total Accrual</span>
+                <span className="text-base font-bold text-blue-700">{CURRENCY_SYMBOL}{(selectedComponent.total_accrued_amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Balance</span>
+                <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{(selectedComponent.total_balance_amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Total Claim</span>
+                <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{(selectedComponent.total_claimed_amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Periodic Accrual</span>
+                <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{(selectedComponent.periodic_original_amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Carry Forward</span>
+                <span className="text-base font-bold text-slate-800">{CURRENCY_SYMBOL}{(selectedComponent.carry_forward_amount ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex flex-col gap-0.5 p-2.5 rounded-lg bg-gray-50">
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-700">Advance Periods</span>
+                <span className="text-base font-bold text-slate-800">{selectedComponent.advance_period ?? 0} Months</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Accrual Detail List */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-4 w-4 text-slate-500" />
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+                Accrual Calculation
+              </h3>
+            </div>
+            <div className="space-y-3">
+              {(selectedComponent.details ?? []).map((detail, idx) => (
+                <MobileDetailCard key={detail.month ?? idx} data={detail} />
+              ))}
+              {(!selectedComponent.details || selectedComponent.details.length === 0) && (
+                <NoDataFound title="No Details" subtitle="No accrual details available." />
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+};
+
+/* Mobile detail card for accrual items inside modal */
+const MobileDetailCard = ({ data }: { data: SalaryComponentDetail }) => {
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Card Header - Period + Closing Balance */}
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-gray-100">
+        <span className="font-bold text-slate-800 text-sm">{data.month}</span>
+        <div className="flex flex-col items-end">
+          <span className="text-[9px] text-gray-600 uppercase tracking-wider">Closing Bal</span>
+          <span className="text-sm font-bold text-emerald-700">
+            {formatCurrency(data.closing_balance ?? 0)}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        {/* Days Section */}
+        <div>
+          <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-600 mb-2 block">
+            Days Breakdown
+          </span>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="flex flex-col items-center p-2 rounded-lg bg-gray-50">
+              <span className="text-[9px] text-gray-600 uppercase">Work</span>
+              <span className="text-sm font-bold text-slate-800">{data.working_days ?? 0}</span>
+            </div>
+            <div className="flex flex-col items-center p-2 rounded-lg bg-gray-50">
+              <span className="text-[9px] text-gray-600 uppercase">Payment</span>
+              <span className="text-sm font-bold text-slate-800">{data.payment_days ?? 0}</span>
+            </div>
+            <div className="flex flex-col items-center p-2 rounded-lg bg-gray-50">
+              <span className="text-[9px] text-gray-600 uppercase">Arrear</span>
+              <span className="text-sm font-bold text-slate-800">{data.arrear_days ?? 0}</span>
+            </div>
+            <div className="flex flex-col items-center p-2 rounded-lg bg-gray-50">
+              <span className="text-[9px] text-gray-600 uppercase">LOP</span>
+              <span className="text-sm font-bold text-red-600">{data.lop_days ?? 0}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Amounts Section */}
+        <div>
+          <span className="text-[9px] uppercase tracking-wider font-semibold text-gray-600 mb-2 block">
+            Amounts
+          </span>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-gray-600">Original Accrual</span>
+              <span className="text-xs font-semibold text-slate-700">{formatCurrency(data?.periodic_original_amount ?? 0)}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-gray-600">Periodic Accrued</span>
+              <span className="text-xs font-semibold text-slate-700">{formatCurrency(data?.amount ?? 0)}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-gray-600">Claimed</span>
+              <span className="text-xs font-semibold text-slate-700">{formatCurrency(data?.claimed_amount ?? 0)}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span className="text-xs text-gray-600">Paid</span>
+              <span className="text-xs font-semibold text-slate-700">{formatCurrency(data?.paid_amount ?? 0)}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

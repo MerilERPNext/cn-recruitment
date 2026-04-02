@@ -64,7 +64,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   const monthlySeries = useMemo(
     () =>
       cleanedData.map((item) => ({
-        name: item.type,
+        name: item.name || item.type,
         data: item.monthly,
       })),
     [cleanedData],
