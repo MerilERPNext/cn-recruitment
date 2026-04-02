@@ -112,28 +112,28 @@ const MyLeaveRequests = ({
             titles={
               activeStatus === "Rejected"
                 ? [
-                  "Leave Id",
-                  "Leave Type",
-                  "From Date",
-                  "To Date",
-                  "Description",
-                  "Reason",
-                  "Leave Days",
-                  "Status",
-                  "Reject Reason",
-                  "ACTIONS",
-                ]
+                    "Leave Id",
+                    "Leave Type",
+                    "From Date",
+                    "To Date",
+                    "Description",
+                    "Reason",
+                    "Leave Days",
+                    "Status",
+                    "Reject Reason",
+                    "Actions",
+                  ]
                 : [
-                  "Leave Id",
-                  "Leave Type",
-                  "From Date",
-                  "To Date",
-                  "Description",
-                  "Reason",
-                  "Leave Days",
-                  "Status",
-                  "ACTIONS",
-                ]
+                    "Leave Id",
+                    "Leave Type",
+                    "From Date",
+                    "To Date",
+                    "Description",
+                    "Reason",
+                    "Leave Days",
+                    "Status",
+                    "Actions",
+                  ]
             }
             columnWidths={
               activeStatus === "Rejected"
@@ -168,9 +168,7 @@ const MyLeaveRequests = ({
                 )}
                 onFiltersChange={(filters) => {
                   setActiveStatus(
-                    typeof filters.status === "string"
-                      ? filters.status
-                      : "All",
+                    typeof filters.status === "string" ? filters.status : "All",
                   );
                 }}
                 defaultFilters={{ status: ["!=", "Cancelled"] }}
@@ -188,7 +186,6 @@ const MyLeaveRequests = ({
                     ],
                   },
                 ]}
-
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}

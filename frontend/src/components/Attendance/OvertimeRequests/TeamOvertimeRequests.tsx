@@ -30,7 +30,10 @@ const TeamOvertimeRequests = () => {
   const handleRequestClick = useCallback(
     (request: MyPlannedAttendanceRequest) => {
       if (request?.todo_id) {
-        setSearchParams({ requestId: request.todo_id, reference_name: request.reference_name });
+        setSearchParams({
+          requestId: request.todo_id,
+          reference_name: request.reference_name,
+        });
       }
     },
     [setSearchParams],
@@ -46,8 +49,8 @@ const TeamOvertimeRequests = () => {
   }, [setSearchParams]);
 
   const tableTitles = isBulkSelectEnabled
-    ? ["Select", "Employee", "Description", "Due Date", "Status", "ACTIONS"]
-    : ["Employee", "Description", "Due Date", "Status", "ACTIONS"];
+    ? ["Select", "Employee", "Description", "Due Date", "Status", "Actions"]
+    : ["Employee", "Description", "Due Date", "Status", "Actions"];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
@@ -92,42 +95,46 @@ const TeamOvertimeRequests = () => {
                       label: "Pending",
                       key: "Open",
                       value: "Open",
-                      customAPIParams: { todo_status: "Open" }
+                      customAPIParams: { todo_status: "Open" },
                     },
                     {
                       label: "Approved",
                       key: "Approved",
                       value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" }
+                      customAPIParams: { todo_status: "Closed" },
                     },
                     {
                       label: "Rejected",
                       key: "Rejected",
-                      value: "Rejected"
+                      value: "Rejected",
                     },
                   ],
                   emptyValueConfig: {
-                    filterValue: ["!=", "Cancelled"]
-                  }
+                    filterValue: ["!=", "Cancelled"],
+                  },
                 },
               ]}
               SkeletonComponent={CardSkeleton}
               defaultFilters={{ status: "Open" }}
               renderCardContent={(item) => {
-                if (item?.data?.custom_selected_doctype_action === "Send Back") {
+                if (
+                  item?.data?.custom_selected_doctype_action === "Send Back"
+                ) {
                   return null;
                 }
-                return <OvertimeApprovalCard
-                  isSelected={item?.isSelected}
-                  onToggleSelect={item?.onToggleSelect}
-                  data={item?.data}
-                  onAction={item?.onAction}
-                  onClick={(request: MyPlannedAttendanceRequest) =>
-                    handleRequestClick(request)
-                  }
-                  loadingAction={item?.loadingAction}
-                  isBulkSelectEnabled={isBulkSelectEnabled}
-                />
+                return (
+                  <OvertimeApprovalCard
+                    isSelected={item?.isSelected}
+                    onToggleSelect={item?.onToggleSelect}
+                    data={item?.data}
+                    onAction={item?.onAction}
+                    onClick={(request: MyPlannedAttendanceRequest) =>
+                      handleRequestClick(request)
+                    }
+                    loadingAction={item?.loadingAction}
+                    isBulkSelectEnabled={isBulkSelectEnabled}
+                  />
+                );
               }}
             />
           )}

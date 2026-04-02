@@ -1,39 +1,39 @@
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { useNavigate } from "react-router";
 import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import { AttendanceRecord } from "../../../types/attendance";
-import { useNavigate } from "react-router";
-import { endOfMonth, format, startOfMonth, parse } from "date-fns";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
+import { AttendanceRecord } from "../../../types/attendance";
 
 import LeaveRequest from "../LeaveRequest";
 
 import { useScreenSize } from "../../../hooks/useScreenSize";
-import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
-import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 import Modal from "../../shared/Modal";
+import CreateOvertimeRequest from "../OvertimeRequests/CreateOvertimeRequest";
 import { useSidebar } from "../SidebarContext";
+import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import CardTable from "../../shared/CardTable";
-import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
 import AttendanceError from "./EmployeeAttendence/AttendanceError";
+import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
 import ListView from "./EmployeeAttendence/ListView";
 
-import Cardtable from "./EmployeeAttendence/CardTable";
-import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
-import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
-import { ViewAll } from "../../shared/atoms/ViewAll";
-import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import Button from "../../shared/atoms/Button";
 import { Card } from "../../shared/atoms/Card";
 import { Typography } from "../../shared/atoms/Typography";
+import { ViewAll } from "../../shared/atoms/ViewAll";
+import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV2";
+import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
+import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
+import Cardtable from "./EmployeeAttendence/CardTable";
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -263,8 +263,9 @@ const EmployeeAttendance = () => {
   return (
     <div className={`flex h-full overflow-y-auto min-h-0`}>
       <div
-        className={`flex p-0 md:p-2 flex-col ${showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
-          }`}
+        className={`flex p-0 md:p-2 flex-col ${
+          showDetailsFor ? (isDesktop ? "w-2/3" : "w-full") : "w-full"
+        }`}
       >
         {/* ------------------------------------------------- Calendar Start ---------------------------------------------- */}
 
@@ -313,15 +314,7 @@ const EmployeeAttendance = () => {
             />
           </div>
           <CardTable
-            columnWidths={[
-              "1.5fr",
-              "1fr",
-              "1fr",
-              "1fr",
-              "1fr",
-              "1fr",
-              "1fr",
-            ]}
+            columnWidths={["1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
             titles={[
               "Request Type",
               "From Date",
@@ -329,7 +322,7 @@ const EmployeeAttendance = () => {
               "Due Date",
               "Duration",
               "Status",
-              "ACTIONS",
+              "Actions",
             ]}
           >
             <Cardtable
