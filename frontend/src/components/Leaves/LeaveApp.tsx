@@ -8,7 +8,6 @@ import { LeaveRequestRefreshProvider } from "./LeaveRequestRefreshContext";
 import RequestLeave from "./RequestLeave";
 import RequestLeaveModal from "./RequestLeaveModal";
 import {
-  RequestLeaveModalProvider,
   useRequestLeaveModal,
 } from "./RequestLeaveModalContext";
 
@@ -232,9 +231,9 @@ const LeaveAppInner: React.FC = () => {
 const LeaveApp: React.FC = () => {
   return (
     <LeaveRequestRefreshProvider>
-      <RequestLeaveModalProvider>
-        <LeaveAppInner />
-      </RequestLeaveModalProvider>
+
+      <LeaveAppInner />
+
     </LeaveRequestRefreshProvider>
   );
 };
