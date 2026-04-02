@@ -272,7 +272,7 @@ export default function AllShiftsDashboard() {
       "To Date",
       "Due Date",
       "Status",
-      "ACTIONS",
+      "Actions",
     ];
 
   const tableColumnWidths = isBulkSelectEnabled
