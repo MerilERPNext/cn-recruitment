@@ -60,7 +60,7 @@ const ViewPolicies = () => {
             color: "text-yellow-500",
             background: "bg-yellow-50",
             title: "Current Shift",
-            details: employeeShift ? [employeeShift?.shift] : [],
+            details: employeeShift ? [employeeShift?.shift_name || employeeShift?.shift] : [],
         },
         {
             icon: Shield,
