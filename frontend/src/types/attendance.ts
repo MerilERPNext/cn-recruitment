@@ -204,6 +204,7 @@ export type EmployeeCheckInLog = {
 
 export type EmployeeShift = {
   shift: string;
+  shift_name: string;
   end_time: string;
   start_time: string;
 };
