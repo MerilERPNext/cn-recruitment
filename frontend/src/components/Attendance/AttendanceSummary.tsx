@@ -435,35 +435,36 @@ const AttendanceSummary = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}
-          <Card radius="xl" className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <Typography variant="subheading">Today's Team Summary</Typography>
-              <ViewAll
-                className="text-sm"
-                title="View Calendar"
-                to="/webapp/attendance/team-attendance"
-              />
-            </div>
-            {/* Using same grid as Summary Cards in Chart */}
-            <div
-              className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}
-            >
-              {teamSummaryData.map((data, index) => (
-                <SummaryCard
-                  key={index}
-                  icon={data.icon}
-                  iconColor={`text-${data.color}-600`}
-                  bgColor={`bg-${data.color}-50`}
-                  borderColor={`border-${data.color}-100`}
-                  value={data.value}
-                  label={data.label}
-                  isDesktop={isDesktop}
-                  isMetric={true}
+          {(!!teamCheckInSummary?.data?.have_team) && (
+            <Card radius="xl" className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <Typography variant="subheading">Today's Team Summary</Typography>
+                <ViewAll
+                  className="text-sm"
+                  title="View Calendar"
+                  to="/webapp/attendance/team-attendance"
                 />
-              ))}
-            </div>
-          </Card>
-
+              </div>
+              {/* Using same grid as Summary Cards in Chart */}
+              <div
+                className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}
+              >
+                {teamSummaryData.map((data, index) => (
+                  <SummaryCard
+                    key={index}
+                    icon={data.icon}
+                    iconColor={`text-${data.color}-600`}
+                    bgColor={`bg-${data.color}-50`}
+                    borderColor={`border-${data.color}-100`}
+                    value={data.value}
+                    label={data.label}
+                    isDesktop={isDesktop}
+                    isMetric={true}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
           {/* Quick Actions */}
           <Card radius="xl" className="space-y-4">
             <div className="px-1">
