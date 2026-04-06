@@ -154,37 +154,43 @@ export default function CreateLoanDialog({
       const submission = await formRef.current?.submit();
       const formData = submission?.data;
 
-      await loading?.wrap(async () => {
-        const submissionData = {
-          ...formData,
-          company: currentEmployee?.company,
-          applicant_type: "Employee",
-          applicant: currentEmployee?.employee,
-        };
+      const submissionData = {
+        ...formData,
+        company: currentEmployee?.company,
+        applicant_type: "Employee",
+        applicant: currentEmployee?.employee,
+      };
 
-        if (loan) {
-          await loading?.wrap(async () => {
-            await new Promise<void>((resolve, reject) => {
-              mutateLoan.mutate(
-                { docname: loanId || "", data: submissionData },
-                {
-                  onSuccess: async () => {
-                    onClose?.();
-                    setTimeout(() => setRefetchAttendance(true), 2000);
-                    resolve();
-                  },
-                  onError: (error: any) => {
-                    console.error(error);
-                    reject(error);
-                  },
+      if (loan) {
+        await loading?.wrap(async () => {
+          await new Promise<void>((resolve, reject) => {
+            mutateLoan.mutate(
+              { docname: loanId || "", data: submissionData },
+              {
+                onSuccess: async () => {
+                  toast.success("Loan Request updated successfully!");
+                  onClose?.();
+                  setTimeout(() => setRefetchAttendance(true), 2000);
+                  resolve();
                 },
-              );
-            });
-          }, "Updating advance request…");
+                onError: (error: any) => {
+                  const formatedError = errorResponseFormater(
+                    error,
+                    "Update failed. Please try again.",
+                  );
+                  toast.error(formatedError);
+                  console.error(error);
+                  reject(error);
+                },
+              },
+            );
+          });
+        }, "Updating loan request…");
 
-          return;
-        }
+        return;
+      }
 
+      await loading?.wrap(async () => {
         await new Promise<void>((resolve, reject) => {
           mutation.mutate(submissionData as Record<string, any>, {
             onSuccess: () => {
@@ -204,7 +210,7 @@ export default function CreateLoanDialog({
             },
           });
         });
-      }, "Submitting loan request…"); // optional message
+      }, "Submitting loan request…");
     } catch (error) {
       console.error("Error submitting loan:", error);
     }

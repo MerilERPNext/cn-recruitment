@@ -143,7 +143,7 @@ const LoanRow = ({
     ? loan.todo_list[0]
     : null;
 
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = loan.status === "Open" && todo?.custom_allow_revoke === 1;
   const canEdit = todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
 
