@@ -33,6 +33,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   data,
 }) => {
   const [open, setOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
   const { isDesktop } = useScreenSize();
 
   const months = useMemo(
@@ -133,9 +134,17 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   if (!isDesktop) return null;
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => !isLocked && setOpen(false)}
+    >
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const nextLocked = !isLocked;
+          setIsLocked(nextLocked);
+          setOpen(nextLocked);
+        }}
         className="w-full h-14 bg-white shadow-md rounded-b-xl flex items-center justify-between px-4 hover:bg-primary/10 transition"
       >
         <span className="text-lg font-semibold text-gray-800">

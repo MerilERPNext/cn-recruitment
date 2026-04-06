@@ -1,8 +1,11 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { useCurrentEmployee } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
+import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import ApprovalList from "../shared/ApprovalList";
+import { FilterField } from "../DataListView";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
@@ -14,6 +17,63 @@ const TeamLeaveRequest = () => {
   const { isDesktop } = useScreenSize();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Open");
+
+  const { data: currentEmployee } = useCurrentEmployee();
+  const today = new Date().toISOString().split("T")[0];
+  const { data: leaveBalanceData } = useGetLeaveBalance(
+    currentEmployee?.name,
+    today,
+  );
+
+  // Build filter fields dynamically to include leave type options from balance API
+  const dynamicFilterFields: FilterField[] = useMemo(() => {
+    const leaveTypeOptions =
+      leaveBalanceData?.leave_balance
+        ?.filter((l) => l.dont_show_in_frontend !== 1)
+        .map((l) => ({
+          label: l.type,
+          value: l.leave_id,
+        })) ?? [];
+
+    return [
+      {
+        fieldname: "status",
+        label: "Status",
+        fieldtype: "Select" as const,
+        options: [
+          {
+            label: "Pending",
+            key: "Open",
+            value: "Open",
+            customAPIParams: { todo_status: "Open" },
+          },
+          {
+            label: "Approved",
+            key: "Approved",
+            value: ["in", ["Draft", "Approved", "Open", "Pending"]],
+            customAPIParams: { todo_status: "Closed" },
+          },
+          { label: "Rejected", key: "Rejected", value: "Rejected" },
+        ],
+      },
+      {
+        fieldname: "leave_type",
+        label: "Leave Type",
+        fieldtype: "Select" as const,
+        options: leaveTypeOptions,
+      },
+      {
+        fieldname: "from_date_start",
+        label: "Start Date",
+        fieldtype: "Date",
+      },
+      {
+        fieldname: "from_date_end",
+        label: "End Date",
+        fieldtype: "Date",
+      },
+    ];
+  }, [leaveBalanceData]);
 
   const [refetchApprovalList, setRefetchApprovalList] = useState(false);
   const navigate = useNavigate();
@@ -29,6 +89,7 @@ const TeamLeaveRequest = () => {
   const reasonName = searchParams.get("reason_name");
 
   const handleRequestClick = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (request: any) => {
       if (request?.todo_id) {
         setSearchParams({
@@ -55,82 +116,82 @@ const TeamLeaveRequest = () => {
   const tableTitles = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-          "Select",
-          "Leave Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Reject Reason",
-          "Actions",
-        ]
+        "Select",
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Reject Reason",
+        "Actions",
+      ]
       : [
-          "Select",
-          "Leave Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Actions",
-        ]
+        "Select",
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Actions",
+      ]
     : isRejectedFilter
       ? [
-          "Leave Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Reject Reason",
-          "Actions",
-        ]
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Reject Reason",
+        "Actions",
+      ]
       : [
-          "Leave Id",
-          "Employee",
-          "Leave Type",
-          "From Date",
-          "To Date",
-          "Due Date",
-          "Leave Days",
-          "Status",
-          "Actions",
-        ];
+        "Request Id",
+        "Employee",
+        "Leave Type",
+        "From Date",
+        "To Date",
+        "Due Date",
+        "Leave Days",
+        "Status",
+        "Actions",
+      ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? isRejectedFilter
       ? [
-          "0.5fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1.5fr",
-          "1fr",
-        ]
+        "0.5fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1.5fr",
+        "1fr",
+      ]
       : [
-          "0.5fr",
-          "1fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1.5fr",
-          "1fr",
-          "1fr",
-          "1fr",
-          "1fr",
-        ]
+        "0.5fr",
+        "1fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1.5fr",
+        "1fr",
+        "1fr",
+        "1fr",
+        "1fr",
+      ]
     : isRejectedFilter
       ? ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1.5fr", "1fr"]
       : ["1fr", "1.5fr", "1.5fr", "1.5fr", "1.5fr", "1fr", "1fr", "1fr", "1fr"];
@@ -163,28 +224,7 @@ const TeamLeaveRequest = () => {
               isFilter={true}
               columnWidths={finalColumnWidths}
               onBulkSelectVisibilityChange={setIsBulkSelectEnabled}
-              filterFields={[
-                {
-                  fieldname: "status",
-                  label: "Status",
-                  fieldtype: "Select",
-                  options: [
-                    {
-                      label: "Pending",
-                      key: "Open",
-                      value: "Open",
-                      customAPIParams: { todo_status: "Open" },
-                    },
-                    {
-                      label: "Approved",
-                      key: "Approved",
-                      value: ["in", ["Draft", "Approved", "Open", "Pending"]],
-                      customAPIParams: { todo_status: "Closed" },
-                    },
-                    { label: "Rejected", key: "Rejected", value: "Rejected" },
-                  ],
-                },
-              ]}
+              filterFields={dynamicFilterFields}
               defaultFilters={{ status: "Open" }}
               SkeletonComponent={CardSkeleton}
               renderCardContent={(item) => {
@@ -199,6 +239,7 @@ const TeamLeaveRequest = () => {
                     onToggleSelect={item?.onToggleSelect}
                     data={item?.data}
                     onAction={item?.onAction}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     onClick={(request: any) => handleRequestClick(request)}
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}

@@ -229,7 +229,7 @@ export function LeaveDetailView({
                   Leave Type
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+                  {`${data?.reference_document?.custom_leave_type_name}`}
                 </Typography>
               </div>
               <div className="flex flex-col gap-2 text-right">
