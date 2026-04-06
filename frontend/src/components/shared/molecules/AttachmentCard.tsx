@@ -1,5 +1,6 @@
 import { Download, Eye } from "lucide-react";
 import { useState } from "react";
+import { FileTypeIcon, getFileTypeInfo, getFileName } from "../../../utils/fileUtils";
 import Button from "../atoms/Button";
 import Tooltip from "../Tooltip";
 import { FilePreviewModal } from "./FilePreviewModal";
@@ -11,8 +12,9 @@ export function AttachmentCard({
   fileUrl: string;
   compact?: boolean;
 }) {
-  const fileName = fileUrl.split("/").pop();
+  const fileName = getFileName(fileUrl);
   const [showPreview, setShowPreview] = useState(false);
+  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
 
   const ActionButtons = (
     <div className="flex gap-2 items-center">
@@ -27,7 +29,7 @@ export function AttachmentCard({
       </Tooltip>
 
       <Tooltip content={"Download"}>
-        <a href={fileUrl} download>
+        <a href={fileUrl} download={fileName}>
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4" />
           </Button>
@@ -42,13 +44,24 @@ export function AttachmentCard({
         ActionButtons
       ) : (
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
-          {/* Thumbnail */}
-          <div className="w-12 h-12 rounded-md overflow-hidden border bg-white flex items-center justify-center">
-            <img
-              src={fileUrl}
-              alt={fileName}
-              className="w-full h-full object-cover"
-            />
+          {/* Thumbnail — image preview for images, icon for everything else */}
+          <div
+            className={`w-12 h-12 rounded-md overflow-hidden border flex items-center justify-center flex-shrink-0 ${
+              category === "image" ? "bg-white" : bgColor
+            }`}
+          >
+            {category === "image" ? (
+              <img
+                src={fileUrl}
+                alt={fileName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <FileTypeIcon
+                category={category}
+                className={`w-6 h-6 ${iconColor}`}
+              />
+            )}
           </div>
 
           {/* Info */}
@@ -56,7 +69,7 @@ export function AttachmentCard({
             <p className="text-sm font-medium text-gray-900 truncate">
               {fileName}
             </p>
-            <p className="text-xs text-gray-500">Image</p>
+            <p className="text-xs text-gray-500">{label}</p>
           </div>
 
           {/* Actions */}
