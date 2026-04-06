@@ -31,7 +31,9 @@ interface FileTypeInfo {
 }
 
 function getFileTypeInfo(url: string): FileTypeInfo {
-  const ext = url.split(".").pop()?.toLowerCase() ?? "";
+  // Strip query parameters and fragments before extracting the extension
+  const path = url.split(/[?#]/)[0];
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
   switch (ext) {
     case "png":
     case "jpg":
@@ -135,7 +137,8 @@ export function AttachmentCard({
   fileUrl: string;
   compact?: boolean;
 }) {
-  const fileName = fileUrl.split("/").pop() ?? "File";
+  // Strip query params/fragments and guard against trailing slashes
+  const fileName = fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
   const [showPreview, setShowPreview] = useState(false);
   const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
 

@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { renderAsync } from "docx-preview";
 import {
   Download,
@@ -12,7 +13,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import PDFViewer from "../../PDFViewer";
 
@@ -41,7 +42,9 @@ interface FileTypeInfo {
 }
 
 function getFileTypeInfo(url: string): FileTypeInfo {
-  const ext = url.split(".").pop()?.toLowerCase() ?? "";
+  // Strip query parameters and fragments before extracting the extension
+  const path = url.split(/[?#]/)[0];
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
 
   switch (ext) {
     case "png":
@@ -161,37 +164,73 @@ function PdfPreview({ fileUrl }: { fileUrl: string }) {
 /**
  * Renders .docx using docx-preview — renders directly from OOXML with full
  * fidelity: page layout, colors, fonts, images, tables, exactly as in Word.
+ *
+ * Uses useEffect + AbortController to properly cancel in-flight fetches
+ * when the component unmounts or fileUrl changes (fixes potential memory leaks
+ * and race conditions from the previous useCallback-ref approach).
  */
 function DocxPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
-  const containerRef = useCallback((node: HTMLDivElement | null) => {
-    if (!node) return;
-    // renderAsync injects rendered DOCX pages directly into the container div
-    fetch(fileUrl)
+  const [buffer, setBuffer] = useState<ArrayBuffer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Step 1: Fetch the file as ArrayBuffer with proper AbortController cleanup
+  useEffect(() => {
+    const controller = new AbortController();
+    setIsLoading(true);
+    setError(false);
+    setBuffer(null);
+
+    fetch(fileUrl, { signal: controller.signal })
       .then((res) => {
         if (!res.ok) throw new Error("Fetch failed");
         return res.arrayBuffer();
       })
-      .then((buffer) =>
-        renderAsync(buffer, node, undefined, {
-          className: "docx-preview",
-          inWrapper: true,
-          ignoreWidth: false,
-          ignoreHeight: false,
-          ignoreFonts: false,
-          breakPages: true,
-          ignoreLastRenderedPageBreak: true,
-          experimental: false,
-          trimXmlDeclaration: true,
-          useBase64URL: true,
-          renderChanges: false,
-          renderHeaders: true,
-          renderFooters: true,
-          renderFootnotes: true,
-          renderEndnotes: true,
-        })
-      )
+      .then((buf) => {
+        setBuffer(buf);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError(true);
+          setIsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [fileUrl]);
+
+  // Step 2: Once buffer is ready and container is mounted, render with docx-preview
+  const containerCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      containerRef.current = node;
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!buffer || !containerRef.current) return;
+    const node = containerRef.current;
+
+    renderAsync(buffer, node, undefined, {
+      className: "docx-preview",
+      inWrapper: true,
+      ignoreWidth: false,
+      ignoreHeight: false,
+      ignoreFonts: false,
+      breakPages: true,
+      ignoreLastRenderedPageBreak: true,
+      experimental: false,
+      trimXmlDeclaration: true,
+      useBase64URL: true,
+      renderChanges: false,
+      renderHeaders: true,
+      renderFooters: true,
+      renderFootnotes: true,
+      renderEndnotes: true,
+    })
       .then(() => {
-        // Hide the loading overlay once rendered
         const overlay = node.parentElement?.querySelector<HTMLDivElement>(".docx-loading");
         if (overlay) overlay.style.display = "none";
       })
@@ -201,30 +240,35 @@ function DocxPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
           overlay.innerHTML = `<div style="text-align:center;color:#ef4444;padding:16px">Failed to render document.</div>`;
         }
       });
-  }, [fileUrl]);
+  }, [buffer]);
+
+  if (error)
+    return <PreviewFallback fileUrl={fileUrl} fileName={fileName} message="Could not load this Word document for preview." />;
 
   return (
     <div className="w-full h-full overflow-auto bg-gray-200 relative" style={{ padding: "24px 0" }}>
       {/* Loading overlay — hidden once renderAsync completes */}
-      <div className="docx-loading" style={{
-        position: "absolute", inset: 0,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: "#e5e7eb", zIndex: 10,
-      }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 40, height: 40,
-            border: "3px solid #3b82f6",
-            borderTopColor: "transparent",
-            borderRadius: "50%",
-            animation: "spin 0.8s linear infinite",
-            margin: "0 auto",
-          }} />
-          <p style={{ marginTop: 12, fontSize: 14, color: "#6b7280" }}>Rendering document…</p>
+      {isLoading && (
+        <div className="docx-loading" style={{
+          position: "absolute", inset: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "#e5e7eb", zIndex: 10,
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <div style={{
+              width: 40, height: 40,
+              border: "3px solid #3b82f6",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+              margin: "0 auto",
+            }} />
+            <p style={{ marginTop: 12, fontSize: 14, color: "#6b7280" }}>Rendering document…</p>
+          </div>
         </div>
-      </div>
+      )}
       {/* docx-preview renders page divs into this container */}
-      <div ref={containerRef} className="docx-preview-container" />
+      <div ref={containerCallback} className="docx-preview-container" />
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .docx-preview-container .docx-wrapper {
@@ -315,11 +359,11 @@ function ExcelPreview({ fileUrl, fileName }: { fileUrl: string; fileName: string
           ))}
         </div>
       )}
-      {/* Table */}
+      {/* Table — sanitized with DOMPurify to prevent XSS from malicious xlsx files */}
       <div className="flex-1 overflow-auto p-4">
         <div
           className="xlsx-table-wrapper"
-          dangerouslySetInnerHTML={{ __html: tableHtml }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(tableHtml) }}
         />
       </div>
       <style>{`
@@ -489,7 +533,8 @@ function UnknownPreview({ fileUrl, fileName }: { fileUrl: string; fileName: stri
 export function FilePreviewModal({ fileUrl, onClose }: FilePreviewModalProps) {
   const [imageZoom, setImageZoom] = useState(100);
 
-  const fileName = fileUrl.split("/").pop() ?? "File";
+  // Strip query params/fragments and guard against trailing slashes
+  const fileName = fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
   const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
 
   const handleZoomIn  = useCallback(() => setImageZoom((p) => Math.min(p + 25, 200)), []);
