@@ -70,6 +70,8 @@ export interface FilterOption {
   value: string | any[]; // Can be a simple string or complex array like ["in", ["Draft", "Approved"]]
   key?: string; // Optional key for matching when value is complex (e.g., "Approved")
   customAPIParams?: Record<string, any>; // Additional params to add to customAPI when this option is selected
+  additionalFilters?: Record<string, any>; // Additional filters to merge into the filters object
+  excludeFieldFromFilters?: boolean; // If true, the parent fieldname is removed from filters (only additionalFilters/customAPIParams apply)
 }
 
 export interface FilterField {
@@ -133,7 +135,7 @@ interface DataListViewProps<T extends BaseItem> {
   showRefreshButton?: boolean;
   onRefetchAvailable?: (refetch: () => void) => void;
   onDataLoad?: (data: T[]) => void;
-  refetchTrigger?: boolean;
+  refetchTrigger?: boolean | number;
   onRefetchComplete?: () => void;
   orderBy?: string;
   showPagination?: boolean;
@@ -321,29 +323,44 @@ const DataListView = <T extends BaseItem>({
         });
 
         if (matchingOption && typeof matchingOption !== "string") {
-          // Replace the filter value with the actual value (could be complex array)
-          processedFilters = {
-            ...processedFilters,
-            [field.fieldname]: matchingOption.value,
-          };
+          if (matchingOption.excludeFieldFromFilters) {
+            // Remove the parent fieldname from filters, only apply additionalFilters
+            delete processedFilters[field.fieldname];
+            processedFilters = {
+              ...processedFilters,
+              ...(matchingOption.additionalFilters || {}),
+            };
+          } else {
+            // Replace the filter value with the actual value (could be complex array)
+            processedFilters = {
+              ...processedFilters,
+              [field.fieldname]: matchingOption.value,
+              ...(matchingOption.additionalFilters || {}),
+            };
+          }
         }
       }
     });
 
-    // Handle date range filters (creation_start and creation_end)
-    const creationStart = processedFilters.creation_start;
-    const creationEnd = processedFilters.creation_end;
+    // Handle date range filters generically: any {field}_start / {field}_end pair
+    // gets combined into {field}: ["between", [startValue, endValue]]
+    const startKeys = Object.keys(processedFilters).filter((k) => k.endsWith("_start"));
+    for (const startKey of startKeys) {
+      const baseField = startKey.replace(/_start$/, "");
+      const endKey = `${baseField}_end`;
 
-    // Remove the separate date fields
-    delete processedFilters.creation_start;
-    delete processedFilters.creation_end;
+      const startVal = processedFilters[startKey];
+      const endVal = processedFilters[endKey];
 
-    // Add combined date range filter
-    if (creationStart || creationEnd) {
-      processedFilters.creation = ["between", [
-        creationStart || "1900-01-01",
-        creationEnd || "2099-12-31"
-      ]];
+      delete processedFilters[startKey];
+      delete processedFilters[endKey];
+
+      if (startVal || endVal) {
+        processedFilters[baseField] = ["between", [
+          startVal || "1900-01-01",
+          endVal || "2099-12-31",
+        ]];
+      }
     }
 
     return {

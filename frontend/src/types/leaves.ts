@@ -17,6 +17,7 @@ export interface LeaveRequest {
   total_leave_days: number;
   posting_date: string;
   reason_name?: string;
+  docstatus: number;
 }
 
 export interface TeamLeaveRequest {
@@ -202,6 +203,7 @@ export interface MyLeaveRequestType {
   reference_name: string;
   can_edit?: boolean;
   send_back_user?: string;
+  todo_status: string;
 }
 
 // types/leaves.ts
@@ -294,7 +296,7 @@ export type EditApprovedLeavePayload = {
     custom_second_half_day_date?: string;
     description?: string;
     custom_reason?: string;
-    custom_attachment?: string;
+    custom_attachment?: string | string[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
   };

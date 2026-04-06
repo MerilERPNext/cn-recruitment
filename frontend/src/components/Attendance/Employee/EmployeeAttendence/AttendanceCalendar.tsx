@@ -73,7 +73,35 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
     newParams.set("date", dateStr);
     setSearchParams(newParams, { replace: true });
   }, [selectedDate, setSearchParams, searchParams]);
-
+  const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
+    return (attendance?.events ?? []).length > 0 && (
+      <div className="flex gap-1">
+        {Array.from(
+          new Set(
+            attendance?.events?.map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
+            // (attendance?.events ?? [])
+            //   .filter(
+            //     (event) =>
+            //       !(
+            //         event.doctype === "Attendance Request" &&
+            //         event.status === "Approved"
+            //       )
+            //   )
+            //   // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
+            //   .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
+          )
+        ).map((doctype, index) => (
+          <div
+            key={index}
+            className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
+              doctype
+            )}`}
+            title={doctype}
+          />
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="p-1 employee-datepicker-lg">
       <DatePicker
@@ -147,7 +175,8 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             selectedDate?.toDateString() === date.toDateString();
           const baseClasses = "transition-all duration-200";
           const highlightClass = (() => {
-            switch (attendance?.status) {
+            const status = attendance?.record?.is_optional_leave ? "optional_leave" : attendance?.status
+            switch (status) {
               case "present":
                 return "!bg-green-100 !text-green-700 rounded-md";
               case "unpaid":
@@ -156,6 +185,8 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
               case "on-leave":
                 return "!bg-yellow-100 !text-yellow-700 rounded-md";
               case "holiday":
+                return "!bg-blue-100 !text-blue-700 rounded-md";
+              case "optional_leave":
                 return "!bg-blue-100 !text-blue-700 rounded-md";
               case "week-off":
                 return "!bg-gray-200 !text-gray-700 rounded-md";
@@ -189,9 +220,13 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
                   display: "flex",
                   justifyContent: "center",
                   alignItems: "center",
+                  flexDirection: "column",
                 }}
               >
-                {day}
+                <span>
+                  {day}
+                </span>
+                {getAttendanceEvents(attendance)}
               </div>
             );
           }
@@ -199,33 +234,7 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
             <div className={dayBoxStyles}>
               <div className="flex flex-col items-center gap-1">
                 <span>{day}</span>
-                {(attendance?.events ?? []).length > 0 && (
-                  <div className="flex gap-1">
-                    {Array.from(
-                      new Set(
-                        attendance?.events?.map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
-                        // (attendance?.events ?? [])
-                        //   .filter(
-                        //     (event) =>
-                        //       !(
-                        //         event.doctype === "Attendance Request" &&
-                        //         event.status === "Approved"
-                        //       )
-                        //   )
-                        //   // here we treat request type Out Duty as a doctype because we don't have a separate doctype for it
-                        //   .map((event) => event?.doctype === "Attendance Request" && event?.request_type === "Out Duty" ? event?.request_type : event?.doctype)
-                      )
-                    ).map((doctype, index) => (
-                      <div
-                        key={index}
-                        className={`w-[6px] h-[6px] rounded-full ${getEventDotColor(
-                          doctype
-                        )}`}
-                        title={doctype}
-                      />
-                    ))}
-                  </div>
-                )}
+                {getAttendanceEvents(attendance)}
               </div>
             </div>
           );

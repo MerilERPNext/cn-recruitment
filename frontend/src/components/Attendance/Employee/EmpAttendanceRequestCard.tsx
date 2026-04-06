@@ -29,7 +29,6 @@ const EmpAttendanceRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
-
   const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -123,13 +122,14 @@ const EmpAttendanceRequestCard = ({
               allocated_to_user={data?.username}
               position="left"
             >
-              <StatusBadge status={data?.reference_document?.custom_status} />
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
               isPending={type === "pending"}
-              canRevoke={!!data?.custom_allow_revoke}
+              canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
               canEdit={!!data?.can_edit}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
@@ -152,7 +152,7 @@ const EmpAttendanceRequestCard = ({
                 username={data?.username}
               />
 
-              <StatusBadge status={data?.reference_document?.custom_status} />
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
             </div>
 
             <div className="flex items-start justify-between">
@@ -191,7 +191,7 @@ const EmpAttendanceRequestCard = ({
             <MyApprovalActionPill
               variant="buttons"
               isPending={type === "pending"}
-              canRevoke={type === "pending" && !!data?.custom_allow_revoke}
+              canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
               canEdit={type === "pending" && !!data?.can_edit}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}

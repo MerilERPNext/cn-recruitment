@@ -51,8 +51,8 @@ const LeaveAppInner: React.FC = () => {
     const allTabs: { key: TabName; label: string; permissionKey: string }[] = [
       {
         key: "leave-balance",
-        label: "Leave Balance",
-        permissionKey: "Leave Balance",
+        label: "Leave Summary",
+        permissionKey: "Leave Summary",
       },
       {
         key: "my-requests",

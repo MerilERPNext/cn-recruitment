@@ -1,3 +1,5 @@
+import { TodoType } from "../../../../types/todos"
+
 export interface Installment {
   loan_end_date: string
   loan_start_date: string
@@ -58,7 +60,8 @@ export interface Loan {
   standardInterest: number
   loanName: string
   name: string
-  employee: string
+  employee: string;
+  todo_list: TodoType[] | null;
 }
 
 

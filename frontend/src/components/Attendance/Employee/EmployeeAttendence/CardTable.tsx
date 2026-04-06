@@ -6,10 +6,10 @@ import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton"
 
 type prop = {
   currentEmployee?:
-    | {
-        employee?: string;
-      }
-    | undefined;
+  | {
+    employee?: string;
+  }
+  | undefined;
   refetchAttendance?: boolean;
   setRefetchAttendance: (val: boolean) => void;
 };
@@ -39,7 +39,7 @@ const Cardtable: React.FC<prop> = ({
             },
           }}
           defaultFilters={{
-            status: "Pending",
+            custom_status: "Pending",
           }}
           ItemComponent={(props: { item: MyAttendanceRequest }) => {
             return (

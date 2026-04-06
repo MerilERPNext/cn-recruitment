@@ -163,7 +163,7 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
       <div className="p-4 md:p-6">
         <NoDataFound
           title="No Accrual Data"
-          subtitle={`There are no accrual periods available for ${leaveType} (${leaveId})`}
+          subtitle={`There are no accrual periods available for ${leaveType}`}
         />
       </div>
     );

@@ -3,15 +3,16 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+
 import { Typography } from "../../../shared/atoms/Typography";
 import PolicyDrawer from "../../PolicyDrawer";
 import { useState } from "react";
 import { PolicyDrawerConfig } from "../../AttendanceSummary";
+import { DRAWER_SETTINGS } from "../../constants";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const ViewPolicies = () => {
-    const navigate = useNavigate()
+
     const { targetEmployeeId } = useTargetUser();
     const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
 
@@ -60,7 +61,7 @@ const ViewPolicies = () => {
             color: "text-yellow-500",
             background: "bg-yellow-50",
             title: "Current Shift",
-            details: employeeShift ? [employeeShift?.shift] : [],
+            details: employeeShift ? [employeeShift?.shift_name || employeeShift?.shift] : [],
         },
         {
             icon: Shield,
@@ -94,19 +95,9 @@ const ViewPolicies = () => {
         const displayLabel = Array.isArray(data) ? data[0] : data;
         const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
-        const drawerSettings: Record<
-            string,
-            { doctypeName: string; useEmployeeAsTarget?: boolean }
-        > = {
-            "Current Shift": { doctypeName: "Shift Type" },
-            "Attendance Method": {
-                doctypeName: "Employee",
-                useEmployeeAsTarget: true,
-            },
-            "Week Off": { doctypeName: "Week Off" },
-        };
 
-        const settingConfig = drawerSettings[settingType];
+
+        const settingConfig = DRAWER_SETTINGS[settingType];
         if (settingConfig) {
             const { doctypeName, useEmployeeAsTarget } = settingConfig;
             return (
@@ -129,30 +120,7 @@ const ViewPolicies = () => {
             );
         }
 
-        let path: string | null = null;
-
-        switch (settingType) {
-            case "Attendance Policy":
-                path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
-                break;
-
-            case "Overtime Policy":
-                path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
-                break;
-
-            default:
-                return null;
-        }
-
-        return (
-            <Typography
-                variant="bodySmall"
-                onClick={() => navigate(path!)}
-                className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
-            >
-                {displayLabel}
-            </Typography>
-        );
+        return null;
     };
 
     return (

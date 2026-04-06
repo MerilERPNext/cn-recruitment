@@ -11,6 +11,13 @@ import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import MobileAllocatedTo from "../../../shared/MobileAllocatedTo";
+import { TodoType } from "../../../../types/todos";
+import useCurrentUser from "../../../../hooks/useCurrentUser";
+import { useRevokeEvent } from "../../../../hooks/userApprovalList";
+import { useLoadingOverlay } from "../../../../context/OverlayContext";
+import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
+import { queryClient } from "../../../../providers/QueryProvider";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
@@ -77,6 +84,37 @@ const LoantItem: React.FC<{
   handleEdit: (docname: string) => void;
   onClick: () => void;
 }> = ({ item, handleEdit, onClick }) => {
+  const todo: TodoType | null = Array.isArray(item?.todo_list) && item.todo_list.length > 0
+    ? item.todo_list[0]
+    : null;
+
+  const { data: currentUser } = useCurrentUser();
+  const canRevoke = item.status === "Open" && todo?.custom_allow_revoke === 1;
+  const canEdit = todo?.can_edit === true &&
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+
+  const loading = useLoadingOverlay();
+  const revokeEventMutation = useRevokeEvent();
+
+  const handleRevokeClick = () => {
+    if (!todo?.todo_id) return;
+    loading?.show("Revoking Request...");
+    revokeEventMutation.mutate(
+      { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["loan"] });
+          queryClient.invalidateQueries({ queryKey: ["loan-requests"] });
+          toast.success("Loan Request Revoked Successfully!");
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+        onSettled: () => loading?.hide(),
+      },
+    );
+  };
+
   return (
     <div
       key={item.name}
@@ -150,18 +188,22 @@ const LoantItem: React.FC<{
 
         {/* Allocated To */}
         <MobileAllocatedTo
-          users={item.allocated_to}
-          roles={item.allocated_to_roles}
-          allocated_to={item.allocated_to_user}
+          users={todo?.allocated_to}
+          roles={todo?.allocated_roles}
+          role={todo?.role ?? ""}
+          allocated_to={todo?.username}
         />
 
         <MyApprovalActionPill
           variant="buttons"
           isPending={item.status === "Open"}
-          canEdit={!!item.can_edit}
+          canRevoke={canRevoke}
+          canEdit={canEdit}
+          onRevoke={handleRevokeClick}
           onEdit={() => {
             handleEdit(item.name);
           }}
+          isResubmit={canEdit}
         />
       </div>
     </div>

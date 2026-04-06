@@ -2,13 +2,15 @@
 import { ChevronUp } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useGetPolicyQuestions } from "../../hooks/useLeaves";
+import { getStatusStyle } from "./constants";
 
 interface Props {
   doctypeName: string;
   targetDoctype: string;
+  showStatus?: boolean;
 }
 
-const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
+const PolicyQAContent = ({ doctypeName, targetDoctype, showStatus = false }: Props) => {
   const [open, setOpen] = useState(true);
 
   const { data, isLoading, isError } = useGetPolicyQuestions(
@@ -21,6 +23,7 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
     return data.questions.map((q) => ({
       question: q.question_name,
       answer: q.description,
+      status: q.status,
     }));
   }, [data]);
 
@@ -29,6 +32,8 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
       <p className="text-sm text-red-600">Failed to load policy information</p>
     );
   }
+
+
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white">
@@ -57,7 +62,16 @@ const PolicyQAContent = ({ doctypeName, targetDoctype }: Props) => {
           <div className="space-y-4">
             {questions.map((q) => (
               <div key={q.question}>
-                <p className="font-semibold text-sm">{q.question}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-semibold text-sm">{q.question}</p>
+                  {showStatus && q.status && (
+                    <span
+                      className={`px-2 py-0.5 text-xs font-semibold rounded ${getStatusStyle(q.status)}`}
+                    >
+                      {q.status}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-600">{q.answer}</p>
               </div>
             ))}

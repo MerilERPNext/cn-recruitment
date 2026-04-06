@@ -78,6 +78,7 @@ export interface MyAttendanceRequest {
   reference_name: string;
   status: string;
   can_edit?: boolean;
+  todo_status: string;
   attachments?: [
     {
       file_url: string;
@@ -204,6 +205,7 @@ export type EmployeeCheckInLog = {
 
 export type EmployeeShift = {
   shift: string;
+  shift_name: string;
   end_time: string;
   start_time: string;
 };
@@ -224,6 +226,7 @@ export type EmployeeShiftSummary = {
 
 export type EmployeeTeamCheckIns = {
   data: {
+    have_team?: boolean;
     checked_in_count: number;
     not_checked_in_count: number;
     total_employees: number;
@@ -281,6 +284,7 @@ export type AttendanceRecord = {
   message?: string;
   request_type?: string;
   employee_name?: string;
+  is_optional_leave?: boolean;
 };
 
 export type PolicyQuestion = {

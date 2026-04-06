@@ -3,6 +3,7 @@ export interface Employee {
   designation: string;
   department_display: string;
   designation_display: string;
+  designation_name: string;
   shift_request_approver: string | null;
   name: string;
   employee: string;
@@ -13,6 +14,7 @@ export interface Employee {
   employee_number?: string;
   custom_designation_name?: string;
   department?: string;
+  department_name?: string;
   company?: string;
   branch?: string;
   branch_display?: string;
@@ -22,6 +24,7 @@ export interface Employee {
   date_of_joining: string;
   date_of_birth: string;
   gender: string;
+  branch_name?: string;
   image?: string;
   status: 'Active' | 'Inactive' | 'Suspended' | 'Left';
   custom_employment_status?: "On Probation" | "Confirmation" | "Probation Extended" | "On Notice Period";

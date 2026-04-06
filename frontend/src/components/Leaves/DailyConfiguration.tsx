@@ -1,5 +1,7 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { getDatesBetween } from "../../utils/helperUtils";
+import { AttendanceStatusItem } from "../../types/leaves";
+import Badge from "../shared/Badge";
 
 type DayConfig = "Full Day" | "First Half" | "Second Half";
 interface DailyConfigProps {
@@ -7,13 +9,38 @@ interface DailyConfigProps {
   toDate: string;
   value: Record<string, DayConfig>;
   onChange: (val: Record<string, DayConfig>) => void;
+  attendanceStatus?: AttendanceStatusItem[];
 }
+
+const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
+  Present: {
+    bg: "bg-green-100",
+    text: "text-green-800",
+  },
+  Absent: {
+    bg: "bg-red-100",
+    text: "text-red-800",
+  },
+  "On Leave": {
+    bg: "bg-yellow-100",
+    text: "text-yellow-800",
+  },
+  "Half Day": {
+    bg: "bg-orange-100",
+    text: "text-orange-800",
+  },
+  "Work From Home": {
+    bg: "bg-blue-100",
+    text: "text-blue-800",
+  },
+};
 
 const DailyConfiguration: React.FC<DailyConfigProps> = ({
   fromDate,
   toDate,
   value,
   onChange,
+  attendanceStatus,
 }) => {
   const dates = useMemo(
     () => getDatesBetween(fromDate, toDate),
@@ -31,8 +58,8 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
   const allSame: DayConfig | null = useMemo(() => {
     if (!dates.length) return null;
 
-    const first = value[dates[0]] ?? "First Half";
-    return dates.every((d) => (value[d] ?? "First Half") === first)
+    const first = value[dates[0]] ?? "Full Day";
+    return dates.every((d) => (value[d] ?? "Full Day") === first)
       ? first
       : null;
   }, [dates, value]);
@@ -78,18 +105,44 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
         <thead className="bg-gray-100 text-left text-sm text-gray-600">
           <tr>
             <th className="px-4 py-2">Date</th>
+            <th className="px-4 py-2">Attendance</th>
             <th className="px-4 py-2">Leave Options</th>
           </tr>
         </thead>
 
         <tbody>
           {dates.map((date) => {
-            const selected = value[date] ?? "First Half";
+            const selected = value[date] ?? "Full Day";
 
             return (
               <tr key={date} className="border-t">
                 <td className="px-4 py-2">
-                  {new Date(date).toLocaleDateString("en-GB")}
+                  {`${new Date(date).toLocaleDateString("en-GB")} (${new Date(
+                    date,
+                  ).toLocaleDateString("en-GB", { weekday: "long" })})`}
+                </td>
+
+                <td className="px-4 py-2">
+                  {(() => {
+                    const statusRecord = attendanceStatus?.find(
+                      (r) => r.attendance_date === date,
+                    );
+                    if (!statusRecord) return "-";
+
+                    const style = STATUS_STYLES[statusRecord.status] || {
+                      bg: "bg-gray-100",
+                      text: "text-gray-800",
+                    };
+
+                    return (
+                      <Badge
+                        label={statusRecord.status}
+                        backgroundColor={style.bg}
+                        textColor={style.text}
+                        size="sm"
+                      />
+                    );
+                  })()}
                 </td>
 
                 <td className="px-4 py-2">

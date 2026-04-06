@@ -30,12 +30,12 @@ const AttendanceLegend: React.FC<AttendanceLegendProps> = ({
     //   textColor: "text-orange-700",
     //   borderColor: "border-orange-200",
     // },
-    {
-      label: "WFH",
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-700",
-      borderColor: "border-purple-200",
-    },
+    // {
+    //   label: "WFH",
+    //   bgColor: "bg-purple-100",
+    //   textColor: "text-purple-700",
+    //   borderColor: "border-purple-200",
+    // },
     {
       label: "Holiday",
       bgColor: "bg-blue-100",

@@ -6,8 +6,9 @@ import {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
+import { getAllAccruedReimbursements, getBenefitClaimLockingPeriod, getBenefitPaySlipHTML, getBenefitPayslipListView, getBenefitRequestLockView, getSalaryComponentFilters, getYearFilterOptions, putCommentBenefitClaim } from "../services/benefitService";
 import FrappeAPI from "../utils/frappeAPI";
+import { TodoType } from "../types/todos";
 
 
 export interface BenefitPayslip {
@@ -27,6 +28,7 @@ export interface BenefitPayslip {
     custom_taxable_amount: number;
     custom_is_non_taxable: number;
     custom_non_taxable_amount: number;
+    todo_list: TodoType[];
     attachments: {
         file_url: string;
     }[];
@@ -166,15 +168,34 @@ export const useGetBenefitDoc = (
 export const useUpdateBenefitDoc = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ docname, data }: { docname: string; data: Record<string, unknown> }) =>
-            FrappeAPI.updateDocument("Employee Benefit Claim", docname, data),
+        mutationFn: async ({ docname, data }: { docname: string; data: Record<string, unknown> }) => {
+            await FrappeAPI.updateDocument("Employee Benefit Claim", docname, data)
+            const response = await FrappeAPI.callMethod(
+                "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+                {
+                    doctype: "Employee Benefit Claim",
+                    docname: docname,
+                    data: [data],
+                }
+            );
+            return response as boolean;
+        },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ["advance-doc-data", variables.docname] });
             queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
-            queryClient.invalidateQueries({ queryKey: ["benifit-request"] });
         },
         onError: (error: any) => {
             console.error("Benefit claim update failed:", error);
         },
+    });
+};
+
+export const useGetSalaryComponentFilters = (
+    employee: string, claim_date: string
+) => {
+    return useQuery<{ component_array: string[] }>({
+        queryKey: ["benefit-salary-component-filters", employee, claim_date],
+        queryFn: () => getSalaryComponentFilters(employee, claim_date),
+        enabled: !!employee && !!claim_date,
     });
 };
