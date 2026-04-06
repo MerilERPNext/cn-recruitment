@@ -2,6 +2,7 @@
 import { ChevronUp } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useGetPolicyQuestions } from "../../hooks/useLeaves";
+import { getStatusStyle } from "./constants";
 
 interface Props {
   doctypeName: string;
@@ -32,11 +33,7 @@ const PolicyQAContent = ({ doctypeName, targetDoctype, showStatus = false }: Pro
     );
   }
 
-  const getStatusStyle = (status: string) => {
-    if (status === "----") return "bg-yellow-100 text-yellow-700";
-    if (status.toLowerCase() === "yes") return "bg-blue-100 text-blue-700";
-    return "bg-red-100 text-red-700";
-  };
+
 
   return (
     <div className="border border-gray-200 rounded-lg bg-white">

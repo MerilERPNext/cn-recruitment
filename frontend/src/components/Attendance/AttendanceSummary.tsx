@@ -48,6 +48,7 @@ import AttendanceChart from "../AttendanceChart";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { DRAWER_SETTINGS } from "./constants";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -340,21 +341,9 @@ const AttendanceSummary = () => {
     const displayLabel = Array.isArray(data) ? data[0] : data;
     const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
-    const drawerSettings: Record<
-      string,
-      { doctypeName: string; useEmployeeAsTarget?: boolean }
-    > = {
-      "Current Shift": { doctypeName: "Shift Type" },
-      "Attendance Method": {
-        doctypeName: "Employee",
-        useEmployeeAsTarget: true,
-      },
-      "Week Off": { doctypeName: "Week Off" },
-      "Attendance Policy": { doctypeName: "Attendance Policies" },
-      "Overtime Policy": { doctypeName: "Overtime Policy" },
-    };
 
-    const settingConfig = drawerSettings[settingType];
+
+    const settingConfig = DRAWER_SETTINGS[settingType];
     if (settingConfig) {
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (

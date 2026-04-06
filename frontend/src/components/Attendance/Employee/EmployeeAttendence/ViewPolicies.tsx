@@ -8,6 +8,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 import PolicyDrawer from "../../PolicyDrawer";
 import { useState } from "react";
 import { PolicyDrawerConfig } from "../../AttendanceSummary";
+import { DRAWER_SETTINGS } from "../../constants";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const ViewPolicies = () => {
@@ -94,21 +95,9 @@ const ViewPolicies = () => {
         const displayLabel = Array.isArray(data) ? data[0] : data;
         const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
-        const drawerSettings: Record<
-            string,
-            { doctypeName: string; useEmployeeAsTarget?: boolean }
-        > = {
-            "Current Shift": { doctypeName: "Shift Type" },
-            "Attendance Method": {
-                doctypeName: "Employee",
-                useEmployeeAsTarget: true,
-            },
-            "Week Off": { doctypeName: "Week Off" },
-            "Attendance Policy": { doctypeName: "Attendance Policies" },
-            "Overtime Policy": { doctypeName: "Overtime Policy" },
-        };
 
-        const settingConfig = drawerSettings[settingType];
+
+        const settingConfig = DRAWER_SETTINGS[settingType];
         if (settingConfig) {
             const { doctypeName, useEmployeeAsTarget } = settingConfig;
             return (
