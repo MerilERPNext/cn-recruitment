@@ -44,6 +44,7 @@ const PolicyDrawer = ({
           <PolicyQAContent
             doctypeName={doctypeName}
             targetDoctype={targetDoctype}
+            showStatus={doctypeName === "Attendance Policies" || doctypeName === "Overtime Policy"}
           />
         </div>
       </div>

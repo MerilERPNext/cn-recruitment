@@ -30,7 +30,6 @@ import {
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
@@ -57,7 +56,6 @@ export interface PolicyDrawerConfig {
 }
 
 const AttendanceSummary = () => {
-  const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
 
   const { isDesktop } = useScreenSize();
@@ -352,6 +350,8 @@ const AttendanceSummary = () => {
         useEmployeeAsTarget: true,
       },
       "Week Off": { doctypeName: "Week Off" },
+      "Attendance Policy": { doctypeName: "Attendance Policies" },
+      "Overtime Policy": { doctypeName: "Overtime Policy" },
     };
 
     const settingConfig = drawerSettings[settingType];
@@ -377,30 +377,7 @@ const AttendanceSummary = () => {
       );
     }
 
-    let path: string | null = null;
-
-    switch (settingType) {
-      case "Attendance Policy":
-        path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
-        break;
-
-      case "Overtime Policy":
-        path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
-        break;
-
-      default:
-        return null;
-    }
-
-    return (
-      <Typography
-        variant="bodySmall"
-        onClick={() => navigate(path!)}
-        className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
-      >
-        {displayLabel}
-      </Typography>
-    );
+    return null;
   };
 
   return (

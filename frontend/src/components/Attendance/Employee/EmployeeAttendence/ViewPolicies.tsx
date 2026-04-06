@@ -3,7 +3,7 @@ import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+
 import { Typography } from "../../../shared/atoms/Typography";
 import PolicyDrawer from "../../PolicyDrawer";
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { PolicyDrawerConfig } from "../../AttendanceSummary";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const ViewPolicies = () => {
-    const navigate = useNavigate()
+
     const { targetEmployeeId } = useTargetUser();
     const [openPolicyDrawer, setOpenPolicyDrawer] = useState(false);
 
@@ -104,6 +104,8 @@ const ViewPolicies = () => {
                 useEmployeeAsTarget: true,
             },
             "Week Off": { doctypeName: "Week Off" },
+            "Attendance Policy": { doctypeName: "Attendance Policies" },
+            "Overtime Policy": { doctypeName: "Overtime Policy" },
         };
 
         const settingConfig = drawerSettings[settingType];
@@ -129,30 +131,7 @@ const ViewPolicies = () => {
             );
         }
 
-        let path: string | null = null;
-
-        switch (settingType) {
-            case "Attendance Policy":
-                path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
-                break;
-
-            case "Overtime Policy":
-                path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
-                break;
-
-            default:
-                return null;
-        }
-
-        return (
-            <Typography
-                variant="bodySmall"
-                onClick={() => navigate(path!)}
-                className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
-            >
-                {displayLabel}
-            </Typography>
-        );
+        return null;
     };
 
     return (
