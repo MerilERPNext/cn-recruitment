@@ -19,15 +19,13 @@ const COLOR_RANGES = [
   { hMin: 200, hMax: 220, s: 70, l: 55 }, // blue
 ];
 
-// 🔑 Deterministic hash from string
-const hashString = (str: string) =>
-  [...str].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
 // 🎨 Generate stable color for a given type
-const getColorForType = (type: string): string => {
-  const hash = hashString(type);
-  const range = COLOR_RANGES[hash % COLOR_RANGES.length];
-  const hue = range.hMin + (hash % (range.hMax - range.hMin + 1));
+const getColorByIndex = (index: number): string => {
+  const range = COLOR_RANGES[index % COLOR_RANGES.length];
+
+  // pick middle hue of range for consistency
+  const hue = Math.floor((range.hMin + range.hMax) / 2);
+
   return `hsl(${hue}, ${range.s}%, ${range.l}%)`;
 };
 
@@ -72,7 +70,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
 
   // ✅ One color per item.type (stable)
   const colors = useMemo(
-    () => cleanedData.map((item) => getColorForType(item.type)),
+    () => cleanedData.map((_, index) => getColorByIndex(index)),
     [cleanedData],
   );
 
@@ -137,8 +135,7 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
   return (
     <div className="w-full">
       <button
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen(!open)}
         className="w-full h-14 bg-white shadow-md rounded-b-xl flex items-center justify-between px-4 hover:bg-primary/10 transition"
       >
         <span className="text-lg font-semibold text-gray-800">
@@ -148,9 +145,8 @@ const LeaveTransactionsChart: React.FC<LeaveTransactionsChartProps> = ({
       </button>
 
       <div
-        className={`overflow-hidden transition-all duration-500 ${
-          open ? "max-h-[2000px] mt-4" : "max-h-0"
-        }`}
+        className={`overflow-hidden transition-all duration-500 ${open ? "max-h-[2000px] mt-4" : "max-h-0"
+          }`}
       >
         <div className="bg-white rounded-2xl w-full p-4 md:p-8">
           <Chart
