@@ -1,134 +1,9 @@
-import {
-  Download,
-  Eye,
-  File,
-  FileSpreadsheet,
-  FileText,
-  FileVideo,
-  Image as ImageIcon,
-} from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { useState } from "react";
+import { FileTypeIcon, getFileTypeInfo, getFileName } from "../../../utils/fileUtils";
 import Button from "../atoms/Button";
 import Tooltip from "../Tooltip";
 import { FilePreviewModal } from "./FilePreviewModal";
-
-// ─── Shared file type helper (mirrors FilePreviewModal logic) ─────────────────
-
-type FileCategory =
-  | "image"
-  | "pdf"
-  | "office-word"
-  | "office-excel"
-  | "text"
-  | "video"
-  | "unknown";
-
-interface FileTypeInfo {
-  category: FileCategory;
-  label: string;
-  iconColor: string;
-  bgColor: string;
-}
-
-function getFileTypeInfo(url: string): FileTypeInfo {
-  // Strip query parameters and fragments before extracting the extension
-  const path = url.split(/[?#]/)[0];
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  switch (ext) {
-    case "png":
-    case "jpg":
-    case "jpeg":
-    case "gif":
-    case "webp":
-    case "bmp":
-    case "svg":
-      return {
-        category: "image",
-        label: "Image",
-        iconColor: "text-emerald-600",
-        bgColor: "bg-emerald-100",
-      };
-    case "pdf":
-      return {
-        category: "pdf",
-        label: "PDF Document",
-        iconColor: "text-red-600",
-        bgColor: "bg-red-100",
-      };
-    case "doc":
-    case "docx":
-      return {
-        category: "office-word",
-        label: "Word Document",
-        iconColor: "text-blue-600",
-        bgColor: "bg-blue-100",
-      };
-    case "xls":
-    case "xlsx":
-    case "csv":
-      return {
-        category: "office-excel",
-        label: ext === "csv" ? "CSV Spreadsheet" : "Excel Spreadsheet",
-        iconColor: "text-green-700",
-        bgColor: "bg-green-100",
-      };
-    case "txt":
-    case "md":
-    case "log":
-    case "json":
-    case "xml":
-    case "yaml":
-    case "yml":
-      return {
-        category: "text",
-        label: ext === "md" ? "Markdown File" : "Text File",
-        iconColor: "text-gray-600",
-        bgColor: "bg-gray-200",
-      };
-    case "mp4":
-    case "webm":
-    case "ogg":
-    case "mov":
-      return {
-        category: "video",
-        label: "Video",
-        iconColor: "text-purple-600",
-        bgColor: "bg-purple-100",
-      };
-    default:
-      return {
-        category: "unknown",
-        label: ext ? `${ext.toUpperCase()} File` : "File",
-        iconColor: "text-orange-600",
-        bgColor: "bg-orange-100",
-      };
-  }
-}
-
-function FileCategoryIcon({
-  category,
-  className,
-}: {
-  category: FileCategory;
-  className?: string;
-}) {
-  switch (category) {
-    case "image":
-      return <ImageIcon className={className} />;
-    case "pdf":
-    case "office-word":
-    case "text":
-      return <FileText className={className} />;
-    case "office-excel":
-      return <FileSpreadsheet className={className} />;
-    case "video":
-      return <FileVideo className={className} />;
-    default:
-      return <File className={className} />;
-  }
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export function AttachmentCard({
   fileUrl,
@@ -137,8 +12,7 @@ export function AttachmentCard({
   fileUrl: string;
   compact?: boolean;
 }) {
-  // Strip query params/fragments and guard against trailing slashes
-  const fileName = fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
+  const fileName = getFileName(fileUrl);
   const [showPreview, setShowPreview] = useState(false);
   const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
 
@@ -183,7 +57,7 @@ export function AttachmentCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <FileCategoryIcon
+              <FileTypeIcon
                 category={category}
                 className={`w-6 h-6 ${iconColor}`}
               />

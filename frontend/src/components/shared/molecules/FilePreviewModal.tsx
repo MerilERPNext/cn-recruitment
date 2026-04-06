@@ -1,102 +1,19 @@
 import DOMPurify from "dompurify";
 import { renderAsync } from "docx-preview";
-import {
-  Download,
-  ExternalLink,
-  File,
-  FileSpreadsheet,
-  FileText,
-  FileVideo,
-  Image as ImageIcon,
-  RotateCcw,
-  X,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Download, ExternalLink, File, RotateCcw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import PDFViewer from "../../PDFViewer";
+import {
+  FileTypeIcon,
+  getFileTypeInfo,
+} from "../../../utils/fileUtils";
 
 interface FilePreviewModalProps {
   fileUrl: string;
   onClose: () => void;
 }
 
-// ─── File Type Detection ──────────────────────────────────────────────────────
-
-type FileCategory =
-  | "image"
-  | "pdf"
-  | "office-word"
-  | "office-excel"
-  | "csv"
-  | "text"
-  | "video"
-  | "unknown";
-
-interface FileTypeInfo {
-  category: FileCategory;
-  label: string;
-  iconColor: string;
-  bgColor: string;
-}
-
-function getFileTypeInfo(url: string): FileTypeInfo {
-  // Strip query parameters and fragments before extracting the extension
-  const path = url.split(/[?#]/)[0];
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-
-  switch (ext) {
-    case "png":
-    case "jpg":
-    case "jpeg":
-    case "gif":
-    case "webp":
-    case "bmp":
-    case "svg":
-      return { category: "image", label: "Image", iconColor: "text-emerald-600", bgColor: "bg-emerald-100" };
-    case "pdf":
-      return { category: "pdf", label: "PDF Document", iconColor: "text-red-600", bgColor: "bg-red-100" };
-    case "doc":
-    case "docx":
-      return { category: "office-word", label: "Word Document", iconColor: "text-blue-600", bgColor: "bg-blue-100" };
-    case "xls":
-    case "xlsx":
-      return { category: "office-excel", label: "Excel Spreadsheet", iconColor: "text-green-700", bgColor: "bg-green-100" };
-    case "csv":
-      return { category: "csv", label: "CSV Spreadsheet", iconColor: "text-green-700", bgColor: "bg-green-100" };
-    case "txt":
-    case "md":
-    case "log":
-    case "json":
-    case "xml":
-    case "yaml":
-    case "yml":
-      return { category: "text", label: ext === "md" ? "Markdown File" : "Text File", iconColor: "text-gray-600", bgColor: "bg-gray-200" };
-    case "mp4":
-    case "webm":
-    case "ogg":
-    case "mov":
-      return { category: "video", label: "Video", iconColor: "text-purple-600", bgColor: "bg-purple-100" };
-    default:
-      return { category: "unknown", label: ext ? `${ext.toUpperCase()} File` : "File", iconColor: "text-orange-600", bgColor: "bg-orange-100" };
-  }
-}
-
-// ─── File Icon ────────────────────────────────────────────────────────────────
-
-function FileTypeIcon({ category, className }: { category: FileCategory; className?: string }) {
-  switch (category) {
-    case "image":     return <ImageIcon className={className} />;
-    case "pdf":       return <FileText className={className} />;
-    case "office-word": return <FileText className={className} />;
-    case "office-excel":
-    case "csv":       return <FileSpreadsheet className={className} />;
-    case "text":      return <FileText className={className} />;
-    case "video":     return <FileVideo className={className} />;
-    default:          return <File className={className} />;
-  }
-}
 
 // ─── Shared Loading / Error UI ────────────────────────────────────────────────
 
