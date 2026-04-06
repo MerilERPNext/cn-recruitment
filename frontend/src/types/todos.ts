@@ -114,7 +114,7 @@ export interface TodoType {
     description: string;
     custom_doctype_actions_with_form: string;
     is_allocated_todo: boolean;
-    send_back_user: null;
+    send_back_user: string | null;
     can_edit: boolean;
     todo_status: string;
     reference_document: ReferenceDocument;

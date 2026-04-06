@@ -34,5 +34,13 @@ export const updateLoanApplication = async ({
   data,
 }: LoanApplicationUpdatePayload) => {
   const response = await FrappeAPI.updateDocument("Loan Application", docname, data);
+  await FrappeAPI.callMethod(
+    "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+    {
+      doctype: "Loan Application",
+      docname: docname,
+      data: [data],
+    }
+  );
   return response;
 };

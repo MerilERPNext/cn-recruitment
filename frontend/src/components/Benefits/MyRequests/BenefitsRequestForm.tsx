@@ -218,7 +218,6 @@ export default function BenefitRequestForm({
             }
             onClose();
             onSuccess();
-            queryClient.invalidateQueries({ queryKey: ["mybenefit-request"] });
             toast.success("Added Benefit Request successfully!");
           },
           onError: (error: CustomError) => {

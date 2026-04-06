@@ -1,3 +1,6 @@
+import { TodoType } from "./todos";
+
+
 // API shape
 export interface ApiRepayment {
   idx: number;
@@ -24,6 +27,7 @@ export type ApiAdvance = {
   total_advance_amount: number;
   total_paid_amount: number;
   balance_amount: number;
+  todo_list: TodoType[] | null;
   repayments: ApiRepayment[];
 }
 
@@ -42,6 +46,7 @@ export interface UiAdvance {
   advanceStatus: string;
   installments: Installment[];
   can_edit: number;
+  todo: TodoType | null;
 }
 
 export interface Installment {

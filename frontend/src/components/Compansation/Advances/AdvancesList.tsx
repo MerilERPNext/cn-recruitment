@@ -25,6 +25,12 @@ import ShowHideButton from "../ui/ShowHideButton";
 import SearchInputWrapper from "../../shared/SearchBar";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
+import useCurrentUser from "../../../hooks/useCurrentUser";
+import { useRevokeEvent } from "../../../hooks/userApprovalList";
+import { useLoadingOverlay } from "../../../context/OverlayContext";
+import { errorResponseFormater } from "../../../utils/errorResponseFormater";
+import toast from "react-hot-toast";
+import { queryClient } from "../../../providers/QueryProvider";
 
 
 const AdvancesList: React.FC = () => {
@@ -49,39 +55,10 @@ const AdvancesList: React.FC = () => {
     isLoading,
   } = useEmployeeAdvances(employeeId || "");
 
-  type AmountRowProps = {
-    label: string;
-    value: number;
-    maskAmounts: boolean;
-  };
   const [editAdvanceId, setEditAdvanceId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {
     setEditAdvanceId(docname);
     setShowAdvanceForm(true);
-  };
-
-  const AmountRow = ({ label, value, maskAmounts }: AmountRowProps) => {
-    return (
-      <div className="flex items-start justify-between">
-        <div className="flex flex-col gap-1">
-          <Typography variant="mobileCardLabel">{label}</Typography>
-        </div>
-        <div className="flex flex-col gap-1 text-right">
-          {maskAmounts ? (
-            <Typography
-              variant="mobileCardValue"
-              className="blur-sm select-none text-gray-400"
-            >
-              {formatCurrency(0).replace("0", "XX,XXX")}
-            </Typography>
-          ) : (
-            <Typography variant="mobileCardValue">
-              {formatCurrency(value)}
-            </Typography>
-          )}
-        </div>
-      </div>
-    );
   };
 
   useEffect(() => {
@@ -105,6 +82,7 @@ const AdvancesList: React.FC = () => {
       endDate: a.end_date,
       advanceStatus: a.status,
       employee_name: a.employee_name,
+      todo: Array.isArray(a.todo_list) && a.todo_list.length > 0 ? a.todo_list[0] : null,
       installments: a.repayments.map((r) => ({
         installmentNo: r.idx,
         installmentDate: r.payment_date,
@@ -148,6 +126,11 @@ const AdvancesList: React.FC = () => {
     setShowAdvanceForm(false);
     setEditAdvanceId(null);
     setIsModalOpen(false);
+  };
+
+  const handleRefetch = () => {
+    setTimeout(() => refetch(), 1500);
+    queryClient.invalidateQueries({ queryKey: ["advances"] });
   };
 
   // Register action button in central SalarySlipApp
@@ -204,68 +187,17 @@ const AdvancesList: React.FC = () => {
 
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  interface DesktopLayoutProps {
-    handleEdit: (docname: string) => void;
-  }
-  const DesktopLayout = ({ handleEdit }: DesktopLayoutProps) => (
+  const DesktopLayout = () => (
     <>
       {filteredData.map((advance, index) => (
-        <div
+        <AdvanceDesktopRow
           key={`${advance.name}-${index}`}
-          className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
-          onClick={() => handleViewInstallments(advance)}
-        >
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {advance.name}
-          </Typography>
-
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {maskAmounts ? (
-              <span className="blur-sm select-none text-gray-400">
-                {formatCurrency("XX,XXX")}
-              </span>
-            ) : (
-              <span>{formatCurrency(advance.amount)}</span>
-            )}
-          </Typography>
-
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {maskAmounts ? (
-              <span className="blur-sm select-none text-gray-400">
-                {formatCurrency("XX,XXX")}
-              </span>
-            ) : (
-              <span>{formatCurrency(advance.numberOfDeductions)}</span>
-            )}
-          </Typography>
-
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(advance.startDate)}
-          </Typography>
-
-          <Typography variant="bodySmall" className="font-medium text-center">
-            {formatToIndianDate(advance.endDate)}
-          </Typography>
-
-          <div className="flex items-center justify-center">
-            <AllocatedToTooltip
-              users={advance.allocated_to}
-              roles={advance.allocated_to_roles}
-            >
-              <StatusBadge status={advance.advanceStatus} />
-            </AllocatedToTooltip>
-
-          </div>
-
-          <div className="flex items-center justify-center">
-            <MyApprovalActionPill
-              isPending={advance.advanceStatus === "Pending"}
-              canEdit={!!advance.can_edit}
-              onEdit={() => handleEdit(advance.docname)}
-            />
-          </div>
-        </div>
+          advance={advance}
+          maskAmounts={maskAmounts}
+          handleEdit={handleEdit}
+          handleViewInstallments={handleViewInstallments}
+          handleRefetch={handleRefetch}
+        />
       ))}
     </>
   );
@@ -273,65 +205,14 @@ const AdvancesList: React.FC = () => {
   const MobileLayout = () => (
     <>
       {filteredData.map((advance, index) => (
-        <div
+        <AdvanceMobileRow
           key={`${advance.name}-${index}`}
-          className="cursor-pointer border-t-4 border-x border-b mt-2
-            border-x-primary/20 border-b-primary/20 
-            shadow-sm border-primary bg-white rounded-xl"
-          onClick={() => handleViewInstallments(advance)}
-        >
-          <div className="p-4 flex flex-col gap-3 w-full">
-            {/* Header: Advance Name + Status */}
-            <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Advance Name</Typography>
-                <Typography variant="mobileCardValue">
-                  {advance.name}
-                </Typography>
-              </div>
-              <StatusBadge status={advance.advanceStatus} />
-            </div>
-
-            {/* Amount rows */}
-            <AmountRow
-              label="Total Amount"
-              value={advance.amount}
-              maskAmounts={maskAmounts}
-            />
-            <AmountRow
-              label="Deduction Amount"
-              value={advance.numberOfDeductions}
-              maskAmounts={maskAmounts}
-            />
-
-            {/* Duration + Installments */}
-            <div className="flex items-start justify-between">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel">Duration</Typography>
-                <Typography variant="mobileCardValue">
-                  {formatToIndianDate(advance.startDate)} to{" "}
-                  {formatToIndianDate(advance.endDate)}
-                </Typography>
-              </div>
-              <div className="flex flex-col gap-1 text-right">
-                <Typography variant="mobileCardLabel">Installments</Typography>
-                <Typography variant="mobileCardValue">
-                  {advance.installments.length}
-                </Typography>
-              </div>
-            </div>
-            <MobileAllocatedTo
-              users={advance.allocated_to}
-              roles={advance.allocated_to_roles}
-            />
-            <MyApprovalActionPill
-              variant="buttons"
-              isPending={advance.advanceStatus === "Pending"}
-              canEdit={!!advance.can_edit}
-              onEdit={() => handleEdit(advance.docname)}
-            />
-          </div>
-        </div>
+          advance={advance}
+          maskAmounts={maskAmounts}
+          handleEdit={handleEdit}
+          handleViewInstallments={handleViewInstallments}
+          handleRefetch={handleRefetch}
+        />
       ))}
     </>
   );
@@ -380,7 +261,7 @@ const AdvancesList: React.FC = () => {
                   {filteredData.length === 0 ? (
                     <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
                   ) : isDesktop ? (
-                    <DesktopLayout handleEdit={handleEdit} />
+                    <DesktopLayout />
                   ) : (
                     <MobileLayout />
                   )}
@@ -404,3 +285,194 @@ const AdvancesList: React.FC = () => {
   );
 };
 export default AdvancesList;
+
+// ─── Per-row sub-components (use hooks at top level of component) ─────────────
+
+type AdvanceRowProps = {
+  advance: UiAdvance;
+  maskAmounts: boolean;
+  handleEdit: (docname: string) => void;
+  handleViewInstallments: (advance: UiAdvance) => void;
+  handleRefetch: () => void;
+};
+
+const AmountEntry = ({ label, value, maskAmounts }: { label: string; value: number; maskAmounts: boolean }) => (
+  <div className="flex items-start justify-between">
+    <div className="flex flex-col gap-1">
+      <Typography variant="mobileCardLabel">{label}</Typography>
+    </div>
+    <div className="flex flex-col gap-1 text-right">
+      {maskAmounts ? (
+        <Typography variant="mobileCardValue" className="blur-sm select-none text-gray-400">
+          {formatCurrency(0).replace("0", "XX,XXX")}
+        </Typography>
+      ) : (
+        <Typography variant="mobileCardValue">{formatCurrency(value)}</Typography>
+      )}
+    </div>
+  </div>
+);
+
+const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstallments, handleRefetch }: AdvanceRowProps) => {
+  const { data: currentUser } = useCurrentUser();
+  const todo = advance.todo ?? null;
+  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canEdit = todo?.can_edit === true &&
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+
+  const loading = useLoadingOverlay();
+  const revokeEventMutation = useRevokeEvent();
+
+  const handleRevokeClick = () => {
+    if (!todo?.todo_id) return;
+    loading?.show("Revoking Request...");
+    revokeEventMutation.mutate(
+      { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
+      {
+        onSuccess: () => {
+          handleRefetch();
+          toast.success("Advance Request Revoked Successfully!");
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+        onSettled: () => loading?.hide(),
+      },
+    );
+  };
+
+  return (
+    <div
+      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      onClick={() => handleViewInstallments(advance)}
+    >
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {advance.name}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {maskAmounts ? (
+          <span className="blur-sm select-none text-gray-400">{formatCurrency("XX,XXX")}</span>
+        ) : (
+          <span>{formatCurrency(advance.amount)}</span>
+        )}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {maskAmounts ? (
+          <span className="blur-sm select-none text-gray-400">{formatCurrency("XX,XXX")}</span>
+        ) : (
+          <span>{formatCurrency(advance.numberOfDeductions)}</span>
+        )}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(advance.startDate)}
+      </Typography>
+
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {formatToIndianDate(advance.endDate)}
+      </Typography>
+
+      <div className="flex items-center justify-center">
+        <AllocatedToTooltip
+          users={todo?.allocated_to}
+          roles={todo?.allocated_roles}
+          role={todo?.role ?? ""}
+          position="left"
+        >
+          <StatusBadge status={advance.advanceStatus} />
+        </AllocatedToTooltip>
+      </div>
+
+      <div className="flex items-center justify-center">
+        <MyApprovalActionPill
+          isPending={advance.advanceStatus === "Pending"}
+          canRevoke={canRevoke}
+          canEdit={canEdit}
+          onRevoke={handleRevokeClick}
+          onEdit={() => handleEdit(advance.docname)}
+          isResubmit={canEdit}
+        />
+      </div>
+    </div>
+  );
+};
+
+const AdvanceMobileRow = ({ advance, maskAmounts, handleEdit, handleViewInstallments, handleRefetch }: AdvanceRowProps) => {
+  const { data: currentUser } = useCurrentUser();
+  const todo = advance.todo ?? null;
+  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canEdit = todo?.can_edit === true &&
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+
+  const loading = useLoadingOverlay();
+  const revokeEventMutation = useRevokeEvent();
+
+  const handleRevokeClick = () => {
+    if (!todo?.todo_id) return;
+    loading?.show("Revoking Request...");
+    revokeEventMutation.mutate(
+      { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
+      {
+        onSuccess: () => {
+          handleRefetch();
+          toast.success("Advance Request Revoked Successfully!");
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+        onSettled: () => loading?.hide(),
+      },
+    );
+  };
+
+  return (
+    <div
+      className="cursor-pointer border-t-4 border-x border-b mt-2 border-x-primary/20 border-b-primary/20 shadow-sm border-primary bg-white rounded-xl"
+      onClick={() => handleViewInstallments(advance)}
+    >
+      <div className="p-4 flex flex-col gap-3 w-full">
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Advance Name</Typography>
+            <Typography variant="mobileCardValue">{advance.name}</Typography>
+          </div>
+          <StatusBadge status={advance.advanceStatus} />
+        </div>
+
+        <AmountEntry label="Total Amount" value={advance.amount} maskAmounts={maskAmounts} />
+        <AmountEntry label="Deduction Amount" value={advance.numberOfDeductions} maskAmounts={maskAmounts} />
+
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <Typography variant="mobileCardLabel">Duration</Typography>
+            <Typography variant="mobileCardValue">
+              {formatToIndianDate(advance.startDate)} to {formatToIndianDate(advance.endDate)}
+            </Typography>
+          </div>
+          <div className="flex flex-col gap-1 text-right">
+            <Typography variant="mobileCardLabel">Installments</Typography>
+            <Typography variant="mobileCardValue">{advance.installments.length}</Typography>
+          </div>
+        </div>
+
+        <MobileAllocatedTo
+          users={advance.allocated_to}
+          roles={advance.allocated_to_roles}
+        />
+
+        <MyApprovalActionPill
+          variant="buttons"
+          isPending={advance.advanceStatus === "Pending"}
+          canRevoke={canRevoke}
+          canEdit={canEdit}
+          onRevoke={handleRevokeClick}
+          onEdit={() => handleEdit(advance.docname)}
+          isResubmit={canEdit}
+        />
+      </div>
+    </div>
+  );
+};
