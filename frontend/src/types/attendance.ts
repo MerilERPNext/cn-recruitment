@@ -78,6 +78,7 @@ export interface MyAttendanceRequest {
   reference_name: string;
   status: string;
   can_edit?: boolean;
+  todo_status: string;
   attachments?: [
     {
       file_url: string;

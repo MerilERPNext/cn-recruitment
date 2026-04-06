@@ -122,7 +122,8 @@ const EmpAttendanceRequestCard = ({
               allocated_to_user={data?.username}
               position="left"
             >
-              <StatusBadge status={data?.reference_document?.custom_status} />
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
@@ -151,7 +152,7 @@ const EmpAttendanceRequestCard = ({
                 username={data?.username}
               />
 
-              <StatusBadge status={data?.reference_document?.custom_status} />
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
             </div>
 
             <div className="flex items-start justify-between">

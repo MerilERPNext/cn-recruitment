@@ -145,7 +145,7 @@ const AttendanceRequest = ({
                       ],
                     },
                   ]}
-                  defaultFilters={{ status: ["!=", "Cancelled"] }}
+                // defaultFilters={{ status: ["!=", "Cancelled"] }}
                 />
               ) : (
                 <></>
