@@ -49,6 +49,7 @@ import { useTargetUser } from "../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import { DRAWER_SETTINGS } from "./constants";
+import { createPortal } from "react-dom";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -528,10 +529,12 @@ const AttendanceSummary = () => {
           </div>
         </Card>
       </div>
-      {showAttendanceRequestModal && (
+      {showAttendanceRequestModal && (createPortal(
         <AttendanceRequestFormV2
           onClose={() => setShowAttendanceRequestModal(false)}
-        />
+        />,
+        document.body
+      )
       )}
       {showOvertimeRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
