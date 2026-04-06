@@ -30,7 +30,6 @@ import {
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
-import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
@@ -49,6 +48,7 @@ import AttendanceChart from "../AttendanceChart";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
+import { DRAWER_SETTINGS } from "./constants";
 
 export interface PolicyDrawerConfig {
   title: string;
@@ -57,7 +57,6 @@ export interface PolicyDrawerConfig {
 }
 
 const AttendanceSummary = () => {
-  const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
 
   const { isDesktop } = useScreenSize();
@@ -342,19 +341,9 @@ const AttendanceSummary = () => {
     const displayLabel = Array.isArray(data) ? data[0] : data;
     const redirectId = Array.isArray(data) ? (data[1] as string) : data;
 
-    const drawerSettings: Record<
-      string,
-      { doctypeName: string; useEmployeeAsTarget?: boolean }
-    > = {
-      "Current Shift": { doctypeName: "Shift Type" },
-      "Attendance Method": {
-        doctypeName: "Employee",
-        useEmployeeAsTarget: true,
-      },
-      "Week Off": { doctypeName: "Week Off" },
-    };
 
-    const settingConfig = drawerSettings[settingType];
+
+    const settingConfig = DRAWER_SETTINGS[settingType];
     if (settingConfig) {
       const { doctypeName, useEmployeeAsTarget } = settingConfig;
       return (
@@ -377,30 +366,7 @@ const AttendanceSummary = () => {
       );
     }
 
-    let path: string | null = null;
-
-    switch (settingType) {
-      case "Attendance Policy":
-        path = `/webapp/attendance/attendance-policies?policy=${redirectId}`;
-        break;
-
-      case "Overtime Policy":
-        path = `/webapp/attendance/overtime-policies?policy=${redirectId}`;
-        break;
-
-      default:
-        return null;
-    }
-
-    return (
-      <Typography
-        variant="bodySmall"
-        onClick={() => navigate(path!)}
-        className="w-full text-left font-semibold text-primary-600 hover:text-primary-700 cursor-pointer transition-colors"
-      >
-        {displayLabel}
-      </Typography>
-    );
+    return null;
   };
 
   return (
@@ -458,35 +424,36 @@ const AttendanceSummary = () => {
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-start">
         <div className="w-full lg:w-[70%] space-y-6">
           {/* Today's Team Summary */}
-          <Card radius="xl" className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <Typography variant="subheading">Today's Team Summary</Typography>
-              <ViewAll
-                className="text-sm"
-                title="View Calendar"
-                to="/webapp/attendance/team-attendance"
-              />
-            </div>
-            {/* Using same grid as Summary Cards in Chart */}
-            <div
-              className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}
-            >
-              {teamSummaryData.map((data, index) => (
-                <SummaryCard
-                  key={index}
-                  icon={data.icon}
-                  iconColor={`text-${data.color}-600`}
-                  bgColor={`bg-${data.color}-50`}
-                  borderColor={`border-${data.color}-100`}
-                  value={data.value}
-                  label={data.label}
-                  isDesktop={isDesktop}
-                  isMetric={true}
+          {(!!teamCheckInSummary?.data?.have_team) && (
+            <Card radius="xl" className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <Typography variant="subheading">Today's Team Summary</Typography>
+                <ViewAll
+                  className="text-sm"
+                  title="View Calendar"
+                  to="/webapp/attendance/team-attendance"
                 />
-              ))}
-            </div>
-          </Card>
-
+              </div>
+              {/* Using same grid as Summary Cards in Chart */}
+              <div
+                className={`grid gap-4 ${isDesktop ? "grid-cols-3" : "grid-cols-1 sm:grid-cols-2"}`}
+              >
+                {teamSummaryData.map((data, index) => (
+                  <SummaryCard
+                    key={index}
+                    icon={data.icon}
+                    iconColor={`text-${data.color}-600`}
+                    bgColor={`bg-${data.color}-50`}
+                    borderColor={`border-${data.color}-100`}
+                    value={data.value}
+                    label={data.label}
+                    isDesktop={isDesktop}
+                    isMetric={true}
+                  />
+                ))}
+              </div>
+            </Card>
+          )}
           {/* Quick Actions */}
           <Card radius="xl" className="space-y-4">
             <div className="px-1">

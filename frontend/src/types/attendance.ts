@@ -225,6 +225,7 @@ export type EmployeeShiftSummary = {
 
 export type EmployeeTeamCheckIns = {
   data: {
+    have_team?: boolean;
     checked_in_count: number;
     not_checked_in_count: number;
     total_employees: number;
