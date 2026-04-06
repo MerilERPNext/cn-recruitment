@@ -104,12 +104,35 @@ const AttendanceRequest = ({
                   isSearch={true}
                   isFilter={true}
                   filterFields={[
+
                     {
-                      fieldname: "status",
+                      fieldname: "custom_status",
                       label: "Status",
                       fieldtype: "Select",
-                      options: ["Pending", "Approved", "Rejected"],
+                      options: [
+                        {
+                          label: "Pending",
+                          key: "Draft",
+                          value: "Draft",
+                          customAPIParams: { todo_status: "Open" },
+                        },
+                        { label: "Approved", value: "Approved" },
+                        { label: "Rejected", value: "Rejected" },
+                        {
+                          label: "Revoked",
+                          value: "Revoked",
+                          excludeFieldFromFilters: true,
+                          customAPIParams: {
+                            todo_status: "Cancelled",
+                          },
+                          additionalFilters: {
+                            docstatus: 2,
+                            custom_allow_revoke: 1,
+                          },
+                        },
+                      ],
                     },
+
                     {
                       fieldname: "custom_request_type",
                       label: "Request Type",

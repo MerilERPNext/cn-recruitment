@@ -283,6 +283,7 @@ export type AttendanceRecord = {
   message?: string;
   request_type?: string;
   employee_name?: string;
+  is_optional_leave?: boolean;
 };
 
 export type PolicyQuestion = {

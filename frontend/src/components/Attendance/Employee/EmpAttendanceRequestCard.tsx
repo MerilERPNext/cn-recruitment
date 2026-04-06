@@ -29,7 +29,6 @@ const EmpAttendanceRequestCard = ({
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
   const { isDesktop } = useScreenSize();
-
   const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
     if (data?.todo_id) {
@@ -129,7 +128,7 @@ const EmpAttendanceRequestCard = ({
           <div className="flex items-center justify-center">
             <MyApprovalActionPill
               isPending={type === "pending"}
-              canRevoke={!!data?.custom_allow_revoke}
+              canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
               canEdit={!!data?.can_edit}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
@@ -191,7 +190,7 @@ const EmpAttendanceRequestCard = ({
             <MyApprovalActionPill
               variant="buttons"
               isPending={type === "pending"}
-              canRevoke={type === "pending" && !!data?.custom_allow_revoke}
+              canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
               canEdit={type === "pending" && !!data?.can_edit}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
