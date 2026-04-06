@@ -162,7 +162,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
       <div className="p-4">
         <NoDataFound
           title="No Passbook Data"
-          subtitle={`There are no cycles available for ${leaveType} (${leaveId})`}
+          subtitle={`There are no cycles available for ${leaveType}`}
         />
       </div>
     );

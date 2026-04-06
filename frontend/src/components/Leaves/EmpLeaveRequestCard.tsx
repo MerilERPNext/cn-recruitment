@@ -135,15 +135,14 @@ const EmpLeaveRequestCard = ({
             </Typography>
           </Tooltip>
           <Tooltip
-            content={`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+            content={`${data?.reference_document?.custom_leave_type_name}`}
             triggerClassName="w-full truncate min-w-0 block"
           >
             <Typography
               variant="bodySmall"
               className="font-medium text-center truncate block w-full"
             >
-              {data?.reference_document?.custom_leave_type_name} (
-              {data?.reference_document?.leave_type})
+              {data?.reference_document?.custom_leave_type_name}
             </Typography>
           </Tooltip>
           <Typography variant="bodySmall" className="font-medium text-center">
@@ -188,7 +187,10 @@ const EmpLeaveRequestCard = ({
               role={data?.role}
               position="left"
             >
-              <StatusBadge status={data?.reference_document?.status} />
+
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+
+
             </AllocatedToTooltip>
           </div>
           {showRejectReason && (
@@ -239,14 +241,15 @@ const EmpLeaveRequestCard = ({
                   {data?.reference_document?.name}
                 </Typography>
               </div>
-              <StatusBadge status={data?.reference_document?.status} />
+              <StatusBadge status={data?.custom_allow_revoke && data?.reference_document?.docstatus === 2 && data?.todo_status.toLowerCase() === "cancelled" ? "Revoked" : data?.reference_document?.status} />
+
             </div>
 
             <div className="flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel">Leave Type</Typography>
                 <Typography variant="mobileCardValue">
-                  {data?.reference_document?.custom_leave_type_name} ({data?.reference_document?.leave_type})
+                  {data?.reference_document?.custom_leave_type_name}
                 </Typography>
               </div>
               <div className="flex flex-col gap-1 text-right">

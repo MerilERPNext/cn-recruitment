@@ -138,7 +138,7 @@ const LeaveBalance: React.FC = () => {
   const canRequestLeave = isActionEnabled(
     userUiPermission,
     "lb_request_leave",
-    "Leave Balance",
+    "Leave Summary",
   );
 
   const today = new Date().toISOString().split("T")[0];
@@ -204,7 +204,7 @@ const LeaveBalance: React.FC = () => {
     .filter((t) => visibleTypes.includes(t.type))
     .map((t) => ({
       ...t,
-      name: leaveIdToName[t.type] ? `${leaveIdToName[t.type]} (${t.type})` : t.type,
+      name: leaveIdToName[t.type] || t.type,
     }));
 
   return (
@@ -349,7 +349,7 @@ const LeaveBalance: React.FC = () => {
                               {leave.entitled}
                             </Typography>
 
-                            <p className="text-sm text-gray-600">{`${leave.type} (${leave?.leave_id})`}</p>
+                            <p className="text-sm text-gray-600">{`${leave.type}`}</p>
                           </div>
                           {leave?.visibility_flags?.show_carry_over && (
                             <Typography

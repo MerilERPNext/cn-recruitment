@@ -16,68 +16,82 @@ import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
 import CustomDropdown from "../shared/CustomDropdown";
 import { NoDataFound } from "../shared/atoms/NoDataFound";
-import Button from "../shared/atoms/Button";
+import StatusBadge from "../shared/atoms/statusBadge";
 
-interface HolidayCardProps {
-  holiday: Holiday;
-  statusLabel?: string | null;
-  showOptionalLabel?: boolean;
-  canRequest?: boolean;
+interface HolidayWithType extends Holiday {
+  type_name?: string;
 }
 
-export const HolidayCard: React.FC<HolidayCardProps> = ({
-  holiday,
-  statusLabel,
-  showOptionalLabel,
-  canRequest,
-}) => {
-  const dateObj = new Date(holiday.date);
-  const month = format(dateObj, "MMM");
-  const day = format(dateObj, "dd");
-  const weekday = format(dateObj, "EEEE");
+interface DateBadgeProps {
+  date: string;
+  type: string;
+}
 
+const DateBadge: React.FC<DateBadgeProps> = ({ date, type }) => {
+  const dateObj = new Date(date);
+  const day = format(dateObj, "dd");
+  const month = format(dateObj, "MMM").toUpperCase();
+
+  const isOptional = type === "Optional" || type === "Optional Holiday";
+  const colorClass = isOptional
+    ? "bg-blue-50 text-blue-600"
+    : "bg-primary/10 text-primary";
+
+  return (
+    <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg ${colorClass} font-semibold`}>
+      <span className="text-lg leading-none">{day}</span>
+      <span className="text-[10px] mt-0.5 opacity-80">{month}</span>
+    </div>
+  );
+};
+
+const HolidayRow: React.FC<{
+  holiday: HolidayWithType;
+  statusLabel?: string | null;
+  canRequest?: boolean;
+  index: number;
+}> = ({ holiday, statusLabel, canRequest }) => {
   const { openModal } = useRequestLeaveModal();
   const { data: userUiPermission } = useGetUiPermission("Leaves and Holidays");
 
   const canApplyPermission = isActionEnabled(
     userUiPermission,
     "optional_holiday_apply",
-    "Holidays",
+    "Holidays"
   );
 
-  const showRequestButton =
-    canRequest &&
-    !statusLabel &&
-    canApplyPermission;
+  const showRequestButton = canRequest && !statusLabel && canApplyPermission;
+
+  const dateObj = new Date(holiday.date);
+  const weekday = format(dateObj, "EEEE");
+
+  const renderStatus = () => {
+    if (!statusLabel) return null;
+    return <StatusBadge status={statusLabel} />;
+  };
 
   return (
-    <div
-      className={`flex items-center justify-between px-3 py-3 sm:px-4 sm:py-4 border-b last:border-b-0`}
-    >
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex flex-col items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary text-xs font-semibold flex-shrink-0">
-          <span className="text-base leading-none">{day}</span>
-          <span className="mt-0.5">{month}</span>
-        </div>
-
-        <div className="flex flex-col min-w-0">
-          <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-            {holiday.holiday_name}
-          </p>
-          <p className="text-xs sm:text-sm text-gray-500 truncate">
-            {weekday}
-            {showOptionalLabel &&
-              holiday?.type === "Optional"
-              ? " | Optional Holiday"
-              : ""}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex-shrink-0 pl-2">
+    <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors">
+      <td className="py-4 pl-4 pr-3 align-middle">
+        <DateBadge date={holiday.date} type={holiday.type_name || holiday.type} />
+      </td>
+      <td className="py-4 px-3 align-middle">
+        <span className="text-gray-900 font-medium text-sm sm:text-base">
+          {holiday.holiday_name}
+        </span>
+      </td>
+      <td className="py-4 px-3 align-middle">
+        <span className="text-gray-600 text-sm">{weekday}</span>
+      </td>
+      <td className="py-4 px-3 align-middle text-sm text-gray-600">
+        {holiday.type_name === "Mandatory" ? "Holiday" : (holiday.type_name || "Holiday")}
+      </td>
+      <td className="py-4 px-3 align-middle">
+        {renderStatus()}
+      </td>
+      <td className="py-4 pl-3 pr-4 align-middle text-right">
         {showRequestButton && (
-          <Button
-            bgColor="gray-500"
+          <button
             onClick={() =>
               openModal({
                 fromDate: holiday.date,
@@ -88,27 +102,13 @@ export const HolidayCard: React.FC<HolidayCardProps> = ({
                 hideHalfDayToggle: true,
               })
             }
-            className="text-xs sm:text-sm font-medium rounded-full border border-gray-300 px-3 py-1 text-gray-700 bg-white hover:bg-gray-50"
+            className="px-4 py-1.5 rounded-md border border-primary-200 text-primary text-sm font-medium hover:bg-purple-50 transition-colors"
           >
             Request
-          </Button>
+          </button>
         )}
-
-        {statusLabel && (
-          <span
-            className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-xs sm:text-sm font-medium
-              ${statusLabel === "Taken" || statusLabel === "Applied"
-                ? "bg-primary/10 text-primary"
-                : statusLabel === "Rejected"
-                  ? "bg-red-100 text-red-600"
-                  : "bg-yellow-100 text-yellow-700"
-              }`}
-          >
-            {statusLabel === "Taken" ? "Applied" : statusLabel}
-          </span>
-        )}
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 };
 
@@ -155,53 +155,54 @@ const Holidays: React.FC = () => {
 
   const { data: attendancePolicy } = useGetAttendancePolicyForDate(
     employee?.name,
-    today,
+    today
   );
 
   const { data: leaveBalance, isLoading: isBalanceLoading } =
     useGetLeaveBalance(employee?.name, selectedYearDate);
 
-  const regularHolidays: Holiday[] = useMemo(() => {
+  const regularHolidays: HolidayWithType[] = useMemo(() => {
     if (!holidaysData) return [];
     return holidaysData
       .filter(
         (g: HolidayGroup) =>
-          g.type_name === "National Holiday" || g.type_name === "Mandatory",
+          g.type_name === "National Holiday" || g.type_name === "Mandatory"
       )
-      .flatMap((g: HolidayGroup) => g.holidays);
+      .flatMap((g: HolidayGroup) =>
+        g.holidays.map(h => ({ ...h, type_name: g.type_name }))
+      );
   }, [holidaysData]);
 
-  const optionalHolidays: Holiday[] = useMemo(() => {
-    return (
-      holidaysData?.find((g: HolidayGroup) => g.type_name === "Optional")
-        ?.holidays || []
-    );
+  const optionalHolidays: HolidayWithType[] = useMemo(() => {
+    const group = holidaysData?.find((g: HolidayGroup) => g.type_name === "Optional");
+    if (!group) return [];
+    return group.holidays.map(h => ({ ...h, type_name: "Optional Holiday" }));
   }, [holidaysData]);
 
-  const allHolidays: Holiday[] = useMemo(
+  const allHolidays: HolidayWithType[] = useMemo(
     () =>
       [...regularHolidays, ...optionalHolidays].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       ),
-    [regularHolidays, optionalHolidays],
+    [regularHolidays, optionalHolidays]
   );
 
   const optionalBalance = leaveBalance?.leave_balance?.find(
-    (b) => b.optional_leave === 1,
+    (b) => b.optional_leave === 1
   );
 
   const getHolidayStatus = (date: string) => {
     const req = leaveRequests?.find(
-      (r) => r.from_date === date && r.to_date === date,
+      (r) => r.from_date === date && r.to_date === date
     );
     if (!req) return null;
-    if (req.status === "Approved") return "Taken";
+    if (req.status === "Approved") return "Approved";
     if (req.status === "Rejected") return "Rejected";
-    if (req.status === "Open") return "Applied";
+    if (req.status === "Open") return "Pending";
     return null;
   };
 
-  const listToShow: Holiday[] = showOptionalOnly
+  const listToShow: HolidayWithType[] = showOptionalOnly
     ? optionalHolidays
     : allHolidays;
 
@@ -228,9 +229,9 @@ const Holidays: React.FC = () => {
   }
 
   return (
-    <div className="px-3 py-4 sm:p-6 min-h-full pb-24 flex bg-none">
+    <div className="px-3 py-4 sm:p-6 min-h-full pb-24 flex bg-white/50">
       <div className="w-full">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <CustomDropdown
             value={year}
             onChange={(e) => setYear(e.target.value)}
@@ -240,29 +241,29 @@ const Holidays: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowOptionalOnly((prev) => !prev)}
-            className="text-xs sm:text-sm text-primary font-semibold"
+            className="text-xs sm:text-sm text-primary font-semibold hover:underline"
           >
             {showOptionalOnly ? "Show All Holidays" : "Show Optional Holidays"}
           </button>
         </div>
 
         {showOptionalOnly && attendancePolicy && (
-          <div className="flex justify-between text-center py-2 rounded-lg bg-primary/10 mb-3 text-xs sm:text-sm">
+          <div className="flex justify-between text-center py-2.5 rounded-xl bg-primary/5 border border-primary/10 mb-6 text-xs sm:text-sm">
             <p className="w-full">
               Entitled:{" "}
-              <span className="font-semibold">
+              <span className="font-bold text-primary">
                 {optionalBalance?.entitled ?? 0}
               </span>
             </p>
-            <p className="w-full border-x border-blue-100">
+            <p className="w-full border-x border-primary/10">
               Availed:{" "}
-              <span className="font-semibold">
+              <span className="font-bold text-primary">
                 {optionalBalance?.availed ?? 0}
               </span>
             </p>
-            <p className="w-full">
+            <p className="w-full text-primary/80">
               Balance:{" "}
-              <span className="font-semibold">
+              <span className="font-bold text-primary">
                 {optionalBalance?.balance ?? 0}
               </span>
             </p>
@@ -270,27 +271,38 @@ const Holidays: React.FC = () => {
         )}
 
         {!attendancePolicy && showOptionalOnly && (
-          <p className="text-center text-red-500 mt-2 text-sm">
-            ! Please contact HR to assign an attendance policy
+          <p className="text-center text-red-500 mb-6 text-sm flex items-center justify-center gap-2 bg-red-50 py-2 rounded-lg border border-red-100">
+            <span className="font-bold">!</span> Please contact HR to assign an attendance policy
           </p>
         )}
 
         {listToShow.length === 0 ? (
           <NoDataFound title="No Holidays Found" subtitle="There are no holidays available for the selected year." />
         ) : (
-          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
-
-            {listToShow.map((h) => (
-              <HolidayCard
-                key={h.name}
-                holiday={h}
-                statusLabel={getHolidayStatus(h.date)}
-                showOptionalLabel={
-                  h?.type === "Optional"
-                }
-                canRequest={h?.type === "Optional"}
-              />
-            ))}
+          <div className="rounded-2xl border border-gray-100 overflow-x-auto bg-white shadow-sm ring-1 ring-gray-900/5">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="py-4 pl-4 pr-3 text-sm font-semibold text-gray-900">Date</th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Occasion</th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Day</th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Holiday Type</th>
+                  <th className="py-4 px-3 text-sm font-semibold text-gray-900">Request Status</th>
+                  <th className="py-4 pl-3 pr-4 text-sm font-semibold text-gray-900 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {listToShow.map((h, i) => (
+                  <HolidayRow
+                    key={h.name}
+                    holiday={h}
+                    statusLabel={getHolidayStatus(h.date)}
+                    canRequest={h?.type === "Optional"}
+                    index={i}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
@@ -299,3 +311,4 @@ const Holidays: React.FC = () => {
 };
 
 export default Holidays;
+

@@ -976,7 +976,7 @@ export const routesConfig: AppRoute[] = [
       {
         path: "leaves/leave-balance",
         element: <LeaveBalance />,
-        permissionKey: "Leave Balance",
+        permissionKey: "Leave Summary",
       },
       {
         path: "leaves/leave-requests",

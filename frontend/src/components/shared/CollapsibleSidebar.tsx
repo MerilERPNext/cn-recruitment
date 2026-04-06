@@ -120,10 +120,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       permissionKey: "Leaves and Holidays",
       subItems: [
         {
-          name: "Leave Balance",
+          name: "Leave Summary",
           icon: Calculator,
           href: "/webapp/leave-app/leaves/leave-balance",
-          permissionKey: "Leave Balance",
+          permissionKey: "Leave Summary",
         },
         {
           name: "My Requests",

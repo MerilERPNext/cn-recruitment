@@ -163,15 +163,14 @@ const LeaveApprovalCard = ({
           </Link>
 
           <Tooltip
-            content={`${data?.reference_document?.custom_leave_type_name} (${data?.reference_document?.leave_type})`}
+            content={`${data?.reference_document?.custom_leave_type_name}`}
             triggerClassName="w-full truncate min-w-0 block"
           >
             <Typography
               variant="bodySmall"
               className="font-medium text-center truncate block w-full"
             >
-              {data?.reference_document?.custom_leave_type_name} (
-              {data?.reference_document?.leave_type})
+              {data?.reference_document?.custom_leave_type_name}
             </Typography>
           </Tooltip>
 
@@ -289,8 +288,7 @@ const LeaveApprovalCard = ({
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <Typography variant="mobileCardLabel">Leave Type</Typography>
                   <Typography variant="mobileCardValue" className="truncate">
-                    {data?.reference_document?.custom_leave_type_name} (
-                    {data?.reference_document?.leave_type})
+                    {data?.reference_document?.custom_leave_type_name}
                   </Typography>
                 </div>
 

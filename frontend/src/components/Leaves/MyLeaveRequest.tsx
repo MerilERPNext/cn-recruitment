@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCurrentEmployee } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
+  useGetLeaveBalance,
   useReplaceLeave,
   useRevokeApprovedLeave,
 } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { MyLeaveRequestType } from "../../types/leaves";
-import DataListView from "../DataListView";
+import DataListView, { FilterField } from "../DataListView";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
@@ -28,6 +29,64 @@ const MyLeaveRequests = ({
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
     useCurrentEmployee();
+
+  const today = new Date().toISOString().split("T")[0];
+  const { data: leaveBalanceData } = useGetLeaveBalance(
+    currentEmployee?.name,
+    today,
+  );
+
+  // Build filter fields dynamically to include leave type options from balance API
+  const dynamicFilterFields: FilterField[] = useMemo(() => {
+    const leaveTypeOptions =
+      leaveBalanceData?.leave_balance
+        ?.filter((l) => l.dont_show_in_frontend !== 1)
+        .map((l) => ({
+          label: l.type,
+          value: l.leave_id,
+        })) ?? [];
+
+    return [
+      {
+        fieldname: "status",
+        label: "Status",
+        fieldtype: "Select" as const,
+        options: [
+          { label: "Pending", value: "Open" },
+          { label: "Approved", value: "Approved" },
+          { label: "Rejected", value: "Rejected" },
+          {
+            label: "Revoked",
+            value: "Revoked",
+            excludeFieldFromFilters: true,
+            customAPIParams: {
+              todo_status: "Cancelled",
+            },
+            additionalFilters: {
+              docstatus: 2,
+              custom_allow_revoke: 1,
+            },
+          },
+        ],
+      },
+      {
+        fieldname: "leave_type",
+        label: "Leave Type",
+        fieldtype: "Select" as const,
+        options: leaveTypeOptions,
+      },
+      {
+        fieldname: "from_date_start",
+        label: "Start Date",
+        fieldtype: "Date",
+      },
+      {
+        fieldname: "from_date_end",
+        label: "End Date",
+        fieldtype: "Date",
+      },
+    ];
+  }, [leaveBalanceData]);
 
   const [replaceModalData, setReplaceModalData] = useState<{
     isOpen: boolean;
@@ -112,28 +171,28 @@ const MyLeaveRequests = ({
             titles={
               activeStatus === "Rejected"
                 ? [
-                    "Leave Id",
-                    "Leave Type",
-                    "From Date",
-                    "To Date",
-                    "Description",
-                    "Reason",
-                    "Leave Days",
-                    "Status",
-                    "Reject Reason",
-                    "Actions",
-                  ]
+                  "Request Id",
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Reason",
+                  "Leave Days",
+                  "Status",
+                  "Reject Reason",
+                  "Actions",
+                ]
                 : [
-                    "Leave Id",
-                    "Leave Type",
-                    "From Date",
-                    "To Date",
-                    "Description",
-                    "Reason",
-                    "Leave Days",
-                    "Status",
-                    "Actions",
-                  ]
+                  "Request Id",
+                  "Leave Type",
+                  "From Date",
+                  "To Date",
+                  "Description",
+                  "Reason",
+                  "Leave Days",
+                  "Status",
+                  "Actions",
+                ]
             }
             columnWidths={
               activeStatus === "Rejected"
@@ -174,18 +233,7 @@ const MyLeaveRequests = ({
                 defaultFilters={{ status: ["!=", "Cancelled"] }}
                 isSearch={true}
                 isFilter={true}
-                filterFields={[
-                  {
-                    fieldname: "status",
-                    label: "Status",
-                    fieldtype: "Select",
-                    options: [
-                      { label: "Pending", value: "Open" },
-                      { label: "Approved", value: "Approved" },
-                      { label: "Rejected", value: "Rejected" },
-                    ],
-                  },
-                ]}
+                filterFields={dynamicFilterFields}
                 SkeletonComponent={CardSkeleton}
                 onRefetchComplete={() => setRefetchAttendance(false)}
                 refetchTrigger={refetchAttendance}
