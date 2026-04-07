@@ -562,7 +562,8 @@ export class EmployeeService {
     filters?: FilterCondition[],
     orFilters?: FilterCondition[],
     limit?: number,
-    limitStart?: number
+    limitStart?: number,
+    orderBy?: string,
   ): Promise<Employee[]> {
     const response = FrappeAPI.getDocumentList("Employee", {
       fields: fields && fields.length > 0 ? fields : ["*"],
@@ -570,6 +571,7 @@ export class EmployeeService {
       limitStart: limitStart,
       filters: filters,
       orFilters: orFilters,
+      orderBy: orderBy
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
