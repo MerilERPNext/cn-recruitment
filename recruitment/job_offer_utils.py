@@ -3,6 +3,8 @@ import json
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
+from frappe.utils import formatdate
+
 
 
 @frappe.whitelist(allow_guest=True)
@@ -48,6 +50,7 @@ def get_job_offer_status(appl):
         return {"status": None}
     status = frappe.db.get_value("Job Offer", jo_id, "status")
     return {"status": status}
+
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl, reason=None, message=None):
     frappe.set_user('Administrator')
@@ -72,6 +75,30 @@ def job_offer_update(status, appl, reason=None, message=None):
 
     webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
     return {"jo_id": jo_id, "webform": webform}
+
+
+@frappe.whitelist(allow_guest=True)
+def get_job_offer_summary(appl):
+    frappe.set_user('Administrator')
+
+    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+    if not jo_id:
+        return {}
+
+    jo = frappe.get_doc("Job Offer", jo_id)
+
+    duration = jo.get("custom_duration")
+    expected_doj = jo.get("custom_expected_doj")
+    stipend = jo.get("custom_stipend")
+
+    return {
+        "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
+        "designation": jo.designation or "Intern",
+        "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
+        "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+        "stipend_display": f"₹ {stipend}" if stipend else None,
+    }
+
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
