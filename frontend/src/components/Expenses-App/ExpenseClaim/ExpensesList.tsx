@@ -544,15 +544,28 @@ const DraftExpenseItem: React.FC<{
           </div>
         </div>
 
-        {/* Attachments */}
-        {attachmentNames.length > 0 && (
+        {/* Created Date & Attachemnt*/}
+        <div className="flex justify-between">
           <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Attachments</Typography>
+            <Typography variant="mobileCardLabel">Created Date</Typography>
             <Typography variant="mobileCardValue">
-              {attachmentNames.length} file(s): {attachmentNames.join(", ")}
+              {item?.creation
+                ? formatToIndianDate(item.creation)
+                : "-"}
             </Typography>
           </div>
-        )}
+          {attachmentNames.length > 0 && (
+            <div className="flex text-right flex-col gap-1">
+              <Typography variant="mobileCardLabel">Attachments</Typography>
+              <Typography variant="mobileCardValue">
+                {attachmentNames.length} file(s): {attachmentNames.join(", ")}
+              </Typography>
+            </div>
+          )}
+        </div>
+
+        {/* Attachments */}
+
       </div>
     </div>
   );
@@ -595,7 +608,7 @@ const DraftExpenseTableRow: React.FC<{
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px" }}
+      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 1fr 120px" }}
     >
       <div className="flex items-center justify-center">
         <input
@@ -634,6 +647,11 @@ const DraftExpenseTableRow: React.FC<{
           {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
         </Typography>
       </Tooltip>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item?.creation
+          ? formatToIndianDate(item.creation)
+          : "-"}
+      </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {parsedJson?.expense_date
           ? formatToIndianDate(parsedJson.expense_date)
@@ -899,6 +917,7 @@ const ExpensesList: React.FC = () => {
         "",
         "Expense Category",
         "Expense Type",
+        "Created Date",
         "Expense Date",
         "Claimed Amount",
         "Attachments",
@@ -919,7 +938,7 @@ const ExpensesList: React.FC = () => {
 
   const tableColumnWidths =
     activeTab === "draft"
-      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
+      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
       : [
         "1fr",
         "1fr",

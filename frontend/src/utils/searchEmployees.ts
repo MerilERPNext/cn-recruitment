@@ -20,6 +20,8 @@ export async function searchEmployeesByQuery(q: string): Promise<Option[]> {
     "image",
   ];
 
+  const filters: FilterCondition[] = [["status", "=", "Active"]];
+
   // OR search: name LIKE %query% OR employee_name LIKE %query%
   const orFilters: FilterCondition[] = [
     ["name", "like", `%${query}%`],
@@ -28,8 +30,11 @@ export async function searchEmployeesByQuery(q: string): Promise<Option[]> {
 
   const employees: Employee[] = await EmployeeService.getAllEmployees(
     fields,
-    [], // no AND filters
-    orFilters // OR filters
+    filters, // AND filters
+    orFilters, // OR filters,
+    undefined,
+    undefined,
+    "employee_name asc"
   );
 
   return employees.map((e) => ({
