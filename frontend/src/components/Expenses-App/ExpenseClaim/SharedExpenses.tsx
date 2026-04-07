@@ -14,7 +14,7 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import Button from "../../shared/atoms/Button";
 import { FileText } from "lucide-react";
 
-const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
+export const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
   const formattedSanctioned = new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -80,7 +80,7 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
   );
 };
 
-const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
+export const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
   const postingDate = item?.posting_date
     ? new Date(item.posting_date).toLocaleDateString("en-US", {
         month: "short",
