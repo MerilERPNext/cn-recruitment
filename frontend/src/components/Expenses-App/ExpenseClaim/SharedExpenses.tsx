@@ -81,21 +81,14 @@ export const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
 };
 
 export const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
-  const postingDate = item?.posting_date
-    ? new Date(item.posting_date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
   const expenseDate = item?.expenses[0]?.expense_date
-    ? new Date(item.posting_date).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : " - ";
+    ? formatToIndianDate(item?.expenses[0]?.expense_date)
+    : "—";
 
+  const postingDate = item?.posting_date
+    ? formatToIndianDate(item?.posting_date)
+    : "—";
+    
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
