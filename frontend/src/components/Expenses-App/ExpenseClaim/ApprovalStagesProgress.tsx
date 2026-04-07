@@ -37,6 +37,7 @@ const getStatusIcon = (status: ApprovalStage["status"]) => {
 const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
   stages,
 }) => {
+
   if (!stages || stages.length === 0) {
     return (
       <p className="text-sm text-gray-500 italic">
@@ -44,6 +45,8 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
       </p>
     );
   }
+
+  const rejectedStageIndex = stages.findIndex(stage => stage.status === "Rejected") ?? stages.length;
 
   const totalStages = stages.length;
 
@@ -204,6 +207,17 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
             alignmentStyle = { left: `50%`, transform: "translateX(-50%)" };
           }
 
+          const isAfterRejected =
+            rejectedStageIndex !== -1 && index > rejectedStageIndex;
+
+          let displayStatus = stage.status;
+
+          if (isAfterRejected) {
+            displayStatus = "Not Available";
+          } else if (stage.status === "Draft") {
+            displayStatus = "Pending";
+          }
+
           return (
             <div
               key={index}
@@ -220,7 +234,7 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
               <p
                 className={`text-xs whitespace-nowrap overflow-hidden text-ellipsis ${labelColorClass}`}
               >
-                {stage.status === "Draft" ? "Pending" : stage.status}
+                {displayStatus}
               </p>
             </div>
           );
