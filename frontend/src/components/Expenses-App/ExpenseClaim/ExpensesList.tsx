@@ -416,6 +416,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
               item?.todo_status?.toLowerCase() === "cancelled" &&
               item?.reference_document?.docstatus === 2
             )
+            &&
+            item?.todo_status?.toLowerCase() === "open"
           }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
@@ -942,15 +944,15 @@ const ExpensesList: React.FC = () => {
                   {activeTab === "draft"
                     ? "Draft Expense Claims"
                     : activeTab === "shared"
-                    ? "Shared Expense Claims"
-                    : "My Expense Claims"}
+                      ? "Shared Expense Claims"
+                      : "My Expense Claims"}
                 </Typography>
                 <Typography variant="bodySmall" color="body2">
                   {activeTab === "draft"
                     ? "View your draft expense claims"
                     : activeTab === "shared"
-                    ? "Track and manage your shared expense claims"
-                    : "Track and manage your expense claim requests"}
+                      ? "Track and manage your shared expense claims"
+                      : "Track and manage your expense claim requests"}
                 </Typography>
               </div>
             ) : (
