@@ -852,6 +852,31 @@ export const getAllWeekOffs = async (
     data: res.data as WeeklyOff[], // Return the expected format
   };
 };
+
+export const updateAttendanceRejectionReason = async (
+  attendanceApplicationId: string,
+  reason: string
+) => {
+  if (!attendanceApplicationId) {
+    throw new Error("Attendance Application ID is required");
+  }
+  return FrappeAPI.updateDocument("Attendance Request", attendanceApplicationId, {
+    custom_rejection_reason: reason,
+  });
+}
+
+export const updateOvertimeRejectionReason = async (
+  overtimeApplicationId: string,
+  reason: string
+) => {
+  if (!overtimeApplicationId) {
+    throw new Error("Overtime Application ID is required");
+  }
+  return FrappeAPI.updateDocument("Planned Overtime Request", overtimeApplicationId, {
+    custom_rejection_reason: reason,
+  });
+}
+
 export const getAllIpRestrictions = async (
   filters?: FilterCondition[]
 ): Promise<{ data: IPRestrictionsT[] }> => {

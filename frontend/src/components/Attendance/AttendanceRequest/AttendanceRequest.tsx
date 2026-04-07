@@ -1,3 +1,4 @@
+import { differenceInCalendarDays } from "date-fns";
 import { useCallback, useState } from "react";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -9,9 +10,55 @@ import DataListView from "../../DataListView";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import EmpAttendanceRequestCard from "../Employee/EmpAttendanceRequestCard";
 import AttendanceRequestFormV2 from "./AttendanceRequestFormV2";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "custom_request_type",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.custom_request_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyAttendanceRequest) => item.due_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "duration",
+    getValue: (item: MyAttendanceRequest) => {
+      const from = item.reference_document?.from_date;
+      const to = item.reference_document?.to_date;
+      if (!from || !to) return 0;
+      return differenceInCalendarDays(new Date(to), new Date(from)) + 1;
+    },
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false },
+];
 
 const AttendanceRequest = ({
   pageSize = 10,
@@ -68,6 +115,7 @@ const AttendanceRequest = ({
                 "Status",
                 "Actions",
               ]}
+              columnSortConfig={COLUMN_SORT_CONFIG}
             >
               {effectiveEmployeeId ? (
                 <DataListView
@@ -104,7 +152,6 @@ const AttendanceRequest = ({
                   isSearch={true}
                   isFilter={true}
                   filterFields={[
-
                     {
                       fieldname: "custom_status",
                       label: "Status",
@@ -132,7 +179,6 @@ const AttendanceRequest = ({
                         },
                       ],
                     },
-
                     {
                       fieldname: "custom_request_type",
                       label: "Request Type",

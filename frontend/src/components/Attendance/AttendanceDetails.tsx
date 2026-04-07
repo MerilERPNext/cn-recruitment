@@ -1,8 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
-import { useGetToDoWithReferenceDoc } from "../../hooks/useAttendance";
+import {
+  useGetToDoWithReferenceDoc,
+  useUpdateAttendanceRejectionReason,
+} from "../../hooks/useAttendance";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -18,6 +22,7 @@ import {
   LoadingView,
 } from "../shared/DetailViewErrorLoadingWrapper";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
+import RejectionReasonModal from "../shared/RejectionReasonModal";
 
 export function AttendanceDetailView({
   data: propData,
@@ -58,6 +63,9 @@ export function AttendanceDetailView({
   );
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
 
   const loading = useLoadingOverlay();
   const handleAction = useCallback(
@@ -128,6 +136,36 @@ export function AttendanceDetailView({
       setRefetchAttendance,
     ],
   );
+
+  const handleActionClick = (action: string) => {
+    if (action.toLowerCase() === "reject") {
+      setPendingAction(action);
+      setShowCommentModal(true);
+      return;
+    }
+    handleAction(action);
+  };
+
+  const handleSaveComment = async (reason: string) => {
+    try {
+      await updateRejectionReasonMutation.mutateAsync({
+        id: data?.reference_document?.name || "",
+        reason,
+      });
+      setShowCommentModal(false);
+      if (pendingAction) {
+        handleAction(pendingAction);
+        setPendingAction(null);
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingAction(null);
+  };
 
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
@@ -274,7 +312,7 @@ export function AttendanceDetailView({
                   ? { id: data?.todo_id, action: currentAction }
                   : null
               }
-              onAction={(action) => handleAction(action)}
+              onAction={(action) => handleActionClick(action)}
             />
           </div>
         ) : (
@@ -287,6 +325,13 @@ export function AttendanceDetailView({
           </div>
         )}
       </div>
+      <RejectionReasonModal
+        isOpen={showCommentModal}
+        isPending={updateRejectionReasonMutation.isPending}
+        description="Please add a comment before rejecting this attendance request."
+        onCancel={handleCancelComment}
+        onSave={handleSaveComment}
+      />
     </div>
   );
 }

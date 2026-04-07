@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { MyAttendanceRequest } from "../../../types/attendance";
 import { AttendanceDetailView } from "../AttendanceDetails";
@@ -8,6 +8,7 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalCard from "./ApprovalCard";
 
@@ -50,28 +51,77 @@ const TeamAttendanceDetails = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Explanation",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee",
+      "Explanation",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1.5fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
+  const sortableColumns: ColumnSortConfig[] = [
+    {
+      sortable: true,
+      type: "string",
+      field: "employee_name",
+      getValue: (item) =>
+        item.reference_document?.employee_name ??
+        item.reference_document?.employee ??
+        "",
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "explanation",
+      getValue: (item) => item.reference_document?.explanation ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "from_date",
+      getValue: (item) => item.reference_document?.from_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "to_date",
+      getValue: (item) => item.reference_document?.to_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "due_date",
+      getValue: (item) => item.due_date ?? "",
+    },
+    {
+      sortable: false,
+    },
+    { sortable: false }, // Actions
+  ];
+
+  const columnSortConfig = useMemo<ColumnSortConfig[]>(
+    () =>
+      isBulkSelectEnabled
+        ? [{ sortable: false }, ...sortableColumns] // prepend { sortable: false } for "Select" column
+        : sortableColumns,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isBulkSelectEnabled],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -86,7 +136,7 @@ const TeamAttendanceDetails = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={columnSortConfig}>
           {currentUser?.name ? (
             <ApprovalList
               doctype={"Attendance Request"}

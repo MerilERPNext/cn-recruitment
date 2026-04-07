@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -6,6 +6,7 @@ import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import ApprovalList from "../../shared/ApprovalList";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import OvertimeApprovalCard from "./OvertimeApprovalCard";
@@ -56,6 +57,43 @@ const TeamOvertimeRequests = () => {
     ? ["0.5fr", "1fr", "1.5fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1.5fr", "1fr", "1fr", "1fr"];
 
+  const sortableColumns: ColumnSortConfig[] = [
+    {
+      sortable: true,
+      type: "string",
+      field: "employee_name",
+      getValue: (item: MyPlannedAttendanceRequest) =>
+        item.reference_document?.employee_name ??
+        item.reference_document?.employee ??
+        "",
+    },
+    {
+      sortable: true,
+      type: "string",
+      field: "description",
+      getValue: (item: MyPlannedAttendanceRequest) => item.description ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "due_date",
+      getValue: (item: MyPlannedAttendanceRequest) => String(item.due_date ?? ""),
+    },
+    {
+      sortable: false,
+    },
+    { sortable: false }, // Actions
+  ];
+
+  const columnSortConfig = useMemo<ColumnSortConfig[]>(
+    () =>
+      isBulkSelectEnabled
+        ? [{ sortable: false }, ...sortableColumns]
+        : sortableColumns,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isBulkSelectEnabled],
+  );
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -70,7 +108,7 @@ const TeamOvertimeRequests = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={columnSortConfig}>
           {currentUser?.name && (
             <ApprovalList
               doctype="Planned Overtime Request"

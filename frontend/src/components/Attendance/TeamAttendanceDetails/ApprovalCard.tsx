@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useUpdateAttendanceRejectionReason } from "../../../hooks/useAttendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import {
@@ -10,6 +12,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
+import RejectionReasonModal from "../../shared/RejectionReasonModal";
 import Tooltip from "../../shared/Tooltip";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 
@@ -38,6 +41,45 @@ const ApprovalCard = ({
   isBulkSelectEnabled,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
+  const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [pendingActionData, setPendingActionData] = useState<{
+    action: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any;
+  } | null>(null);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleActionClick = (action: string, actionData: any) => {
+    if (action.toLowerCase() === "reject") {
+      setPendingActionData({ action, data: actionData });
+      setShowCommentModal(true);
+      return;
+    }
+    onAction(action, actionData);
+  };
+
+  const handleSaveComment = async (reason: string) => {
+    try {
+      await updateRejectionReasonMutation.mutateAsync({
+        id: data?.reference_document?.name || "",
+        reason,
+      });
+      setShowCommentModal(false);
+      if (pendingActionData) {
+        onAction(pendingActionData.action, pendingActionData.data);
+        setPendingActionData(null);
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingActionData(null);
+  };
+
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -134,7 +176,7 @@ const ApprovalCard = ({
                 status={data?.reference_document?.custom_status || data?.reference_document?.status}
                 recordId={data?.todo_id}
                 loadingAction={loadingAction}
-                onAction={(action) => onAction(action, data)}
+                onAction={(action) => handleActionClick(action, data)}
               />
             ) : (
               <div className="flex items-center justify-center">
@@ -237,7 +279,7 @@ const ApprovalCard = ({
                   status={data?.reference_document?.custom_status || data?.reference_document?.status}
                   recordId={data?.todo_id}
                   loadingAction={loadingAction}
-                  onAction={(action) => onAction(action, data)}
+                  onAction={(action) => handleActionClick(action, data)}
                 />
               ) : (
                 <div className="flex items-center justify-center">
@@ -250,6 +292,13 @@ const ApprovalCard = ({
           </div>
         </div>
       )}
+      <RejectionReasonModal
+        isOpen={showCommentModal}
+        isPending={updateRejectionReasonMutation.isPending}
+        description="Please add a comment before rejecting this attendance request."
+        onCancel={handleCancelComment}
+        onSave={handleSaveComment}
+      />
     </>
   );
 };

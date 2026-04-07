@@ -13,10 +13,38 @@ import DataListView from "../../DataListView";
 import Button from "../../shared/atoms/Button";
 import { Typography } from "../../shared/atoms/Typography";
 import CardTable from "../../shared/CardTable";
+import { ColumnSortConfig } from "../../shared/CardTableContext";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CreateOvertimeRequest from "./CreateOvertimeRequest";
 import { MyOvertimeDetails } from "./MyOvertimeRequestDetails";
 import { MyRequestCard } from "./MyRequestCard";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "description",
+    getValue: (item: MyPlannedAttendanceRequest) => item.description ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "creation",
+    getValue: (item: MyPlannedAttendanceRequest) =>
+      item.reference_document?.creation ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyPlannedAttendanceRequest) =>
+      String(item.due_date ?? ""),
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false }, // Actions
+];
 
 const MyOvertimeRequests = () => {
   const [refetchMyRequestsList, setRefetchMyRequestsList] = useState(false);
@@ -101,13 +129,8 @@ const MyOvertimeRequests = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-20">
         <CardTable
           columnWidths={["1.5fr", "1fr", "1fr", "1fr", "0.5fr"]}
-          titles={[
-            "Description",
-            "Creation",
-            "Due Date",
-            "Status",
-            "Actions"
-          ]}
+          titles={["Description", "Creation", "Due Date", "Status", "Actions"]}
+          columnSortConfig={COLUMN_SORT_CONFIG}
         >
           {effectiveEmployeeId ? (
             <DataListView

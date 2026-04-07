@@ -1,7 +1,10 @@
 import { X } from "lucide-react";
 import { useCallback, useState } from "react";
 import toast from "react-hot-toast";
-import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
+import {
+  useGetToDoWithReferenceDoc,
+  useUpdateOvertimeRejectionReason,
+} from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
@@ -21,6 +24,7 @@ import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { AttachmentCard } from "../../shared/molecules/AttachmentCard";
+import RejectionReasonModal from "../../shared/RejectionReasonModal";
 
 export function MyOvertimeDetails({
   documentName,
@@ -50,7 +54,10 @@ export function MyOvertimeDetails({
   );
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
+  const updateRejectionReasonMutation = useUpdateOvertimeRejectionReason();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const data = (
     documentName || referenceName ? fetchedData : propData
@@ -109,6 +116,36 @@ export function MyOvertimeDetails({
     [],
   );
 
+  const handleActionClick = (action: string) => {
+    if (action.toLowerCase() === "reject") {
+      setPendingAction(action);
+      setShowCommentModal(true);
+      return;
+    }
+    handleAction(action);
+  };
+
+  const handleSaveComment = async (reason: string) => {
+    try {
+      await updateRejectionReasonMutation.mutateAsync({
+        id: data?.reference_document?.name || "",
+        reason,
+      });
+      setShowCommentModal(false);
+      if (pendingAction) {
+        handleAction(pendingAction);
+        setPendingAction(null);
+      }
+    } catch (error) {
+      console.error("Failed to save comment", error);
+    }
+  };
+
+  const handleCancelComment = () => {
+    setShowCommentModal(false);
+    setPendingAction(null);
+  };
+
   const actions = data?.custom_doctype_actions
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
@@ -124,7 +161,7 @@ export function MyOvertimeDetails({
   if (error && (documentName || referenceName)) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
-
+  console.log(data.allocated_to, typeof data.allocated_to)
   return data?.todo_id ? (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-50"
@@ -326,7 +363,7 @@ export function MyOvertimeDetails({
                     ? { id: data?.todo_id, action: currentAction }
                     : null
                 }
-                onAction={(action) => handleAction(action)}
+                onAction={(action) => handleActionClick(action)}
               />}
           </div>
         ) : (
@@ -339,6 +376,13 @@ export function MyOvertimeDetails({
           </div>
         )}
       </div>
+      <RejectionReasonModal
+        isOpen={showCommentModal}
+        isPending={updateRejectionReasonMutation.isPending}
+        description="Please add a comment before rejecting this overtime request."
+        onCancel={handleCancelComment}
+        onSave={handleSaveComment}
+      />
     </div>
   ) : null;
 }
