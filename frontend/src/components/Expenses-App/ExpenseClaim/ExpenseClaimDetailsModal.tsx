@@ -74,7 +74,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Employee Type
+              Employee ID
             </th>
             <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
               Employee Name
@@ -98,7 +98,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                 className="bg-white hover:bg-gray-50 transition-colors duration-150"
               >
                 <td className="px-4 py-3 text-gray-800">
-                  {p?.employee_type ?? "—"}
+                  {p?.employee ?? "—"}
                 </td>
                 <td className="px-4 py-3 text-gray-800">{name}</td>
                 <td className="px-4 py-3 text-gray-800">
@@ -136,10 +136,10 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
             <div className="grid grid-cols-2 gap-x-6 gap-y-3">
               <div className="flex flex-col gap-1">
                 <Typography variant="mobileCardLabel" className="block">
-                  Employee Type
+                  Employee ID
                 </Typography>
                 <Typography variant="mobileCardValue">
-                  {p?.employee_type ?? "—"}
+                  {p?.employee ?? "—"}
                 </Typography>
               </div>
               <div className="flex flex-col gap-1">

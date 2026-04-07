@@ -180,7 +180,6 @@ const TeamAdvanceExpenseList = () => {
                 },
               ]}
               defaultFilters={{ custom_final_status: "Pending" }}
-              orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters?.custom_final_status || "Pending");
