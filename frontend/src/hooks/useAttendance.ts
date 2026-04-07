@@ -12,6 +12,8 @@ import {
   getAllShiftBlocks,
   getAllShiftLocations,
   getAllWeekOffs,
+  updateAttendanceRejectionReason,
+  updateOvertimeRejectionReason,
 } from "../services/attendanceService";
 import type {
   AllEventsAndAttendanceT,
@@ -34,6 +36,8 @@ import type {
   WorkingHoursResponse,
 } from "../types/attendance";
 import { FilterCondition } from "../types/frappe";
+import { errorResponseFormater } from "../utils/errorResponseFormater";
+import toast from "react-hot-toast";
 
 // Retry logic (same as other hooks)
 const isPermissionError = (error: unknown): boolean =>
@@ -672,6 +676,36 @@ export const useAllWeekOffs = (filters?: FilterCondition[]) => {
     queryFn: () => getAllWeekOffs(filters),
   });
 };
+export function useUpdateAttendanceRejectionReason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      updateAttendanceRejectionReason(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance-request"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance-requests"] });
+    },
+    onError: (err: unknown) => {
+      console.error("Failed to update rejection reason:", err);
+      toast.error(errorResponseFormater(err));
+    },
+  });
+}
+export function useUpdateOvertimeRejectionReason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      updateOvertimeRejectionReason(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["planned-overtime-request"] });
+      queryClient.invalidateQueries({ queryKey: ["my-attendance-requests"] });
+    },
+    onError: (err: unknown) => {
+      console.error("Failed to update rejection reason:", err);
+      toast.error(errorResponseFormater(err));
+    },
+  });
+}
 export const useAllIpRestrictions = (filters?: FilterCondition[]) => {
   return useQuery({
     queryKey: ["all-ip-restrictions", filters],

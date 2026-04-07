@@ -504,10 +504,9 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
       onCancel?.();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      console.error("Submit error:", err[0].message);
       const formatted = errorResponseFormater(
         err,
-        err[0].message,
+        err?.[0]?.message?.toString() ?? "Failed to Submit Leave Request",
       );
       toast.error(formatted);
     }

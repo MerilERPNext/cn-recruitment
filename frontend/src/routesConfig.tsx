@@ -17,7 +17,6 @@ import Perquisite from "./components/Compansation/Perquisite/Perquisite";
 import IncomeTaxSheet from "./components/Compansation/TaxSheet/TaxSheet";
 import EmployeeProfile from "./components/EmployeeProfile/EmployeeProfile";
 import AddExpenseForm from "./components/Expenses-App/ExpenseClaim/AddExpenseForm";
-import SharedExpenses from "./components/Expenses-App/ExpenseClaim/SharedExpenses";
 import IdCard from "./components/IdCard";
 import NotificationList from "./components/Notification/Notification";
 import Requests from "./components/Requests";
@@ -850,11 +849,6 @@ export const routesConfig: AppRoute[] = [
         path: "team-advance-expense",
         element: <TeamAdvanceExpenseList />,
         permissionKey: "Team Advances",
-      },
-      {
-        path: "shared-expenses",
-        element: <SharedExpenses />,
-        permissionKey: "Expenses",
       },
     ],
   },

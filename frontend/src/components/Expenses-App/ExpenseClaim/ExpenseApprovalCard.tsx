@@ -413,6 +413,11 @@ const ExpenseApprovalCard = ({
                 rows={4}
                 autoFocus
               />
+              {rejectionComment.trim().length < 15 && (
+                <p className="text-[10px] mt-1 text-right text-gray-400">
+                  {rejectionComment.trim().length}/15 characters minimum
+                </p>
+              )}
             </div>
             <div className="flex gap-3 justify-end">
               <Button
@@ -426,7 +431,7 @@ const ExpenseApprovalCard = ({
                 onClick={handleSaveComment}
                 size="sm"
                 bgColor="primary"
-                disabled={!rejectionComment.trim() || commentMutation.isPending}
+                disabled={rejectionComment.trim().length < 15 || commentMutation.isPending}
               >
                 {commentMutation.isPending ? (
                   <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />

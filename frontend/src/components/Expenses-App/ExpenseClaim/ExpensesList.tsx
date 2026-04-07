@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2, Users } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import React from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -39,6 +39,7 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
+import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -415,6 +416,8 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
               item?.todo_status?.toLowerCase() === "cancelled" &&
               item?.reference_document?.docstatus === 2
             )
+            &&
+            item?.todo_status?.toLowerCase() === "open"
           }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
@@ -541,15 +544,28 @@ const DraftExpenseItem: React.FC<{
           </div>
         </div>
 
-        {/* Attachments */}
-        {attachmentNames.length > 0 && (
+        {/* Created Date & Attachemnt*/}
+        <div className="flex justify-between">
           <div className="flex flex-col gap-1">
-            <Typography variant="mobileCardLabel">Attachments</Typography>
+            <Typography variant="mobileCardLabel">Created Date</Typography>
             <Typography variant="mobileCardValue">
-              {attachmentNames.length} file(s): {attachmentNames.join(", ")}
+              {item?.creation
+                ? formatToIndianDate(item.creation)
+                : "-"}
             </Typography>
           </div>
-        )}
+          {attachmentNames.length > 0 && (
+            <div className="flex text-right flex-col gap-1">
+              <Typography variant="mobileCardLabel">Attachments</Typography>
+              <Typography variant="mobileCardValue">
+                {attachmentNames.length} file(s): {attachmentNames.join(", ")}
+              </Typography>
+            </div>
+          )}
+        </div>
+
+        {/* Attachments */}
+
       </div>
     </div>
   );
@@ -592,7 +608,7 @@ const DraftExpenseTableRow: React.FC<{
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 120px" }}
+      style={{ gridTemplateColumns: "48px 1fr 1fr 1fr 1fr 1fr 1fr 120px" }}
     >
       <div className="flex items-center justify-center">
         <input
@@ -631,6 +647,11 @@ const DraftExpenseTableRow: React.FC<{
           {parsedJson?.custom_expense_type || parsedJson?.expenseType || "-"}
         </Typography>
       </Tooltip>
+      <Typography variant="bodySmall" className="font-medium text-center">
+        {item?.creation
+          ? formatToIndianDate(item.creation)
+          : "-"}
+      </Typography>
       <Typography variant="bodySmall" className="font-medium text-center">
         {parsedJson?.expense_date
           ? formatToIndianDate(parsedJson.expense_date)
@@ -688,11 +709,10 @@ const ExpensesList: React.FC = () => {
 
   const { data: expenseCategories } = useGetAllExpenseCategories();
 
-  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft">(() => {
-    return (
-      (localStorage.getItem("expenseActiveTab") as "expenses" | "draft") ||
-      "draft"
-    );
+  const [activeTab, setActiveTab] = React.useState<"expenses" | "draft" | "shared">(() => {
+    const stored = localStorage.getItem("expenseActiveTab");
+    if (stored === "expenses" || stored === "draft" || stored === "shared") return stored;
+    return "draft";
   });
   const [selectedDraftIds, setSelectedDraftIds] = React.useState<Set<string>>(
     new Set(),
@@ -897,6 +917,7 @@ const ExpensesList: React.FC = () => {
         "",
         "Expense Category",
         "Expense Type",
+        "Created Date",
         "Expense Date",
         "Claimed Amount",
         "Attachments",
@@ -917,7 +938,7 @@ const ExpensesList: React.FC = () => {
 
   const tableColumnWidths =
     activeTab === "draft"
-      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
+      ? ["48px", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "120px"]
       : [
         "1fr",
         "1fr",
@@ -941,28 +962,21 @@ const ExpensesList: React.FC = () => {
                 <Typography variant="h4">
                   {activeTab === "draft"
                     ? "Draft Expense Claims"
-                    : "My Expense Claims"}
+                    : activeTab === "shared"
+                      ? "Shared Expense Claims"
+                      : "My Expense Claims"}
                 </Typography>
                 <Typography variant="bodySmall" color="body2">
                   {activeTab === "draft"
                     ? "View your draft expense claims"
-                    : "Track and manage your expense claim requests"}
+                    : activeTab === "shared"
+                      ? "Track and manage your shared expense claims"
+                      : "Track and manage your expense claim requests"}
                 </Typography>
               </div>
             ) : (
               <span></span>
             )}
-            <div className="flex items-center space-x-3 pb-1">
-              <Button
-                onClick={() => navigate("/webapp/expenses-app/shared-expenses")}
-                icon={<Users size={16} />}
-                size="md"
-                variant="outline"
-                className="hover:bg-blue-100 rounded-xl py-1"
-              >
-                Shared
-              </Button>
-            </div>
           </div>
 
           {/* Toggle Tabs */}
@@ -984,6 +998,15 @@ const ExpensesList: React.FC = () => {
                 }`}
             >
               My Expenses
+            </button>
+            <button
+              onClick={() => setActiveTab("shared")}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
+                ? "bg-white text-primary shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              Shared Expenses
             </button>
           </div>
         </div>
@@ -1061,7 +1084,6 @@ const ExpensesList: React.FC = () => {
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
@@ -1268,6 +1290,60 @@ const ExpensesList: React.FC = () => {
                 />
               </div>
             )}
+          </CardTable>
+        )}
+
+        {currentEmployee?.name && activeTab === "shared" && (
+          <CardTable
+            titles={[
+              "Employee ID",
+              "Shared By",
+              "Posting Date",
+              "Expense Date",
+              "Status",
+              "Sanctioned Amount",
+              "% Share",
+              "Allocated Amount",
+            ]}
+            columnWidths={[
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+            ]}
+          >
+            <DataListView
+              queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
+              customAPI={{
+                method:
+                  "chatnext_expense_trips.expense_claim.get_shared_expenses_for_employee",
+              }}
+              ItemComponent={(props: { item: any }) => {
+                const row = props.item?.message?.data
+                  ? props.item.message.data
+                  : props.item;
+                const doc = Array.isArray(row) ? row[0] : row;
+                return isDesktop ? (
+                  <SharedExpensesRow item={doc} />
+                ) : (
+                  <SharedExpenseCard item={doc} />
+                );
+              }}
+              SkeletonComponent={CardSkeleton}
+              onRefetchComplete={() => setRefetchAttendance(false)}
+              refetchTrigger={refetchAttendance}
+              isSearch={false}
+              isFilter={false}
+              showRefreshButton={false}
+              pageSize={10}
+              infiniteScroll={false}
+              loadMorePagination={false}
+              showPagination={true}
+            />
           </CardTable>
         )}
       </div>

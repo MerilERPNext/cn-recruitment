@@ -30,6 +30,7 @@ import {
 } from "../services/customApiService";
 import type { FrappePageResponse } from "../types/frappe";
 import SearchInputWrapper from "./shared/SearchBar";
+import { useCardTableSort } from "./shared/CardTableContext";
 
 interface BaseItem {
   name?: string;
@@ -144,6 +145,7 @@ interface DataListViewProps<T extends BaseItem> {
   enableUrlParams?: boolean;
   onFiltersChange?: (filters: Record<string, any>) => void;
   clientFilterFn?: (data: T[]) => T[];
+  clientSortFn?: (data: T[]) => T[];
   noRecordsScreen?:
   | React.ReactNode
   | ((filters: Record<string, any>) => React.ReactNode);
@@ -180,6 +182,7 @@ const DataListView = <T extends BaseItem>({
   enableUrlParams = true,
   onFiltersChange,
   clientFilterFn,
+  clientSortFn,
   noRecordsScreen,
 }: DataListViewProps<T>) => {
   const { search } = useLocation();
@@ -286,14 +289,27 @@ const DataListView = <T extends BaseItem>({
     [debouncedFilters],
   );
 
-  // Reset to first page when search or filters change
+  const cardTableSort = useCardTableSort();
+
+  // Derive server-side orderBy from CardTable sort context (overrides the prop when active)
+  const contextOrderBy = useMemo(() => {
+    if (!cardTableSort?.sortState) return null;
+    const { field, direction } = cardTableSort.sortState;
+    const colConfig = cardTableSort.columnSortConfig.find(
+      (c) => c?.sortable && (c as { sortable: true; field: string }).field === field,
+    ) as { orderByField?: string; field: string } | undefined;
+    const serverField = colConfig?.orderByField ?? field;
+    return `${serverField} ${direction}`;
+  }, [cardTableSort]);
+
+  // Reset to first page when search, filters, or sort changes
   useEffect(() => {
     setCurrentPage(1);
     if (loadMorePagination) {
       setLoadMorePage(1);
       setAccumulatedData([]);
     }
-  }, [debouncedSearchTerm, currentFiltersString, loadMorePagination]);
+  }, [debouncedSearchTerm, currentFiltersString, contextOrderBy, loadMorePagination]);
 
   // Common query parameters
   const queryParams = useMemo(() => {
@@ -368,7 +384,7 @@ const DataListView = <T extends BaseItem>({
       searchTerm: debouncedSearchTerm,
       filters: processedFilters,
       searchFields,
-      orderBy,
+      orderBy: contextOrderBy ?? orderBy,
     };
   }, [
     pageSize,
@@ -378,6 +394,7 @@ const DataListView = <T extends BaseItem>({
     searchFields,
     orderBy,
     filterFields,
+    contextOrderBy,
   ]);
 
   // Conditionally add/strip customAPI params based on active filters
@@ -612,7 +629,12 @@ const DataListView = <T extends BaseItem>({
     }
 
     if (clientFilterFn) {
-      return clientFilterFn(data);
+      data = clientFilterFn(data);
+    }
+
+    // clientSortFn is an escape hatch for cases where client-side sorting is needed
+    if (clientSortFn) {
+      data = clientSortFn(data);
     }
 
     return data;
@@ -623,6 +645,7 @@ const DataListView = <T extends BaseItem>({
     paginationQueryResult.data,
     accumulatedData,
     clientFilterFn,
+    clientSortFn,
   ]);
 
   // Handle accumulating data for load more pagination
