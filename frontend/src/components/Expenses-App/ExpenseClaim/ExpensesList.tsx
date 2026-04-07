@@ -1063,7 +1063,6 @@ const ExpensesList: React.FC = () => {
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
               showRefreshButton={false}
-              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
@@ -1319,7 +1318,6 @@ const ExpensesList: React.FC = () => {
               isSearch={false}
               isFilter={false}
               showRefreshButton={false}
-              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}

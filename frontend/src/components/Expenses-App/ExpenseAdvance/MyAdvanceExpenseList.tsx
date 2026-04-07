@@ -420,7 +420,6 @@ const MyAdvanceExpenseList = () => {
                 },
               },
             ]}
-            orderBy="posting_date desc"
             noRecordsScreen={noRecordsScreen}
             refetchTrigger={refetchAttendance}
             onRefetchComplete={() => setRefetchAttendance(false)}

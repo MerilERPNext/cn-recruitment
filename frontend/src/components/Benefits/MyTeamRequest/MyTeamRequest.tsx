@@ -129,7 +129,6 @@ const MyTeamRequest: React.FC = () => {
                 },
               },
             ]}
-            orderBy="claim_date desc"
             defaultFilters={{ custom_status: "Pending" }}
             SkeletonComponent={CardSkeleton}
             renderCardContent={(item) => {

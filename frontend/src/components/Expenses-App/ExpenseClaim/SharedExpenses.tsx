@@ -234,7 +234,6 @@ const SharedExpenses: React.FC = () => {
               isSearch={false}
               isFilter={false}
               showRefreshButton={false}
-              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}
@@ -262,7 +261,6 @@ const SharedExpenses: React.FC = () => {
               isSearch={false}
               isFilter={false}
               showRefreshButton={false}
-              orderBy="posting_date desc"
               pageSize={10}
               infiniteScroll={false}
               loadMorePagination={false}

@@ -194,7 +194,6 @@ const TeamExpense = () => {
               ]}
               noRecordsScreen={noRecordsScreen}
               defaultFilters={{ approval_status: "Draft" }}
-              orderBy="posting_date desc"
               SkeletonComponent={CardSkeleton}
               onActiveFiltersChange={(filters) => {
                 setActiveStatus(filters?.approval_status || "Draft");
