@@ -38,15 +38,13 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Shared by</Typography>
             <Typography variant="mobileCardValue">
-              {item.employee_name}
+              {`${item.employee_name} (${item.employee})`}
             </Typography>
           </div>
           <StatusBadge
             status={item.status === "Draft" ? "Pending" : item.status}
           />
-
         </div>
-
 
         {/* Row 2: Posting Date + Sanctioned */}
         <div className="flex items-start justify-between">
@@ -85,24 +83,30 @@ const SharedExpenseCard: React.FC<{ item: any }> = ({ item }) => {
 const SharedExpensesRow: React.FC<{ item: any }> = ({ item }) => {
   const postingDate = item?.posting_date
     ? new Date(item.posting_date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : " - ";
   const expenseDate = item?.expenses[0]?.expense_date
     ? new Date(item.posting_date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
     : " - ";
 
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
     >
+      <Typography
+        variant="bodySmall"
+        className="font-medium text-center truncate block w-full"
+      >
+        {item.employee}
+      </Typography>
       <Link
         to={`/webapp/employee-profile?target_user=${item.employee}`}
         target="_blank"
@@ -191,6 +195,7 @@ const SharedExpenses: React.FC = () => {
         {isDesktop ? (
           <CardTable
             titles={[
+              "Employee ID",
               "Shared By",
               "Posting Date",
               "Expense Date",
@@ -199,7 +204,16 @@ const SharedExpenses: React.FC = () => {
               "% Share",
               "Allocated Amount",
             ]}
-            columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+            columnWidths={[
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+              "1fr",
+            ]}
           >
             <DataListView
               queryKey={["shared-expenses", currentEmployee?.name ?? ""]}
