@@ -46,7 +46,7 @@ const ApprovalStagesProgress: React.FC<ApprovalStagesProgressProps> = ({
     );
   }
 
-  const rejectedStageIndex = stages.findIndex(stage => stage.status === "Rejected") ?? stages.length;
+  const rejectedStageIndex = stages.findIndex(stage => stage.status === "Rejected");
 
   const totalStages = stages.length;
 
