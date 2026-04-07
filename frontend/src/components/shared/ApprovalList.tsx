@@ -2,12 +2,18 @@
 import { useState, ReactNode, useCallback, useEffect } from "react";
 import DataListView, { FilterField } from "../DataListView";
 import { BulkActionBar } from "../Attendance/TeamAttendanceDetails/BulkActionBar";
-import { useApprovalListActions } from "../../hooks/userApprovalList";
+import { CommentConfig, useApprovalAction, useApprovalListActions } from "../../hooks/userApprovalList";
 import { useActionOnAttendanceRequest } from "../../hooks/useAttendance";
 import toast from "react-hot-toast";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+
+export type ActionWithCommentType = (action: string, data: {
+  todo_id: string;
+  custom_open_chatnext_assistant_on_action: boolean;
+  custom_approval_type?: "Approval Matrix" | "Multi Actions" | undefined;
+}, custom_action_message?: string | undefined, commentApiData?: any) => Promise<void>;
 
 type ApprovalListProps = {
   doctype: string;
@@ -17,6 +23,7 @@ type ApprovalListProps = {
     onToggleSelect,
     data,
     onAction,
+    onActionWithComments,
     loadingAction,
   }: {
     todoId: string;
@@ -24,6 +31,7 @@ type ApprovalListProps = {
     onToggleSelect: (id: string) => void;
     data: any;
     onAction: (action: string, data: any) => void;
+    onActionWithComments: ActionWithCommentType;
     loadingAction: { id: string; action: string } | null;
   }) => ReactNode;
   refetch?: boolean;
@@ -31,6 +39,7 @@ type ApprovalListProps = {
   status?: string;
   pageSize?: number;
   showPagination?: boolean;
+  actionWithCommentConfig?: CommentConfig;
   onApprovalRefetchComplete?: () => void;
   infiniteScroll?: boolean;
   loadMorePagination?: boolean;
@@ -74,6 +83,7 @@ const ApprovalList = ({
   pageSize,
   refetch,
   setRefetch,
+  actionWithCommentConfig,
   onApprovalRefetchComplete,
   showPagination = true,
   infiniteScroll = true,
@@ -140,6 +150,8 @@ const ApprovalList = ({
     }
     setRefetchAttendance(true);
   }, [setRefetch, setRefetchAttendance]);
+
+  const { handleAction: handleActionWithComment, renderCommentModal } = useApprovalAction(triggerRefetch, actionWithCommentConfig);
 
   useEffect(() => {
     const handleChatClose = () => {
@@ -365,6 +377,7 @@ const ApprovalList = ({
             onToggleSelect: handleToggleSelect,
             data: item,
             onAction: handleAction,
+            onActionWithComments: handleActionWithComment,
             loadingAction: loadingAction,
           });
         }}
@@ -381,6 +394,7 @@ const ApprovalList = ({
           }
         }}
       />
+      {renderCommentModal ? renderCommentModal() : null}
     </div>
   );
 };

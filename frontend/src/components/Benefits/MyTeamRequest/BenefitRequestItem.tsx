@@ -1,18 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import Button from "../../shared/atoms/Button";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
-import toast from "react-hot-toast";
-import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
-import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { formatCurrency } from "../../../utils/currency";
+import { ActionWithCommentType } from "../../shared/ApprovalList";
 
 // Props type
 type BenefitRequestItemProps = {
@@ -20,7 +16,7 @@ type BenefitRequestItemProps = {
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
   data: any;
-  onAction: (action: string, data: any) => void;
+  onActionWithComments: ActionWithCommentType;
   onClick?: (data: any) => void;
   refetch?: () => void;
   loadingAction?: { id: string; action: string } | null;
@@ -31,52 +27,13 @@ const BenefitRequestItem = ({
   isSelected = false,
   isDisabled = false,
   onToggleSelect,
+  onActionWithComments,
   data,
-  onAction,
   onClick,
   loadingAction,
   isBulkSelectEnabled,
 }: BenefitRequestItemProps) => {
   const { isDesktop } = useScreenSize();
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [rejectionComment, setRejectionComment] = useState("");
-
-  const CommentBenefitClaim = useCommentOnBenefitClaim();
-
-
-  const handleCancelComment = () => {
-    setShowCommentModal(false);
-    setRejectionComment("");
-    setSAction("");
-  };
-  const [sAction, setSAction] = useState<string>("");
-
-  const handlePreSaveAction = (action: string) => {
-    setShowCommentModal(() => action === "Reject");
-    if (action !== "Reject") {
-      onAction(action, data);
-    }
-    setSAction(action);
-  };
-
-  const handleSaveComment = async () => {
-    if (!rejectionComment.trim()) {
-      toast.error("Please enter a comment");
-      return;
-    }
-
-    try {
-      const res = await CommentBenefitClaim.mutateAsync({
-        doc_name: data.reference_document.name,
-        comment: rejectionComment,
-      });
-      console.log("Update Response", res);
-      handleCancelComment();
-      onAction(sAction, data);
-    } catch (error) {
-      console.error("Failed to save comment", error);
-    }
-  };
 
   if (!data) return null;
 
@@ -90,6 +47,19 @@ const BenefitRequestItem = ({
   const gridTemplateColumns = isBulkSelectEnabled
     ? "0.5fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
     : "1fr 1fr 1fr 1fr 1fr 1fr 1fr";
+
+  const handleActionWithComments = (action: string) => {
+    onActionWithComments(action, {
+      todo_id: data?.todo_id,
+      custom_open_chatnext_assistant_on_action: actionsWithForm.includes(action),
+      custom_approval_type: data?.custom_approval_type ?? "Multi Actions",
+
+    }, undefined,
+      {
+        docname: data?.reference_document?.name || data?.refrence_name || "",
+      }
+    );
+  }
 
   return (
     <div>
@@ -168,7 +138,7 @@ const BenefitRequestItem = ({
                 : data.reference_document.custom_status}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
+              onAction={handleActionWithComments}
             />
           </div>
         </div>
@@ -262,74 +232,13 @@ const BenefitRequestItem = ({
                     : data.reference_document.custom_status}
                   recordId={data?.todo_id}
                   loadingAction={loadingAction}
-                  onAction={(action) => handlePreSaveAction(action)}
+                  onAction={handleActionWithComments}
                 />
               </div>
             </div>
           </div>
         </div>
       )
-      }
-      {
-        showCommentModal &&
-        createPortal(
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCancelComment();
-            }}
-          >
-            <div
-              className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Comment Required
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Please add a comment before rejecting this benefit request.
-              </p>
-              <div className="mb-4">
-                <label className="text-xs text-gray-500 uppercase mb-1 block">
-                  COMMENT *
-                </label>
-                <textarea
-                  value={rejectionComment}
-                  onChange={(e) => setRejectionComment(e.target.value)}
-                  placeholder="Enter your rejection comment..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  rows={4}
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3 justify-end">
-                <Button
-                  onClick={handleCancelComment}
-                  size="sm"
-                  bgColor="disabled"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveComment}
-                  size="sm"
-                  bgColor="primary"
-                  disabled={
-                    !rejectionComment.trim() || CommentBenefitClaim.isPending
-                  }
-                >
-                  {CommentBenefitClaim.isPending ? (
-                    <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    "Save & Continue"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>,
-          document.body,
-        )
       }
     </div >
   );

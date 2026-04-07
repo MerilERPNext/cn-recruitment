@@ -10,12 +10,14 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { BenefitRequestDetailModal } from "../BenefitRequestDetailModal";
 import BenefitRequestItem from "./BenefitRequestItem";
+import { useCommentOnBenefitClaim } from "../../../hooks/useBenefit";
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const CommentBenefitClaim = useCommentOnBenefitClaim();
   const requestId = searchParams.get("requestId");
   const referenceName = searchParams.get("reference_name");
 
@@ -49,24 +51,24 @@ const MyTeamRequest: React.FC = () => {
   }, [setSearchParams]);
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "Actions",
+    ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
@@ -96,6 +98,17 @@ const MyTeamRequest: React.FC = () => {
             infiniteScroll={false}
             loadMorePagination={false}
             showPagination={true}
+            actionWithCommentConfig={{
+              actionTypes: ["Reject"],
+              commentRequired: true,
+              placeholder: "Enter rejection reason...",
+              onBeforeAction: async ({ comment, commentApiData }: { comment: string, commentApiData: { docname: string } }) => {
+                await CommentBenefitClaim.mutateAsync({
+                  doc_name: commentApiData?.docname,
+                  comment,
+                });
+              },
+            }}
             isSearch={true}
             isFilter={true}
             columnWidths={finalColumnWidths}
@@ -135,12 +148,13 @@ const MyTeamRequest: React.FC = () => {
               if (item?.data?.custom_selected_doctype_action === "Send Back") {
                 return null;
               }
+
               return (
                 <BenefitRequestItem
                   isSelected={item?.isSelected}
                   onToggleSelect={item?.onToggleSelect}
                   data={item?.data}
-                  onAction={item?.onAction}
+                  onActionWithComments={item?.onActionWithComments}
                   onClick={(request) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
