@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "creation": "2026-04-07 13:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "help_section",
+  "help_html",
+  "fields_config_section",
+  "portal_fields",
+  "helper_section",
+  "fetch_fields_btn",
+  "available_fields_html"
+ ],
+ "fields": [
+  {
+   "fieldname": "help_section",
+   "fieldtype": "Section Break",
+   "label": "How to Use"
+  },
+  {
+   "fieldname": "help_html",
+   "fieldtype": "HTML",
+   "options": "<div class=\"alert alert-info\" style=\"padding:12px 16px;border-radius:6px;\">\n  <strong>📋 Job Applicant Portal Field Configuration</strong><br/>\n  <ul style=\"margin-top:8px;margin-bottom:0;\">\n    <li>Add rows to the table below specifying which <strong>Job Applicant</strong> fields to expose in the candidate portal.</li>\n    <li>Set <strong>Tab</strong> and <strong>Section</strong> to control how fields are grouped in the portal form.</li>\n    <li>Use <strong>Mandatory</strong> to enforce required fields on the candidate side.</li>\n    <li>Use <strong>Read Only</strong> to display pre-filled values that the candidate cannot change.</li>\n    <li>Click <strong>Fetch Available Fields</strong> to see and auto-fill field metadata from Job Applicant.</li>\n  </ul>\n</div>"
+  },
+  {
+   "fieldname": "fields_config_section",
+   "fieldtype": "Section Break",
+   "label": "Portal Field Configuration"
+  },
+  {
+   "fieldname": "portal_fields",
+   "fieldtype": "Table",
+   "label": "Portal Fields",
+   "options": "Job Applicant Portal Field"
+  },
+  {
+   "fieldname": "helper_section",
+   "fieldtype": "Section Break",
+   "label": "Field Inspector (Helper)"
+  },
+  {
+   "fieldname": "fetch_fields_btn",
+   "fieldtype": "Button",
+   "label": "Fetch Available Fields from Job Applicant"
+  },
+  {
+   "fieldname": "available_fields_html",
+   "fieldtype": "HTML",
+   "label": "Available Fields"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-07 13:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Recruitment",
+ "name": "Job Applicant Portal Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "HR Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

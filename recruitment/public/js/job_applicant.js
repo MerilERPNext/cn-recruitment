@@ -124,9 +124,10 @@ frappe.ui.form.on("Job Applicant", {
       }
       // <td style="width:5%"><button class="delete-note-btn btn btn-sm btn-primary" data-note="${note.note}"><svg class="icon icon-sm"><use xlink:href="#icon-delete"></use></svg></button></td>
 
-      let newNoteBtn = frm
-        .get_field("custom_notes_html")
-        .wrapper.querySelector(".new-note-btn");
+      let notesField = frm.get_field("custom_notes_html");
+      if (notesField && notesField.wrapper) {
+      let newNoteBtn = notesField.wrapper.querySelector(".new-note-btn");
+      if (newNoteBtn) {
       newNoteBtn.addEventListener("click", () => {
         frappe.prompt(
           [
@@ -193,6 +194,8 @@ frappe.ui.form.on("Job Applicant", {
           "Submit"
         );
       });
+      }
+      }
 
       allNotesSection.querySelectorAll(".edit-note-btn").forEach((btn, idx) => {
         btn.addEventListener("click", (event) => {
@@ -342,16 +345,20 @@ frappe.ui.form.on("Job Applicant", {
                         </table>
                     `;
 
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).html(table);
+                    if (frm.fields_dict.custom_interview_feedback) {
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).html(table);
 
-                    // Attach click event to buttons
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).find('button').on('click', function () {
-                        let interview_id = $(this).data('interview');
-                        show_feedback(interview_id);
-                    });
+                        // Attach click event to buttons
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).find('button').on('click', function () {
+                            let interview_id = $(this).data('interview');
+                            show_feedback(interview_id);
+                        });
+                    }
 
                 } else {
-                    $(frm.fields_dict.custom_interview_feedback.wrapper).html('<p style="margin-top: 30px;">No Interview has been scheduled.</p>');
+                    if (frm.fields_dict.custom_interview_feedback) {
+                        $(frm.fields_dict.custom_interview_feedback.wrapper).html('<p style="margin-top: 30px;">No Interview has been scheduled.</p>');
+                    }
                 }
             }
         },
@@ -935,7 +942,9 @@ function applicant_details(frm) {
                   `;
 
                   // Finally set the HTML content
-                  frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+                  if (frm.fields_dict.custom_custom_table) {
+                      frm.fields_dict.custom_custom_table.$wrapper.html(job_applicant_html);
+                  }
               }
           });
       }
