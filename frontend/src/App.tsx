@@ -13,7 +13,8 @@ import { AppRoute, routesConfig } from "./routesConfig";
 import { findRouteConfig } from "./utils/routeUtils";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
-import { useCurrentEmployee } from "./hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "./hooks/useEmployee";
+
 import toast, { ToastBar, Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
@@ -199,8 +200,8 @@ const App: React.FC = () => {
 export default App;
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
-    useCurrentEmployee();
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+
   const navigate = useNavigate();
   const location = useLocation();
   const [isAutoOpened, setInAutoOpened] = useState(false);
