@@ -25,7 +25,48 @@ def make_employee(source_name, target_doc=None):
         target.personal_email = frappe.db.get_value("Job Applicant", source.job_applicant, "email_id")
         target.status = "Active"
 
-    field_map = {}
+    # Explicit mappings for fields with different names in EO vs Employee
+    field_map = {
+        # Personal info
+        "custom_first_name": "first_name",
+        "custom_middle_name": "middle_name",
+        "custom_last_name": "last_name",
+        "custom_date_of_birth": "date_of_birth",
+        "custom_gender": "gender",
+        "custom_marital_status": "marital_status",
+        "custom_blood_group": "blood_group",
+        "custom_spouse_name": "spouse_name",
+        "custom_passport_size_photo": "image",
+
+        # Contact
+        "custom_primary_mobile_number": "custom_its_mobile",
+        "custom_whatsapp_number": "custom_whatsapp_no",
+        "custom_email_id": "custom_its_email",
+        "custom_personal_contact_no": "personal_email",
+        "custom_name_of_emergency_contact_person": "person_to_be_contacted",
+
+        # ITS / Education
+        "custom_farig_year": "custom_farigh_year",
+        "custom_farig_darajah": "custom_farigh_darajah",
+        "custom_nationality": "custom_citizenship",
+        "custom_manzuri_amount": "custom_manzuri_pay",
+
+        # Government IDs
+        "custom_pan_card_number": "pan_number",
+        "custom_passport_number": "passport_number",
+        "custom_aadhar_card_number": "custom_aadhar_number",
+
+        # Address
+        "custom_current_address": "current_address",
+        "custom_permanent_address": "permanent_address",
+
+        # Bank details
+        "custom_bank_account_no": "bank_ac_no",
+        "custom_ifsc_code": "ifsc_code",
+        "custom_name_of_bank": "bank_name",
+    }
+
+    # Add mappings from Recruitment Settings (can override defaults)
     for fieldrow in settings.mapping_fields:
         field_map[fieldrow.employee_onboarding] = fieldrow.employee
 

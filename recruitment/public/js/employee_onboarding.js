@@ -13,6 +13,11 @@ frappe.ui.form.on("Employee Onboarding", {
 
                 // 🔸 Make non-mandatory
                 frm.fields_dict[field].df.reqd = 0;
+
+                // 🔸 Hide job_offer and job_applicant fields
+                if (field === "job_offer" || field === "job_applicant") {
+                    frm.fields_dict[field].df.hidden = 1;
+                }
                 
 
 
