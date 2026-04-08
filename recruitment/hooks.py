@@ -55,8 +55,13 @@ fixtures =   [
     ]
 fixtures = [
     
-    {"dt": "Web Form", "filters": [["name", "in", ["Employee Onboarding"]]]}  ,
-    {"dt": "Web Form", "filters": [["name", "in", ["Employee Onboarding-1"]]]}  ,  #      "filters": [["Workspace", "name", "=", "Recruitment"]],
+    {
+        "dt": "Web Form",
+        "filters": [
+            ["name", "in", ["Employee Onboarding", "Employee Onboarding-1"]]
+        ]
+    },
+  #      "filters": [["Workspace", "name", "=", "Recruitment"]],
   #      "filters": [["Workspace", "name", "=", "Recruitment"]],
 	
    
@@ -204,7 +209,7 @@ doc_events = {
     "Job Offer":{
          "validate":"recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
 		"before_save":"recruitment.customizations.job_offer.calculate_salary_structure"
-        
+
     },
     "Employee":{
         "before_insert":"recruitment.customizations.job_applicant.validate_blacklist_employee",
@@ -259,7 +264,8 @@ override_whitelisted_methods = {
 }
 override_doctype_class = {
     "Employee Onboarding": "recruitment.customizations.employee_onboarding.overide_class.CustomEmployeeOnboarding",
-    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening"
+    "Job Opening": "recruitment.customizations.job_opening.class_override.CustomJobOpening",
+    "Job Offer": "recruitment.customizations.job_offer.CustomJobOffer"
 }
 #
 # each overriding function accepts a `data` argument;

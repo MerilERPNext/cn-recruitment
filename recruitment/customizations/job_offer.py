@@ -6,6 +6,18 @@ from frappe.utils import cint
 
 
 
+from hrms.hr.doctype.job_offer.job_offer import JobOffer
+
+
+class CustomJobOffer(JobOffer):
+    def on_change(self):
+        """Override core on_change to use frappe.db.set_value instead of frappe.set_value.
+        This avoids mandatory validation errors (e.g. resume_attachment) on Job Applicant
+        when status is updated via Job Offer submission."""
+        if self.status in ("Accepted", "Rejected") and self.job_applicant:
+            frappe.db.set_value("Job Applicant", self.job_applicant, "status", self.status)
+
+
 @frappe.whitelist()
 def calculate_salary_structure(self,method=None):
     if self.custom_employee_salary_structure and self.custom_base_salary:
