@@ -461,76 +461,76 @@ const ExpenseAdvanceForm: React.FC<{
 
             ...(showProject || showCostCenter
               ? [
-                  {
-                    type: "columns",
-                    key: "row4",
-                    columns: [
-                      ...(showProject
-                        ? [
+                {
+                  type: "columns",
+                  key: "row4",
+                  columns: [
+                    ...(showProject
+                      ? [
+                        {
+                          width: 6,
+                          components: [
                             {
-                              width: 6,
-                              components: [
-                                {
-                                  type: "select",
-                                  key: "project",
-                                  label: getLabelWithAsterisk(
-                                    "Project",
-                                    projectMandatory,
-                                  ),
-                                  html: true,
-                                  input: true,
-                                  placeholder: "Select project",
-                                  data: {
-                                    values:
-                                      projects?.data.map((pro) => ({
-                                        label: pro.project_name,
-                                        value: pro.project_name,
-                                      })) || [],
-                                  },
-                                  validate: {
-                                    required: projectMandatory,
-                                    customMessage: "Project is required",
-                                  },
-                                },
-                              ],
+                              type: "select",
+                              key: "project",
+                              label: getLabelWithAsterisk(
+                                "Project",
+                                projectMandatory,
+                              ),
+                              html: true,
+                              input: true,
+                              placeholder: "Select project",
+                              data: {
+                                values:
+                                  projects?.data.map((pro) => ({
+                                    label: pro.project_name,
+                                    value: pro.project_name,
+                                  })) || [],
+                              },
+                              validate: {
+                                required: projectMandatory,
+                                customMessage: "Project is required",
+                              },
                             },
-                          ]
-                        : []),
+                          ],
+                        },
+                      ]
+                      : []),
 
-                      ...(showCostCenter
-                        ? [
+                    ...(showCostCenter
+                      ? [
+                        {
+                          width: 6,
+                          components: [
                             {
-                              width: 6,
-                              components: [
-                                {
-                                  type: "select",
-                                  key: "cost_center",
-                                  label: getLabelWithAsterisk(
-                                    "Cost Center",
-                                    costCenterMandatory,
-                                  ),
-                                  html: true,
-                                  input: true,
-                                  placeholder: "Select cost center",
-                                  data: {
-                                    values:
-                                      costCenters?.data.map((cc) => ({
-                                        label: cc.name,
-                                        value: cc.name,
-                                      })) || [],
-                                  },
-                                  validate: {
-                                    required: costCenterMandatory,
-                                    customMessage: "Cost Center is required",
-                                  },
-                                },
-                              ],
+                              type: "select",
+                              key: "cost_center",
+                              label: getLabelWithAsterisk(
+                                "Cost Center",
+                                costCenterMandatory,
+                              ),
+                              html: true,
+                              input: true,
+                              placeholder: "Select cost center",
+                              data: {
+                                values:
+                                  costCenters?.data.map((cc) => ({
+                                    label: cc.name,
+                                    value: cc.name,
+                                  })) || [],
+                              },
+                              validate: {
+                                required: costCenterMandatory,
+                                customMessage: "Cost Center is required",
+                              },
                             },
-                          ]
-                        : []),
-                    ],
-                  },
-                ]
+                          ],
+                        },
+                      ]
+                      : []),
+                  ],
+                },
+              ]
               : []),
 
             {
@@ -629,7 +629,7 @@ const ExpenseAdvanceForm: React.FC<{
           <div className="flex items-center justify-between mb-4">
             <h3 className="lg:text-lg font-semibold text-gray-800 flex items-center gap-1">
               Advance Break Up
-              {fieldSettings?.expense_table_mandatory && (
+              {Boolean(fieldSettings?.expense_table_mandatory) && (
                 <span className="text-red-500">*</span>
               )}
             </h3>
@@ -651,7 +651,7 @@ const ExpenseAdvanceForm: React.FC<{
                 setExpenseToEdit(null);
               }}
               disabled={isPolicyMissing}
-              // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            // className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
               Advance Break Up

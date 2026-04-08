@@ -11,6 +11,7 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
+import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -209,7 +210,12 @@ const TeamLeaveRequest = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
+            isBulkSelectEnabled,
+            isRejectedFilter
+          )}
+        >
           {currentUser?.name ? (
             <ApprovalList
               doctype={"Leave Application"}

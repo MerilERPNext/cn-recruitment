@@ -15,6 +15,8 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
+import { COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+
 
 const MyLeaveRequests = ({
   pageSize = 10,
@@ -199,6 +201,7 @@ const MyLeaveRequests = ({
                 ? ["1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
                 : ["1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
             }
+            columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
           >
             {currentEmployee?.name && (
               <DataListView
