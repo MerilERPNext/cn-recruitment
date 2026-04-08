@@ -12,7 +12,7 @@ export interface Employee {
   middle_name?: string;
   last_name?: string;
   employee_number?: string;
-  custom_designation_name?: string;
+  custom_designation_title?: string;
   department?: string;
   department_name?: string;
   company?: string;
