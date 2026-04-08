@@ -1,6 +1,6 @@
 import frappe
 import json
-from frappe.utils import validate_email_address
+from frappe.utils import now, get_url, validate_email_address
 
 @frappe.whitelist()
 def create_bulk_job_offer(applicants):
@@ -69,6 +69,12 @@ def send_bulk_job_offer(job_offers):
     skipped = 0
     failed = 0
 
+    settings = frappe.get_doc("Recruitment Settings")
+    JOB_OFFER_TEMPLATE = settings.job_offer_template
+
+    if not JOB_OFFER_TEMPLATE:
+        frappe.throw("Job Offer Email Template not set in Recruitment Settings")
+
     for jo in job_offers:
 
         try:
@@ -112,39 +118,30 @@ def send_bulk_job_offer(job_offers):
                 })
                 continue
 
-            site_url = frappe.utils.get_url()
+            # ----------------------------
+            # Dynamic Context
+            # ----------------------------
+            site_url = get_url()
             offer_url = f"{site_url}/job_offer?appl={applicant.name}"
-
             first_name = (job_offer.applicant_name or "Candidate").split(" ")[0]
 
-            subject = "Internship Offer Letter – HomeFirst Finance"
+            email_context = {
+                "first_name": first_name,
+                "offer_url": offer_url
+            }
 
-            message = f"""
-<p>Dear {first_name},</p>
+            # ----------------------------
+            # Render Template
+            # ----------------------------
+            subject_template = frappe.db.get_value("Email Template", JOB_OFFER_TEMPLATE, "subject")
+            message_template = frappe.db.get_value("Email Template", JOB_OFFER_TEMPLATE, "response_html")
 
-<p>
-We are pleased to inform you that you have been selected for an internship with
-HomeFirst Finance Company India Ltd.
-</p>
+            subject = frappe.render_template(subject_template, email_context)
+            message = frappe.render_template(message_template, email_context)
 
-<p>
-Please find your offer letter attached. Kindly review the offer letter and click on the below link to accept the offer.
-</p>
-
-<p>
-Link - <a href="{offer_url}">Click here to view your offer letter</a>
-</p>
-
-<p>
-We look forward to welcoming you onboard and wish you a successful internship with us.
-</p>
-
-<p>
-Warm regards,<br>
-Team HR
-</p>
-"""
-
+            # ----------------------------
+            # Send Email
+            # ----------------------------
             try:
                 frappe.sendmail(
                     recipients=[email],
@@ -152,6 +149,8 @@ Team HR
                     message=message,
                     reference_doctype="Job Offer",
                     reference_name=job_offer.name,
+                    args=email_context,
+                    now=True
                 )
             except Exception as mail_error:
                 failed += 1
@@ -162,6 +161,9 @@ Team HR
                 frappe.log_error(frappe.get_traceback(), "Email Send Failure")
                 continue
 
+            # ----------------------------
+            # Email Queue Check
+            # ----------------------------
             email_queue = frappe.get_all(
                 "Email Queue",
                 filters={
@@ -183,12 +185,29 @@ Team HR
                 })
                 continue
 
+            # ----------------------------
+            # Update Job Offer
+            # ----------------------------
             job_offer.db_set({
                 "email_status": "Sent",
                 "email_error": "",
-                "email_sent_on": frappe.utils.now()
+                "email_sent_on": now()
             })
 
+            # ----------------------------
+            # Create Communication Log
+            # ----------------------------
+            communication_doc = frappe.new_doc("Communication")
+            communication_doc.subject = subject
+            communication_doc.content = message
+            communication_doc.reference_doctype = "Job Offer"
+            communication_doc.reference_name = job_offer.name
+            communication_doc.recipients = email + ","
+            communication_doc.save(ignore_permissions=True)
+
+            # ----------------------------
+            # Update Applicant
+            # ----------------------------
             applicant.flags.ignore_notify = True
             applicant.status = "Offered"
             applicant.save(ignore_permissions=True)

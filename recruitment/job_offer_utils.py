@@ -99,6 +99,13 @@ def get_job_offer_summary(appl):
         "stipend_display": f"₹ {stipend}" if stipend else None,
     }
 
+@frappe.whitelist(allow_guest=True)
+def get_company_logo():
+    logo = frappe.db.get_single_value("Website Settings", "app_logo")
+
+    return {
+        "logo_url": logo
+    }
 
 @frappe.whitelist()
 def request_for_offer(jo_id):
