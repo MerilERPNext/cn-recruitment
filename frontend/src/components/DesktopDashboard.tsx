@@ -369,20 +369,7 @@ export default function DesktopDashboard() {
     (role) => "Administrator" === role.role,
   );
   const { data: userUiPermission } = useGetUiPermission();
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, [
-    "name",
-    "employee_name",
-    "employee",
-    "department",
-    "company",
-    "date_of_joining",
-    "status",
-    "image",
-    "custom_designation_title",
-    "company_email",
-    "personal_email",
-    "user_id",
-  ]);
+  const user = currentEmployee;
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
@@ -659,7 +646,7 @@ export default function DesktopDashboard() {
                           color="body2"
                           className="truncate block"
                         >
-                          {currentEmployee?.custom_designation_name || "N/A"}
+                          {currentEmployee?.custom_designation_title || "N/A"}
                         </Typography>
                         <div className="flex items-center gap-2">
                           <Typography
