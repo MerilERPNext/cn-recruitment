@@ -7,7 +7,7 @@ import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {
   useDeleteDraftExpenseClaim,
   useGetAllExpenseCategories,
@@ -746,7 +746,7 @@ const ExpensesList: React.FC = () => {
   }>({ isOpen: false, count: 0 });
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name","employee_name", "company"]);
   const navigate = useNavigate();
   const { data: draftExpenses, isFetching: isFetchingDrafts } =
     useGetDraftExpenseClaims(currentEmployee?.name);

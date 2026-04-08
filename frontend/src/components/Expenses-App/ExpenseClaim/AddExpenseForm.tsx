@@ -2,7 +2,7 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
 import { Form } from "@tsed/react-formio";
 import "formiojs/dist/formio.form.css";
-import { useCurrentEmployee, useEmployees } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails, useEmployees } from "../../../hooks/useEmployee";
 import {
   useGetExpenseTypeFields,
   usePostExpenseClaim,
@@ -202,7 +202,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name","employee_name", "company"]);
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",
