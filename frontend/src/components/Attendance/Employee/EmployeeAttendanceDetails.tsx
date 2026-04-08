@@ -149,7 +149,7 @@ const EmployeeAttendanceDetails = ({
         ["employee", "=", effectiveEmployeeId],
         ["from_date", "<=", format(validDate, "yyyy-MM-dd")],
         ["to_date", ">=", format(validDate, "yyyy-MM-dd")],
-        ["docstatus", "!=", 2],
+        // ["docstatus", "!=", 2],
       ]
       : [],
     {
@@ -666,7 +666,7 @@ export const AttendanceRequestInfo = ({
 
         {data.custom_status && (
           <Badge
-            label={data.custom_status}
+            label={data.custom_status === "Cancelled" ? "Revoked" : data.custom_status}
             backgroundColor={status.backgroundColor}
             textColor={status.textColor}
           />
