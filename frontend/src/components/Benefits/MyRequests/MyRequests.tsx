@@ -136,7 +136,6 @@ const MyRequests: React.FC = () => {
 
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedComponent, setSelectedComponent] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("All");
   const [benefitId, setBenefitId] = useState<string | null>(null);
   const handleEdit = (BenefitId: string) => {
     setBenefitId(BenefitId);
@@ -161,6 +160,7 @@ const MyRequests: React.FC = () => {
     selectedYear,
     today,
   );
+  const [customStatus, setCustomStatus] = useState("All");
   const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } =
     useGetBenefitClaimLockingPeriod(
       effectiveEmployeeId || "",
@@ -206,6 +206,14 @@ const MyRequests: React.FC = () => {
     label: item,
     value: item,
   })) ?? [];
+
+  const filterStatusMap = {
+    "Open": "Pending",
+    "Approved": "Approved",
+    "Rejected": "Rejected",
+    "Cancelled": "Revoked",
+  };
+
 
   return (
     <div className="flex flex-col h-full">
@@ -257,17 +265,6 @@ const MyRequests: React.FC = () => {
                 options={componentArray}
 
               />
-              <CustomDropdown
-                position="bottom-left"
-                value={selectedStatus}
-                onChange={(event) => setSelectedStatus(event?.target.value)}
-                options={[
-                  { label: "All", value: "All" },
-                  { label: "Pending", value: "Pending" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
-                ]}
-              />
             </div>
           </div>
         </div>
@@ -303,12 +300,43 @@ const MyRequests: React.FC = () => {
                 employee: employeeIdCard?.id || "",
                 company: employeeIdCard?.company || "",
                 payroll_period: selectedYear,
-                custom_status: selectedStatus,
-                earning_component: selectedComponent
+                earning_component: selectedComponent,
+                custom_status: customStatus,
               },
             }}
-
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "custom_status",
+                label: "Status",
+                fieldtype: "Select",
+                options: [
+                  {
+                    label: "Pending",
+                    key: "Open",
+                    value: "Open",
+                    customAPIParams: { todo_status: "Open" },
+                  },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Revoked",
+                    value: "Revoked",
+                    excludeFieldFromFilters: true,
+                    customAPIParams: { todo_status: "Cancelled" },
+                    additionalFilters: {
+                      docstatus: 2,
+                      custom_allow_revoke: 1,
+                    },
+                  },
+                ],
+              },
+            ]}
+            onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
             ItemComponent={(props: { item: BenefitPayslip }) => {
+              if (!props?.item?.todo_list || props?.item?.todo_list?.length === 0) {
+                return null;
+              }
               return (
                 <BenefitSlipItem
                   handleEdit={handleEdit}
@@ -322,7 +350,6 @@ const MyRequests: React.FC = () => {
             SkeletonComponent={CardSkeleton}
             refetchTrigger={refetchCounter}
             isSearch={true}
-            isFilter={false}
             showRefreshButton={false}
             pageSize={10}
             infiniteScroll={false}
@@ -373,7 +400,7 @@ const BenefitSlipItem = ({
 
   const canEdit = todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = !!todo?.custom_allow_revoke && todo?.reference_document?.custom_status === "Pending";
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 

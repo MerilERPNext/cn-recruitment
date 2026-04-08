@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoan } from "../../../hooks/useLoan";
 import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
@@ -9,34 +8,101 @@ import { isActionEnabled } from "../../../utils/uiPermission";
 import { Typography } from "../../shared/atoms/Typography";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import CreateLoanDialog from "./component/CreateLoanDailog";
-import ListViewOfLoanForMobile from "./component/ListViewOfLoanForMobile";
-import LoanList from "./component/LoanListView";
+import { LoantItem } from "./component/ListViewOfLoanForMobile";
+import { LoanRow } from "./component/LoanListView";
+import DataListView from "../../DataListView";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
+import { Loan } from "./Type/loan";
+import { createPortal } from "react-dom";
+
+const titles = [
+  "",
+  "Loan Name",
+  "Loan Type",
+  "Loan Amount",
+  "Rate of Interest",
+  "Standard Interest",
+  "EMI Type",
+  "Tenure",
+  "Start Date",
+  "End Month",
+  "Status",
+  "Actions",
+];
+
+const columnWidths = [
+  "0.1rem",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+  "1fr",
+];
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false,
+  },
+  {
+    sortable: true,
+    field: "name",
+    getValue: (item: Loan) =>
+      item.loan_name ?? "",
+  },
+  {
+    sortable: true,
+    field: "loan_product",
+    getValue: (item: Loan) =>
+      item?.loan_type ?? "",
+  }, {
+    sortable: true,
+    field: "loan_amount",
+    getValue: (item: Loan) =>
+      item?.loan_requested_amount ?? "",
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  }, {
+    sortable: false,
+  }, {
+    sortable: true,
+    field: "repayment_periods",
+    getValue: (item: Loan) => item.loan_tenure ?? 0,
+  }, {
+    sortable: true,
+    field: "custom_repayment_start_date",
+    getValue: (item: Loan) => item.loan_start_date ?? 0,
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  },
+];
 
 export default function LoansPage() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { isDesktop } = useScreenSize();
   const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user, isFetching: userLoading } = useCurrentEmployeeAllDetails(userId || "");
   const employeeId = user?.employee ?? "";
-  const { data: loanData, isLoading } = useLoan(employeeId || "");
   const [loanId, setLoanId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {
     setLoanId(docname);
     setIsDialogOpen(true);
   };
 
-  const filteredLoans = useMemo(() => {
-    if (!loanData) return [];
-    const lower = searchTerm.toLowerCase();
-    return loanData.filter(
-      (loan) =>
-        loan.loan_name?.toLowerCase().includes(lower) ||
-        loan.loan_type?.toLowerCase().includes(lower) ||
-        loan.status?.toLowerCase().includes(lower),
-    );
-  }, [loanData, searchTerm]);
 
   // UI Permission check
   const { data: uiPermission } = useGetUiPermission("Compensation");
@@ -54,6 +120,10 @@ export default function LoansPage() {
     setIsModalOpen: (open: boolean) => void;
   }>();
 
+  const navigate = useNavigate();
+  const handleGoToLoanDetails = (loan_application: string) => {
+    navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
+  };
   useEffect(() => {
     if (canCreateLoan) {
       setActionButtonConfig({
@@ -69,65 +139,128 @@ export default function LoansPage() {
     return () => setActionButtonConfig(null);
   }, [setActionButtonConfig, setIsModalOpen, canCreateLoan]);
 
-  // Desktop Layout
-  const DesktopLayout = (
-    <div className="flex flex-col h-full">
-      <div className="flex-shrink-0">
-        <div className="px-1 md:px-6 py-1 md:py-4">
-          <div className="flex items-center justify-between">
-            {isDesktop ? (
-              <div>
-                <Typography variant="h4">My Loan Requests</Typography>
-                <Typography variant="bodySmall" color="body2">
-                  Track and manage your loan requests
-                </Typography>
-              </div>
-            ) : (
-              <div>
-                <Typography variant="h4">My Loan Requests</Typography>
-              </div>
-            )}
+  return (
+    <>
+      <div className="flex flex-col h-full">
+        <div className="flex-shrink-0">
+          <div className="px-1 md:px-6 py-1 md:py-4">
+            <div className="flex items-center justify-between">
+              {isDesktop ? (
+                <div>
+                  <Typography variant="h4">My Loan Requests</Typography>
+                  <Typography variant="bodySmall" color="body2">
+                    Track and manage your loan requests
+                  </Typography>
+                </div>
+              ) : (
+                <div>
+                  <Typography variant="h4">My Loan Requests</Typography>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
+          <div className="max-w-screen">
+            <CardTable
+              titles={titles}
+              columnWidths={columnWidths}
+              columnSortConfig={COLUMN_SORT_CONFIG}
+            >
+              <DataListView
+                queryKey={[
+                  "loan-requests",
+                  employeeId,
+                ]}
+                customAPI={{
+                  method: "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
+                  params: {
+                    employee: employeeId,
+                  },
+                }}
+                ItemComponent={(props: { item: Loan }) => {
+                  if (!props?.item?.todo_list || props?.item?.todo_list?.length === 0) {
+                    return null;
+                  }
+                  return (
+                    isDesktop
+                      ? <LoanRow
+                        loan={props?.item}
+                        handleEdit={handleEdit}
+                        columnWidths={columnWidths}
+                      />
+                      :
+                      <LoantItem
+                        item={props?.item}
+                        handleEdit={handleEdit}
+                        onClick={() => handleGoToLoanDetails(props?.item.loan_name)}
+                      />
+
+                  );
+                }}
+                SkeletonComponent={CardSkeleton}
+                onItemClick={(data) => {
+                  console.log(data);
+                }}
+                // onRefetchComplete={() => {
+                //   setRefetchAttendance(false);
+                // }}
+                // refetchTrigger={refetchAttendance}
+                isSearch={true}
+                isFilter={true}
+                filterFields={[
+                  {
+                    fieldname: "status",
+                    label: "Status",
+                    fieldtype: "Select",
+                    options: [
+                      {
+                        label: "Pending",
+                        key: "Draft",
+                        value: "Open",
+                        customAPIParams: { todo_status: "Open" },
+                      },
+                      { label: "Approved", value: "Approved" },
+                      { label: "Rejected", value: "Rejected" },
+                      {
+                        label: "Revoked",
+                        value: "Revoked",
+                        excludeFieldFromFilters: true,
+                        customAPIParams: { todo_status: "Cancelled" },
+                        additionalFilters: {
+                          docstatus: 2,
+                          custom_allow_revoke: 1,
+                        },
+                      },
+                    ],
+                  },
+                ]}
+                pageSize={10}
+                isLoading={userLoading}
+                showRefreshButton={false}
+                infiniteScroll={false}
+                loadMorePagination={false}
+                showPagination={true}
+              />
+            </CardTable>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <div className="max-w-screen">
-          {isLoading ? (
-            <CardSkeleton />
-          ) : (
-            <LoanList
-              handleEdit={handleEdit}
-              loans={filteredLoans}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const MobileLayout = () => (
-    <div className="min-h-screen w-full py-4">
-      {isLoading ? <CardSkeleton /> : <ListViewOfLoanForMobile />}
-    </div>
-  );
-
-  return (
-    <>
-      {isDesktop ? DesktopLayout : <MobileLayout />}
-
       {isDialogOpen && (
-        <CreateLoanDialog
-          loanId={loanId}
-          isOpen={isDialogOpen}
-          onClose={() => {
-            setIsDialogOpen(false);
-            setLoanId(null);
-            setIsModalOpen(false);
-          }}
-        />
+        createPortal(
+          <CreateLoanDialog
+            loanId={loanId}
+            isOpen={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false);
+              setLoanId(null);
+              setIsModalOpen(false);
+            }}
+          />,
+          document.body
+        )
       )}
     </>
   );
