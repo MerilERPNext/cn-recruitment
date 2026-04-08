@@ -11,18 +11,17 @@ import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { formatCurrency } from "../../../utils/currency";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import SearchInputWrapper from "../../shared/SearchBar";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
 
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-
   const { data: userId } = useLoggedInUser();
   const { data: user } = useCurrentEmployeeAllDetails(userId || "");
   const { data: perquisiteData } = usePerquisite(user?.employee, user?.company);
-
   const { isDesktop } = useScreenSize();
+  const [sortConfig, setSortConfig] = useState<any>(null);
 
   const perquisites = useMemo(() => {
     return ((perquisiteData as any)?.extra_payments || []).map((item: any) => ({
@@ -31,6 +30,7 @@ export default function PerquisiteList() {
       taxableValue: item.amount,
       status: item.is_tax_applicable === 1 ? "Paid" : "Not Paid",
       description: `Payment Date: ${item.payment_date}`,
+      paymentDate: item.payment_date,
       details: {
         paymentDate: item.payment_date,
         taxApplicable: item.is_tax_applicable === 1,
@@ -39,7 +39,6 @@ export default function PerquisiteList() {
     }));
   }, [perquisiteData]);
 
-  // ✅ SEARCH FILTER
   const filteredPerquisites = useMemo(() => {
     if (!searchTerm) return perquisites;
 
@@ -50,8 +49,56 @@ export default function PerquisiteList() {
     );
   }, [perquisites, searchTerm]);
 
-  const titles = ["Perquisite Name", "Taxable Value", "Status", "Action"];
-  const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr"];
+  const sortedPerquisites = useMemo(() => {
+    if (!sortConfig) return filteredPerquisites;
+  
+    const { key, direction } = sortConfig;
+  
+    return [...filteredPerquisites].sort((a, b) => {
+      const valA = a[key];
+      const valB = b[key];
+  
+      if (valA < valB) return direction === "asc" ? -1 : 1;
+      if (valA > valB) return direction === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filteredPerquisites, sortConfig]);
+
+const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "name",
+    getValue: (item: any) => item.name ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "paymentDate",
+    getValue: (item: any) => item.paymentDate ?? 0,
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "taxableValue",
+    getValue: (item: any) => item.taxableValue ?? 0,
+  },
+
+  {
+    sortable: true,
+    type: "string",
+    field: "status",
+    getValue: (item: any) => item.status ?? "",
+  },
+  {
+    sortable: false, // action
+  },
+];
+  // ✅ SEARCH FILTER
+
+
+  const titles = ["Perquisite Name", "Payment Date", "Taxable Value", "Status", "Action"];
+  const columnWidths = ["0.5fr", "1.2fr", "1.2fr", "1fr","1fr"];
 
   return (
     <div className="w-full lg:p-4 p-2">
@@ -66,10 +113,13 @@ export default function PerquisiteList() {
         }
       </div>
       {isDesktop ? (
-        <CardTable titles={titles} columnWidths={columnWidths}>
-
-
-          <div className="flex items-center w-full border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+        <CardTable
+        titles={titles}
+        columnWidths={columnWidths}
+        columnSortConfig={PERQUISITE_SORT_CONFIG}
+        onSortChange={setSortConfig} 
+      >
+          <div className="flex items-center w-full border-t-none border border-gray-100 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
             <SearchInputWrapper
               searchTerm={searchTerm}
               handleSearch={(e) => setSearchTerm(e.target.value)}
@@ -82,19 +132,24 @@ export default function PerquisiteList() {
               <NoDataFound title="No Perquisites Found" subtitle="No perquisite records available." />
             )}
 
-            {filteredPerquisites.map((item: any) => (
+            {sortedPerquisites.map((item: any) => (
               <div
                 key={item.id}
                 className="max-w-screen grid px-6 py-3 gap-4 items-center border-gray-200"
                 style={{ gridTemplateColumns: columnWidths.join(" ") }}
               >
-                <div className="font-medium flex justify-center">
+                <Typography variant="bodySmall" className="font-medium text-center">
                   {item.name}
-                </div>
+                </Typography>
 
-                <div className="font-medium items-center flex justify-center">
+                <Typography variant="bodySmall" className="font-medium text-center">
+                  {item.paymentDate}
+                </Typography>
+
+
+                <Typography variant="bodySmall" className="font-medium text-center">
                   {formatCurrency(item.taxableValue)}
-                </div>
+                </Typography>
 
                 <div className="font-medium items-center flex justify-center">
                   <StatusBadge status={item.status} />

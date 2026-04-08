@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FrappeAPI from "../utils/frappeAPI";
-import { ApiAdvance } from "../types/employeeAttendance";
+import { ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
 import {
   CostCenterType,
   CurrencyType,
@@ -13,7 +13,7 @@ import {
 
 export const getAdvances = async (
   employeeId: string
-): Promise<ApiAdvance[]> => {
+): Promise<ApiAdvanceResponse> => {
   if (!employeeId) throw new Error("Employee ID is required");
 
   const result = await FrappeAPI.callMethod(
@@ -22,7 +22,7 @@ export const getAdvances = async (
       employee: employeeId,
     }
   );
-  return result as ApiAdvance[];
+  return result as ApiAdvanceResponse;
 };
 
 
