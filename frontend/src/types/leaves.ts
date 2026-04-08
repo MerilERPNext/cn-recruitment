@@ -6,6 +6,8 @@ export interface LeaveRequest {
   to_date: string;
   status: "Approved" | "Open" | "Rejected" | "Cancelled" | "Pending";
   employee_name: string;
+  employee?: string;
+
   description?: string;
   department?: string;
   custom_reason?: string;
@@ -204,6 +206,7 @@ export interface MyLeaveRequestType {
   can_edit?: boolean;
   send_back_user?: string;
   todo_status: string;
+  due_date: string;
 }
 
 // types/leaves.ts

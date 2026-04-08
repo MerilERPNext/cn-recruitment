@@ -40,6 +40,7 @@ import ExpenseClaimDetailsModal from "./ExpenseClaimDetailsModal";
 import ExpensePolicyDrawer from "./ExpensePolicyDrawer";
 import { buildExpenseNavigationState } from "./expenseNavigationHelper";
 import { SharedExpenseCard, SharedExpensesRow } from "./SharedExpenses";
+import { COLUMN_SORT_CONFIG_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
 
 const getStatusBadgeClasses = (status: string) => {
   switch (status) {
@@ -318,7 +319,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
 
   return (
     <div
-      className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
+      className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
       style={{
         gridTemplateColumns: isPaidFilter
           ? "1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr"
@@ -1014,7 +1015,9 @@ const ExpensesList: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         {currentEmployee?.name && activeTab === "expenses" && (
-          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+          <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
+            columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_CLAIM}
+          >
             <DataListView
               queryKey={["expense-claims-all"]}
               customAPI={{

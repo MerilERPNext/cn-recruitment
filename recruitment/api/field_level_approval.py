@@ -152,7 +152,12 @@ def _get_doc(onboarding_name):
     try:
         return frappe.get_doc("Employee Onboarding", onboarding_name)
     except frappe.DoesNotExistError:
-        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
+        return None
+
+
+def _is_new_doc_name(name):
+    """Returns True if the name looks like a temporary unsaved Frappe doc name."""
+    return name and name.startswith("new-")
 
 
 def _load_approval_list(doc):
@@ -228,8 +233,23 @@ def initialize_approval_json(onboarding_name):
     Reads all fields from meta (including section info) and seeds
     custom_field_approval_json.  Existing per-field statuses preserved.
     """
+    # Guard against temp names for new unsaved documents
+    if _is_new_doc_name(onboarding_name):
+        return {
+            "status":  "error",
+            "message": _("Document has not been saved yet. Please save first."),
+            "data":    [],
+        }
+
     frappe.has_permission("Employee Onboarding", "write", throw=True)
-    doc          = _get_doc(onboarding_name)
+    doc = _get_doc(onboarding_name)
+    if not doc:
+        return {
+            "status":  "error",
+            "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
+            "data":    [],
+        }
+
     existing_map = {e["fieldname"]: e for e in _load_approval_list(doc) if "fieldname" in e}
     merged       = _build_approval_list(doc, existing_map)
     _save_list(doc, merged)

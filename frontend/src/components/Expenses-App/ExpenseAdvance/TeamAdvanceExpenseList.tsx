@@ -10,6 +10,7 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceApprovalCard from "./AdvanceApprovalCard";
 import TeamAdvanceDetailView from "./TeamAdvanceDetailView";
+import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 
 const TeamAdvanceExpenseList = () => {
   const { data: currentUser } = useCurrentUser();
@@ -32,7 +33,7 @@ const TeamAdvanceExpenseList = () => {
       if (request?.todo_id) {
         const computedStatus =
           request.todo_status === "Closed" &&
-          request.reference_document.custom_final_status !== "Rejected"
+            request.reference_document.custom_final_status !== "Rejected"
             ? "Approved"
             : request.reference_document.custom_final_status;
 
@@ -58,28 +59,28 @@ const TeamAdvanceExpenseList = () => {
   const { isDesktop } = useScreenSize();
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Advance ID",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Select",
+      "Advance Id",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "Actions",
-      ]
+      "Actions",
+    ]
     : [
-        "Advance ID",
-        "Employee",
-        "Department",
-        "Advance Amount",
-        "Due Date",
-        "Status",
-        ...(activeStatus === "Approved" ? ["Paid Status"] : []),
+      "Advance Id",
+      "Employee",
+      "Department",
+      "Advance Amount",
+      "Due Date",
+      "Status",
+      ...(activeStatus === "Approved" ? ["Paid Status"] : []),
 
-        "Actions",
-      ];
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? activeStatus === "Approved"
@@ -136,7 +137,9 @@ const TeamAdvanceExpenseList = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
+          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_ADVANCE(isBulkSelectEnabled, activeStatus === "Approved")}
+        >
           {currentUser?.name && (
             <ApprovalList
               doctype={"Employee Advance"}

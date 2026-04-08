@@ -38,16 +38,22 @@ import {
 } from "../hooks/useAttendance";
 import useCurrentUser from "../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
 import { useEmployeeWithFallback } from "../hooks/useEmployeeWithFallback";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import useLogout from "../hooks/useLogout";
 import { useGetUserNotices } from "../hooks/useNotices";
 import { useRequestPasswordReset } from "../hooks/useResetPassword";
+import { useGetUiPermission } from "../hooks/userUiPermission";
+import { useShiftRequestConfig } from "../hooks/useShift";
 import { CustomError } from "../types/attendance";
 import { errorResponseFormater } from "../utils/errorResponseFormater";
 import { formatTimeSafe, formatTo24HourTime } from "../utils/helperUtils";
+import { isActionEnabled } from "../utils/uiPermission";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
+import AdvanceForm from "./Compansation/Advances/AdvanceForm";
+import Modal from "./Compansation/Advances/commonModal";
+import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
 import MicroAppInDashboard from "./DashboardComponent/MicroAppInDashboard";
 import TasksAwaiting from "./DashboardComponent/TasksAwaiting";
 import EmployeeFallback from "./EmployeeFallback";
@@ -66,13 +72,6 @@ import { NoticeSlide } from "./shared/molecules/NoticeSlide";
 import SearchMembers from "./shared/SearchMembers";
 import ShiftRequestFormModal from "./ShiftRequest/ShiftRequestFormModal";
 import ViewingAsBanner from "./ViewingAsBanner";
-import { useGetUiPermission } from "../hooks/userUiPermission";
-import { isActionEnabled } from "../utils/uiPermission";
-import CreateLoanDialog from "./Compansation/Loan/component/CreateLoanDailog";
-import Modal from "./Compansation/Advances/commonModal";
-import AdvanceForm from "./Compansation/Advances/AdvanceForm";
-import { useCheckAdvancePolicy } from "../hooks/useEmployeeAdvances";
-import { useShiftRequestConfig } from "../hooks/useShift";
 
 export default function DesktopDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -99,14 +98,26 @@ export default function DesktopDashboard() {
     setShowShiftRequestModal(true);
   };
 
-  const { data: userId } = useLoggedInUser();
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
-    useCurrentEmployeeAllDetails(userId || "");
+    useCurrentEmployeeAllDetails(undefined, undefined, [
+      "name",
+      "employee_name",
+      "employee",
+      "department",
+      "company",
+      "date_of_joining",
+      "status",
+      "image",
+      "custom_designation_title",
+      "company_email",
+      "personal_email",
+      "user_id",
+    ]);
 
   const { data: employeeShift } = useGetEmployeeShift(
-    currentEmployee?.user_id || ""
+    currentEmployee?.user_id || "",
   );
-  const loginUserEmail = userId || "";
+  const loginUserEmail = currentEmployee?.user_id || "";
   const mutation = useRequestPasswordReset();
   const handleReset = () => {
     const email = loginUserEmail;
@@ -117,7 +128,7 @@ export default function DesktopDashboard() {
       onError: (error: any) => {
         const formatedError = errorResponseFormater(
           error,
-          "Failed to send password reset email!"
+          "Failed to send password reset email!",
         );
         toast.error(formatedError);
       },
@@ -142,7 +153,7 @@ export default function DesktopDashboard() {
     isRefetching,
   } = useHomeSummaryDetails(currentEmployee?.user_id || "", encodedFilters);
   const { data: canShowClockIn } = useCanShowClockIn(
-    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {}
+    currentEmployee?.user_id ? { user: currentEmployee.user_id } : {},
   );
   const { mutate: clockInCheckOutMutation, isPending: clockInCheckOutPending } =
     useClockInOutService();
@@ -153,16 +164,16 @@ export default function DesktopDashboard() {
     ? checkIns.sort((a, b) =>
         compareAsc(
           parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
+          parseISO(b.time.replace(" ", "T")),
+        ),
       )[0]
     : undefined;
   const lastCheckOut = checkOuts.length
     ? checkOuts.sort((a, b) =>
         compareDesc(
           parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
+          parseISO(b.time.replace(" ", "T")),
+        ),
       )[0]
     : undefined;
 
@@ -171,8 +182,8 @@ export default function DesktopDashboard() {
       ? [...homeSummary].sort((a, b) =>
           compareDesc(
             parseISO(a.time.replace(" ", "T")),
-            parseISO(b.time.replace(" ", "T"))
-          )
+            parseISO(b.time.replace(" ", "T")),
+          ),
         )[0]
       : undefined;
 
@@ -229,8 +240,8 @@ export default function DesktopDashboard() {
     const sortedLogs = [...homeSummary].sort((a, b) =>
       compareAsc(
         parseISO(a.time.replace(" ", "T")),
-        parseISO(b.time.replace(" ", "T"))
-      )
+        parseISO(b.time.replace(" ", "T")),
+      ),
     );
 
     let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -273,10 +284,10 @@ export default function DesktopDashboard() {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking in"
+              e?.response?.data?.message?.error || "Error while Clocking in",
             );
           },
-        }
+        },
       );
     } else {
       clockInCheckOutMutation(
@@ -292,10 +303,10 @@ export default function DesktopDashboard() {
           },
           onError: (e: CustomError) => {
             toast.error(
-              e?.response?.data?.message?.error || "Error while Clocking out"
+              e?.response?.data?.message?.error || "Error while Clocking out",
             );
           },
-        }
+        },
       );
     }
   };
@@ -311,8 +322,8 @@ export default function DesktopDashboard() {
       const sortedLogs = [...homeSummary].sort((a, b) =>
         compareAsc(
           parseISO(a.time.replace(" ", "T")),
-          parseISO(b.time.replace(" ", "T"))
-        )
+          parseISO(b.time.replace(" ", "T")),
+        ),
       );
 
       let currentCheckIn: (typeof sortedLogs)[0] | null = null;
@@ -343,7 +354,7 @@ export default function DesktopDashboard() {
     }
 
     const percentage = Math.round(
-      (totalWorkedMinutes / totalShiftMinutes) * 100
+      (totalWorkedMinutes / totalShiftMinutes) * 100,
     );
     return Math.min(percentage, 100);
   };
@@ -351,70 +362,71 @@ export default function DesktopDashboard() {
   const contentMarginLeft = isSidebarExpanded ? "ml-64" : "ml-20";
 
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
-    ["System User", "Payroll Manager", "System Manager"].includes(role.role)
+    ["System User", "Payroll Manager", "System Manager"].includes(role.role),
   );
 
   const currentUserIsAdmin = currentUser?.roles?.some(
-    (role) => "Administrator" === role.role
+    (role) => "Administrator" === role.role,
   );
   const { data: userUiPermission } = useGetUiPermission();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const user = currentEmployee;
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
 
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
-    effectiveEmployeeId || ""
+    effectiveEmployeeId || "",
   );
   const { data: ExpenseAdvanceAllowed } = useCheckAdvancePolicy(
-    effectiveEmployeeId || ""
+    effectiveEmployeeId || "",
   );
   const { data: shiftRequestConfig } = useShiftRequestConfig(
-    effectiveEmployeeId || "");
+    effectiveEmployeeId || "",
+  );
 
   const isShiftConfigEnabled =
     shiftRequestConfig?.shift_change_requests ||
     shiftRequestConfig?.shift_change_and_attendance_requests;
-    
+
   const canRequestOvertime = isActionEnabled(
     userUiPermission,
     "create_overtime_request",
-    "Planned Overtime"
+    "Planned Overtime",
   );
 
   const canLeaveRequest = isActionEnabled(
     userUiPermission,
     "request_leave",
-    "My Requests"
+    "My Requests",
   );
   const canAttendaneRequest = isActionEnabled(
     userUiPermission,
     "create_attendance_request",
-    "Attendance Summary"
+    "Attendance Summary",
   );
   const canShiftChangeRequest = isActionEnabled(
     userUiPermission,
     "request_shift_change",
-    "All Shift"
+    "All Shift",
   );
   const canLoanRequest = isActionEnabled(
     userUiPermission,
     "create_loan",
-    "My Loan Requests"
+    "My Loan Requests",
   );
   const canEmployeeAdvanceRequest = isActionEnabled(
     userUiPermission,
     "create_advance",
-    "My Advances"
+    "My Advances",
   );
   const canExpenseRequest = isActionEnabled(
     userUiPermission,
     "expense_claim_request",
-    "Expense Claims"
+    "Expense Claims",
   );
 
   const canExpenseAdvanceRequest = isActionEnabled(
     userUiPermission,
     "request_expense_advance",
-    "My Advances"
+    "My Advances",
   );
 
   const actions = [
@@ -634,7 +646,7 @@ export default function DesktopDashboard() {
                           color="body2"
                           className="truncate block"
                         >
-                          {currentEmployee?.custom_designation_name || "N/A"}
+                          {currentEmployee?.custom_designation_title || "N/A"}
                         </Typography>
                         <div className="flex items-center gap-2">
                           <Typography
@@ -979,7 +991,7 @@ export default function DesktopDashboard() {
                         bgColor={isCurrentlyCheckedIn ? "primary" : "success"}
                         onClick={() =>
                           handleClockInOut(
-                            isCurrentlyCheckedIn ? "clockOut" : "clockIn"
+                            isCurrentlyCheckedIn ? "clockOut" : "clockIn",
                           )
                         }
                         disabled={
@@ -991,8 +1003,8 @@ export default function DesktopDashboard() {
                         {clockInCheckOutPending || isRefetching
                           ? "Processing…"
                           : isCurrentlyCheckedIn
-                          ? "Clock Out"
-                          : "Clock In"}
+                            ? "Clock Out"
+                            : "Clock In"}
                       </Button>
                     </div>
                   )}
@@ -1051,8 +1063,8 @@ export default function DesktopDashboard() {
                             action.color === "primary"
                               ? "bg-primary-100 text-primary-600"
                               : action.color === "purple"
-                              ? "bg-purple-100 text-purple-600"
-                              : "bg-success-100 text-success"
+                                ? "bg-purple-100 text-purple-600"
+                                : "bg-success-100 text-success"
                           }`}
                         >
                           <action.icon className="w-5 h-5 shadow-sm" />
