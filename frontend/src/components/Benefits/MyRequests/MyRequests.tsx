@@ -23,7 +23,7 @@ import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
@@ -41,6 +41,51 @@ import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { queryClient } from "../../../providers/QueryProvider";
 
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "earning_component",
+    getValue: (item: BenefitPayslip) =>
+      item.earning_component ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "claim_date",
+    getValue: (item: BenefitPayslip) =>
+      item?.claim_date ?? "",
+  }, {
+    sortable: true,
+    type: "date",
+    field: "claimed_amount",
+    getValue: (item: BenefitPayslip) =>
+      item?.claimed_amount ?? "",
+  },
+  {
+    sortable: true,
+    field: "custom_taxable_amount",
+    getValue: (item: BenefitPayslip) => item.custom_taxable_amount ?? 0,
+  },
+  {
+    sortable: true,
+    field: "custom_non_taxable_amount",
+    getValue: (item: BenefitPayslip) => item.custom_non_taxable_amount ?? 0,
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  },
+];
+
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [showBenefitForm, setShowBenefitForm] = useState(false);
@@ -51,6 +96,7 @@ const MyRequests: React.FC = () => {
     "request_benefit",
     "My Requests",
   );
+
 
 
   const { data: employeeIdCard, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
@@ -241,6 +287,7 @@ const MyRequests: React.FC = () => {
             "Status",
             "Actions",
           ]}
+          columnSortConfig={COLUMN_SORT_CONFIG}
         >
           <DataListView
             queryKey={[
