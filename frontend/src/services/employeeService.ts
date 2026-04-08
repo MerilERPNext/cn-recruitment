@@ -1,30 +1,30 @@
-import { FrappeAPI } from "../utils/frappeAPI";
 import {
+  AttendanceFieldPermissions,
   Employee,
   EmployeeIdCard,
+  EmployeeIdCardResponse,
   EmployeeListItem,
   EmployeeNode,
   IReason,
-  AttendanceFieldPermissions,
-  EmployeeIdCardResponse,
 } from "../types/employee";
 import { FilterCondition } from "../types/frappe";
 import {
   debugEmployeeData,
   validateEmployeeFields,
 } from "../utils/employeeDebug";
+import { FrappeAPI } from "../utils/frappeAPI";
 import logger from "../utils/logger";
 
 function hasRequiredProperties<T extends Record<string, unknown>>(
   obj: unknown,
-  requiredProps: (keyof T)[]
+  requiredProps: (keyof T)[],
 ): obj is T {
   if (!obj || typeof obj !== "object") return false;
 
   const objRecord = obj as Record<string, unknown>;
 
   return requiredProps.every(
-    (prop) => prop in objRecord && objRecord[prop as string] !== undefined
+    (prop) => prop in objRecord && objRecord[prop as string] !== undefined,
   );
 }
 
@@ -32,7 +32,7 @@ function hasRequiredProperties<T extends Record<string, unknown>>(
 function isEmployee(obj: unknown): obj is Employee {
   if (!obj || typeof obj !== "object") {
     console.warn(
-      "isEmployee validation failed: object is null, undefined, or not an object"
+      "isEmployee validation failed: object is null, undefined, or not an object",
     );
     return false;
   }
@@ -48,8 +48,8 @@ function isEmployee(obj: unknown): obj is Employee {
     if (typeof employee[field] !== "string") {
       console.warn(
         `isEmployee validation failed: field '${field}' is not a string, got ${typeof employee[
-        field
-        ]}`
+          field
+        ]}`,
       );
       return false;
     }
@@ -62,11 +62,11 @@ function isEmployee(obj: unknown): obj is Employee {
   if (
     employee.status &&
     !["Active", "Inactive", "Suspended", "Left"].includes(
-      employee.status as string
+      employee.status as string,
     )
   ) {
     console.warn(
-      `isEmployee validation failed: invalid status '${employee.status}'`
+      `isEmployee validation failed: invalid status '${employee.status}'`,
     );
     return false;
   }
@@ -98,9 +98,10 @@ function isEmployeeListItemArray(obj: unknown): obj is EmployeeListItem[] {
 
 export class EmployeeService {
   // Get a single employee by ID/name
-  static async getEmployee(employeeId: string): Promise<Employee | EmployeeIdCardResponse> {
+  static async getEmployee(
+    employeeId: string,
+  ): Promise<Employee | EmployeeIdCardResponse> {
     try {
-
       let result;
 
       // Try the primary API method first
@@ -109,12 +110,12 @@ export class EmployeeService {
           "recruitment.api.get_employee_details",
           {
             employee_id: employeeId,
-          }
+          },
         );
       } catch (primaryError) {
         console.warn(
           "Primary API method failed, trying fallback:",
-          primaryError
+          primaryError,
         );
 
         // Fallback: Try to get employee directly from doctype
@@ -123,7 +124,7 @@ export class EmployeeService {
         } catch (fallbackError) {
           console.error("Fallback API method also failed:", fallbackError);
           throw new Error(
-            `No employee found with ID: ${employeeId}. Please verify the employee ID is correct.`
+            `No employee found with ID: ${employeeId}. Please verify the employee ID is correct.`,
           );
         }
       }
@@ -132,10 +133,10 @@ export class EmployeeService {
       if (result === undefined || result === null) {
         console.error(
           "API returned undefined/null for employee ID:",
-          employeeId
+          employeeId,
         );
         throw new Error(
-          `No employee data found for ID: ${employeeId}. The employee may not exist.`
+          `No employee data found for ID: ${employeeId}. The employee may not exist.`,
         );
       }
 
@@ -144,7 +145,7 @@ export class EmployeeService {
         console.error("Data type:", typeof result);
         console.error("Data content:", JSON.stringify(result));
         throw new Error(
-          `Invalid employee data structure received for ID: ${employeeId}`
+          `Invalid employee data structure received for ID: ${employeeId}`,
         );
       }
 
@@ -156,20 +157,20 @@ export class EmployeeService {
         throw error;
       }
       throw new Error(
-        `Failed to fetch employee details for ID: ${employeeId}. Please try again or contact support.`
+        `Failed to fetch employee details for ID: ${employeeId}. Please try again or contact support.`,
       );
     }
   }
 
   // Search employees by name
   static async searchEmployees(
-    searchTerm: string
+    searchTerm: string,
   ): Promise<EmployeeListItem[]> {
     const result = await FrappeAPI.callMethod(
       "recruitment.api.search_employees",
       {
         search_term: searchTerm,
-      }
+      },
     );
 
     if (!isEmployeeListItemArray(result)) {
@@ -184,47 +185,49 @@ export class EmployeeService {
       "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_hierarchy",
       {
         company: company,
-      }
+      },
     );
     return result as EmployeeNode[];
   }
 
   static async getEmployeeSubordinateHierarchy(
-    employee: string
+    employee: string,
   ): Promise<EmployeeNode[]> {
     const result = await FrappeAPI.callMethod(
       "cn_hrms_core.cn_hrms_core.apis.employee_hierarchy.get_employee_subordinates",
-      { employee: employee }
+      { employee: employee },
     );
     return result as EmployeeNode[];
   }
   static async getEmployeeReportees(): Promise<Employee[]> {
     const result = await FrappeAPI.getMethod(
-      "cn_leave_shift_managment.api.get_reportees"
+      "cn_leave_shift_managment.api.get_reportees",
     );
     return result as Employee[];
   }
 
   // Get current user's employee record
-  static async getCurrentEmployee(): Promise<Employee | EmployeeIdCardResponse | null> {
+  static async getCurrentEmployee(): Promise<
+    Employee | EmployeeIdCardResponse | null
+  > {
     try {
       let result;
 
       // Try the primary API method first
       try {
         result = await FrappeAPI.callMethod(
-          "recruitment.api.get_current_employee"
+          "recruitment.api.get_current_employee",
         );
       } catch (primaryError) {
         console.warn(
           "Primary API method failed, trying fallback:",
-          primaryError
+          primaryError,
         );
 
         // Fallback: Try to get employee by current user
         try {
           const userResult = await FrappeAPI.callMethod(
-            "frappe.auth.get_logged_user"
+            "frappe.auth.get_logged_user",
           );
           if (userResult && typeof userResult === "string") {
             const employeeList = await FrappeAPI.getDocumentList("Employee", {
@@ -248,7 +251,7 @@ export class EmployeeService {
       // Handle undefined/null responses
       if (result === undefined || result === null) {
         console.warn(
-          "API returned undefined/null for current employee. User may not have an employee record."
+          "API returned undefined/null for current employee. User may not have an employee record.",
         );
         return null;
       }
@@ -266,7 +269,7 @@ export class EmployeeService {
       console.error("Error fetching current employee:", error);
       console.error(
         "Error details:",
-        error instanceof Error ? error.message : error
+        error instanceof Error ? error.message : error,
       );
 
       throw error;
@@ -275,19 +278,20 @@ export class EmployeeService {
   static async getCurrentEmployeeAllDetails(
     user_id: string,
     name?: string,
+    fields?: string[],
   ): Promise<Employee | null> {
     try {
       logger.info("Fetching employee details for user_id", { user_id });
 
       const result = await FrappeAPI.getDocumentList("Employee", {
-        fields: ["*"],
+        fields: fields && fields.length > 0 ? fields : ["*"],
         filters: name ? [["name", "=", name]] : [["user_id", "=", user_id]],
       });
 
       // Debug the API response
       debugEmployeeData(
         result,
-        `getCurrentEmployeeAllDetails API response for user_id: ${user_id}`
+        `getCurrentEmployeeAllDetails API response for user_id: ${user_id}`,
       );
 
       // Handle different response structures
@@ -339,7 +343,7 @@ export class EmployeeService {
             missingFields: validation.missingFields,
             invalidFields: validation.invalidFields,
             receivedData: employeeData,
-          }
+          },
         );
 
         // Try to provide helpful suggestions
@@ -355,7 +359,7 @@ export class EmployeeService {
               .filter(
                 (key) =>
                   key.toLowerCase().includes("name") ||
-                  key.toLowerCase().includes("id")
+                  key.toLowerCase().includes("id"),
               )
               .map((key) => ({ key, value: emp[key] })),
           });
@@ -372,7 +376,7 @@ export class EmployeeService {
     }
   }
   static async getCurrentEmployeeAllDetailsWithParams(
-    filters: FilterCondition[]
+    filters: FilterCondition[],
   ): Promise<Employee | null> {
     try {
       logger.info("Fetching employee details for filters", { filters });
@@ -385,7 +389,7 @@ export class EmployeeService {
       // Debug the API response
       debugEmployeeData(
         result,
-        `getCurrentEmployeeAllDetails API response for filters: ${filters}`
+        `getCurrentEmployeeAllDetails API response for filters: ${filters}`,
       );
 
       // Handle different response structures
@@ -428,14 +432,11 @@ export class EmployeeService {
 
       // Validate the employee data
       if (!isEmployee(employeeData)) {
-        logger.error(
-          "getCurrentEmployeeAllDetails validation failed",
-          {
-            missingFields: validation.missingFields,
-            invalidFields: validation.invalidFields,
-            receivedData: employeeData,
-          }
-        );
+        logger.error("getCurrentEmployeeAllDetails validation failed", {
+          missingFields: validation.missingFields,
+          invalidFields: validation.invalidFields,
+          receivedData: employeeData,
+        });
 
         // Try to provide helpful suggestions
         if (
@@ -449,7 +450,7 @@ export class EmployeeService {
               .filter(
                 (key) =>
                   key.toLowerCase().includes("name") ||
-                  key.toLowerCase().includes("id")
+                  key.toLowerCase().includes("id"),
               )
               .map((key) => ({ key, value: emp[key] })),
           });
@@ -472,7 +473,7 @@ export class EmployeeService {
         "recruitment.payroll_api.address_details",
         {
           user_id: user_id,
-        }
+        },
       );
 
       return result;
@@ -483,12 +484,12 @@ export class EmployeeService {
   }
 
   static async updateCurrentEmployeeProfile(
-    employeeDetails: unknown
+    employeeDetails: unknown,
   ): Promise<unknown> {
     try {
       const result = await FrappeAPI.callMethod(
         "cn_hrms_core.cn_hrms_core.apis.profile_change_request.save_profile_change",
-        { data: employeeDetails }
+        { data: employeeDetails },
       );
       return result;
     } catch (error) {
@@ -498,20 +499,35 @@ export class EmployeeService {
   }
 
   // Transform Employee data to EmployeeIdCard format
-  static transformToIdCard(employee: Employee | EmployeeIdCardResponse): EmployeeIdCard {
+  static transformToIdCard(
+    employee: Employee | EmployeeIdCardResponse,
+  ): EmployeeIdCard {
     try {
       return {
         id: employee.name || "Unknown",
         name: employee.employee_name || employee.first_name || "Unknown",
         employee_name:
           employee.employee_name || employee.first_name || "Unknown",
-        department: ('department_name' in employee && employee.department_name) || employee.department || "Not Specified",
-        designation: ('designation_name' in employee && employee.designation_name) || employee.designation || "Not Specified",
-        location: ('branch_name' in employee && employee.branch_name) || employee.branch || employee.company || "Not Specified",
+        department:
+          ("department_name" in employee && employee.department_name) ||
+          employee.department ||
+          "Not Specified",
+        designation:
+          ("designation_name" in employee && employee.designation_name) ||
+          employee.designation ||
+          "Not Specified",
+        location:
+          ("branch_name" in employee && employee.branch_name) ||
+          employee.branch ||
+          employee.company ||
+          "Not Specified",
         startDate: employee.date_of_joining || "Not Available",
         avatar: employee.image || undefined, // Don't set default here, let the component handle it
         status: employee.status || "Active",
-        company: ('company_name' in employee && employee.company_name) || employee.company || "Not Specified",
+        company:
+          ("company_name" in employee && employee.company_name) ||
+          employee.company ||
+          "Not Specified",
         employee_number: employee.employee_number || employee.name || "N/A",
         contact: employee.cell_number || undefined,
         email:
@@ -571,7 +587,7 @@ export class EmployeeService {
       limitStart: limitStart,
       filters: filters,
       orFilters: orFilters,
-      orderBy: orderBy
+      orderBy: orderBy,
     });
     const data = await response;
     if (!response || data?.data?.length === 0) {
@@ -581,18 +597,23 @@ export class EmployeeService {
   }
   static async getSearchMembers(
     filters?: string,
-    limit?: number
+    limit?: number,
   ): Promise<Employee[]> {
-    const response = FrappeAPI.getMethod("cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees", {
-      limit: limit,
-      status: 'Active',
-      query: filters,
-    });
+    const response = FrappeAPI.getMethod(
+      "cn_hrms_core.cn_hrms_core.apis.employee_search.search_employees",
+      {
+        limit: limit,
+        status: "Active",
+        query: filters,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
   static async getAttendanceFieldReasonAndMessagePermissions(): Promise<AttendanceFieldPermissions> {
-    const response = FrappeAPI.getMethod("cn_leave_shift_managment.api.get_attendance_field_settings");
+    const response = FrappeAPI.getMethod(
+      "cn_leave_shift_managment.api.get_attendance_field_settings",
+    );
     const data = await response;
     return data as AttendanceFieldPermissions;
   }
@@ -612,74 +633,85 @@ export class EmployeeService {
   static async resetPassword(
     employee: string,
     new_password: string,
-    send_mail: boolean
+    send_mail: boolean,
   ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.reset_employee_password", {
-      employee: employee,
-      new_password: new_password,
-      send_mail: send_mail,
-    });
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.reset_employee_password",
+      {
+        employee: employee,
+        new_password: new_password,
+        send_mail: send_mail,
+      },
+    );
     const data = await response;
     return data;
   }
-  static async updateEmployeeSelfService(
-    employee?: string,
-    status?: string
-  ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_employee_self_service_role", {
-      employee: employee,
-      status: status,
-    });
+  static async updateEmployeeSelfService(employee?: string, status?: string) {
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.change_employee_self_service_role",
+      {
+        employee: employee,
+        status: status,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
   static async updateProbationPeriod(
     employees: string[],
-    probation_period: string
+    probation_period: string,
   ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_probation_period", {
-      employees: employees,
-      probation_period: probation_period,
-    });
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.change_probation_period",
+      {
+        employees: employees,
+        probation_period: probation_period,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
-  static async updateHRBP(
-    employees: string[],
-    hrbp: string,
-    date: string
-  ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_hrbp", {
-      employees: employees,
-      hrbp: hrbp,
-      date: date,
-    });
+  static async updateHRBP(employees: string[], hrbp: string, date: string) {
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.change_hrbp",
+      {
+        employees: employees,
+        hrbp: hrbp,
+        date: date,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
   static async updateDottedLineManager(
     employees: string[],
     dotted_line_manager: string,
-    date: string
+    date: string,
   ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.change_dotted_line_manager", {
-      employees: employees,
-      dotted_line_manager: dotted_line_manager,
-      date: date,
-    });
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.change_dotted_line_manager",
+      {
+        employees: employees,
+        dotted_line_manager: dotted_line_manager,
+        date: date,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
   static async updateEmployeeWeekOff(
     employee: string,
     new_week_off: string,
-    date: string
+    date: string,
   ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.api.change_employee_week_off", {
-      employee: employee,
-      new_week_off: new_week_off,
-      effective_date: date,
-    });
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.api.change_employee_week_off",
+      {
+        employee: employee,
+        new_week_off: new_week_off,
+        effective_date: date,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
@@ -687,19 +719,20 @@ export class EmployeeService {
     employees: string[],
     deactivate_reason: string,
     comment: string,
-    notice_period_start_date: string
+    notice_period_start_date: string,
   ) {
-    const response = FrappeAPI.callMethod("cn_leave_shift_managment.employee_directory.deactivate_employee", {
-      employees: employees,
-      deactivate_reason: deactivate_reason,
-      comment: comment,
-      notice_period_start_date: notice_period_start_date,
-    });
+    const response = FrappeAPI.callMethod(
+      "cn_leave_shift_managment.employee_directory.deactivate_employee",
+      {
+        employees: employees,
+        deactivate_reason: deactivate_reason,
+        comment: comment,
+        notice_period_start_date: notice_period_start_date,
+      },
+    );
     const data = await response;
     return data as Employee[];
   }
 }
-
-
 
 export default EmployeeService;
