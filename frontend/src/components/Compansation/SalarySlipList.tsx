@@ -21,7 +21,7 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import DataListView from "../DataListView"; // ← replaced FrappeListView
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
-import CardTable from "../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import CustomDropdown from "../shared/CustomDropdown";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
@@ -49,13 +49,40 @@ type SalarySlipRecord = {
   [key: string]: any;
 };
 
-// ---- DataListView requires a fetchFunction or customAPI.
-// We use the same frappe doctype fetch pattern that FrappeListView used internally.
-// Adjust the import path to wherever your frappe fetch service lives in your project.
-// import { frappeService } from "../../services/frappeService"; // adjust if needed
-
-
 const SALARY_SLIP_SEARCH_FIELDS = ["employee", "status", "posting_date"];
+ const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false,
+  },
+    {
+      sortable: true,
+      type: "date",
+      field: "start_date",
+      getValue: (item: any) => item.start_date ?? "",
+    },
+ 
+    {
+      sortable: true,
+      type: "date",
+      field: "end_date",
+      getValue: (item: any) => item.end_date ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "gross_pay",
+      getValue: (item: any) => item.gross_pay ?? 0,
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "net_pay",
+      getValue: (item: any) => item.net_pay ?? 0,
+    },
+    {
+      sortable: false,
+    },
+  ];
 
 // ---- Main Component ----
 const SalarySlipsList = () => {
@@ -252,6 +279,7 @@ const SalarySlipsList = () => {
             "Actions",
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnSortConfig={SALARY_SORT_CONFIG}
         >
       
           <DataListView<SalarySlipRecord>
