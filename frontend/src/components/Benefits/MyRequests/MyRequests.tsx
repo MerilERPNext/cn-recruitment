@@ -333,10 +333,13 @@ const MyRequests: React.FC = () => {
               },
             ]}
             onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
+            clientFilterFn={(list) =>
+              list.filter(
+                (item) =>
+                  Array.isArray(item?.todo_list) && item.todo_list.length > 0,
+              )
+            }
             ItemComponent={(props: { item: BenefitPayslip }) => {
-              if (!props?.item?.todo_list || props?.item?.todo_list?.length === 0) {
-                return null;
-              }
               return (
                 <BenefitSlipItem
                   handleEdit={handleEdit}
