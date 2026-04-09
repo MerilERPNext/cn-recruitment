@@ -92,8 +92,9 @@ const MyProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined,
-    ["user_id",
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: [
+      "user_id",
       "employee_name",
       "image",
       "designation",
@@ -123,7 +124,7 @@ const MyProfile: React.FC = () => {
       "bank_name",
       "bank_ac_no",
       "ifsc_code"
-    ]);
+    ]});
 
   const { data: userAddress } = useCurrentEmployeeAddress(user?.user_id || "");
 

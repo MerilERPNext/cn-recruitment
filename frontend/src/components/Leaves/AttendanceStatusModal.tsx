@@ -9,7 +9,9 @@ const AttendanceStatusModal: React.FC<{
   fromDate: string;
   toDate: string;
 }> = ({ isOpen, onClose, fromDate, toDate }) => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const {
     data: attendanceStatus,
     isLoading,

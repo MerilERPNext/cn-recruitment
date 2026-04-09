@@ -65,7 +65,9 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     data: employeeDetails,
     isLoading: employeeLoading,
     error: employeeError,
-  } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "shift_request_approver"]);
+  } = useCurrentEmployeeAllDetails({
+    fields: ["name", "shift_request_approver"]
+  });
 
   const loading = useLoadingOverlay(); // ✅ overlay hook
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();

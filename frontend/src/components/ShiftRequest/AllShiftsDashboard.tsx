@@ -155,11 +155,10 @@ const TeamShiftList = () => {
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name ?? "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name ?? "",
+    fields: ["employee"],
+});
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleRefetchComplete = useCallback(() => {

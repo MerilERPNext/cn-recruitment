@@ -37,11 +37,10 @@ export const EditAttendance = ({
   const formInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-    undefined,
-    ["user_id"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name as string,
+    fields: ["user_id"],
+  });
   const { data, isLoading: isDataLoading } = useAttendanceById(open, [
     ["name", "=", requestId],
     // ["employee", "=", effectiveEmployeeId],

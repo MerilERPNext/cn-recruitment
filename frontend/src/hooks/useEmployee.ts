@@ -92,23 +92,25 @@ export const useCurrentEmployee = (): UseQueryResult<
 export const useCurrentEmployeeAllDetails = <
   T extends keyof Employee = never
 >(
-  user_id?: string,
-  name?: string,
-  fields?: T[],
+  params?: {
+    user_id?: string;
+    name?: string;
+    fields?: T[];
+  }
 ) => {
   // Internally resolve the logged-in user when no user_id is supplied
   const { data: loggedInUserId } = useLoggedInUser({
-    enabled: !user_id || user_id.trim() === "",
+    enabled: !params?.user_id || params.user_id.trim() === "",
   });
 
   // The effective user id: prefer the explicit arg, fall back to logged-in user
   const effectiveUserId =
-    user_id && user_id.trim() !== "" ? user_id : (loggedInUserId ?? "");
+    params?.user_id && params.user_id.trim() !== "" ? params.user_id : (loggedInUserId ?? "");
 
   type ResultType = [T] extends [never] ? Employee : Pick<Employee, T>;
 
   return useQuery<ResultType | null, Error>({
-    queryKey: ["currentEmployeeAllDetails", effectiveUserId, name, fields],
+    queryKey: ["currentEmployeeAllDetails", effectiveUserId, params?.name, params?.fields],
     queryFn: async () => {
       if (
         !effectiveUserId ||
@@ -117,14 +119,14 @@ export const useCurrentEmployeeAllDetails = <
       ) {
         console.warn(
           "useCurrentEmployeeAllDetails: could not resolve a valid user_id",
-          { user_id, loggedInUserId },
+          { user_id: params?.user_id, loggedInUserId },
         );
         return null;
       }
       return EmployeeService.getCurrentEmployeeAllDetails(
         effectiveUserId,
-        name,
-        fields,
+        params?.name,
+        params?.fields,
       ) as Promise<ResultType | null>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

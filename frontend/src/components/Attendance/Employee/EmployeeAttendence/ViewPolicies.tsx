@@ -20,11 +20,11 @@ const ViewPolicies = () => {
         useState<PolicyDrawerConfig | null>(null);
 
     const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string,
-        targetEmployeeId || "",
-        ["user_id", "custom_weekly_off", "employee", "custom_enable_web_clockin", "custom_allow_mobile_checkin"],
-    );
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+        user_id: currentUser?.name as string,
+        name: targetEmployeeId || "",
+        fields: ["user_id", "custom_weekly_off", "employee", "custom_enable_web_clockin", "custom_allow_mobile_checkin"],
+      });
     const { data: employeeShift } = useGetEmployeeShift(
         currentEmployee?.user_id || ""
     );

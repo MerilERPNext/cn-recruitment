@@ -30,7 +30,9 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
   const lastExpenseType = useRef<string | null>(null);
   const lastCalculatedUnits = useRef<CalculateExpenseParams | null>(null);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const employeeId = currentEmployee?.name;
 
   const mapStoredDataToForm = (storedData: any) => {

@@ -49,11 +49,10 @@ export function MyOvertimeDetails({
   } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-    undefined,
-    ["user_id"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name as string,
+    fields: ["user_id"],
+  });
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateOvertimeRejectionReason();

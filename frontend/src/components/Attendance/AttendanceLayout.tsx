@@ -19,7 +19,9 @@ const AttendanceLayoutContent: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { isSidebarOpen } = useSidebar();
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(

@@ -29,11 +29,10 @@ const EmploymentHistoryForm = ({
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name || "",
+    fields: ["employee"],
+  });
   const [formValues, setFormValues] = useState({
     company: "",
     department: "",

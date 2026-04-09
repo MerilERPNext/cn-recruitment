@@ -29,11 +29,10 @@ const ReportingDetailsForm = ({
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name || "",
+    fields: ["employee"],
+  });
   const { mutateAsync: addEmployeeReportingDetails } =
     useAddEmployeeReportingDetailsMutation();
 

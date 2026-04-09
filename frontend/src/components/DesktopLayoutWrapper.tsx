@@ -40,15 +40,16 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const { data: currentEmployeeByList, isLoading: currentEmpListIsLoading } =
-    useCurrentEmployeeAllDetails(undefined, undefined, [
-      "employee",
-      "name",
-      "employee_name",
+    useCurrentEmployeeAllDetails({
+      fields: [
+        "employee",
+        "name",
+        "employee_name",
       "first_name",
       "image",
       "company_email",
       "personal_email",
-    ]);
+    ]});
   const { data: currentEmployeeByMethod, isLoading: currentEmpMethodIsLoading } =
     useCurrentEmployee();
   const currentEmployee = currentEmployeeByList ?? currentEmployeeByMethod;

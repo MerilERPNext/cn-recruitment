@@ -19,11 +19,10 @@ import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-    undefined,
-    ["employee", "date_of_joining"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name || "",
+    fields: ["employee", "date_of_joining"]
+  });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
     useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");

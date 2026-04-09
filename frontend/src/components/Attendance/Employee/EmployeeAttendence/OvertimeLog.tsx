@@ -9,11 +9,10 @@ import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const OvertimeLog = () => {
     const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string,
-        undefined,
-        ["name"],
-    );
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+        user_id: currentUser?.name as string,
+        fields: ["name"],
+    });
     const { targetEmployeeId } = useTargetUser();
     const { data: overtimeLog, isError, isLoading, error } = useGetAllEmployeeOvertimeLog({
         employee: targetEmployeeId || currentEmployee?.name as string,

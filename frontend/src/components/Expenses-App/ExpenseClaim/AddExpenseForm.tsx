@@ -202,7 +202,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "employee_name", "company"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "employee_name", "company"]
+  });
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",

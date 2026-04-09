@@ -21,12 +21,10 @@ const NoticeDetails = () => {
     const params = useParams()
     const noticeId = params?.id as string
     const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string,
-        undefined,
-        ["user_id"],
-    );
-    console.log("-----------------------------", currentUser)
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+        user_id: currentUser?.name as string,
+        fields: ["user_id"]
+    });
 
     const {
         data: notice,

@@ -66,7 +66,9 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
   const { isDesktop } = useScreenSize();
 
   const employeeId = user?.employee ?? "";

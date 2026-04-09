@@ -33,11 +33,10 @@ const CheckInStatus = () => {
     const date = isValid(parsedDate) ? parsedDate : new Date();
     const formattedDate = format(date, "yyyy-MM");
     const { data: currentUser } = useCurrentUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string,
-        undefined,
-        ["employee"],
-    );
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+        user_id: currentUser?.name as string,
+        fields: ["employee"],
+    });
     const { targetEmployeeId } = useTargetUser();
 
     const monthOptions: MonthOption[] = generateMonthOptions(12);

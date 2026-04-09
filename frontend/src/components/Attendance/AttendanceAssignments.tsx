@@ -38,11 +38,10 @@ const AttendanceAssignments = ({
   const { targetEmployeeId } = useTargetUser();
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name || "",
+    fields: ["employee"],
+  });
 
   // Use either the passed list or single employee from context
   const targetEmployees = employees.length > 0

@@ -88,7 +88,9 @@ const SalarySlipsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);

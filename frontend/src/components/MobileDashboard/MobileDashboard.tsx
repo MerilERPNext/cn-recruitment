@@ -104,15 +104,16 @@ const MobileDashboard: React.FC = () => {
   }, []);
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string, undefined, [
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name as string,
+    fields: [
     "user_id",
     "employee_name",
     "company",
     "custom_allow_mobile_checkin",
     "employee"
   ]
-  );
+  });
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(

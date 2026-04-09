@@ -10,7 +10,9 @@ import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
-  const { data: employee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: employee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const currentEmployeeId = employee?.name;
   const navigate = useNavigate();
   const { setTargetEmployee, clearTargetEmployee } = useTargetUser();

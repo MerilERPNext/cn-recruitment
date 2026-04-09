@@ -9,7 +9,9 @@ import { NoDataFound } from "../shared/atoms/NoDataFound";
 import ShowHideButton from "./ui/ShowHideButton";
 
 const CTCSalaryUI = () => {
-  const { data: employee, isLoading: isEmpLoading } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: employee, isLoading: isEmpLoading } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   const employeeId = employee?.name;
   const { isDesktop } = useScreenSize();

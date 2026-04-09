@@ -19,7 +19,9 @@ import { useNavigate } from "react-router-dom";
 
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "company"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "company"]
+  });
   const createJobRequisition = useCreateJobRequisition();
   const navigate = useNavigate();
 

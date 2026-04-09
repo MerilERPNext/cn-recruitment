@@ -14,11 +14,10 @@ import { Typography } from "../../../shared/atoms/Typography";
 const AuditReport = () => {
     const { data: currentUser } = useCurrentUser();
 
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string,
-        undefined,
-        ["employee"],
-    );
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+        user_id: currentUser?.name as string,
+        fields: ["employee"],
+    });
 
     const { data: auditReports, isLoading, isError, error } = useGetAuditReport({
         employee: currentEmployee?.employee,
