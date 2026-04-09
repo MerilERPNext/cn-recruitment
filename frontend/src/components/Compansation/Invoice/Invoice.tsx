@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import Button from "../../shared/atoms/Button";
@@ -19,6 +19,14 @@ import ShowHideButton from "../ui/ShowHideButton";
 import { IoMdCloudUpload } from "react-icons/io";
 import DataListView from "../../DataListView";
 import NoDataFound from "../../shared/atoms/NoDataFound";
+import { useTaxSheetPayrollPriodsData } from "../../../hooks/useTaxSheet";
+import CustomDropdown from "../../shared/CustomDropdown";
+
+type PayrollPeriod = {
+  name: string;
+  start_date: string;
+  end_date: string;
+};
 
 const formatINR = (num: number) =>
   `${formatCurrency(num.toLocaleString("en-IN"))}`;
@@ -28,7 +36,6 @@ const titles = [
   "Status",
   "Invoice Date",
   "Due Date",
-  "Customer",
   "Sub Total",
   "Total Amount",
   "Attach Proof",
@@ -36,7 +43,6 @@ const titles = [
 ];
 
 const columnWidths = [
-  "1fr",
   "1fr",
   "1fr",
   "1fr",
@@ -52,10 +58,32 @@ export default function Invoice() {
   const [hideAmount, setHideAmount] = useState(true);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const { isDesktop } = useScreenSize();
-
+const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+ const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
+    user?.company || null,
+  ) as {
+    data: PayrollPeriod[] | undefined;
+  };
+
+    useEffect(() => {
+      if (!payrollPeriods?.length || selectedPeriod) return;
+  
+      const today = new Date();
+  
+      const matchedPeriod = payrollPeriods.find((p) => {
+        const start = new Date(p.start_date);
+        const end = new Date(p.end_date);
+        return today >= start && today <= end;
+      });
+  
+      setSelectedPeriod(matchedPeriod?.name || payrollPeriods[0].name);
+    }, [payrollPeriods, selectedPeriod]);
+  
+    // ✅ Refresh list on filter change
   const { data: user } = useCurrentEmployeeAllDetails({
     fields: ["employee", "company"]
   });
@@ -124,6 +152,7 @@ export default function Invoice() {
     params: {
       employee: user.employee,
       company: user.company,
+      payroll_period: selectedPeriod,
     },
   };
   const SALARY_SORT_CONFIG: ColumnSortConfig[] = [
@@ -196,10 +225,6 @@ export default function Invoice() {
 
           <Typography variant="bodySmall" className="text-center">
             {formatToIndianDate(inv.end_date)}
-          </Typography>
-
-          <Typography variant="bodySmall" className="text-center">
-            {inv.employee_name}
           </Typography>
 
           <Typography
@@ -391,12 +416,27 @@ export default function Invoice() {
             ) : (
               <Typography variant="h4">My Invoices</Typography>
             )}
+            <div className="flex  items-center gap-4">
             <ShowHideButton
               showAmount={hideAmount}
               onToggleAmount={() => setHideAmount((prev) => !prev)}
             />
+            <CustomDropdown
+                value={selectedPeriod}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  setSelectedPeriod(e.target.value)
+                }
+                options={
+                  payrollPeriods?.map((p) => ({
+                    value: p.name,
+                    label: p.name,
+                  })) || []
+                }
+              />
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* Content */}
