@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -11,7 +11,7 @@ import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
 import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -21,7 +21,6 @@ import AdvanceForm from "./AdvanceForm";
 import InstallmentsList from "./InstallmentsList";
 import Modal from "./commonModal";
 import ShowHideButton from "../ui/ShowHideButton";
-import SearchInputWrapper from "../../shared/SearchBar";
 import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import useCurrentUser from "../../../hooks/useCurrentUser";
@@ -30,42 +29,11 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../providers/QueryProvider";
+import DataListView from "../../DataListView"; // ← adjust path as needed
 
-
-const AdvancesList: React.FC = () => {
-  const [maskAmounts, setMaskAmounts] = useState(true);
-  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(
-    null,
-  );
-  const [showInstallments, setShowInstallments] = useState(false);
-  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
-  const employeeId = user?.employee ?? "";
-  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const {
-    data: advancesData,
-    refetch,
-    isLoading,
-  } = useEmployeeAdvances(employeeId || "");
-
-  const [editAdvanceId, setEditAdvanceId] = useState<string | null>(null);
-  const handleEdit = (docname: string) => {
-    setEditAdvanceId(docname);
-    setShowAdvanceForm(true);
-  };
-
-  useEffect(() => {
-    if (refetchAttendance) {
-      refetch();
-      setRefetchAttendance(false);
-    }
-  }, [refetchAttendance, refetch, setRefetchAttendance]);
- 
+// ─── mapAdvanceData helper ────────────────────────────────────────────────────
 const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
   if (!Array.isArray(apiData)) return [];
-
   return apiData.map((a) => ({
     name: a.advance_type,
     docname: a.name,
@@ -83,8 +51,6 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
       Array.isArray(a.todo_list) && a.todo_list.length > 0
         ? a.todo_list[0]
         : null,
-
-    // ⚠️ safe mapping
     installments: Array.isArray(a.repayments)
       ? a.repayments.map((r) => ({
           installmentNo: r.idx,
@@ -97,16 +63,60 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
   }));
 };
 
-  const formattedData: UiAdvance[] = Array.isArray(advancesData?.data)
-  ? mapAdvanceData(advancesData.data)
-  : [];
-  const filteredData = formattedData.filter((item) => {
-    const name = item.name?.toLowerCase() || "";
-    const status = item.advanceStatus?.toLowerCase() || "";
-    const search = searchTerm.toLowerCase();
+// ─── Main Component ───────────────────────────────────────────────────────────
+const AdvancesList: React.FC = () => {
+  const [maskAmounts, setMaskAmounts] = useState(true);
+  const [selectedAdvance, setSelectedAdvance] = useState<UiAdvance | null>(null);
+  const [showInstallments, setShowInstallments] = useState(false);
+  const [showAdvanceForm, setShowAdvanceForm] = useState(false);
+  const [editAdvanceId, setEditAdvanceId] = useState<string | null>(null);
+  const [refetchTrigger, setRefetchTrigger] = useState<number>(0);
 
-    return name.includes(search) || status.includes(search);
-  });
+  const { isDesktop } = useScreenSize();
+  const { data: userId } = useLoggedInUser();
+  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const employeeId = user?.employee ?? "";
+
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+
+  // Register action button in central SalarySlipApp
+  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
+    setActionButtonConfig: (
+      config: { label: string; onClick: () => void; disabled?: boolean } | null,
+    ) => void;
+    setIsModalOpen: (open: boolean) => void;
+  }>();
+
+  // UI Permission check
+  const { data: uiPermission } = useGetUiPermission("Compensation");
+  const canCreateAdvance = isActionEnabled(uiPermission, "create_advance", "My Advances");
+
+  useEffect(() => {
+    if (canCreateAdvance) {
+      setActionButtonConfig({
+        label: "+ Request Advance",
+        onClick: () => {
+          setShowAdvanceForm(true);
+          setIsModalOpen(true);
+        },
+      });
+    } else {
+      setActionButtonConfig(null);
+    }
+    return () => setActionButtonConfig(null);
+  }, [setActionButtonConfig, setIsModalOpen, canCreateAdvance]);
+
+  useEffect(() => {
+    if (refetchAttendance) {
+      setRefetchTrigger((prev) => prev + 1);
+      setRefetchAttendance(false);
+    }
+  }, [refetchAttendance, setRefetchAttendance]);
+
+  const handleEdit = (docname: string) => {
+    setEditAdvanceId(docname);
+    setShowAdvanceForm(true);
+  };
 
   const handleViewInstallments = (advance: UiAdvance) => {
     setSelectedAdvance(advance);
@@ -125,41 +135,11 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
   };
 
   const handleRefetch = () => {
-    setTimeout(() => refetch(), 1500);
+    setTimeout(() => setRefetchTrigger((prev) => prev + 1), 1500);
     queryClient.invalidateQueries({ queryKey: ["advances"] });
   };
 
-  // Register action button in central SalarySlipApp
-  const { setActionButtonConfig, setIsModalOpen } = useOutletContext<{
-    setActionButtonConfig: (
-      config: { label: string; onClick: () => void; disabled?: boolean } | null,
-    ) => void;
-    setIsModalOpen: (open: boolean) => void;
-  }>();
-
-  // UI Permission check
-  const { data: uiPermission } = useGetUiPermission("Compensation");
-  const canCreateAdvance = isActionEnabled(
-    uiPermission,
-    "create_advance",
-    "My Advances",
-  );
-
-  useEffect(() => {
-    if (canCreateAdvance) {
-      setActionButtonConfig({
-        label: "+ Request Advance",
-        onClick: () => {
-          setShowAdvanceForm(true);
-          setIsModalOpen(true);
-        },
-      });
-    } else {
-      setActionButtonConfig(null);
-    }
-    return () => setActionButtonConfig(null);
-  }, [setActionButtonConfig, setIsModalOpen, canCreateAdvance]);
-
+  // ── Show InstallmentsList view ──────────────────────────────────────────────
   if (showInstallments && selectedAdvance) {
     return (
       <InstallmentsList
@@ -170,6 +150,51 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
       />
     );
   }
+   const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+    {
+      sortable: true,
+      type: "string",
+      field: "name",
+      getValue: (item: any) =>
+        item.advance.name ?? "",
+    },
+
+          {
+            sortable: true,
+            type: "string",
+            field: "advance_amount",
+            getValue: (item: any) =>
+              item?.advance.amount ?? "",
+          },
+          {
+            sortable: true,
+            type: "number",
+            field: "numberOfDeductions",
+            getValue: (item: any) =>
+              item?.advance.numberOfDeductions ?? 0,
+          },
+          {
+            sortable: true,
+            type: "date",
+            field: "start_date",
+            getValue: (item: any) =>
+              item?.advance.startDate ?? "",
+          },
+          {
+            sortable: true,
+            type: "date",
+            field: "posting_date",
+            getValue: (item: any) =>
+              item?.advance.endDate ?? "",
+          },
+          {
+            sortable: false,
+
+          },
+          {
+            sortable: false, // Actions
+          },
+        ];
 
   const titles = [
     "Advance Name",
@@ -180,38 +205,16 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     "Status",
     "Actions",
   ];
-
   const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
-  const DesktopLayout = () => (
-    <>
-      {filteredData.map((advance, index) => (
-        <AdvanceDesktopRow
-          key={`${advance.name}-${index}`}
-          advance={advance}
-          maskAmounts={maskAmounts}
-          handleEdit={handleEdit}
-          handleViewInstallments={handleViewInstallments}
-          handleRefetch={handleRefetch}
-        />
-      ))}
-    </>
-  );
-
-  const MobileLayout = () => (
-    <>
-      {filteredData.map((advance, index) => (
-        <AdvanceMobileRow
-          key={`${advance.name}-${index}`}
-          advance={advance}
-          maskAmounts={maskAmounts}
-          handleEdit={handleEdit}
-          handleViewInstallments={handleViewInstallments}
-          handleRefetch={handleRefetch}
-        />
-      ))}
-    </>
-  );
+  // ── customAPI config — only build when employeeId is ready ──────────────────
+  const customAPI = employeeId
+    ? {
+        method:
+          "cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_dashboard",
+        params: { employee: employeeId },
+      }
+    : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -229,7 +232,6 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
             ) : (
               <span></span>
             )}
-
             <ShowHideButton
               showAmount={maskAmounts}
               onToggleAmount={() => setMaskAmounts((prev) => !prev)}
@@ -238,30 +240,52 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
         </div>
 
         <div className="flex-1 overflow-y-auto md:px-4 pb-4">
-          <CardTable titles={titles} columnWidths={columnWidths}>
+          <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
             <>
-              <div className="flex items-center w-full border border-gray-300 bg-white">
-                <SearchInputWrapper
-                  searchTerm={searchTerm}
-                  handleSearch={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              {isLoading ? (
+              {!customAPI ? (
                 <CardSkeleton />
-              ) : formattedData.length === 0 ? (
-                <NoDataFound title="No Advance Records" subtitle="You have not requested any advance yet." />
               ) : (
-                <>
-
-
-                  {filteredData.length === 0 ? (
-                    <NoDataFound title="No Advances Found" subtitle="You don't have any advance requests yet." />
-                  ) : isDesktop ? (
-                    <DesktopLayout />
-                  ) : (
-                    <MobileLayout />
-                  )}
-                </>
+                <DataListView<UiAdvance>
+                  queryKey={["advances", employeeId]}
+                  customAPI={customAPI}
+                  isSearch={true}
+                  isFilter={false}
+                  showPagination={true}
+                  pageSize={10}
+                  SkeletonComponent={CardSkeleton}
+                  refetchTrigger={refetchTrigger}
+                  onRefetchComplete={() => setRefetchTrigger(0)}
+                  clientFilterFn={(rawData) => {
+                    return mapAdvanceData(rawData as unknown as ApiAdvance[]);
+                  }}
+                  noRecordsScreen={
+                    <NoDataFound
+                      title="No Advance Records"
+                      subtitle="You have not requested any advance yet."
+                    />
+                  }
+                  renderItem={(item: UiAdvance, index: number) =>
+                    isDesktop ? (
+                      <AdvanceDesktopRow
+                        key={`${item.name}-${index}`}
+                        advance={item}
+                        maskAmounts={maskAmounts}
+                        handleEdit={handleEdit}
+                        handleViewInstallments={handleViewInstallments}
+                        handleRefetch={handleRefetch}
+                      />
+                    ) : (
+                      <AdvanceMobileRow
+                        key={`${item.name}-${index}`}
+                        advance={item}
+                        maskAmounts={maskAmounts}
+                        handleEdit={handleEdit}
+                        handleViewInstallments={handleViewInstallments}
+                        handleRefetch={handleRefetch}
+                      />
+                    )
+                  }
+                />
               )}
             </>
           </CardTable>
@@ -280,9 +304,10 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
     </div>
   );
 };
+
 export default AdvancesList;
 
-// ─── Per-row sub-components (use hooks at top level of component) ─────────────
+// ─── Per-row sub-components ───────────────────────────────────────────────────
 
 type AdvanceRowProps = {
   advance: UiAdvance;
@@ -292,28 +317,48 @@ type AdvanceRowProps = {
   handleRefetch: () => void;
 };
 
-const AmountEntry = ({ label, value, maskAmounts }: { label: string; value: number; maskAmounts: boolean }) => (
+const AmountEntry = ({
+  label,
+  value,
+  maskAmounts,
+}: {
+  label: string;
+  value: number;
+  maskAmounts: boolean;
+}) => (
   <div className="flex items-start justify-between">
     <div className="flex flex-col gap-1">
       <Typography variant="mobileCardLabel">{label}</Typography>
     </div>
     <div className="flex flex-col gap-1 text-right">
       {maskAmounts ? (
-        <Typography variant="mobileCardValue" className="blur-sm select-none text-gray-400">
+        <Typography
+          variant="mobileCardValue"
+          className="blur-sm select-none text-gray-400"
+        >
           {formatCurrency(0).replace("0", "XX,XXX")}
         </Typography>
       ) : (
-        <Typography variant="mobileCardValue">{formatCurrency(value)}</Typography>
+        <Typography variant="mobileCardValue">
+          {formatCurrency(value)}
+        </Typography>
       )}
     </div>
   </div>
 );
 
-const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstallments, handleRefetch }: AdvanceRowProps) => {
+const AdvanceDesktopRow = ({
+  advance,
+  maskAmounts,
+  handleEdit,
+  handleViewInstallments,
+  handleRefetch,
+}: AdvanceRowProps) => {
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
   const canRevoke = todo?.custom_allow_revoke === 1;
-  const canEdit = todo?.can_edit === true &&
+  const canEdit =
+    todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
 
   const loading = useLoadingOverlay();
@@ -323,7 +368,11 @@ const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstall
     if (!todo?.todo_id) return;
     loading?.show("Revoking Request...");
     revokeEventMutation.mutate(
-      { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
+      {
+        docname: todo.reference_name,
+        doctype: todo.reference_type,
+        todo: todo.todo_id,
+      },
       {
         onSuccess: () => {
           handleRefetch();
@@ -349,7 +398,9 @@ const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstall
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskAmounts ? (
-          <span className="blur-sm select-none text-gray-400">{formatCurrency("XX,XXX")}</span>
+          <span className="blur-sm select-none text-gray-400">
+            {formatCurrency("XX,XXX")}
+          </span>
         ) : (
           <span>{formatCurrency(advance.amount)}</span>
         )}
@@ -357,7 +408,9 @@ const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstall
 
       <Typography variant="bodySmall" className="font-medium text-center">
         {maskAmounts ? (
-          <span className="blur-sm select-none text-gray-400">{formatCurrency("XX,XXX")}</span>
+          <span className="blur-sm select-none text-gray-400">
+            {formatCurrency("XX,XXX")}
+          </span>
         ) : (
           <span>{formatCurrency(advance.numberOfDeductions)}</span>
         )}
@@ -396,11 +449,18 @@ const AdvanceDesktopRow = ({ advance, maskAmounts, handleEdit, handleViewInstall
   );
 };
 
-const AdvanceMobileRow = ({ advance, maskAmounts, handleEdit, handleViewInstallments, handleRefetch }: AdvanceRowProps) => {
+const AdvanceMobileRow = ({
+  advance,
+  maskAmounts,
+  handleEdit,
+  handleViewInstallments,
+  handleRefetch,
+}: AdvanceRowProps) => {
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
   const canRevoke = todo?.custom_allow_revoke === 1;
-  const canEdit = todo?.can_edit === true &&
+  const canEdit =
+    todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
 
   const loading = useLoadingOverlay();
@@ -410,7 +470,11 @@ const AdvanceMobileRow = ({ advance, maskAmounts, handleEdit, handleViewInstallm
     if (!todo?.todo_id) return;
     loading?.show("Revoking Request...");
     revokeEventMutation.mutate(
-      { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
+      {
+        docname: todo.reference_name,
+        doctype: todo.reference_type,
+        todo: todo.todo_id,
+      },
       {
         onSuccess: () => {
           handleRefetch();
@@ -438,19 +502,30 @@ const AdvanceMobileRow = ({ advance, maskAmounts, handleEdit, handleViewInstallm
           <StatusBadge status={advance.advanceStatus} />
         </div>
 
-        <AmountEntry label="Total Amount" value={advance.amount} maskAmounts={maskAmounts} />
-        <AmountEntry label="Deduction Amount" value={advance.numberOfDeductions} maskAmounts={maskAmounts} />
+        <AmountEntry
+          label="Total Amount"
+          value={advance.amount}
+          maskAmounts={maskAmounts}
+        />
+        <AmountEntry
+          label="Deduction Amount"
+          value={advance.numberOfDeductions}
+          maskAmounts={maskAmounts}
+        />
 
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Duration</Typography>
             <Typography variant="mobileCardValue">
-              {formatToIndianDate(advance.startDate)} to {formatToIndianDate(advance.endDate)}
+              {formatToIndianDate(advance.startDate)} to{" "}
+              {formatToIndianDate(advance.endDate)}
             </Typography>
           </div>
           <div className="flex flex-col gap-1 text-right">
             <Typography variant="mobileCardLabel">Installments</Typography>
-            <Typography variant="mobileCardValue">{advance.installments.length}</Typography>
+            <Typography variant="mobileCardValue">
+              {advance.installments.length}
+            </Typography>
           </div>
         </div>
 
