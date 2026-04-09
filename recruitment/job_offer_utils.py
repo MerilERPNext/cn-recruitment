@@ -179,7 +179,7 @@ def get_job_offer_status(appl):
     status = frappe.db.get_value("Job Offer", jo_id, "status")
     return {"status": status}
     
-# @frappe.whitelist(allow_guest=True)
+# @frappe.whitelist(allow_guest=True)/
 # def job_offer_update(status, appl):
 #     frappe.set_user('Administrator')
 #     jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
