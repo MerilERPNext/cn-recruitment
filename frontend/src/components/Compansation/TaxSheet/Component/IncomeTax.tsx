@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 import {
   useIncomeTaxComputationData,
   useTaxSheetPayrollPriodsData,
@@ -22,8 +21,9 @@ type taxsheetData = {
 };
 
 export default function IncomeComputationSheetContainer() {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(user?.company ?? null) as {
     data: PayrollPeriod[] | undefined;
   };

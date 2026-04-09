@@ -5,7 +5,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useGetToDoWithReferenceDoc } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
@@ -24,6 +24,7 @@ import { Typography } from "../../shared/atoms/Typography";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import AdvanceDetailModal from "./AdvanceDetailModal";
+import { COLUMN_SORT_CONFIG_EXPENSE_ADVANCE } from "../../../utils/tableSortConfig";
 
 const MyAdvanceExpenseList = () => {
   const [selectedAdvance, setSelectedAdvance] = useState<{
@@ -33,7 +34,9 @@ const MyAdvanceExpenseList = () => {
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();
@@ -164,8 +167,8 @@ const MyAdvanceExpenseList = () => {
             <StatusBadge
               status={
                 item?.custom_allow_revoke === 1 &&
-                item?.todo_status?.toLowerCase() === "cancelled" &&
-                item?.reference_document?.docstatus === 2
+                  item?.todo_status?.toLowerCase() === "cancelled" &&
+                  item?.reference_document?.docstatus === 2
                   ? "Revoked"
                   : item?.reference_document?.custom_final_status
               }
@@ -214,8 +217,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -233,8 +236,8 @@ const MyAdvanceExpenseList = () => {
                 <StatusBadge
                   status={
                     item?.custom_allow_revoke === 1 &&
-                    item?.todo_status?.toLowerCase() === "cancelled" &&
-                    item?.reference_document?.docstatus === 2
+                      item?.todo_status?.toLowerCase() === "cancelled" &&
+                      item?.reference_document?.docstatus === 2
                       ? "Revoked"
                       : item?.reference_document?.custom_final_status
                   }
@@ -303,8 +306,8 @@ const MyAdvanceExpenseList = () => {
 
     const status =
       item?.custom_allow_revoke === 1 &&
-      item?.todo_status?.toLowerCase() === "cancelled" &&
-      item?.reference_document?.docstatus === 2
+        item?.todo_status?.toLowerCase() === "cancelled" &&
+        item?.reference_document?.docstatus === 2
         ? "Revoked"
         : item?.reference_document?.custom_final_status;
 
@@ -366,7 +369,7 @@ const MyAdvanceExpenseList = () => {
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable
           titles={[
-            "Advance ID",
+            "Advance Id",
             "Advance Category",
             "Advance Policy",
             "Posting Date",
@@ -375,6 +378,8 @@ const MyAdvanceExpenseList = () => {
             "Actions",
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnSortConfig={COLUMN_SORT_CONFIG_EXPENSE_ADVANCE}
+
         >
           <DataListView
             queryKey={["employee-advance"]}

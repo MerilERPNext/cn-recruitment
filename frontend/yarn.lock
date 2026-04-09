@@ -2880,7 +2880,7 @@ dnd-core@^16.0.1:
 
 docx-preview@^0.3.7:
   version "0.3.7"
-  resolved "https://registry.npmjs.org/docx-preview/-/docx-preview-0.3.7.tgz"
+  resolved "https://registry.yarnpkg.com/docx-preview/-/docx-preview-0.3.7.tgz#15181817bca67c2137f4e4d46e01d9f570db340a"
   integrity sha512-Lav69CTA/IYZPJTsKH7oYeoZjyg96N0wEJMNslGJnZJ+dMUZK85Lt5ASC79yUlD48ecWjuv+rkcmFt6EVPV0Xg==
   dependencies:
     jszip ">=3.0.0"

@@ -7,7 +7,7 @@ import { EmployeeSearchList } from "./EmployeeSearchList";
 import { BadgeCard } from "./BadgeCard";
 import { useGetBadgeTypes, useAppreciateEmployee } from "../../services/recognitionService";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import toast from "react-hot-toast";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 import { X, ChevronLeft } from "lucide-react";
@@ -37,7 +37,9 @@ export const AppreciateEmployeeModal: React.FC<
   const [reason, setReason] = useState<string>("");
 
   const queryClient = useQueryClient();
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "employee_name"]
+  });
   const { data: badgesData, isLoading: badgesLoading } = useGetBadgeTypes();
   const { data: selectedEmployeeData } = useGetAllEmployees(
     ["name", "employee_name", "designation", "image"],

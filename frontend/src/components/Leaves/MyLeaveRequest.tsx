@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
@@ -15,6 +15,8 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpLeaveRequestCard from "./EmpLeaveRequestCard";
 import ReplaceLeaveModal from "./ReplaceLeaveModal";
+import { COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST } from "../../utils/tableSortConfig";
+
 
 const MyLeaveRequests = ({
   pageSize = 10,
@@ -28,7 +30,9 @@ const MyLeaveRequests = ({
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployee();
+    useCurrentEmployeeAllDetails({
+      fields: ["name"]
+    });
 
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
@@ -199,6 +203,7 @@ const MyLeaveRequests = ({
                 ? ["1fr 1fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr 1fr"]
                 : ["1fr 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1.5fr"]
             }
+            columnSortConfig={COLUMN_SORT_CONFIG_MY_LEAVE_REQUEST}
           >
             {currentEmployee?.name && (
               <DataListView

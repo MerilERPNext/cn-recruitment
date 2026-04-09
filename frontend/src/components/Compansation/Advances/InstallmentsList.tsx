@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
 import { X } from "lucide-react";
 import type React from "react";

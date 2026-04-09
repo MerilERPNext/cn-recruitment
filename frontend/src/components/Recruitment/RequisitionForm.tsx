@@ -6,7 +6,7 @@ import {
   FormSchemaKeys,
 } from "./requisitionFormSchemas";
 import Button from "../shared/atoms/Button";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useCreateJobRequisition } from "../../hooks/useRecruitment";
 import {
   JobRequisitionFormData,
@@ -19,7 +19,9 @@ import { useNavigate } from "react-router-dom";
 
 const RequisitionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "company"]
+  });
   const createJobRequisition = useCreateJobRequisition();
   const navigate = useNavigate();
 

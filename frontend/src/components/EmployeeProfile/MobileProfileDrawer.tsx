@@ -3,7 +3,7 @@ import {
     useCurrentEmployeeAllDetails,
     useGetEmployeeDetailsByEmpIdForProfile,
 } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+
 import defaultProfile from "../../assets/user.png";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -46,9 +46,10 @@ const quickActions: QuickAction[] = [
 
 const MobileProfileDrawer = () => {
     const { targetEmployeeId } = useTargetUser();
-    const { data: userId } = useLoggedInUser();
     const { data: currentUser, isLoading: isCurrentUserLoading } =
-        useCurrentEmployeeAllDetails(userId || "");
+        useCurrentEmployeeAllDetails({
+          fields: ["employee"]
+        });
 
     const employeeId =
         targetEmployeeId ||

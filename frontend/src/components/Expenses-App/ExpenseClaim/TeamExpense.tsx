@@ -10,6 +10,7 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
+import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -145,7 +146,9 @@ const TeamExpense = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}
+          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM(isBulkSelectEnabled, activeStatus === "Approved")}
+        >
           {currentUser?.name ? (
             <ApprovalList
               doctype={"Expense Claim"}

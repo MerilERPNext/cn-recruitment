@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 import {
   useTaxSheetData,
   useTaxSheetPayrollPriodsData,
@@ -28,8 +27,9 @@ type PayrollPeriod = {
 };
 
 export default function TaxSheet() {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
   const {
     data: payrollPeriods,

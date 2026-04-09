@@ -8,7 +8,7 @@ import RequestShiftChangeButton from "./RequestShiftChangeButton";
 
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { useShiftRouting } from "../../hooks/useShiftRouting";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useShiftRequestConfig } from "../../hooks/useShift";
 import Button from "../shared/atoms/Button";
 import ShiftRequestFormModal from "./ShiftRequestFormModal";
@@ -33,7 +33,9 @@ const ShiftRequestApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const { data: shiftRequestConfig, isLoading: isShiftConfigLoading } =
     useShiftRequestConfig(currentEmployee?.name || null);
 

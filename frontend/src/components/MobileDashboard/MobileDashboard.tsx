@@ -9,7 +9,6 @@ import {
   useHomeSummaryDetails,
 } from "../../hooks/useAttendance";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useGetUserNotices } from "../../hooks/useNotices";
 
 import {
@@ -103,10 +102,16 @@ const MobileDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: [
+    "user_id",
+    "employee_name",
+    "company",
+    "custom_allow_mobile_checkin",
+    "employee",
+    "image"
+  ]
+  });
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(
@@ -206,9 +211,21 @@ const MobileDashboard: React.FC = () => {
           longitude: location.longitude,
         },
         {
-          onSuccess: () => {
+          onSuccess: (res: { warning?: string }) => {
             refetchHomeSummary();
             setGeoLocationModal(false)
+            if (res && res.warning) {
+              toast.custom(
+                () => (
+                  <div
+                    className="bg-yellow-500 p-4 rounded-lg shadow-lg"
+                    role="status"
+                  >
+                    <p>{res?.warning}</p>
+                  </div>
+                )
+              )
+            }
             toast.success("Check In successful");
           },
           onError: (e: CustomError) => {
@@ -415,7 +432,7 @@ const MobileDashboard: React.FC = () => {
               }}
             >
               <img
-                src={currentUser?.user_image || defaultProfile}
+                src={currentEmployee?.image || defaultProfile}
                 alt="User avatar"
                 className="w-full h-full object-cover bg-gray-400"
               />

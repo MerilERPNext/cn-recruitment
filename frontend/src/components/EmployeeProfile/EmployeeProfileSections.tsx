@@ -6,7 +6,7 @@ import {
     useGetEmployeeDetailsByEmpIdForProfile,
     useGetEmployeeFieldPermissions,
 } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+
 import {
     convertFieldsToSimpleTabbedData,
     convertToFormioWithTabMetadata,
@@ -31,9 +31,10 @@ interface EditableField {
 export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
 
-    const { data: userId } = useLoggedInUser();
     const { data: currentUser, isLoading } =
-        useCurrentEmployeeAllDetails(userId || "");
+        useCurrentEmployeeAllDetails({
+          fields: ["employee"]
+        });
 
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";

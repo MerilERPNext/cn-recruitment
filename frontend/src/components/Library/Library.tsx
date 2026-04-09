@@ -5,7 +5,6 @@ import {
   useEmployeeDocument,
   useSubmitAcknowledgement,
 } from "../../hooks/useEmployeeDocuments";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGetUiPermission } from "../../hooks/userUiPermission";
 import { isActionEnabled } from "../../utils/uiPermission";
@@ -18,9 +17,10 @@ const DocumentLibrary = () => {
   const [activeTab, setActiveTab] = useState("awaiting");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
-  const { data: userId } = useLoggedInUser();
   const { targetEmployeeId } = useTargetUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
   const employeeId = useMemo(() => {
     if (targetEmployeeId && targetEmployeeId.trim() !== "") {
       return targetEmployeeId;

@@ -13,7 +13,8 @@ import { AppRoute, routesConfig } from "./routesConfig";
 import { findRouteConfig } from "./utils/routeUtils";
 import ResponsiveDashboard from "./components/ResponsiveDashboard";
 import { useFrappeDocumentCount } from "./hooks/useFrappeQuery";
-import { useCurrentEmployee } from "./hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "./hooks/useEmployee";
+
 import toast, { ToastBar, Toaster } from "react-hot-toast";
 import ModalWrapper from "./components/ModalWrapper";
 import { RequestLeaveModalProvider } from "./components/Leaves/RequestLeaveModalContext";
@@ -31,6 +32,18 @@ import { useGetUiPermission } from "./hooks/userUiPermission";
 import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
+
+// Component to sync ViewedUserContext with frappeAPI
+// NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
+const TargetUserSync: React.FC = () => {
+  const { targetEmployeeId } = useTargetUser();
+
+  useEffect(() => {
+    setTargetEmployeeId(targetEmployeeId);
+  }, [targetEmployeeId]);
+
+  return null;
+};
 
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
@@ -186,20 +199,11 @@ const App: React.FC = () => {
 
 export default App;
 
-// Component to sync ViewedUserContext with frappeAPI
-const TargetUserSync: React.FC = () => {
-  const { targetEmployeeId } = useTargetUser();
-
-  useEffect(() => {
-    setTargetEmployeeId(targetEmployeeId);
-  }, [targetEmployeeId]);
-
-  return null;
-};
-
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } =
-    useCurrentEmployee();
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
   const [isAutoOpened, setInAutoOpened] = useState(false);

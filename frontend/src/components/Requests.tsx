@@ -10,7 +10,6 @@ import {
 import { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
 import { useScreenSize } from "../hooks/useScreenSize";
 import AttendanceRequestFormV2 from "./Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import CreateOvertimeRequest from "./Attendance/OvertimeRequests/CreateOvertimeRequest";
@@ -36,8 +35,9 @@ interface RequestsProps {
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
   const { data: userUiPermission } = useGetUiPermission();
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;

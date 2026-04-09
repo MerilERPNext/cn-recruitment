@@ -94,6 +94,7 @@ export interface MyShiftRequest {
   username: string;
   reference_name: string;
   can_edit: boolean;
+  due_date: string;
 }
 export interface RequestCardProps {
   request: ShiftRequest;

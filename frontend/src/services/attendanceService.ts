@@ -255,13 +255,13 @@ export const attendanceService = {
 
   checkInOutService: async (
     body: Record<string, unknown>
-  ): Promise<boolean> => {
+  ): Promise<Record<string, unknown>> => {
     try {
       const response = await FrappeAPI.callMethod(
         "cn_leave_shift_managment.api.create_employee_checkin",
         body
       );
-      return response as boolean;
+      return response as Record<string, unknown>;
     } catch (error) {
       console.error("📡 Error while checking in:", error);
       throw error;

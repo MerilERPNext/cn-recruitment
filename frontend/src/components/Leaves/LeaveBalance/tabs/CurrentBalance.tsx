@@ -3,7 +3,7 @@ import type React from "react";
 import { useState } from "react";
 import { Form } from "@tsed/react-formio";
 import { useGetLeaveBalance } from "../../../../hooks/useLeaves";
-import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { LeaveBalance } from "../../../../types/leaves";
 import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -22,7 +22,9 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useCurrentEmployee();
+  } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   const leaveId = leaveData?.leave_id || "";
 

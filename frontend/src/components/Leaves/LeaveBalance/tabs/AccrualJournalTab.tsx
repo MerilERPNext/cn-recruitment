@@ -9,7 +9,7 @@ import {
   useGetAccrualJournalEntries,
 } from "../../../../hooks/useLeaves";
 import { LeaveBalance } from "../../../../types/leaves";
-import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 
 interface AccrualJournalTabProps {
   leaveData: LeaveBalance;
@@ -20,7 +20,9 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useCurrentEmployee();
+  } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
   const leaveId = leaveData?.leave_id || "";

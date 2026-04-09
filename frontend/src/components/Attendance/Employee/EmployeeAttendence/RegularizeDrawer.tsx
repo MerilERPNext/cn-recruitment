@@ -5,7 +5,6 @@ import {
   useGetAllEmployeeRegularize,
   useMarkBulkAttendance,
 } from "../../../../hooks/useAttendance";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
   generateMonthOptions,
   getMonthDateRange,
@@ -34,10 +33,9 @@ const RegularizeDrawer = () => {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["employee"],
+  });
   const { targetEmployeeId } = useTargetUser();
 
   const monthOptions: MonthOption[] = generateMonthOptions(1);

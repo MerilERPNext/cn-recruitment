@@ -23,7 +23,7 @@ import { formatCurrency } from "../../../utils/currency";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { isActionEnabled } from "../../../utils/uiPermission";
 import DataListView from "../../DataListView";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import CustomDropdown from "../../shared/CustomDropdown";
 import WrapperHoverCard from "../../shared/WrapperHoverCard";
 import MyApprovalActionPill from "../../shared/atoms/MyApprovalActionPill";
@@ -41,6 +41,51 @@ import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { queryClient } from "../../../providers/QueryProvider";
 
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "earning_component",
+    getValue: (item: BenefitPayslip) =>
+      item.earning_component ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "claim_date",
+    getValue: (item: BenefitPayslip) =>
+      item?.claim_date ?? "",
+  }, {
+    sortable: true,
+    type: "date",
+    field: "claimed_amount",
+    getValue: (item: BenefitPayslip) =>
+      item?.claimed_amount ?? "",
+  },
+  {
+    sortable: true,
+    field: "custom_taxable_amount",
+    getValue: (item: BenefitPayslip) => item.custom_taxable_amount ?? 0,
+  },
+  {
+    sortable: true,
+    field: "custom_non_taxable_amount",
+    getValue: (item: BenefitPayslip) => item.custom_non_taxable_amount ?? 0,
+  },
+  {
+    sortable: false,
+  },
+  {
+    sortable: false,
+  },
+];
+
 const MyRequests: React.FC = () => {
   const [maskAmounts, setMaskAmounts] = useState(true);
   const [showBenefitForm, setShowBenefitForm] = useState(false);
@@ -51,6 +96,7 @@ const MyRequests: React.FC = () => {
     "request_benefit",
     "My Requests",
   );
+
 
 
   const { data: employeeIdCard, isLoading: EmployeeIdCardLoading } = useCurrentEmployeeIdCard();
@@ -90,7 +136,6 @@ const MyRequests: React.FC = () => {
 
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedComponent, setSelectedComponent] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("All");
   const [benefitId, setBenefitId] = useState<string | null>(null);
   const handleEdit = (BenefitId: string) => {
     setBenefitId(BenefitId);
@@ -115,6 +160,7 @@ const MyRequests: React.FC = () => {
     selectedYear,
     today,
   );
+  const [customStatus, setCustomStatus] = useState("All");
   const { data: benefitClaimLock, isLoading: benefitClaimLockLoading } =
     useGetBenefitClaimLockingPeriod(
       effectiveEmployeeId || "",
@@ -160,6 +206,14 @@ const MyRequests: React.FC = () => {
     label: item,
     value: item,
   })) ?? [];
+
+  const filterStatusMap = {
+    "Open": "Pending",
+    "Approved": "Approved",
+    "Rejected": "Rejected",
+    "Cancelled": "Revoked",
+  };
+
 
   return (
     <div className="flex flex-col h-full">
@@ -211,17 +265,6 @@ const MyRequests: React.FC = () => {
                 options={componentArray}
 
               />
-              <CustomDropdown
-                position="bottom-left"
-                value={selectedStatus}
-                onChange={(event) => setSelectedStatus(event?.target.value)}
-                options={[
-                  { label: "All", value: "All" },
-                  { label: "Pending", value: "Pending" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
-                ]}
-              />
             </div>
           </div>
         </div>
@@ -241,6 +284,7 @@ const MyRequests: React.FC = () => {
             "Status",
             "Actions",
           ]}
+          columnSortConfig={COLUMN_SORT_CONFIG}
         >
           <DataListView
             queryKey={[
@@ -256,11 +300,45 @@ const MyRequests: React.FC = () => {
                 employee: employeeIdCard?.id || "",
                 company: employeeIdCard?.company || "",
                 payroll_period: selectedYear,
-                custom_status: selectedStatus,
-                earning_component: selectedComponent
+                earning_component: selectedComponent,
+                custom_status: customStatus,
               },
             }}
-
+            isFilter={true}
+            filterFields={[
+              {
+                fieldname: "custom_status",
+                label: "Status",
+                fieldtype: "Select",
+                options: [
+                  {
+                    label: "Pending",
+                    key: "Open",
+                    value: "Open",
+                    customAPIParams: { todo_status: "Open" },
+                  },
+                  { label: "Approved", value: "Approved" },
+                  { label: "Rejected", value: "Rejected" },
+                  {
+                    label: "Revoked",
+                    value: "Revoked",
+                    excludeFieldFromFilters: true,
+                    customAPIParams: { todo_status: "Cancelled" },
+                    additionalFilters: {
+                      docstatus: 2,
+                      custom_allow_revoke: 1,
+                    },
+                  },
+                ],
+              },
+            ]}
+            onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
+            clientFilterFn={(list) =>
+              list.filter(
+                (item) =>
+                  Array.isArray(item?.todo_list) && item.todo_list.length > 0,
+              )
+            }
             ItemComponent={(props: { item: BenefitPayslip }) => {
               return (
                 <BenefitSlipItem
@@ -275,7 +353,6 @@ const MyRequests: React.FC = () => {
             SkeletonComponent={CardSkeleton}
             refetchTrigger={refetchCounter}
             isSearch={true}
-            isFilter={false}
             showRefreshButton={false}
             pageSize={10}
             infiniteScroll={false}
@@ -326,7 +403,7 @@ const BenefitSlipItem = ({
 
   const canEdit = todo?.can_edit === true &&
     currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = !!todo?.custom_allow_revoke && todo?.reference_document?.custom_status === "Pending";
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 

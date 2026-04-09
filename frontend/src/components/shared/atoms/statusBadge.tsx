@@ -22,7 +22,7 @@ export type StatusBadgeConfig = {
   icon: ReactNode;
 };
 
-export function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
+function getStatusBadge(rawStatus?: string): StatusBadgeConfig {
   const status = rawStatus?.toLowerCase().trim();
 
   switch (status) {
