@@ -146,7 +146,7 @@ const StageCard = ({
     setResponseData(data);
     setShowForm(true);
   };
-  console.log("action", canPerformActions, actions, actionsWithForm)
+
   return (
     <div
       key={stage.stage_name}
