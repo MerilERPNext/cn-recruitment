@@ -88,7 +88,8 @@ def send_onboarding_form(job_applicant):
     company = frappe.db.get_value("Job Offer", {"job_applicant": doc.name}, "company")
 
     # Base onboarding form URL
-    base_onboarding_url = "https://nexus-dev.m.frappe.cloud/employee-onboarding/new"
+    site_url = frappe.utils.get_url()
+    base_onboarding_url = f"{site_url}/employee-onboarding/new"
 
     params = {
         "job_applicant": doc.email_id,
