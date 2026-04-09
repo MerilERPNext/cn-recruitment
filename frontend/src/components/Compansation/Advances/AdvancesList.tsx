@@ -73,8 +73,7 @@ const AdvancesList: React.FC = () => {
   const [refetchTrigger, setRefetchTrigger] = useState<number>(0);
 
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails();
   const employeeId = user?.employee ?? "";
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();

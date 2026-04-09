@@ -12,6 +12,8 @@ import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Card } from "../../shared/atoms/Card";
 import DataListView from "../../DataListView"; // ← adjust path as needed
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+
 
 // ─── Raw API shape ────────────────────────────────────────────────────────────
 interface ApiPerquisiteItem {
@@ -66,8 +68,7 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails();
   const { isDesktop } = useScreenSize();
 
   const employeeId = user?.employee ?? "";
@@ -114,7 +115,7 @@ export default function PerquisiteList() {
               customAPI={customAPI}
               isSearch={true}
               isFilter={false}
-              showPagination={false}
+              showPagination={true}
               SkeletonComponent={CardSkeleton}
               clientFilterFn={(rawData) =>
                 mapPerquisiteData(rawData as unknown as ApiPerquisiteItem[])
@@ -136,7 +137,7 @@ export default function PerquisiteList() {
                   </Typography>
 
                   <Typography variant="bodySmall" className="font-medium text-center">
-                    {item.paymentDate}
+                    {formatToIndianDate(item.paymentDate)}
                   </Typography>
 
                   <Typography variant="bodySmall" className="font-medium text-center">
@@ -172,8 +173,8 @@ export default function PerquisiteList() {
               queryKey={["perquisites", employeeId, company]}
               customAPI={customAPI}
               isSearch={true}
-              isFilter={false}
-              showPagination={false}
+              isFilter={true}
+              showPagination={true}
               SkeletonComponent={CardSkeleton}
               clientFilterFn={(rawData) =>
                 mapPerquisiteData(rawData as unknown as ApiPerquisiteItem[])
