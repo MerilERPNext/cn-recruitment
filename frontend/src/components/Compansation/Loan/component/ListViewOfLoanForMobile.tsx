@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import DataListView from "../../../DataListView";
-import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { Loan } from "../Type/loan";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
 import { useGlobalStore } from "../../../../hooks/useGlobalStore";
@@ -21,7 +21,7 @@ import { queryClient } from "../../../../providers/QueryProvider";
 
 const ListViewOfLoanForMobile = () => {
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [loanId, setLoanId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

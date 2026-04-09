@@ -275,7 +275,7 @@ export interface EmployeeSupplementary {
  * This is the shape of `getCurrentEmployeeAllDetails`’s success value when all columns are
  * requested. For a subset of fields, use `Pick<Employee, K>` (see `useCurrentEmployeeAllDetails`).
  */
-export interface Employee extends EmployeeFromAPI, EmployeeSupplementary {}
+export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
 
 /** Alias: full row from `getCurrentEmployeeAllDetails` with default / `["*"]` fields. */
 export type CurrentEmployeeAllDetails = Employee;

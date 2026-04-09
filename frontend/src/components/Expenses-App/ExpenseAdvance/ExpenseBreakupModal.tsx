@@ -2,7 +2,7 @@ import { Form } from "@tsed/react-formio";
 import { X } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useCalculateExpenseAmount } from "../../../hooks/useExpense";
 import { CalculateExpenseParams } from "../../../types/expenseAdvance";
 import { formatMySQLDatetime } from "../../../utils/dateTimeFormatUtils";
@@ -30,7 +30,7 @@ const ExpenseBreakupModal: React.FC<ExpenseBreakupModalProps> = ({
 
   const lastExpenseType = useRef<string | null>(null);
   const lastCalculatedUnits = useRef<CalculateExpenseParams | null>(null);
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const employeeId = currentEmployee?.name;
 
   const mapStoredDataToForm = (storedData: any) => {
