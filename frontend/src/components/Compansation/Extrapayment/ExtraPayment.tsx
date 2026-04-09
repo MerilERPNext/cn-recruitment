@@ -67,7 +67,6 @@ export default function ExtraPayment() {
 
   const renderDesktopRow = (raw: any) => {
   const payment = mapItem(raw, raw.employee_name || raw.employee);
-  console.log("Raw item:",renderDesktopRow );
     return (
       <div
         className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"

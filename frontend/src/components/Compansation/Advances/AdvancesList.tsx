@@ -53,12 +53,12 @@ const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
         : null,
     installments: Array.isArray(a.repayments)
       ? a.repayments.map((r) => ({
-          installmentNo: r.idx,
-          installmentDate: r.payment_date,
-          openingBalance: r.balance_amount,
-          installmentAmount: r.payment_amount,
-          principalBalance: r.deducted,
-        }))
+        installmentNo: r.idx,
+        installmentDate: r.payment_date,
+        openingBalance: r.balance_amount,
+        installmentAmount: r.payment_amount,
+        principalBalance: r.deducted,
+      }))
       : [],
   }));
 };
@@ -73,7 +73,7 @@ const AdvancesList: React.FC = () => {
   const [refetchTrigger, setRefetchTrigger] = useState<number>(0);
 
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
@@ -149,7 +149,7 @@ const AdvancesList: React.FC = () => {
       />
     );
   }
-   const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+  const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
     {
       sortable: true,
       type: "string",
@@ -158,42 +158,42 @@ const AdvancesList: React.FC = () => {
         item.advance.name ?? "",
     },
 
-          {
-            sortable: true,
-            type: "string",
-            field: "advance_amount",
-            getValue: (item: any) =>
-              item?.advance.amount ?? "",
-          },
-          {
-            sortable: true,
-            type: "number",
-            field: "numberOfDeductions",
-            getValue: (item: any) =>
-              item?.advance.numberOfDeductions ?? 0,
-          },
-          {
-            sortable: true,
-            type: "date",
-            field: "start_date",
-            getValue: (item: any) =>
-              item?.advance.startDate ?? "",
-          },
-          {
-            sortable: true,
-            type: "date",
-            field: "posting_date",
-            getValue: (item: any) =>
-              item?.advance.endDate ?? "",
-          },
-          {
-            sortable: false,
+    {
+      sortable: true,
+      type: "string",
+      field: "advance_amount",
+      getValue: (item: any) =>
+        item?.advance.amount ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "numberOfDeductions",
+      getValue: (item: any) =>
+        item?.advance.numberOfDeductions ?? 0,
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "start_date",
+      getValue: (item: any) =>
+        item?.advance.startDate ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "posting_date",
+      getValue: (item: any) =>
+        item?.advance.endDate ?? "",
+    },
+    {
+      sortable: false,
 
-          },
-          {
-            sortable: false, // Actions
-          },
-        ];
+    },
+    {
+      sortable: false, // Actions
+    },
+  ];
 
   const titles = [
     "Advance Name",
@@ -209,10 +209,10 @@ const AdvancesList: React.FC = () => {
   // ── customAPI config — only build when employeeId is ready ──────────────────
   const customAPI = employeeId
     ? {
-        method:
-          "cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_dashboard",
-        params: { employee: employeeId },
-      }
+      method:
+        "cn_indian_payroll.cn_indian_payroll.overrides.employee_advance.get_advance_dashboard",
+      params: { employee: employeeId },
+    }
     : null;
 
   return (
