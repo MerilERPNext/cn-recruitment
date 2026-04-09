@@ -188,6 +188,7 @@ export default function LoansPage() {
                       ? <LoanRow
                         loan={props?.item}
                         handleEdit={handleEdit}
+                        employeeId={employeeId}
                         columnWidths={columnWidths}
                       />
                       :

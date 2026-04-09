@@ -20,6 +20,7 @@ export type ApprovalRejectionLoanProps = {
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
   data: any;
+  isActed?: boolean;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
@@ -31,6 +32,7 @@ const ApprovalRejectionLoanList = ({
   isDisabled = false,
   onToggleSelect,
   data,
+  isActed = false,
   onAction,
   onClick,
   loadingAction,
@@ -186,14 +188,22 @@ const ApprovalRejectionLoanList = ({
                 username={data?.username}
               />
 
-             {data.todo_status != "Closed" && (  <TeamApprovalActionPill
-                variant="buttons"
-                actions={actions}
-                status={data?.status || ""}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action)}
-              />)}
+              {data?.todo_status === "Open" && !isActed ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.status || ""}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => handleActionClick(action)}
+                />
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -324,13 +334,21 @@ const ApprovalRejectionLoanList = ({
         </div>
 
         <div className="flex items-center justify-center">
-        {data.todo_status != "Closed" && ( <TeamApprovalActionPill
-            actions={actions}
-            status={data?.reference_document?.status}
-            recordId={data?.todo_id}
-            loadingAction={loadingAction}
-            onAction={(action) => onAction(action, data)}
-          />)}
+          {data?.todo_status === "Open" && !isActed ? (
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.reference_document?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
+          ) : (
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

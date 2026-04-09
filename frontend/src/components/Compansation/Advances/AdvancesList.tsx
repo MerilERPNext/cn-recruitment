@@ -355,12 +355,14 @@ const AdvanceDesktopRow = ({
   handleViewInstallments,
   handleRefetch,
 }: AdvanceRowProps) => {
+  const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit =
     todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
+    !isActed;
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
@@ -376,6 +378,7 @@ const AdvanceDesktopRow = ({
       },
       {
         onSuccess: () => {
+          setIsActed(true);
           handleRefetch();
           toast.success("Advance Request Revoked Successfully!");
         },
@@ -436,7 +439,7 @@ const AdvanceDesktopRow = ({
         </AllocatedToTooltip>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
           isPending={advance.advanceStatus === "Pending"}
           canRevoke={canRevoke}
@@ -457,12 +460,14 @@ const AdvanceMobileRow = ({
   handleViewInstallments,
   handleRefetch,
 }: AdvanceRowProps) => {
+  const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit =
     todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
+    !isActed;
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
@@ -478,6 +483,7 @@ const AdvanceMobileRow = ({
       },
       {
         onSuccess: () => {
+          setIsActed(true);
           handleRefetch();
           toast.success("Advance Request Revoked Successfully!");
         },
@@ -535,15 +541,17 @@ const AdvanceMobileRow = ({
           roles={advance.allocated_to_roles}
         />
 
-        <MyApprovalActionPill
-          variant="buttons"
-          isPending={advance.advanceStatus === "Pending"}
-          canRevoke={canRevoke}
-          canEdit={canEdit}
-          onRevoke={handleRevokeClick}
-          onEdit={() => handleEdit(advance.docname)}
-          isResubmit={canEdit}
-        />
+        <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+          <MyApprovalActionPill
+            variant="buttons"
+            isPending={advance.advanceStatus === "Pending"}
+            canRevoke={canRevoke}
+            canEdit={canEdit}
+            onRevoke={handleRevokeClick}
+            onEdit={() => handleEdit(advance.docname)}
+            isResubmit={canEdit}
+          />
+        </div>
       </div>
     </div>
   );

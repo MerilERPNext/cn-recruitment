@@ -208,6 +208,7 @@ const TeamLoanRequest = () => {
                   loadingAction={item.loadingAction}
                   onClick={() => handleRequestClick(item)}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  isActed={item?.isActed}
                 />
               );
             }}
