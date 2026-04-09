@@ -5,7 +5,7 @@ import Tooltip from "../shared/Tooltip";
 import Badge from "../shared/Badge";
 import { Employee } from "../../types/employee";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router-dom";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
@@ -77,7 +77,7 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     return;
   }
 
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
 

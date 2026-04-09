@@ -4,6 +4,7 @@ export interface Employee {
   department_display: string;
   designation_display: string;
   designation_name: string;
+  custom_designation_name?: string;
   shift_request_approver: string | null;
   name: string;
   employee: string;

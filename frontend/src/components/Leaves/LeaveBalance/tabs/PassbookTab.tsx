@@ -7,7 +7,7 @@ import {
   useGetLeavePassbookTransaction,
 } from "../../../../hooks/useLeaves";
 import { LeaveBalance } from "../../../../types/leaves";
-import { useCurrentEmployee } from "../../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { NoDataFound } from "../../../shared/atoms/NoDataFound";
 
 interface PassbookTabProps {
@@ -19,7 +19,7 @@ const PassbookTab: React.FC<PassbookTabProps> = ({ leaveData }) => {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useCurrentEmployee();
+  } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
   const leaveId = leaveData?.leave_id || "";
