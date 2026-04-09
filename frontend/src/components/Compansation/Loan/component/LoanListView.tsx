@@ -28,6 +28,16 @@ interface LoanListProps {
   searchTerm?: string;
   onSearchChange?: (value: string) => void;
 }
+function calculateEndMonth(startDate: string, tenure: number) {
+  if (!startDate || !tenure) return "-";
+
+  const date = new Date(startDate);
+  date.setMonth(date.getMonth() + tenure);
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${month}/${year}`;
+}
 
 export default function LoanList({
   handleEdit,
@@ -35,22 +45,8 @@ export default function LoanList({
   searchTerm,
   onSearchChange,
 }: LoanListProps) {
-  const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
-  const toggleLoanExpansion = (loan_name: string) => {
-    setExpandedLoan(expandedLoan === loan_name ? null : loan_name);
-  };
 
-  function calculateEndMonth(startDate: string, tenure: number) {
-    if (!startDate || !tenure) return "-";
-
-    const date = new Date(startDate);
-    date.setMonth(date.getMonth() + tenure);
-
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${month}/${year}`;
-  }
 
   const titles = [
     "",
@@ -99,10 +95,7 @@ export default function LoanList({
           <LoanRow
             key={loan.loan_name}
             loan={loan}
-            expanded={expandedLoan === loan.loan_name}
-            onToggle={() => toggleLoanExpansion(loan.loan_name)}
             handleEdit={handleEdit}
-            calculateEndMonth={calculateEndMonth}
             columnWidths={columnWidths}
           />
         ))}
@@ -123,21 +116,19 @@ export default function LoanList({
 
 type LoanRowProps = {
   loan: Loan;
-  expanded: boolean;
-  onToggle: () => void;
   handleEdit: (docname: string) => void;
-  calculateEndMonth: (startDate: string, tenure: number) => string;
   columnWidths: string[];
 };
 
-const LoanRow = ({
+export const LoanRow = ({
   loan,
-  expanded,
-  onToggle,
   handleEdit,
-  calculateEndMonth,
   columnWidths,
 }: LoanRowProps) => {
+  const [expanded, setExpanded] = useState<boolean>(false);
+  const onToggle = () => {
+    setExpanded(prev => !prev);
+  }
   const { data: currentUser } = useCurrentUser();
   const todo = Array.isArray(loan.todo_list) && loan.todo_list.length > 0
     ? loan.todo_list[0]

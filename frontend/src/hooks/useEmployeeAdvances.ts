@@ -16,11 +16,11 @@ import {
   getProjects,
   updateEmployeeAdvance,
 } from "../services/employeeAdvances";
-import { ApiAdvance } from "../types/employeeAttendance";
+import { ApiAdvance, ApiAdvanceResponse } from "../types/employeeAttendance";
 import FrappeAPI from "../utils/frappeAPI";
 
 export const useEmployeeAdvances = (employeeId?: string) => {
-  return useQuery<ApiAdvance[]>({
+  return useQuery<ApiAdvanceResponse>({
     queryKey: ["advances", employeeId],
     queryFn: () => getAdvances(employeeId!),
     enabled: !!employeeId,

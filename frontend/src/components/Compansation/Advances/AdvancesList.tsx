@@ -39,10 +39,7 @@ const AdvancesList: React.FC = () => {
   );
   const [showInstallments, setShowInstallments] = useState(false);
   const [showAdvanceForm, setShowAdvanceForm] = useState(false);
-
-  // ✅ SEARCH STATE
   const [searchTerm, setSearchTerm] = useState("");
-
   const { isDesktop } = useScreenSize();
   const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
@@ -65,43 +62,44 @@ const AdvancesList: React.FC = () => {
       setRefetchAttendance(false);
     }
   }, [refetchAttendance, refetch, setRefetchAttendance]);
+ 
+const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
+  if (!Array.isArray(apiData)) return [];
 
-  const mapAdvanceData = (apiData: ApiAdvance[]): UiAdvance[] => {
-    return apiData.map((a) => ({
-      name: a.advance_type,
-      docname: a.name,
-      can_edit: a.can_edit,
-      allocated_to: a.allocated_to,
-      allocated_to_roles: a.allocated_to_roles,
-      allocated_to_user: a.allocated_to_user,
-      amount: a.total_advance_amount,
-      numberOfDeductions: a.total_paid_amount,
-      startDate: a.start_date,
-      endDate: a.end_date,
-      advanceStatus: a.status,
-      employee_name: a.employee_name,
-      todo: Array.isArray(a.todo_list) && a.todo_list.length > 0 ? a.todo_list[0] : null,
-      installments: a.repayments.map((r) => ({
-        installmentNo: r.idx,
-        installmentDate: r.payment_date,
-        openingBalance: r.balance_amount,
-        installmentAmount: r.payment_amount,
-        principalBalance: r.deducted,
-      })),
-    }));
-  };
+  return apiData.map((a) => ({
+    name: a.advance_type,
+    docname: a.name,
+    can_edit: a.can_edit,
+    allocated_to: a.allocated_to,
+    allocated_to_roles: a.allocated_to_roles,
+    allocated_to_user: a.allocated_to_user,
+    amount: a.total_advance_amount,
+    numberOfDeductions: a.total_paid_amount,
+    startDate: a.start_date,
+    endDate: a.end_date,
+    advanceStatus: a.status,
+    employee_name: a.employee_name,
+    todo:
+      Array.isArray(a.todo_list) && a.todo_list.length > 0
+        ? a.todo_list[0]
+        : null,
 
-  const formattedData: UiAdvance[] = advancesData
-    ? mapAdvanceData(advancesData)
-    : [];
+    // ⚠️ safe mapping
+    installments: Array.isArray(a.repayments)
+      ? a.repayments.map((r) => ({
+          installmentNo: r.idx,
+          installmentDate: r.payment_date,
+          openingBalance: r.balance_amount,
+          installmentAmount: r.payment_amount,
+          principalBalance: r.deducted,
+        }))
+      : [],
+  }));
+};
 
-  // ✅ FILTERED DATA (SEARCH)
-  // const filteredData = formattedData.filter(
-  //   (item) =>
-  //     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  //     item.advanceStatus.toLowerCase().includes(searchTerm.toLowerCase()),
-  // );
-
+  const formattedData: UiAdvance[] = Array.isArray(advancesData?.data)
+  ? mapAdvanceData(advancesData.data)
+  : [];
   const filteredData = formattedData.filter((item) => {
     const name = item.name?.toLowerCase() || "";
     const status = item.advanceStatus?.toLowerCase() || "";

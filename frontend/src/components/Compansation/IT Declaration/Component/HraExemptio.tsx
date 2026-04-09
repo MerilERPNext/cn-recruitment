@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Typography } from "../../../shared/atoms/Typography";
 import LTACards from "./LtaBreakUp";
 import { useDeleteDocument } from "../../../../hooks/payroll/UseDeleteDocuemt";
@@ -34,6 +34,8 @@ export interface LTAData {
 }
 
 export interface HRAData {
+  custom_name: string;
+  attach_proof: string | undefined;
   custom_proof_status: string;
   owner_name: string;
   attach_reqd: number;
@@ -55,6 +57,7 @@ export interface HRAData {
 interface HRAFormProps {
   hraData: HRAData;
   LATABreakup: any;
+  ltaData ?: LTAData;
   onChange: (field: keyof HRAData | "lta", value: any) => void;
 }
 
@@ -67,18 +70,21 @@ const formatDate = (val: any): string => {
   }
 };
 
-const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => {
+const HRAForm: React.FC<HRAFormProps> = ({ hraData, ltaData, onChange, LATABreakup }) => {
   const [showLTAModal, setShowLTAModal] = useState(false);
   const uploadMutation = useFileUpload();
   const { mutateAsync: deleteDoc } = useDeleteDocument();
   const [fileName, setFileName] = useState<Record<string, string>>({});
-  const LTAData = (hraData as unknown as any[])?.[1];
-  const hraDetails = (hraData as unknown as any[])?.[0];
+  const LTAData = ltaData;
+  const hraDetails = hraData;
+  console.log("HRA Details: ", hraDetails);
   const [hraFileName, setHraFileName] = useState<string>("");
   const isPanMandatory = Number(hraData.monthly_hra) > 8333;
-
+  const isInitialized = useRef(false);
   // ─── Sync ALL initial values to parent on mount / hraDetails change ───
   useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
     const addr    = hraData.address_line1        ?? hraDetails?.address_line1        ?? "";
     const metro   = Number(hraData.rented_in_metro_city ?? hraDetails?.rented_in_metro_city ?? 0);
     const sDate   = formatDate(hraData.start_date  ?? hraDetails?.start_date);
@@ -277,7 +283,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => 
     if (!file) return;
     uploadMutation.mutate(file, {
       onSuccess(data) {
-        const updatedItems = [...LTAData.items];
+        const updatedItems = [...(LTAData?.items ?? [])];
         updatedItems[catIdx].items[itemIdx] = {
           ...updatedItems[catIdx].items[itemIdx],
           proof_file: data?.file_url,
@@ -297,7 +303,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => 
     if (!window.confirm("Delete this file?")) return;
     try {
       await deleteDoc({ doctype: "File", name: fileId });
-      const updated = [...LTAData.items];
+      const updated = [...((LTAData?.items) ?? [])];
       updated[catIdx].items[itemIdx] = {
         ...updated[catIdx].items[itemIdx],
         proof_file: undefined,
@@ -401,7 +407,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => 
       </div>
 
       {/* ═══════════════ LTA Section ═══════════════ */}
-      {LTAData?.items && (
+       
         <div className="border rounded p-4 mt-4">
           <Typography variant="bodySmall" color="body1" className="font-semibold">
             LTA Details
@@ -435,7 +441,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => 
             </div>
           )}
 
-          {LTAData.items.map((category: any, catIdx: number) => (
+          {LTAData?.items.map((category: any, catIdx: number) => (
             <div key={catIdx} className="mb-4">
               <Typography variant="bodySmall" color="body2" className="mb-2">
                 {category.category_name}
@@ -536,7 +542,7 @@ const HRAForm: React.FC<HRAFormProps> = ({ hraData, onChange, LATABreakup }) => 
             </div>
           ))}
         </div>
-      )}
+ 
     </div>
   );
 };

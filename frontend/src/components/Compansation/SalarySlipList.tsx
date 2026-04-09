@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-
 import { MoreVertical } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect,  useRef, useState } from "react";
 import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -19,7 +17,7 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { useTaxSheetPayrollPriodsData } from "../../hooks/useTaxSheet";
 import { formatCurrency } from "../../utils/currency";
 import formatToIndianDate from "../../utils/formatToIndianDate";
-import FrappeListView from "../ListView";
+import DataListView from "../DataListView"; // ← replaced FrappeListView
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import CardTable from "../shared/CardTable";
@@ -30,12 +28,35 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SalarySlipPDFModal from "./SalarySlipPDFModal";
 import ShowHideButton from "./ui/ShowHideButton";
 
+// ---- Types ----
 type PayrollPeriod = {
   name: string;
   start_date: string;
   end_date: string;
 };
 
+type SalarySlipRecord = {
+  name: string;
+  employee: string;
+  employee_name: string;
+  start_date: string;
+  end_date: string;
+  gross_pay: number;
+  net_pay: number;
+  status: string;
+  posting_date: string;
+  [key: string]: any;
+};
+
+// ---- DataListView requires a fetchFunction or customAPI.
+// We use the same frappe doctype fetch pattern that FrappeListView used internally.
+// Adjust the import path to wherever your frappe fetch service lives in your project.
+// import { frappeService } from "../../services/frappeService"; // adjust if needed
+
+
+const SALARY_SLIP_SEARCH_FIELDS = ["employee", "status", "posting_date"];
+
+// ---- Main Component ----
 const SalarySlipsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
@@ -183,23 +204,6 @@ const SalarySlipsList = () => {
     handleViewPDF("offcycle", name);
   };
 
-  // ---------------- FILTER ----------------
-  const filter = useMemo(() => {
-    const f: Record<string, string> = {};
-
-    const employeeId = targetEmployeeId || user?.employee;
-    if (employeeId) {
-      f.employee = employeeId;
-    }
-
-    if (selectedPeriod) {
-      f.custom_payroll_period = selectedPeriod; // optional backend support
-    }
-
-    return f;
-  }, [targetEmployeeId, selectedPeriod, user?.employee]);
-
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-shrink-0">
@@ -214,7 +218,10 @@ const SalarySlipsList = () => {
               </div>
             )}
             <div className="flex items-center justify-between gap-2 w-full md:w-auto">
-              <ShowHideButton showAmount={maskSalary} onToggleAmount={() => setMaskSalary((prev) => !prev)} />
+              <ShowHideButton
+                showAmount={maskSalary}
+                onToggleAmount={() => setMaskSalary((prev) => !prev)}
+              />
               <CustomDropdown
                 value={selectedPeriod}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
@@ -244,12 +251,25 @@ const SalarySlipsList = () => {
           ]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]}
         >
-          <FrappeListView
+      
+          <DataListView<SalarySlipRecord>
             key={filtersKey}
-            doctype="Salary Slip"
-            ItemComponent={(props) => (
+            queryKey={["salary-slips", String(filtersKey)]}
+            customAPI={{
+              method: "cn_indian_payroll.cn_indian_payroll.overrides.salary_silip.get_salary_slips",
+              params: {
+                doctype: "Salary Slip",
+                employee: targetEmployeeId || user?.employee,
+                payroll_period: selectedPeriod,
+              },
+            }}
+            defaultFilters={{
+              status: "Submitted",
+            }}
+            
+            ItemComponent={({ item }) => (
               <SalarySlipItem
-                {...props}
+                item={item}
                 maskSalary={maskSalary}
                 onDownloadType1={handleDownloadType1}
                 onDownloadType2={handleDownloadType2}
@@ -261,27 +281,11 @@ const SalarySlipsList = () => {
             )}
             isSearch={true}
             pageSize={10}
-            defaultFields={[
-              "name",
-              "employee",
-              "employee_name",
-              "start_date",
-              "end_date",
-              "gross_pay",
-              "net_pay",
-              "status",
-              "posting_date",
-            ]}
-            searchFields={["employee", "status", "posting_date"]}
+            searchFields={SALARY_SLIP_SEARCH_FIELDS}
             infiniteScroll={false}
             showPagination={true}
             SkeletonComponent={CardSkeleton}
             isFilter={false}
-            // defaultFilters={filter as any}
-            defaultFilters={{
-              status: "Submitted",
-              ...filter,
-            }}
           />
         </CardTable>
       </div>
@@ -356,7 +360,7 @@ const DownloadMenu = ({
         ].map(
           (item, i) =>
             printFormatMenuRef?.[item.key] === 1 && (
-              <div key={i} className="flex justify-between items-center ">
+              <div key={i} className="flex justify-between items-center">
                 <button
                   onClick={(e) => {
                     setOpen(false);
@@ -387,8 +391,6 @@ const SalarySlipItemDesktop = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  // if (item.status.toLowerCase() !== "submitted") return null;
-
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -476,8 +478,6 @@ const SalarySlipItemMobile = ({
   onDownloadType4,
   isDownloading,
 }: any) => {
-  // if (item.status.toLowerCase() !== "submitted") return null;
-
   const formatCurrency2 = (amount: number) =>
     new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -491,7 +491,6 @@ const SalarySlipItemMobile = ({
     ).padStart(2, "0")}-${date.getFullYear()}`;
   };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const printFormatMenuRef = usePrintFormatMenuOptions(
     item.name,
     item.employee,
@@ -528,7 +527,8 @@ const SalarySlipItemMobile = ({
           <div className="flex flex-col gap-1">
             <Typography variant="mobileCardLabel">Duration</Typography>
             <Typography variant="mobileCardValue">
-              {formatToIndianDate(item.start_date)} to {formatToIndianDate(item.end_date)}
+              {formatToIndianDate(item.start_date)} to{" "}
+              {formatToIndianDate(item.end_date)}
             </Typography>
           </div>
         </div>
@@ -565,6 +565,7 @@ const SalarySlipItemMobile = ({
   );
 };
 
+// ---- Responsive wrapper — DataListView passes { item } to ItemComponent ----
 const SalarySlipItem = (props: any) => {
   const { isDesktop } = useScreenSize();
   return isDesktop ? (

@@ -63,7 +63,7 @@ const ITDeclarationForm = () => {
   const [activeSection, setActiveSection] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [hraData, setHraData] = useState<HRAData | null>(null);
-  console.log(hraData, "hraData-------");
+  const [ltaData, setLtaData] = useState<any>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   useEffect(() => {
     const el = tabRefs.current[activeMainTab];
@@ -135,8 +135,12 @@ const ITDeclarationForm = () => {
     if (normalized.length) {
       setActiveSection(normalized[0].section);
     }
-    if (responseData?.hra_exemption) {
-      setHraData(responseData.hra_exemption);
+    if (responseData?.hra_exemption && responseData.lta_exemption) {
+      setHraData(responseData.hra_exemption?.[0] || null);
+      setLtaData({
+        items: responseData.lta_exemption || [],
+      });
+
     }
   }, [responseData]);
   /* ---------------- Derived ---------------- */
@@ -167,16 +171,16 @@ const ITDeclarationForm = () => {
     );
   };
   /* ---------------- Submit ---------------- */
-  const LTAData = (hraData as unknown as any[])?.[1];
+
   const handleSubmit = () => {
     const isValid = validateITDeclarationProofs({
       groupedCategories,
       hraData,
       goHeadWithNewRegimeBool,
-      toast
+      toast,
     });
-      if (!isValid) return;
-    const ltaDeclarations = LTAData?.items?.flatMap((cat: any) =>
+    if (!isValid) return;
+    const ltaDeclarations = ltaData?.items?.flatMap((cat: any) =>
       cat.items
         .filter((item: any) => Number(item?.amount) > 0)
         .map((item: any) => ({
@@ -269,7 +273,10 @@ const ITDeclarationForm = () => {
     });
   };
 
-  const message = PrrofOfITDeclaration?.message || "";
+  const message =
+    typeof PrrofOfITDeclaration?.message === "string"
+      ? PrrofOfITDeclaration.message
+      : "";
 
   // eslint-disable-next-line no-useless-escape
   const dateRegex = /(\b\d{4}-\d{2}-\d{2}\b|\b\d{2}[\/-]\d{2}[\/-]\d{4}\b)/g;
@@ -277,9 +284,6 @@ const ITDeclarationForm = () => {
   const parts = message.split(dateRegex);
 
   // Register action button in central SalarySlipApp via ref pattern
-
-
-
 
   return (
     <div className="bg-white min-h-screen">
@@ -349,15 +353,17 @@ const ITDeclarationForm = () => {
                   disabled={false}
                 />
               )}
-              {(actionsEnabled.preview && declarationDoctype === "Employee Tax Exemption Proof Submission") &&   (
-                <PreviewOfITDeclaration
-                  declarationId={declarationIdFromITDeclaration}
-                  disabled={false}
-                />
-              )}
-            <Button
-            variant="contain"
-            size="md"
+              {actionsEnabled.preview &&
+                declarationDoctype ===
+                  "Employee Tax Exemption Proof Submission" && (
+                  <PreviewOfITDeclaration
+                    declarationId={declarationIdFromITDeclaration}
+                    disabled={false}
+                  />
+                )}
+              <Button
+                variant="contain"
+                size="md"
                 onClick={handleSubmit}
                 disabled={PrrofOfITDeclaration?.status === "failed"}
               >
@@ -382,12 +388,12 @@ const ITDeclarationForm = () => {
                   declarationId={declarationIdFromITDeclaration}
                   disabled={false}
                 />
-              <Button
-                onClick={handleSubmit}
-                disabled={PrrofOfITDeclaration?.status === "failed"}
-              >
-                Submit
-              </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={PrrofOfITDeclaration?.status === "failed"}
+                >
+                  Submit
+                </Button>
               </div>
             </div>
           )}
@@ -396,7 +402,7 @@ const ITDeclarationForm = () => {
           {isDesktop && <p className="text-gray-500">Tax Regime</p>}
           <div className="inline-flex rounded-lg border bg-gray-100 p-[2px] text-xs">
             <button
-            disabled={PrrofOfITDeclaration?.status === "failed"}
+              disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(1)}
               className={`px-6 py-1 whitespace-nowrap w-full rounded-md ${
                 goHeadWithNewRegime === 1
@@ -407,7 +413,7 @@ const ITDeclarationForm = () => {
               New Regime
             </button>
             <button
-             disabled={PrrofOfITDeclaration?.status === "failed"}
+              disabled={PrrofOfITDeclaration?.status === "failed"}
               onClick={() => setGoHeadWithNewRegime(0)}
               className={`px-6  whitespace-nowrap py-1 w-full rounded-md ${
                 goHeadWithNewRegime === 0
@@ -417,103 +423,100 @@ const ITDeclarationForm = () => {
             >
               Old Regime
             </button>
-            
-           
-
           </div>
           <div className=" flex gap-2 items-center">
-      
-      {/* Open Button */}
-     {actionsEnabled?.edit_decalaration && ( <button
-        onClick={() => setOpenModal(true)}
-        className=" text-gray-500 rounded-xl"
-      >
-        <SquarePen className="h-5 w-5" />
-      </button>)}
+            {/* Open Button */}
+            {actionsEnabled?.edit_decalaration && (
+              <button
+                onClick={() => setOpenModal(true)}
+                className=" text-gray-500 rounded-xl"
+              >
+                <SquarePen className="h-5 w-5" />
+              </button>
+            )}
 
-      {/* Modal */}
-      <EditITDeclarationAccess
+            {/* Modal */}
+            <EditITDeclarationAccess
               isOpen={openModal}
-              onClose={() => setOpenModal(false)} empdoc_id={user?.employee || null}/>
-    </div>
+              onClose={() => setOpenModal(false)}
+              empdoc_id={user?.employee || null}
+            />
+          </div>
         </div>
         {/* Tabs */}
         <div className="w-full">
-        <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-6 mt-4 border-b border-gray-200">
-  <button
-    ref={(el) => {
-      tabRefs.current["category"] = el;
-    }}
-    onClick={() => setActiveMainTab("category")}
-    className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+          <div className="flex flex-nowrap overflow-x-auto md:overflow-visible gap-6 mt-4 border-b border-gray-200">
+            <button
+              ref={(el) => {
+                tabRefs.current["category"] = el;
+              }}
+              onClick={() => setActiveMainTab("category")}
+              className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
     ${
       activeMainTab === "category"
         ? "text-primary"
         : "text-gray-500 hover:text-gray-800"
     }`}
-  >
-    Other Investment Declaration
+            >
+              Other Investment Declaration
+              {activeMainTab === "category" && (
+                <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+              )}
+            </button>
 
-    {activeMainTab === "category" && (
-      <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
-    )}
-  </button>
-
-  {!goHeadWithNewRegimeBool && (
-    <button
-      ref={(el) => {
-        tabRefs.current["hra"] = el;
-      }}
-      onClick={() => setActiveMainTab("hra")}
-      className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
+            {!goHeadWithNewRegimeBool && (
+              <button
+                ref={(el) => {
+                  tabRefs.current["hra"] = el;
+                }}
+                onClick={() => setActiveMainTab("hra")}
+                className={`relative whitespace-nowrap pb-3 text-sm font-semibold transition-all duration-200
       ${
         activeMainTab === "hra"
           ? "text-primary"
           : "text-gray-500 hover:text-gray-800"
       }`}
-    >
-      HRA & Other (U/S 10)
-
-      {activeMainTab === "hra" && (
-        <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
-      )}
-    </button>
-  )}
-</div>
+              >
+                HRA & Other (U/S 10)
+                {activeMainTab === "hra" && (
+                  <span className="absolute left-0 bottom-0 w-full h-[2px] bg-primary rounded-lg"></span>
+                )}
+              </button>
+            )}
+          </div>
           {activeMainTab === "hra" && hraData && (
             <HRAForm
               hraData={hraData}
+              ltaData={ltaData}
               onChange={handleHraChange}
               LATABreakup={LTABreakup}
             />
           )}
           {activeMainTab === "category" && (
             <>
-<div className="flex flex-wrap md:flex-nowrap items-center gap-2 mt-4 p-1 bg-gray-100/70 backdrop-blur-sm rounded-xl w-fit">
-  {groupedCategories.map((sec, index) => {
-    const active = activeSection === sec.section;
+              <div className="flex flex-wrap md:flex-nowrap items-center gap-2 mt-4 p-1 bg-gray-100/70 backdrop-blur-sm rounded-xl w-fit">
+                {groupedCategories.map((sec, index) => {
+                  const active = activeSection === sec.section;
 
-    return (
-      <div key={sec.section} className="flex items-center">
-        <button
-          onClick={() => setActiveSection(sec.section)}
-          className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200
-          ${
-            active
-              ? "bg-white text-primary shadow-sm"
-              : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
-          }`}
-        >
-          {sec.section}
-        </button>
+                  return (
+                    <div key={sec.section} className="flex items-center">
+                      <button
+                        onClick={() => setActiveSection(sec.section)}
+                        className={`px-5 py-2 text-xs font-semibold rounded-lg transition-all duration-200
+                        ${ active ? "bg-white text-primary shadow-sm"
+                         : "text-gray-600 hover:text-gray-900 hover:bg-white/70"
+                          }`}
+                       >
+                        {sec.section}
+                      </button>
 
-        {index !== groupedCategories.length - 1 && (
-          <div className="w-px h-5 bg-gray-300 mx-1"></div>
-        )}
-      </div>
-    );
-  })}
-</div>
+                      {index !== groupedCategories.length - 1 && (
+                        <div className="w-px h-5 bg-gray-300 mx-1"></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
               <CategorySection
                 sectionCategories={sectionCategories}
                 activeSection={activeSection}

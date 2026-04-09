@@ -29,8 +29,13 @@ export type ApiAdvance = {
   balance_amount: number;
   todo_list: TodoType[] | null;
   repayments: ApiRepayment[];
+ // For any additional fields that might be needed in the UI
 }
-
+export interface ApiAdvanceResponse {
+  status: string;
+  total_count: number;
+  data: ApiAdvance[];
+}
 // UI shape (your old Advance type)
 export interface UiAdvance {
   allocated_to: string[];

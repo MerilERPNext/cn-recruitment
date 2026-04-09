@@ -4,9 +4,7 @@ import DataListView from "../../../DataListView";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { Loan } from "../Type/loan";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
-import { useGlobalStore } from "../../../../hooks/useGlobalStore";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
-import CreateLoanDialog from "./CreateLoanDailog";
 import StatusBadge from "../../../shared/atoms/statusBadge";
 import { Typography } from "../../../shared/atoms/Typography";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -210,4 +208,3 @@ const LoantItem: React.FC<{
   );
 };
 
-export default ListViewOfLoanForMobile;
