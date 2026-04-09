@@ -35,8 +35,6 @@ const LeaveAppInner: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: uiPermissions } = useGetUiPermission();
-  console.log("ui permission for leave", uiPermissions);
   const [activeTab, setActiveTab] = useState<TabName>("leave-balance");
   const isRequestRoute = location.pathname === "/webapp/leave-app/request";
 

@@ -18,7 +18,6 @@ import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails } from
 import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import dagre from "dagre";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -280,8 +279,7 @@ export default function ThreeLevelOrgChart() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
-  const { data: userId } = useLoggedInUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";

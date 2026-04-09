@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useMemo, useEffect } from "react";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
@@ -177,8 +176,7 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => (
 // ---- Main Component ----
 
 export default function SalaryAssignmentList() {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =

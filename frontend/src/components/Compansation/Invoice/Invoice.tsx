@@ -3,7 +3,6 @@
 
 import { useState, useRef } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import Button from "../../shared/atoms/Button";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
@@ -57,8 +56,7 @@ export default function Invoice() {
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
   const amountClass = hideAmount
     ? "blur-sm select-none pointer-events-none"

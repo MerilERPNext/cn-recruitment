@@ -6,7 +6,6 @@ import { FaRegEye } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useBenefitClaimPDF,
   useDownloadSalarySlipPDF,
@@ -62,8 +61,7 @@ const SalarySlipsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId } = useTargetUser();
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const [filtersKey, setFiltersKey] = useState(0);

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router";
 import { CategoryCardSkeleton } from "./PolicySkeletons";
 import { usePolicyCountsByCategory } from "../../hooks/usePolicy";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { Typography } from "../shared/atoms/Typography";
 import { Card } from "../shared/atoms/Card";
@@ -50,7 +50,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
 
 const PoliciesCategory: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { data: employee, isLoading: employeeLoading } = useCurrentEmployee();
+  const { data: employee, isLoading: employeeLoading } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
 
   const {
     data: counts,

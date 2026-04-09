@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useExtraPayment } from "../../../hooks/useExtraPAyments";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -28,8 +27,7 @@ export default function ExtraPayment() {
   const [searchTerm, setSearchTerm] = useState("");
   const { isDesktop } = useScreenSize();
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
   const { data: extraPayment } = useExtraPayment(
     user?.company || null,
     user?.employee || null

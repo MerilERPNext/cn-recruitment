@@ -7,7 +7,6 @@ import SalaryInfo from "./SalaryInfo";
 // import HRLetters from "./HRLetters";
 import HeaderBar from "../HeaderBar";
 import { useNavigate } from "react-router-dom";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import {
   useCurrentEmployeeAddress,
   useCurrentEmployeeAllDetails,
@@ -23,7 +22,53 @@ import TwoLevelOrgChart from "../ORGChart/OrgnazationChartForTwoLavel";
 import DocumentLibrary from "../Library/Library";
 
 export interface PersonalInfoProps {
-  user: Employee | null | undefined;
+  user: Pick<Employee, "date_of_birth" | "gender" | "marital_status" | "blood_group" | "employee_name" | "person_to_be_contacted" | "emergency_phone_number" | "employee"> | null | undefined;
+  refetch?: () => void;
+}
+
+export interface ContactInfoProps {
+  user: Pick<Employee, "cell_number" | "personal_email" | "company_email" | "employee"> | null | undefined;
+  refetch?: () => void;
+}
+
+export interface CompanyInfoProps {
+  user:
+  | Pick<
+    Employee,
+    | "employee"
+    | "department"
+    | "designation"
+    | "reports_to"
+    | "date_of_joining"
+    | "employment_type"
+    | "branch"
+    | "default_shift"
+    | "company"
+    | "status"
+    | "final_confirmation_date"
+    | "contract_end_date"
+    | "grade"
+    | "payroll_cost_center"
+  >
+  | null
+  | undefined;
+  refetch?: () => void;
+}
+
+export interface SalaryInfoProps {
+  user:
+  | Pick<
+    Employee,
+    | "ctc"
+    | "salary_currency"
+    | "provident_fund_account"
+    | "pan_number"
+    | "bank_name"
+    | "bank_ac_no"
+    | "ifsc_code"
+  >
+  | null
+  | undefined;
   refetch?: () => void;
 }
 
@@ -47,9 +92,40 @@ const MyProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
-  const { data: userAddress } = useCurrentEmployeeAddress(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined,
+    ["user_id",
+      "employee_name",
+      "image",
+      "designation",
+      "department",
+      "reports_to",
+      "date_of_joining",
+      "employment_type",
+      "branch",
+      "default_shift",
+      "company",
+      "status",
+      "final_confirmation_date",
+      "contract_end_date",
+      "grade",
+      "payroll_cost_center",
+      "employee",
+      "date_of_birth",
+      "gender",
+      "marital_status",
+      "blood_group",
+      "person_to_be_contacted",
+      "emergency_phone_number",
+      "ctc",
+      "salary_currency",
+      "provident_fund_account",
+      "pan_number",
+      "bank_name",
+      "bank_ac_no",
+      "ifsc_code"
+    ]);
+
+  const { data: userAddress } = useCurrentEmployeeAddress(user?.user_id || "");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -177,11 +253,10 @@ const MyProfile: React.FC = () => {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      activeTab === tab.key
-                        ? "bg-black text-white shadow-lg shadow-black/20"
-                        : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
-                    }`}
+                    className={`w-full text-left px-5 py-4 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === tab.key
+                      ? "bg-black text-white shadow-lg shadow-black/20"
+                      : "text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+                      }`}
                   >
                     {tab.label}
                   </button>

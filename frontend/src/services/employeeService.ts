@@ -74,6 +74,64 @@ function isEmployee(obj: unknown): obj is Employee {
   return true;
 }
 
+function normalizeEmployeeData(obj: unknown): unknown {
+  if (!obj || typeof obj !== "object") {
+    return obj;
+  }
+
+  const employee = { ...(obj as Record<string, unknown>) };
+
+  // Some API variants return `employee` as the primary identifier
+  // while UI code expects/validates `name`.
+  if (
+    (typeof employee.name !== "string" || employee.name.trim() === "") &&
+    typeof employee.employee === "string" &&
+    employee.employee.trim() !== ""
+  ) {
+    employee.name = employee.employee;
+  }
+
+  // Keep `employee` available when only `name` is returned.
+  if (
+    (typeof employee.employee !== "string" || employee.employee.trim() === "") &&
+    typeof employee.name === "string" &&
+    employee.name.trim() !== ""
+  ) {
+    employee.employee = employee.name;
+  }
+
+  if (
+    (typeof employee.employee_name !== "string" ||
+      employee.employee_name.trim() === "") &&
+    typeof employee.first_name === "string" &&
+    employee.first_name.trim() !== ""
+  ) {
+    employee.employee_name = employee.first_name;
+  }
+
+  return employee;
+}
+
+function hasEmployeeIdentifier(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") {
+    return false;
+  }
+
+  const employee = obj as Record<string, unknown>;
+  return (
+    (typeof employee.name === "string" && employee.name.trim() !== "") ||
+    (typeof employee.employee === "string" && employee.employee.trim() !== "")
+  );
+}
+
+function shouldUseStrictEmployeeValidation(fields?: string[]): boolean {
+  if (!fields || fields.length === 0) {
+    return true;
+  }
+
+  return fields.includes("*");
+}
+
 function isEmployeeListItem(obj: unknown): obj is EmployeeListItem {
   if (!hasRequiredProperties(obj, ["name", "employee_name", "status"])) {
     return false;
@@ -140,7 +198,9 @@ export class EmployeeService {
         );
       }
 
-      if (!isEmployee(result)) {
+      const normalizedResult = normalizeEmployeeData(result);
+
+      if (!isEmployee(normalizedResult)) {
         console.error("Employee validation failed for data:", result);
         console.error("Data type:", typeof result);
         console.error("Data content:", JSON.stringify(result));
@@ -149,7 +209,7 @@ export class EmployeeService {
         );
       }
 
-      return result;
+      return normalizedResult;
     } catch (error) {
       console.error("Error fetching employee:", error);
       // Re-throw with user-friendly message
@@ -256,15 +316,20 @@ export class EmployeeService {
         return null;
       }
 
-      if (!isEmployee(result)) {
+      const normalizedResult = normalizeEmployeeData(result);
+
+      if (!isEmployee(normalizedResult)) {
         console.error("Current employee validation failed for data:", result);
         console.error("Data type:", typeof result);
         console.error("Data content:", JSON.stringify(result));
         return null;
       }
 
-      console.log("Current employee data validated successfully:", result);
-      return result;
+      console.log(
+        "Current employee data validated successfully:",
+        normalizedResult,
+      );
+      return normalizedResult;
     } catch (error) {
       console.error("Error fetching current employee:", error);
       console.error(
@@ -275,6 +340,7 @@ export class EmployeeService {
       throw error;
     }
   }
+  /** Loads the Employee row; default `fields` is `["*"]` — see `CurrentEmployeeAllDetails` in types. */
   static async getCurrentEmployeeAllDetails(
     user_id: string,
     name?: string,
@@ -327,14 +393,22 @@ export class EmployeeService {
         return null;
       }
 
-      const employeeData = employeeDataArray[0];
+      const employeeData = normalizeEmployeeData(employeeDataArray[0]);
+
+      const useStrictValidation = shouldUseStrictEmployeeValidation(fields);
 
       // Debug employee data validation
       const validation = validateEmployeeFields(employeeData);
-      logger.debug("Employee validation result", validation);
+      logger.debug("Employee validation result", {
+        ...validation,
+        useStrictValidation,
+      });
 
-      // Validate the employee data
-      if (!isEmployee(employeeData)) {
+      // For partial field queries, only require a stable employee identifier.
+      if (
+        (useStrictValidation && !isEmployee(employeeData)) ||
+        (!useStrictValidation && !hasEmployeeIdentifier(employeeData))
+      ) {
         logger.employeeError(
           "getCurrentEmployeeAllDetails validation failed",
           user_id,
@@ -368,8 +442,11 @@ export class EmployeeService {
         return null;
       }
 
-      logger.info("Employee data validated successfully", { user_id });
-      return employeeData;
+      logger.info("Employee data validated successfully", {
+        user_id,
+        strictValidation: useStrictValidation,
+      });
+      return employeeData as Employee;
     } catch (error) {
       logger.employeeError("getCurrentEmployeeAllDetails", user_id, error);
       return null;
@@ -424,7 +501,7 @@ export class EmployeeService {
         return null;
       }
 
-      const employeeData = employeeDataArray[0];
+      const employeeData = normalizeEmployeeData(employeeDataArray[0]);
 
       // Debug employee data validation
       const validation = validateEmployeeFields(employeeData);
@@ -513,6 +590,8 @@ export class EmployeeService {
           employee.department ||
           "Not Specified",
         designation:
+          ("custom_designation_name" in employee &&
+            employee.custom_designation_name) ||
           ("designation_name" in employee && employee.designation_name) ||
           employee.designation ||
           "Not Specified",

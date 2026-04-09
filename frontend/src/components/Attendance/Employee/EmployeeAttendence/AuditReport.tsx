@@ -15,7 +15,9 @@ const AuditReport = () => {
     const { data: currentUser } = useCurrentUser();
 
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string
+        currentUser?.name as string,
+        undefined,
+        ["employee"],
     );
 
     const { data: auditReports, isLoading, isError, error } = useGetAuditReport({
