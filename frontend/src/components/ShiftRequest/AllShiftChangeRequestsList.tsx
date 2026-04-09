@@ -192,6 +192,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  isActed={item?.isActed}
                 />
               );
             }}
