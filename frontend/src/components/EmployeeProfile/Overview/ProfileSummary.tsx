@@ -1,6 +1,6 @@
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { useCurrentEmployeeAllDetails, useGetEmployeeProfileOverview } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
+
 import { formatDateToDDMMYYYY } from "../../../utils/helperUtils";
 import { Typography } from "../../shared/atoms/Typography";
 import ProfileSkeleton from "../../shared/molecules/Skeletons/ProfileSkeleton";
@@ -8,9 +8,8 @@ import ProfileSkeleton from "../../shared/molecules/Skeletons/ProfileSkeleton";
 const ProfileSummary = () => {
     const { targetEmployeeId } = useTargetUser();
 
-    const { data: userId } = useLoggedInUser();
     const { data: currentUser, isLoading } =
-        useCurrentEmployeeAllDetails(userId || "");
+        useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
 
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";

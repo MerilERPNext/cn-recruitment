@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useMemo, useRef } from "react";
 import { Form } from "@tsed/react-formio";
-import { PersonalInfoProps } from "./MyProfile";
+import { ContactInfoProps } from "./MyProfile";
 import { useUpdateCurrentEmployeeProfile } from "../../hooks/useEmployee";
 // CHANGED: Added the import for the custom screen size hook
 import { useScreenSize } from "../../hooks/useScreenSize";
 
-export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const ContactInfo: React.FC<ContactInfoProps> = ({ user }) => {
   const { updateEmployeeMutation } = useUpdateCurrentEmployeeProfile();
   const formContactInfoInstance = useRef<any>(null);
   // CHANGED: Use the custom hook to determine if the screen is a desktop
@@ -112,7 +112,7 @@ export const ContactInfo: React.FC<PersonalInfoProps> = ({ user }) => {
             </p>
           </div>
         )}
-        
+
         <div className="max-w-full pb-16 md:pb-0 md:max-w-4xl md:mx-auto">
           <Form
             form={contactInfoForm}

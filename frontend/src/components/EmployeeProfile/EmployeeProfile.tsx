@@ -18,7 +18,7 @@ import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import Button from "../shared/atoms/Button";
 import AttendanceAssignments from "../Attendance/AttendanceAssignments";
 import ShowHolidays from "./ShowHolidays";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
+
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
 import CircularLoader from "../shared/atoms/CircularLoader";
@@ -55,7 +55,6 @@ const EmployeeProfile: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
     useTargetUser();
-  const { data: userId } = useLoggedInUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
   const canAttendanceAssignments = isActionEnabled(
     userUiPermission,
@@ -73,7 +72,7 @@ const EmployeeProfile: React.FC = () => {
     "Employee Profile",
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
-    useCurrentEmployeeAllDetails(userId || "");
+    useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
 
   const queryClient = useQueryClient();
 

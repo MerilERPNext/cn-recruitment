@@ -18,6 +18,8 @@ const AllMyShiftRequestsList = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name ?? "",
+    undefined,
+    ["employee"],
   );
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useLoan } from "../../../hooks/useLoan";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { isActionEnabled } from "../../../utils/uiPermission";
@@ -17,8 +16,7 @@ export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
   const { data: loanData, isLoading } = useLoan(employeeId || "");
   const [loanId, setLoanId] = useState<string | null>(null);

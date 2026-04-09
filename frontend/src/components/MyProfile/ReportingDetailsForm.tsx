@@ -31,6 +31,8 @@ const ReportingDetailsForm = ({
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || "",
+    undefined,
+    ["employee"],
   );
   const { mutateAsync: addEmployeeReportingDetails } =
     useAddEmployeeReportingDetailsMutation();

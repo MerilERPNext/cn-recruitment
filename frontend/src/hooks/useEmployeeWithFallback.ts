@@ -1,9 +1,7 @@
 import { useCurrentUser } from './useCurrentUser';
 import { useCurrentEmployeeAllDetails } from './useEmployee';
-import { Employee } from '../types/employee';
 
 export interface EmployeeState {
-  employee: Employee | null;
   isLoading: boolean;
   error: Error | null;
   hasEmployeeRecord: boolean;
@@ -29,7 +27,8 @@ export const useEmployeeWithFallback = (): EmployeeState => {
     isLoading: employeeLoading, 
     error: employeeError,
     refetch: refetchEmployee
-  } = useCurrentEmployeeAllDetails(currentUser?.name || '');
+  } = useCurrentEmployeeAllDetails(currentUser?.name || '', undefined, 
+    ["user_id", "name", "employee_name"]);
 
   const retry = () => {
     if (userError) {
@@ -47,7 +46,6 @@ export const useEmployeeWithFallback = (): EmployeeState => {
   const canRetry = !!error || (!currentEmployee && !isLoading);
 
   return {
-    employee: hasValidData ? currentEmployee : null,
     isLoading,
     error,
     hasEmployeeRecord,
@@ -61,47 +59,47 @@ export const useEmployeeWithFallback = (): EmployeeState => {
  * Hook that provides employee data with automatic fallback handling
  * Returns null for employee if data is invalid, but provides state information
  */
-export const useEmployeeOrNull = () => {
-  const state = useEmployeeWithFallback();
-  return {
-    ...state,
-    // Only return employee if data is completely valid
-    employee: state.hasValidData ? state.employee : null
-  };
-};
+// export const useEmployeeOrNull = () => {
+//   const state = useEmployeeWithFallback();
+//   return {
+//     ...state,
+//     // Only return employee if data is completely valid
+//     employee: state.hasValidData ? state.employee : null
+//   };
+// };
 
 /**
  * Hook that throws an error if employee data is not available
  * Use this when employee data is absolutely required
  */
-export const useRequiredEmployee = (): Employee => {
-  const state = useEmployeeWithFallback();
+// export const useRequiredEmployee = (): Employee => {
+//   const state = useEmployeeWithFallback();
   
-  if (state.isLoading) {
-    throw new Promise((resolve) => {
-      // This will suspend the component until loading is complete
-      const checkLoading = () => {
-        if (!state.isLoading) {
-          resolve(state.employee);
-        } else {
-          setTimeout(checkLoading, 100);
-        }
-      };
-      checkLoading();
-    });
-  }
+//   if (state.isLoading) {
+//     throw new Promise((resolve) => {
+//       // This will suspend the component until loading is complete
+//       const checkLoading = () => {
+//         if (!state.isLoading) {
+//           resolve(state.employee);
+//         } else {
+//           setTimeout(checkLoading, 100);
+//         }
+//       };
+//       checkLoading();
+//     });
+//   }
   
-  if (state.error) {
-    throw state.error;
-  }
+//   if (state.error) {
+//     throw state.error;
+//   }
   
-  if (!state.hasValidData) {
-    throw new Error(
-      state.hasEmployeeRecord 
-        ? 'Employee record exists but has invalid data structure'
-        : 'No employee record found for current user'
-    );
-  }
+//   if (!state.hasValidData) {
+//     throw new Error(
+//       state.hasEmployeeRecord 
+//         ? 'Employee record exists but has invalid data structure'
+//         : 'No employee record found for current user'
+//     );
+//   }
   
-  return state.employee!;
-};
+//   return state.employee!;
+// };

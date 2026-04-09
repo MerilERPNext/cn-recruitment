@@ -27,7 +27,7 @@ export interface AddressInfoData {
 
 export interface AddressInfoProps {
   userAddress: AddressInfoData | undefined;
-  user: Employee | null | undefined;
+  user: Pick<Employee, "custom_same_as_current" | "email" | "employee"> | null | undefined;
   refetch?: () => void;
 }
 

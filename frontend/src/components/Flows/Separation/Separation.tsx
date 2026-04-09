@@ -9,7 +9,6 @@ import {
   useChatAssistantLazy,
   useDifinitaionNameForSeparation,
 } from "../../../hooks/useFlows";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import Button from "../../shared/atoms/Button";
 import ApprovalTracker from "./components/ApprovalTracker";
 import { useTargetUser } from "../../../context/ViewedUserContext";
@@ -47,8 +46,7 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "notice_number_of_days"]);
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);

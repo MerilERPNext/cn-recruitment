@@ -6,7 +6,6 @@ import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useMemo } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import useCurrentUser from "../../../hooks/useCurrentUser";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import StatusBadge from "../../shared/atoms/statusBadge";
 
@@ -93,9 +92,8 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
     ? JSON.parse(data?.custom_doctype_actions)
     : [];
 
-  const { data: userId } = useLoggedInUser();
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
 
   const canPerformAction = useMemo(() => {
     if (

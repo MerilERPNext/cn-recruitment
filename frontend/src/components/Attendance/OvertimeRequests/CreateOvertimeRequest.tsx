@@ -143,6 +143,8 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
+    undefined,
+    ["employee"],
   );
   const { targetEmployeeId } = useTargetUser();
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();

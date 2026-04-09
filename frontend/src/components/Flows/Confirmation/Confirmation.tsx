@@ -8,7 +8,6 @@ import {
   useDifinitaionNameForSeparation,
   useGetShouldShowConfirmationButton,
 } from "../../../hooks/useFlows";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import {
   useConfirmation,
   // useConfirmationEmployee,
@@ -40,12 +39,11 @@ import { buildFormFromSchemaAndAnswer } from "../../../utils/flowUtils";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
   const {
     data: currentEmployee,
     isLoading: loadingCurrentEmployee,
     refetch: refetchCurrentEmployee,
-  } = useCurrentEmployeeAllDetails(userId || "");
+  } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "date_of_joining", "final_confirmation_date", "custom_employment_status"]);
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee, refetch: refetchTargetEmployee } =
     useEmployee(targetEmployeeId);

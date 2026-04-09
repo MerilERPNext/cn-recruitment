@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { usePerquisite } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -18,8 +17,7 @@ export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
   const { data: perquisiteData } = usePerquisite(user?.employee, user?.company);
 
   const { isDesktop } = useScreenSize();

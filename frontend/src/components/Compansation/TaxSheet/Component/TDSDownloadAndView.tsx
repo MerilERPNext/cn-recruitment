@@ -8,7 +8,6 @@ import {
   useTDSPRintViewPDF,
 } from "../../../../hooks/useTaxSheet";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 import Button from "../../../shared/atoms/Button";
 
 type Props = {
@@ -18,8 +17,7 @@ type Props = {
 const TDSSlipHandler = ({ disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
