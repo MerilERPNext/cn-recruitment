@@ -105,7 +105,13 @@ const MobileDashboard: React.FC = () => {
 
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
+    currentUser?.name as string, undefined, [
+    "user_id",
+    "employee_name",
+    "company",
+    "custom_allow_mobile_checkin",
+    "employee"
+  ]
   );
 
   const employeeState = useEmployeeWithFallback();

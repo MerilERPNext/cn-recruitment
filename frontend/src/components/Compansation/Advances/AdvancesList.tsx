@@ -5,7 +5,6 @@ import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useEmployeeAdvances } from "../../../hooks/useEmployeeAdvances";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";
@@ -45,8 +44,7 @@ const AdvancesList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const {

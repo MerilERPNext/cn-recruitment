@@ -2,7 +2,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
 import { usePayPackage } from "../../../hooks/payroll/usePayroll";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import CardTable from "../../shared/CardTable";
@@ -33,8 +32,7 @@ type PayrollPeriod = {
 };
 
 export default function SalaryAssignmentList() {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =

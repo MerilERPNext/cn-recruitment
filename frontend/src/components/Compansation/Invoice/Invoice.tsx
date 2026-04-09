@@ -4,7 +4,6 @@
 import { useState } from "react";
 import { useInvoiceSalarySlip } from "../../../hooks/payroll/usePerquisite";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import InvoicePDFview from "./Component/InvoicePDFview";
 import Button from "../../shared/atoms/Button";
 import { useRef } from "react";
@@ -32,8 +31,7 @@ export default function Invoice() {
 
   const uploadMutation = useFileUpload();
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
 
   const { data: invoiceData, isLoading } = useInvoiceSalarySlip(
     user?.employee || "",

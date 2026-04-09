@@ -1,5 +1,5 @@
 import React from "react";
-import { PersonalInfoProps } from "./MyProfile";
+import { SalaryInfoProps } from "./MyProfile";
 import { DollarSign, CreditCard, Building } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
@@ -41,7 +41,7 @@ const MobileSectionHeader: React.FC<{ title: string }> = ({ title }) => (
   </h3>
 );
 
-export const SalaryInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const SalaryInfo: React.FC<SalaryInfoProps> = ({ user }) => {
   const { isDesktop } = useScreenSize(); // ✅ useScreenSize hook
   const isMobile = !isDesktop;
 

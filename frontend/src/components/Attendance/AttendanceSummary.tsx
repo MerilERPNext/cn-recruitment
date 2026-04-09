@@ -71,7 +71,9 @@ const AttendanceSummary = () => {
   const { data: currentUser } = useCurrentUser();
 
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "", targetEmployeeId || ""
+    currentUser?.name || "",
+    targetEmployeeId || "",
+    ["employee", "user_id", "custom_allow_mobile_checkin", "custom_enable_web_clockin", "custom_weekly_off"],
   );
 
   const { data: userUiPermission } = useGetUiPermission("Attendance");

@@ -120,7 +120,9 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
 
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name || ""
+        currentUser?.name || "",
+        undefined,
+        ["name"],
     );
 
     const employee = targetEmployeeId || currentEmployee?.name;

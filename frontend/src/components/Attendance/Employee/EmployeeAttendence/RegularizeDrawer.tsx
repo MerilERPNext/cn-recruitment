@@ -37,6 +37,8 @@ const RegularizeDrawer = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
+    undefined,
+    ["employee"],
   );
   const { targetEmployeeId } = useTargetUser();
 

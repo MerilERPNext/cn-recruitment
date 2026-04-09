@@ -6,8 +6,8 @@ import { LogOut, ChevronDown, User, Dock, RotateCcwKey } from "lucide-react";
 import defaultProfile from "../assets/face-rec.png";
 import CollapsibleSidebar from "./shared/CollapsibleSidebar";
 import NotificationBell from "./Notification/NotificationBell";
-import { useLoggedInUser } from "../hooks/useLoggedInUser";
-import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
+
+import { useCurrentEmployee, useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { ROUTES } from "../constants/routes";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useLogout from "../hooks/useLogout";
@@ -39,9 +39,20 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const { data: userId } = useLoggedInUser();
-  const { data: currentEmployee, isLoading: currentEmpIsLoading } =
-    useCurrentEmployeeAllDetails(userId || "");
+  const { data: currentEmployeeByList, isLoading: currentEmpListIsLoading } =
+    useCurrentEmployeeAllDetails(undefined, undefined, [
+      "employee",
+      "name",
+      "employee_name",
+      "first_name",
+      "image",
+      "company_email",
+      "personal_email",
+    ]);
+  const { data: currentEmployeeByMethod, isLoading: currentEmpMethodIsLoading } =
+    useCurrentEmployee();
+  const currentEmployee = currentEmployeeByList ?? currentEmployeeByMethod;
+  const currentEmpIsLoading = currentEmpListIsLoading || currentEmpMethodIsLoading;
   const { clearTargetEmployee } = useTargetUser();
 
   const { data: currentUser } = useCurrentUser();
@@ -212,7 +223,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       {currentUser?.username}
                     </Typography>
                     <Typography variant="label" color="white">
-                      Employee ID: {currentEmployee?.employee}
+                      Employee ID: {currentEmployee?.employee || currentEmployee?.name}
                     </Typography>
                   </div>
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white/20">
@@ -227,7 +238,8 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                       }`}
                   />
                 </button>
-              ) : currentEmpIsLoading || !currentEmployee?.employee ? (
+              ) : currentEmpIsLoading ||
+                !(currentEmployee?.employee || currentEmployee?.name) ? (
                 <div className="flex w-30 animate-pulse gap-2 items-center">
                   <div className="h-4 bg-primary-400/20 rounded w-20  flex-1"></div>
                   <div className="h-6 w-6 bg-primary-400/20 rounded-full "></div>
@@ -252,7 +264,7 @@ const DesktopLayoutWrapper: React.FC<DesktopLayoutWrapperProps> = ({
                         color="white"
                         className="opacity-80 block"
                       >
-                        Employee ID: {currentEmployee?.employee}
+                        Employee ID: {currentEmployee?.employee || currentEmployee?.name}
                       </Typography>
                     </div>
                     <div className="w-12 h-12 rounded-full overflow-hidden border border-white/20">

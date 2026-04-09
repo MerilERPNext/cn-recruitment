@@ -101,6 +101,8 @@ const EmployeeAttendanceDetails = ({
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
+    undefined,
+    ["employee"],
   );
 
   // Only fetch leave details if it's a leave record
