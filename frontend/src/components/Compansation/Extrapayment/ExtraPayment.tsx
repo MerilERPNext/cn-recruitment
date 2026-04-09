@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
-
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
