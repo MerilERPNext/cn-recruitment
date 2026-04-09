@@ -11,7 +11,6 @@ import {
   useEditAttendance,
   useGetEmployeeShift,
 } from "../../../hooks/useAttendance";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
@@ -36,9 +35,7 @@ export const EditAttendance = ({
 }: EditAttendanceProps) => {
   const formInstance = useRef<any>(null);
   const { isDesktop } = useScreenSize();
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name as string,
     fields: ["user_id"],
   });
   const { data, isLoading: isDataLoading } = useAttendanceById(open, [

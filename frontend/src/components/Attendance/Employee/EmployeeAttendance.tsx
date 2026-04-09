@@ -6,7 +6,6 @@ import {
   useGetAllEventsAndAttendance,
   usePlannedOvertimeAllowed,
 } from "../../../hooks/useAttendance";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { AttendanceRecord } from "../../../types/attendance";
 
@@ -60,9 +59,7 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name as string,
     fields: ["employee"],
   });
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");

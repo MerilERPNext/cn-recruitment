@@ -4,7 +4,6 @@ import { Award } from "../../types/employee";
 import ContextualPopup from "../shared/molecules/ContextualPopup";
 import { useCurrentEmployeeAllDetails, useGetEmployeeEarnedAppreciations } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import Modal from "../shared/Modal";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -118,9 +117,7 @@ export const AwardsSection: React.FC<AwardsSectionProps> = ({ isDesktop, mobileC
     const { targetEmployeeId } = useTargetUser();
     const [showAllModal, setShowAllModal] = useState(false);
 
-    const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        user_id: currentUser?.name || "",
         fields: ["name"]
     });
 

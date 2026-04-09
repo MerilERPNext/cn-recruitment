@@ -29,7 +29,6 @@ import {
   useWeeklyOff,
 } from "../../hooks/useAttendance";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import SummaryCard from "./SummaryCard";
 import QuickActionCard, { QuickActionCardData } from "./QuickActionCard";
@@ -68,10 +67,8 @@ const AttendanceSummary = () => {
   const [policyDrawerConfig, setPolicyDrawerConfig] =
     useState<PolicyDrawerConfig | null>(null);
 
-  const { data: currentUser } = useCurrentUser();
 
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     name: targetEmployeeId || "",
     fields: ["employee", "user_id", "custom_allow_mobile_checkin", "custom_enable_web_clockin", "custom_weekly_off"],
   });

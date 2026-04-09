@@ -8,7 +8,6 @@ import {
   usePlannedOvertimeRequestAttachments,
   useUpdatePlannedOvertimeRequest,
 } from "../../../hooks/useAttendance";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { format, isValid, parseISO } from "date-fns";
 import toast from "react-hot-toast";
@@ -140,9 +139,7 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
 
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name as string,
     fields: ["employee"],
   });
   const { targetEmployeeId } = useTargetUser();

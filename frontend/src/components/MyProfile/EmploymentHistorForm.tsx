@@ -12,7 +12,6 @@ import {
   useGetEmpDesignationHierarchyCurrentDetails,
 } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
-import useCurrentUser from "../../hooks/useCurrentUser";
 
 interface EmploymentHistoryProps {
   onSuccess?: (data?: any) => void;
@@ -28,9 +27,7 @@ const EmploymentHistoryForm = ({
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     fields: ["employee"],
   });
   const [formValues, setFormValues] = useState({

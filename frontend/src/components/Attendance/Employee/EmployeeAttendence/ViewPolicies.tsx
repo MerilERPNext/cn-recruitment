@@ -1,5 +1,4 @@
 import { Calendar, Clock, Shield, Timer, Users } from "lucide-react";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useGetEmployeeShift, useGetPolicyForDate, useReqValidationsForOvertimeRequest, useWeeklyOff } from "../../../../hooks/useAttendance";
 import { format } from "date-fns";
@@ -19,9 +18,7 @@ const ViewPolicies = () => {
     const [policyDrawerConfig, setPolicyDrawerConfig] =
         useState<PolicyDrawerConfig | null>(null);
 
-    const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        user_id: currentUser?.name as string,
         name: targetEmployeeId || "",
         fields: ["user_id", "custom_weekly_off", "employee", "custom_enable_web_clockin", "custom_allow_mobile_checkin"],
       });

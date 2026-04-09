@@ -1,16 +1,13 @@
 import { format } from "date-fns";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAllEmployeeOvertimeLog } from "../../../../hooks/useAttendance";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { IOvertimeLog } from "../../../../types/attendance";
 import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { useTargetUser } from "../../../../context/ViewedUserContext";
 
 const OvertimeLog = () => {
-    const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        user_id: currentUser?.name as string,
         fields: ["name"],
     });
     const { targetEmployeeId } = useTargetUser();

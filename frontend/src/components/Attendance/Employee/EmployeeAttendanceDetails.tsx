@@ -14,7 +14,6 @@ import {
   EmployeeCheckInLog,
 } from "../../../types/attendance";
 import { LeaveApplication } from "../../../types/leaves";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
 import {
@@ -98,9 +97,7 @@ const EmployeeAttendanceDetails = ({
       ? data?.leave_application
       : data?.leave_application_name || leaveEvent?.name;
 
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name as string,
     fields: ["employee"],
   });
 

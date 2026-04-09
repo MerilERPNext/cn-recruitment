@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useShiftAssignments } from "../../hooks/useShiftAssignments";
@@ -154,9 +153,7 @@ const TeamShiftList = () => {
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name ?? "",
     fields: ["employee"],
 });
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();

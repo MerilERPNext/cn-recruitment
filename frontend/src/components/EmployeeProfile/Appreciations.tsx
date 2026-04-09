@@ -7,7 +7,6 @@ import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { CustomError } from "../../types/attendance";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
@@ -22,9 +21,7 @@ const Appreciations = () => {
 
     // Get effective target employee
     const { targetEmployeeId } = useTargetUser();
-    const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-      user_id: currentUser?.name as string,
       fields: ["employee"]
     });
     const queryClient = useQueryClient();

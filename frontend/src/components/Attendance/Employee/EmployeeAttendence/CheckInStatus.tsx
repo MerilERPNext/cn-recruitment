@@ -2,7 +2,6 @@ import { format, isValid, parseISO } from "date-fns";
 import { useState } from "react";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAllEmployeeCheckin } from "../../../../hooks/useAttendance";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { EmployeeAllCheckin } from "../../../../types/attendance";
 import { generateMonthOptions } from "../../../../utils/helperUtils";
@@ -32,9 +31,7 @@ const CheckInStatus = () => {
     const parsedDate = decodedDate ? parseISO(decodedDate) : new Date();
     const date = isValid(parsedDate) ? parsedDate : new Date();
     const formattedDate = format(date, "yyyy-MM");
-    const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        user_id: currentUser?.name as string,
         fields: ["employee"],
     });
     const { targetEmployeeId } = useTargetUser();

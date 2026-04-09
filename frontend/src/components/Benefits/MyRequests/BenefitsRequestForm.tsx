@@ -9,7 +9,6 @@ import {
   useUpdateBenefitDoc,
 } from "../../../hooks/useBenefit";
 import { useNewBenifitRequest } from "../../../hooks/useBenifits";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useFileUploader } from "../../../hooks/useFileUploader";
 import { useRequiredFields } from "../../../hooks/useRequiredFields";
@@ -39,9 +38,7 @@ export default function BenefitRequestForm({
   docname,
 }: BenefitRequestFormProps) {
   const { isDesktop } = useScreenSize();
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     fields: ["employee"],
   });
   const { data: benefitClaim, isLoading: benefitClaimLoading } =

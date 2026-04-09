@@ -13,7 +13,6 @@ import {
   usePoliciesForEmployees,
   useShiftsForEmployees,
 } from "../../hooks/useAttendance";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
@@ -37,9 +36,7 @@ const AttendanceAssignments = ({
   const formInstance = useRef<any>(null);
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     fields: ["employee"],
   });
 

@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import { Form } from "@tsed/react-formio";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import {
   useCreateNewLoanApplication,
   useGetLoanApplicationDoc,
@@ -35,9 +34,7 @@ export default function CreateLoanDialog({
   onClose,
 }: CreateLoanDialogProps) {
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     fields: ["employee", "company"],
   });
   const { isDesktop } = useScreenSize();

@@ -1,7 +1,6 @@
 import { format } from "date-fns";
 import NoDataFound from "../../../shared/atoms/NoDataFound";
 import { useGetAuditReport } from "../../../../hooks/useAttendance";
-import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import {
     AttendancePolicyAudit,
@@ -12,10 +11,8 @@ import TableSkeleton from "../../../shared/molecules/Skeletons/TableSkeleton";
 import { Typography } from "../../../shared/atoms/Typography";
 
 const AuditReport = () => {
-    const { data: currentUser } = useCurrentUser();
 
     const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        user_id: currentUser?.name as string,
         fields: ["employee"],
     });
 

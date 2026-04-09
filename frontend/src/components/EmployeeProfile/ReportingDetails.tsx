@@ -3,7 +3,6 @@ import {
   useCurrentEmployeeAllDetails,
   useGetEmployeeHierarchyHistory,
 } from "../../hooks/useEmployee";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import CircularLoader from "../shared/atoms/CircularLoader";
 import Button from "../shared/atoms/Button";
 import { EditIcon, ExternalLink, IdCard, MapPin, PlusIcon, Warehouse } from "lucide-react";
@@ -18,9 +17,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
-  const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    user_id: currentUser?.name || "",
     fields: ["employee", "date_of_joining"]
   });
 
