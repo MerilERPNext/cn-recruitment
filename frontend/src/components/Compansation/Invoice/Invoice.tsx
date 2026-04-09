@@ -62,7 +62,9 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company || null,
   ) as {
@@ -84,9 +86,7 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
     }, [payrollPeriods, selectedPeriod]);
   
     // ✅ Refresh list on filter change
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+
 
   const amountClass = hideAmount
     ? "blur-sm select-none pointer-events-none"
