@@ -74,6 +74,9 @@ const AttendanceCalendar: React.FC<attendanceProps> = ({
     setSearchParams(newParams, { replace: true });
   }, [selectedDate, setSearchParams, searchParams]);
   const getAttendanceEvents = (attendance: AttendanceStatusInfo) => {
+    if (attendance.events?.some((event) => event.status === "Revoked")) {
+      return
+    }
     return (attendance?.events ?? []).length > 0 && (
       <div className="flex gap-1">
         {Array.from(

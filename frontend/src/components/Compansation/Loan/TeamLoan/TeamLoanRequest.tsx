@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import ApprovalList from "../../../shared/ApprovalList";
 import { Typography } from "../../../shared/atoms/Typography";
-import CardTable from "../../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../../shared/CardTable";
 import { CardSkeleton } from "../../../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionLoanList from "../component/TeamApprovallist";
 import LoanDetailsModal from "./LoanDetailsView";
@@ -50,7 +50,62 @@ const TeamLoanRequest = () => {
 
   // Modal is open if EITHER a row was clicked OR URL already has an ID (direct URL open)
   const isModalOpen = !!selectedItem || !!(requestId || referenceName);
-
+ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+        {
+          sortable: false, // Select checkbox
+        },
+        {
+          sortable: false,
+        },
+        {
+          sortable: true,
+          type: "string",
+          field: "loan_product",
+          getValue: (item: any) =>
+            item?.reference_document?.loan_product ?? "",
+        },
+        {
+          sortable: true,
+          type: "number",
+          field: "loan_amount",
+          getValue: (item: any) =>
+            item?.reference_document?.loan_amount ?? 0,
+        },
+        {
+          sortable: true,
+          type: "date",
+          field: "rate_of_interest",
+          getValue: (item: any) =>
+            item?.reference_document?.rate_of_interest ?? "",
+        },
+        {
+          sortable: true,
+          type: "number",
+          field: "total_payable_interest",
+          getValue: (item: any) =>
+            item?.reference_document?.total_payable_interest ?? "",
+        },
+        {
+          sortable: true,
+          type: "date",
+          field: "custom_repayment_start_date",
+          getValue: (item: any) =>
+            item?.reference_document?.custom_repayment_start_date ?? "",
+        },
+        {
+          sortable: true,
+          type: "date",
+          field: "posting_date",
+          getValue: (item: any) =>
+            item?.reference_document?.posting_date ?? "",
+        },
+        {
+          sortable: false, // Actions
+        },
+        {
+          sortable: false, // Actions
+        },
+      ];
   const tableTitles = isBulkSelectEnabled
     ? [
         "Select",
@@ -94,7 +149,7 @@ const TeamLoanRequest = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={tableColumnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
           <ApprovalList
             status="Open"
             doctype="Loan Application"

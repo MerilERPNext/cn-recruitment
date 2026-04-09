@@ -51,6 +51,8 @@ export function MyOvertimeDetails({
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
+    undefined,
+    ["user_id"],
   );
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();

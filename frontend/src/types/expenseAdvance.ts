@@ -113,7 +113,7 @@ export interface ApprovalStage {
 export interface ExpenseClaim {
   name: string;
   owner: string;
-  creation: Date;
+  creation: string;
   modified: Date;
   modified_by: string;
   docstatus: number;
@@ -159,7 +159,7 @@ export interface Expense {
   modified_by: string;
   docstatus: number;
   idx: number;
-  expense_date: Date;
+  expense_date: string;
   custom_reimbursement_category_: string;
   expense_type: string;
   default_account: string;
@@ -188,4 +188,48 @@ export interface Expense {
   custom_start_datetime?: Date;
   custom_location?: string;
   custom_end_datetime?: Date;
+}
+
+
+export interface ExpenseClaimType {
+  reference_document: ExpenseClaim;
+  allocated_to: string[];
+  allocated_roles?: string[];
+  role: string;
+  reference_type: string;
+  custom_allow_revoke: boolean;
+  todo_id: string;
+  username: string;
+  reference_name: string;
+  can_edit?: boolean;
+  send_back_user?: string;
+  todo_status: string;
+  due_date: string;
+}
+
+export interface Advance {
+  name: string;
+  owner: string;
+  creation: Date;
+  docstatus: number;
+  custom_advance_type: string;
+  custom_advance_policy: string;
+  advance_amount: number;
+  posting_date: string;
+  
+}
+export interface ExpenseAdvanceType {
+  reference_document: Advance;
+  allocated_to: string[];
+  allocated_roles?: string[];
+  role: string;
+  reference_type: string;
+  custom_allow_revoke: boolean;
+  todo_id: string;
+  username: string;
+  reference_name: string;
+  can_edit?: boolean;
+  send_back_user?: string;
+  todo_status: string;
+  due_date: string;
 }

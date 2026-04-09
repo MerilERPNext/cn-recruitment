@@ -461,6 +461,8 @@ function fla_render(frm, filterStatus, filterText) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function fla_initIfNeeded(frm) {
+    // Skip for new (unsaved) documents — the temp name doesn't exist in DB yet
+    if (frm.is_new()) return;
     const list = fla_parseList(frm);
     if (list.length) { fla_render(frm); return; }
     frappe.call({
@@ -542,6 +544,10 @@ function fla_bulkUpdate(frm, newStatus) {
 }
 
 function fla_manualInit(frm) {
+    if (frm.is_new()) {
+        frappe.msgprint(__("Please save the document first before initializing approvals."));
+        return;
+    }
     frappe.call({
         method: FLA.init, freeze: true, freeze_message: __("Re-reading fields from meta…"),
         args:   { onboarding_name: frm.doc.name },

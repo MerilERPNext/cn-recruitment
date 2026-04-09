@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import useCurrentUser from "../../hooks/useCurrentUser";
 import { useGetLeaveBalance } from "../../hooks/useLeaves";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -11,6 +11,7 @@ import CardTable from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import LeaveApprovalCard from "./LeaveApprovalCard";
 import { LeaveDetailView } from "./LeaveDetails";
+import { getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST } from "../../utils/tableSortConfig";
 
 const TeamLeaveRequest = () => {
   const { data: currentUser } = useCurrentUser();
@@ -18,7 +19,7 @@ const TeamLeaveRequest = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Open");
 
-  const { data: currentEmployee } = useCurrentEmployee();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,
@@ -209,7 +210,12 @@ const TeamLeaveRequest = () => {
         </div>
       )}
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+          columnSortConfig={getCOLUMN_SORT_CONFIG_TEAM_LEAVE_REQUEST(
+            isBulkSelectEnabled,
+            isRejectedFilter
+          )}
+        >
           {currentUser?.name ? (
             <ApprovalList
               doctype={"Leave Application"}

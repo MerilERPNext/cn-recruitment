@@ -55,6 +55,8 @@ const MyOvertimeRequests = () => {
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name as string,
+    undefined,
+    ["employee"],
   );
   const { targetEmployeeId } = useTargetUser();
   const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
