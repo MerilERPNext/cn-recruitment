@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { Pencil, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import {
   useGetToDoWithReferenceDoc,
   useUpdateAttendanceRejectionReason,
+  useUpdateAttendanceRequest,
 } from "../../hooks/useAttendance";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../hooks/userApprovalList";
@@ -65,7 +66,46 @@ export function AttendanceDetailView({
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const isAttendanceAdjustmentPending =
+    data?.reference_document?.custom_request_type === "Attendance Adjustment" &&
+    data?.reference_document?.custom_status === "Pending";
+
+  const [isEditingTimes, setIsEditingTimes] = useState(false);
+  const [fromTime, setFromTime] = useState<string>("");
+  const [toTime, setToTime] = useState<string>("");
+
+  useEffect(() => {
+    if (data?.reference_document?.custom_from_time) {
+      setFromTime(data.reference_document.custom_from_time);
+    }
+    if (data?.reference_document?.custom_to_time) {
+      setToTime(data.reference_document.custom_to_time);
+    }
+  }, [data]);
+
+  const handleTimeSubmit = () => {
+    updateAttendanceRequest(
+      {
+        doctype: "Attendance Request",
+        name: data?.reference_document?.name,
+        data: {
+          custom_from_time: fromTime,
+          custom_to_time: toTime,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Times updated successfully!");
+          setIsEditingTimes(false);
+        },
+        onError: (error) => {
+          toast.error(errorResponseFormater(error));
+        },
+      },
+    );
+  };
   const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
+  const { mutate: updateAttendanceRequest } = useUpdateAttendanceRequest();
 
   const loading = useLoadingOverlay();
   const handleAction = useCallback(
@@ -180,7 +220,6 @@ export function AttendanceDetailView({
   if (error && documentName) {
     return <ErrorView onClose={onClose} label={label} error={error} />;
   }
-
   // Only render if we have documentName or data
   if (!shouldRender) return null;
   return (
@@ -227,6 +266,14 @@ export function AttendanceDetailView({
               </Typography>
             </div>
 
+          </div>
+          <div className="flex w-full justify-between items-start">
+            <div className="flex flex-col gap-2">
+              <Typography variant="mobileCardLabel">Request Type</Typography>
+              <Typography variant="mobileCardValue">
+                {data?.reference_document?.custom_request_type}
+              </Typography>
+            </div>
             <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
           </div>
 
@@ -247,6 +294,71 @@ export function AttendanceDetailView({
                 </Typography>
               </div>
             </div>
+            {((data?.reference_document?.custom_from_time ||
+              data?.reference_document?.custom_to_time) &&
+              isAttendanceAdjustmentPending) && (
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex justify-between w-full">
+                    <div className="flex flex-col gap-1">
+                      <Typography variant="mobileCardLabel">From Time</Typography>
+                      {isEditingTimes ? (
+                        <input
+                          type="time"
+                          value={fromTime}
+                          onChange={(e) => setFromTime(e.target.value)}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <Typography variant="mobileCardValue">
+                            {fromTime || "—"}
+                          </Typography>
+                          {isAttendanceAdjustmentPending && (
+                            <button onClick={() => setIsEditingTimes(true)}>
+                              <Pencil className="h-3.5 w-3.5 text-blue-400 hover:text-gray-600" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1 text-right">
+                      <Typography variant="mobileCardLabel">To Time</Typography>
+                      {isEditingTimes ? (
+                        <input
+                          type="time"
+                          value={toTime}
+                          onChange={(e) => setToTime(e.target.value)}
+                          className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-end gap-1">
+                          <Typography variant="mobileCardValue">
+                            {toTime || "—"}
+                          </Typography>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {isEditingTimes && (
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => setIsEditingTimes(false)}
+                        className="text-sm px-3 py-1 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleTimeSubmit}
+                        className="text-sm px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
             <div className="flex justify-between w-full">
               <div className="flex flex-col gap-1">

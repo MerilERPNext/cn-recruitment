@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
@@ -65,8 +64,7 @@ export default function ExtraPayment() {
   });
 
   const renderDesktopRow = (raw: any) => {
-    const payment = mapItem(raw, raw.employee_name || raw.employee);
-
+  const payment = mapItem(raw, raw.employee_name || raw.employee);
     return (
       <div
         className="grid items-center gap-4 px-6 h-16 border-b border-gray-50 transition-colors cursor-pointer hover:bg-primary/10"
@@ -193,7 +191,8 @@ export default function ExtraPayment() {
               isFilter={false}
               showPagination={true}
               SkeletonComponent={CardSkeleton}
-              renderItem={(raw: any) => renderDesktopRow(raw.extra_payments)}
+              renderItem={(raw: any) => renderDesktopRow(raw)}
+
               noRecordsScreen={noRecords}
             />
           </CardTable>

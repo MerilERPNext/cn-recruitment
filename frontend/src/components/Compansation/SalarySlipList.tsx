@@ -98,7 +98,7 @@ const SalarySlipsList = () => {
   const [modalHtmlContent, setModalHtmlContent] = useState<string>("");
 
   const [selectedSalarySlip, setSelectedSalarySlip] = useState<{
-    name: string;
+    salary_slip_id: string;
     date: string;
   } | null>(null);
 
@@ -177,7 +177,7 @@ const SalarySlipsList = () => {
   const handleGoToSalarySlip = (salaryId: string, startDate?: string) => {
     if (isDesktop) {
       setSelectedSalarySlip({
-        name: salaryId,
+        salary_slip_id: salaryId,
         date: startDate ? formatToIndianDate(startDate) : "",
       });
       setPdfModalOpen(true);
@@ -189,47 +189,41 @@ const SalarySlipsList = () => {
 
   const handleViewPDF = (
     type: "regular" | "tds" | "benefit" | "offcycle",
-    salarySlipName: string,
+    salary_slip_id: string,
     salaryDate?: string,
   ) => {
     setModalHtmlContent("");
     setSelectedSalarySlip({
-      name: salarySlipName,
+      salary_slip_id: salary_slip_id,
       date: salaryDate || "",
     });
 
     switch (type) {
       case "regular":
-        downloadType1(salarySlipName);
+        downloadType1(salary_slip_id);
         break;
       case "tds":
-        downloadType2(salarySlipName);
+        downloadType2(salary_slip_id);
         break;
       case "benefit":
-        downloadType3(salarySlipName);
+        downloadType3(salary_slip_id);
         break;
       case "offcycle":
-        downloadType4(salarySlipName);
+        downloadType4(salary_slip_id);
         break;
     }
   };
 
-  const handleDownloadType1 = (e: React.MouseEvent, name: string) => {
+  const handleDownloadType1 = (e: React.MouseEvent, salary_slip_id
+    : string) => {
     e.stopPropagation();
-    handleViewPDF("regular", name);
+    handleViewPDF("regular", salary_slip_id );
   };
-  const handleDownloadType2 = (e: React.MouseEvent, name: string) => {
+  const handleDownloadType2 = (e: React.MouseEvent, salary_slip_id: string) => {
     e.stopPropagation();
-    handleViewPDF("tds", name);
+    handleViewPDF("tds", salary_slip_id);
   };
-  const handleDownloadType3 = (e: React.MouseEvent, name: string) => {
-    e.stopPropagation();
-    handleViewPDF("benefit", name);
-  };
-  const handleDownloadType4 = (e: React.MouseEvent, name: string) => {
-    e.stopPropagation();
-    handleViewPDF("offcycle", name);
-  };
+
 
   return (
     <div className="flex flex-col h-full">
@@ -284,10 +278,11 @@ const SalarySlipsList = () => {
             key={filtersKey}
             queryKey={["salary-slips", String(filtersKey)]}
             customAPI={{
-              method: "cn_indian_payroll.cn_indian_payroll.overrides.salary_silip.get_salary_slips",
+              method: "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.salary_slip_list.salary_slip_list_view",
               params: {
                 doctype: "Salary Slip",
                 employee: targetEmployeeId || user?.employee,
+                company: user?.company,
                 payroll_period: selectedPeriod,
               },
             }}
@@ -301,8 +296,6 @@ const SalarySlipsList = () => {
                 maskSalary={maskSalary}
                 onDownloadType1={handleDownloadType1}
                 onDownloadType2={handleDownloadType2}
-                onDownloadType3={handleDownloadType3}
-                onDownloadType4={handleDownloadType4}
                 onViewPDF={handleGoToSalarySlip}
                 isDownloading={isDownloading}
               />
@@ -327,7 +320,7 @@ const SalarySlipsList = () => {
             setSelectedSalarySlip(null);
             setModalHtmlContent("");
           }}
-          salarySlipName={selectedSalarySlip?.name || ""}
+          salarySlipName={selectedSalarySlip?.salary_slip_id || ""}
           salarySlipDate={selectedSalarySlip?.date || ""}
           htmlContent={modalHtmlContent}
         />
@@ -433,7 +426,7 @@ const SalarySlipItemDesktop = ({
   };
 
   const printFormatMenuRef = usePrintFormatMenuOptions(
-    item.name,
+    item.salary_slip_id,
     item.employee,
   );
 
@@ -484,7 +477,7 @@ const SalarySlipItemDesktop = ({
 
       <div className="flex items-center justify-center">
         <DownloadMenu
-          itemName={item.name}
+          itemName={item.salary_slip_id}
           isDownloading={isDownloading}
           onType1={onDownloadType1}
           onType2={onDownloadType2}
@@ -540,7 +533,7 @@ const SalarySlipItemMobile = ({
             </Typography>
           </div>
           <DownloadMenu
-            itemName={item.name}
+            itemName={item.salary_slip_id}
             isDownloading={isDownloading}
             onType1={onDownloadType1}
             onType2={onDownloadType2}
