@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import ApprovalList from "../../shared/ApprovalList";
@@ -13,9 +13,7 @@ import BenefitRequestItem from "./BenefitRequestItem";
 import { ColumnSortConfig } from "../../shared/CardTable";
 import { BenefitType } from "../../../types/benefit";
 
-const COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
-  { sortable: false },
-
+const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
   { sortable: false },
   {
     sortable: true,
@@ -26,23 +24,23 @@ const COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
   },
   {
     sortable: true,
-    type: "date",
+    type: "number",
     field: "claimed_amount",
     getValue: (item: BenefitType) =>
-      item.reference_document?.claimed_amount ?? "",
+      item.reference_document?.claimed_amount ?? 0,
   },
   {
     sortable: true,
-    type: "date",
+    type: "number",
     field: "custom_max_amount",
     getValue: (item: BenefitType) =>
-      item.reference_document?.custom_max_amount ?? "",
+      item.reference_document?.custom_max_amount ?? 0,
   },
   {
     sortable: true,
     type: "date",
     field: "claim_date",
-    getValue: (item: BenefitType) => item?.reference_document.claim_date ?? "",
+    getValue: (item: BenefitType) => item?.reference_document?.claim_date ?? "",
   },
   { sortable: false },
   { sortable: false },
@@ -109,6 +107,14 @@ const MyTeamRequest: React.FC = () => {
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
+  const columnSortConfig = useMemo<ColumnSortConfig[]>(
+    () =>
+      isBulkSelectEnabled
+        ? [{ sortable: false }, ...BASE_COLUMN_SORT_CONFIG_TEAM]
+        : BASE_COLUMN_SORT_CONFIG_TEAM,
+    [isBulkSelectEnabled],
+  );
+
 
   return (
     <div className="flex flex-col h-full">
@@ -125,7 +131,7 @@ const MyTeamRequest: React.FC = () => {
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
         <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
-          columnSortConfig={COLUMN_SORT_CONFIG_TEAM}
+          columnSortConfig={columnSortConfig}
         >
           <ApprovalList
             doctype={"Employee Benefit Claim"}
