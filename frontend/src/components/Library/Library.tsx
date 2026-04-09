@@ -18,7 +18,9 @@ const DocumentLibrary = () => {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
   const { targetEmployeeId } = useTargetUser();
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
   const employeeId = useMemo(() => {
     if (targetEmployeeId && targetEmployeeId.trim() !== "") {
       return targetEmployeeId;

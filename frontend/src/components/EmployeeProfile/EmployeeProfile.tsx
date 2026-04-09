@@ -72,7 +72,9 @@ const EmployeeProfile: React.FC = () => {
     "Employee Profile",
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } =
-    useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+    useCurrentEmployeeAllDetails({
+      fields: ["employee"]
+    });
 
   const queryClient = useQueryClient();
 

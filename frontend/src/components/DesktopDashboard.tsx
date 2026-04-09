@@ -99,10 +99,11 @@ export default function DesktopDashboard() {
   };
 
   const { data: currentEmployee, isLoading: currentEmpIsLoading } =
-    useCurrentEmployeeAllDetails(undefined, undefined, [
-      "name",
-      "employee_name",
-      "employee",
+    useCurrentEmployeeAllDetails({
+      fields: [
+        "name",
+        "employee_name",
+        "employee",
       "department",
       "company",
       "date_of_joining",
@@ -112,7 +113,7 @@ export default function DesktopDashboard() {
       "company_email",
       "personal_email",
       "user_id",
-    ]);
+    ]});
 
   const { data: employeeShift } = useGetEmployeeShift(
     currentEmployee?.user_id || "",

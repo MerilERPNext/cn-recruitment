@@ -56,7 +56,9 @@ export default function Invoice() {
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
   const amountClass = hideAmount
     ? "blur-sm select-none pointer-events-none"

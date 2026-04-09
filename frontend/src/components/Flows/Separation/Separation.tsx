@@ -46,7 +46,9 @@ const SeparationCard = ({ data }: { data: cardDataType }) => {
 };
 
 const Separation = () => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "notice_number_of_days"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "notice_number_of_days"]
+  });
   const doctype_name = "Employee";
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee } = useEmployee(targetEmployeeId);

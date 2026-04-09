@@ -30,7 +30,9 @@ const ExpensesApp: React.FC = () => {
   );
 
   const { data: userUiPermission } = useGetUiPermission("Expenses");
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const { data: hasAdvancePolicy } = useCheckAdvancePolicy(
     currentEmployee?.name || null,
   );

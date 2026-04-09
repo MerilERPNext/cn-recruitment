@@ -47,7 +47,9 @@ const quickActions: QuickAction[] = [
 const MobileProfileDrawer = () => {
     const { targetEmployeeId } = useTargetUser();
     const { data: currentUser, isLoading: isCurrentUserLoading } =
-        useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+        useCurrentEmployeeAllDetails({
+          fields: ["employee"]
+        });
 
     const employeeId =
         targetEmployeeId ||

@@ -77,7 +77,9 @@ const EmployeeRow: React.FC<EmployeeRowProps> = ({
     return;
   }
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
 

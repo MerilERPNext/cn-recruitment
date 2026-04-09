@@ -148,7 +148,9 @@ const PoliciesEnforced: React.FC = () => {
   const [completedPoliciesExpanded, setCompletedPoliciesExpanded] =
     useState(false);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
-    useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+    useCurrentEmployeeAllDetails({
+      fields: ["name"]
+    });
   const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } = 
     useMandatoryPoliciesPending(currentEmployee?.name);
   const { isMobile } = useScreenSize();

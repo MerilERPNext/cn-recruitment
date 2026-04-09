@@ -279,7 +279,9 @@ export default function ThreeLevelOrgChart() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";

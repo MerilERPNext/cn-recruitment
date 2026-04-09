@@ -48,7 +48,9 @@ const ExpenseAdvanceForm: React.FC<{
   const isEditMode = !!editAdvanceData;
 
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployeeAllDetails(undefined, undefined, ["name", "company"]);
+    useCurrentEmployeeAllDetails({
+      fields: ["name", "company"]
+    });
   const employeeId = currentEmployee?.name || "";
   const employeeCompany = currentEmployee?.company || "";
 

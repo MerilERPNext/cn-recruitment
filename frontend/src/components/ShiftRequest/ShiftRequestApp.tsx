@@ -33,7 +33,9 @@ const ShiftRequestApp: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabName>("My Shift Assignment");
   const [showShiftRequestModal, setShowShiftRequestModal] = useState(false);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const { data: shiftRequestConfig, isLoading: isShiftConfigLoading } =
     useShiftRequestConfig(currentEmployee?.name || null);
 

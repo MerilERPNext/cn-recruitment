@@ -27,7 +27,9 @@ type PayrollPeriod = {
 };
 
 export default function TaxSheet() {
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
   const {
     data: payrollPeriods,
