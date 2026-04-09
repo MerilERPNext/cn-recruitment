@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { X } from "lucide-react";
-import {  useState } from "react";
+import { useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
@@ -66,8 +66,7 @@ const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
 export default function PerquisiteList() {
   const [selectedPerquisite, setSelectedPerquisite] = useState<UiPerquisite | null>(null);
 
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
   const { isDesktop } = useScreenSize();
 
   const employeeId = user?.employee ?? "";
@@ -79,10 +78,10 @@ export default function PerquisiteList() {
   // Only build customAPI when both employeeId and company are ready
   const customAPI = employeeId && company
     ? {
-        method:
-          "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.perquisite_payment.get_perquisite_payment_list",
-        params: { employee: employeeId, company },
-      }
+      method:
+        "cn_indian_payroll.cn_indian_payroll.overrides.webapp_api.perquisite_payment.get_perquisite_payment_list",
+      params: { employee: employeeId, company },
+    }
     : null;
 
   // Client-side sort applied after DataListView gives us mapped data
@@ -104,7 +103,7 @@ export default function PerquisiteList() {
           titles={titles}
           columnWidths={columnWidths}
           columnSortConfig={PERQUISITE_SORT_CONFIG}
-          
+
         >
           {!customAPI ? (
             <CardSkeleton />
@@ -266,13 +265,12 @@ export default function PerquisiteList() {
                       {key.replace(/([A-Z])/g, " $1")}
                     </span>
                     <span
-                      className={`font-medium ${
-                        typeof value === "boolean"
-                          ? value
-                            ? "bg-success-100 text-success"
-                            : "bg-error-100 text-error"
-                          : "bg-transparent text-gray-800"
-                      } px-2 py-1 rounded`}
+                      className={`font-medium ${typeof value === "boolean"
+                        ? value
+                          ? "bg-success-100 text-success"
+                          : "bg-error-100 text-error"
+                        : "bg-transparent text-gray-800"
+                        } px-2 py-1 rounded`}
                     >
                       {typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}
                     </span>

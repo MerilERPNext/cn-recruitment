@@ -60,7 +60,6 @@ export interface FrappePageResponse {
   hasNextPage: boolean;
   nextCursor?: number;
   pages: number[];
-  page: number;  
 }
 
 export interface FrappeDocumentsResponse {
