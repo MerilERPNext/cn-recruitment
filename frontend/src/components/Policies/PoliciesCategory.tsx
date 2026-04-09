@@ -50,7 +50,9 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ name, count }) => {
 
 const PoliciesCategory: React.FC = () => {
   const { isDesktop } = useScreenSize();
-  const { data: employee, isLoading: employeeLoading } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: employee, isLoading: employeeLoading } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   const {
     data: counts,

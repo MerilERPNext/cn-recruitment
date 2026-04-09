@@ -176,7 +176,9 @@ const MobileRow = ({ item, showAmount, onView, onVersions }: RowProps) => (
 // ---- Main Component ----
 
 export default function SalaryAssignmentList() {
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
   const [selected, setSelected] = useState<SalaryItem | null>(null);
   const [selectedVersionItem, setSelectedVersionItem] =

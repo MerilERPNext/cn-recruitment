@@ -746,7 +746,9 @@ const ExpensesList: React.FC = () => {
   }>({ isOpen: false, count: 0 });
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "employee_name", "company"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "employee_name", "company"]
+  });
   const navigate = useNavigate();
   const { data: draftExpenses, isFetching: isFetchingDrafts } =
     useGetDraftExpenseClaims(currentEmployee?.name);

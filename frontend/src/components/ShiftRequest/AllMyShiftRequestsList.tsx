@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -15,12 +14,9 @@ const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name ?? "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["employee"],
+});
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
 
   const handleRefetchComplete = useCallback(() => {

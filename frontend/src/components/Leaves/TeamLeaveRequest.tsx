@@ -19,7 +19,9 @@ const TeamLeaveRequest = () => {
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
   const [activeStatus, setActiveStatus] = useState("Open");
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(
     currentEmployee?.name,

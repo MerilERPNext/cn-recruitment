@@ -14,7 +14,6 @@ import {
   EmployeeCheckInLog,
 } from "../../../types/attendance";
 import { LeaveApplication } from "../../../types/leaves";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Plus, X } from "lucide-react";
 import {
@@ -98,12 +97,9 @@ const EmployeeAttendanceDetails = ({
       ? data?.leave_application
       : data?.leave_application_name || leaveEvent?.name;
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["employee"],
+  });
 
   // Only fetch leave details if it's a leave record
   const { data: leaveDetails } = useFrappeDocument(

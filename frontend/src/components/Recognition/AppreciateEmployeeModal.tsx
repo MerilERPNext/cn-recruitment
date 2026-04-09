@@ -37,7 +37,9 @@ export const AppreciateEmployeeModal: React.FC<
   const [reason, setReason] = useState<string>("");
 
   const queryClient = useQueryClient();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name", "employee_name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name", "employee_name"]
+  });
   const { data: badgesData, isLoading: badgesLoading } = useGetBadgeTypes();
   const { data: selectedEmployeeData } = useGetAllEmployees(
     ["name", "employee_name", "designation", "image"],

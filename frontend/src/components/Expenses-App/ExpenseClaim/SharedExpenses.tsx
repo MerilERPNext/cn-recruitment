@@ -150,7 +150,9 @@ const SharedExpenses: React.FC = () => {
   const navigate = useNavigate();
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   return (
     <div className="flex flex-col min-h-screen">

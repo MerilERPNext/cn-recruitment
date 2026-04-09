@@ -32,7 +32,9 @@ export default function EmployeeProfileSections() {
     const { targetEmployeeId } = useTargetUser();
 
     const { data: currentUser, isLoading } =
-        useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+        useCurrentEmployeeAllDetails({
+          fields: ["employee"]
+        });
 
     const employeeId =
         targetEmployeeId || (isLoading ? null : currentUser?.employee) || "";

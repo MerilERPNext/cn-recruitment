@@ -35,7 +35,9 @@ interface RequestsProps {
 const Requests: React.FC<RequestsProps> = ({ limitCards }) => {
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee"]
+  });
   const { data: userUiPermission } = useGetUiPermission();
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;

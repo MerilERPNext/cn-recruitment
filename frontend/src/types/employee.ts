@@ -268,21 +268,10 @@ export interface EmployeeSupplementary {
   custom_designation_name?: string;
 }
 
-/**
- * Typed “full” employee: {@link EmployeeFromAPI} plus optional enriched/list-only fields
- * (`designation_name`, etc.) that some APIs attach on top of the raw doc.
- *
- * This is the shape of `getCurrentEmployeeAllDetails`’s success value when all columns are
- * requested. For a subset of fields, use `Pick<Employee, K>` (see `useCurrentEmployeeAllDetails`).
- */
 export interface Employee extends EmployeeFromAPI, EmployeeSupplementary { }
 
-/** Alias: full row from `getCurrentEmployeeAllDetails` with default / `["*"]` fields. */
 export type CurrentEmployeeAllDetails = Employee;
 
-/**
- * get_employee_details and get_current_employee response type
- */
 export interface EmployeeIdCardResponse {
   blood_group: string;
   branch: string;

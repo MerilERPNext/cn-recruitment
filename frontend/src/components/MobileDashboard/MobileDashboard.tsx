@@ -9,7 +9,6 @@ import {
   useHomeSummaryDetails,
 } from "../../hooks/useAttendance";
 import { useCompanyLogo } from "../../hooks/useCompanyLogo";
-import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useGetUserNotices } from "../../hooks/useNotices";
 
 import {
@@ -103,16 +102,16 @@ const MobileDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string, undefined, [
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: [
     "user_id",
     "employee_name",
     "company",
     "custom_allow_mobile_checkin",
-    "employee"
+    "employee",
+    "image"
   ]
-  );
+  });
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(
@@ -433,7 +432,7 @@ const MobileDashboard: React.FC = () => {
               }}
             >
               <img
-                src={currentUser?.user_image || defaultProfile}
+                src={currentEmployee?.image || defaultProfile}
                 alt="User avatar"
                 className="w-full h-full object-cover bg-gray-400"
               />

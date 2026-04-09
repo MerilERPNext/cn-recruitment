@@ -17,7 +17,9 @@ type Props = {
 const TDSSlipHandler = ({ disabled }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: ["employee", "company"]
+  });
 
 
   const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(

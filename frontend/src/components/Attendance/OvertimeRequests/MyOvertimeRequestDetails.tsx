@@ -5,7 +5,6 @@ import {
   useGetToDoWithReferenceDoc,
   useUpdateOvertimeRejectionReason,
 } from "../../../hooks/useAttendance";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
@@ -48,12 +47,9 @@ export function MyOvertimeDetails({
     error,
   } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-    undefined,
-    ["user_id"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["user_id"],
+  });
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateOvertimeRejectionReason();

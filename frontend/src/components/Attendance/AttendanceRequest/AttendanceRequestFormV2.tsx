@@ -186,11 +186,10 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
   const [isSchemaLoading, setIsSchemaLoading] = useState(false);
   const [isFormReady, setIsFormReady] = useState(false);
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name as string,
-    undefined,
-    ["employee", "user_id", "company"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    user_id: currentUser?.name as string,
+    fields: ["employee", "user_id", "company"],
+  });
   const { data: attendanceFieldReasonAndMessagePermissions } = useAttendanceFieldReasonAndMessagePermissions();
   const { data: userRoles } = useGetUserRoles();
 

@@ -33,7 +33,9 @@ export const ViewedUserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const isClearing = useRef(false);
   const navigateTimeoutRef = useRef<number | null>(null);
   const queryClient = useQueryClient();

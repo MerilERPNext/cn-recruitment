@@ -11,7 +11,6 @@ import {
   useGetEmployeeReportingDetails,
 } from "../../hooks/useEmployee";
 import CircularLoader from "../shared/atoms/CircularLoader";
-import useCurrentUser from "../../hooks/useCurrentUser";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 interface ReportingDetailsProps {
@@ -28,12 +27,9 @@ const ReportingDetailsForm = ({
 }: ReportingDetailsProps) => {
   const formInstance = useRef<any>(null);
   const initialSubmissionSet = useRef(false);
-  const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-    currentUser?.name || "",
-    undefined,
-    ["employee"],
-  );
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["employee"],
+  });
   const { mutateAsync: addEmployeeReportingDetails } =
     useAddEmployeeReportingDetailsMutation();
 

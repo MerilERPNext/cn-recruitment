@@ -34,7 +34,9 @@ const MyAdvanceExpenseList = () => {
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();

@@ -22,7 +22,9 @@ const CurrentBalanceTab: React.FC<CurrentBalanceTabProps> = ({ leaveData }) => {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   const leaveId = leaveData?.leave_id || "";
 

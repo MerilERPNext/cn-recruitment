@@ -200,7 +200,9 @@ const App: React.FC = () => {
 export default App;
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails({
+    fields: ["name"]
+  });
 
   const navigate = useNavigate();
   const location = useLocation();
