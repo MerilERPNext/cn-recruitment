@@ -205,6 +205,7 @@ const TeamAdvanceExpenseList = () => {
                     onClick={(request: any) => handleRequestClick(request)}
                     onAction={item?.onAction}
                     activeStatus={activeStatus}
+                    isActed={item?.isActed}
                   />
                 );
               }}

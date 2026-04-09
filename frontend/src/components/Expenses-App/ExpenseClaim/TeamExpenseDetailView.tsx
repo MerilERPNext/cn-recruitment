@@ -78,6 +78,7 @@ export function TeamExpenseDetailView({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [isActed, setIsActed] = useState(false);
 
   const loading = useLoadingOverlay();
 
@@ -211,6 +212,7 @@ export function TeamExpenseDetailView({
           );
         }
       } else {
+        setIsActed(true);
         setTimeout(() => {
           setRefetchAttendance(true);
         }, 2000);
@@ -840,8 +842,8 @@ export function TeamExpenseDetailView({
 
           {actions?.length > 0 &&
             status?.label === "Pending" &&
-            data?.todo_status !== "Closed" && (
-              <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            data?.todo_status !== "Closed" && !isActed && (
+              <div className={`w-full bg-white border-t shadow-md p-4 z-20 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
                 <TeamApprovalActionPill
                   variant={isDesktop ? "modal" : "buttons"}
                   actions={actions}

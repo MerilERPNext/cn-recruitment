@@ -47,6 +47,7 @@ export default function TeamAdvanceDetailView({
   );
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
 
   const handleAction = useCallback(
     async (action: string) => {
@@ -57,6 +58,7 @@ export default function TeamAdvanceDetailView({
           name: data.todo_id,
         });
 
+        setIsActed(true);
         setRefetchAttendance(true);
         if (onAction) {
           onAction();
@@ -218,8 +220,8 @@ export default function TeamAdvanceDetailView({
 
   const ActionButtons =
     actions?.length &&
-    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) ? (
-      <div className="border-t bg-white p-4">
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) && !isActed ? (
+      <div className={`border-t bg-white p-4 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <TeamApprovalActionPill
           variant={isDesktop ? "modal" : "buttons"}
           actions={actions}
