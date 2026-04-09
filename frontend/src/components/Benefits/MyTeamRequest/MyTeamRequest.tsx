@@ -10,6 +10,43 @@ import CardTable from "../../shared/CardTable";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { BenefitRequestDetailModal } from "../BenefitRequestDetailModal";
 import BenefitRequestItem from "./BenefitRequestItem";
+import { ColumnSortConfig } from "../../shared/CardTable";
+import { BenefitType } from "../../../types/benefit";
+
+const COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
+  { sortable: false },
+
+  { sortable: false },
+  {
+    sortable: true,
+    type: "string",
+    field: "earning_component",
+    getValue: (item: BenefitType) =>
+      item.reference_document?.earning_component ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "claimed_amount",
+    getValue: (item: BenefitType) =>
+      item.reference_document?.claimed_amount ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "custom_max_amount",
+    getValue: (item: BenefitType) =>
+      item.reference_document?.custom_max_amount ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "claim_date",
+    getValue: (item: BenefitType) => item?.reference_document.claim_date ?? "",
+  },
+  { sortable: false },
+  { sortable: false },
+];
 
 const MyTeamRequest: React.FC = () => {
   const { isDesktop } = useScreenSize();
@@ -49,28 +86,29 @@ const MyTeamRequest: React.FC = () => {
   }, [setSearchParams]);
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee Name",
-        "Claim Benefit For",
-        "Claimed Amount",
-        "Max Amount Eligible",
-        "Claim Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee Name",
+      "Claim Benefit For",
+      "Claimed Amount",
+      "Max Amount Eligible",
+      "Claim Date",
+      "Status",
+      "Actions",
+    ];
 
   const finalColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
 
   return (
     <div className="flex flex-col h-full">
@@ -86,7 +124,9 @@ const MyTeamRequest: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}>
+        <CardTable titles={tableTitles} columnWidths={finalColumnWidths}
+          columnSortConfig={COLUMN_SORT_CONFIG_TEAM}
+        >
           <ApprovalList
             doctype={"Employee Benefit Claim"}
             refetch={refetchApprovalList}

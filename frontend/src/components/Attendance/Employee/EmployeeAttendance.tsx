@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { endOfMonth, format, parse, startOfMonth } from "date-fns";
+import { differenceInCalendarDays, endOfMonth, format, parse, startOfMonth } from "date-fns";
 import { useNavigate } from "react-router";
 import {
   useGetAllEventsAndAttendance,
@@ -8,7 +8,7 @@ import {
 } from "../../../hooks/useAttendance";
 import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { AttendanceRecord } from "../../../types/attendance";
+import { AttendanceRecord, MyAttendanceRequest } from "../../../types/attendance";
 
 import LeaveRequest from "../LeaveRequest";
 
@@ -19,7 +19,7 @@ import { useSidebar } from "../SidebarContext";
 import EmployeeAttendanceDetails from "./EmployeeAttendanceDetails";
 
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import AttendanceError from "./EmployeeAttendence/AttendanceError";
 import AttendanceLegend from "./EmployeeAttendence/AttendanceLegend";
 import ListView from "./EmployeeAttendence/ListView";
@@ -34,6 +34,52 @@ import AttendanceRequestFormV2 from "../AttendanceRequest/AttendanceRequestFormV
 import AttendanceCalendar from "./EmployeeAttendence/AttendanceCalendar";
 import BottomDrowerForAttendance from "./EmployeeAttendence/BottomDrower";
 import Cardtable from "./EmployeeAttendence/CardTable";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "custom_request_type",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.custom_request_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyAttendanceRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyAttendanceRequest) => item.due_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "number",
+    field: "duration",
+    getValue: (item: MyAttendanceRequest) => {
+      const from = item.reference_document?.from_date;
+      const to = item.reference_document?.to_date;
+      if (!from || !to) return 0;
+      return differenceInCalendarDays(new Date(to), new Date(from)) + 1;
+    },
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false },
+];
+
 
 const EmployeeAttendance = () => {
   const navigate = useNavigate();
@@ -325,6 +371,7 @@ const EmployeeAttendance = () => {
               "Status",
               "Actions",
             ]}
+            columnSortConfig={COLUMN_SORT_CONFIG}
           >
             <Cardtable
               currentEmployee={

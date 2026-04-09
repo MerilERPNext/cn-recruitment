@@ -7,9 +7,38 @@ import { useScreenSize } from "../../hooks/useScreenSize";
 import { MyShiftRequest } from "../../types/shift";
 import DataListView from "../DataListView";
 import HeaderBar from "../HeaderBar";
-import CardTable from "../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpShiftRequestCard from "./EmpShiftRequestCard";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "shift_type",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.shift_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false },
+];
+
 
 const AllMyShiftRequestsList = () => {
   const navigate = useNavigate();
@@ -45,6 +74,7 @@ const AllMyShiftRequestsList = () => {
         <CardTable
           titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
           columnWidths={["1fr 1fr 1fr  1fr 1fr"]}
+          columnSortConfig={COLUMN_SORT_CONFIG}
         >
           {currentEmployee?.employee ? (
             <DataListView

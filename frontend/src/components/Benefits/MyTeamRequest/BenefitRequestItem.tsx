@@ -13,13 +13,16 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { formatCurrency } from "../../../utils/currency";
+import { BenefitType } from "../../../types/benefit";
+
+
 
 // Props type
 type BenefitRequestItemProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  data: any;
+  data: BenefitType;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   refetch?: () => void;
@@ -146,7 +149,7 @@ const BenefitRequestItem = ({
               users={data?.allocated_to}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
-              role={data?.role}
+              role={data?.role || ""}
               position="left"
             >
               <StatusBadge
