@@ -120,6 +120,7 @@ const StageCard = ({
     return actionPermission;
   }, [currentUser, isActive, allocatedTo, stage.can_act]);
 
+
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
@@ -145,8 +146,7 @@ const StageCard = ({
     setResponseData(data);
     setShowForm(true);
   };
-
-
+  console.log("action", canPerformActions, actions, actionsWithForm)
   return (
     <div
       key={stage.stage_name}
@@ -160,15 +160,16 @@ const StageCard = ({
       </div>
       <div>
         {" "}
-        <Typography variant="bodySmall" className="font-medium text-center">
-          <AllocatedToTooltip
-            position="right"
-            users={allocatedTo.users}
-            roles={allocatedTo.roles}
-          >
-            <StatusBadge status={stage.status || "-"} />
-          </AllocatedToTooltip>
-        </Typography>
+
+        <AllocatedToTooltip
+          position="right"
+          users={allocatedTo.users}
+          roles={allocatedTo.roles}
+          role={stage.role || ""}
+        >
+          <StatusBadge status={stage.status || "-"} />
+        </AllocatedToTooltip>
+
       </div>
       <div>
         {" "}
@@ -184,27 +185,26 @@ const StageCard = ({
       </div>
       <div className="flex items-center justify-center pr-2">
         {" "}
-        <Typography variant="bodySmall" className="font-medium text-center">
-          <>
-            {stage?.approval_response_data && (
-              <Button
-                variant="outline"
-                onClick={handleShowForm}
-              >
-                Review Form
-              </Button>
-            )}
-            {canPerformActions && (
-              <TeamApprovalActionPill
-                actions={actions}
-                status={stage?.status}
-                recordId={stage?.todo?.name}
-                // loadingAction={loadingAction}
-                onAction={(action) => onAction(action, stage?.todo)}
-              />
-            )}
-          </>
-        </Typography>
+
+        <>
+          {stage?.approval_response_data && (
+            <Button
+              variant="outline"
+              onClick={handleShowForm}
+            >
+              Review Form
+            </Button>
+          )}
+          {canPerformActions && (
+            <TeamApprovalActionPill
+              actions={actions}
+              status={stage?.status}
+              recordId={stage?.todo?.name}
+              // loadingAction={loadingAction}
+              onAction={(action) => onAction(action, stage?.todo)}
+            />
+          )}
+        </>
       </div>
       {formSchema && showForm && createPortal(
         <ReviewForm onClose={() => setShowForm(false)}>
