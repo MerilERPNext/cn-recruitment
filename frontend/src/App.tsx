@@ -33,18 +33,6 @@ import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
-// Component to sync ViewedUserContext with frappeAPI
-// NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
-const TargetUserSync: React.FC = () => {
-  const { targetEmployeeId } = useTargetUser();
-
-  useEffect(() => {
-    setTargetEmployeeId(targetEmployeeId);
-  }, [targetEmployeeId]);
-
-  return null;
-};
-
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
   const location = useLocation();
@@ -123,7 +111,16 @@ const App: React.FC = () => {
       <PermissionProvider permissions={uiPermissions || []}>
         <GlobalStoreProvider>
           <ViewedUserProvider>
-            <TargetUserSync />
+            {(() => {
+              const TargetUserSync = () => {
+                const { targetEmployeeId } = useTargetUser();
+                useEffect(() => {
+                  setTargetEmployeeId(targetEmployeeId);
+                }, [targetEmployeeId]);
+                return null;
+              };
+              return <TargetUserSync />;
+            })()}
             <LoadingOverlayProvider>
               <RequestLeaveModalProvider>
                 <GlobalLeaveRequestModal />
