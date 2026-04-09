@@ -42,6 +42,8 @@ export default function BenefitRequestForm({
   const { data: currentUser } = useCurrentUser();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails(
     currentUser?.name || "",
+    undefined,
+    ["employee"],
   );
   const { data: benefitClaim, isLoading: benefitClaimLoading } =
     useGetBenefitDoc(docname || "");

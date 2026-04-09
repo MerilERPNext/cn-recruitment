@@ -23,6 +23,8 @@ const NoticeDetails = () => {
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
         currentUser?.name as string,
+        undefined,
+        ["user_id"],
     );
     console.log("-----------------------------", currentUser)
 

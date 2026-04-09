@@ -1,5 +1,5 @@
 import React from "react";
-import { PersonalInfoProps } from "./MyProfile";
+import { CompanyInfoProps } from "./MyProfile";
 import { Building2, Calendar, MapPin, Clock, Users } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize"; 
 
@@ -37,7 +37,7 @@ const MobileInfoRow: React.FC<{ label: string; value: string | undefined }> = ({
   </div>
 );
 
-export const CompanyInfo: React.FC<PersonalInfoProps> = ({ user }) => {
+export const CompanyInfo: React.FC<CompanyInfoProps> = ({ user }) => {
   const { isDesktop } = useScreenSize();
   const isMobile = !isDesktop;
 

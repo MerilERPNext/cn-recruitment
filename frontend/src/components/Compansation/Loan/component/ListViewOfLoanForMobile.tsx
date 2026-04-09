@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import DataListView from "../../../DataListView";
+import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { Loan } from "../Type/loan";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
 import MyApprovalActionPill from "../../../shared/atoms/MyApprovalActionPill";
@@ -13,7 +17,67 @@ import { errorResponseFormater } from "../../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
 import { queryClient } from "../../../../providers/QueryProvider";
 
-export const LoantItem: React.FC<{
+const ListViewOfLoanForMobile = () => {
+  const navigate = useNavigate();
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const [loanId, setLoanId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleGoToLoanDetails = (loan_application: string) => {
+    navigate(`/webapp/salary-slip-app/loan/${loan_application}`);
+  };
+
+  const handleEdit = (docname: string) => {
+    setLoanId(docname);
+    setIsDialogOpen(true);
+  };
+
+  return (
+    <>
+      <DataListView
+        queryKey="loan-requests"
+        customAPI={{
+          method:
+            "cn_indian_payroll.cn_indian_payroll.overrides.loan_dashboard.print_loan_dashboard",
+          params: {
+            employee: currentEmployee?.name,
+          },
+        }}
+        ItemComponent={({ item }) => (
+          <LoantItem
+            item={item}
+            handleEdit={handleEdit}
+            onClick={() => handleGoToLoanDetails(item.loan_name)}
+          />
+        )}
+        onRefetchComplete={() => setRefetchAttendance(false)}
+        refetchTrigger={refetchAttendance}
+        onItemClick={(item: Loan) => handleGoToLoanDetails(item.loan_name)}
+        isSearch={true}
+        isFilter={false}
+        pageSize={10}
+        showRefreshButton={false}
+        infiniteScroll={true}
+        loadMorePagination={true}
+        showPagination={false}
+        searchFields={["employee", "status", "shift_type"]}
+      />
+      {isDialogOpen && (
+        <CreateLoanDialog
+          loanId={loanId}
+          isOpen={isDialogOpen}
+          onClose={() => {
+            setIsDialogOpen(false);
+            setLoanId(null);
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+const LoantItem: React.FC<{
   item: Loan;
   handleEdit: (docname: string) => void;
   onClick: () => void;

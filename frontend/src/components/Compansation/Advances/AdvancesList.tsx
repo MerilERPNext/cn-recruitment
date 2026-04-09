@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { ApiAdvance, UiAdvance } from "../../../types/employeeAttendance";

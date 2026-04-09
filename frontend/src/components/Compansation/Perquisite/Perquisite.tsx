@@ -3,7 +3,6 @@
 import { X } from "lucide-react";
 import {  useState } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";

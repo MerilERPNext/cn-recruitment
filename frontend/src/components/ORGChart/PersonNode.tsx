@@ -2,7 +2,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import type { EmployeeNode } from "./type/type";
 import { useNavigate } from "react-router";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useTargetUser } from "../../context/ViewedUserContext";
 import Tooltip from "../shared/Tooltip";
 import Avatar from "../shared/Avatar";
@@ -10,7 +10,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { useScreenSize } from "../../hooks/useScreenSize";
 
 export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
-  const { data: employee } = useCurrentEmployee();
+  const { data: employee } = useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const currentEmployeeId = employee?.name;
   const navigate = useNavigate();
   const { setTargetEmployee, clearTargetEmployee } = useTargetUser();

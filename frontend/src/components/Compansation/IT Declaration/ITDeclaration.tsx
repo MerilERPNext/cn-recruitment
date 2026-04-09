@@ -12,7 +12,6 @@ import {
   useSubmitITDeclaration,
 } from "../../../hooks/payroll/useITDeclaration";
 import { normalizeITCategories } from "./Component/DataHandling";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import HRAForm, { type HRAData } from "./Component/HraExemptio";
 import CompareTaxSheetHandler from "./Component/TaxCompare";
@@ -38,8 +37,7 @@ type PayrollPeriod = {
 };
 
 const ITDeclarationForm = () => {
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee", "company"]);
   const mutation = useSubmitITDeclaration();
   const { isDesktop } = useScreenSize();
   const { data: userUiPermission } = useGetUiPermission("Compensation");

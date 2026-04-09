@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { FaRegEye } from "react-icons/fa";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
-import { useLoggedInUser } from "../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import HeaderBar from "../HeaderBar";
 import FrappeListView from "../ListView";
@@ -81,8 +80,7 @@ const PoliciesList: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("Acknowledged");

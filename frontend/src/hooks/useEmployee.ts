@@ -89,10 +89,12 @@ export const useCurrentEmployee = (): UseQueryResult<
   });
 };
 
-export const useCurrentEmployeeAllDetails = (
+export const useCurrentEmployeeAllDetails = <
+  T extends keyof Employee = never
+>(
   user_id?: string,
   name?: string,
-  fields?: string[],
+  fields?: T[],
 ) => {
   // Internally resolve the logged-in user when no user_id is supplied
   const { data: loggedInUserId } = useLoggedInUser({
@@ -103,7 +105,9 @@ export const useCurrentEmployeeAllDetails = (
   const effectiveUserId =
     user_id && user_id.trim() !== "" ? user_id : (loggedInUserId ?? "");
 
-  return useQuery<Employee | null, Error>({
+  type ResultType = [T] extends [never] ? Employee : Pick<Employee, T>;
+
+  return useQuery<ResultType | null, Error>({
     queryKey: ["currentEmployeeAllDetails", effectiveUserId, name, fields],
     queryFn: async () => {
       if (
@@ -121,7 +125,7 @@ export const useCurrentEmployeeAllDetails = (
         effectiveUserId,
         name,
         fields,
-      );
+      ) as Promise<ResultType | null>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)

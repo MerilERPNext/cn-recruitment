@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useCurrentEmployee } from "../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
 import {
   useGetButtonsStatus,
@@ -30,7 +30,7 @@ const MyLeaveRequests = ({
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployee();
+    useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
 
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(

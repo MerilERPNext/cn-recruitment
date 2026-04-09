@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import { useLoan } from "../../../../hooks/useLoan";
-import { useLoggedInUser } from "../../../../hooks/useLoggedInUser";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../../utils/currencyFormatter";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
@@ -20,10 +19,9 @@ interface RepaymentItem {
 }
 
 export default function LoanSummary() {
-  const { data: userId } = useLoggedInUser();
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
   const { loanId } = useParams();
-  const { data: user } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
   const { data: loanData } = useLoan(employeeId || "");
   const navigate = useNavigate();

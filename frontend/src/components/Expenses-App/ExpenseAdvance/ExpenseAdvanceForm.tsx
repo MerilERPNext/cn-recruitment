@@ -5,7 +5,7 @@ import { Plus, SquarePen, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useCurrentEmployee } from "../../../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import {
   useAdvanceTypes,
   useCostCenters,
@@ -48,7 +48,7 @@ const ExpenseAdvanceForm: React.FC<{
   const isEditMode = !!editAdvanceData;
 
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployee();
+    useCurrentEmployeeAllDetails(undefined, undefined, ["name", "company"]);
   const employeeId = currentEmployee?.name || "";
   const employeeCompany = currentEmployee?.company || "";
 

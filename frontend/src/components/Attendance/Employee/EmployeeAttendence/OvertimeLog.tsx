@@ -10,7 +10,9 @@ import { useTargetUser } from "../../../../context/ViewedUserContext";
 const OvertimeLog = () => {
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string
+        currentUser?.name as string,
+        undefined,
+        ["name"],
     );
     const { targetEmployeeId } = useTargetUser();
     const { data: overtimeLog, isError, isLoading, error } = useGetAllEmployeeOvertimeLog({

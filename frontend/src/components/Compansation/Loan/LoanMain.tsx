@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
-import { useLoggedInUser } from "../../../hooks/useLoggedInUser";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { isActionEnabled } from "../../../utils/uiPermission";
@@ -94,8 +93,7 @@ export default function LoansPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: userId } = useLoggedInUser();
-  const { data: user, isFetching: userLoading } = useCurrentEmployeeAllDetails(userId || "");
+  const { data: user } = useCurrentEmployeeAllDetails(undefined, undefined, ["employee"]);
   const employeeId = user?.employee ?? "";
   const [loanId, setLoanId] = useState<string | null>(null);
   const handleEdit = (docname: string) => {

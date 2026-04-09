@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FrappeListView from "./ListView";
-import { useCurrentEmployee } from "../hooks/useEmployee";
+import { useCurrentEmployeeAllDetails } from "../hooks/useEmployee";
 import { Typography } from "./shared/atoms/Typography";
 import {
   IoWarningOutline,
@@ -148,7 +148,7 @@ const PoliciesEnforced: React.FC = () => {
   const [completedPoliciesExpanded, setCompletedPoliciesExpanded] =
     useState(false);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
-    useCurrentEmployee();
+    useCurrentEmployeeAllDetails(undefined, undefined, ["name"]);
   const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } = 
     useMandatoryPoliciesPending(currentEmployee?.name);
   const { isMobile } = useScreenSize();

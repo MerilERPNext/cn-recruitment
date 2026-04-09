@@ -34,7 +34,9 @@ const CheckInStatus = () => {
     const formattedDate = format(date, "yyyy-MM");
     const { data: currentUser } = useCurrentUser();
     const { data: currentEmployee } = useCurrentEmployeeAllDetails(
-        currentUser?.name as string
+        currentUser?.name as string,
+        undefined,
+        ["employee"],
     );
     const { targetEmployeeId } = useTargetUser();
 
