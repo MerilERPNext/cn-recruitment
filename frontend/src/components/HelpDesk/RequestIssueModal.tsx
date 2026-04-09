@@ -371,7 +371,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
           {/* Attachments */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Attachments{isAttachmentMandatory && <span className="text-red-500">*</span>}
+              Attachments{!!isAttachmentMandatory && <span className="text-red-500">*</span>}
             </label>
             <div
               onDragOver={handleDragOver}
