@@ -328,7 +328,7 @@ const ApprovalRejectionLoanList = ({
             role={data?.role}
             position="left"
           >
-            <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.approval_status} />
+            <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.approval_status !== "Rejected" ? "Approved" : data?.reference_document?.status} />
 
           </AllocatedToTooltip>
         </div>

@@ -15,9 +15,9 @@ import { useGetToDoWithReferenceDoc } from "../../../../hooks/useAttendance";
 import Button from "../../../shared/atoms/Button";
 import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill";
 import { Typography } from "../../../shared/atoms/Typography";
-
 import advanceDetailsFormSchema from "./AdvanceDetailsModel.json";
 import { Form } from "@tsed/react-formio";
+import StatusBadge from "../../../shared/atoms/statusBadge";
 
 type Props = {
   open: boolean;
@@ -209,11 +209,9 @@ const AdvanceDetailsModal = ({
           </div>
 
           {/* STATUS */}
-          <div className="bg-[#EFF6FF] flex justify-between items-center px-4 py-2 m-4 rounded">
+          <div className="bg-primary/10 flex justify-between items-center px-4 py-2 m-4 rounded">
             <Typography variant="bodySmall">Status</Typography>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700">
-              {ref?.status || data?.status}
-            </span>
+              <StatusBadge status={ref?.status || data?.status} />
           </div>
 
           {/* FORM */}

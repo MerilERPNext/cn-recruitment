@@ -4,12 +4,51 @@ import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { Typography } from "../../shared/atoms/Typography";
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
-import CardTable from "../../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import StatusBadge from "../../shared/atoms/statusBadge";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { formatCurrency } from "../../../utils/currency";
 import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import DataListView from "../../DataListView";
+
+const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: false, // Actions
+  },
+    {
+      sortable: true,
+      type: "string",
+      field: "name",
+      getValue: (payment: any) =>
+        payment.invoiceId ?? "",
+    },
+
+    {
+      sortable: true,
+      type: "string",
+      field: "salary_component",
+      getValue: (payment: any) =>
+        payment.salary_component ?? "",
+    },
+    {
+      sortable: true,
+      type: "date",
+      field: "payroll_date",
+      getValue: (payment: any) =>
+        payment.date ?? "",
+    },
+    {
+      sortable: true,
+      type: "number",
+      field: "amount",
+      getValue: (payment: any) =>
+        payment.amount ?? "",
+    },
+  
+    {
+      sortable: false, // Actions
+    },
+  ];
 
 const titles = [
   "Recipient",
@@ -185,7 +224,7 @@ export default function ExtraPayment() {
       {/* ---------------------- DESKTOP ---------------------- */}
       {isDesktop && (
         <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-          <CardTable titles={titles} columnWidths={columnWidths}>
+          <CardTable titles={titles} columnWidths={columnWidths} columnSortConfig={PERQUISITE_SORT_CONFIG}>
             <DataListView
               queryKey={["extra-payments", user.employee, user.company]}
               customAPI={customAPI}

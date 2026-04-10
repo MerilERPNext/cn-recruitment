@@ -121,7 +121,7 @@
                     "key": "custom_repayment_start_date",
                     "label": "Start Date",
                     "placeholder": "Select start date",
-                    "format": "yyyy-MM-dd",
+                    "format": "dd-MM-yyyy",
                     "enableTime": false,
                     "customClass": "mb-4",
                     "input": true,

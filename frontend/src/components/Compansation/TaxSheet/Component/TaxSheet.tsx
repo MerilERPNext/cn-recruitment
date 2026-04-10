@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, } from "react";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
 import {
   useTaxSheetData,
@@ -26,7 +27,7 @@ type PayrollPeriod = {
   name: string;
 };
 
-export default function TaxSheet() {
+export default function TaxSheet({selectedPeriod, setSelectedPeriod}: any ) {
   const { data: user } = useCurrentEmployeeAllDetails({
     fields: ["employee", "company"]
   });
@@ -39,7 +40,6 @@ export default function TaxSheet() {
     isLoading: boolean;
   };
 
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
 
   useEffect(() => {
     if (!payrollPeriods?.length) return;

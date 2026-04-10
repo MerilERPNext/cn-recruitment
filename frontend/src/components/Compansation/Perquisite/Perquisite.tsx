@@ -58,10 +58,10 @@ const mapPerquisiteData = (rawData: ApiPerquisiteItem[]): UiPerquisite[] => {
 };
 // console.log("Mapped Perquisite Data:", rowData)
 const PERQUISITE_SORT_CONFIG: ColumnSortConfig[] = [
-  { sortable: true, type: "string", field: "name", getValue: (item: any) => item.name ?? "" },
-  { sortable: true, type: "date", field: "paymentDate", getValue: (item: any) => item.paymentDate ?? 0 },
-  { sortable: true, type: "number", field: "taxableValue", getValue: (item: any) => item.taxableValue ?? 0 },
-  { sortable: true, type: "string", field: "status", getValue: (item: any) => item.status ?? "" },
+  { sortable: true, type: "string", field: "salary_component", getValue: (item: any) => item.name ?? "" },
+  { sortable: true, type: "date", field: "payroll_date", getValue: (item: any) => item.paymentDate ?? 0 },
+  { sortable: true, type: "number", field: "amount", getValue: (item: any) => item.taxableValue ?? 0 },
+  { sortable: false, },
   { sortable: false },
 ];
 
