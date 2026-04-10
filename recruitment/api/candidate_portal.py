@@ -114,6 +114,32 @@ def _get_field_value(doc, fieldname, fieldtype):
         return [row.as_dict() if hasattr(row, "as_dict") else dict(row) for row in (val or [])]
     return "" if val is None else val
 
+def _get_child_table_fields(child_doctype):
+    """Returns renderable field metadata for a child table doctype."""
+    if not child_doctype:
+        return []
+
+    try:
+        meta = frappe.get_meta(child_doctype)
+    except Exception:
+        return []
+
+    fields = []
+    for df in meta.fields:
+        if df.fieldtype in _LAYOUT_TYPES or not df.fieldname or df.get("hidden"):
+            continue
+
+        fields.append({
+            "fieldname": df.fieldname,
+            "label": (df.label or df.fieldname).strip(),
+            "fieldtype": df.fieldtype,
+            "options": df.options or "",
+            "reqd": df.reqd or 0,
+            "read_only": df.read_only or 0,
+        })
+
+    return fields
+
 @frappe.whitelist()
 def get_all_onboarding_fields():
     """Returns all fields grouped for the desk settings page."""
@@ -173,6 +199,7 @@ def get_candidate_portal_form(job_applicant_id):
         meta = meta_lookup.get(fn, {})
         
         fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
         
         field_entry = {
             "fieldname": fn,
@@ -181,9 +208,12 @@ def get_candidate_portal_form(job_applicant_id):
             "is_mandatory": int(row.is_mandatory or 0),
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
-            "options": row.options or meta.get("options", ""),
+            "options": field_options,
             "current_value": _get_field_value(doc, fn, fieldtype),
         }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
@@ -334,6 +364,7 @@ def get_job_applicant_portal_form(job_applicant_id):
         meta = meta_lookup.get(fn, {})
 
         fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
 
         field_entry = {
             "fieldname": fn,
@@ -342,9 +373,12 @@ def get_job_applicant_portal_form(job_applicant_id):
             "is_mandatory": int(row.is_mandatory or 0),
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
-            "options": row.options or meta.get("options", ""),
+            "options": field_options,
             "current_value": _get_field_value(doc, fn, fieldtype),
         }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
 
         if tab_lbl not in tab_map:
             tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
