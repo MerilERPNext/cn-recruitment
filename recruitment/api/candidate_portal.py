@@ -108,12 +108,6 @@ def _get_job_applicant_portal_settings():
     except Exception:
         return []
 
-def _get_field_value(doc, fieldname, fieldtype):
-    val = doc.get(fieldname)
-    if fieldtype == "Table":
-        return [row.as_dict() if hasattr(row, "as_dict") else dict(row) for row in (val or [])]
-    return "" if val is None else val
-
 def _get_child_table_fields(child_doctype):
     """Returns renderable field metadata for a child table doctype."""
     if not child_doctype:
@@ -209,7 +203,6 @@ def get_candidate_portal_form(job_applicant_id):
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
             "options": field_options,
-            "current_value": _get_field_value(doc, fn, fieldtype),
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
@@ -374,7 +367,6 @@ def get_job_applicant_portal_form(job_applicant_id):
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
             "options": field_options,
-            "current_value": _get_field_value(doc, fn, fieldtype),
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
