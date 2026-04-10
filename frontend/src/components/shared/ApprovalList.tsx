@@ -18,6 +18,8 @@ type ApprovalListProps = {
     data,
     onAction,
     loadingAction,
+    isActed,
+    onActed,
   }: {
     todoId: string;
     isSelected: boolean;
@@ -25,6 +27,8 @@ type ApprovalListProps = {
     data: any;
     onAction: (action: string, data: any) => void;
     loadingAction: { id: string; action: string } | null;
+    isActed: boolean;
+    onActed: (id: string) => void;
   }) => ReactNode;
   refetch?: boolean;
   setRefetch?: (value: boolean) => void;
@@ -115,6 +119,11 @@ const ApprovalList = ({
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [allRequests, setAllRequests] = useState<any[]>([]);
+  const [actedIds, setActedIds] = useState<Set<string>>(new Set());
+
+  const addActedId = useCallback((id: string) => {
+    setActedIds((prev) => new Set(prev).add(id));
+  }, []);
 
   const currentStatus = activeFilters?.status || activeFilters?.approval_status || activeFilters?.custom_final_status || activeFilters?.custom_status || status;
 
@@ -220,6 +229,8 @@ const ApprovalList = ({
             data?.custom_open_chatnext_assistant_on_action,
           );
 
+          addActedId(data?.todo_id);
+
           if (
             (data?.custom_approval_type === "Approval Matrix" &&
               responseWithSession?.session) ||
@@ -265,7 +276,7 @@ const ApprovalList = ({
         }
       }, actionLoadingShow);
     },
-    [mutation, loading, triggerRefetch],
+    [mutation, loading, triggerRefetch, addActedId],
   );
 
   const batchActionMutation = useActionOnAttendanceRequest();
@@ -282,6 +293,12 @@ const ApprovalList = ({
             },
             {
               onSuccess: () => {
+                const ids = selectedIds.filter(Boolean);
+                setActedIds((prev) => {
+                  const next = new Set(prev);
+                  ids.forEach((id) => next.add(id));
+                  return next;
+                });
                 toast.success(
                   `Requests ${action === "Reject"
                     ? "rejected"
@@ -359,17 +376,25 @@ const ApprovalList = ({
         )}
         renderItem={(item: any) => {
           const todoId = item?.todo_id;
-          return renderCardContent({
-            todoId: todoId,
-            isSelected: selectedIds.includes(todoId),
-            onToggleSelect: handleToggleSelect,
-            data: item,
-            onAction: handleAction,
-            loadingAction: loadingAction,
-          });
+          const isActed = actedIds.has(todoId);
+          return (
+            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+              {renderCardContent({
+                todoId: todoId,
+                isSelected: selectedIds.includes(todoId),
+                onToggleSelect: handleToggleSelect,
+                data: item,
+                onAction: handleAction,
+                loadingAction: loadingAction,
+                isActed,
+                onActed: addActedId,
+              })}
+            </div>
+          );
         }}
         refetchTrigger={refetch || refetchAttendance}
         onRefetchComplete={() => {
+          setActedIds(new Set());
           setRefetchAttendance(false);
 
           if (setRefetch) {

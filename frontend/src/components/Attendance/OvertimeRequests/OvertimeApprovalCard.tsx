@@ -27,6 +27,7 @@ type ApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  isActed?: boolean;
 };
 const OvertimeApprovalCard = ({
   isSelected = false,
@@ -37,6 +38,7 @@ const OvertimeApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateOvertimeRejectionReason();
@@ -153,7 +155,7 @@ const OvertimeApprovalCard = ({
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            {data?.reference_document?.status === "Open" ? <TeamApprovalActionPill
+            {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
               actions={actions}
               status={data?.reference_document?.status}
               recordId={data?.todo_id}
@@ -240,7 +242,7 @@ const OvertimeApprovalCard = ({
                   </Typography>
                 </div>
               </div>
-              {data?.reference_document?.status === "Open" ? <TeamApprovalActionPill
+              {data?.reference_document?.status === "Open" && !isActed ? <TeamApprovalActionPill
                 variant="buttons"
                 actions={actions}
                 status={data?.reference_document?.status}

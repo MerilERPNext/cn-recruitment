@@ -2,13 +2,47 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import HeaderBar from "../HeaderBar";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import ApprovalList from "../shared/ApprovalList";
-import CardTable from "../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
 import { ShiftDetailView } from "./ShiftDetailView";
+import { MyShiftRequest } from "../../types/shift";
+
+const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
+  { sortable: false },
+  {
+    sortable: true,
+    type: "string",
+    field: "shift_type",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.shift_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyShiftRequest) => item?.due_date ?? "",
+  },
+  { sortable: false },
+  { sortable: false },
+];
 
 const AllShiftChangeRequestsList: React.FC = () => {
   const navigate = useNavigate();
@@ -49,28 +83,36 @@ const AllShiftChangeRequestsList: React.FC = () => {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Shift Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Shift Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
+  const columnSortConfig = useMemo<ColumnSortConfig[]>(
+    () =>
+      isBulkSelectEnabled
+        ? [{ sortable: false }, ...BASE_COLUMN_SORT_CONFIG_TEAM]
+        : BASE_COLUMN_SORT_CONFIG_TEAM,
+    [isBulkSelectEnabled],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -87,7 +129,11 @@ const AllShiftChangeRequestsList: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto md:px-4 pb-5 md:pb-20">
-        <CardTable titles={tableTitles} columnWidths={tableColumnWidths}>
+        <CardTable
+          titles={tableTitles}
+          columnWidths={tableColumnWidths}
+          columnSortConfig={columnSortConfig}
+        >
           <ApprovalList
             doctype={"Shift Request"}
             refetch={refetchApprovalList}
@@ -146,6 +192,7 @@ const AllShiftChangeRequestsList: React.FC = () => {
                   onClick={(request: any) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  isActed={item?.isActed}
                 />
               );
             }}

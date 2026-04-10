@@ -39,7 +39,7 @@
             },
             "selectValues": "message.data.companies",
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{ item.company_name }}</span>",
             "lazyLoad": false,
             "clearOnRefresh": false
         },
@@ -57,7 +57,7 @@
             "clearOnRefresh": true,
             "selectValues": "message.data.departments",
             "valueProperty": "name",
-            "template": "<span>{{ item.name }}</span>",
+            "template": "<span>{{ item.department_name }}</span>",
             "lazyLoad": false
         },
         {
@@ -71,7 +71,7 @@
                 "url": "/api/resource/Employment Type?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{item.employee_type_name}} ({{ item.name }})</span>",
+            "template": "<span>{{item.employee_type_name}}</span>",
             "selectValues": "data",
             "lazyLoad": false
         },
@@ -87,7 +87,7 @@
                 "url": "/api/resource/Branch?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{item.branch}} ({{ item.name }})</span>",
+            "template": "<span>{{item.branch}}</span>",
             "selectValues": "data",
             "lazyLoad": false
         },
@@ -103,7 +103,7 @@
                 "url": "/api/resource/Business Unit?fields=[\"*\"]"
             },
             "valueProperty": "name",
-            "template": "<span>{{ item.business_unit }} ({{item.name}})</span>",
+            "template": "<span>{{ item.business_unit }}</span>",
             "selectValues": "data",
             "lazyLoad": false
         }

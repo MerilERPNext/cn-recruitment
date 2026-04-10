@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MyPlannedAttendanceRequest } from "../../../types/attendance";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
@@ -33,6 +34,7 @@ export function MyRequestCard({
   onActionComplete?: () => void;
 }) {
   const { isDesktop } = useScreenSize();
+  const [isActed, setIsActed] = useState(false);
 
   const cleanDescription = sanitizeToPlainText(request?.description);
   const truncatedDescription = truncateByChars(cleanDescription);
@@ -64,6 +66,7 @@ export function MyRequestCard({
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             toast.success("Attendance Request Revoked Successfully!");
             // Trigger refetch in parent component
             setTimeout(() => {
@@ -117,11 +120,11 @@ export function MyRequestCard({
               <StatusBadge status={request?.status} />
             </AllocatedToTooltip>
           </div>
-          <div className="flex items-center justify-center">
+          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             {canEditOvertimeRequest && <Button
               size="sm"
               variant="subtle"
-              disabled={!canEdit}
+              disabled={!canEdit || isActed}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -133,7 +136,7 @@ export function MyRequestCard({
               <Edit className="w-4 h-4" />
             </Button>}
             {canRevokeOvertimeRequest && <Button size="sm" variant="subtle"
-              disabled={!canRevoke}
+              disabled={!canRevoke || isActed}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -191,11 +194,11 @@ export function MyRequestCard({
                     {truncateByChars(cleanDescription, 40)}
                   </Typography>
                 </div>
-                <div className="flex items-center justify-center">
+                <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
                   {canEditOvertimeRequest && <Button
                     size="sm"
                     variant="soft"
-                    disabled={!canEdit}
+                    disabled={!canEdit || isActed}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -207,7 +210,7 @@ export function MyRequestCard({
                     <Edit className="w-4 h-4" /> Edit
                   </Button>}
                   {canRevokeOvertimeRequest && <Button size="sm" variant="soft"
-                    disabled={!canRevoke}
+                    disabled={!canRevoke || isActed}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();

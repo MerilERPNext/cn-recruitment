@@ -131,7 +131,7 @@ export default function PerquisiteList() {
               renderItem={(item: UiPerquisite) => (
                 <div
                   key={item.id}
-                  className="max-w-screen grid px-6 py-3 gap-4 items-center border border-gray-200 bg-white hover:bg-primary/10"
+                  className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 cursor-pointer hover:bg-primary/10"
                   style={{ gridTemplateColumns: columnWidths.join(" ") }}
                 >
                   <Typography variant="bodySmall" className="font-medium text-center">

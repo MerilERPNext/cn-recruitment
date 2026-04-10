@@ -53,14 +53,18 @@ const RejectedSeparationRequest = () => {
   const { data: separationFunnelDetails, isLoading, isError } = useGetSeparationFunnelDetails();
   const navigate = useNavigate();
 
+  // check for current and previous request
   const rejectedSeparationRequest = useMemo(() => {
-    if (!separationFunnelDetails?.data
-      || separationFunnelDetails?.data?.length === 0
-      || separationFunnelDetails?.data[0]?.approval_status !== "Rejected"
-    ) return null;
-
-    return separationFunnelDetails?.data[0];
+    if (!separationFunnelDetails?.data || separationFunnelDetails?.data?.length === 0) {
+      return null;
+    }
+    if (separationFunnelDetails.data[0].approval_status === "Rejected")
+      return separationFunnelDetails.data[0];
+    if (separationFunnelDetails?.data?.length >= 2 && separationFunnelDetails.data[1].approval_status === "Rejected")
+      return separationFunnelDetails.data[1];
+    return null;
   }, [separationFunnelDetails]);
+
 
   if (isLoading) {
     return (

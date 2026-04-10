@@ -13,18 +13,22 @@ import StatusBadge from "../../shared/atoms/statusBadge";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import TeamApprovalActionPill from "../../shared/atoms/TeamApprovalActionPill";
 import { formatCurrency } from "../../../utils/currency";
+import { BenefitType } from "../../../types/benefit";
+
+
 
 // Props type
 type BenefitRequestItemProps = {
   isSelected?: boolean;
   isDisabled?: boolean;
   onToggleSelect?: (id: string) => void;
-  data: any;
+  data: BenefitType;
   onAction: (action: string, data: any) => void;
   onClick?: (data: any) => void;
   refetch?: () => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled: boolean;
+  isActed?: boolean;
 };
 
 const BenefitRequestItem = ({
@@ -36,6 +40,7 @@ const BenefitRequestItem = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  isActed = false,
 }: BenefitRequestItemProps) => {
   const { isDesktop } = useScreenSize();
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -146,7 +151,7 @@ const BenefitRequestItem = ({
               users={data?.allocated_to}
               roles={data?.allocated_roles}
               allocated_to_user={data?.username}
-              role={data?.role}
+              role={data?.role || ""}
               position="left"
             >
               <StatusBadge
@@ -160,16 +165,24 @@ const BenefitRequestItem = ({
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data.todo_status === "Closed" &&
-                data.reference_document.custom_status !== "Rejected"
-                ? "Approved"
-                : data.reference_document.custom_status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
-            />
+            {data?.todo_status === "Open" && !isActed ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data.todo_status === "Closed" &&
+                  data.reference_document.custom_status !== "Rejected"
+                  ? "Approved"
+                  : data.reference_document.custom_status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -253,17 +266,25 @@ const BenefitRequestItem = ({
               </div>
 
               <div className="mt-4 w-full">
-                <TeamApprovalActionPill
-                  variant="buttons"
-                  actions={actions}
-                  status={data.todo_status === "Closed" &&
-                    data.reference_document.custom_status !== "Rejected"
-                    ? "Approved"
-                    : data.reference_document.custom_status}
-                  recordId={data?.todo_id}
-                  loadingAction={loadingAction}
-                  onAction={(action) => handlePreSaveAction(action)}
-                />
+                {data?.todo_status === "Open" && !isActed ? (
+                  <TeamApprovalActionPill
+                    variant="buttons"
+                    actions={actions}
+                    status={data.todo_status === "Closed" &&
+                      data.reference_document.custom_status !== "Rejected"
+                      ? "Approved"
+                      : data.reference_document.custom_status}
+                    recordId={data?.todo_id}
+                    loadingAction={loadingAction}
+                    onAction={(action) => handlePreSaveAction(action)}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center">
+                    <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                      Action Taken
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

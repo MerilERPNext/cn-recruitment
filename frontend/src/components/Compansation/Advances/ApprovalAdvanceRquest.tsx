@@ -197,6 +197,7 @@ const TeamAdvanceRequest = () => {
                   onClick={() => handleRequestClick(item)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  isActed={item?.isActed}
                 />
               );
             }}

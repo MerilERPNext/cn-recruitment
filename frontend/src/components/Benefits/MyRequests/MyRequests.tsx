@@ -34,7 +34,6 @@ import { getCurrentPeriod } from "../shared/logic";
 import BenefitRequestForm from "./BenefitsRequestForm";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import { TodoType } from "../../../types/todos";
-import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useRevokeEvent } from "../../../hooks/userApprovalList";
 import { errorResponseFormater } from "../../../utils/errorResponseFormater";
 import toast from "react-hot-toast";
@@ -333,10 +332,13 @@ const MyRequests: React.FC = () => {
               },
             ]}
             onFiltersChange={(filter) => setCustomStatus(filterStatusMap[filter.custom_status as "Open" | "Approved" | "Rejected" | "Cancelled"])}
+            clientFilterFn={(list) =>
+              list.filter(
+                (item) =>
+                  Array.isArray(item?.todo_list) && item.todo_list.length > 0,
+              )
+            }
             ItemComponent={(props: { item: BenefitPayslip }) => {
-              if (!props?.item?.todo_list || props?.item?.todo_list?.length === 0) {
-                return null;
-              }
               return (
                 <BenefitSlipItem
                   handleEdit={handleEdit}
@@ -396,11 +398,19 @@ const BenefitSlipItem = ({
 }) => {
   const { isDesktop } = useScreenSize();
   const todo: TodoType | null = (Array.isArray(item.todo_list) && item.todo_list.length > 0) ? item.todo_list[0] : null;
-  const { data: currentUser } = useCurrentUser();
+  const [isActed, setIsActed] = useState(false);
 
-  const canEdit = todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
-  const canRevoke = !!todo?.custom_allow_revoke && todo?.reference_document?.custom_status === "Pending";
+  const canEdit = todo?.can_edit === true && !isActed;
+  const canRevoke =
+    todo?.custom_allow_revoke === 1 &&
+    item?.custom_status === "Pending" &&
+    !isActed;
+  const badgeStatus =
+    todo?.custom_allow_revoke &&
+      item?.custom_status === "Cancelled" &&
+      todo?.todo_status?.toLowerCase?.() === "cancelled"
+      ? "Revoked"
+      : item?.custom_status;
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
 
@@ -415,6 +425,7 @@ const BenefitSlipItem = ({
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             setTimeout(() => {
               handleRefetch();
             }, 2000);
@@ -485,11 +496,11 @@ const BenefitSlipItem = ({
           roles={item?.todo_list[0]?.allocated_roles}
           role={item?.todo_list[0]?.role ?? ""}
         >
-          <StatusBadge status={item?.custom_status} />
+          <StatusBadge status={badgeStatus} />
         </AllocatedToTooltip>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
           isPending={item.custom_status === "Pending"}
           canEdit={canEdit}
@@ -514,7 +525,7 @@ const BenefitSlipItem = ({
               </Typography>
             </div>
             <div className="shrink-0">
-              <StatusBadge status={item?.custom_status} />
+              <StatusBadge status={badgeStatus} />
             </div>
           </div>
 
@@ -599,7 +610,7 @@ const BenefitSlipItem = ({
           </div>
 
           {/* Actions */}
-          <div className="mt-4">
+          <div className={`mt-4 ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               isPending={item.custom_status === "Pending"}
               canEdit={canEdit}

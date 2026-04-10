@@ -22,6 +22,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
 
   const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
+  const [isActed, setIsActed] = useState(false);
   const {
     data: shiftTypes,
     isLoading: shiftTypesLoading,
@@ -44,6 +45,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 1000);
@@ -69,10 +71,18 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   };
 
   const gridTemplateColumns = "1fr 1fr 1fr 1fr 1fr";
-  const isDraft = data?.reference_document?.status === "Draft";
-
-  const canEdit = Boolean(data?.can_edit && isDraft);
-  const canRevoke = Boolean(data?.custom_allow_revoke && isDraft);
+  const canEdit = Boolean(data?.can_edit && !isActed);
+  const canRevoke = Boolean(
+    data?.custom_allow_revoke &&
+      data?.reference_document?.status === "Draft" &&
+      !isActed,
+  );
+  const badgeStatus =
+    data?.custom_allow_revoke &&
+    data?.reference_document?.docstatus === 2 &&
+    data?.todo_status?.toLowerCase?.() === "cancelled"
+      ? "Revoked"
+      : data?.reference_document?.status;
 
   return (
     <>
@@ -108,10 +118,10 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
               allocated_to_user={data?.username}
               position="left"
             >
-              <StatusBadge status={data?.reference_document?.status} />
+              <StatusBadge status={badgeStatus} />
             </AllocatedToTooltip>
           </div>
-          <div className="flex items-center justify-center">
+          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               canEdit={canEdit}
               canRevoke={canRevoke}
@@ -137,7 +147,7 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
                 username={data?.username}
               />
 
-              <StatusBadge status={data?.reference_document?.status} />
+              <StatusBadge status={badgeStatus} />
             </div>
 
             <div className="flex justify-between w-full">
@@ -176,15 +186,17 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
             </div>
 
             {/* Actions */}
-            <MyApprovalActionPill
-              variant="buttons"
-              canEdit={canEdit}
-              canRevoke={canRevoke}
-              isPending={false}
-              revokeLoading={revokeEventMutation.isPending}
-              onEdit={handleEditClick}
-              onRevoke={handleRevokeClick}
-            />
+            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+              <MyApprovalActionPill
+                variant="buttons"
+                canEdit={canEdit}
+                canRevoke={canRevoke}
+                isPending={false}
+                revokeLoading={revokeEventMutation.isPending}
+                onEdit={handleEditClick}
+                onRevoke={handleRevokeClick}
+              />
+            </div>
           </div>
         </div>
       )}

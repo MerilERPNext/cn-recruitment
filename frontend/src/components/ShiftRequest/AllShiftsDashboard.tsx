@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
 import { useGlobalStore } from "../../hooks/useGlobalStore";
@@ -11,13 +11,74 @@ import formatToIndianDate, {
 } from "../../utils/formatToIndianDate";
 import DataListView from "../DataListView";
 import ApprovalList from "../shared/ApprovalList";
-import CardTable from "../shared/CardTable";
+import CardTable, { ColumnSortConfig } from "../shared/CardTable";
 import { ViewAll } from "../shared/atoms/ViewAll";
 import StatusBadge from "../shared/atoms/statusBadge";
 import { CardSkeleton } from "../shared/molecules/Skeletons/TableSkeleton";
 import EmpShiftRequestCard from "./EmpShiftRequestCard";
 import { ShiftDetailView } from "./ShiftDetailView";
 import ApprovalRejectionQueue from "./dashboard/ApprovalRejection";
+
+const COLUMN_SORT_CONFIG: ColumnSortConfig[] = [
+  {
+    sortable: true,
+    type: "string",
+    field: "shift_type",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.shift_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: false,
+  },
+  { sortable: false },
+];
+
+const BASE_COLUMN_SORT_CONFIG_TEAM: ColumnSortConfig[] = [
+  { sortable: false },
+  {
+    sortable: true,
+    type: "string",
+    field: "shift_type",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.shift_type ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "from_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.from_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "to_date",
+    getValue: (item: MyShiftRequest) =>
+      item.reference_document?.to_date ?? "",
+  },
+  {
+    sortable: true,
+    type: "date",
+    field: "due_date",
+    getValue: (item: MyShiftRequest) => item?.due_date ?? "",
+  },
+  { sortable: false },
+  { sortable: false },
+];
 
 const Card = ({
   children,
@@ -172,6 +233,7 @@ const AllMyShiftRequestsList = () => {
         <CardTable
           titles={["Shift Type", "From Date", "To Date", "Status", "Actions"]}
           columnWidths={["1fr", "1fr", "1fr", "1fr", "1fr"]}
+          columnSortConfig={COLUMN_SORT_CONFIG}
         >
           {currentEmployee?.employee ? (
             <DataListView
@@ -254,28 +316,36 @@ export default function AllShiftsDashboard() {
 
   const tableTitles = isBulkSelectEnabled
     ? [
-        "Select",
-        "Employee",
-        "Shift Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ]
+      "Select",
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ]
     : [
-        "Employee",
-        "Shift Type",
-        "From Date",
-        "To Date",
-        "Due Date",
-        "Status",
-        "Actions",
-      ];
+      "Employee",
+      "Shift Type",
+      "From Date",
+      "To Date",
+      "Due Date",
+      "Status",
+      "Actions",
+    ];
 
   const tableColumnWidths = isBulkSelectEnabled
     ? ["0.5fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"]
     : ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+
+  const columnSortConfig = useMemo<ColumnSortConfig[]>(
+    () =>
+      isBulkSelectEnabled
+        ? [{ sortable: false }, ...BASE_COLUMN_SORT_CONFIG_TEAM]
+        : BASE_COLUMN_SORT_CONFIG_TEAM,
+    [isBulkSelectEnabled],
+  );
 
   return (
     <div className="h-screen pb-22 overflow-hidden font-sans text-sm">
@@ -293,6 +363,7 @@ export default function AllShiftsDashboard() {
                 <CardTable
                   titles={tableTitles}
                   columnWidths={tableColumnWidths}
+                  columnSortConfig={columnSortConfig}
                 >
                   <ApprovalList
                     status="Draft"
@@ -314,6 +385,7 @@ export default function AllShiftsDashboard() {
                         onClick={handleRequestClick}
                         loadingAction={item?.loadingAction}
                         isBulkSelectEnabled={isBulkSelectEnabled}
+                        isActed={item?.isActed}
                       />
                     )}
                   />
