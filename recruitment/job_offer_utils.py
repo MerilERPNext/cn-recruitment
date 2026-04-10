@@ -4,10 +4,8 @@ import json
 from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
-
-import frappe
 from urllib.parse import urlencode
-
+from nexus_customizations.api.global_email import get_company_sender
 
 @frappe.whitelist()
 def send_job_offer(job_offer):
@@ -68,11 +66,13 @@ def send_job_offer(job_offer):
 
     </div>
     """
+    sender = get_company_sender(doc.company)
 
     frappe.sendmail(
         recipients=[doc.applicant_email],
         subject=f"Offer of Employment with {doc.company}",
         message=email_message,
+        sender=sender,
         now=True
     )
 
@@ -161,10 +161,13 @@ def send_onboarding_form(job_applicant):
     </div>
     """
 
+    sender = get_company_sender(company)
+
     frappe.sendmail(
         recipients=[doc.email_id],
         subject="Please Complete Your Details: SubmissionLink and Deadline",
         message=email_message,
+        sender=sender,
         now=True
     )
 
