@@ -117,15 +117,18 @@ export default function LoanList({
 type LoanRowProps = {
   loan: Loan;
   handleEdit: (docname: string) => void;
+  employeeId?: string;
   columnWidths: string[];
 };
 
 export const LoanRow = ({
   loan,
   handleEdit,
+  employeeId,
   columnWidths,
 }: LoanRowProps) => {
   const [expanded, setExpanded] = useState<boolean>(false);
+  const [isActed, setIsActed] = useState(false);
   const onToggle = () => {
     setExpanded(prev => !prev);
   }
@@ -134,9 +137,11 @@ export const LoanRow = ({
     ? loan.todo_list[0]
     : null;
 
-  const canRevoke = loan.status === "Open" && todo?.custom_allow_revoke === 1;
+  const canRevoke =
+    loan.status === "Open" && todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit = todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
+    !isActed;
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
@@ -148,7 +153,9 @@ export const LoanRow = ({
       { docname: todo.reference_name, doctype: todo.reference_type, todo: todo.todo_id },
       {
         onSuccess: () => {
+          setIsActed(true);
           queryClient.invalidateQueries({ queryKey: ["loan"] });
+          queryClient.invalidateQueries({ queryKey: ["loan-requests", employeeId] });
           toast.success("Loan Request Revoked Successfully!");
         },
         onError: (error) => {
@@ -244,7 +251,7 @@ export const LoanRow = ({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-center">
+        <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
           <MyApprovalActionPill
             isPending={loan.status === "Open"}
             canRevoke={canRevoke}

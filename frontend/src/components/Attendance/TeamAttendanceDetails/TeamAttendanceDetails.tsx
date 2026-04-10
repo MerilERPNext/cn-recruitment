@@ -199,6 +199,7 @@ const TeamAttendanceDetails = () => {
                     }
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}
+                    isActed={item?.isActed}
                   />
                 );
               }}

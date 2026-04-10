@@ -13,6 +13,7 @@ export default function IncomeTaxSheet() {
     "taxsheet",
   );
   const { data: userUiPermission } = useGetUiPermission("Compensation");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const canPreviewTDS = isActionEnabled(
     userUiPermission,
     "preview_tds",
@@ -47,11 +48,14 @@ export default function IncomeTaxSheet() {
         </div>
         {activeTab === "taxsheet" && canPreviewTDS && (
           <div className="flex items-center gap-3">
-            <TDSSlipHandler disabled={false} />
+            <TDSSlipHandler disabled={false} selectedPeriod={selectedPeriod}  />
           </div>
         )}
       </header>
-      {activeTab === "taxsheet" && <TaxSheet />}
+      {activeTab === "taxsheet" && <TaxSheet 
+          selectedPeriod={selectedPeriod}   // ✅ PASS
+          setSelectedPeriod={setSelectedPeriod}
+          />}
       {activeTab === "income-computation" && <IncomeComputationSheet />}
     </div>
   );

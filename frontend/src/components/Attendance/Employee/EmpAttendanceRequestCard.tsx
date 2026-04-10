@@ -28,6 +28,7 @@ const EmpAttendanceRequestCard = ({
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
   const [edit, setEdit] = useState(false);
+  const [isActed, setIsActed] = useState(false);
   const { isDesktop } = useScreenSize();
   const loading = useLoadingOverlay();
   const handleRevokeClick = () => {
@@ -41,6 +42,7 @@ const EmpAttendanceRequestCard = ({
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
@@ -126,11 +128,11 @@ const EmpAttendanceRequestCard = ({
 
             </AllocatedToTooltip>
           </div>
-          <div className="flex items-center justify-center">
+          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               isPending={type === "pending"}
-              canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
-              canEdit={!!data?.can_edit}
+              canRevoke={!!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
+              canEdit={!!data?.can_edit && !isActed}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
               onEdit={() => setEdit(true)}
@@ -188,15 +190,17 @@ const EmpAttendanceRequestCard = ({
             </div>
 
             {/* Actions */}
-            <MyApprovalActionPill
-              variant="buttons"
-              isPending={type === "pending"}
-              canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending"}
-              canEdit={type === "pending" && !!data?.can_edit}
-              revokeLoading={revokeEventMutation.isPending}
-              onRevoke={handleRevokeClick}
-              onEdit={() => setEdit(true)}
-            />
+            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+              <MyApprovalActionPill
+                variant="buttons"
+                isPending={type === "pending"}
+                canRevoke={type === "pending" && !!data?.custom_allow_revoke && data?.reference_document?.custom_status === "Pending" && !isActed}
+                canEdit={type === "pending" && !!data?.can_edit && !isActed}
+                revokeLoading={revokeEventMutation.isPending}
+                onRevoke={handleRevokeClick}
+                onEdit={() => setEdit(true)}
+              />
+            </div>
           </div>
         </div>
       )}

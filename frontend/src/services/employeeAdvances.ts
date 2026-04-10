@@ -215,5 +215,13 @@ export const updateEmployeeAdvance = async ({
   data,
 }: EmployeeAdvanceUpdatePayload) => {
   const response = await FrappeAPI.updateDocument("Employee Advance", docname, data);
+  await FrappeAPI.callMethod(
+    "nextai.funnel.doctype.funnel_task.awaiting_actions.chatnext_dynamic_multi_actions.resubmit_approval_event",
+    {
+      doctype: "Employee Advance",
+      docname: docname,
+      data: [data],
+    }
+  );
   return response;
 };
