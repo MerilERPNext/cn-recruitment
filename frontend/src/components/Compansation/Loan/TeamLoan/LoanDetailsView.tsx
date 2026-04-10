@@ -5,6 +5,7 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Form } from "@tsed/react-formio";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useExpenseCommentUpdate } from "../../../../hooks/useExpense";
 import {
@@ -18,6 +19,7 @@ import TeamApprovalActionPill from "../../../shared/atoms/TeamApprovalActionPill
 import { Typography } from "../../../shared/atoms/Typography";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useGetToDoWithReferenceDoc } from "../../../../hooks/useAttendance";
+import loanDetailsFormSchema from "./LoanDetailsModel.json";
 
 type Props = {
   open: boolean;
@@ -60,46 +62,59 @@ const LoanDetailsModal = ({
   const loanFormUpdate = useLoanApplicationUpdate();
   const commentMutation = useExpenseCommentUpdate();
   const { data: user } = useCurrentUser();
+  const [submissionData, setSubmissionData] = useState<any>(null);
+  const [formLiveData, setFormLiveData] = useState<any>({});
 
-  const [repaymentType, setRepaymentType] = useState(
-    ref?.repayment_method || "",
-  );
+  const formatDateForDisplay = (dateValue?: string) => {
+    if (!dateValue) return "";
+    const asString = String(dateValue);
+    if (/^\d{2}-\d{2}-\d{4}$/.test(asString)) return asString;
+    const [year, month, day] = asString.split("T")[0].split("-");
+    if (!year || !month || !day) return asString;
+    return `${day}-${month}-${year}`;
+  };
 
-  const [form, setForm] = useState({
-    loan_amount: "",
-    rate_of_interest: "",
-    loan_tenure: "",
-    monthly_repayment_amount: "",
-    start_date: "",
-    custom_defered_date: "",
-    repayment_method: "",
-  });
+  const formatDateForFrappe = (dateValue?: string) => {
+    if (!dateValue) return "";
+    const asString = String(dateValue).split("T")[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(asString)) return asString;
+    if (/^\d{2}-\d{2}-\d{4}$/.test(asString)) {
+      const [day, month, year] = asString.split("-");
+      return `${year}-${month}-${day}`;
+    }
+    return asString;
+  };
 
-  // ✅ FIX: sync form with API data
+  // Auto-populate Formio submission data from fetched document.
   useEffect(() => {
-    if (ref) {
-      setForm({
+    if (!ref) return;
+    setSubmissionData({
+      data: {
+        applicant_name: ref.applicant_name || ref.applicant || "",
+        loan_product: ref.loan_product || "",
         loan_amount: ref.loan_amount || "",
         rate_of_interest: ref.rate_of_interest || "",
+        repayment_method: ref.repayment_method || "",
         loan_tenure: ref.repayment_periods || "",
         monthly_repayment_amount: ref.repayment_amount || "",
-        start_date: ref.custom_repayment_start_date?.slice(0, 10) || "",
-        custom_defered_date: ref.custom_defered_date?.slice(0, 10) || "",
-        repayment_method: ref.repayment_method || "",
-      });
-
-      setRepaymentType(ref.repayment_method || "");
-    }
+        start_date: formatDateForDisplay(ref.custom_repayment_start_date),
+        custom_defered_date: formatDateForDisplay(ref.custom_defered_date),
+      },
+    });
+    setFormLiveData({
+      loan_amount: ref.loan_amount || "",
+      rate_of_interest: ref.rate_of_interest || "",
+      repayment_method: ref.repayment_method || "",
+      loan_tenure: ref.repayment_periods || "",
+      monthly_repayment_amount: ref.repayment_amount || "",
+      start_date: formatDateForDisplay(ref.custom_repayment_start_date),
+      custom_defered_date: formatDateForDisplay(ref.custom_defered_date),
+    });
   }, [ref]);
 
   const [commentOpen, setCommentOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
-
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
-  };
 
   const handleActionClick = (action: string) => {
     setSelectedAction(action);
@@ -130,19 +145,25 @@ const LoanDetailsModal = ({
       const payload: LoanApplicationUpdatePayload = {
         docname: refDocName,
         data: {
-          loan_amount: Number(form.loan_amount),
-          rate_of_interest: Number(form.rate_of_interest),
-          custom_repayment_start_date: form.start_date,
-          custom_defered_date: form.custom_defered_date,
-          repayment_method: form.repayment_method,
+          loan_amount: Number(formLiveData.loan_amount),
+          rate_of_interest: Number(formLiveData.rate_of_interest),
+          custom_repayment_start_date: formatDateForFrappe(
+            formLiveData.start_date,
+          ),
+          custom_defered_date: formatDateForFrappe(
+            formLiveData.custom_defered_date,
+          ),
+          repayment_method: formLiveData.repayment_method,
           status: selectedAction,
 
-          ...(form.repayment_method === "Repay Fixed Amount per Period" && {
-            repayment_amount: Number(form.monthly_repayment_amount),
+          ...(formLiveData.repayment_method ===
+            "Repay Fixed Amount per Period" && {
+            repayment_amount: Number(formLiveData.monthly_repayment_amount),
           }),
 
-          ...(form.repayment_method === "Repay Over Number of Periods" && {
-            repayment_periods: Number(form.loan_tenure),
+          ...(formLiveData.repayment_method ===
+            "Repay Over Number of Periods" && {
+            repayment_periods: Number(formLiveData.loan_tenure),
           }),
         },
       };
@@ -155,7 +176,7 @@ const LoanDetailsModal = ({
           ...data,
           reference_document: {
             ...ref,
-            ...form,
+            ...formLiveData,
           },
         });
       }
@@ -231,129 +252,21 @@ const LoanDetailsModal = ({
               <StatusBadge status={ref?.status} />
             </div>
 
-            {/* Read-only fields — paired rows */}
-            <div className="flex flex-col items-start justify-between mt-2 rounded-md p-1 gap-4">
-              <div className="flex justify-between w-full">
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Employee
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {ref?.applicant_name || ref?.applicant}
-                  </Typography>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Loan Type
-                  </Typography>
-                  <Typography variant="mobileCardValue">
-                    {ref?.loan_product}
-                  </Typography>
-                </div>
-              </div>
-            </div>
-
-            {/* Editable fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Loan Amount
-                </Typography>
-                <input
-                  name="loan_amount"
-                  value={form.loan_amount}
-                  onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Rate of Interest (%)
-                </Typography>
-                <input
-                  name="rate_of_interest"
-                  value={form.rate_of_interest}
-                  onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Repayment Type
-                </Typography>
-                <select
-                  value={form.repayment_method}
-                  name="repayment_method"
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setRepaymentType(value);
-                    setForm((p) => ({ ...p, repayment_method: value }));
-                  }}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="">Select Loan Type</option>
-                  <option value="Repay Fixed Amount per Period">
-                    Repay Fixed Amount per Period
-                  </option>
-                  <option value="Repay Over Number of Periods">
-                    Repay Over Number of Periods
-                  </option>
-                </select>
-              </div>
-
-              {repaymentType === "Repay Over Number of Periods" && (
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Loan Tenure
-                  </Typography>
-                  <input
-                    name="loan_tenure"
-                    value={form.loan_tenure}
-                    onChange={handleChange}
-                    className="w-full border rounded-md px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
-
-              {repaymentType === "Repay Fixed Amount per Period" && (
-                <div className="flex flex-col gap-1">
-                  <Typography variant="mobileCardLabel" className="block">
-                    Monthly Repayment Amount
-                  </Typography>
-                  <input
-                    name="monthly_repayment_amount"
-                    value={form.monthly_repayment_amount}
-                    onChange={handleChange}
-                    className="w-full border rounded-md px-3 py-2 text-sm"
-                  />
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Start Date
-                </Typography>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={form.start_date}
-                  onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Typography variant="mobileCardLabel" className="block">
-                  Deferment Date
-                </Typography>
-                <input
-                  type="date"
-                  name="custom_defered_date"
-                  value={form.custom_defered_date}
-                  onChange={handleChange}
-                  className="w-full border rounded-md px-3 py-2 text-sm"
-                />
-              </div>
+            <div>
+              <Form
+                form={loanDetailsFormSchema}
+                submission={submissionData}
+                onChange={(form: { data: any }) => {
+                  setFormLiveData((prev: any) => ({
+                    ...prev,
+                    ...form.data,
+                  }));
+                }}
+                options={{
+                  noAlerts: true,
+                  readOnly: false,
+                }}
+              />
             </div>
           </div>
 
