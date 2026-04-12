@@ -155,7 +155,7 @@ const AdvancesList: React.FC = () => {
     {
       sortable: true,
       type: "string",
-      field: "name",
+      field: "custom_advance_type",
       getValue: (item: any) =>
         item.advance.name ?? "",
     },
@@ -169,28 +169,20 @@ const AdvancesList: React.FC = () => {
     },
     {
       sortable: true,
-      type: "number",
-      field: "numberOfDeductions",
-      getValue: (item: any) =>
-        item?.advance.numberOfDeductions ?? 0,
-    },
-    {
-      sortable: true,
       type: "date",
-      field: "start_date",
+      field: "custom_repayment_start_date",
       getValue: (item: any) =>
         item?.advance.startDate ?? "",
     },
     {
-      sortable: true,
-      type: "date",
-      field: "posting_date",
-      getValue: (item: any) =>
-        item?.advance.endDate ?? "",
+      sortable: false,
     },
     {
-      sortable: false,
-
+      sortable: true,
+      type: "string",
+      field: "custom_final_status",
+      getValue: (item: any) =>
+        item?.advance.status ?? "",
     },
     {
       sortable: false, // Actions
@@ -200,13 +192,12 @@ const AdvancesList: React.FC = () => {
   const titles = [
     "Advance Name",
     "Amount",
-    "Deductions",
     "Start Date",
     "End Date",
     "Status",
     "Actions",
   ];
-  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
+  const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
   // ── customAPI config — only build when employeeId is ready ──────────────────
   const customAPI = employeeId
@@ -355,12 +346,14 @@ const AdvanceDesktopRow = ({
   handleViewInstallments,
   handleRefetch,
 }: AdvanceRowProps) => {
+  const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit =
     todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
+    !isActed;
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
@@ -376,6 +369,7 @@ const AdvanceDesktopRow = ({
       },
       {
         onSuccess: () => {
+          setIsActed(true);
           handleRefetch();
           toast.success("Advance Request Revoked Successfully!");
         },
@@ -390,7 +384,7 @@ const AdvanceDesktopRow = ({
   return (
     <div
       className="grid max-w-screen items-center gap-4 px-6 h-16 border-b border-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
-      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr" }}
+      style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr" }}
       onClick={() => handleViewInstallments(advance)}
     >
       <Typography variant="bodySmall" className="font-medium text-center">
@@ -404,16 +398,6 @@ const AdvanceDesktopRow = ({
           </span>
         ) : (
           <span>{formatCurrency(advance.amount)}</span>
-        )}
-      </Typography>
-
-      <Typography variant="bodySmall" className="font-medium text-center">
-        {maskAmounts ? (
-          <span className="blur-sm select-none text-gray-400">
-            {formatCurrency("XX,XXX")}
-          </span>
-        ) : (
-          <span>{formatCurrency(advance.numberOfDeductions)}</span>
         )}
       </Typography>
 
@@ -436,7 +420,7 @@ const AdvanceDesktopRow = ({
         </AllocatedToTooltip>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
           isPending={advance.advanceStatus === "Pending"}
           canRevoke={canRevoke}
@@ -457,12 +441,14 @@ const AdvanceMobileRow = ({
   handleViewInstallments,
   handleRefetch,
 }: AdvanceRowProps) => {
+  const [isActed, setIsActed] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const todo = advance.todo ?? null;
-  const canRevoke = todo?.custom_allow_revoke === 1;
+  const canRevoke = todo?.custom_allow_revoke === 1 && !isActed;
   const canEdit =
     todo?.can_edit === true &&
-    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase();
+    currentUser?.name?.toLowerCase() === todo?.send_back_user?.toLowerCase() &&
+    !isActed;
 
   const loading = useLoadingOverlay();
   const revokeEventMutation = useRevokeEvent();
@@ -478,6 +464,7 @@ const AdvanceMobileRow = ({
       },
       {
         onSuccess: () => {
+          setIsActed(true);
           handleRefetch();
           toast.success("Advance Request Revoked Successfully!");
         },
@@ -535,15 +522,17 @@ const AdvanceMobileRow = ({
           roles={advance.allocated_to_roles}
         />
 
-        <MyApprovalActionPill
-          variant="buttons"
-          isPending={advance.advanceStatus === "Pending"}
-          canRevoke={canRevoke}
-          canEdit={canEdit}
-          onRevoke={handleRevokeClick}
-          onEdit={() => handleEdit(advance.docname)}
-          isResubmit={canEdit}
-        />
+        <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+          <MyApprovalActionPill
+            variant="buttons"
+            isPending={advance.advanceStatus === "Pending"}
+            canRevoke={canRevoke}
+            canEdit={canEdit}
+            onRevoke={handleRevokeClick}
+            onEdit={() => handleEdit(advance.docname)}
+            isResubmit={canEdit}
+          />
+        </div>
       </div>
     </div>
   );

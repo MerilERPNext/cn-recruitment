@@ -29,6 +29,7 @@ type ApprovalCardProps = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  isActed?: boolean;
 };
 const ApprovalCard = ({
   isSelected = false,
@@ -39,6 +40,7 @@ const ApprovalCard = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateAttendanceRejectionReason();
@@ -170,7 +172,7 @@ const ApprovalCard = ({
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            {data?.todo_status === "Open" ? (
+            {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.reference_document?.custom_status || data?.reference_document?.status}
@@ -272,7 +274,7 @@ const ApprovalCard = ({
               </div>
 
               {/* Actions */}
-              {data?.todo_status === "Open" ? (
+              {data?.todo_status === "Open" && !isActed ? (
                 <TeamApprovalActionPill
                   variant="buttons"
                   actions={actions}
