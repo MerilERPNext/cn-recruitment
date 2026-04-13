@@ -130,6 +130,21 @@ export const getFlowRequests = async (
   return response as any;
 };
 
+// cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_detail_by_id?funnel_activity_id=u2frkv4g7d
+export const getFlowRequestById = async (
+  funnel_activity_id: string
+) => {
+  const response = FrappeAPI.callMethod('cn_hrms_core.cn_hrms_core.apis.funnel_activity.get_funnel_activity_detail_by_id',
+    {
+      funnel_activity_id
+    },
+  );
+
+  return response as any;
+};
+
+
+
 
 // ?reference_doctype=Employee%20Separation&reference_docname=HR-EMP-SEP-2026-00001
 export const getOpenApprovalTodos = async (
