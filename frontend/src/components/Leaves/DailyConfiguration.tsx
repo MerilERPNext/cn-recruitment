@@ -3,6 +3,8 @@ import { getDatesBetween } from "../../utils/helperUtils";
 import { AttendanceStatusItem } from "../../types/leaves";
 import Badge from "../shared/Badge";
 
+import formatToIndianDate from "../../utils/formatToIndianDate";
+
 type DayConfig = "Full Day" | "First Half" | "Second Half";
 interface DailyConfigProps {
   fromDate: string;
@@ -117,9 +119,7 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
             return (
               <tr key={date} className="border-t">
                 <td className="px-4 py-2">
-                  {`${new Date(date).toLocaleDateString("en-GB")} (${new Date(
-                    date,
-                  ).toLocaleDateString("en-GB", { weekday: "long" })})`}
+                  {formatToIndianDate(date)}
                 </td>
 
                 <td className="px-4 py-2">
