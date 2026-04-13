@@ -181,6 +181,10 @@ const LoanDetailsModal = ({
         });
       }
 
+      document.dispatchEvent(
+        new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+      );
+
       setComment("");
       setSelectedAction(null);
       setCommentOpen(false);
