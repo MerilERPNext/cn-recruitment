@@ -211,6 +211,7 @@ const MyOvertimeRequests = () => {
       )}
       {(requestId || referenceName) && (
         <MyOvertimeDetails
+          type="my"
           documentName={requestId || ""}
           referenceName={referenceName || ""}
           onClose={handleCloseModal}
