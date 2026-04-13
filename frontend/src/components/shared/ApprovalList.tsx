@@ -51,6 +51,7 @@ type ApprovalListProps = {
   | ((filters: Record<string, any>) => React.ReactNode);
   SkeletonComponent?: React.ComponentType;
   onActiveFiltersChange?: (filters: Record<string, any>) => void;
+  onDataLoad?: (data: any[]) => void;
 };
 
 const normalizeFilters = (filters: Record<string, any>) => {
@@ -93,6 +94,7 @@ const ApprovalList = ({
   SkeletonComponent,
   orderBy,
   onActiveFiltersChange,
+  onDataLoad,
 }: ApprovalListProps) => {
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
@@ -357,7 +359,10 @@ const ApprovalList = ({
         showRefreshButton={false}
         infiniteScroll={infiniteScroll}
         loadMorePagination={loadMorePagination}
-        onDataLoad={(data) => setAllRequests(data)}
+        onDataLoad={(data) => {
+          setAllRequests(data);
+          onDataLoad?.(data);
+        }}
         SkeletonComponent={SkeletonComponent}
         orderBy={orderBy}
         PreListComponent={() => (

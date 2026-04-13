@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Download } from "lucide-react";
 import React from "react";
+import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
@@ -745,6 +746,8 @@ const ExpensesList: React.FC = () => {
     count: number;
   }>({ isOpen: false, count: 0 });
 
+  const [currentListData, setCurrentListData] = React.useState<any[]>([]);
+
   const [isAcknowledgementChecked, setIsAcknowledgementChecked] = React.useState(false);
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = React.useState(false);
 
@@ -827,6 +830,103 @@ const ExpensesList: React.FC = () => {
     urlReferenceName ||
     todoData?.reference_name ||
     todoData?.reference_document?.name;
+
+  const handleExport = () => {
+    let exportData: any[] = [];
+    let fileName = "Expense_Claims";
+
+    if (activeTab === "draft") {
+      fileName = "Draft_Expense_Claims";
+      exportData = (draftExpenses || []).map((item: any) => {
+        const parsed = item?.json && typeof item.json === "string" ? JSON.parse(item.json) : item?.json;
+        return {
+          "Expense Category": parsed?.custom_expense_category_name || parsed?.expenseCategory || "-",
+          "Expense Type": parsed?.custom_expense_type || parsed?.expenseType || "-",
+          "Created Date": formatToIndianDate(item?.creation),
+          "Expense Date": formatToIndianDate(parsed?.expense_date),
+          "Claimed Amount": parsed?.amount || 0,
+        };
+      });
+    } else if (activeTab === "expenses") {
+      fileName = "My_Expense_Claims";
+      const isPaidFilter = currentFilters.status === "Paid";
+      exportData = (currentListData || []).map((item: any) => {
+        const doc = item?.reference_document;
+        const rawStatus =
+          item?.custom_allow_revoke === 1 &&
+            item?.todo_status?.toLowerCase() === "cancelled" &&
+            doc?.docstatus === 2
+            ? "Revoked"
+            : doc?.approval_status;
+
+        const getExportStatus = (s: string) => {
+          const st = s?.toLowerCase().trim();
+          if (["open", "pending", "draft"].includes(st)) return "Pending";
+          if (["approved", "submitted"].includes(st)) return "Approved";
+          return s || "--";
+        };
+
+        const status = getExportStatus(rawStatus);
+
+        const sanctioned =
+          item?.todo_status?.toLowerCase() === "closed" &&
+            doc?.approval_status !== "Rejected"
+            ? doc?.total_sanctioned_amount
+            : "--";
+
+        const row: any = {
+          "Expense ID": doc?.name,
+          "Expense Category": doc?.custom_expense_category_name,
+          "Expense Type": doc?.expenses?.[0]?.custom_claim_type_name,
+          "Claimed Amount": doc?.total_claimed_amount,
+          "Sanctioned Amount": sanctioned,
+          "Expense Date": formatToIndianDate(doc?.expenses?.[0]?.expense_date),
+          "Claimed Date": formatToIndianDate(doc?.creation),
+          Status: status,
+        };
+
+        if (isPaidFilter) {
+          row["Paid Amount"] = doc?.total_amount_reimbursed || 0;
+        }
+
+        return row;
+      });
+    } else if (activeTab === "shared") {
+      fileName = "Shared_Expense_Claims";
+      exportData = (currentListData || []).map((item: any) => {
+        const rowData = item?.message?.data ? item.message.data : item;
+        const doc = Array.isArray(rowData) ? rowData[0] : rowData;
+        return {
+          "Employee Id": doc?.employee,
+          "Shared By": doc?.employee_name,
+          "Posting Date": formatToIndianDate(doc?.posting_date),
+          "Claimed Date": formatToIndianDate(doc?.creation) || "--",
+          Status: (function(s: string) {
+            const st = s?.toLowerCase().trim();
+            if (["open", "pending", "draft"].includes(st)) return "Pending";
+            if (["approved", "submitted"].includes(st)) return "Approved";
+            return s || "--";
+          })(doc?.status),
+          "Sanctioned Amount": doc?.total_sanctioned_amount || 0,
+          "% Share": doc?.participant_info?.percentage || 0,
+          "Allocated Amount": doc?.participant_info?.allocated_amount || 0,
+        };
+      });
+    }
+
+    if (exportData.length === 0) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses");
+
+    // Generate buffer and trigger download
+    XLSX.writeFile(workbook, `${fileName}_${new Date().getTime()}.xlsx`);
+    toast.success("Exporting data...");
+  };
 
   const RowWrapper = ({ item }: any) => {
     const id = item?.reference_document?.name;
@@ -986,34 +1086,55 @@ const ExpensesList: React.FC = () => {
           </div>
 
           {/* Toggle Tabs */}
-          <div className="flex mt-3 bg-gray-100 rounded-xl p-1 w-fit">
-            <button
-              onClick={() => setActiveTab("draft")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "draft"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              Draft Expenses
-            </button>
-            <button
-              onClick={() => setActiveTab("expenses")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              My Expenses
-            </button>
-            <button
-              onClick={() => setActiveTab("shared")}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              Shared Expenses
-            </button>
+          <div className="flex items-center justify-between mt-3 gap-4">
+            <div className="flex bg-gray-100 rounded-xl p-1 w-fit">
+              <button
+                onClick={() => {
+                  setActiveTab("draft");
+                  setCurrentListData([]);
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "draft"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+                  }`}
+              >
+                Draft Expenses
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("expenses");
+                  setCurrentListData([]);
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "expenses"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+                  }`}
+              >
+                My Expenses
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("shared");
+                  setCurrentListData([]);
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === "shared"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+                  }`}
+              >
+                Shared Expenses
+              </button>
+            </div>
+
+            <Tooltip content="Export to Excel">
+              <button
+                onClick={handleExport}
+                className="flex items-center justify-center p-2.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all duration-200 border border-primary/20 shadow-sm"
+                title="Export to Excel"
+              >
+                <Download size={20} />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -1088,6 +1209,7 @@ const ExpensesList: React.FC = () => {
               ]}
               // defaultFilters={{ approval_status: ["===", "Draft"] }}
               onFiltersChange={setCurrentFilters}
+              onDataLoad={setCurrentListData}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
@@ -1306,7 +1428,7 @@ const ExpensesList: React.FC = () => {
         {currentEmployee?.name && activeTab === "shared" && (
           <CardTable
             titles={[
-              "Employee ID",
+              "Employee Id",
               "Shared By",
               "Posting Date",
               "Expense Date",
@@ -1343,6 +1465,7 @@ const ExpensesList: React.FC = () => {
                   <SharedExpenseCard item={doc} />
                 );
               }}
+              onDataLoad={setCurrentListData}
               SkeletonComponent={CardSkeleton}
               onRefetchComplete={() => setRefetchAttendance(false)}
               refetchTrigger={refetchAttendance}
