@@ -24,6 +24,8 @@ interface UploadedFile {
   file_name: string;
 }
 
+const MIN_DESCRIPTION_LENGTH = 15;
+
 const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   isOpen,
   onClose,
@@ -182,8 +184,8 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       toast.error("Description is required");
       return;
     }
-    if (description.trim().length < 15) {
-      toast.error("Description must be at least 15 characters long");
+    if (description.trim().length < MIN_DESCRIPTION_LENGTH) {
+      toast.error(`Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`);
       return;
     }
     if (isAttachmentMandatory && attachments.length === 0) {
@@ -375,14 +377,14 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description (minimum 15 characters)"
+              placeholder={`Description (minimum ${MIN_DESCRIPTION_LENGTH} characters)`}
               rows={5}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 resize-none"
             />
             <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-gray-500">Minimum 15 characters required</span>
-              <span className={`text-xs ${description.trim().length < 15 ? 'text-red-500' : 'text-green-500'}`}>
-                {description.trim().length}/15 characters
+              <span className="text-xs text-gray-500">Minimum {MIN_DESCRIPTION_LENGTH} characters required</span>
+              <span className={`text-xs ${description.trim().length < MIN_DESCRIPTION_LENGTH ? 'text-red-500' : 'text-green-500'}`}>
+                {description.trim().length}/{MIN_DESCRIPTION_LENGTH} characters
               </span>
             </div>
           </div>
@@ -471,7 +473,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             bgColor="primary"
             size="md"
             onClick={handleSubmit}
-            disabled={createTicketMutation.isPending || !title.trim() || !description.trim() || description.trim().length < 15 || !category.trim() || !subcategory.trim()}
+            disabled={createTicketMutation.isPending || !title.trim() || description.trim().length < MIN_DESCRIPTION_LENGTH || !category.trim() || !subcategory.trim()}
             className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}
