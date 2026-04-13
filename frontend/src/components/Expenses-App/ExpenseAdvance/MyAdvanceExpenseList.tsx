@@ -32,6 +32,7 @@ const MyAdvanceExpenseList = () => {
     status: string;
   } | null>(null);
   const [selectedStages, setSelectedStages] = useState<ApprovalStage[]>([]);
+  const [isActed, setIsActed] = useState(false);
 
   const { isDesktop } = useScreenSize();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
@@ -114,6 +115,7 @@ const MyAdvanceExpenseList = () => {
       },
       {
         onSuccess: () => {
+          setIsActed(true);
           setTimeout(() => setRefetchAttendance(true), 2000);
           toast.success("Advance Revoked Successfully!");
         },
@@ -177,14 +179,14 @@ const MyAdvanceExpenseList = () => {
         </div>
         {/* Actions column — stop propagation so click doesn't open detail modal */}
         <div
-          className="flex items-center justify-center"
+          className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}
           onClick={(e) => e.stopPropagation()}
         >
           <MyApprovalActionPill
             isPending={doc?.custom_final_status === "Pending"}
-            canEdit={canEdit}
+            canEdit={canEdit && !isActed}
             onEdit={() => handleEditClick(item)}
-            canRevoke={canRevoke}
+            canRevoke={canRevoke && !isActed}
             revokeLoading={revokeEventMutation.isPending}
             onRevoke={() => handleRevokeClick(item)}
           />
@@ -282,13 +284,13 @@ const MyAdvanceExpenseList = () => {
 
           {/* Action Buttons — stop propagation to prevent opening detail modal */}
           {(canEdit || canRevoke) && (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()} className={isActed ? "pointer-events-none opacity-50" : ""}>
               <MyApprovalActionPill
                 variant="buttons"
                 isPending={doc?.custom_final_status === "Pending"}
-                canEdit={canEdit}
+                canEdit={canEdit && !isActed}
                 onEdit={() => handleEditClick(item)}
-                canRevoke={canRevoke}
+                canRevoke={canRevoke && !isActed}
                 revokeLoading={revokeEventMutation.isPending}
                 onRevoke={() => handleRevokeClick(item)}
               />
