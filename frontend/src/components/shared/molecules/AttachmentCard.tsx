@@ -8,9 +8,11 @@ import { FilePreviewModal } from "./FilePreviewModal";
 export function AttachmentCard({
   fileUrl,
   compact = false,
+  showFileNameWithEye = false,
 }: {
   fileUrl: string;
   compact?: boolean;
+  showFileNameWithEye?: boolean;
 }) {
   const fileName = getFileName(fileUrl);
   const [showPreview, setShowPreview] = useState(false);
@@ -28,19 +30,31 @@ export function AttachmentCard({
         </Button>
       </Tooltip>
 
-      <Tooltip content={"Download"}>
-        <a href={fileUrl} download={fileName}>
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4" />
-          </Button>
-        </a>
-      </Tooltip>
+      {!showFileNameWithEye && (
+        <Tooltip content={"Download"}>
+          <a href={fileUrl} download={fileName}>
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4" />
+            </Button>
+          </a>
+        </Tooltip>
+      )}
     </div>
   );
 
   return (
     <>
-      {compact ? (
+      {showFileNameWithEye ? (
+        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+          <span
+            className="text-sm text-gray-700 truncate flex-1 cursor-pointer hover:text-blue-600 hover:underline"
+            onClick={() => setShowPreview(true)}
+            title="Click to preview"
+          >
+            {fileName}
+          </span>
+        </div>
+      ) : compact ? (
         ActionButtons
       ) : (
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">

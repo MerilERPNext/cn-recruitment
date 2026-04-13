@@ -11,6 +11,7 @@ import {
   useCreateTicket,
   HDCategory,
 } from "../../hooks/useHelpDeskTickets";
+import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -179,6 +180,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
     if (!description.trim()) {
       toast.error("Description is required");
+      return;
+    }
+    if (description.trim().length < 15) {
+      toast.error("Description must be at least 15 characters long");
       return;
     }
     if (isAttachmentMandatory && attachments.length === 0) {
@@ -370,10 +375,16 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
+              placeholder="Description (minimum 15 characters)"
               rows={5}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 resize-none"
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">Minimum 15 characters required</span>
+              <span className={`text-xs ${description.trim().length < 15 ? 'text-red-500' : 'text-green-500'}`}>
+                {description.trim().length}/15 characters
+              </span>
+            </div>
           </div>
 
           {/* Attachments */}
@@ -417,14 +428,18 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                 {attachments.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
                   >
-                    <span className="text-sm text-gray-700 truncate flex-1">
-                      {file.file_name}
-                    </span>
+                    <div className="flex-1">
+                      <AttachmentCard 
+                        fileUrl={file.file_url} 
+                        showFileNameWithEye={true}
+                      />
+                    </div>
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="p-1 text-gray-400 hover:text-red-600"
+                      className="p-1 text-gray-400 hover:text-red-600 ml-2"
+                      title="Remove attachment"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -456,7 +471,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             bgColor="primary"
             size="md"
             onClick={handleSubmit}
-            disabled={createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim()}
+            disabled={createTicketMutation.isPending || !title.trim() || !description.trim() || description.trim().length < 15 || !category.trim() || !subcategory.trim()}
             className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}
