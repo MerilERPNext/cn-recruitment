@@ -168,7 +168,7 @@ const BenefitRequestItem = ({
             {data?.todo_status === "Open" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
-                status={data.todo_status === "Closed" &&
+                status={data.status === "Closed" &&
                   data.reference_document.custom_status !== "Rejected"
                   ? "Approved"
                   : data.reference_document.custom_status}
@@ -270,7 +270,7 @@ const BenefitRequestItem = ({
                   <TeamApprovalActionPill
                     variant="buttons"
                     actions={actions}
-                    status={data.todo_status === "Closed" &&
+                    status={data.status === "Closed" &&
                       data.reference_document.custom_status !== "Rejected"
                       ? "Approved"
                       : data.reference_document.custom_status}
