@@ -164,6 +164,18 @@ const ApprovalList = ({
       );
     };
   }, [triggerRefetch]);
+
+  useEffect(() => {
+    const handleActed = (e: any) => {
+      if (e.detail?.id) {
+        addActedId(e.detail.id);
+      }
+    };
+    document.addEventListener("approval:acted", handleActed);
+    return () => {
+      document.removeEventListener("approval:acted", handleActed);
+    };
+  }, [addActedId]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>
