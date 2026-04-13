@@ -54,7 +54,7 @@ def _read_onboarding_meta():
 
     return result
 
-def _read_job_applicant_meta():
+def _read_job_applicant_meta(include_hidden=False, include_skipped=False):
     """Returns a flat list of field dicts from Job Applicant meta."""
     try:
         meta = frappe.get_meta("Job Applicant")
@@ -79,7 +79,13 @@ def _read_job_applicant_meta():
                 current_section = sec_label
             continue
 
-        if df.fieldtype in _LAYOUT_TYPES or df.fieldname in _SKIP_FIELDNAMES or df.get("hidden"):
+        if df.fieldtype in _LAYOUT_TYPES:
+            continue
+        if not df.fieldname:
+            continue
+        if not include_skipped and df.fieldname in _SKIP_FIELDNAMES:
+            continue
+        if not include_hidden and df.get("hidden"):
             continue
 
         result.append({
@@ -147,9 +153,40 @@ def get_all_onboarding_fields():
 
 @frappe.whitelist()
 def get_all_job_applicant_fields():
-    """Returns all Job Applicant fields grouped for the desk settings page."""
+    """Returns Job Applicant fields configured in Job Applicant Portal Settings."""
     frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
-    fields = _read_job_applicant_meta()
+    portal_rows = _get_job_applicant_portal_settings()
+    meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
+
+    fields = []
+    for row in portal_rows:
+        fn = row.fieldname
+        meta = meta_lookup.get(fn, {})
+
+        fields.append({
+            "fieldname": fn,
+            "label": row.label or meta.get("label", fn),
+            "fieldtype": row.fieldtype or meta.get("fieldtype", "Data"),
+            "tab_label": (row.tab_label or meta.get("tab_label", "")).strip(),
+            "section_label": (row.section_label or meta.get("section_label", "")).strip(),
+            "options": row.options or meta.get("options", ""),
+            "reqd": int(row.is_mandatory or meta.get("reqd", 0)),
+            "read_only": int(row.read_only or 0),
+            "hidden": int(row.hidden or 0),
+        })
+
+    return {
+        "status": "success",
+        "total": len(fields),
+        "fields": fields,
+    }
+
+
+@frappe.whitelist()
+def get_available_job_applicant_fields():
+    """Returns all available Job Applicant meta fields for settings field picker."""
+    frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
+    fields = _read_job_applicant_meta(include_hidden=True, include_skipped=True)
     return {
         "status": "success",
         "total": len(fields),
