@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import SalarySlipPDFModal from "../../SalarySlipPDFModal";
 import {
-  useTaxSheetPayrollPriodsData,
   useTDSPRintViewPDF,
 } from "../../../../hooks/useTaxSheet";
 import { useCurrentEmployeeAllDetails } from "../../../../hooks/useEmployee";
@@ -12,42 +11,15 @@ import Button from "../../../shared/atoms/Button";
 
 type Props = {
   disabled?: boolean;
+  selectedPeriod: string;
 };
 
-const TDSSlipHandler = ({ disabled }: Props) => {
+const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
   const { data: user } = useCurrentEmployeeAllDetails({
     fields: ["employee", "company"]
   });
-
-
-  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
-    user?.company ?? null
-  ) as {
-    data: any[] | undefined;
-    refetch: () => void;
-  };
-    const [selectedPeriod, setSelectedPeriod] = useState<string>(
-      payrollPeriods?.[0]?.name || "",
-    );
-    useEffect(() => {
-      if (!payrollPeriods?.length) return;
-  
-      const today = new Date();
-  
-      const matchedPeriod = payrollPeriods.find((p) => {
-        const start = new Date(p.start_date);
-        const end = new Date(p.end_date);
-  
-        // inclusive range check
-        return today >= start && today <= end;
-      });
-  
-      setSelectedPeriod(
-        matchedPeriod?.name || payrollPeriods[0].name
-      );
-    }, [payrollPeriods, selectedPeriod]);
 
   const { mutate, isPending } = useTDSPRintViewPDF(
     selectedPeriod,
@@ -55,7 +27,7 @@ const TDSSlipHandler = ({ disabled }: Props) => {
   );
 
   const handleView = () => {
-    if (!user?.employee || !payrollPeriods?.[0]?.name || !user?.company) return;
+    if (!user?.employee || !selectedPeriod || !user?.company) return;
 
     mutate(user.employee, {
       onSuccess: (res: any) => {

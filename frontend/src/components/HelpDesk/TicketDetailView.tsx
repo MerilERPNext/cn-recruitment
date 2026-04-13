@@ -600,8 +600,8 @@ const TicketDetailView: React.FC = () => {
             <button
               onClick={() => setIsResolutionModalOpen(true)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${canClose
-                  ? "bg-green-500 text-white hover:bg-green-600"
-                  : "bg-amber-500 text-white hover:bg-amber-600"
+                ? "bg-green-500 text-white hover:bg-green-600"
+                : "bg-amber-500 text-white hover:bg-amber-600"
                 }`}
             >
               {canClose ? (
@@ -653,15 +653,15 @@ const TicketDetailView: React.FC = () => {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key as TabType)}
                   className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.key
-                      ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                    ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                     }`}
                 >
                   {tab.label}
                   {tab.count > 0 && (
                     <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === tab.key
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-app text-gray-600"
+                      ? "bg-blue-100 text-blue-700"
+                      : "bg-app text-gray-600"
                       }`}>
                       {tab.count}
                     </span>
@@ -702,7 +702,6 @@ const TicketDetailView: React.FC = () => {
             )}
             <div ref={messagesEndRef} />
           </div>
-
           {/* Chat Input - hide on resolution tab */}
           {activeTab !== "resolution" && (
             <ChatInput

@@ -52,7 +52,7 @@ export const useLoanApplicationUpdate = () => {
     mutationFn: (payload: LoanApplicationUpdatePayload) => updateLoanApplication(payload),
     onSuccess: (data, variables) => {
       console.log("Loan Application updated:", data);
-       queryClient.invalidateQueries({ queryKey: ["loan"] });
+      queryClient.invalidateQueries({ queryKey: ["loan"] });
       queryClient.invalidateQueries({ queryKey: [  "loan-application-doc-data"] });
       queryClient.invalidateQueries({ queryKey: ["loan-application", variables.docname] });
       queryClient.invalidateQueries({ queryKey: ["loan-application-list"] });

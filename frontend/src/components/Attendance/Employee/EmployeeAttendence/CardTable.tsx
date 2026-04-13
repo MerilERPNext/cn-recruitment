@@ -27,7 +27,6 @@ const Cardtable: React.FC<prop> = ({
         <DataListView
           queryKey={[
             "attendance-requests",
-            "pending",
             "calendar-page",
             effectiveEmployeeId,
           ]}
@@ -38,9 +37,9 @@ const Cardtable: React.FC<prop> = ({
               employee: effectiveEmployeeId,
             },
           }}
-          defaultFilters={{
-            custom_status: "Pending",
-          }}
+          // defaultFilters={{
+          //   custom_status: "Pending",
+          // }}
           ItemComponent={(props: { item: MyAttendanceRequest }) => {
             return (
               <EmpAttendanceRequestCard

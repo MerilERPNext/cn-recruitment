@@ -1063,7 +1063,13 @@ export const routesConfig: AppRoute[] = [
     element: <TrackerApp />,
     permissionKey: "Flows",
     children: [
-      { path: "", element: <FlowRequests />, permissionKey: "Flow Requests" },
+      {
+        path: "", element: <FlowRequests />, permissionKey: "Flow Requests",
+      }, {
+        path: "flow-requests/:id",
+        element: <FlowRequestDetails />,
+        permissionKey: "Flow Requests",
+      },
       {
         path: "initiate",
         element: <InitiateFlow />,

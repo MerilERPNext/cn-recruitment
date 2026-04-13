@@ -56,7 +56,7 @@ export const LeaveDetailsCard = ({ data }: { data: LeaveApplication }) => {
           <Tooltip content="Status" position="bottom">
             <Badge
               size="sm"
-              label={data.status}
+              label={data.status === "Cancelled" ? "Revoked" : data.status}
               backgroundColor={status.backgroundColor}
               textColor={status.textColor}
             />
