@@ -28,17 +28,18 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 interface TicketListViewProps {
   currentUserEmail: string;
+  currentUserLoading: boolean;
   isAdmin: boolean;
   viewMode?: "user" | "admin";
   onDrawerStateChange?: (isOpen: boolean) => void;
 }
 
-const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdmin, viewMode = "user", onDrawerStateChange }) => {
+const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, currentUserLoading, isAdmin, viewMode = "user", onDrawerStateChange }) => {
   const { isDesktop } = useScreenSize();
 
   // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState<TicketFilters>({});
+  const [filters, setFilters] = useState<TicketFilters>({ status: ['=', 'Open'] });
   const [sortField, setSortField] = useState("modified");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [pageLength, setPageLength] = useState(20);
@@ -246,7 +247,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, isAdm
         <div className={isDesktop ? "p-4" : "p-0"}>
           <TicketTable
             tickets={tickets}
-            isLoading={ticketsLoading}
+            isLoading={ticketsLoading || currentUserLoading}
             onReply={handleReply}
             onClose={handleClose}
             onRowClick={handleReply}

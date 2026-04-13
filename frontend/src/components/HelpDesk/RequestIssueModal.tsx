@@ -169,6 +169,14 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       toast.error("Title is required");
       return;
     }
+    if (!category.trim()) {
+      toast.error("Category is required");
+      return;
+    }
+    if (!subcategory.trim()) {
+      toast.error("Subcategory is required");
+      return;
+    }
     if (!description.trim()) {
       toast.error("Description is required");
       return;
@@ -186,7 +194,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         subject: title.trim(),
         description: descriptionWithAttachments,
         custom_category: category || undefined,
-        custom_subcategory: subcategory || undefined,
+        custom_sub_category: subcategory || undefined,
         custom_rasied_for: raisedFor,
         custom_raise_for_employee: raisedFor === "Others" ? selectedEmployee : undefined,
         custom_for_myself: raisedFor === "Myself" ? 1 : 0,
@@ -253,7 +261,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             {/* Category */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Category
+                Select Category<span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <select
@@ -275,10 +283,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
           </div>
 
           {/* Row 2: Subcategory (always show when category is selected) */}
-          {category && (
+          {category && subcategories.length > 0 && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Subcategory
+                Select Subcategory<span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <select
@@ -448,7 +456,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             bgColor="primary"
             size="md"
             onClick={handleSubmit}
-            disabled={createTicketMutation.isPending || !title.trim() || !description.trim()}
+            disabled={createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim()}
             className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}

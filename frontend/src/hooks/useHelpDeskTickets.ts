@@ -121,6 +121,7 @@ export const useTicketList = (
       });
       return result as TicketListResponse;
     },
+    enabled: !!currentUserEmail,
     ...defaultQueryOptions,
   });
 };
@@ -340,7 +341,7 @@ export interface CreateTicketPayload {
   subject: string;
   description: string;
   custom_category?: string;
-  custom_subcategory?: string;
+  custom_sub_category?: string;
   custom_rasied_for?: string;
   custom_raise_for_employee?: string;
   custom_for_myself?: number;
