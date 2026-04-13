@@ -58,6 +58,7 @@ export function LeaveDetailView({
   const cleanDescription = DOMPurify.sanitize(data?.reference_document?.description || "");
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
 
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
@@ -109,6 +110,7 @@ export function LeaveDetailView({
             setRefetchAttendance(true);
           }, 2000);
         }
+        setIsActed(true);
         if (onAction) {
           onAction();
         }
@@ -290,7 +292,7 @@ export function LeaveDetailView({
           ) : null}
         </div>
 
-        {actions?.length > 0 && data?.status === "Open" && (
+        {actions?.length > 0 && data?.status === "Open" && !isActed ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}
@@ -304,6 +306,14 @@ export function LeaveDetailView({
               }
               onAction={(action) => handleAction(action)}
             />
+          </div>
+        ) : (
+          <div className="w-full bg-white border-t shadow-md p-4 z-20">
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -252,7 +252,7 @@ const TeamLeaveRequest = () => {
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}
                     showRejectReason={isRejectedFilter}
-                    isActed={item?.isSelected}
+                    isActed={item?.isActed}
                   />
                 );
               }}
@@ -271,7 +271,6 @@ const TeamLeaveRequest = () => {
           onClose={handleCloseModal}
           onAction={handleActionComplete}
           reasonName={reasonName || undefined}
-          isActed={activeStatus !== "Open"}
         />
       )}
     </div>

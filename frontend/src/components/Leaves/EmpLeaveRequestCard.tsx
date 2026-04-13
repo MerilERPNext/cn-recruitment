@@ -35,6 +35,7 @@ const EmpLeaveRequestCard = ({
 }: EmpLeaveRequestCardProps) => {
   const { isDesktop } = useScreenSize();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [isActed, setIsActed] = useState(false);
 
   const revokeEventMutation = useRevokeEvent();
   const { setRefetchAttendance } = useGlobalStore();
@@ -74,8 +75,11 @@ const EmpLeaveRequestCard = ({
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             queryClient.invalidateQueries({ queryKey: ["my-leave-requests"] });
-            setRefetchAttendance(true);
+            setTimeout(() => {
+              setRefetchAttendance(true);
+            }, 2000);
             toast.success("Leave revoked successfully");
           },
         },
@@ -210,15 +214,15 @@ const EmpLeaveRequestCard = ({
               )}
             </div>
           )}
-          <div className="flex items-center justify-center">
+          <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
             <MyApprovalActionPill
               isPending={isPending}
               canRevoke={
-                isPending && data?.custom_allow_revoke && canRequestLeave
+                isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
               }
-              canEdit={allowEdit}
+              canEdit={allowEdit && !isActed}
               isResubmit={isResubmit}
-              canReplace={allowReplace && (isPending || isApproved)}
+              canReplace={allowReplace && (isPending || isApproved) && !isActed}
               revokeLoading={revokeEventMutation.isPending}
               onRevoke={handleRevokeClick}
               onEdit={handleEditClick}
@@ -316,20 +320,22 @@ const EmpLeaveRequestCard = ({
               </div>
             )}
 
-            <MyApprovalActionPill
-              variant="buttons"
-              isPending={isPending}
-              canRevoke={
-                isPending && data?.custom_allow_revoke && canRequestLeave
-              }
-              canEdit={allowEdit}
-              isResubmit={isResubmit}
-              canReplace={allowReplace && (isPending || isApproved)}
-              revokeLoading={revokeEventMutation.isPending}
-              onRevoke={handleRevokeClick}
-              onEdit={handleEditClick}
-              onReplace={handleReplaceClick}
-            />
+            <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+              <MyApprovalActionPill
+                variant="buttons"
+                isPending={isPending}
+                canRevoke={
+                  isPending && data?.custom_allow_revoke && canRequestLeave && !isActed
+                }
+                canEdit={allowEdit && !isActed}
+                isResubmit={isResubmit}
+                canReplace={allowReplace && (isPending || isApproved) && !isActed}
+                revokeLoading={revokeEventMutation.isPending}
+                onRevoke={handleRevokeClick}
+                onEdit={handleEditClick}
+                onReplace={handleReplaceClick}
+              />
+            </div>
           </div>
           {showDescriptionModal && (
             <div className="fixed inset-0 z-[60] bg-black/50 flex items-end">
