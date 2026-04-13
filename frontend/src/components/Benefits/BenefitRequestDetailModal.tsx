@@ -49,6 +49,7 @@ export function BenefitRequestDetailModal({
   const data = documentName || referenceName ? fetchedData : propsData;
   const { isDesktop } = useScreenSize();
 
+  const [isActed, setIsActed] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [rejectionComment, setRejectionComment] = useState("");
@@ -95,6 +96,10 @@ export function BenefitRequestDetailModal({
           setRejectionComment("");
         }
         setCurrentAction(null);
+        setIsActed(true);
+        document.dispatchEvent(
+          new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+        );
         if (onAction) onAction();
       } catch (error) {
         setCurrentAction(null);
@@ -321,7 +326,7 @@ export function BenefitRequestDetailModal({
         </div>
 
         {/* Actions Footer */}
-        {actions?.length > 0 && isPending ? (
+        {actions?.length > 0 && isPending && !isActed ? (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}

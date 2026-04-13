@@ -74,13 +74,13 @@ const EmpShiftRequestCard = ({ data }: { data: MyShiftRequest }) => {
   const canEdit = Boolean(data?.can_edit && !isActed);
   const canRevoke = Boolean(
     data?.custom_allow_revoke &&
-      data?.reference_document?.status === "Draft" &&
-      !isActed,
+    data?.reference_document?.status === "Draft" &&
+    !isActed,
   );
   const badgeStatus =
     data?.custom_allow_revoke &&
-    data?.reference_document?.docstatus === 2 &&
-    data?.todo_status?.toLowerCase?.() === "cancelled"
+      data?.reference_document?.docstatus === 2 &&
+      data?.reference_document?.status?.toLowerCase?.() === "cancelled"
       ? "Revoked"
       : data?.reference_document?.status;
 
