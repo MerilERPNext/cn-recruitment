@@ -745,6 +745,9 @@ const ExpensesList: React.FC = () => {
     count: number;
   }>({ isOpen: false, count: 0 });
 
+  const [isAcknowledgementChecked, setIsAcknowledgementChecked] = React.useState(false);
+  const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = React.useState(false);
+
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
     fields: ["name", "employee_name", "company"]
@@ -1249,6 +1252,8 @@ const ExpensesList: React.FC = () => {
                       size="md"
                       bgColor="primary"
                       onClick={() => {
+                        setIsAcknowledgementChecked(false);
+                        setIsRelocationAcknowledgementChecked(false);
                         setSubmitConfirmModal({
                           isOpen: true,
                           count: selectedDraftIds.size,
@@ -1413,209 +1418,268 @@ const ExpensesList: React.FC = () => {
         </div>
       </Modal>
 
-      <Modal
-        isOpen={submitConfirmModal.isOpen}
-        onClose={() => setSubmitConfirmModal({ isOpen: false, count: 0 })}
-        size="sm"
-      >
-        <div className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Confirm Submit
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Are you sure you want to submit {submitConfirmModal.count} selected
-            draft(s)?
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setSubmitConfirmModal({ isOpen: false, count: 0 })}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="md"
-              bgColor="primary"
-              onClick={async () => {
-                const selectedDrafts =
-                  draftExpenses?.filter((d: any) =>
-                    selectedDraftIds.has(d.name),
-                  ) || [];
+      {submitConfirmModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">Acknowledgement</h3>
+            <p className="mb-2 font-medium">I acknowledge that:</p>
+            <ul className="list-disc pl-5 mb-4 text-sm space-y-1 text-gray-700">
+              <li>
+                I have raised the expense as per the policy-defined limits
+              </li>
+              <li>I have attached payment proof for all bills</li>
+              <li>
+                I have uploaded the approval email screenshot for exceptional
+                expenses.
+              </li>
+            </ul>
+            <div className="flex items-start gap-2 mb-4">
+              <input
+                type="checkbox"
+                id="draft-ack-checkbox"
+                checked={isAcknowledgementChecked}
+                onChange={(e) => setIsAcknowledgementChecked(e.target.checked)}
+                className="mt-1 w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+              />
+              <label
+                htmlFor="draft-ack-checkbox"
+                className="text-sm text-gray-800 cursor-pointer"
+              >
+                Otherwise I acknowledge that, the claim may be rejected on a
+                later stage.
+              </label>
+            </div>
 
-                const expensesToSubmit = selectedDrafts.map((draft: any) => {
-                  const parsedJson =
-                    draft?.json && typeof draft.json === "string"
-                      ? JSON.parse(draft.json)
-                      : draft?.json;
-                  return {
-                    ...parsedJson,
-                    uid: parsedJson?.uid,
-                  };
-                });
+            {(() => {
+              const selectedDraftsForRelocation = draftExpenses?.filter((d: any) => {
+                const parsed = d?.json && typeof d.json === "string" ? JSON.parse(d.json) : d?.json;
+                return selectedDraftIds.has(d.name) && (parsed?.categoryType === "Relocation");
+              }) || [];
+              if (selectedDraftsForRelocation.length === 0) return null;
+              return (
+                <div className="flex items-start gap-2 mb-6">
+                  <input
+                    type="checkbox"
+                    id="draft-relocation-ack-checkbox"
+                    checked={isRelocationAcknowledgementChecked}
+                    onChange={(e) => setIsRelocationAcknowledgementChecked(e.target.checked)}
+                    className="mt-1 w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="draft-relocation-ack-checkbox"
+                    className="text-sm text-gray-800 cursor-pointer"
+                  >
+                    I confirm that I have submitted all my relocation expenses.
+                  </label>
+                </div>
+              );
+            })()}
 
-                const formatExpenseDate = (dateVal: any) => {
-                  if (!dateVal) return undefined;
-                  if (typeof dateVal === "string") {
-                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
-                      return dateVal;
-                    }
-                    const d = new Date(dateVal);
-                    if (!isNaN(d.getTime())) {
-                      return d.toISOString().split("T")[0];
-                    }
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                size="md"
+                className="font-semibold"
+                onClick={() => setSubmitConfirmModal({ isOpen: false, count: 0 })}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="md"
+                bgColor="primary"
+                className="font-semibold"
+                onClick={async () => {
+                  if (!isAcknowledgementChecked) {
+                    toast.error("Please acknowledge the terms to proceed.");
+                    return;
                   }
-                  if (dateVal instanceof Date) {
-                    return dateVal.toISOString().split("T")[0];
-                  }
-                  return undefined;
-                };
 
-                const payload = {
-                  employee: currentEmployee?.name,
-                  employee_name: currentEmployee?.employee_name,
-                  company: currentEmployee?.company,
-                  posting_date: new Date().toISOString().split("T")[0],
-                  expenses: expensesToSubmit.map((exp: any) => {
-                    const {
-                      uid,
-                      submitButton,
-                      saveAndSubmit,
-                      categoryTypeOptions,
-                      expense_date,
-                      start_datetime,
-                      end_datetime,
-                      ...rest
-                    } = exp;
-                    const formattedExpense: any = { ...rest };
-                    console.log(
-                      uid,
-                      submitButton,
-                      saveAndSubmit,
-                      categoryTypeOptions,
-                    );
-                    if (expense_date) {
-                      formattedExpense.expense_date =
-                        formatExpenseDate(expense_date);
-                    }
-                    if (start_datetime) {
-                      const d = new Date(start_datetime);
-                      if (!isNaN(d.getTime())) {
-                        formattedExpense.start_datetime = d
-                          .toISOString()
-                          .replace("T", " ")
-                          .slice(0, 19);
-                      }
-                    }
-                    if (end_datetime) {
-                      const d = new Date(end_datetime);
-                      if (!isNaN(d.getTime())) {
-                        formattedExpense.end_datetime = d
-                          .toISOString()
-                          .replace("T", " ")
-                          .slice(0, 19);
-                      }
-                    }
+                  const selectedDrafts =
+                    draftExpenses?.filter((d: any) =>
+                      selectedDraftIds.has(d.name),
+                    ) || [];
 
+                  const expensesToSubmit = selectedDrafts.map((draft: any) => {
+                    const parsedJson =
+                      draft?.json && typeof draft.json === "string"
+                        ? JSON.parse(draft.json)
+                        : draft?.json;
                     return {
-                      ...formattedExpense,
-                      expense_type: exp.expenseType || exp.expense_type,
-                      reimbursement_category:
-                        exp.expenseCategory || exp.expenseCategory,
+                      ...parsedJson,
+                      uid: parsedJson?.uid,
                     };
-                  }),
-                };
+                  });
 
-                setSubmitConfirmModal({ isOpen: false, count: 0 });
-
-                await new Promise<void>((resolve, reject) => {
-                  submitExpenses(JSON.stringify(payload), {
-                    onSuccess: async (response: any) => {
-                      try {
-                        // Get the created expense claim document name(s)
-                        const message = response?.message;
-                        const claims = response?.claims;
-
-                        let expenseClaimNames: string[] = [];
-
-                        if (Array.isArray(claims) && claims.length > 0) {
-                          expenseClaimNames = claims.map(
-                            (claim: any) => claim.name || claim,
-                          );
-                        } else if (response?.name) {
-                          expenseClaimNames = [response.name];
-                        } else if (message?.name) {
-                          expenseClaimNames = [message.name];
-                        } else if (message?.results) {
-                          expenseClaimNames = message.results.map(
-                            (r: any) => r.name || r,
-                          );
-                        }
-
-                        // Update files attached to drafts with new expense claim reference
-                        const fileUpdatePromises: Promise<any>[] = [];
-
-                        selectedDrafts.forEach((draft: any, index: number) => {
-                          const expenseClaimName = expenseClaimNames[index];
-                          if (!expenseClaimName) return;
-
-                          // Find files attached to this draft
-                          fileUpdatePromises.push(
-                            expenseService
-                              .getFilesByAttachment(
-                                "Draft Expense Claim",
-                                draft.name,
-                              )
-                              .then((files: any[]) => {
-                                files.forEach((file: any) => {
-                                  updateFileMutation.mutate({
-                                    fileName: file.name,
-                                    data: {
-                                      attached_to_doctype: "Expense Claim",
-                                      attached_to_name: expenseClaimName,
-                                    },
-                                  });
-                                });
-                              }),
-                          );
-                        });
-
-                        await Promise.all(fileUpdatePromises);
-
-                        // Delete submitted drafts after updating files
-                        selectedDraftIds.forEach((id) => {
-                          deleteDraftMutation.mutate(id);
-                        });
-
-                        setSelectedDraftIds(new Set());
-                        toast.success("Drafts submitted successfully!");
-                        resolve();
-                      } catch (error) {
-                        console.error(
-                          "Error updating file attachments:",
-                          error,
-                        );
-                        // Still proceed with deletion even if file update fails
-                        selectedDraftIds.forEach((id) => {
-                          deleteDraftMutation.mutate(id);
-                        });
-                        setSelectedDraftIds(new Set());
-                        resolve();
+                  const formatExpenseDate = (dateVal: any) => {
+                    if (!dateVal) return undefined;
+                    if (typeof dateVal === "string") {
+                      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+                        return dateVal;
                       }
-                    },
-                    onError: (err: any) => {
-                      reject(err);
-                    },
-                  } as any);
-                });
-              }}
-              loading={isSubmitting}
-            >
-              Submit
-            </Button>
+                      const d = new Date(dateVal);
+                      if (!isNaN(d.getTime())) {
+                        return d.toISOString().split("T")[0];
+                      }
+                    }
+                    if (dateVal instanceof Date) {
+                      return dateVal.toISOString().split("T")[0];
+                    }
+                    return undefined;
+                  };
+
+                  const payload = {
+                    employee: currentEmployee?.name,
+                    employee_name: currentEmployee?.employee_name,
+                    company: currentEmployee?.company,
+                    posting_date: new Date().toISOString().split("T")[0],
+                    expenses: expensesToSubmit.map((exp: any, index: number) => {
+                      const {
+                        uid,
+                        submitButton,
+                        saveAndSubmit,
+                        categoryTypeOptions,
+                        expense_date,
+                        start_datetime,
+                        end_datetime,
+                        ...rest
+                      } = exp;
+                      const formattedExpense: any = { ...rest };
+                      console.log(
+                        uid,
+                        submitButton,
+                        saveAndSubmit,
+                        categoryTypeOptions,
+                      );
+                      if (expense_date) {
+                        formattedExpense.expense_date =
+                          formatExpenseDate(expense_date);
+                      }
+                      if (start_datetime) {
+                        const d = new Date(start_datetime);
+                        if (!isNaN(d.getTime())) {
+                          formattedExpense.start_datetime = d
+                            .toISOString()
+                            .replace("T", " ")
+                            .slice(0, 19);
+                        }
+                      }
+                      if (end_datetime) {
+                        const d = new Date(end_datetime);
+                        if (!isNaN(d.getTime())) {
+                          formattedExpense.end_datetime = d
+                            .toISOString()
+                            .replace("T", " ")
+                            .slice(0, 19);
+                        }
+                      }
+
+                      // Add acknowledgment fields matching Save & Submit behavior
+                      const categoryType = exp.categoryType || "General";
+                      formattedExpense.custom_is_acknowledged = isAcknowledgementChecked;
+                      if (categoryType === "Relocation" && index === expensesToSubmit.length - 1) {
+                        formattedExpense.custom_is_last_relocation_expense = isRelocationAcknowledgementChecked;
+                      }
+
+                      return {
+                        ...formattedExpense,
+                        expense_type: exp.expenseType || exp.expense_type,
+                        reimbursement_category:
+                          exp.expenseCategory || exp.expenseCategory,
+                      };
+                    }),
+                  };
+
+                  setSubmitConfirmModal({ isOpen: false, count: 0 });
+
+                  await new Promise<void>((resolve, reject) => {
+                    submitExpenses(JSON.stringify(payload), {
+                      onSuccess: async (response: any) => {
+                        try {
+                          // Get the created expense claim document name(s)
+                          const message = response?.message;
+                          const claims = response?.claims;
+
+                          let expenseClaimNames: string[] = [];
+
+                          if (Array.isArray(claims) && claims.length > 0) {
+                            expenseClaimNames = claims.map(
+                              (claim: any) => claim.name || claim,
+                            );
+                          } else if (response?.name) {
+                            expenseClaimNames = [response.name];
+                          } else if (message?.name) {
+                            expenseClaimNames = [message.name];
+                          } else if (message?.results) {
+                            expenseClaimNames = message.results.map(
+                              (r: any) => r.name || r,
+                            );
+                          }
+
+                          // Update files attached to drafts with new expense claim reference
+                          const fileUpdatePromises: Promise<any>[] = [];
+
+                          selectedDrafts.forEach((draft: any, index: number) => {
+                            const expenseClaimName = expenseClaimNames[index];
+                            if (!expenseClaimName) return;
+
+                            // Find files attached to this draft
+                            fileUpdatePromises.push(
+                              expenseService
+                                .getFilesByAttachment(
+                                  "Draft Expense Claim",
+                                  draft.name,
+                                )
+                                .then((files: any[]) => {
+                                  files.forEach((file: any) => {
+                                    updateFileMutation.mutate({
+                                      fileName: file.name,
+                                      data: {
+                                        attached_to_doctype: "Expense Claim",
+                                        attached_to_name: expenseClaimName,
+                                      },
+                                    });
+                                  });
+                                }),
+                            );
+                          });
+
+                          await Promise.all(fileUpdatePromises);
+
+                          // Delete submitted drafts after updating files
+                          selectedDraftIds.forEach((id) => {
+                            deleteDraftMutation.mutate(id);
+                          });
+
+                          setSelectedDraftIds(new Set());
+                          toast.success("Drafts submitted successfully!");
+                          resolve();
+                        } catch (error) {
+                          console.error(
+                            "Error updating file attachments:",
+                            error,
+                          );
+                          // Still proceed with deletion even if file update fails
+                          selectedDraftIds.forEach((id) => {
+                            deleteDraftMutation.mutate(id);
+                          });
+                          setSelectedDraftIds(new Set());
+                          resolve();
+                        }
+                      },
+                      onError: (err: any) => {
+                        reject(err);
+                      },
+                    } as any);
+                  });
+                }}
+                loading={isSubmitting}
+              >
+                Proceed
+              </Button>
+            </div>
           </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 };
