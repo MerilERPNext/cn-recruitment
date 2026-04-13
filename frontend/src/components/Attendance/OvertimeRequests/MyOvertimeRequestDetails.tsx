@@ -5,7 +5,6 @@ import {
   useGetToDoWithReferenceDoc,
   useUpdateOvertimeRejectionReason,
 } from "../../../hooks/useAttendance";
-import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGlobalStore } from "../../../hooks/useGlobalStore";
 import { useApprovalListActions } from "../../../hooks/userApprovalList";
 import {
@@ -32,6 +31,7 @@ export function MyOvertimeDetails({
   onClose,
   onAction,
   label = "Overtime Request",
+  type = "my"
 }: {
   documentName?: string;
   referenceName?: string;
@@ -40,6 +40,7 @@ export function MyOvertimeDetails({
   label?: string;
   onAction?: () => void;
   loadingAction?: { id: string; action: string } | null;
+  type?: 'my' | 'team'
 }) {
   const {
     data: fetchedData,
@@ -47,13 +48,12 @@ export function MyOvertimeDetails({
     error,
   } = useGetToDoWithReferenceDoc(documentName || "", referenceName || "");
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["user_id"],
-  });
+
   const { setRefetchAttendance } = useGlobalStore();
   const mutation = useApprovalListActions();
   const updateRejectionReasonMutation = useUpdateOvertimeRejectionReason();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
@@ -98,6 +98,10 @@ export function MyOvertimeDetails({
         } else {
           setRefetchAttendance(true);
         }
+        setIsActed(true);
+        document.dispatchEvent(
+          new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+        );
         if (onAction) {
           onAction();
         }
@@ -348,21 +352,20 @@ export function MyOvertimeDetails({
           )}
         </div>
         {(actions?.length > 0 &&
-          data?.reference_document?.status === "Open") ? (
+          data?.reference_document?.status === "Open" && !isActed) ? (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">
-            {typeof data?.allocated_to === "string" &&
-              data?.allocated_to === currentEmployee?.user_id && <TeamApprovalActionPill
-                variant="modal"
-                actions={actions}
-                status={data?.reference_document?.status}
-                recordId={data?.todo_id}
-                loadingAction={
-                  currentAction
-                    ? { id: data?.todo_id, action: currentAction }
-                    : null
-                }
-                onAction={(action) => handleActionClick(action)}
-              />}
+            {typeof data?.allocated_to === "string" && type !== "my" && <TeamApprovalActionPill
+              variant="modal"
+              actions={actions}
+              status={data?.reference_document?.status}
+              recordId={data?.todo_id}
+              loadingAction={
+                currentAction
+                  ? { id: data?.todo_id, action: currentAction }
+                  : null
+              }
+              onAction={(action) => handleActionClick(action)}
+            />}
           </div>
         ) : (
           <div className="w-full bg-white border-t shadow-md p-4 z-20">

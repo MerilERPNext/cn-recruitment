@@ -125,6 +125,15 @@ const ApprovalList = ({
     setActedIds((prev) => new Set(prev).add(id));
   }, []);
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id } = (e as CustomEvent<{ id: string }>).detail;
+      if (id) addActedId(id);
+    };
+    document.addEventListener("approval:acted", handler);
+    return () => document.removeEventListener("approval:acted", handler);
+  }, [addActedId]);
+
   const currentStatus = activeFilters?.status || activeFilters?.approval_status || activeFilters?.custom_final_status || activeFilters?.custom_status || status;
 
   const statusBasedBulkEnable =
@@ -164,6 +173,18 @@ const ApprovalList = ({
       );
     };
   }, [triggerRefetch]);
+
+  useEffect(() => {
+    const handleActed = (e: any) => {
+      if (e.detail?.id) {
+        addActedId(e.detail.id);
+      }
+    };
+    document.addEventListener("approval:acted", handleActed);
+    return () => {
+      document.removeEventListener("approval:acted", handleActed);
+    };
+  }, [addActedId]);
   // Toggle single
   const handleToggleSelect = (id: string) => {
     setSelectedIds((prev) =>

@@ -64,6 +64,7 @@ export function AttendanceDetailView({
   );
 
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const isAttendanceAdjustmentPending =
@@ -151,6 +152,10 @@ export function AttendanceDetailView({
               setRefetchAttendance(true);
             }, 2000);
           }
+          setIsActed(true);
+          document.dispatchEvent(
+            new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+          );
           if (onAction) {
             onAction();
           }
@@ -412,7 +417,7 @@ export function AttendanceDetailView({
 
         {/* Actions */}
         {actions?.length > 0 &&
-          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") ? (
+          (data?.reference_document?.custom_status === "Pending" || data?.reference_document?.custom_status === "Open") && !isActed ? (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}
