@@ -5,7 +5,7 @@ from  hrms.payroll.doctype.salary_slip import salary_slip
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 from urllib.parse import urlencode
-from nexus_customizations.api.global_email import get_company_sender
+from nexus_customizations.api.global_email import company_sendmail
 
 @frappe.whitelist()
 def send_job_offer(job_offer):
@@ -66,13 +66,11 @@ def send_job_offer(job_offer):
 
     </div>
     """
-    sender = get_company_sender(doc.company)
-
-    frappe.sendmail(
+    company_sendmail(
         recipients=[doc.applicant_email],
         subject=f"Offer of Employment with {doc.company}",
         message=email_message,
-        sender=sender,
+        company=doc.company,
         now=True
     )
 
@@ -161,13 +159,11 @@ def send_onboarding_form(job_applicant):
     </div>
     """
 
-    sender = get_company_sender(company)
-
-    frappe.sendmail(
+    company_sendmail(
         recipients=[doc.email_id],
         subject="Please Complete Your Details: SubmissionLink and Deadline",
         message=email_message,
-        sender=sender,
+        company=company,
         now=True
     )
 
@@ -249,8 +245,9 @@ def submit_docs(status, appl,url=None):
 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
 	if status == "Accepted":
 		wf_url = url+"/"+settings.employee_onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
-		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
-		frappe.sendmail(
+		company = frappe.db.get_value("Job Offer", {"job_applicant": appl}, "company")
+		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":company,"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
+		company_sendmail(
 			recipients=[job_applicant],
 			subject=frappe.render_template(
 				frappe.db.get_value("Email Template", "Employee Onboarding", "subject"),
@@ -261,6 +258,8 @@ def submit_docs(status, appl,url=None):
 				email_context,
 			),
 			args=email_context,
+			company=company,
+			now=True,
 		)
 
 @frappe.whitelist()
