@@ -17,6 +17,7 @@ import AttachmentPreview from "./AttachmentPreview";
 import { useGetFlowRequestById } from "../../../hooks/useFlows";
 import { useNavigate, useParams } from "react-router-dom";
 import TableSkeleton, { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
+import NoDataFound from "../../shared/atoms/NoDataFound";
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
 
@@ -108,7 +109,12 @@ const RequestDetails: React.FC = () => {
   }
 
   if (!data) {
-    return <div>No Data</div>
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-4">
+        <NoDataFound subtitle="Flow Request Record not Found" />
+        <Button variant="outline" onClick={handleNavigateBack}>Go Back</Button>
+      </div>
+    );
   }
 
   return (
