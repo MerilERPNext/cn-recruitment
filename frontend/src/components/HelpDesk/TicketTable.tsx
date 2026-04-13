@@ -6,6 +6,7 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import NoDataFound from "../shared/atoms/NoDataFound";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -19,6 +20,7 @@ interface TicketTableProps {
   categoryMap?: Record<string, string>;
   userLookup?: Map<string, string>;
   employeeByEmail?: Map<string, string>;
+  headerControls?: React.ReactNode;
 }
 
 const getAssignedName = (
@@ -261,6 +263,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   categoryMap = {},
   userLookup,
   employeeByEmail,
+  headerControls,
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -286,11 +289,11 @@ const TicketTable: React.FC<TicketTableProps> = ({
     );
   };
 
-  if (isLoading) {
-    // Mobile loading skeleton
-    if (!isDesktop) {
-      return (
-        <div className="space-y-4 px-2">
+
+  const LoadingSkeleton = (
+    !isDesktop ?
+      (
+        <div className="w-fullspace-y-4 px-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -341,67 +344,53 @@ const TicketTable: React.FC<TicketTableProps> = ({
             </div>
           ))}
         </div>
-      );
-    }
+      ) : (
+        <tr>
+          <td colSpan={columns.length + 1}>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <table className="helpdesk-table w-full border-collapse">
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="border-t border-gray-200">
+                      {columns.map((col) => (
+                        <td key={col.key} className="px-4 py-3">
+                          <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
+                        </td>
+                      ))}
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
+                          <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )
+  );
 
-    // Desktop loading skeleton
-    return (
-      <div className="bg-white rounded-lg overflow-hidden">
-        <table className="helpdesk-table w-full border-collapse">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 text-left ${col.width}`}
-                >
-                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
-                </th>
-              ))}
-              <th className="px-4 py-3 w-28">
-                <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <tr key={i} className="border-t border-gray-200">
-                {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3">
-                    <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
-                  </td>
-                ))}
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
-                    <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (tickets.length === 0) {
-    return (
-      <div className="bg-white rounded-lg p-8 text-center">
-        <Typography variant="body" color="body2">
-          No tickets found matching your criteria.
-        </Typography>
-      </div>
-    );
-  }
 
   // Mobile Card View
   if (!isDesktop) {
     return (
       <div className="space-y-2">
+        {headerControls && headerControls}
         {/* Ticket Cards */}
         <div className="px-2">
-          {tickets.map((ticket) => (
+          {isLoading && LoadingSkeleton}
+          {!isLoading && tickets.length === 0 &&
+            <div className="bg-white rounded-lg p-8 text-center">
+              <NoDataFound
+                title="No tickets found"
+                subtitle="No tickets found matching your criteria."
+              />
+            </div>
+          }
+          {!isLoading && tickets.map((ticket) => (
             <TicketCard
               key={ticket.name}
               ticket={ticket}
@@ -421,6 +410,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   // Desktop Table View
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
+
       <table className="helpdesk-table w-full min-w-[900px] border-collapse">
         <thead className="bg-gray-50/80 border-b border-gray-100">
           <tr>
@@ -454,12 +444,25 @@ const TicketTable: React.FC<TicketTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {tickets.map((ticket) => (
+          <tr className="sticky top-0 left-0">
+            <td className="p-0 m-0" colSpan={columns.length + 1}>
+              {headerControls && headerControls}
+              {!isLoading && tickets.length === 0 &&
+                <div className="bg-white rounded-lg p-8 text-center">
+                  <NoDataFound
+                    title="No tickets found"
+                    subtitle="No tickets found matching your criteria."
+                  />
+                </div>
+              }
+            </td>
+          </tr>
+          {isLoading && LoadingSkeleton}
+          {!isLoading && tickets.map((ticket) => (
             <tr
               key={ticket.name}
-              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${
-                onRowClick ? "cursor-pointer" : ""
-              }`}
+              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${onRowClick ? "cursor-pointer" : ""
+                }`}
               onClick={() => onRowClick?.(ticket)}
             >
               <td className="px-4 py-3">

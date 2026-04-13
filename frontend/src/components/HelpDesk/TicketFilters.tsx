@@ -6,6 +6,8 @@ import {
   FilterableField,
   TicketFilters as TicketFiltersType,
 } from "../../hooks/useHelpDeskTickets";
+import { useFloatingPosition } from "../../hooks/useFloatingPosition";
+import { createPortal } from "react-dom";
 
 interface FilterItem {
   id: string;
@@ -116,13 +118,16 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+
+      const isInsideDropdown = dropdownRef.current?.contains(target);
+      const isInsideTooltip = tooltipRef.current?.contains(target);
+
+      if (!isInsideDropdown && !isInsideTooltip) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -183,11 +188,21 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   };
 
   const activeFilterCount = Object.keys(filters).length;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  useFloatingPosition(buttonRef, tooltipRef, isOpen, {
+    placement: "bottom",
+    align: "end",
+    offset: 10,
+  });
+
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Filter Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
       >
@@ -201,8 +216,11 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
       </button>
 
       {/* Filter Dropdown */}
-      {isOpen && (
-        <div className="absolute right-0 z-[999] mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg">
+      {isOpen && createPortal(
+        <div
+          ref={tooltipRef}
+
+          className="z-[999] mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg">
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <Typography
@@ -345,7 +363,8 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
             </div>
           </div>
         </div>
-      )}
+        , document.body)
+      }
     </div>
   );
 };
