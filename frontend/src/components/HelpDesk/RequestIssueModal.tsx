@@ -123,6 +123,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
   };
 
+  const submitDisabled = createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim() || (raisedFor === "Others" && !selectedEmployee.trim()) || (isAttachmentMandatory && attachments.length === 0) || description.trim().length < MIN_DESCRIPTION_LENGTH;
   // Handle drag events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -177,6 +178,10 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
     if (!subcategory.trim()) {
       toast.error("Subcategory is required");
+      return;
+    }
+    if (raisedFor === "Others" && !selectedEmployee.trim()) {
+      toast.error("Employee is required");
       return;
     }
     if (!description.trim()) {
@@ -344,7 +349,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             {raisedFor === "Others" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Employee
+                  Select Employee<span className="text-red-500">*</span>
                 </label>
                 <EmployeeSelect
                   value={selectedEmployee}
@@ -419,8 +424,8 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
                   >
                     <div className="flex-1">
-                      <AttachmentCard 
-                        fileUrl={file.file_url} 
+                      <AttachmentCard
+                        fileUrl={file.file_url}
                         showFileNameWithEye={true}
                       />
                     </div>
@@ -459,7 +464,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             bgColor="primary"
             size="md"
             onClick={handleSubmit}
-            disabled={createTicketMutation.isPending || !title.trim() || description.trim().length < MIN_DESCRIPTION_LENGTH || !category.trim() || !subcategory.trim()}
+            disabled={submitDisabled}
             className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}

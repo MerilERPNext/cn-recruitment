@@ -20,10 +20,13 @@ import {
   HDTicket,
   TicketFilters,
   HDCategory,
+  useRevokeTicket,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -83,6 +86,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   // Mutations
   const closeTicketMutation = useCloseTicket();
   const requestClosureMutation = useRequestClosure();
+  const revokeTicketMutation = useRevokeTicket();
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
@@ -166,6 +170,23 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
     }
   }, [currentUserEmail, closeTicketMutation]);
 
+  // handle revoke ticket 
+  const { show, hide } = useLoadingOverlay();
+  const handleRevoke = useCallback((ticket: HDTicket) => {
+    show("Revoking ticket...");
+    revokeTicketMutation.mutate({ ticketId: ticket.name }, {
+      onSuccess: () => {
+        toast.success("Ticket revoked successfully");
+      },
+      onError: () => {
+        toast.error("Failed to revoke ticket");
+      },
+      onSettled: () => {
+        hide();
+      }
+    })
+  }, [hide, show, revokeTicketMutation])
+
   const handleResolutionSubmit = useCallback((resolution: string) => {
     if (!selectedTicketForClose) return;
 
@@ -226,6 +247,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             isLoading={ticketsLoading || currentUserLoading}
             onReply={handleReply}
             onClose={handleClose}
+            onRevoke={handleRevoke}
             onRowClick={handleReply}
             sortField={sortField}
             sortDirection={sortDirection}

@@ -14,6 +14,7 @@ import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SimplifiedChatInput from "./SimplifiedChatInput";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../hooks/useScreenSize";
+import { showCloseTicketButton } from "./hdelpdeskUtils";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -1034,14 +1035,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 Resolve
               </button>
             )}
-            <button
-              onClick={handleCloseButtonClick}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {isClosing ? "Closing..." : "Close Ticket"}
-            </button>
+            {showCloseTicketButton(ticket.status) && (
+              <button
+                onClick={handleCloseButtonClick}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isClosing ? "Closing..." : "Close Ticket"}
+              </button>
+            )}
           </>
         ) : null}
       </div>
