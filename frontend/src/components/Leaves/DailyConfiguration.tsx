@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { getDatesBetween } from "../../utils/helperUtils";
 import { AttendanceStatusItem } from "../../types/leaves";
 import Badge from "../shared/Badge";
+import { format, parseISO } from "date-fns";
 
 import formatToIndianDate from "../../utils/formatToIndianDate";
 
@@ -119,7 +120,10 @@ const DailyConfiguration: React.FC<DailyConfigProps> = ({
             return (
               <tr key={date} className="border-t">
                 <td className="px-4 py-2">
-                  {formatToIndianDate(date)}
+                  <span>{formatToIndianDate(date)}</span>
+                  <span className="text-gray-600 ml-1 text-xs">
+                    ({format(parseISO(date), "EEEE")})
+                  </span>
                 </td>
 
                 <td className="px-4 py-2">
