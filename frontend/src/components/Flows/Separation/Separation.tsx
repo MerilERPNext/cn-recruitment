@@ -154,8 +154,14 @@ const Separation = () => {
     isViewingOtherUser &&
     !!termination_funnel_data?.name &&
     enabledActions.terminate;
+
+  const isRejected = item?.approval_status === "Rejected";
+  const hasNoItem = !item;
+
   const showSeparationButton =
-    !!separation_funnel_data?.name && enabledActions.initiate_separation && ["Rejected"].includes(item?.approval_status || "");
+    Boolean(separation_funnel_data?.name) &&
+    enabledActions?.initiate_separation &&
+    (hasNoItem || isRejected);
 
   const cardData: cardDataType[] = [
     {
