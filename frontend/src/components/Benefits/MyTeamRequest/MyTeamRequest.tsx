@@ -190,6 +190,7 @@ const MyTeamRequest: React.FC = () => {
                   onClick={(request) => handleRequestClick(request)}
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
+                  isActed={item?.isActed}
                 />
               );
             }}

@@ -15,6 +15,7 @@ type Props = {
   onClick?: (data: any) => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  isActed?: boolean;
 };
 
 const TeamProofApprovalCard = ({
@@ -22,6 +23,7 @@ const TeamProofApprovalCard = ({
   onAction,
   onClick,
   loadingAction,
+  isActed = false,
 }: Props) => {
   const { isDesktop } = useScreenSize();
 
@@ -81,13 +83,19 @@ const TeamProofApprovalCard = ({
           className="flex justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <TeamApprovalActionPill
-            actions={actions}
-            status={data?.status}
-            recordId={data?.todo_id}
-            loadingAction={loadingAction}
-            onAction={(action) => onAction(action, data)}
-          />
+          {data?.todo_status === "Open" && !isActed ? (
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
+          ) : (
+            <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+              Action Taken
+            </div>
+          )}
         </div>
       </div>
       ) : (
@@ -119,13 +127,19 @@ const TeamProofApprovalCard = ({
             ).toLocaleString("en-IN")}
           </Typography>
 
-          <TeamApprovalActionPill
-            actions={actions}
-            status={data?.status}
-            recordId={data?.todo_id}
-            loadingAction={loadingAction}
-            onAction={(action) => onAction(action, data)}
-          />
+          {data?.todo_status === "Open" && !isActed ? (
+            <TeamApprovalActionPill
+              actions={actions}
+              status={data?.status}
+              recordId={data?.todo_id}
+              loadingAction={loadingAction}
+              onAction={(action) => onAction(action, data)}
+            />
+          ) : (
+            <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+              Action Taken
+            </div>
+          )}
         </div>
       )}
     </>

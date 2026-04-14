@@ -185,6 +185,7 @@ const TeamOvertimeRequests = () => {
           referenceName={referenceName || ""}
           onClose={handleCloseModal}
           onAction={handleActionComplete}
+          type="team"
         />
       )}
     </div>

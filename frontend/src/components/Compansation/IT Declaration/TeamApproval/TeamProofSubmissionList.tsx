@@ -120,6 +120,7 @@ const TeamProofSubmissionList = () => {
                 loadingAction={item.loadingAction}
                 onAction={item.onAction}
                 onClick={handleRowClick}
+                isActed={item.isActed}
               />
             }}
           />

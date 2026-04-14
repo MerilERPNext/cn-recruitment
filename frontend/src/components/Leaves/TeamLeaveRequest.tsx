@@ -252,6 +252,7 @@ const TeamLeaveRequest = () => {
                     loadingAction={item?.loadingAction}
                     isBulkSelectEnabled={isBulkSelectEnabled}
                     showRejectReason={isRejectedFilter}
+                    isActed={item?.isActed}
                   />
                 );
               }}

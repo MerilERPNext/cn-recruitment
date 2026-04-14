@@ -153,6 +153,10 @@ const AdvanceDetailsModal = ({
         });
       }
 
+      document.dispatchEvent(
+        new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+      );
+
       // cleanup
       setComment("");
       setSelectedAction(null);

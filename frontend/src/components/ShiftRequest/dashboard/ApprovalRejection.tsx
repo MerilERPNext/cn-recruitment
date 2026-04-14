@@ -20,6 +20,7 @@ type ApprovalRejectionQueueProps = {
   refetch?: () => void;
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
+  isActed?: boolean;
 };
 
 const ApprovalRejectionQueue = ({
@@ -31,6 +32,7 @@ const ApprovalRejectionQueue = ({
   onClick,
   loadingAction,
   isBulkSelectEnabled,
+  isActed = false,
 }: ApprovalRejectionQueueProps) => {
   const { isDesktop } = useScreenSize();
 
@@ -123,13 +125,21 @@ const ApprovalRejectionQueue = ({
             </AllocatedToTooltip>
           </div>
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data?.reference_document?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => onAction(action, data)}
-            />
+            {data?.todo_status === "Open" && !isActed ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => onAction(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -233,14 +243,22 @@ const ApprovalRejectionQueue = ({
                 </div>
               </div>
 
-              <TeamApprovalActionPill
-                variant="buttons"
-                actions={actions}
-                status={data?.reference_document?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => onAction(action, data)}
-              />
+              {data?.todo_status === "Open" && !isActed ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.reference_document?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => onAction(action, data)}
+                />
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

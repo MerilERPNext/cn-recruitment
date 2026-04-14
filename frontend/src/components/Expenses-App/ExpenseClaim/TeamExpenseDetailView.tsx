@@ -74,6 +74,7 @@ export function TeamExpenseDetailView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
   const [showActionWarning, setShowActionWarning] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [rejectionComment, setRejectionComment] = useState<string>("");
@@ -216,6 +217,11 @@ export function TeamExpenseDetailView({
         }, 2000);
       }
 
+      setIsActed(true);
+      document.dispatchEvent(
+        new CustomEvent("approval:acted", { detail: { id: todoId } }),
+      );
+
       if (onAction) {
         onAction();
       }
@@ -344,7 +350,6 @@ export function TeamExpenseDetailView({
       const approved = expenseItems.filter(
         (item) => item.custom_approval_staus === "Approved",
       );
-
 
       let totalReimbursed;
 
@@ -840,7 +845,7 @@ export function TeamExpenseDetailView({
 
           {actions?.length > 0 &&
             status?.label === "Pending" &&
-            data?.todo_status !== "Closed" && (
+            data?.todo_status !== "Closed" && !isActed ? (
               <div className="w-full bg-white border-t shadow-md p-4 z-20">
                 <TeamApprovalActionPill
                   variant={isDesktop ? "modal" : "buttons"}
@@ -854,6 +859,14 @@ export function TeamExpenseDetailView({
                   }
                   onAction={(action) => handleAction(action)}
                 />
+              </div>
+            ) : (
+              <div className="w-full bg-white border-t shadow-md p-4 z-20">
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
+                </div>
               </div>
             )}
 

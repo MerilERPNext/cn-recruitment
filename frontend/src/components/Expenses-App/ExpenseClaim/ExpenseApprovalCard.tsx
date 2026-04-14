@@ -26,6 +26,7 @@ type ApprovalCardProps = {
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
   activeStatus?: string;
+  isActed?: boolean;
 };
 
 const ExpenseApprovalCard = ({
@@ -38,6 +39,7 @@ const ExpenseApprovalCard = ({
   loadingAction,
   isBulkSelectEnabled = true,
   activeStatus = "Draft",
+  isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const commentMutation = useExpenseCommentUpdate();
@@ -225,7 +227,7 @@ const ExpenseApprovalCard = ({
           )}
 
           <div className="flex items-center justify-center">
-            {activeStatus === "Draft" ? (
+            {activeStatus === "Draft" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.status}
@@ -362,7 +364,7 @@ const ExpenseApprovalCard = ({
                 </div>
               )}
 
-              {activeStatus === "Draft" ? (
+              {activeStatus === "Draft" && !isActed ? (
                 <TeamApprovalActionPill
                   variant="buttons"
                   actions={actions}
