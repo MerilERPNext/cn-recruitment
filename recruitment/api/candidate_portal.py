@@ -162,18 +162,25 @@ def get_all_job_applicant_fields():
     for row in portal_rows:
         fn = row.fieldname
         meta = meta_lookup.get(fn, {})
+        fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
 
-        fields.append({
+        field_entry = {
             "fieldname": fn,
             "label": row.label or meta.get("label", fn),
-            "fieldtype": row.fieldtype or meta.get("fieldtype", "Data"),
+            "fieldtype": fieldtype,
             "tab_label": (row.tab_label or meta.get("tab_label", "")).strip(),
             "section_label": (row.section_label or meta.get("section_label", "")).strip(),
-            "options": row.options or meta.get("options", ""),
+            "options": field_options,
             "reqd": int(row.is_mandatory or meta.get("reqd", 0)),
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
-        })
+        }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
+
+        fields.append(field_entry)
 
     return {
         "status": "success",
