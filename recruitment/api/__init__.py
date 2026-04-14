@@ -327,6 +327,10 @@ def get_ticket_list_data(
             )
             or []
         )
+        for tic in data:
+            emp=frappe.db.get_value("Employee",{"user_id":tic.raised_by},"employee_name")
+            if emp:
+                tic["raise_by_name"]=emp
         
         # Calculate total count with same filters and or_filters
         # Use frappe.get_list with minimal fields and count the results
