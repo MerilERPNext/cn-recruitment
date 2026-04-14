@@ -9,7 +9,7 @@ frappe.ui.form.on("Job Applicant Portal Settings", {
 
     fetch_fields_btn(frm) {
         frappe.call({
-            method: "recruitment.api.candidate_portal.get_all_job_applicant_fields",
+            method: "recruitment.api.candidate_portal.get_available_job_applicant_fields",
             freeze: true,
             freeze_message: __("Reading Job Applicant fields…"),
             callback(r) {

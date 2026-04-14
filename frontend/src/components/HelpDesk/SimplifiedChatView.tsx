@@ -1155,6 +1155,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
             onSend={handleSendMessage}
             placeholder="Type your reply here....."
             isSending={isSending}
+            disabled={isTicketClosed}
             replyingTo={replyingTo ? {
               id: replyingTo.id,
               content: replyingTo.content,

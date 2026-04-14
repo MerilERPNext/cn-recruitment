@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
@@ -11,6 +12,11 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import ExpenseApprovalCard from "./ExpenseApprovalCard";
 import { TeamExpenseDetailView } from "./TeamExpenseDetailView";
 import { getCOLUMN_SORT_CONFIG_TEAM_EXPENSE_CLAIM } from "../../../utils/tableSortConfig";
+import Tooltip from "../../shared/Tooltip";
+import * as XLSX from "xlsx";
+import { Download } from "lucide-react";
+import formatToIndianDate from "../../../utils/formatToIndianDate";
+import toast from "react-hot-toast";
 
 const TeamExpense = () => {
   const { data: currentUser } = useCurrentUser();
@@ -19,6 +25,7 @@ const TeamExpense = () => {
   const [activeStatus, setActiveStatus] = useState("Draft");
   const navigate = useNavigate();
   const [isBulkSelectEnabled, setIsBulkSelectEnabled] = useState(true);
+  const [currentListData, setCurrentListData] = useState<any[]>([]);
 
   const expenseCategoryOptions = useMemo(() => {
     if (!expenseCategories || !Array.isArray(expenseCategories)) {
@@ -59,6 +66,63 @@ const TeamExpense = () => {
     setSearchParams({});
     setRefetchApprovalList(true);
   }, [setSearchParams]);
+
+  const handleExport = () => {
+    const exportData = (currentListData || []).map((item: any) => {
+      const doc = item?.reference_document;
+      // Sync Status Condition
+      const rawStatus =
+        item?.todo_status === "Closed" && doc?.approval_status !== "Rejected"
+          ? "Approved"
+          : doc?.approval_status;
+
+      const getExportStatus = (s: string) => {
+        const status = s?.toLowerCase().trim();
+        if (["open", "pending", "draft"].includes(status)) return "Pending";
+        if (["approved", "submitted"].includes(status)) return "Approved";
+        return s || "--";
+      };
+
+      const status = getExportStatus(rawStatus);
+
+      // Sync Sanctioned Amount Condition
+      const sanctioned =
+        item?.todo_status === "Closed" && doc?.approval_status !== "Rejected"
+          ? doc?.total_sanctioned_amount
+          : "--";
+
+      const row: any = {
+        "Expense Id": doc?.name || "--",
+        Employee: doc?.employee_name || "--",
+        "Expense Category": doc?.custom_expense_category_name || "--",
+        "Expense Type": doc?.expenses?.[0]?.custom_claim_type_name || "--",
+        "Expense Date":
+          formatToIndianDate(doc?.expenses?.[0]?.expense_date) || "--",
+        "Claimed Amount": doc?.total_claimed_amount || 0,
+        "Sanctioned Amount": sanctioned,
+        "Claimed Date": formatToIndianDate(doc?.creation) || "--",
+        "Due Date": formatToIndianDate(item?.due_date) || "--",
+        Status: status,
+      };
+
+      if (activeStatus === "Approved") {
+        row["Paid Status"] = item?.status === "Paid" ? "Paid" : "Unpaid";
+      }
+
+      return row;
+    });
+
+    if (exportData.length === 0) {
+      toast.error("No data available to export");
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Team Expenses");
+    XLSX.writeFile(workbook, `Team_Expenses_${new Date().getTime()}.xlsx`);
+    toast.success("Exporting data...");
+  };
 
   const tableTitles = isBulkSelectEnabled
     ? [
@@ -137,11 +201,22 @@ const TeamExpense = () => {
     <div className="flex flex-col h-full">
       {isDesktop && (
         <div className="flex-shrink-0">
-          <div className="px-6 py-1 md:py-4">
-            <Typography variant="h4">Team Expense Claims</Typography>
-            <Typography variant="bodySmall" color="body2">
-              Track and manage team expense claim requests{" "}
-            </Typography>
+          <div className="px-6 py-1 md:py-4 flex items-center justify-between">
+            <div>
+              <Typography variant="h4">Team Expense Claims</Typography>
+              <Typography variant="bodySmall" color="body2">
+                Track and manage team expense claim requests{" "}
+              </Typography>
+            </div>
+            <Tooltip content="Export to Excel">
+              <button
+                onClick={handleExport}
+                className="flex items-center justify-center p-2.5 text-primary bg-primary/10 hover:bg-primary/20 rounded-xl transition-all duration-200 border border-primary/20 shadow-sm"
+                title="Export to Excel"
+              >
+                <Download size={20} />
+              </button>
+            </Tooltip>
           </div>
         </div>
       )}
@@ -216,6 +291,7 @@ const TeamExpense = () => {
                   activeStatus={activeStatus}
                 />
               }}
+              onDataLoad={setCurrentListData}
             />
           ) : null}
         </CardTable>

@@ -300,6 +300,8 @@ def get_ticket_list_data(
             },
             {"label": "Assigned To", "type": "Text", "value": "_assign"},
             {"label": "Owner", "type": "Link", "value": "owner", "options": "User"},
+            {"label": "Response By", "type": "Datetime", "value": "response_by"},
+            {"label": "Resolution By", "type": "Datetime", "value": "resolution_by"},
         ]
         
         for field in std_fields:

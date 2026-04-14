@@ -7,8 +7,7 @@ import { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { useGetFlowRequests } from "../../../hooks/useFlows";
 import { StaticListView } from "../../ListView";
 import FlowRequestCard from "./FlowRequestCard";
-import RequestDetails from "../RequestDetails/RequestDetails";
-import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 
 const titles = [
   "Flow Name",
@@ -27,13 +26,9 @@ const FlowRequests: React.FC = () => {
   const { isDesktop } = useScreenSize();
 
   const [flowDetails, setFlowDetails] = useState<FlowRequestItem | null>(null);
+  const navigate = useNavigate();
   const handleShowDetails = (data: FlowRequestItem) => {
-    // setSearchParams((prev) => ({
-    //   ...Object.fromEntries(prev),
-    //   todo_id: data.request_id,
-    // }));
-    setFlowDetails(data);
-    // navigate("/webapp/flow-app/flow-request/" + data?.request_id);
+    navigate("/webapp/flow-app/flow-request/" + data?.request_id);
   };
 
   const {
@@ -42,9 +37,6 @@ const FlowRequests: React.FC = () => {
     refetch: refetchFlowRequests,
   } = useGetFlowRequests();
 
-  const handleNavigateBack = () => {
-    setFlowDetails(null);
-  };
 
   // refresh request details page after fetching new flowDetails
   useEffect(() => {
@@ -74,31 +66,10 @@ const FlowRequests: React.FC = () => {
     };
   }, [refetchFlowRequests]);
 
-  const FlowDetailComponent = flowDetails ? (
-    isDesktop ? (
-      <RequestDetails
-        data={flowDetails}
-        handleNavigateBack={handleNavigateBack}
-      />
-    ) : (
-      createPortal(
-        <div className="fixed inset-0 z-50">
-          <RequestDetails
-            data={flowDetails}
-            handleNavigateBack={handleNavigateBack}
-          />
-        </div>,
-        document.body,
-      )
-    )
-  ) : null;
-
   return (
     <>
-      {FlowDetailComponent}
       <div
         className="flex flex-col h-full overflow-auto"
-        style={{ display: flowDetails ? "none" : "flex" }}
       >
 
         {isDesktop && (

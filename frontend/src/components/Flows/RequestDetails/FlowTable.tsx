@@ -59,8 +59,6 @@ const FlowTable: React.FC<FlowTableProps> = ({ data }) => {
               />
             )
           }
-          isSearch={isDesktop}
-          searchFields={["stage_name", "role", "status"]}
           getItemKey={(stage, index) => stage?.stage_name + index}
           pageSize={20}
           SkeletonComponent={CardSkeleton}

@@ -6,17 +6,17 @@ import {
   getFlowConfigSelfTriggerList,
   getFlowConfigOthersTriggerList,
   getFlowRequests,
-  getOpenApprovalTodos,
   getSeparationFunnelData,
   getSeparationWorkflow,
   getShouldShowConfirmationButton,
   postSelectEventFromOptions,
-  getDifinitionNameForSeparation
+  getDifinitionNameForSeparation,
+  getFlowRequestById
 } from "../services/flowsService";
 import { AssistantTriggerResponse } from "../types/chatnextApiResponses";
 import { SeparationFunnelDataResponse, SeparationWorkflowResponse } from "../types/separation";
 import { approvalListServices } from "../services/approvalListService";
-import { FlowRequestResponse } from "../types/flows";
+import { FlowRequestItem, FlowRequestResponse } from "../types/flows";
 
 export const useDifinitaionNameForSeparation = () => {
   return useQuery<string | AssistantTriggerResponse>({
@@ -191,15 +191,16 @@ export const useGetFlowRequests = (
   });
 };
 
-
-export const useGetOpenApprovalTodos = (
-  name: string
+export const useGetFlowRequestById = (
+  funnel_activity_id: string
 ) => {
-  return useQuery<FlowRequestResponse>({
+  return useQuery<{ data: FlowRequestItem }>({
     queryKey: [
-      "employee-flow-requests",
+      "employee-flow-request-details",
+      funnel_activity_id
     ],
-    queryFn: () => getOpenApprovalTodos({ name }),
-    enabled: !!name
+    queryFn: () => getFlowRequestById(funnel_activity_id),
+    enabled: !!funnel_activity_id
   });
 };
+

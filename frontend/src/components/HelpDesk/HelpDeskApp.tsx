@@ -17,7 +17,7 @@ type ViewMode = "user" | "admin";
 const HelpDeskApp: React.FC = () => {
   const { isDesktop } = useScreenSize();
   const navigate = useNavigate();
-  const { data: currentUser } = useCurrentUser();
+  const { data: currentUser, isLoading: currentUserLoading } = useCurrentUser();
 
   // Calculate admin status from user roles
   const isAdmin = isAdminUser(currentUser ?? null);
@@ -68,6 +68,7 @@ const HelpDeskApp: React.FC = () => {
         <div className="p-4 md:p-6">
           <TicketListView
             currentUserEmail={currentUserEmail}
+            currentUserLoading={currentUserLoading}
             isAdmin={isAdmin}
             viewMode={viewMode}
             onDrawerStateChange={setIsDrawerOpen}
