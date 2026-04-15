@@ -370,7 +370,7 @@ export function LeaveDetailView({
                 size="sm"
                 bgColor="primary"
                 disabled={
-                  !rejectionComment.trim() ||
+                  rejectionComment.trim().length < 15 ||
                   updateRejectionReasonMutation.isPending
                 }
               >
