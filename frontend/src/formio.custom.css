@@ -6,7 +6,8 @@
 
 [data-testid="formioContainer"] .table th,
 [data-testid="formioContainer"] .table td {
-  border: 1px solid #e5e7eb !important; /* light gray */
+  border: 1px solid #e5e7eb !important;
+  /* light gray */
   padding: 6px 10px !important;
   font-size: 14px !important;
   vertical-align: middle !important;
@@ -69,6 +70,7 @@
 [data-testid="formioContainer"] .formio-button-remove-row:hover {
   background: #fee2e2 !important;
 }
+
 [data-testid="formioContainer"].profile-form .choices__item {
   /* background: #f0f0f0 !important; */
   border: none !important;
@@ -77,14 +79,13 @@
   color: rgb(79, 79, 79) !important;
   /* margin: 2px !important; */
 }
+
 /* 
  [data-testid="formioContainer"].profile-form .choices__item .formio-select-item {
    background-color: #6366f1 !important;
 } */
 /* Container */
-[data-testid="formioContainer"].profile-form
-  .choices__item
-  .formio-select-item {
+[data-testid="formioContainer"].profile-form .choices__item .formio-select-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -126,11 +127,19 @@
   display: none !important;
 }
 
+chatnext-app .field-required::after,
+chatnext-app.field-required::after {
+  display: initial !important;
+  /* or whatever original value should be */
+}
+
+
 .form-control.input {
   border-radius: 4px 0 0 4px !important;
 }
 
 @media (max-width: 768px) {
+
   /* Scoped to the overtime form specifically */
   .overtime-request-form .formio-component-overtime_details table {
     display: block;
@@ -170,58 +179,35 @@
   }
 
   /* Add labels via pseudo-elements matching schema order */
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:nth-child(1)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(1)::before {
     content: "Start Date";
   }
 
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:nth-child(2)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(2)::before {
     content: "Start Time";
   }
 
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:nth-child(3)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(3)::before {
     content: "End Date";
   }
 
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:nth-child(4)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(4)::before {
     content: "End Time";
   }
 
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:nth-child(5)::before {
+  .overtime-request-form .formio-component-overtime_details table tbody td:nth-child(5)::before {
     content: "Message";
   }
 
   /* Position the remove button (last column) to top-right */
-  .overtime-request-form
-    .formio-component-overtime_details
-    table
-    tbody
-    td:last-child {
+  .overtime-request-form .formio-component-overtime_details table tbody td:last-child {
     position: absolute;
     top: 8px;
     right: 8px;
     width: auto;
     padding: 0 !important;
   }
+
   /* Remove border from New Row container */
   .overtime-request-form .formio-component-overtime_details table tfoot td {
     border: none !important;
