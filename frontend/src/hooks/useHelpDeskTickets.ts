@@ -282,7 +282,7 @@ export const useLinkedFieldOptions = (fields: string[], doctype: string) => {
         is_current_version: number;
       }>;
     },
-enabled: !!fields,
+    enabled: !!fields,
     ...defaultQueryOptions,
   });
 };
@@ -918,7 +918,6 @@ export const useRevokeTicket = () => {
     }) => {
       const result = await FrappeAPI.updateDocument("HD Ticket", ticketId, {
         custom_archived: 1,
-        status: "Archived",
       });
       return result;
     },

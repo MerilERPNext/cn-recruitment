@@ -789,7 +789,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   // Resolution content component
   const ResolutionContent = () => {
     // If no resolution and ticket not closed, show option to add
-    if (!ticket.resolution_details && !isTicketClosed) {
+    if (!ticket.resolution_details && !isTicketClosed && ticket.status !== "Open") {
       return (
         <div className="flex flex-col items-center justify-center h-full">
           <div className="w-16 h-16 bg-app rounded-xl flex items-center justify-center mb-4">
@@ -811,7 +811,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }
 
     // If ticket is closed but no resolution details
-    if (!ticket.resolution_details && isTicketClosed) {
+    if (!ticket.resolution_details && isTicketClosed && ticket.status !== "Open") {
       return (
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -1086,23 +1086,25 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </span>
             )}
           </button>
-          <button
-            onClick={() => setActiveTab("resolution")}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
-              ? "border-blue-500 text-blue-600 bg-blue-50/50"
-              : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-          >
-            Resolution
-            {ticket.resolution_details && (
-              <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-app text-gray-600"
-                }`}>
-                1
-              </span>
-            )}
-          </button>
+          {ticket.status !== "Open" && (
+            <button
+              onClick={() => setActiveTab("resolution")}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === "resolution"
+                ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+            >
+              Resolution
+              {ticket.resolution_details && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === "resolution"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-app text-gray-600"
+                  }`}>
+                  1
+                </span>
+              )}
+            </button>
+          )}
           {!isDesktop &&
             <button
               onClick={() => setIsDropDownOpen(!isDropDownOpen)}

@@ -15,6 +15,7 @@ import TicketDetailSidebar from "./TicketDetailSidebar";
 import TicketInfoPanel from "./TicketInfoPanel";
 import SimplifiedChatView from "./SimplifiedChatView";
 import toast from "react-hot-toast";
+import { showCloseTicketButton } from "./hdelpdeskUtils";
 
 type TabType = "activity" | "resolution";
 
@@ -647,27 +648,35 @@ const TicketDetailView: React.FC = () => {
             <nav className="flex gap-1">
               {[
                 { key: "activity", label: "All Activity", count: allMessages.length },
-                { key: "resolution", label: "Resolution", count: ticket.resolution_details ? 1 : 0 },
-              ].map((tab) => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key as TabType)}
-                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.key
-                    ? "border-blue-500 text-blue-600 bg-blue-50/50"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                    }`}
-                >
-                  {tab.label}
-                  {tab.count > 0 && (
-                    <span className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === tab.key
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-app text-gray-600"
-                      }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+                showCloseTicketButton(ticket.status, true) && {
+                  key: "resolution",
+                  label: "Resolution",
+                  count: ticket.resolution_details ? 1 : 0,
+                },
+              ]
+                .filter((tab): tab is { key: TabType; label: string; count: number } => Boolean(tab))
+                .map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.key
+                      ? "border-blue-500 text-blue-600 bg-blue-50/50"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    {tab.label}
+                    {tab.count > 0 && (
+                      <span
+                        className={`ml-2 px-2 py-0.5 text-xs rounded-lg ${activeTab === tab.key
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-app text-gray-600"
+                          }`}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
             </nav>
           </div>
 
