@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { Search, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
 import TicketStatsCards from "./TicketStatsCards";
 import TicketTable from "./TicketTable";
 import TicketFiltersComponent from "./TicketFilters";
+import SearchInputWrapper from "../shared/SearchBar";
 import ResolutionModal from "./ResolutionModal";
 import TicketDrawer from "./TicketDrawer";
 import {
@@ -19,10 +20,13 @@ import {
   HDTicket,
   TicketFilters,
   HDCategory,
+  useRevokeTicket,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -82,6 +86,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   // Mutations
   const closeTicketMutation = useCloseTicket();
   const requestClosureMutation = useRequestClosure();
+  const revokeTicketMutation = useRevokeTicket();
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
@@ -165,6 +170,23 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
     }
   }, [currentUserEmail, closeTicketMutation]);
 
+  // handle revoke ticket 
+  const { show, hide } = useLoadingOverlay();
+  const handleRevoke = useCallback((ticket: HDTicket) => {
+    show("Revoking ticket...");
+    revokeTicketMutation.mutate({ ticketId: ticket.name }, {
+      onSuccess: () => {
+        toast.success("Ticket revoked successfully");
+      },
+      onError: () => {
+        toast.error("Failed to revoke ticket");
+      },
+      onSettled: () => {
+        hide();
+      }
+    })
+  }, [hide, show, revokeTicketMutation])
+
   const handleResolutionSubmit = useCallback((resolution: string) => {
     if (!selectedTicketForClose) return;
 
@@ -218,31 +240,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
 
       {/* Table Section */}
       <div className={`${isDesktop ? "rounded-lg border border-gray-200" : ""} bg-white `}>
-        {/* Header */}
-        <div className={isDesktop ? "flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-6 py-4 border-b border-gray-200" : "flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4 px-2 py-4"}>
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="relative flex flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="md:w-64 w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
-              />
-            </div>
-
-            {/* Filters */}
-            <TicketFiltersComponent
-              fields={filterableFields}
-              filters={filters}
-              onApply={handleApplyFilters}
-              isLoading={fieldsLoading}
-            />
-          </div>
-        </div>
-
         {/* Table */}
         <div className={isDesktop ? "p-4" : "p-0"}>
           <TicketTable
@@ -250,6 +247,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             isLoading={ticketsLoading || currentUserLoading}
             onReply={handleReply}
             onClose={handleClose}
+            onRevoke={handleRevoke}
             onRowClick={handleReply}
             sortField={sortField}
             sortDirection={sortDirection}
@@ -257,6 +255,29 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             categoryMap={categoryMap}
             userLookup={userLookup || new Map()}
             employeeByEmail={employeeByEmail}
+            headerControls={
+              <div
+                className="bg-white  w-full border-b border-gray-100"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center w-full lg:border-b border-gray-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition">
+                    <SearchInputWrapper
+                      searchTerm={searchTerm}
+                      handleSearch={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="flex mr-2 items-center">
+                      <TicketFiltersComponent
+                        fields={filterableFields}
+                        filters={filters}
+                        onApply={handleApplyFilters}
+                        isLoading={fieldsLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            }
           />
         </div>
 

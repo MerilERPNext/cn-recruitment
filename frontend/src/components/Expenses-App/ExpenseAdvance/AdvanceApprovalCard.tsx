@@ -21,6 +21,7 @@ type ApprovalCardProps = {
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled?: boolean;
   activeStatus?: string;
+  isActed?: boolean;
 };
 
 const AdvanceApprovalCard = ({
@@ -33,6 +34,7 @@ const AdvanceApprovalCard = ({
   loadingAction,
   isBulkSelectEnabled = true,
   activeStatus = "Pending",
+  isActed = false,
 }: ApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const actions = (() => {
@@ -168,7 +170,7 @@ const AdvanceApprovalCard = ({
             </div>
           )}
           <div className="flex items-center justify-center">
-            {activeStatus === "Pending" ? (
+            {activeStatus === "Pending" && !isActed ? (
               <TeamApprovalActionPill
                 actions={actions}
                 status={data?.reference_document?.custom_final_status}
@@ -287,7 +289,7 @@ const AdvanceApprovalCard = ({
                 </div>
               )}
 
-              {activeStatus === "Draft" ? (
+              {activeStatus === "Draft" && !isActed ? (
                 <TeamApprovalActionPill
                   variant="buttons"
                   actions={actions}

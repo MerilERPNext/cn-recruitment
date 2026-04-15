@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, ExternalLink, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import React from "react";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -6,12 +6,17 @@ import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
 import Badge from "../shared/Badge";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
+import NoDataFound from "../shared/atoms/NoDataFound";
+import { showCloseTicketButton } from "./hdelpdeskUtils";
+import HDActionPill from "./HDActionPills";
+import TicketTableRow from "./TicketTableRow";
 
 interface TicketTableProps {
   tickets: HDTicket[];
   isLoading?: boolean;
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
+  onRevoke: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
   sortField: string;
   sortDirection: "asc" | "desc";
@@ -19,6 +24,7 @@ interface TicketTableProps {
   categoryMap?: Record<string, string>;
   userLookup?: Map<string, string>;
   employeeByEmail?: Map<string, string>;
+  headerControls?: React.ReactNode;
 }
 
 const getAssignedName = (
@@ -79,6 +85,12 @@ const getStatusBadgeConfig = (
         backgroundColor: "bg-yellow-100",
         textColor: "text-yellow-600",
       };
+    case "Revoked":
+      return {
+        label: "Revoked",
+        backgroundColor: "bg-red-100",
+        textColor: "text-red-600",
+      };
     default:
       return {
         label: status,
@@ -109,6 +121,7 @@ interface TicketCardProps {
   employeeByEmail?: Map<string, string>;
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
+  onRevoke: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
 }
 
@@ -119,6 +132,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   employeeByEmail,
   onReply,
   onClose,
+  onRevoke,
   onRowClick,
 }) => {
   const getCategoryName = (categoryId: string | undefined): string => {
@@ -211,22 +225,14 @@ const TicketCard: React.FC<TicketCardProps> = ({
             className="flex items-center gap-2"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={() => onReply(ticket)}
-              className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
-              title="Reply"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
-            {ticket.status !== "Closed" && (
-              <button
-                onClick={() => onClose(ticket)}
-                className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
-                title="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+            <HDActionPill
+              canClose={showCloseTicketButton(ticket.status)}
+              canRevoke={ticket.status === "Open" && !ticket.custom_archived}
+              canReply={ticket.status !== "Closed"}
+              onClose={() => onClose(ticket)}
+              onReply={() => onReply(ticket)}
+              onRevoke={() => onRevoke(ticket)}
+            />
           </div>
         </div>
       </div>
@@ -236,6 +242,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
 const columns = [
   { key: "name", label: "Issue ID", sortable: true, width: "w-28" },
+  { key: "subject", label: "Issue Title", sortable: false, width: "w-28" },
   { key: "custom_category", label: "Category", sortable: true, width: "w-32" },
   {
     key: "custom_sub_category",
@@ -243,17 +250,54 @@ const columns = [
     sortable: true,
     width: "w-40",
   },
+  {
+    key: "resolution_by",
+    label: "SLA Breached - TAT",
+    sortable: true,
+    width: "w-40",
+  },
+  {
+    key: "response_by",
+    label: "SLA Breached - FAT",
+    sortable: true,
+    width: "w-40",
+  }, {
+    key: "raise_by_name",
+    label: "Requested By",
+    sortable: false,
+    width: "w-40",
+  }, {
+    key: "custom_second_level_escalation_delay_hours",
+    label: "Remaining Escalation Business Time ",
+    sortable: true,
+    width: "w-40",
+  },
+  {
+    key: "agreement_status",
+    label: "Sla Breached",
+    sortable: false,
+    width: "w-40",
+  },
   { key: "_assign", label: "Assigned to", sortable: false, width: "w-40" },
   { key: "creation", label: "Created on", sortable: true, width: "w-32" },
   { key: "modified", label: "Last Updated", sortable: true, width: "w-32" },
-  { key: "status", label: "Status", sortable: true, width: "w-28" },
+  { key: "status", label: "Status", sortable: false, width: "w-28" },
 ];
+
+const formateDateDiff = (date1: string, date2: string) => {
+  if (!date1 || !date2) return "-";
+  const diff = new Date(date1).getTime() - new Date(date2).getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${minutes}m`;
+}
 
 const TicketTable: React.FC<TicketTableProps> = ({
   tickets,
   isLoading,
   onReply,
   onClose,
+  onRevoke,
   onRowClick,
   sortField,
   sortDirection,
@@ -261,6 +305,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   categoryMap = {},
   userLookup,
   employeeByEmail,
+  headerControls,
 }) => {
   const { isDesktop } = useScreenSize();
 
@@ -270,27 +315,22 @@ const TicketTable: React.FC<TicketTableProps> = ({
     return categoryMap[categoryId] || categoryId;
   };
 
-  // Since we only show user's own tickets, always show "Close" button
-  const getCloseButtonLabel = () => {
-    return "Close";
-  };
-
   const renderSortIcon = (field: string) => {
     if (sortField !== field) {
-      return <ChevronUp className="w-3 h-3 text-gray-300" />;
+      return <ArrowUpDown size={13} className="text-gray-400 flex-shrink-0" />;
     }
     return sortDirection === "asc" ? (
-      <ChevronUp className="w-3 h-3 text-gray-600" />
+      <ArrowUp size={13} className="text-blue-600 flex-shrink-0" />
     ) : (
-      <ChevronDown className="w-3 h-3 text-gray-600" />
+      <ArrowDown size={13} className="text-blue-600 flex-shrink-0" />
     );
   };
 
-  if (isLoading) {
-    // Mobile loading skeleton
-    if (!isDesktop) {
-      return (
-        <div className="space-y-4 px-2">
+
+  const LoadingSkeleton = (
+    !isDesktop ?
+      (
+        <div className="w-fullspace-y-4 px-2">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -341,67 +381,53 @@ const TicketTable: React.FC<TicketTableProps> = ({
             </div>
           ))}
         </div>
-      );
-    }
+      ) : (
+        <tr>
+          <td colSpan={columns.length + 1}>
+            <div className="bg-white rounded-lg overflow-hidden">
+              <table className="helpdesk-table w-full border-collapse">
+                <tbody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <tr key={i} className="border-t border-gray-200">
+                      {columns.map((col) => (
+                        <td key={col.key} className="px-4 py-3">
+                          <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
+                        </td>
+                      ))}
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
+                          <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )
+  );
 
-    // Desktop loading skeleton
-    return (
-      <div className="bg-white rounded-lg overflow-hidden">
-        <table className="helpdesk-table w-full border-collapse">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 text-left ${col.width}`}
-                >
-                  <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
-                </th>
-              ))}
-              <th className="px-4 py-3 w-28">
-                <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {[1, 2, 3, 4, 5].map((i) => (
-              <tr key={i} className="border-t border-gray-200">
-                {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3">
-                    <div className="w-full h-4 bg-gray-100 rounded animate-pulse" />
-                  </td>
-                ))}
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
-                    <div className="w-8 h-8 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
-  if (tickets.length === 0) {
-    return (
-      <div className="bg-white rounded-lg p-8 text-center">
-        <Typography variant="body" color="body2">
-          No tickets found matching your criteria.
-        </Typography>
-      </div>
-    );
-  }
 
   // Mobile Card View
   if (!isDesktop) {
     return (
       <div className="space-y-2">
+        {headerControls && headerControls}
         {/* Ticket Cards */}
         <div className="px-2">
-          {tickets.map((ticket) => (
+          {isLoading && LoadingSkeleton}
+          {!isLoading && tickets.length === 0 &&
+            <div className="bg-white rounded-lg p-8 text-center">
+              <NoDataFound
+                title="No tickets found"
+                subtitle="No tickets found matching your criteria."
+              />
+            </div>
+          }
+          {!isLoading && tickets.map((ticket) => (
             <TicketCard
               key={ticket.name}
               ticket={ticket}
@@ -410,6 +436,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               employeeByEmail={employeeByEmail}
               onReply={onReply}
               onClose={onClose}
+              onRevoke={onRevoke}
               onRowClick={onRowClick}
             />
           ))}
@@ -421,6 +448,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   // Desktop Table View
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
+
       <table className="helpdesk-table w-full min-w-[900px] border-collapse">
         <thead className="bg-gray-50/80 border-b border-gray-100">
           <tr>
@@ -454,99 +482,36 @@ const TicketTable: React.FC<TicketTableProps> = ({
           </tr>
         </thead>
         <tbody>
-          {tickets.map((ticket) => (
-            <tr
-              key={ticket.name}
-              className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${
-                onRowClick ? "cursor-pointer" : ""
-              }`}
-              onClick={() => onRowClick?.(ticket)}
-            >
-              <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1">
-                  {ticket.name}
-                </Typography>
-              </td>
-              <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1">
-                  {getCategoryName(ticket.custom_category)}
-                </Typography>
-              </td>
-              <td className="px-4 py-3">
-                <Typography variant="bodySmall" color="body1">
-                  {getCategoryName(ticket.custom_sub_category)}
-                </Typography>
-              </td>
-              <td className="px-4 py-3">
-                <WrapperHoverCard
-                  employeeId={employeeByEmail?.get(
-                    getAssignedEmail(ticket._assign) || "",
-                  )}
-                  placement="bottom-left"
-                >
-                  <Typography variant="bodySmall" color="body1">
-                    {getAssignedName(ticket._assign, userLookup)}
-                  </Typography>
-                </WrapperHoverCard>
-              </td>
-              <td className="px-4 py-3">
-                <Typography
-                  variant="bodySmall"
-                  color="body1"
-                  className="font-semibold tracking-tight"
-                >
-                  {formatToIndianDate(ticket.creation)}
-                </Typography>
-              </td>
-              <td className="px-4 py-3">
-                <Typography
-                  variant="bodySmall"
-                  color="body1"
-                  className="font-semibold tracking-tight"
-                >
-                  {formatToIndianDate(ticket.modified)}
-                </Typography>
-              </td>
-              <td className="px-4 py-3">
-                {(() => {
-                  const badgeConfig = getStatusBadgeConfig(ticket.status);
-                  return (
-                    <Badge
-                      size="sm"
-                      label={badgeConfig.label}
-                      backgroundColor={badgeConfig.backgroundColor}
-                      textColor={badgeConfig.textColor}
-                    />
-                  );
-                })()}
-              </td>
-              <td
-                className="pl-4 pr-6 py-3"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-2">
-                  {/* Reply Button */}
-                  <button
-                    onClick={() => onReply(ticket)}
-                    className="p-2 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
-                    title="Reply"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </button>
-                  {/* Close/Request Closure Button */}
-                  {ticket.status !== "Closed" && (
-                    <button
-                      onClick={() => onClose(ticket)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
-                      title={getCloseButtonLabel()}
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
+          <tr className="sticky top-0 left-0">
+            <td className="p-0 m-0" colSpan={columns.length + 1}>
+              {headerControls && headerControls}
+              {!isLoading && tickets.length === 0 &&
+                <div className="bg-white rounded-lg p-8 text-center">
+                  <NoDataFound
+                    title="No tickets found"
+                    subtitle="No tickets found matching your criteria."
+                  />
                 </div>
-              </td>
-            </tr>
-          ))}
+              }
+            </td>
+          </tr>
+          {isLoading && LoadingSkeleton}
+          {!isLoading && tickets.map((ticket) =>
+            <TicketTableRow
+              key={ticket.name}
+              ticket={ticket}
+              userLookup={userLookup}
+              employeeByEmail={employeeByEmail}
+              onReply={onReply}
+              onClose={onClose}
+              onRevoke={onRevoke}
+              getStatusBadgeConfig={getStatusBadgeConfig}
+              formatToIndianDate={formatToIndianDate}
+              getAssignedEmail={getAssignedEmail}
+              getAssignedName={getAssignedName}
+              getCategoryName={getCategoryName}
+              formateDateDiff={formateDateDiff}
+              onRowClick={onRowClick} />)}
         </tbody>
       </table>
     </div>

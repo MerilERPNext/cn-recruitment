@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2, Download } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -68,6 +68,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
   const navigate = useNavigate();
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
+  const [isActed, setIsActed] = useState(false);
 
   const handleRevokeClick = () => {
     if (item?.todo_id) {
@@ -80,6 +81,7 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
@@ -219,21 +221,23 @@ const ExpensesItem: React.FC<{ item: any }> = ({ item }) => {
           username={item?.username}
         />
 
-        <MyApprovalActionPill
-          variant="buttons"
-          isPending={item?.status === "Draft"}
-          canEdit={canEdit}
-          onEdit={handleEditClick}
-          canRevoke={
-            item?.custom_allow_revoke === 1 &&
-            !(
-              item?.todo_status?.toLowerCase() === "cancelled" &&
-              item?.reference_document?.docstatus === 2
-            )
-          }
-          revokeLoading={revokeEventMutation.isPending}
-          onRevoke={handleRevokeClick}
-        />
+        <div className={isActed ? "pointer-events-none opacity-50" : ""}>
+          <MyApprovalActionPill
+            variant="buttons"
+            isPending={item?.status === "Draft"}
+            canEdit={canEdit && !isActed}
+            onEdit={handleEditClick}
+            canRevoke={
+              item?.custom_allow_revoke === 1 &&
+              !(
+                item?.todo_status?.toLowerCase() === "cancelled" &&
+                item?.reference_document?.docstatus === 2
+              ) && !isActed
+            }
+            revokeLoading={revokeEventMutation.isPending}
+            onRevoke={handleRevokeClick}
+          />
+        </div>
       </div>
     </div>
   );
@@ -248,6 +252,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
   const navigate = useNavigate();
   const revokeEventMutation = useRevokeEvent();
   const loading = useLoadingOverlay();
+  const [isActed, setIsActed] = useState(false);
 
   const handleRevokeClick = () => {
     if (item?.todo_id) {
@@ -260,6 +265,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         },
         {
           onSuccess: () => {
+            setIsActed(true);
             setTimeout(() => {
               setRefetchAttendance(true);
             }, 2000);
@@ -402,14 +408,14 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
         </AllocatedToTooltip>
       </div>
 
-      <div className="flex items-center justify-center">
+      <div className={`flex items-center justify-center ${isActed ? "pointer-events-none opacity-50" : ""}`}>
         <MyApprovalActionPill
           isPending={item?.status === "Draft"}
           canEdit={
             currentUser?.name?.toLowerCase() ===
             item?.send_back_user?.toLowerCase() &&
             canEditExpense &&
-            item?.can_edit
+            item?.can_edit && !isActed
           }
           onEdit={handleEditClick}
           canRevoke={
@@ -419,7 +425,7 @@ const ExpensesTableRow: React.FC<{ item: any; isPaidFilter?: boolean }> = ({
               item?.reference_document?.docstatus === 2
             )
             &&
-            item?.todo_status?.toLowerCase() === "open"
+            item?.todo_status?.toLowerCase() === "open" && !isActed
           }
           revokeLoading={revokeEventMutation.isPending}
           onRevoke={handleRevokeClick}
@@ -901,7 +907,7 @@ const ExpensesList: React.FC = () => {
           "Shared By": doc?.employee_name,
           "Posting Date": formatToIndianDate(doc?.posting_date),
           "Claimed Date": formatToIndianDate(doc?.creation) || "--",
-          Status: (function(s: string) {
+          Status: (function (s: string) {
             const st = s?.toLowerCase().trim();
             if (["open", "pending", "draft"].includes(st)) return "Pending";
             if (["approved", "submitted"].includes(st)) return "Approved";

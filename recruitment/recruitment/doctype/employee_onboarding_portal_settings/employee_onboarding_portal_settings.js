@@ -128,18 +128,77 @@ function _render_field_inspector(frm, fields) {
             </div>`;
     }
 
+    function _selectCell(isAdded, fn) {
+        return `
+            <input type="checkbox"
+                   class="cps-row-select"
+                   data-fn="${fn}"
+                   ${isAdded ? "disabled" : ""}
+                   title="${isAdded ? "Already added" : "Select for bulk add"}"
+                   style="cursor:${isAdded ? "not-allowed" : "pointer"};" />`;
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Full HTML builder
     // ─────────────────────────────────────────────────────────────────────
     function buildHTML(addedSet) {
+        const tabSuggestions = Array.from(new Set([
+            ...tabOrder,
+            ...(frm.doc.portal_fields || []).map(r => (r.tab_label || "").trim()).filter(Boolean),
+        ]));
+        const secSuggestions = Array.from(new Set([
+            ...tabOrder.flatMap(tab => Object.keys(tabs[tab] || {})),
+            ...(frm.doc.portal_fields || []).map(r => (r.section_label || "").trim()).filter(Boolean),
+        ]));
+        const tabOptionsHTML = tabSuggestions
+            .map(v => `<option value="${frappe.utils.escape_html(v)}"></option>`)
+            .join("");
+        const secOptionsHTML = secSuggestions
+            .map(v => `<option value="${frappe.utils.escape_html(v)}"></option>`)
+            .join("");
+
         let html = `
         <div style="margin-top:10px;">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
                 <input type="text" class="form-control cps-search"
                        placeholder="🔍 Search fieldname or label…"
                        style="max-width:340px;height:32px;font-size:0.83rem;" />
+                <input type="text" class="form-control cps-target-tab"
+                       list="cps-target-tab-list"
+                       placeholder="Target Tab (optional)"
+                       style="max-width:220px;height:32px;font-size:0.8rem;" />
+                <input type="text" class="form-control cps-target-sec"
+                       list="cps-target-sec-list"
+                       placeholder="Target Section (optional)"
+                       style="max-width:220px;height:32px;font-size:0.8rem;" />
+                <datalist id="cps-target-tab-list">${tabOptionsHTML}</datalist>
+                <datalist id="cps-target-sec-list">${secOptionsHTML}</datalist>
+                <label title="When enabled, all selected fields are added as mandatory"
+                       style="display:inline-flex;align-items:center;gap:6px;
+                              font-size:0.76rem;color:#333;font-weight:600;
+                              border:1px solid #f1c27d;border-radius:4px;
+                              padding:5px 8px;background:#fff7e8;">
+                    <input type="checkbox" class="cps-bulk-mandatory"
+                           style="cursor:pointer;width:13px;height:13px;" />
+                    Mark Selected Mandatory
+                </label>
+                <button class="btn btn-xs cps-select-visible-btn"
+                        style="font-size:0.72rem;padding:4px 9px;background:#6c757d;color:#fff;border:none;border-radius:4px;">
+                    Select Visible
+                </button>
+                <button class="btn btn-xs cps-clear-selected-btn"
+                        style="font-size:0.72rem;padding:4px 9px;background:#adb5bd;color:#1f1f1f;border:none;border-radius:4px;">
+                    Clear
+                </button>
+                <button class="btn btn-xs cps-add-selected-btn"
+                        disabled
+                        style="font-size:0.72rem;padding:4px 9px;background:#198754;color:#fff;border:none;border-radius:4px;opacity:0.7;">
+                    + Add Selected
+                </button>
+                <span class="cps-selected-count"
+                      style="font-size:0.75rem;color:#666;font-weight:600;">0 selected</span>
                 <span style="font-size:0.75rem;color:#888;">
-                    💡 Check <strong>Mandatory</strong> before or after adding a field.
+                    💡 Select fields, optionally set target Tab/Section, then bulk add. Press Enter in target boxes to add.
                 </span>
             </div>`;
 
@@ -185,6 +244,22 @@ function _render_field_inspector(frm, fields) {
                                 ${counts.added}/${counts.total} added
                             </span>
 
+                            <label class="cps-sec-select-label"
+                                   data-sec-key="${secKey}"
+                                   title="Select all fields in this section"
+                                   style="display:inline-flex;align-items:center;gap:4px;
+                                          font-size:0.71rem;font-weight:600;cursor:pointer;
+                                          color:#1f4f91;white-space:nowrap;user-select:none;
+                                          border:1px solid #9dc1f0;border-radius:3px;
+                                          padding:2px 7px;background:#eef5ff;"
+                                   onclick="event.stopPropagation()">
+                                <input type="checkbox"
+                                       class="cps-sec-select-chk"
+                                       data-sec-key="${secKey}"
+                                       style="cursor:pointer;width:12px;height:12px;" />
+                                Select All
+                            </label>
+
                             <!-- ★ Mark All Mandatory for this section -->
                             <label class="cps-sec-mand-label"
                                    data-sec-key="${secKey}"
@@ -202,20 +277,35 @@ function _render_field_inspector(frm, fields) {
                                 🔴 All Mandatory
                             </label>
 
-                            ${allAdded
-                                ? `<span class="cps-sec-all-badge badge badge-success"
-                                          data-sec-key="${secKey}"
-                                          style="font-size:0.68rem;">✓ All Added</span>`
-                                : `<button class="btn btn-xs cps-add-sec-btn"
-                                           data-sec-key="${secKey}"
-                                           data-tab="${frappe.utils.escape_html(tab)}"
-                                           data-sec="${frappe.utils.escape_html(sec)}"
-                                           style="font-size:0.7rem;padding:2px 8px;
-                                                  background:#2e6cd1;color:#fff;border:none;
-                                                  border-radius:3px;white-space:nowrap;">
-                                       + Add All Section
-                                   </button>`
-                            }
+                            <span class="cps-sec-primary-action" data-sec-key="${secKey}">
+                                ${allAdded
+                                    ? `<span class="cps-sec-all-badge badge badge-success"
+                                              data-sec-key="${secKey}"
+                                              style="font-size:0.68rem;">✓ All Added</span>`
+                                    : `<button class="btn btn-xs cps-add-sec-btn"
+                                               data-sec-key="${secKey}"
+                                               data-tab="${frappe.utils.escape_html(tab)}"
+                                               data-sec="${frappe.utils.escape_html(sec)}"
+                                               style="font-size:0.7rem;padding:2px 8px;
+                                                      background:#2e6cd1;color:#fff;border:none;
+                                                      border-radius:3px;white-space:nowrap;">
+                                           + Add All Section
+                                       </button>`
+                                }
+                            </span>
+                            <span class="cps-sec-remove-action" data-sec-key="${secKey}">
+                                ${counts.added > 0
+                                    ? `<button class="btn btn-xs cps-remove-sec-btn"
+                                               data-sec-key="${secKey}"
+                                               data-sec="${frappe.utils.escape_html(sec)}"
+                                               style="font-size:0.7rem;padding:2px 8px;
+                                                      background:#dc3545;color:#fff;border:none;
+                                                      border-radius:3px;white-space:nowrap;">
+                                           ✕ Remove Section
+                                       </button>`
+                                    : ""
+                                }
+                            </span>
                         </span>
                     </div>
 
@@ -227,9 +317,10 @@ function _render_field_inspector(frm, fields) {
                                style="font-size:0.79rem;margin-bottom:0;">
                             <thead style="background:#f4f6f9;">
                                 <tr>
-                                    <th style="width:24%">Fieldname</th>
-                                    <th style="width:28%">Label</th>
-                                    <th style="width:14%">Type</th>
+                                    <th style="width:5%;text-align:center;">Select</th>
+                                    <th style="width:22%">Fieldname</th>
+                                    <th style="width:26%">Label</th>
+                                    <th style="width:13%">Type</th>
                                     <th style="width:34%;text-align:right;">Action</th>
                                 </tr>
                             </thead>
@@ -248,6 +339,9 @@ function _render_field_inspector(frm, fields) {
                         data-fn="${fnEsc}" data-lbl="${lblEsc}"
                         data-ft="${ftEsc}" data-tab="${tabEsc}"
                         data-sec="${secEsc}" data-sec-key="${secKey}">
+                        <td class="cps-select-cell" style="text-align:center;vertical-align:middle;">
+                            ${_selectCell(isAdded, fnEsc)}
+                        </td>
                         <td><code style="font-size:0.72rem;color:#c0392b;">${fnEsc}</code></td>
                         <td style="font-size:0.8rem;">${lblEsc}</td>
                         <td>
@@ -287,11 +381,15 @@ function _render_field_inspector(frm, fields) {
         if (!$row.length) return;
         const lbl = $row.data("lbl"), ft  = $row.data("ft");
         const tab = $row.data("tab"), sec = $row.data("sec");
+        $row.find(".cps-select-cell").html(_selectCell(isAdded, fn));
         $row.find(".cps-action-cell")
             .html(_actionCell(isAdded, fn, lbl, ft,
                   frappe.utils.escape_html(tab),
                   frappe.utils.escape_html(sec)));
         _bindActionCellEvents($row.find(".cps-action-cell"));
+        const secKey = $row.data("sec-key");
+        if (secKey) _syncSecSelectChk(secKey);
+        _syncBulkAddState();
     }
 
     function _secFieldsByKey(secKey) {
@@ -313,30 +411,81 @@ function _render_field_inspector(frm, fields) {
           .text(`${counts.added}/${counts.total} added`);
 
         const $hdr = $w.find(`.cps-sec-header[data-sec-key="${secKey}"]`);
-        const $bulk = $hdr.find(".cps-add-sec-btn, .cps-sec-all-badge");
-
         const $blk = $w.find(`.cps-sec-block[data-sec-key="${secKey}"]`);
         const tabV = $blk.data("tab") || "";
         const secV = $blk.data("sec") || "";
-
-        if (allAdded) {
-            $bulk.replaceWith(
-                `<span class="cps-sec-all-badge badge badge-success"
+        const primaryHTML = allAdded
+            ? `<span class="cps-sec-all-badge badge badge-success"
+                     data-sec-key="${secKey}"
+                     style="font-size:0.68rem;">✓ All Added</span>`
+            : `<button class="btn btn-xs cps-add-sec-btn"
                        data-sec-key="${secKey}"
-                       style="font-size:0.68rem;">✓ All Added</span>`
-            );
-        } else if (!$hdr.find(".cps-add-sec-btn").length) {
-            $hdr.find(".cps-sec-all-badge").replaceWith(
-                `<button class="btn btn-xs cps-add-sec-btn"
-                         data-sec-key="${secKey}"
-                         data-tab="${frappe.utils.escape_html(tabV)}"
-                         data-sec="${frappe.utils.escape_html(secV)}"
-                         style="font-size:0.7rem;padding:2px 8px;
-                                background:#2e6cd1;color:#fff;border:none;
-                                border-radius:3px;white-space:nowrap;">
-                     + Add All Section
-                 </button>`
-            );
+                       data-tab="${frappe.utils.escape_html(tabV)}"
+                       data-sec="${frappe.utils.escape_html(secV)}"
+                       style="font-size:0.7rem;padding:2px 8px;
+                              background:#2e6cd1;color:#fff;border:none;
+                              border-radius:3px;white-space:nowrap;">
+                   + Add All Section
+               </button>`;
+        $hdr.find(`.cps-sec-primary-action[data-sec-key="${secKey}"]`).html(primaryHTML);
+
+        const removeHTML = counts.added > 0
+            ? `<button class="btn btn-xs cps-remove-sec-btn"
+                       data-sec-key="${secKey}"
+                       data-sec="${frappe.utils.escape_html(secV)}"
+                       style="font-size:0.7rem;padding:2px 8px;
+                              background:#dc3545;color:#fff;border:none;
+                              border-radius:3px;white-space:nowrap;">
+                   ✕ Remove Section
+               </button>`
+            : "";
+        $hdr.find(`.cps-sec-remove-action[data-sec-key="${secKey}"]`).html(removeHTML);
+    }
+
+    function _selectedFns() {
+        return $w.find(".cps-row-select:checked").map(function () {
+            return $(this).data("fn");
+        }).get();
+    }
+
+    function _syncBulkAddState() {
+        const selectedCount = _selectedFns().length;
+        $w.find(".cps-selected-count").text(`${selectedCount} selected`);
+        $w.find(".cps-add-selected-btn")
+            .prop("disabled", selectedCount === 0)
+            .css("opacity", selectedCount === 0 ? 0.7 : 1);
+    }
+
+    function _syncSecSelectChk(secKey) {
+        const $chk = $w.find(`.cps-sec-select-chk[data-sec-key="${secKey}"]`);
+        if (!$chk.length) return;
+
+        const secFields = _secFieldsByKey(secKey);
+        let selectable = 0;
+        let selected = 0;
+
+        secFields.forEach(f => {
+            const $rowChk = $w.find(`.cps-field-row[data-fn="${f.fieldname}"] .cps-row-select`);
+            if (!$rowChk.length || $rowChk.prop("disabled")) return;
+            selectable++;
+            if ($rowChk.prop("checked")) selected++;
+        });
+
+        if (!selectable) {
+            $chk.prop("checked", false).prop("indeterminate", false).prop("disabled", true);
+            $chk.closest(".cps-sec-select-label").css("opacity", 0.6);
+            return;
+        }
+
+        $chk.prop("disabled", false);
+        $chk.closest(".cps-sec-select-label").css("opacity", 1);
+
+        if (selected === selectable) {
+            $chk.prop("checked", true).prop("indeterminate", false);
+        } else if (selected > 0) {
+            $chk.prop("checked", false).prop("indeterminate", true);
+        } else {
+            $chk.prop("checked", false).prop("indeterminate", false);
         }
     }
 
@@ -364,6 +513,7 @@ function _render_field_inspector(frm, fields) {
         if (idx === -1) return;
         frappe.model.clear_doc("Employee Onboarding Portal Field", frm.doc.portal_fields[idx].name);
         frm.doc.portal_fields.splice(idx, 1);
+        frm.dirty();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -446,6 +596,100 @@ function _render_field_inspector(frm, fields) {
     $w.find(".cps-action-cell").each(function() {
         _bindActionCellEvents($(this));
     });
+    _syncBulkAddState();
+
+    $w.on("change.cps", ".cps-row-select", function () {
+        const secKey = $(this).closest(".cps-field-row").data("sec-key");
+        if (secKey) _syncSecSelectChk(secKey);
+        _syncBulkAddState();
+    });
+
+    $w.on("click.cps", ".cps-select-visible-btn", function () {
+        $w.find(".cps-field-row:visible .cps-row-select:not(:disabled)").prop("checked", true);
+        tabOrder.forEach(tab => {
+            Object.keys(tabs[tab]).forEach(sec => _syncSecSelectChk(`${_k(tab)}__${_k(sec)}`));
+        });
+        _syncBulkAddState();
+    });
+
+    $w.on("click.cps", ".cps-clear-selected-btn", function () {
+        $w.find(".cps-row-select:checked").prop("checked", false);
+        tabOrder.forEach(tab => {
+            Object.keys(tabs[tab]).forEach(sec => _syncSecSelectChk(`${_k(tab)}__${_k(sec)}`));
+        });
+        _syncBulkAddState();
+    });
+
+    $w.on("change.cps", ".cps-sec-select-chk", function (e) {
+        e.stopPropagation();
+        const secKey = $(this).data("sec-key");
+        const checked = $(this).prop("checked");
+        const secFields = _secFieldsByKey(secKey);
+
+        secFields.forEach(f => {
+            const $rowChk = $w.find(`.cps-field-row[data-fn="${f.fieldname}"] .cps-row-select`);
+            if (!$rowChk.length || $rowChk.prop("disabled")) return;
+            $rowChk.prop("checked", checked);
+        });
+
+        _syncSecSelectChk(secKey);
+        _syncBulkAddState();
+    });
+
+    $w.on("click.cps", ".cps-add-selected-btn", function () {
+        const selectedFns = _selectedFns();
+        if (!selectedFns.length) return;
+
+        const tabOverride = ($w.find(".cps-target-tab").val() || "").trim();
+        const secOverride = ($w.find(".cps-target-sec").val() || "").trim();
+        const forceMandatory = $w.find(".cps-bulk-mandatory").prop("checked");
+        const touchedSecKeys = new Set();
+        let addedCount = 0;
+
+        selectedFns.forEach(fn => {
+            const $row = $w.find(".cps-field-row").filter(function () {
+                return ($(this).data("fn") || "") === fn;
+            }).first();
+            if (!$row.length) return;
+
+            const lbl = $row.data("lbl") || fn;
+            const ft = $row.data("ft") || "Data";
+            const tab = tabOverride || ($row.data("tab") || "General");
+            const sec = secOverride || ($row.data("sec") || "General");
+            const secKey = $row.data("sec-key");
+            const isMandatory = forceMandatory || $row.find(".cps-mandatory-chk").prop("checked");
+
+            if (_addField(fn, lbl, ft, tab, sec, isMandatory)) {
+                addedCount++;
+                if (secKey) touchedSecKeys.add(secKey);
+            }
+        });
+
+        if (!addedCount) {
+            frappe.show_alert({ message: __("Selected fields are already added."), indicator: "orange" });
+            return;
+        }
+
+        frm.refresh_field("portal_fields");
+        const newAdded = _added();
+        selectedFns.forEach(fn => _refreshRowCell(fn, newAdded.has(fn)));
+        touchedSecKeys.forEach(secKey => {
+            _refreshSecHeader(secKey);
+            _syncSecMandChk(secKey);
+        });
+        _syncBulkAddState();
+
+        frappe.show_alert({
+            message: __(`Added ${addedCount} selected field(s)${tabOverride || secOverride ? ` to ${tabOverride || "General"} / ${secOverride || "General"}` : ""}${forceMandatory ? " as Mandatory" : ""}`),
+            indicator: "green"
+        });
+    });
+
+    $w.on("keydown.cps", ".cps-target-tab, .cps-target-sec", function (e) {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        $w.find(".cps-add-selected-btn").trigger("click");
+    });
 
     // ─────────────────────────────────────────────────────────────────────
     // Add ALL Section button (event delegation)
@@ -483,6 +727,42 @@ function _render_field_inspector(frm, fields) {
         });
     });
 
+    $w.on("click.cps", ".cps-remove-sec-btn", function (e) {
+        e.stopPropagation();
+        const secKey  = $(this).data("sec-key");
+        const sec     = $(this).data("sec");
+        const secFlds = _secFieldsByKey(secKey);
+        const addedSet = _added();
+        let removedCount = 0;
+
+        secFlds.forEach(f => {
+            if (!addedSet.has(f.fieldname)) return;
+            _removeField(f.fieldname);
+            removedCount++;
+        });
+
+        if (!removedCount) {
+            frappe.show_alert({ message: __(`No fields to remove from "${sec}"`), indicator: "orange" });
+            return;
+        }
+
+        frm.refresh_field("portal_fields");
+
+        const newAdded = _added();
+        secFlds.forEach(f => {
+            _refreshRowCell(f.fieldname, newAdded.has(f.fieldname));
+        });
+        _refreshSecHeader(secKey);
+        _syncSecMandChk(secKey);
+        _syncSecSelectChk(secKey);
+        _syncBulkAddState();
+
+        frappe.show_alert({
+            message: __(`Removed ${removedCount} field(s) from "${sec}"`),
+            indicator: "orange"
+        });
+    });
+
     // ─────────────────────────────────────────────────────────────────────
     // Helper: sync the section-level mandatory checkbox state
     // ─────────────────────────────────────────────────────────────────────
@@ -506,6 +786,7 @@ function _render_field_inspector(frm, fields) {
     // Sync all section checkboxes on initial render
     tabOrder.forEach(tab => {
         Object.keys(tabs[tab]).forEach(sec => {
+            _syncSecSelectChk(`${_k(tab)}__${_k(sec)}`);
             _syncSecMandChk(`${_k(tab)}__${_k(sec)}`);
         });
     });
@@ -562,7 +843,7 @@ function _render_field_inspector(frm, fields) {
     // ─────────────────────────────────────────────────────────────────────
     $w.on("click.cps", ".cps-sec-header", function (e) {
         // Ignore clicks on action buttons / mandatory label inside header
-        if ($(e.target).closest(".cps-add-sec-btn, .cps-sec-mand-label, .cps-sec-mand-chk").length) return;
+        if ($(e.target).closest(".cps-add-sec-btn, .cps-remove-sec-btn, .cps-sec-select-label, .cps-sec-select-chk, .cps-sec-mand-label, .cps-sec-mand-chk").length) return;
 
         const secKey = $(this).data("sec-key");
         const $body  = $w.find(`.cps-sec-body[data-sec-key="${secKey}"]`);

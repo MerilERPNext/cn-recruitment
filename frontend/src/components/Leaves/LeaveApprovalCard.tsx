@@ -28,6 +28,7 @@ type LeaveApprovalCardProps = {
   loadingAction?: { id: string; action: string } | null;
   isBulkSelectEnabled: boolean;
   showRejectReason?: boolean;
+  isActed?: boolean;
 };
 const LeaveApprovalCard = ({
   isSelected = false,
@@ -39,6 +40,7 @@ const LeaveApprovalCard = ({
   loadingAction,
   isBulkSelectEnabled,
   showRejectReason,
+  isActed = false,
 }: LeaveApprovalCardProps) => {
   const { isDesktop } = useScreenSize();
   const updateRejectionReasonMutation = useUpdateRejectionReason();
@@ -218,13 +220,21 @@ const LeaveApprovalCard = ({
             </div>
           )}
           <div className="flex items-center justify-center">
-            <TeamApprovalActionPill
-              actions={actions}
-              status={data?.reference_document?.status}
-              recordId={data?.todo_id}
-              loadingAction={loadingAction}
-              onAction={(action) => handleActionClick(action, data)}
-            />
+            {data?.todo_status === "Open" && !isActed ? (
+              <TeamApprovalActionPill
+                actions={actions}
+                status={data?.reference_document?.status}
+                recordId={data?.todo_id}
+                loadingAction={loadingAction}
+                onAction={(action) => handleActionClick(action, data)}
+              />
+            ) : (
+              <div className="flex items-center justify-center">
+                <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                  Action Taken
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -352,14 +362,22 @@ const LeaveApprovalCard = ({
                   </div>
                 )}
 
-              <TeamApprovalActionPill
-                variant="buttons"
-                actions={actions}
-                status={data?.reference_document?.status}
-                recordId={data?.todo_id}
-                loadingAction={loadingAction}
-                onAction={(action) => handleActionClick(action, data)}
-              />
+              {data?.todo_status === "Open" && !isActed ? (
+                <TeamApprovalActionPill
+                  variant="buttons"
+                  actions={actions}
+                  status={data?.reference_document?.status}
+                  recordId={data?.todo_id}
+                  loadingAction={loadingAction}
+                  onAction={(action) => handleActionClick(action, data)}
+                />
+              ) : (
+                <div className="flex items-center justify-center">
+                  <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                    Action Taken
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -412,7 +430,7 @@ const LeaveApprovalCard = ({
                 size="sm"
                 bgColor="primary"
                 disabled={
-                  !rejectionComment.trim() ||
+                  rejectionComment.trim().length < 15 ||
                   updateRejectionReasonMutation.isPending
                 }
               >

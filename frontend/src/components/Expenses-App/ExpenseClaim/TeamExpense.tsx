@@ -289,6 +289,7 @@ const TeamExpense = () => {
                   loadingAction={item?.loadingAction}
                   isBulkSelectEnabled={isBulkSelectEnabled}
                   activeStatus={activeStatus}
+                  isActed={item?.isActed}
                 />
               }}
               onDataLoad={setCurrentListData}

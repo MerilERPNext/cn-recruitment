@@ -47,6 +47,7 @@ export default function TeamAdvanceDetailView({
   );
   const mutation = useApprovalListActions();
   const [currentAction, setCurrentAction] = useState<string | null>(null);
+  const [isActed, setIsActed] = useState(false);
 
   const handleAction = useCallback(
     async (action: string) => {
@@ -58,6 +59,10 @@ export default function TeamAdvanceDetailView({
         });
 
         setRefetchAttendance(true);
+        setIsActed(true);
+        document.dispatchEvent(
+          new CustomEvent("approval:acted", { detail: { id: data.todo_id } }),
+        );
         if (onAction) {
           onAction();
         } else {
@@ -218,7 +223,7 @@ export default function TeamAdvanceDetailView({
 
   const ActionButtons =
     actions?.length &&
-    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) ? (
+    ["Open", "Pending", "Draft"].includes(ref.custom_final_status) && !isActed ? (
       <div className="border-t bg-white p-4">
         <TeamApprovalActionPill
           variant={isDesktop ? "modal" : "buttons"}
@@ -232,8 +237,12 @@ export default function TeamAdvanceDetailView({
         />
       </div>
     ) : (
-      <div className="border-t bg-white p-4 flex justify-end">
-        <StatusBadge status={"Action taken"} />
+      <div className="border-t bg-white p-4">
+        <div className="flex items-center justify-center">
+          <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+            Action Taken
+          </div>
+        </div>
       </div>
     );
 

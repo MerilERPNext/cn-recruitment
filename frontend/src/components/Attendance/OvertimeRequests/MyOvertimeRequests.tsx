@@ -111,6 +111,18 @@ const MyOvertimeRequests = () => {
     setRefetchMyRequestsList(true);
   }, []);
 
+  const OvertimeItemComponent = useCallback(
+    (props: { item: MyPlannedAttendanceRequest }) => (
+      <MyRequestCard
+        request={props.item}
+        onClick={handleRequestClick}
+        onEdit={handleEditRequest}
+        onActionComplete={handleRevokeComplete}
+      />
+    ),
+    [handleRequestClick, handleEditRequest, handleRevokeComplete],
+  );
+
   return (
     <div className="flex flex-col h-full">
       {isDesktop && (
@@ -140,18 +152,7 @@ const MyOvertimeRequests = () => {
                   employee: effectiveEmployeeId,
                 },
               }}
-              ItemComponent={(props: { item: MyPlannedAttendanceRequest }) => {
-                return (
-                  <MyRequestCard
-                    request={props?.item}
-                    onClick={(request: MyPlannedAttendanceRequest) =>
-                      handleRequestClick(request)
-                    }
-                    onEdit={handleEditRequest}
-                    onActionComplete={handleRevokeComplete}
-                  />
-                );
-              }}
+              ItemComponent={OvertimeItemComponent}
               onRefetchComplete={handleMyRequestsRefetchComplete}
               refetchTrigger={refetchMyRequestsList || refetchAttendance}
               isSearch={true}
@@ -211,6 +212,7 @@ const MyOvertimeRequests = () => {
       )}
       {(requestId || referenceName) && (
         <MyOvertimeDetails
+          type="my"
           documentName={requestId || ""}
           referenceName={referenceName || ""}
           onClose={handleCloseModal}

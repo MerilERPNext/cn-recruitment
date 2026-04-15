@@ -12,8 +12,16 @@ export interface HDTicket {
   raised_by: string;
   creation: string;
   modified: string;
+  raise_by_name: string;
+  custom_archived?: boolean;
+  custom_closure_requested?: boolean;
+  custom_closure_requested_by?: string;
   resolution_details?: string;
+  custom_second_level_escalation_delay_hours: number;
   owner: string;
+  resolution_by: string;
+  agreement_status: "First Response Due" | "Resolution Due" | "Failed" | "Fulfilled" | "Paused";
+  response_by: string;
 }
 
 export interface TicketListResponse {
@@ -29,6 +37,7 @@ export interface FilterableField {
   fieldtype: string;
   label: string;
   options?: string;
+  display_field?: string;
 }
 
 export interface TicketStats {
@@ -112,12 +121,19 @@ export const useTicketList = (
           "custom_sub_category",
           "_assign",
           "raised_by",
+          "resolution_by",
+          "response_by",
           "creation",
+          "custom_second_level_escalation_delay_hours",
+          "custom_archived",
+          "custom_closure_requested",
+          "custom_closure_requested_by",
           "modified",
+          "agreement_status",
           "resolution_details",
           "owner",
         ],
-        show_customer_portal_fields: true,
+        show_customer_portal_fields: false,
       });
       return result as TicketListResponse;
     },
@@ -199,7 +215,7 @@ export const useFilterableFields = () => {
         "helpdesk.api.doc.get_filterable_fields",
         {
           doctype: "HD Ticket",
-          show_customer_portal_fields: true,
+          show_customer_portal_fields: false,
         }
       );
       return result as FilterableField[];
@@ -239,6 +255,38 @@ export const useResolutionHistory = (ticketId: string) => {
     ...defaultQueryOptions,
   });
 };
+
+export const useLinkedFieldOptions = (fields: string[], doctype: string) => {
+  return useQuery({
+    queryKey: ["get-linked-field-option", fields, doctype],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list",
+        {
+          fields,
+          doctype
+        }
+      );
+      return result as Array<{
+        name: string;
+        version_number: number;
+        resolution_content: string;
+        submitted_by: string;
+        submitted_by_name?: string;
+        submitted_on: string;
+        satisfaction_status: string;
+        satisfaction_by?: string;
+        satisfaction_by_name?: string;
+        satisfaction_on?: string;
+        rejection_reason?: string;
+        is_current_version: number;
+      }>;
+    },
+    enabled: !!fields,
+    ...defaultQueryOptions,
+  });
+};
+
 
 /**
  * Close ticket with resolution (for raiser/admin)
@@ -851,6 +899,32 @@ export const useAddComment = () => {
       await queryClient.refetchQueries({
         queryKey: ["hd-ticket-detail", variables.ticketId],
       });
+    },
+  });
+};
+
+
+/**
+ * revoke the ticket 
+ */
+export const useRevokeTicket = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketId,
+    }: {
+      ticketId: string;
+    }) => {
+      const result = await FrappeAPI.updateDocument("HD Ticket", ticketId, {
+        custom_archived: 1,
+      });
+      return result;
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
     },
   });
 };

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import { Filter, Plus, X } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
@@ -6,6 +8,9 @@ import {
   FilterableField,
   TicketFilters as TicketFiltersType,
 } from "../../hooks/useHelpDeskTickets";
+import { useFloatingPosition } from "../../hooks/useFloatingPosition";
+import { createPortal } from "react-dom";
+import FrappeAPI from "../../utils/frappeAPI";
 
 interface FilterItem {
   id: string;
@@ -13,6 +18,11 @@ interface FilterItem {
   operator: string;
   value: string;
 }
+
+type SelectOption = {
+  label: string;
+  value: string;
+};
 
 interface TicketFiltersProps {
   fields: FilterableField[];
@@ -71,13 +81,68 @@ const getOperatorsForFieldType = (fieldType: string) => {
   }
 };
 
-const getSelectOptions = (field: FilterableField) => {
+const getSelectOptions = async (
+  field: FilterableField
+): Promise<SelectOption[]> => {
+  // Select
+
+  if (field.fieldname === "status") {
+    return [
+      { label: "Open", value: "Open" },
+      { label: "Closed", value: "Closed" },
+      { label: "Resolved", value: "Resolved" },
+      { label: "Replied", value: "Replied" },
+      { label: "Reopened", value: "Reopened" },
+      { label: "Not Assigned", value: "Not Assigned" },
+      { label: "Archived", value: "Archived" },
+      { label: "Requested Closure", value: "Requested Closure" },
+    ];
+  }
   if (field.fieldtype === "Select" && field.options) {
-    return field.options.split("\n").filter(Boolean);
+    return field.options
+      .split("\n")
+      .filter(Boolean)
+      .map((opt) => ({
+        label: opt,
+        value: opt,
+      }));
   }
+
+  // Check
   if (field.fieldtype === "Check") {
-    return ["Yes", "No"];
+    return [
+      { label: "Yes", value: "Yes" },
+      { label: "No", value: "No" },
+    ];
   }
+
+  // Link
+  if (field.fieldtype === "Link" && field.options) {
+    try {
+      const result = (await FrappeAPI.callMethod(
+        "cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list",
+        {
+          fields: ["name", field.display_field || "name"],
+          doctype: field.options,
+        }
+      )) as Record<string, string>[];
+
+      return result.map((item) => {
+        const displayValue = field.display_field
+          ? item[field.display_field]
+          : item.name;
+
+        return {
+          label: displayValue,
+          value: item.name,
+        };
+      });
+    } catch (error) {
+      console.error("Error fetching link options:", error);
+      return [];
+    }
+  }
+
   return [];
 };
 
@@ -86,13 +151,36 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   filters,
   onApply,
 }) => {
+  const [optionsMap, setOptionsMap] = useState<
+    Record<string, SelectOption[]>
+  >({});
   const [isOpen, setIsOpen] = useState(false);
   const [filterItems, setFilterItems] = useState<FilterItem[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize filter items from existing filters
+  // Fetch options
+  useEffect(() => {
+    const fetchOptions = async () => {
+      const newOptionsMap: Record<string, SelectOption[]> = {};
+
+      for (const item of filterItems) {
+        const field = fields.find((f) => f.fieldname === item.field);
+        if (field) {
+          const options = await getSelectOptions(field);
+          newOptionsMap[item.id] = options;
+        }
+      }
+
+      setOptionsMap(newOptionsMap);
+    };
+
+    fetchOptions();
+  }, [filterItems, fields]);
+
+  // Initialize filters
   useEffect(() => {
     const items: FilterItem[] = [];
+
     Object.entries(filters).forEach(([key, value]) => {
       if (Array.isArray(value)) {
         items.push({
@@ -110,27 +198,34 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
         });
       }
     });
+
     setFilterItems(items);
   }, []);
 
-  // Close dropdown on outside click
+  // Close on outside click
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current?.contains(target) &&
+        !tooltipRef.current?.contains(target)
       ) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const addFilter = () => {
     const defaultField = fields[0]?.fieldname || "";
-    setFilterItems([
-      ...filterItems,
+    setFilterItems((prev) => [
+      ...prev,
       {
         id: Math.random().toString(36).substr(2, 9),
         field: defaultField,
@@ -141,30 +236,30 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   };
 
   const removeFilter = (id: string) => {
-    setFilterItems(filterItems.filter((item) => item.id !== id));
+    setFilterItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const updateFilter = (id: string, updates: Partial<FilterItem>) => {
-    setFilterItems(
-      filterItems.map((item) =>
-        item.id === id ? { ...item, ...updates } : item,
-      ),
+    setFilterItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, ...updates } : item
+      )
     );
   };
 
   const applyFilters = () => {
     const newFilters: TicketFiltersType = {};
+
     filterItems.forEach((item) => {
       if (item.field && item.value) {
         let filterValue: unknown = item.value;
 
-        // Handle special operators
         if (item.operator === "like") {
           filterValue = `%${item.value}%`;
         }
 
-        // Handle check field
         const field = fields.find((f) => f.fieldname === item.field);
+
         if (field?.fieldtype === "Check") {
           filterValue = item.value === "Yes" ? 1 : 0;
         }
@@ -172,6 +267,7 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
         newFilters[item.field] = [item.operator, filterValue];
       }
     });
+
     onApply(newFilters);
     setIsOpen(false);
   };
@@ -183,16 +279,25 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
   };
 
   const activeFilterCount = Object.keys(filters).length;
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useFloatingPosition(buttonRef, tooltipRef, isOpen, {
+    placement: "bottom",
+    align: "end",
+    offset: 10,
+  });
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Filter Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors"
       >
         <Filter className="w-4 h-4" />
         <span className="text-sm font-medium">Filter</span>
+
         {activeFilterCount > 0 && (
           <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary-600 text-white rounded-lg">
             {activeFilterCount}
@@ -200,152 +305,170 @@ const TicketFiltersComponent: React.FC<TicketFiltersProps> = ({
         )}
       </button>
 
-      {/* Filter Dropdown */}
-      {isOpen && (
-        <div className="absolute right-0 z-[999] mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <Typography
-                variant="body"
-                color="primary"
-                className="font-medium"
-              >
-                Filters
-              </Typography>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      {/* Dropdown */}
+      {isOpen &&
+        createPortal(
+          <div
+            ref={tooltipRef}
+            className="z-[999] mt-2 w-[calc(100vw-2rem)] md:w-[500px] bg-white rounded-xl border border-gray-200 shadow-lg"
+          >
+            <div className="p-4">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <Typography
+                  variant="body"
+                  color="primary"
+                  className="font-medium"
+                >
+                  Filters
+                </Typography>
 
-            {/* Filter Items */}
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {filterItems.map((item) => {
-                const field = fields.find((f) => f.fieldname === item.field);
-                const operators = getOperatorsForFieldType(
-                  field?.fieldtype || "Data",
-                );
-                const selectOptions = field ? getSelectOptions(field) : [];
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-                return (
-                  <div
-                    key={item.id}
-                    className="flex flex-col md:flex-row md:items-center gap-2"
-                  >
-                    {/* Field Select */}
-                    <select
-                      value={item.field}
-                      onChange={(e) =>
-                        updateFilter(item.id, {
-                          field: e.target.value,
-                          value: "",
-                        })
-                      }
-                      className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+              {/* Filter Items */}
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {filterItems.map((item) => {
+                  const field = fields.find(
+                    (f) => f.fieldname === item.field
+                  );
+                  const operators = getOperatorsForFieldType(
+                    field?.fieldtype || "Data"
+                  );
+                  const selectOptions = optionsMap[item.id] || [];
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex flex-col md:flex-row md:items-center gap-2"
                     >
-                      {fields.map((f) => (
-                        <option key={f.fieldname} value={f.fieldname}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Operator Select */}
-                    <select
-                      value={item.operator}
-                      onChange={(e) =>
-                        updateFilter(item.id, { operator: e.target.value })
-                      }
-                      className="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                    >
-                      {operators.map((op) => (
-                        <option key={op.value} value={op.value}>
-                          {op.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Value Input */}
-                    {selectOptions.length > 0 ? (
+                      {/* Field */}
                       <select
-                        value={item.value}
+                        value={item.field}
                         onChange={(e) =>
-                          updateFilter(item.id, { value: e.target.value })
+                          updateFilter(item.id, {
+                            field: e.target.value,
+                            value: "",
+                          })
                         }
                         className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
                       >
-                        <option value="">Select...</option>
-                        {selectOptions.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
+                        {fields.map((f) => (
+                          <option key={f.fieldname} value={f.fieldname}>
+                            {f.label}
                           </option>
                         ))}
                       </select>
-                    ) : field?.fieldtype === "Date" ||
-                      field?.fieldtype === "Datetime" ? (
-                      <input
-                        type="date"
-                        value={item.value}
+
+                      {/* Operator */}
+                      <select
+                        value={item.operator}
                         onChange={(e) =>
-                          updateFilter(item.id, { value: e.target.value })
+                          updateFilter(item.id, {
+                            operator: e.target.value,
+                          })
                         }
-                        className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        value={item.value}
-                        onChange={(e) =>
-                          updateFilter(item.id, { value: e.target.value })
-                        }
-                        placeholder="Value"
-                        className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
-                      />
-                    )}
+                        className="w-full md:w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                      >
+                        {operators.map((op) => (
+                          <option key={op.value} value={op.value}>
+                            {op.label}
+                          </option>
+                        ))}
+                      </select>
 
-                    {/* Remove Button */}
-                    <button
-                      onClick={() => removeFilter(item.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 md:self-auto self-end"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+                      {/* Value */}
+                      {selectOptions.length > 0 ? (
+                        <select
+                          value={item.value}
+                          onChange={(e) =>
+                            updateFilter(item.id, {
+                              value: e.target.value,
+                            })
+                          }
+                          className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                        >
+                          <option value="">Select...</option>
+                          {selectOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field?.fieldtype === "Date" ||
+                        field?.fieldtype === "Datetime" ? (
+                        <input
+                          type="date"
+                          value={item.value}
+                          onChange={(e) =>
+                            updateFilter(item.id, {
+                              value: e.target.value,
+                            })
+                          }
+                          className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={item.value}
+                          onChange={(e) =>
+                            updateFilter(item.id, {
+                              value: e.target.value,
+                            })
+                          }
+                          placeholder="Value"
+                          className="w-full md:flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30"
+                        />
+                      )}
 
-            {/* Add Filter Button */}
-            <button
-              onClick={addFilter}
-              className="flex items-center gap-2 mt-3 text-sm text-primary-600 hover:text-primary-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add Filter
-            </button>
+                      {/* Remove */}
+                      <button
+                        onClick={() => removeFilter(item.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 md:self-auto self-end"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
+              {/* Add Filter */}
               <button
-                onClick={clearFilters}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                onClick={addFilter}
+                className="flex items-center gap-2 mt-3 text-sm text-primary-600 hover:text-primary-700"
               >
-                Clear All
+                <Plus className="w-4 h-4" />
+                Add Filter
               </button>
-              <Button
-                variant="contain"
-                bgColor="primary"
-                size="sm"
-                onClick={applyFilters}
-              >
-                Apply Filters
-              </Button>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={clearFilters}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Clear All
+                </button>
+
+                <Button
+                  variant="contain"
+                  bgColor="primary"
+                  size="sm"
+                  onClick={applyFilters}
+                >
+                  Apply Filters
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };

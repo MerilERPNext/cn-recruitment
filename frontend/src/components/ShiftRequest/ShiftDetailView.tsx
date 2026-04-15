@@ -40,6 +40,8 @@ export function ShiftDetailView({
     error,
   } = useGetToDoWithReferenceDoc(documentName || "", referenceName);
 
+
+  const [isActed, setIsActed] = useState(false);
   const data = documentName ? fetchedData : propData;
   const shouldRender = !!documentName || !!data?.todo_id;
 
@@ -88,6 +90,10 @@ export function ShiftDetailView({
             setRefetchAttendance(true);
           }, 2000);
         }
+        setIsActed(true);
+        document.dispatchEvent(
+          new CustomEvent("approval:acted", { detail: { id: data?.todo_id } }),
+        );
         if (onAction) {
           onAction();
         }
@@ -220,7 +226,7 @@ export function ShiftDetailView({
         </div>
 
         {/* Actions */}
-        {actions?.length > 0 && data?.status === "Draft" && (
+        {actions?.length > 0 && data?.status === "Draft" && !isActed ? (
           <div className="fixed md:static bottom-0 w-full bg-white border-t shadow-md p-4 z-20">
             <div className="flex gap-2">
               {actions.map((action: string) => {
@@ -248,7 +254,14 @@ export function ShiftDetailView({
               })}
             </div>
           </div>
-        )}
+        )
+          : (
+            <div className="flex items-center justify-center">
+              <div className="h-8 px-3 flex items-center justify-center rounded-md bg-gray-10 text-gray-600 text-xs font-medium w-fit">
+                Action Taken
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );
