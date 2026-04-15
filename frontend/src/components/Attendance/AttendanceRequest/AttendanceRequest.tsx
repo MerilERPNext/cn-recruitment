@@ -80,6 +80,13 @@ const AttendanceRequest = ({
     setRefetchAttendance(false);
   }, [setRefetchAttendance]);
 
+  const AttendanceItemComponent = useCallback(
+    (props: { item: MyAttendanceRequest }) => (
+      <EmpAttendanceRequestCard type="pending" data={props.item} />
+    ),
+    [],
+  );
+
   return (
     <>
       {showForm ? (
@@ -126,16 +133,7 @@ const AttendanceRequest = ({
                       employee: effectiveEmployeeId,
                     },
                   }}
-                  ItemComponent={(props: { item: MyAttendanceRequest }) => {
-                    return (
-                      <EmpAttendanceRequestCard
-                        type="pending"
-                        data={{
-                          ...props?.item,
-                        }}
-                      />
-                    );
-                  }}
+                  ItemComponent={AttendanceItemComponent}
                   SkeletonComponent={CardSkeleton}
                   onItemClick={(data) => {
                     console.log(data);
