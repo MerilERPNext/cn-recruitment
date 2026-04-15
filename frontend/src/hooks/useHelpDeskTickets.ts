@@ -282,7 +282,7 @@ export const useLinkedFieldOptions = (fields: string[], doctype: string) => {
         is_current_version: number;
       }>;
     },
-    enabled: !!fields && !!fields,
+enabled: !!fields,
     ...defaultQueryOptions,
   });
 };
