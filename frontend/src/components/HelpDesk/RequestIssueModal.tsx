@@ -7,10 +7,11 @@ import FrappeAPI from "../../utils/frappeAPI";
 import {
   useCategories,
   useSubcategories,
-  useSubordinateEmployees,
   useCreateTicket,
   HDCategory,
 } from "../../hooks/useHelpDeskTickets";
+import { AttachmentCard } from "../shared/molecules/AttachmentCard";
+import EmployeeSelect from "../shared/EmployeeSelect";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ interface UploadedFile {
   file_url: string;
   file_name: string;
 }
+
+const MIN_DESCRIPTION_LENGTH = 15;
 
 const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   isOpen,
@@ -44,7 +47,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: subcategories = [] } = useSubcategories(category);
-  const { data: employees = [], isLoading: employeesLoading } = useSubordinateEmployees();
 
   // Mutation
   const createTicketMutation = useCreateTicket();
@@ -121,6 +123,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
   };
 
+  const submitDisabled = createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim() || (raisedFor === "Others" && !selectedEmployee.trim()) || (isAttachmentMandatory && attachments.length === 0) || description.trim().length < MIN_DESCRIPTION_LENGTH;
   // Handle drag events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -177,8 +180,16 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       toast.error("Subcategory is required");
       return;
     }
+    if (raisedFor === "Others" && !selectedEmployee.trim()) {
+      toast.error("Employee is required");
+      return;
+    }
     if (!description.trim()) {
       toast.error("Description is required");
+      return;
+    }
+    if (description.trim().length < MIN_DESCRIPTION_LENGTH) {
+      toast.error(`Description must be at least ${MIN_DESCRIPTION_LENGTH} characters long`);
       return;
     }
     if (isAttachmentMandatory && attachments.length === 0) {
@@ -273,7 +284,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   <option value="">Select Category</option>
                   {categories.map((cat: HDCategory) => (
                     <option key={cat.name} value={cat.name}>
-                      {cat.category_name}
+                      {cat.category_name} - ({cat.name})
                     </option>
                   ))}
                 </select>
@@ -300,7 +311,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   </option>
                   {subcategories.map((sub: HDCategory) => (
                     <option key={sub.name} value={sub.name}>
-                      {sub.category_name}
+                      {sub.category_name} - ({sub.name})
                     </option>
                   ))}
                 </select>
@@ -338,26 +349,13 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             {raisedFor === "Others" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Employee
+                  Select Employee<span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
-                    disabled={employeesLoading}
-                  >
-                    <option value="">
-                      {employeesLoading ? "Loading employees..." : "Select Employee"}
-                    </option>
-                    {employees.map((emp) => (
-                      <option key={emp.value} value={emp.value}>
-                        {emp.description}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
+                <EmployeeSelect
+                  value={selectedEmployee}
+                  onChange={(val) => setSelectedEmployee(val)}
+                  placeholder="Select Employee"
+                />
               </div>
             )}
           </div>
@@ -370,10 +368,16 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description"
+              placeholder={`Description (minimum ${MIN_DESCRIPTION_LENGTH} characters)`}
               rows={5}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 resize-none"
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-xs text-gray-500">Minimum {MIN_DESCRIPTION_LENGTH} characters required</span>
+              <span className={`text-xs ${description.trim().length < MIN_DESCRIPTION_LENGTH ? 'text-red-500' : 'text-green-500'}`}>
+                {description.trim().length}/{MIN_DESCRIPTION_LENGTH} characters
+              </span>
+            </div>
           </div>
 
           {/* Attachments */}
@@ -417,14 +421,18 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                 {attachments.map((file, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
                   >
-                    <span className="text-sm text-gray-700 truncate flex-1">
-                      {file.file_name}
-                    </span>
+                    <div className="flex-1">
+                      <AttachmentCard
+                        fileUrl={file.file_url}
+                        showFileNameWithEye={true}
+                      />
+                    </div>
                     <button
                       onClick={() => removeAttachment(index)}
-                      className="p-1 text-gray-400 hover:text-red-600"
+                      className="p-1 text-gray-400 hover:text-red-600 ml-2"
+                      title="Remove attachment"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -456,7 +464,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
             bgColor="primary"
             size="md"
             onClick={handleSubmit}
-            disabled={createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim()}
+            disabled={submitDisabled}
             className="max-sm:w-full"
           >
             {createTicketMutation.isPending ? "Submitting..." : "Submit Request"}

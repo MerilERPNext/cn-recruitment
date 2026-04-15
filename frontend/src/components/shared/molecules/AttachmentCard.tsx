@@ -1,6 +1,10 @@
 import { Download, Eye } from "lucide-react";
 import { useState } from "react";
-import { FileTypeIcon, getFileTypeInfo, getFileName } from "../../../utils/fileUtils";
+import {
+  FileTypeIcon,
+  getFileName,
+  getFileTypeInfo,
+} from "../../../utils/fileUtils";
 import Button from "../atoms/Button";
 import Tooltip from "../Tooltip";
 import { FilePreviewModal } from "./FilePreviewModal";
@@ -8,9 +12,11 @@ import { FilePreviewModal } from "./FilePreviewModal";
 export function AttachmentCard({
   fileUrl,
   compact = false,
+  showFileNameWithEye = false,
 }: {
   fileUrl: string;
   compact?: boolean;
+  showFileNameWithEye?: boolean;
 }) {
   const fileName = getFileName(fileUrl);
   const [showPreview, setShowPreview] = useState(false);
@@ -40,7 +46,16 @@ export function AttachmentCard({
 
   return (
     <>
-      {compact ? (
+      {showFileNameWithEye ? (
+        <button
+          type="button"
+          className="text-sm text-gray-700 truncate flex-1 cursor-pointer hover:text-blue-600 hover:underline text-left bg-transparent border-none p-0"
+          onClick={() => setShowPreview(true)}
+          title="Click to preview"
+        >
+          {fileName}
+        </button>
+      ) : compact ? (
         ActionButtons
       ) : (
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
