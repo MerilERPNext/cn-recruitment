@@ -60,7 +60,6 @@ export function preloadCriticalRoutes(): void {
     '/webapp/expenses-app',
     '/webapp/recruitment-app',
     '/webapp/policies-app',
-    '/webapp/tracker-app',
   ];
 
   // Preload high priority routes immediately
