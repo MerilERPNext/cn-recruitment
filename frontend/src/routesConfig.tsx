@@ -248,26 +248,6 @@ const EmployeesDirectory = lazyWithRetry(
   () => import("./components/EmployeesDirectory/EmployeeDirectoryLayout"),
   "EmployeesDirectory",
 );
-const TrackerApp = lazyWithRetry(
-  () => import("./components/ApprovalTracker/TrackerApp"),
-  "TrackerApp",
-);
-const FlowRequests = lazyWithRetry(
-  () => import("./components/ApprovalTracker/FlowRequests"),
-  "FlowRequests",
-);
-const InitiateFlow = lazyWithRetry(
-  () => import("./components/ApprovalTracker/InitiateFlow"),
-  "InitiateFlow",
-);
-const InitiateForm = lazyWithRetry(
-  () => import("./components/ApprovalTracker/InitiateForm"),
-  "InitiateForm",
-);
-const FlowRequestDetails = lazyWithRetry(
-  () => import("./components/ApprovalTracker/FlowRequestDetails"),
-  "FlowRequestDetails",
-);
 const AllShiftsDashboardRoute = lazyWithRetry(
   () =>
     import("./components/ShiftRequest/ShiftDynamicRoute").then((module) => ({
@@ -1054,36 +1034,6 @@ export const routesConfig: AppRoute[] = [
         path: "view-policy/:policyName",
         element: <ViewPolicy />,
         permissionKey: "Policies",
-      },
-    ],
-  },
-  //Approval tracker routes
-  {
-    path: "/webapp/tracker-app",
-    element: <TrackerApp />,
-    permissionKey: "Flows",
-    children: [
-      {
-        path: "", element: <FlowRequests />, permissionKey: "Flow Requests",
-      }, {
-        path: "flow-requests/:id",
-        element: <FlowRequestDetails />,
-        permissionKey: "Flow Requests",
-      },
-      {
-        path: "initiate",
-        element: <InitiateFlow />,
-        permissionKey: "Flow Requests",
-      },
-      {
-        path: "initiate-form",
-        element: <InitiateForm />,
-        permissionKey: "Flow Requests",
-      },
-      {
-        path: "details/:id",
-        element: <FlowRequestDetails />,
-        permissionKey: "Flow Requests",
       },
     ],
   },

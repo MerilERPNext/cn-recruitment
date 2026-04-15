@@ -19,7 +19,6 @@ const routePreloadMap: Record<string, () => Promise<any>> = {
   },
   '/webapp/my-profile': () => import('../components/MyProfile/MyProfile'),
   '/webapp/policies-app': () => import('../components/Policies/PoliciesApp'),
-  '/webapp/tracker-app': () => import('../components/ApprovalTracker/TrackerApp'),
 };
 
 /**
@@ -61,7 +60,6 @@ export function preloadCriticalRoutes(): void {
     '/webapp/expenses-app',
     '/webapp/recruitment-app',
     '/webapp/policies-app',
-    '/webapp/tracker-app',
   ];
 
   // Preload high priority routes immediately
