@@ -19,7 +19,6 @@ const routePreloadMap: Record<string, () => Promise<any>> = {
   },
   '/webapp/my-profile': () => import('../components/MyProfile/MyProfile'),
   '/webapp/policies-app': () => import('../components/Policies/PoliciesApp'),
-  '/webapp/tracker-app': () => import('../components/ApprovalTracker/TrackerApp'),
 };
 
 /**
