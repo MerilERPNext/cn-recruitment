@@ -1,83 +1,128 @@
 {
- "actions": [],
- "allow_rename": 1,
- "creation": "2024-06-10 21:04:30.970525",
- "doctype": "DocType",
- "engine": "InnoDB",
- "field_order": [
-  "job_offer_template",
-  "employee_onboarding_webform",
-  "mapping_fields",
-  "recruitment_tool",
-  "dummy_salary_structure_assignment",
-  "interview_settings_section",
-  "authorized_feedback_roles"
- ],
- "fields": [
-  {
-   "fieldname": "job_offer_template",
-   "fieldtype": "Link",
-   "label": "Job Offer Template",
-   "options": "Email Template"
-  },
-  {
-   "fieldname": "employee_onboarding_webform",
-   "fieldtype": "Link",
-   "label": "Employee Onboarding Webform",
-   "options": "Web Form"
-  },
-  {
-   "fieldname": "mapping_fields",
-   "fieldtype": "Table",
-   "label": "Mapping Fields",
-   "options": "Fields Mapping"
-  },
-  {
-   "fieldname": "dummy_salary_structure_assignment",
-   "fieldtype": "Link",
-   "label": "Dummy Salary Structure Assignment",
-   "options": "Salary Structure Assignment"
-  },
-  {
-   "fieldname": "recruitment_tool",
-   "fieldtype": "Table",
-   "label": "Recruitment Tool",
-   "options": "Recruitment Tool"
-  },
-  {
-   "description": "Select the roles that are permitted to submit interview feedback even if they are not listed as interviewers for the round.",
-   "fieldname": "authorized_feedback_roles",
-   "fieldtype": "Table MultiSelect",
-   "label": "Authorized Roles for Feedback Submission",
-   "options": "Roles"
-  },
-  {
-   "fieldname": "interview_settings_section",
-   "fieldtype": "Section Break",
-   "label": "Interview Settings"
-  }
- ],
- "index_web_pages_for_search": 1,
- "issingle": 1,
- "links": [],
- "modified": "2025-04-22 11:56:49.445951",
- "modified_by": "Administrator",
- "module": "Recruitment",
- "name": "Recruitment Settings",
- "owner": "Administrator",
- "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  }
- ],
- "sort_field": "modified",
- "sort_order": "DESC",
- "states": []
+"actions": [],
+"allow_rename": 1,
+"creation": "2024-06-10 21:04:30.970525",
+"doctype": "DocType",
+"engine": "InnoDB",
+"field_order": [
+"bulk_operations_section",
+"allow_bulk_job_offer",
+"allow_bulk_job_offer_email",
+"section_break_xbvj",
+"job_offer_print_format",
+"job_offer_template",
+"employee_onboarding_webform",
+"mapping_fields",
+"recruitment_tool",
+"dummy_salary_structure_assignment",
+"interview_settings_section",
+"authorized_feedback_roles"
+],
+"fields": [
+{
+"fieldname": "bulk_operations_section",
+"fieldtype": "Section Break",
+"label": "Bulk Operations"
+},
+{
+"default": "0",
+"description": "Users can create multiple Job Offers directly from the Job Applicant list using the Actions menu.",
+"fieldname": "allow_bulk_job_offer",
+"fieldtype": "Check",
+"label": "Allow Bulk Job Offer Creation"
+},
+{
+"default": "0",
+"description": "Users can send Job Offer emails to multiple candidates at once from the Job Offer list using the Actions menu.",
+"fieldname": "allow_bulk_job_offer_email",
+"fieldtype": "Check",
+"label": "Allow Bulk Job Offer Email"
+},
+{
+"fieldname": "section_break_xbvj",
+"fieldtype": "Section Break"
+},
+{
+"description": "Print Format used for the candidate-facing Job Offer page and PDF download.",
+"fieldname": "job_offer_print_format",
+"fieldtype": "Link",
+"label": "Job Offer Print Format",
+"options": "Print Format"
+},
+{
+"fieldname": "job_offer_template",
+"fieldtype": "Link",
+"label": "Job Offer Template",
+"options": "Email Template"
+},
+{
+"fieldname": "employee_onboarding_webform",
+"fieldtype": "Link",
+"label": "Employee Onboarding Webform",
+"options": "Web Form"
+},
+{
+"fieldname": "mapping_fields",
+"fieldtype": "Table",
+"label": "Mapping Fields",
+"options": "Fields Mapping"
+},
+{
+"fieldname": "dummy_salary_structure_assignment",
+"fieldtype": "Link",
+"label": "Dummy Salary Structure Assignment",
+"options": "Salary Structure Assignment"
+},
+{
+"fieldname": "recruitment_tool",
+"fieldtype": "Table",
+"label": "Recruitment Tool",
+"options": "Recruitment Tool"
+},
+{
+"fieldname": "interview_settings_section",
+"fieldtype": "Section Break",
+"label": "Interview Settings"
+},
+{
+"description": "Select the roles that are permitted to submit interview feedback even if they are not listed as interviewers for the round.",
+"fieldname": "authorized_feedback_roles",
+"fieldtype": "Table MultiSelect",
+"label": "Authorized Roles for Feedback Submission",
+"options": "Roles"
+}
+],
+"index_web_pages_for_search": 1,
+"issingle": 1,
+"links": [],
+"modified": "2026-03-10 16:19:04.969944",
+"modified_by": "Administrator",
+"module": "Recruitment",
+"name": "Recruitment Settings",
+"owner": "Administrator",
+"permissions": [
+{
+"create": 1,
+"delete": 1,
+"email": 1,
+"print": 1,
+"read": 1,
+"role": "System Manager",
+"share": 1,
+"write": 1
+},
+{
+"read": 1,
+"role": "HR Manager",
+"write": 1
+},
+{
+"read": 1,
+"role": "HR User"
+}
+],
+"row_format": "Dynamic",
+"sort_field": "modified",
+"sort_order": "DESC",
+"states": []
 }
