@@ -202,6 +202,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
+  const resetDynamicSelectionState = () => {
+    setDynamicFormData({});
+    setDynamicFields([]);
+    setCalcParams(undefined);
+    setVehicleType(null);
+  };
+
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
     fields: ["name", "employee_name", "company"]
   });
@@ -345,6 +352,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setSelectedCategoryType(initialExpense.categoryType || "General");
     setPreviousCategory(initialExpense.expenseCategory);
     setShowCategoryAndType(true);
+    setTimeout(() => {
+      hydrationRef.current = false;
+    }, 0);
   }, [initialExpense, isEditActive]);
 
 
@@ -364,6 +374,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       // key based on expenseTypeValue, so it will re-mount automatically.
       // Incrementing formKey here caused a double re-mount race condition
       // that made the dynamic form fail to render on mobile.
+    } else {
+      setDynamicFields([]);
+      setDynamicFormData({});
+      setCalcParams(undefined);
+      setVehicleType(null);
     }
   }, [mainFormData?.expenseType, mainFormData?.expense_type, editingExpenseId, isEditActive]);
 
@@ -513,7 +528,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
 
   const handleSubmit = (submission: any) => {
-    setMainFormData(submission.data);
+    setMainFormData({ ...submission.data });
     setPreviousCategory(submission.data.expenseCategory);
     setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
@@ -763,8 +778,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       .filter(Boolean);
 
   const expenseTypeValue = useMemo(
-    () => mainFormData?.expenseType || undefined,
-    [mainFormData?.expenseType],
+    () => mainFormData?.expenseType || mainFormData?.expense_type || undefined,
+    [mainFormData?.expenseType, mainFormData?.expense_type],
   );
 
   const { data: expenseTypeData, isFetching: isFetchingFields } =
@@ -1217,60 +1232,62 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               },
             }}
             onChange={(change: any) => {
-              // Guard: skip onChange processing during hydration (edit mode init)
-              if (isEditActive) return;
+              // Guard: skip one cycle while initial expense values are being hydrated.
               if (hydrationRef.current) return;
 
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
-              const newExpenseType = change.data.expenseType;
+              const newExpenseType =
+                change.data.expenseType ?? change.data.expense_type;
               const prevCategory = previousCategory;
+              const prevCategoryType = selectedCategoryType;
+              const previousExpenseType =
+                mainFormData?.expenseType ?? mainFormData?.expense_type;
 
-
-              if (
-                selectedCategoryType &&
-                newCategoryType &&
-                selectedCategoryType !== newCategoryType
-              ) {
+              if (!newCategoryType) {
                 change.data.expenseCategory = null;
                 change.data.expenseType = null;
-
-                setDynamicFormData({});
-                setDynamicFields([]);
-                setCalcParams(undefined);
+                setSelectedCategoryType("General");
                 setPreviousCategory(null);
-                setVehicleType(null);
-                setSelectedCategoryType(newCategoryType);
+                resetDynamicSelectionState();
                 setMainFormData({ ...change.data });
-                // Note: Removed setFormKey increment here. Formio handles
-                // cascading updates via refreshOn/clearOnRefresh. Re-keying
-                // the form on every selection change caused re-mount loops
-                // that prevented the dynamic form from rendering on mobile.
                 return;
               }
 
+              if (prevCategoryType && prevCategoryType !== newCategoryType) {
+                change.data.expenseCategory = null;
+                change.data.expenseType = null;
+                setPreviousCategory(null);
+                setSelectedCategoryType(newCategoryType);
+                resetDynamicSelectionState();
+                setMainFormData({ ...change.data });
+                return;
+              }
 
               if (prevCategory && !newCategory) {
                 setPreviousCategory(null);
-                setDynamicFormData({});
-                setDynamicFields([]);
-                setVehicleType(null);
+                change.data.expenseType = null;
+                resetDynamicSelectionState();
                 setMainFormData({ ...change.data });
                 return;
               }
 
               if (newCategory && prevCategory !== newCategory) {
                 change.data.expenseType = null;
-
-                setDynamicFormData({});
-                setVehicleType(null);
+                resetDynamicSelectionState();
                 setPreviousCategory(newCategory);
                 setMainFormData({ ...change.data });
                 return;
               }
 
-              if (newExpenseType !== mainFormData?.expenseType) {
-                setMainFormData(change.data);
+              if (!newExpenseType && previousExpenseType) {
+                resetDynamicSelectionState();
+                setMainFormData({ ...change.data });
+                return;
+              }
+
+              if (newExpenseType !== previousExpenseType) {
+                setMainFormData({ ...change.data });
                 return;
               }
 
@@ -1282,7 +1299,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setPreviousCategory(newCategory);
               }
 
-              setMainFormData(change.data);
+              setMainFormData({ ...change.data });
             }}
             onSubmit={handleSubmit}
             options={{ noAlerts: true }}
