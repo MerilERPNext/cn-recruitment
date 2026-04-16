@@ -291,13 +291,13 @@ def get_ticket_stats(filters=None, use_current_user=False, view_mode="user"):
             COUNT(CASE WHEN status = 'Archived'        THEN 1 END)                     AS archived,
 
             AVG(CASE
-                WHEN status IN ({_closed}) AND resolution_date IS NOT NULL
-                THEN TIMESTAMPDIFF(SECOND, creation, resolution_date)
+                WHEN resolution_by IS NOT NULL
+                THEN TIMESTAMPDIFF(SECOND, creation, resolution_by)
             END) / 3600                                                                 AS avg_tat_hrs,
 
             AVG(CASE
-                WHEN first_responded_on IS NOT NULL
-                THEN TIMESTAMPDIFF(SECOND, creation, first_responded_on)
+                WHEN response_by IS NOT NULL
+                THEN TIMESTAMPDIFF(SECOND, creation, response_by)
             END) / 3600                                                                 AS avg_frt_hrs,
 
             100.0 * COUNT(CASE WHEN agreement_status = 'Fulfilled' THEN 1 END)
