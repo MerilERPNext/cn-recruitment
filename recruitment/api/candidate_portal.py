@@ -140,6 +140,36 @@ def _get_child_table_fields(child_doctype):
 
     return fields
 
+
+def _serialize_doc_field_value(doc, fieldname, fieldtype):
+    """Returns a JSON-safe field value from a document."""
+    value = doc.get(fieldname)
+
+    if fieldtype == "Table":
+        if not value:
+            return []
+
+        rows = []
+        for row in value:
+            row_dict = row.as_dict() if hasattr(row, "as_dict") else dict(row)
+            cleaned_row = {}
+
+            for key, row_value in row_dict.items():
+                if key.startswith("_"):
+                    continue
+                if key in {
+                    "doctype", "parent", "parenttype", "parentfield",
+                    "docstatus", "owner", "creation", "modified", "modified_by",
+                }:
+                    continue
+                cleaned_row[key] = row_value
+
+            rows.append(cleaned_row)
+
+        return rows
+
+    return value
+
 @frappe.whitelist()
 def get_all_onboarding_fields():
     """Returns all fields grouped for the desk settings page."""
@@ -247,6 +277,7 @@ def get_candidate_portal_form(job_applicant_id):
             "read_only": int(row.read_only or 0),
             "hidden": int(row.hidden or 0),
             "options": field_options,
+            "value": _serialize_doc_field_value(doc, fn, fieldtype),
         }
         if fieldtype == "Table":
             field_entry["child_doctype"] = field_options
@@ -528,7 +559,7 @@ def get_job_applicant_portal_field_names():
         "fields": [r.fieldname for r in _get_job_applicant_portal_settings()],
     }
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def get_candidate_feature_flags():
     doc = frappe.get_single("Candidate Portal Feature Flag")
 
