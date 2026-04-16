@@ -1,3 +1,5 @@
+import { allocatedToType } from "./allocatedToTooltip";
+
 export type ChatAssistantItem = {
   name: string;
 };
@@ -90,6 +92,7 @@ export type TodoResponse = {
 
 export type FlowRequestStage = {
   stage_name: string;
+  allocated_to: Array<allocatedToType>;
   user_id: string;
   user: string;
   role: string | null;
@@ -165,6 +168,7 @@ export type FlowRequestItem = {
 
 export type WorkflowStage = {
   status: string;
+  allocated_to: Array<allocatedToType>;
   selected_action: string | null;
   target: string;
   target_name: string;
@@ -172,6 +176,7 @@ export type WorkflowStage = {
   form_data: string;
   trigger_title: string;
   can_act: boolean;
+  role?: string | null;
   todo: {
     name: string;
     owner: string;
