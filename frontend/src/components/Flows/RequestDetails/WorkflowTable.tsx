@@ -327,7 +327,7 @@ const WorkflowCard = ({
                   <MobileAllocatedTo
                     users={stage.allocated_to}
                     roles={allocatedTo.roles}
-                    showLable={false}
+                    showLabel={false}
                   />
                 </div>
               </div>

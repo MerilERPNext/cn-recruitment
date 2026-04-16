@@ -235,7 +235,7 @@ export const RequestDetailCard = ({
                   users={stage.allocated_to}
                   roles={allocatedTo.roles}
                   role={stage.role || ""}
-                  showLable={false}
+                  showLabel={false}
                 />
               </div>
             </div>
