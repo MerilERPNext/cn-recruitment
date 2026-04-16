@@ -344,216 +344,207 @@ def get_ticket_list_data(
     Custom implementation that uses frappe.get_list() directly with or_filters support.
     Returns the same structure as helpdesk.api.doc.get_list_data.
     """
-    try:
-        # Parse JSON strings if passed as strings
-        if isinstance(filters, str):
-            filters = json.loads(filters) if filters else {}
-        if isinstance(or_filters, str):
-            or_filters = json.loads(or_filters) if or_filters else []
-        if isinstance(rows, str):
-            rows = json.loads(rows) if rows else None
-        if isinstance(columns, str):
-            columns = json.loads(columns) if columns else None
-        
-        # Normalize filters and or_filters
-        if filters is None:
-            filters = {}
-        if or_filters is None:
-            or_filters = []
-        
-        # Handle @me support (convert @me to current user)
-        from helpdesk.api.doc import handle_at_me_support
-        filters = handle_at_me_support(filters)
-        
-        # Parse rows and columns
-        if rows is None:
-            rows = []
-        if columns is None:
-            columns = []
-        
-        # Ensure rows is a list
-        if not isinstance(rows, list):
-            rows = []
-        
-        # Ensure columns is a list
-        if not isinstance(columns, list):
-            columns = []
-        
-        # Default columns if empty
-        if not columns:
-            columns = [
-                {"label": "Name", "type": "Data", "key": "name", "width": "16rem"},
-                {
-                    "label": "Last Modified",
-                    "type": "Datetime",
-                    "key": "modified",
-                    "width": "8rem",
-                },
-            ]
-        
-        # Default rows if empty
-        if not rows:
-            rows = ["name"]
-        
-        # Ensure name is in rows
-        if "name" not in rows:
-            rows.append("name")
-        
-        # Add all column keys to rows if not present
-        for column in columns:
-            if column.get("key") and column.get("key") not in rows:
-                rows.append(column.get("key"))
-        
-        # Get field metadata
-        from frappe.model import no_value_fields
-        meta_fields = frappe.get_meta(doctype).fields
-        meta_fields = [field for field in meta_fields if field.fieldtype not in no_value_fields]
-        fields = [
+    # Parse JSON strings if passed as strings
+    if isinstance(filters, str):
+        filters = json.loads(filters) if filters else {}
+    if isinstance(or_filters, str):
+        or_filters = json.loads(or_filters) if or_filters else []
+    if isinstance(rows, str):
+        rows = json.loads(rows) if rows else None
+    if isinstance(columns, str):
+        columns = json.loads(columns) if columns else None
+    
+    # Normalize filters and or_filters
+    if filters is None:
+        filters = {}
+    if or_filters is None:
+        or_filters = []
+    
+    # Handle @me support (convert @me to current user)
+    from helpdesk.api.doc import handle_at_me_support
+    filters = handle_at_me_support(filters)
+    
+    # Parse rows and columns
+    if rows is None:
+        rows = []
+    if columns is None:
+        columns = []
+    
+    # Ensure rows is a list
+    if not isinstance(rows, list):
+        rows = []
+    
+    # Ensure columns is a list
+    if not isinstance(columns, list):
+        columns = []
+    
+    # Default columns if empty
+    if not columns:
+        columns = [
+            {"label": "Name", "type": "Data", "key": "name", "width": "16rem"},
             {
-                "label": field.label,
-                "type": field.fieldtype,
-                "value": field.fieldname,
-                "options": field.options,
-            }
-            for field in meta_fields
-            if field.label and field.fieldname
-        ]
-        
-        # Add standard fields
-        std_fields = [
-            {"label": "Name", "type": "Data", "value": "name"},
-            {"label": "Created On", "type": "Datetime", "value": "creation"},
-            {"label": "Last Modified", "type": "Datetime", "value": "modified"},
-            {
-                "label": "Modified By",
-                "type": "Link",
-                "value": "modified_by",
-                "options": "User",
+                "label": "Last Modified",
+                "type": "Datetime",
+                "key": "modified",
+                "width": "8rem",
             },
-            {"label": "Assigned To", "type": "Text", "value": "_assign"},
-            {"label": "Owner", "type": "Link", "value": "owner", "options": "User"},
-            {"label": "Response By", "type": "Datetime", "value": "response_by"},
-            {"label": "Resolution By", "type": "Datetime", "value": "resolution_by"},
-            {"label": "No of Comments", "type": "Int", "value": "no_of_comments"},
-            {"label": "User Type", "type": "Data", "value": "user_type"},
         ]
-        
-        for field in std_fields:
-            if field.get("value") not in rows:
-                rows.append(field.get("value"))
-            if field not in fields:
-                fields.append(field)
-        
-        # Handle customer portal fields filtering
-        if show_customer_portal_fields:
-            from helpdesk.api.doc import get_customer_portal_fields
-            fields = get_customer_portal_fields(doctype, fields)
-        
-        # Get ticket data using frappe.get_list with or_filters support
-        data = (
-            frappe.get_all(
-                doctype,
-                fields=rows,
-                filters=filters,
-                or_filters=or_filters if or_filters else None,
-                order_by=order_by,
-                page_length=page_length,
-            )
-            or []
-        )
+    
+    # Default rows if empty
+    if not rows:
+        rows = ["name"]
+    
+    # Ensure name is in rows
+    if "name" not in rows:
+        rows.append("name")
+    
+    # Add all column keys to rows if not present
+    for column in columns:
+        if column.get("key") and column.get("key") not in rows:
+            rows.append(column.get("key"))
+    
+    # Get field metadata
+    from frappe.model import no_value_fields
+    meta_fields = frappe.get_meta(doctype).fields
+    meta_fields = [field for field in meta_fields if field.fieldtype not in no_value_fields]
+    fields = [
+        {
+            "label": field.label,
+            "type": field.fieldtype,
+            "value": field.fieldname,
+            "options": field.options,
+        }
+        for field in meta_fields
+        if field.label and field.fieldname
+    ]
+    
+    computed_field_values = {"no_of_comments", "user_type"}
 
-        if doctype == "HD Ticket" and data:
-            ticket_names = [ticket.name for ticket in data if ticket.get("name")]
-            raised_by_users = list(
-                {
-                    ticket.raised_by
-                    for ticket in data
-                    if ticket.get("raised_by")
-                }
-            )
-
-            comment_counts = {}
-            if ticket_names:
-                comment_rows = frappe.get_all(
-                    "HD Ticket Comment",
-                    filters={"reference_ticket": ["in", ticket_names]},
-                    fields=["reference_ticket", "count(name) as comment_count"],
-                    group_by="reference_ticket",
-                )
-                comment_counts = {
-                    row.reference_ticket: int(row.comment_count or 0)
-                    for row in comment_rows
-                }
-
-            employee_names = {}
-            if raised_by_users:
-                employee_rows = frappe.get_all(
-                    "Employee",
-                    filters={"user_id": ["in", raised_by_users]},
-                    fields=["user_id", "employee_name"],
-                )
-                employee_names = {
-                    row.user_id: row.employee_name
-                    for row in employee_rows
-                    if row.user_id
-                }
-
-            user_status_map = {}
-            if raised_by_users:
-                user_rows = frappe.get_all(
-                    "User",
-                    filters={"name": ["in", raised_by_users]},
-                    fields=["name", "enabled"],
-                )
-                user_status_map = {
-                    row.name: ("Active" if int(row.enabled or 0) else "Inactive")
-                    for row in user_rows
-                }
-
-            for tic in data:
-                if tic.get("raised_by") in employee_names:
-                    tic["raise_by_name"] = employee_names[tic.raised_by]
-                tic["no_of_comments"] = comment_counts.get(tic.get("name"), 0)
-                tic["user_type"] = user_status_map.get(
-                    tic.get("raised_by"), "Outside user"
-                )
-        
-        # Calculate total count with same filters and or_filters
-        # Use frappe.get_list with minimal fields and count the results
-        total_count_result = frappe.get_list(
+    # Add standard fields
+    std_fields = [
+        {"label": "Name", "type": "Data", "value": "name"},
+        {"label": "Created On", "type": "Datetime", "value": "creation"},
+        {"label": "Last Modified", "type": "Datetime", "value": "modified"},
+        {
+            "label": "Modified By",
+            "type": "Link",
+            "value": "modified_by",
+            "options": "User",
+        },
+        {"label": "Assigned To", "type": "Text", "value": "_assign"},
+        {"label": "Owner", "type": "Link", "value": "owner", "options": "User"},
+        {"label": "Response By", "type": "Datetime", "value": "response_by"},
+        {"label": "Resolution By", "type": "Datetime", "value": "resolution_by"},
+        {"label": "No of Comments", "type": "Int", "value": "no_of_comments"},
+        {"label": "User Type", "type": "Data", "value": "user_type"},
+    ]
+    
+    for field in std_fields:
+        if (
+            field.get("value") not in rows
+            and field.get("value") not in computed_field_values
+        ):
+            rows.append(field.get("value"))
+        if field not in fields:
+            fields.append(field)
+    
+    # Handle customer portal fields filtering
+    if show_customer_portal_fields:
+        from helpdesk.api.doc import get_customer_portal_fields
+        fields = get_customer_portal_fields(doctype, fields)
+    
+    # Get ticket data using frappe.get_list with or_filters support
+    data = (
+        frappe.get_all(
             doctype,
+            fields=rows,
             filters=filters,
             or_filters=or_filters if or_filters else None,
-            fields=["name"],
-            limit_page_length=0,  # Get all matching records
+            order_by=order_by,
+            page_length=page_length,
         )
-        total_count = len(total_count_result) if total_count_result else 0
+        or []
+    )
+
+    if doctype == "HD Ticket" and data:
+        ticket_names = [ticket.name for ticket in data if ticket.get("name")]
+        raised_by_users = list(
+            {
+                ticket.raised_by
+                for ticket in data
+                if ticket.get("raised_by")
+            }
+        )
+
+        comment_counts = {}
+        if ticket_names:
+            comment_rows = frappe.get_all(
+                "HD Ticket Comment",
+                filters={"reference_ticket": ["in", ticket_names]},
+                fields=["reference_ticket", "count(name) as comment_count"],
+                group_by="reference_ticket",
+            )
+            comment_counts = {
+                row.reference_ticket: int(row.comment_count or 0)
+                for row in comment_rows
+            }
+
+        employee_names = {}
+        if raised_by_users:
+            employee_rows = frappe.get_all(
+                "Employee",
+                filters={"user_id": ["in", raised_by_users]},
+                fields=["user_id", "employee_name"],
+            )
+            employee_names = {
+                row.user_id: row.employee_name
+                for row in employee_rows
+                if row.user_id
+            }
+
+        user_status_map = {}
+        if raised_by_users:
+            user_rows = frappe.get_all(
+                "User",
+                filters={"name": ["in", raised_by_users]},
+                fields=["name", "enabled"],
+            )
+            user_status_map = {
+                row.name: ("Active" if int(row.enabled or 0) else "Inactive")
+                for row in user_rows
+            }
+
+        for tic in data:
+            if tic.get("raised_by") in employee_names:
+                tic["raise_by_name"] = employee_names[tic.raised_by]
+            tic["no_of_comments"] = comment_counts.get(tic.get("name"), 0)
+            tic["user_type"] = user_status_map.get(
+                tic.get("raised_by"), "Outside user"
+            )
+    
+    # Calculate total count with same filters and or_filters
+    # Use frappe.get_list with minimal fields and count the results
+    total_count_result = frappe.get_list(
+        doctype,
+        filters=filters,
+        or_filters=or_filters if or_filters else None,
+        fields=["name"],
+        limit_page_length=0,  # Get all matching records
+    )
+    total_count = len(total_count_result) if total_count_result else 0
+    
+    # Return response matching helpdesk.api.doc.get_list_data structure
+    return {
+        "data": data,
+        "columns": columns,
+        "rows": rows,
+        "fields": fields if doctype == "HD Ticket" else [],
+        "total_count": total_count,
+        "row_count": len(data),
+        "group_by_field": None,
+        "view_type": None,
+    }
         
-        # Return response matching helpdesk.api.doc.get_list_data structure
-        return {
-            "data": data,
-            "columns": columns,
-            "rows": rows,
-            "fields": fields if doctype == "HD Ticket" else [],
-            "total_count": total_count,
-            "row_count": len(data),
-            "group_by_field": None,
-            "view_type": None,
-        }
-        
-    except Exception as e:
-        frappe.log_error(f"Error fetching ticket list data: {str(e)}", "get_ticket_list_data")
-        # Return empty structure instead of throwing to avoid 417 errors
-        return {
-            "data": [],
-            "columns": [],
-            "rows": [],
-            "fields": [],
-            "total_count": 0,
-            "row_count": 0,
-            "group_by_field": None,
-            "view_type": None,
-        }
 
 @frappe.whitelist()
 def get_user_notices(filters: Optional[Dict] = None) -> List[Dict[str, Any]]:
