@@ -249,6 +249,7 @@ def get_action_center_items(candidate_id=None, candidate_email=None, limit=100):
             "attachment",
             "description",
             "modified",
+            "status",
         ],
         order_by="modified desc",
         limit_page_length=max(1, min(limit, 500)),
