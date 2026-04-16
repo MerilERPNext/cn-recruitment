@@ -253,7 +253,7 @@ def get_ticket_count(doctype="HD Ticket", filters=None, or_filters=None):
 
 
 @frappe.whitelist()
-def get_ticket_stats(filters=None, use_current_user=True, view_mode="user"):
+def get_ticket_stats(filters=None, use_current_user=False, view_mode="user"):
     """
     Return all dashboard stats in a single SQL query.
     filters: dict of base filters (e.g. {"raised_by": "user@example.com"})
