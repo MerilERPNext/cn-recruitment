@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Plus, UserLock } from "lucide-react";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useCurrentUser, isAdminUser } from "../../hooks/useCurrentUser";
-import { useTicketStats } from "../../hooks/useHelpDeskTickets";
+import { useGetTicketStats } from "../../hooks/useHelpDeskTickets";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import HeaderBar from "../HeaderBar";
 import Button from "../shared/atoms/Button";
 import { Typography } from "../shared/atoms/Typography";
 import HelpDeskEmptyState from "./HelpDeskEmptyState";
+import HelpDeskSkeleton from "./HelpDeskSkeleton";
 import TicketListView from "./TicketListView";
 import RequestIssueModal from "./RequestIssueModal";
 
@@ -33,18 +34,15 @@ const HelpDeskApp: React.FC = () => {
     filterMode: "raised" as const,
   };
 
-  // Pass user context to useTicketStats for role-based filtering
-  const { data: stats, refetch: refetchStats } = useTicketStats(
-    currentUserEmail,
-    isAdmin,
-    viewMode
-  );
+
+  const { data: stats, refetch: refetchStats, isLoading: statsLoading } = useGetTicketStats();
+
 
   // Modal state
   const [isRequestIssueModalOpen, setIsRequestIssueModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const hasTickets = stats && stats.total > 0;
+  const hasTickets = stats && stats.all_issues > 0;
   const canRedirectToDesk = currentUser?.roles?.some((role) =>
     ["Agent", "Agent Manager"].includes(role.role),
   );
@@ -63,6 +61,9 @@ const HelpDeskApp: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (statsLoading || currentUserLoading) {
+      return <HelpDeskSkeleton />;
+    }
     if (hasTickets) {
       return (
         <div className="p-4 md:p-6">
@@ -86,9 +87,13 @@ const HelpDeskApp: React.FC = () => {
       </header>
 
       <div className="px-4 py-3 border-b border-gray-200">
-        <Typography variant="bodySmall" color="body2">
-          {viewConfig.subtitle}
-        </Typography>
+        {statsLoading || currentUserLoading ? (
+          <div className="h-4 w-36 bg-gray-200 rounded-md animate-pulse" />
+        ) : (
+          <Typography variant="bodySmall" color="body2">
+            {viewConfig.subtitle}
+          </Typography>
+        )}
       </div>
 
       <main className="flex-1 overflow-y-auto bg-app pb-24">
@@ -127,11 +132,15 @@ const HelpDeskApp: React.FC = () => {
       <div className="flex flex-col h-full bg-white rounded-lg">
         {/* Subtitle */}
         <div className="flex justify-between items-center w-full px-8 py-2 border-b border-gray-200">
-          <Typography variant="bodySmall" color="body2">
-            {viewConfig.subtitle}
-          </Typography>
+          {statsLoading || currentUserLoading ? (
+            <div className="h-4 w-36 bg-gray-200 rounded-md animate-pulse" />
+          ) : (
+            <Typography variant="bodySmall" color="body2">
+              {viewConfig.subtitle}
+            </Typography>
+          )}
 
-          {isDesktop && canRedirectToDesk && (
+          {!statsLoading && !currentUserLoading && isDesktop && canRedirectToDesk && (
             <a href="/helpdesk/tickets" target="_blank" rel="noopener noreferrer">
               <Button size="md">
                 <UserLock size={18} />
