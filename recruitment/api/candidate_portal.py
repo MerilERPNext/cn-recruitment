@@ -527,3 +527,14 @@ def get_job_applicant_portal_field_names():
         "status": "success",
         "fields": [r.fieldname for r in _get_job_applicant_portal_settings()],
     }
+
+@frappe.whitelist()
+def get_candidate_feature_flags():
+    doc = frappe.get_single("Candidate Portal Feature Flag")
+
+    result = {}
+    for row in doc.feature_flags:
+        if row.page_name:
+            result[row.page_name.strip().lower().replace(" ", "_")] = row.is_enabled
+
+    return result
