@@ -440,6 +440,8 @@ def get_ticket_list_data(
             {"label": "Owner", "type": "Link", "value": "owner", "options": "User"},
             {"label": "Response By", "type": "Datetime", "value": "response_by"},
             {"label": "Resolution By", "type": "Datetime", "value": "resolution_by"},
+            {"label": "No of Comments", "type": "Int", "value": "no_of_comments"},
+            {"label": "User Type", "type": "Data", "value": "user_type"},
         ]
         
         for field in std_fields:
@@ -465,10 +467,62 @@ def get_ticket_list_data(
             )
             or []
         )
-        for tic in data:
-            emp=frappe.db.get_value("Employee",{"user_id":tic.raised_by},"employee_name")
-            if emp:
-                tic["raise_by_name"]=emp
+
+        if doctype == "HD Ticket" and data:
+            ticket_names = [ticket.name for ticket in data if ticket.get("name")]
+            raised_by_users = list(
+                {
+                    ticket.raised_by
+                    for ticket in data
+                    if ticket.get("raised_by")
+                }
+            )
+
+            comment_counts = {}
+            if ticket_names:
+                comment_rows = frappe.get_all(
+                    "HD Ticket Comment",
+                    filters={"reference_ticket": ["in", ticket_names]},
+                    fields=["reference_ticket", "count(name) as comment_count"],
+                    group_by="reference_ticket",
+                )
+                comment_counts = {
+                    row.reference_ticket: int(row.comment_count or 0)
+                    for row in comment_rows
+                }
+
+            employee_names = {}
+            if raised_by_users:
+                employee_rows = frappe.get_all(
+                    "Employee",
+                    filters={"user_id": ["in", raised_by_users]},
+                    fields=["user_id", "employee_name"],
+                )
+                employee_names = {
+                    row.user_id: row.employee_name
+                    for row in employee_rows
+                    if row.user_id
+                }
+
+            user_status_map = {}
+            if raised_by_users:
+                user_rows = frappe.get_all(
+                    "User",
+                    filters={"name": ["in", raised_by_users]},
+                    fields=["name", "enabled"],
+                )
+                user_status_map = {
+                    row.name: ("Active" if int(row.enabled or 0) else "Inactive")
+                    for row in user_rows
+                }
+
+            for tic in data:
+                if tic.get("raised_by") in employee_names:
+                    tic["raise_by_name"] = employee_names[tic.raised_by]
+                tic["no_of_comments"] = comment_counts.get(tic.get("name"), 0)
+                tic["user_type"] = user_status_map.get(
+                    tic.get("raised_by"), "Outside user"
+                )
         
         # Calculate total count with same filters and or_filters
         # Use frappe.get_list with minimal fields and count the results
