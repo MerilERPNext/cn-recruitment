@@ -11,7 +11,7 @@ import useCurrentUser from "../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import Button from "../../shared/atoms/Button";
-import { Check, Clock, User, X, Info } from "lucide-react";
+import { Check, Clock, User, X } from "lucide-react";
 import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../utils/flowUtils";
 import AllocatedToTooltip from "../../shared/AllocatedToTooltip";
 import Tooltip from "../../shared/Tooltip";
@@ -20,6 +20,7 @@ import { Form } from "@tsed/react-formio";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
 import AttachmentPreview from "./AttachmentPreview";
+import MobileAllocatedTo from "../../shared/MobileAllocatedTo";
 
 interface WorkflowTableProps {
   data: FlowRequestItem;
@@ -225,7 +226,7 @@ const WorkflowCard = ({
           {" "}
           <AllocatedToTooltip
             position="right"
-            users={allocatedTo.users}
+            users={stage.allocated_to}
             roles={allocatedTo.roles}
           >
             <StatusBadge status={stage.status || "-"} />
@@ -314,75 +315,22 @@ const WorkflowCard = ({
 
             <div className="space-y-2.5">
               {/* Assign To Users */}
-              {allocatedTo.users.length > 0 && (
-                <div className="flex items-start text-sm gap-2">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
-                  >
-                    Assign To Users
-                  </Typography>
-                  <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
-                    <AllocatedToTooltip
-                      users={allocatedTo.users}
-                      roles={allocatedTo.roles}
-                      position="bottom"
-                    >
-                      <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
-                        <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
-                          {`${allocatedTo.users[0]}${allocatedTo.users.length > 1 ? ` (+${allocatedTo.users.length - 1})` : ""}`}
-                        </span>
-                        <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
-                      </div>
-                    </AllocatedToTooltip>
-                  </div>
-                </div>
-              )}
 
-              {/* Assign To Roles */}
-              {allocatedTo.roles.length > 0 && (
-                <div className="flex items-start text-sm gap-2">
-                  <Typography
-                    variant="mobileCardLabel"
-                    className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
-                  >
-                    Assign To Roles
-                  </Typography>
-                  <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
-                    <AllocatedToTooltip
-                      users={allocatedTo.users}
-                      roles={allocatedTo.roles}
-                      position="bottom"
-                    >
-                      <div className="flex items-center gap-1 cursor-pointer max-w-full overflow-hidden">
-                        <span className="text-right truncate block text-xs font-medium mt-0.5 max-w-[120px]">
-                          {`${allocatedTo.roles[0]}${allocatedTo.roles.length > 1 ? ` (+${allocatedTo.roles.length - 1})` : ""}`}
-                        </span>
-                        <Info className="w-3.5 h-3.5 text-primary-400 shrink-0" />
-                      </div>
-                    </AllocatedToTooltip>
-                  </div>
+              <div className="flex items-start text-sm gap-2">
+                <Typography
+                  variant="mobileCardLabel"
+                  className="block text-gray-500 shrink-0 mt-0.5 whitespace-nowrap"
+                >
+                  Assign To
+                </Typography>
+                <div className="flex-1 min-w-0 overflow-hidden flex justify-end">
+                  <MobileAllocatedTo
+                    users={stage.allocated_to}
+                    roles={allocatedTo.roles}
+                    showLable={false}
+                  />
                 </div>
-              )}
-
-              {/* Fallback if neither users nor roles */}
-              {allocatedTo.users.length === 0 &&
-                allocatedTo.roles.length === 0 && (
-                  <div className="flex justify-between items-start text-sm gap-4">
-                    <Typography
-                      variant="mobileCardLabel"
-                      className="block text-gray-500 shrink-0 mt-0.5"
-                    >
-                      Assigned To
-                    </Typography>
-                    <Typography
-                      variant="mobileCardValue"
-                      className="text-right flex-1 min-w-0 mt-0.5"
-                    >
-                      -
-                    </Typography>
-                  </div>
-                )}
+              </div>
 
               <div className="flex justify-between items-start text-sm gap-4">
                 <Typography

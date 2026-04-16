@@ -161,7 +161,7 @@ const StageCard = ({
 
         <AllocatedToTooltip
           position="right"
-          users={allocatedTo.users}
+          users={stage.allocated_to}
           roles={allocatedTo.roles}
           role={stage.role || ""}
         >
