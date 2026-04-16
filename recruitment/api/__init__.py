@@ -263,76 +263,70 @@ def get_ticket_stats(filters=None, use_current_user=False, view_mode="user"):
         all_issues, in_progress, closed, resolved, archived,
         team_size, avg_tat_hrs, avg_frt_hrs, resolution_within_sla_pct
     """
-    try:
-        if isinstance(filters, str):
-            filters = json.loads(filters) if filters else {}
-        if isinstance(use_current_user, str):
-            use_current_user = use_current_user.lower() in ("1", "true", "yes")
+    if isinstance(filters, str):
+        filters = json.loads(filters) if filters else {}
+    if isinstance(use_current_user, str):
+        use_current_user = use_current_user.lower() in ("1", "true", "yes")
 
-        filters = filters or {}
+    filters = filters or {}
 
-        if use_current_user:
-            current_user = frappe.session.user
-            if current_user and current_user != "Guest":
-                filters["raised_by"] = current_user
+    if use_current_user:
+        current_user = frappe.session.user
+        if current_user and current_user != "Guest":
+            filters["raised_by"] = current_user
 
-        _in_progress = ("'Open','Replied','Reopened','Not Assigned',"
-                        "'Awaiting Response','Requested Closure'")
-        _closed = "'Closed','Resolved'"
+    _in_progress = ("'Open','Replied','Reopened','Not Assigned',"
+                    "'Awaiting Response','Requested Closure'")
+    _closed = "'Closed','Resolved'"
 
-        where, params = _build_sql_where_clause(filters)
+    where, params = _build_sql_where_clause(filters)
 
-        result = frappe.db.sql(
-            f"""
-            SELECT
-                COUNT(*)                                                                    AS all_issues,
-                COUNT(CASE WHEN status IN ({_in_progress}) THEN 1 END)                     AS in_progress,
-                COUNT(CASE WHEN status = 'Closed'          THEN 1 END)                     AS closed,
-                COUNT(CASE WHEN status = 'Resolved'        THEN 1 END)                     AS resolved,
-                COUNT(CASE WHEN status = 'Archived'        THEN 1 END)                     AS archived,
+    result = frappe.db.sql(
+        f"""
+        SELECT
+            COUNT(*)                                                                    AS all_issues,
+            COUNT(CASE WHEN status IN ({_in_progress}) THEN 1 END)                     AS in_progress,
+            COUNT(CASE WHEN status = 'Closed'          THEN 1 END)                     AS closed,
+            COUNT(CASE WHEN status = 'Resolved'        THEN 1 END)                     AS resolved,
+            COUNT(CASE WHEN status = 'Archived'        THEN 1 END)                     AS archived,
 
-                AVG(CASE
-                    WHEN status IN ({_closed}) AND resolution_date IS NOT NULL
-                    THEN TIMESTAMPDIFF(SECOND, creation, resolution_date)
-                END) / 3600                                                                 AS avg_tat_hrs,
+            AVG(CASE
+                WHEN status IN ({_closed}) AND resolution_date IS NOT NULL
+                THEN TIMESTAMPDIFF(SECOND, creation, resolution_date)
+            END) / 3600                                                                 AS avg_tat_hrs,
 
-                AVG(CASE
-                    WHEN first_responded_on IS NOT NULL
-                    THEN TIMESTAMPDIFF(SECOND, creation, first_responded_on)
-                END) / 3600                                                                 AS avg_frt_hrs,
+            AVG(CASE
+                WHEN first_responded_on IS NOT NULL
+                THEN TIMESTAMPDIFF(SECOND, creation, first_responded_on)
+            END) / 3600                                                                 AS avg_frt_hrs,
 
-                100.0 * COUNT(CASE WHEN agreement_status = 'Fulfilled' THEN 1 END)
-                      / NULLIF(COUNT(CASE WHEN status IN ({_closed}) THEN 1 END), 0)       AS resolution_within_sla_pct
-            FROM `tabHD Ticket`
-            WHERE {where}
-            """,
-            params,
-            as_dict=1,
-        )
+            100.0 * COUNT(CASE WHEN agreement_status = 'Fulfilled' THEN 1 END)
+                    / NULLIF(COUNT(CASE WHEN status IN ({_closed}) THEN 1 END), 0)       AS resolution_within_sla_pct
+        FROM `tabHD Ticket`
+        WHERE {where}
+        """,
+        params,
+        as_dict=1,
+    )
+    
 
-        # Team size — count active agents (optionally scoped to a team via filters)
-        team_size = frappe.db.count("HD Agent", filters={"status": "Active"})
+    # Team size — count active agents (optionally scoped to a team via filters)
+    team_size = frappe.db.count("HD Agent", filters={"is_active": 1})
 
-        row = result[0] if result else {}
-        return {
-            "all_issues":               int(row.get("all_issues") or 0),
-            "in_progress":              int(row.get("in_progress") or 0),
-            "closed":                   int(row.get("closed") or 0),
-            "resolved":                 int(row.get("resolved") or 0),
-            "archived":                 int(row.get("archived") or 0),
-            "team_size":                int(team_size or 0),
-            "avg_tat_hrs":              round(float(row.get("avg_tat_hrs") or 0), 2),
-            "avg_frt_hrs":              round(float(row.get("avg_frt_hrs") or 0), 2),
-            "resolution_within_sla_pct": round(float(row.get("resolution_within_sla_pct") or 0), 2),
-        }
+    row = result[0] if result else {}
+    
+    return {
+        "all_issues":               int(row.get("all_issues") or 0),
+        "in_progress":              int(row.get("in_progress") or 0),
+        "closed":                   int(row.get("closed") or 0),
+        "resolved":                 int(row.get("resolved") or 0),
+        "archived":                 int(row.get("archived") or 0),
+        "team_size":                int(team_size or 0),
+        "avg_tat_hrs":              round(float(row.get("avg_tat_hrs") or 0), 2),
+        "avg_frt_hrs":              round(float(row.get("avg_frt_hrs") or 0), 2),
+        "resolution_within_sla_pct": round(float(row.get("resolution_within_sla_pct") or 0), 2),
+    }
 
-    except Exception as e:
-        frappe.log_error(f"Error fetching ticket stats: {str(e)}")
-        return {
-            "all_issues": 0, "in_progress": 0, "closed": 0, "resolved": 0, "archived": 0,
-            "team_size": 0, "avg_tat_hrs": 0, "avg_frt_hrs": 0,
-            "resolution_within_sla_pct": 0,
-        }
     
 @frappe.whitelist()
 def get_ticket_list_data(
@@ -457,7 +451,7 @@ def get_ticket_list_data(
         
         # Get ticket data using frappe.get_list with or_filters support
         data = (
-            frappe.get_list(
+            frappe.get_all(
                 doctype,
                 fields=rows,
                 filters=filters,
