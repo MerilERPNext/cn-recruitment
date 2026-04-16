@@ -4,6 +4,61 @@ from typing import List, Dict, Any, Optional
 import json
 from datetime import datetime
 
+
+def _build_sql_where_clause(filters: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+    """Build a safe SQL WHERE clause from simple Frappe-style filters."""
+    where_parts = ["1=1"]
+    params: Dict[str, Any] = {}
+
+    allowed_operators = {
+        "=",
+        "!=",
+        ">",
+        "<",
+        ">=",
+        "<=",
+        "like",
+        "not like",
+        "in",
+        "not in",
+    }
+
+    for key, val in (filters or {}).items():
+        field = f"`{key}`"
+
+        if isinstance(val, list) and len(val) == 2:
+            op, raw_value = val
+            operator = str(op).strip().lower()
+
+            if operator not in allowed_operators:
+                raise ValueError(f"Unsupported operator for get_ticket_stats: {op}")
+
+            if operator in {"in", "not in"}:
+                if not isinstance(raw_value, (list, tuple)) or not raw_value:
+                    # Empty IN filters should return no rows rather than invalid SQL
+                    where_parts.append("1=0" if operator == "in" else "1=1")
+                    continue
+
+                placeholders = []
+                for idx, item in enumerate(raw_value):
+                    param_key = f"{key}_{idx}"
+                    placeholders.append(f"%({param_key})s")
+                    params[param_key] = item
+
+                where_parts.append(
+                    f"{field} {operator.upper()} ({', '.join(placeholders)})"
+                )
+            else:
+                params[key] = raw_value
+                where_parts.append(f"{field} {operator.upper()} %({key})s")
+        elif val is None:
+            where_parts.append(f"{field} IS NULL")
+        else:
+            params[key] = val
+            where_parts.append(f"{field} = %({key})s")
+
+    return " AND ".join(where_parts), params
+
 @frappe.whitelist()
 def get_employee_details(employee_id):
     """Get employee details for ID card"""
@@ -198,44 +253,42 @@ def get_ticket_count(doctype="HD Ticket", filters=None, or_filters=None):
 
 
 @frappe.whitelist()
-def get_ticket_stats(filters=None):
+def get_ticket_stats(filters=None, use_current_user=False, view_mode="user"):
     """
     Return all dashboard stats in a single SQL query.
     filters: dict of base filters (e.g. {"raised_by": "user@example.com"})
+    use_current_user: when true, auto-scope stats to the logged-in user
+    view_mode: "user" -> raised_by current user, "admin" -> assigned to current user
     Returns:
-        all_issues, in_progress, closed, archived,
+        all_issues, in_progress, closed, resolved, archived,
         team_size, avg_tat_hrs, avg_frt_hrs, resolution_within_sla_pct
     """
     try:
         if isinstance(filters, str):
             filters = json.loads(filters) if filters else {}
+        if isinstance(use_current_user, str):
+            use_current_user = use_current_user.lower() in ("1", "true", "yes")
 
         filters = filters or {}
+
+        if use_current_user:
+            current_user = frappe.session.user
+            if current_user and current_user != "Guest":
+                filters["raised_by"] = current_user
 
         _in_progress = ("'Open','Replied','Reopened','Not Assigned',"
                         "'Awaiting Response','Requested Closure'")
         _closed = "'Closed','Resolved'"
 
-        # Build WHERE clause from filters dict
-        where_parts = ["1=1"]
-        params = {}
-        for key, val in filters.items():
-            if isinstance(val, list) and len(val) == 2:
-                op, v = val
-                where_parts.append(f"`{key}` {op} %({key})s")
-                params[key] = v
-            else:
-                where_parts.append(f"`{key}` = %({key})s")
-                params[key] = val
-
-        where = " AND ".join(where_parts)
+        where, params = _build_sql_where_clause(filters)
 
         result = frappe.db.sql(
             f"""
             SELECT
                 COUNT(*)                                                                    AS all_issues,
                 COUNT(CASE WHEN status IN ({_in_progress}) THEN 1 END)                     AS in_progress,
-                COUNT(CASE WHEN status IN ({_closed})      THEN 1 END)                     AS closed,
+                COUNT(CASE WHEN status = 'Closed'          THEN 1 END)                     AS closed,
+                COUNT(CASE WHEN status = 'Resolved'        THEN 1 END)                     AS resolved,
                 COUNT(CASE WHEN status = 'Archived'        THEN 1 END)                     AS archived,
 
                 AVG(CASE
@@ -265,6 +318,7 @@ def get_ticket_stats(filters=None):
             "all_issues":               int(row.get("all_issues") or 0),
             "in_progress":              int(row.get("in_progress") or 0),
             "closed":                   int(row.get("closed") or 0),
+            "resolved":                 int(row.get("resolved") or 0),
             "archived":                 int(row.get("archived") or 0),
             "team_size":                int(team_size or 0),
             "avg_tat_hrs":              round(float(row.get("avg_tat_hrs") or 0), 2),
@@ -275,7 +329,7 @@ def get_ticket_stats(filters=None):
     except Exception as e:
         frappe.log_error(f"Error fetching ticket stats: {str(e)}")
         return {
-            "all_issues": 0, "in_progress": 0, "closed": 0, "archived": 0,
+            "all_issues": 0, "in_progress": 0, "closed": 0, "resolved": 0, "archived": 0,
             "team_size": 0, "avg_tat_hrs": 0, "avg_frt_hrs": 0,
             "resolution_within_sla_pct": 0,
         }
