@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FrappeAPI } from "../utils/frappeAPI";
+import { TicketStatsV2 } from "../types/helpdesk";
 
 // Types
 export interface HDTicket {
@@ -926,5 +927,18 @@ export const useRevokeTicket = () => {
       queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
       queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
     },
+  });
+};
+
+export const useGetTicketStats = () => {
+  return useQuery<TicketStatsV2>({
+    queryKey: ["hd-ticket-stats"],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod("recruitment.api.get_ticket_stats", {
+        use_current_user: true
+      });
+      return result as TicketStatsV2;
+    },
+    ...defaultQueryOptions,
   });
 };

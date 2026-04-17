@@ -10,7 +10,6 @@ import ResolutionModal from "./ResolutionModal";
 import TicketDrawer from "./TicketDrawer";
 import {
   useTicketList,
-  useTicketStats,
   useFilterableFields,
   useCloseTicket,
   useRequestClosure,
@@ -21,6 +20,7 @@ import {
   TicketFilters,
   HDCategory,
   useRevokeTicket,
+  useGetTicketStats,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
@@ -64,12 +64,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   // Order by string
   const orderBy = `${sortField} ${sortDirection}`;
 
-  // Queries - pass user context and viewMode for role-based filtering
-  const { data: statsData, isLoading: statsLoading } = useTicketStats(
-    currentUserEmail,
-    isAdmin,
-    viewMode
-  );
+
+  const { data: statsData, isLoading: statsLoading } = useGetTicketStats();
   const { data: ticketData, isLoading: ticketsLoading } = useTicketList(
     filters,
     orderBy,
@@ -90,10 +86,6 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
-  const stats = useMemo(
-    () => statsData || { total: 0, inProgress: 0, closed: 0, resolved: 0 },
-    [statsData]
-  );
 
   // Extract unique assigned emails for employee hover card lookup
   const assignedEmails = useMemo(() => {
@@ -226,7 +218,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   return (
     <div className="sm:space-y-6 space-y-2">
       {/* Stats Cards */}
-      <TicketStatsCards stats={stats} isLoading={statsLoading} />
+      <TicketStatsCards stats={statsData} isLoading={statsLoading} />
 
       {/* Page Heading */}
       <div>

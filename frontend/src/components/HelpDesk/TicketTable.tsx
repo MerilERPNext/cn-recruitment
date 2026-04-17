@@ -1,15 +1,18 @@
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import React from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Ticket as TicketIcon } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
 import { HDTicket } from "../../hooks/useHelpDeskTickets";
+import { useCountdown } from "../../hooks/Helpdesk/useCountdown";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import formatToIndianDate from "../../utils/formatToIndianDate";
 import { Typography } from "../shared/atoms/Typography";
+import BottomDrawer from "../shared/BottomDrawer";
 import Badge from "../shared/Badge";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import NoDataFound from "../shared/atoms/NoDataFound";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
 import HDActionPill from "./HDActionPills";
 import TicketTableRow from "./TicketTableRow";
+import Button from "../shared/atoms/Button";
 
 interface TicketTableProps {
   tickets: HDTicket[];
@@ -258,7 +261,7 @@ const columns = [
   },
   {
     key: "response_by",
-    label: "SLA Breached - FAT",
+    label: "SLA Breached - FRT",
     sortable: true,
     width: "w-40",
   }, {
@@ -292,6 +295,142 @@ const formateDateDiff = (date1: string, date2: string) => {
   return `${hours}h ${minutes}m`;
 }
 
+interface MobileTicketDetailModalProps {
+  ticket: HDTicket | null;
+  isOpen: boolean;
+  onClose: () => void;
+  categoryMap: Record<string, string>;
+  userLookup?: Map<string, string>;
+  getAssignedName: (assignStr: string | null, lookup?: Map<string, string>) => string;
+  onReply: (ticket: HDTicket) => void;
+  onCloseTicket: (ticket: HDTicket) => void;
+  onRevoke: (ticket: HDTicket) => void;
+}
+
+const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
+  ticket,
+  isOpen,
+  onClose,
+  categoryMap,
+  userLookup,
+  getAssignedName,
+  onReply,
+  onCloseTicket,
+  onRevoke,
+}) => {
+  const targetTime = ticket
+    ? new Date(new Date(ticket.creation).getTime() + (ticket.custom_second_level_escalation_delay_hours || 0) * 60 * 60 * 1000)
+    : new Date();
+
+  const { hours, minutes, seconds, isExpired } = useCountdown(targetTime);
+
+  if (!ticket) return <BottomDrawer isOpen={isOpen} onClose={onClose}><div /></BottomDrawer>;
+
+  const badgeConfig = getStatusBadgeConfig(ticket.status);
+
+  const getCategoryName = (categoryId: string | undefined): string => {
+    if (!categoryId) return "-";
+    return categoryMap[categoryId] || categoryId;
+  };
+
+  const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis w-full">
+        {label}
+      </span>
+      <div className="text-sm font-bold text-slate-800 break-words whitespace-normal leading-snug">
+        {value}
+      </div>
+    </div>
+  );
+
+  return (
+    <BottomDrawer isOpen={isOpen} onClose={onClose}>
+      <div className="flex flex-col max-h-[85vh] -mx-4 -mb-6">
+        {/* Sticky Header */}
+        <div className="flex flex-col gap-3 px-4 pt-2 pb-4 border-b border-gray-100 bg-white sticky top-0 z-10 rounded-t-2xl">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex gap-3 items-center">
+              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                <TicketIcon className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex flex-col flex-1 min-w-0 pr-2">
+                <Typography variant="bodySmall" className="text-gray-500 font-medium whitespace-nowrap overflow-hidden text-ellipsis text-xs">
+                  {ticket.name}
+                </Typography>
+                <Typography variant="h3" className="font-bold text-gray-900 text-[15px] leading-tight line-clamp-2 mt-0.5">
+                  {ticket.subject || "No Subject"}
+                </Typography>
+              </div>
+            </div>
+            <div className="flex-shrink-0 pt-0.5">
+              <Badge
+                size="md"
+                label={badgeConfig.label}
+                backgroundColor={badgeConfig.backgroundColor}
+                textColor={badgeConfig.textColor}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50 shadow-inner max-h-[60vh]">
+          
+          {/* Card 1: Issue Details */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
+            <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-gray-500/80 uppercase tracking-wider">Issue Details</span>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+              <DetailRow label="Category" value={getCategoryName(ticket.custom_category)} />
+              <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
+              <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
+              <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
+            </div>
+          </div>
+
+          {/* Card 2: SLA & SLA Timings */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
+            <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
+              <span className="text-[10px] font-bold text-gray-500/80 uppercase tracking-wider">Timing & SLA</span>
+            </div>
+            <div className="p-4 grid grid-cols-2 gap-y-5 gap-x-4">
+              <DetailRow label="Created on" value={formatToIndianDate(ticket.creation)} />
+              <DetailRow label="Last Updated" value={formatToIndianDate(ticket.modified)} />
+              <DetailRow label="SLA Breached TAT" value={formateDateDiff(ticket.resolution_by, ticket.creation)} />
+              <DetailRow label="SLA Breached FRT" value={formateDateDiff(ticket.response_by, ticket.creation)} />
+            </div>
+            {/* Highlighted section for Escalation */}
+            <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/50 border-red-100' : 'bg-emerald-50/50 border-emerald-100'}`}>
+               <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
+               <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
+                 {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
+               </span>
+            </div>
+          </div>
+          
+        </div>
+
+        {/* Action Footer */}
+        <div className="px-4 py-3.5 border-t border-gray-100 bg-white sticky bottom-0 flex flex-wrap items-center justify-end gap-3 rounded-b-2xl z-20">
+          <Button variant="outline" size="md" onClick={onClose} className="border-gray-200 text-gray-600 hover:bg-gray-50">
+            Close
+          </Button>
+          <HDActionPill
+            canClose={showCloseTicketButton(ticket.status)}
+            canRevoke={ticket.status === "Open" && !ticket.custom_archived}
+            canReply={ticket.status !== "Closed"}
+            onClose={() => { onCloseTicket(ticket); onClose(); }}
+            onReply={() => { onReply(ticket); onClose(); }}
+            onRevoke={() => { onRevoke(ticket); onClose(); }}
+          />
+        </div>
+      </div>
+    </BottomDrawer>
+  );
+};
+
 const TicketTable: React.FC<TicketTableProps> = ({
   tickets,
   isLoading,
@@ -308,6 +447,20 @@ const TicketTable: React.FC<TicketTableProps> = ({
   headerControls,
 }) => {
   const { isDesktop } = useScreenSize();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollWidth, setScrollWidth] = useState(0);
+  const [selectedMobileTicket, setSelectedMobileTicket] = useState<HDTicket | null>(null);
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+    const updateWidth = () => setScrollWidth(scrollEl.clientWidth);
+    updateWidth();
+    const ro = window.ResizeObserver ? new ResizeObserver(updateWidth) : null;
+    if (ro) ro.observe(scrollEl);
+    return () => ro?.disconnect();
+  }, [isDesktop]);
 
   // Helper to get category name from ID
   const getCategoryName = (categoryId: string | undefined): string => {
@@ -437,9 +590,21 @@ const TicketTable: React.FC<TicketTableProps> = ({
               onReply={onReply}
               onClose={onClose}
               onRevoke={onRevoke}
-              onRowClick={onRowClick}
+              onRowClick={() => setSelectedMobileTicket(ticket)}
             />
           ))}
+
+          <MobileTicketDetailModal
+            ticket={selectedMobileTicket}
+            isOpen={!!selectedMobileTicket}
+            onClose={() => setSelectedMobileTicket(null)}
+            categoryMap={categoryMap}
+            userLookup={userLookup}
+            getAssignedName={getAssignedName}
+            onReply={onReply}
+            onCloseTicket={onClose}
+            onRevoke={onRevoke}
+          />
         </div>
       </div>
     );
@@ -447,73 +612,85 @@ const TicketTable: React.FC<TicketTableProps> = ({
 
   // Desktop Table View
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
-
-      <table className="helpdesk-table w-full min-w-[900px] border-collapse">
-        <thead className="bg-gray-50/80 border-b border-gray-100">
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={`py-3 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
-                onClick={() => col.sortable && onSort(col.key)}
-              >
-                <div className="flex items-center gap-1">
-                  <Typography
-                    variant="bodySmall"
-                    color="body2"
-                    className="font-medium"
-                  >
-                    {col.label}
-                  </Typography>
-                  {col.sortable && renderSortIcon(col.key)}
-                </div>
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col max-h-full">
+      <div className="overflow-x-auto" ref={scrollRef}>
+        <table className="helpdesk-table w-full min-w-[900px] border-collapse relative">
+          <thead className="bg-gray-50/80 border-b border-gray-100 sticky top-0 z-20">
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`py-4 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
+                  onClick={() => col.sortable && onSort(col.key)}
+                >
+                  <div className="flex items-center gap-1">
+                    <Typography
+                      variant="bodySmall"
+                      color="body2"
+                      className="font-bold whitespace-nowrap"
+                    >
+                      {col.label}
+                    </Typography>
+                    {col.sortable && renderSortIcon(col.key)}
+                  </div>
+                </th>
+              ))}
+              <th className="pl-4 pr-6 py-4 w-28 text-left">
+                <Typography
+                  variant="bodySmall"
+                  color="body2"
+                  className="font-bold whitespace-nowrap"
+                >
+                  Actions
+                </Typography>
               </th>
-            ))}
-            <th className="pl-4 pr-6 py-3 w-28 text-left">
-              <Typography
-                variant="bodySmall"
-                color="body2"
-                className="font-medium"
-              >
-                Actions
-              </Typography>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="sticky top-0 left-0">
-            <td className="p-0 m-0" colSpan={columns.length + 1}>
-              {headerControls && headerControls}
-              {!isLoading && tickets.length === 0 &&
-                <div className="bg-white rounded-lg p-8 text-center">
-                  <NoDataFound
-                    title="No tickets found"
-                    subtitle="No tickets found matching your criteria."
-                  />
-                </div>
-              }
-            </td>
-          </tr>
-          {isLoading && LoadingSkeleton}
-          {!isLoading && tickets.map((ticket) =>
-            <TicketTableRow
-              key={ticket.name}
-              ticket={ticket}
-              userLookup={userLookup}
-              employeeByEmail={employeeByEmail}
-              onReply={onReply}
-              onClose={onClose}
-              onRevoke={onRevoke}
-              getStatusBadgeConfig={getStatusBadgeConfig}
-              formatToIndianDate={formatToIndianDate}
-              getAssignedEmail={getAssignedEmail}
-              getAssignedName={getAssignedName}
-              getCategoryName={getCategoryName}
-              formateDateDiff={formateDateDiff}
-              onRowClick={onRowClick} />)}
-        </tbody>
-      </table>
+            </tr>
+            {headerControls && (
+              <tr className="bg-white">
+                <td colSpan={columns.length + 1} className="p-0 border-0">
+                  <div
+                    className="sticky left-0 border-b border-gray-100"
+                    style={{ width: scrollWidth ? `${scrollWidth}px` : '100%' }}
+                  >
+                    {headerControls}
+                  </div>
+                </td>
+              </tr>
+            )}
+          </thead>
+          <tbody>
+            {!isLoading && tickets.length === 0 &&
+              <tr>
+                <td colSpan={columns.length + 1}>
+                  <div className="bg-white p-8 text-center">
+                    <NoDataFound
+                      title="No tickets found"
+                      subtitle="No tickets found matching your criteria."
+                    />
+                  </div>
+                </td>
+              </tr>
+            }
+            {isLoading && LoadingSkeleton}
+            {!isLoading && tickets.map((ticket) =>
+              <TicketTableRow
+                key={ticket.name}
+                ticket={ticket}
+                userLookup={userLookup}
+                employeeByEmail={employeeByEmail}
+                onReply={onReply}
+                onClose={onClose}
+                onRevoke={onRevoke}
+                getStatusBadgeConfig={getStatusBadgeConfig}
+                formatToIndianDate={formatToIndianDate}
+                getAssignedEmail={getAssignedEmail}
+                getAssignedName={getAssignedName}
+                getCategoryName={getCategoryName}
+                formateDateDiff={formateDateDiff}
+                onRowClick={onRowClick} />)}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
