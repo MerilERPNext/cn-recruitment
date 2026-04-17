@@ -76,6 +76,7 @@ doctype_js = {
     "User": ["public/js/user.js"],
     "Employee Onboarding": [
         "public/js/employee_onboarding.js",
+        "public/js/employee_onboarding_portal_field_inspector.js",
         "public/js/emp_OB_verification_table.js",
         "public/js/emp_OB_field_level_approval.js",
     ],

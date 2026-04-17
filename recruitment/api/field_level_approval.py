@@ -1,6 +1,7 @@
 import frappe
 import json
 from frappe import _
+from recruitment.api.action_center import sync_onboarding_field_rejection_action
 
 
 # ─── Field type sets ──────────────────────────────────────────────────────────
@@ -17,6 +18,8 @@ SKIP_FIELDNAMES = frozenset({
     "custom_field_approval_json",
     "custom_approval_html",
     "custom_field_level_approvals",
+    "custom_candidate_portal_fields_tab",
+    "custom_candidate_portal_fields",
 })
 
 SKIP_CHILD_FIELDNAMES = frozenset({
@@ -155,6 +158,72 @@ def _get_doc(onboarding_name):
         return None
 
 
+def _get_configured_candidate_field_rows(doc):
+    """
+    Returns configured candidate-editable field rows for this onboarding.
+    Fallback: global Employee Onboarding Portal Settings.
+    """
+    rows = []
+
+    if doc and doc.meta.get_field("custom_candidate_portal_fields"):
+        rows = doc.get("custom_candidate_portal_fields") or []
+
+    if not rows:
+        try:
+            rows = frappe.get_single("Employee Onboarding Portal Settings").portal_fields or []
+        except Exception:
+            rows = []
+
+    return [
+        r for r in rows
+        if r.get("fieldname") and not r.get("hidden") and not r.get("read_only")
+    ]
+
+
+def _get_configured_approval_fields(doc, doctype="Employee Onboarding"):
+    """
+    Builds approval field definitions from configured candidate fields only.
+    Falls back to global portal settings when onboarding-specific rows are absent.
+    """
+    configured_rows = _get_configured_candidate_field_rows(doc)
+    meta_fields = _get_doctype_approval_fields(doctype)
+    meta_map = {f["fieldname"]: f for f in meta_fields}
+    configured = []
+    seen = set()
+
+    for row in configured_rows:
+        fieldname = row.get("fieldname")
+        if not fieldname or fieldname in seen:
+            continue
+
+        meta = meta_map.get(fieldname)
+        if not meta:
+            continue
+
+        fieldtype = row.get("fieldtype") or meta.get("fieldtype", "Data")
+        field_options = row.get("options") or meta.get("child_doctype", "")
+        section_label = (row.get("section_label") or "").strip()
+        tab_label = (row.get("tab_label") or "").strip()
+
+        entry = {
+            "fieldname": fieldname,
+            "label": (row.get("label") or meta.get("label") or fieldname).strip(),
+            "fieldtype": fieldtype,
+            "section": section_label or tab_label or meta.get("section", "General"),
+            "section_fieldname": meta.get("section_fieldname", ""),
+        }
+
+        if fieldtype == "Table":
+            child_doctype = field_options
+            entry["child_doctype"] = child_doctype
+            entry["child_fields"] = _get_child_meta_fields(child_doctype) if child_doctype else []
+
+        configured.append(entry)
+        seen.add(fieldname)
+
+    return configured
+
+
 def _is_new_doc_name(name):
     """Returns True if the name looks like a temporary unsaved Frappe doc name."""
     return name and name.startswith("new-")
@@ -178,7 +247,7 @@ def _build_approval_list(doc, existing_map=None):
     if existing_map is None:
         existing_map = {}
 
-    meta_fields = _get_doctype_approval_fields("Employee Onboarding")
+    meta_fields = _get_configured_approval_fields(doc, "Employee Onboarding")
     merged      = []
 
     for fd in meta_fields:
@@ -268,6 +337,12 @@ def get_onboarding_fields_for_approval(onboarding_name):
     """Returns all fields enriched with values + statuses, grouped by section."""
     frappe.has_permission("Employee Onboarding", "read", throw=True)
     doc          = _get_doc(onboarding_name)
+    if not doc:
+        return {
+            "status": "error",
+            "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
+            "data": [],
+        }
     existing_map = {e["fieldname"]: e for e in _load_approval_list(doc) if "fieldname" in e}
     enriched     = _build_approval_list(doc, existing_map)
     counts       = _compute_counts(enriched)
@@ -315,9 +390,11 @@ def save_full_approval_json(onboarding_name, approval_data):
             frappe.throw(_("Invalid status '{0}' for field '{1}'.").format(st, item.get("fieldname", "?")))
 
     doc          = _get_doc(onboarding_name)
+    if not doc:
+        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
     existing_map = {e["fieldname"]: e for e in _load_approval_list(doc) if "fieldname" in e}
     incoming_map = {item["fieldname"]: item for item in approval_data if item.get("fieldname")}
-    meta_fields  = _get_doctype_approval_fields("Employee Onboarding")
+    meta_fields  = _get_configured_approval_fields(doc, "Employee Onboarding")
     reviewer     = frappe.session.user
     now          = frappe.utils.now()
     final_list   = []
@@ -358,6 +435,7 @@ def save_full_approval_json(onboarding_name, approval_data):
         final_list.append(entry)
 
     _save_list(doc, final_list)
+    sync_onboarding_field_rejection_action(doc, final_list)
     counts = _compute_counts(final_list)
     return {
         "status": "success", "message": _("Saved successfully"),
@@ -374,6 +452,8 @@ def update_field_approval_status(onboarding_name, fieldname, new_status):
         frappe.throw(_("Invalid status '{0}'.").format(new_status))
     frappe.has_permission("Employee Onboarding", "write", throw=True)
     doc           = _get_doc(onboarding_name)
+    if not doc:
+        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
     approval_list = _load_approval_list(doc) or _build_approval_list(doc)
     updated = False
     for entry in approval_list:
@@ -390,6 +470,7 @@ def update_field_approval_status(onboarding_name, fieldname, new_status):
     if not updated:
         frappe.throw(_("Field '{0}' not found.").format(fieldname))
     _save_list(doc, approval_list)
+    sync_onboarding_field_rejection_action(doc, approval_list)
     return {"status": "success", "message": _("Updated"), "data": approval_list}
 
 
@@ -407,6 +488,8 @@ def update_section_approval_status(onboarding_name, section_name, new_status):
     frappe.has_permission("Employee Onboarding", "write", throw=True)
 
     doc           = _get_doc(onboarding_name)
+    if not doc:
+        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
     approval_list = _load_approval_list(doc) or _build_approval_list(doc)
 
     reviewer = frappe.session.user
@@ -429,6 +512,7 @@ def update_section_approval_status(onboarding_name, section_name, new_status):
         frappe.throw(_("No fields found for section '{0}'.").format(section_name))
 
     _save_list(doc, approval_list)
+    sync_onboarding_field_rejection_action(doc, approval_list)
     counts = _compute_counts(approval_list)
     return {
         "status":  "success",
@@ -447,6 +531,8 @@ def bulk_update_approval_status(onboarding_name, new_status):
         frappe.throw(_("Only 'Approved' or 'Rejected' allowed."))
     frappe.has_permission("Employee Onboarding", "write", throw=True)
     doc           = _get_doc(onboarding_name)
+    if not doc:
+        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
     approval_list = _load_approval_list(doc) or _build_approval_list(doc)
     reviewer = frappe.session.user
     now      = frappe.utils.now()
@@ -456,6 +542,7 @@ def bulk_update_approval_status(onboarding_name, new_status):
             entry["reviewed_by"] = reviewer
             entry["reviewed_on"] = now
     _save_list(doc, approval_list)
+    sync_onboarding_field_rejection_action(doc, approval_list)
     counts = _compute_counts(approval_list)
     return {"status": "success", "message": _("Done"), "counts": counts, "data": approval_list}
 
@@ -467,6 +554,12 @@ def bulk_update_approval_status(onboarding_name, new_status):
 def get_approval_list(onboarding_name):
     frappe.has_permission("Employee Onboarding", "read", throw=True)
     doc  = _get_doc(onboarding_name)
+    if not doc:
+        return {
+            "status": "error",
+            "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
+            "data": [],
+        }
     data = _load_approval_list(doc)
     return {"status": "success", "data": data}
 

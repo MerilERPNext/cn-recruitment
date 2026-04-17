@@ -11,6 +11,8 @@ _SKIP_FIELDNAMES = frozenset({
     "naming_series", "amended_from", "amendment_date",
     "custom_field_approval_json", "custom_approval_html",
     "custom_field_level_approvals",
+    "custom_candidate_portal_fields_tab",
+    "custom_candidate_portal_fields",
 })
 
 def _read_onboarding_meta():
@@ -107,6 +109,27 @@ def _get_portal_settings():
     except Exception:
         return []
 
+
+def _get_onboarding_name_by_job_applicant(job_applicant_id):
+    return frappe.db.get_value(
+        "Employee Onboarding",
+        {"job_applicant": job_applicant_id, "docstatus": ("<", 2)},
+        "name",
+        order_by="creation desc",
+    )
+
+
+def _get_onboarding_portal_rows(onboarding_doc=None):
+    """
+    Returns per-onboarding candidate portal field rows when configured,
+    otherwise falls back to global Employee Onboarding Portal Settings.
+    """
+    if onboarding_doc and onboarding_doc.meta.get_field("custom_candidate_portal_fields"):
+        rows = onboarding_doc.get("custom_candidate_portal_fields") or []
+        if rows:
+            return rows
+    return _get_portal_settings()
+
 def _get_job_applicant_portal_settings():
     """Returns the portal_fields from Job Applicant Portal Settings."""
     try:
@@ -181,6 +204,18 @@ def get_all_onboarding_fields():
         "fields": fields,
     }
 
+
+@frappe.whitelist()
+def get_all_onboarding_fields_for_onboarding():
+    """Returns all Employee Onboarding fields for per-candidate portal field inspector."""
+    frappe.has_permission("Employee Onboarding", "read", throw=True)
+    fields = _read_onboarding_meta()
+    return {
+        "status": "success",
+        "total": len(fields),
+        "fields": fields,
+    }
+
 @frappe.whitelist()
 def get_all_job_applicant_fields():
     """Returns Job Applicant fields configured in Job Applicant Portal Settings."""
@@ -233,23 +268,16 @@ def get_available_job_applicant_fields():
 @frappe.whitelist(allow_guest=True)
 def get_candidate_portal_form(job_applicant_id):
     """Returns the structured portal form with current document values for a given applicant."""
-    
-    # 1. Lookup the active Employee Onboarding doc by Job Applicant ID
-    # We sort by creation desc and ignore cancelled (docstatus < 2) to ensure high accuracy
-    onboarding_name = frappe.db.get_value(
-        "Employee Onboarding", 
-        {"job_applicant": job_applicant_id, "docstatus": ("<", 2)}, 
-        "name", 
-        order_by="creation desc"
-    )
-    
+
+    onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
+
     if not onboarding_name:
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Employee Onboarding for '{job_applicant_id}' not found.")}
 
     doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    portal_rows = _get_portal_settings()
-    
+    portal_rows = _get_onboarding_portal_rows(doc)
+
     if not portal_rows:
         return {
             "status": "error",
@@ -325,19 +353,14 @@ def save_candidate_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Data must be a JSON object.")}
 
-    # 1. Lookup the active Employee Onboarding doc by Job Applicant ID
-    onboarding_name = frappe.db.get_value(
-        "Employee Onboarding", 
-        {"job_applicant": job_applicant_id, "docstatus": ("<", 2)}, 
-        "name", 
-        order_by="creation desc"
-    )
-    
+    onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
+
     if not onboarding_name:
         frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _(f"Employee Onboarding for '{job_applicant_id}' not found.")}
 
-    portal_rows = _get_portal_settings()
+    onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
+    portal_rows = _get_onboarding_portal_rows(onboarding_doc)
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
     if not allowed_map:
@@ -359,7 +382,7 @@ def save_candidate_portal_data(job_applicant_id, data):
     meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
 
     try:
-        doc = frappe.get_doc("Employee Onboarding", onboarding_name)
+        doc = onboarding_doc
         updated = []
 
         for fn, value in data.items():
@@ -394,11 +417,18 @@ def save_candidate_portal_data(job_applicant_id, data):
         return {"status": "error", "message": str(e)}
 
 @frappe.whitelist(allow_guest=True)
-def get_portal_field_names():
+def get_portal_field_names(job_applicant_id=None):
     """Returns a list of configured fieldnames."""
+    onboarding_doc = None
+    if job_applicant_id:
+        onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
+        if onboarding_name:
+            onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
+
+    rows = _get_onboarding_portal_rows(onboarding_doc)
     return {
         "status": "success",
-        "fields": [r.fieldname for r in _get_portal_settings()],
+        "fields": [r.fieldname for r in rows],
     }
 
 @frappe.whitelist(allow_guest=True)

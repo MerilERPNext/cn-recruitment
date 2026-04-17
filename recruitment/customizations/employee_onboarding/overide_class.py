@@ -10,7 +10,44 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def validate(self):
         super().validate()
         self.set_employee()
+        self.initialize_candidate_portal_fields()
         self.validate_duplicate_employee_onboarding()
+
+    def initialize_candidate_portal_fields(self):
+        """
+        One-time snapshot of default candidate portal fields from
+        Employee Onboarding Portal Settings into this onboarding record.
+        """
+        if not self.is_new():
+            return
+        if self.docstatus != 0:
+            return
+        if not self.meta.get_field("custom_candidate_portal_fields"):
+            return
+        if self.get("custom_candidate_portal_fields"):
+            return
+
+        try:
+            default_rows = frappe.get_single("Employee Onboarding Portal Settings").portal_fields or []
+        except Exception:
+            default_rows = []
+
+        if not default_rows:
+            return
+
+        self.set("custom_candidate_portal_fields", [])
+        for row in default_rows:
+            self.append("custom_candidate_portal_fields", {
+                "fieldname": row.fieldname,
+                "label": row.label,
+                "fieldtype": row.fieldtype,
+                "tab_label": row.tab_label,
+                "section_label": row.section_label,
+                "is_mandatory": row.is_mandatory,
+                "read_only": row.read_only,
+                "hidden": row.hidden,
+                "options": row.options,
+            })
 
     def set_employee(self):
         if not self.employee:
