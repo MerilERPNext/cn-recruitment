@@ -9,6 +9,8 @@ export interface HDTicket {
   status: string;
   custom_category: string;
   custom_sub_category: string;
+  no_of_comments: number;
+  user_type: string;
   _assign: string | null;
   raised_by: string;
   creation: string;
@@ -919,6 +921,29 @@ export const useRevokeTicket = () => {
     }) => {
       const result = await FrappeAPI.updateDocument("HD Ticket", ticketId, {
         custom_archived: 1,
+      });
+      return result;
+    },
+    onSuccess: async (_, variables) => {
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["hd-ticket-stats"] });
+    },
+  });
+};
+
+export const useReopenTicket = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketId,
+    }: {
+      ticketId: string;
+    }) => {
+      const result = await FrappeAPI.updateDocument("HD Ticket", ticketId, {
+        status: "Reopened",
+        custom_archived: 0,
       });
       return result;
     },

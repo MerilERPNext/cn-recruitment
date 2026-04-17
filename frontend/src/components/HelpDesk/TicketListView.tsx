@@ -21,12 +21,14 @@ import {
   HDCategory,
   useRevokeTicket,
   useGetTicketStats,
+  useReopenTicket,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -83,6 +85,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   const closeTicketMutation = useCloseTicket();
   const requestClosureMutation = useRequestClosure();
   const revokeTicketMutation = useRevokeTicket();
+  const reopenTicketMutation = useReopenTicket();
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
@@ -170,14 +173,31 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
       onSuccess: () => {
         toast.success("Ticket revoked successfully");
       },
-      onError: () => {
-        toast.error("Failed to revoke ticket");
+      onError: (error) => {
+        const formatedError = errorResponseFormater(error, "Failed to revoke ticket");
+        toast.error(formatedError);
       },
       onSettled: () => {
         hide();
       }
     })
   }, [hide, show, revokeTicketMutation])
+
+  const handleReopen = useCallback((ticket: HDTicket) => {
+    show("Reopening ticket...");
+    reopenTicketMutation.mutate({ ticketId: ticket.name }, {
+      onSuccess: () => {
+        toast.success("Ticket reopened successfully");
+      },
+      onError: (error) => {
+        const formatedError = errorResponseFormater(error, "Failed to reopen ticket");
+        toast.error(formatedError);
+      },
+      onSettled: () => {
+        hide();
+      }
+    })
+  }, [hide, show, reopenTicketMutation])
 
   const handleResolutionSubmit = useCallback((resolution: string) => {
     if (!selectedTicketForClose) return;
@@ -240,6 +260,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             onReply={handleReply}
             onClose={handleClose}
             onRevoke={handleRevoke}
+            onReopen={handleReopen}
             onRowClick={handleReply}
             sortField={sortField}
             sortDirection={sortDirection}

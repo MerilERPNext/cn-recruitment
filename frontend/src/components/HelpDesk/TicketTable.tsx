@@ -20,6 +20,7 @@ interface TicketTableProps {
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
   onRevoke: (ticket: HDTicket) => void;
+  onReopen: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
   sortField: string;
   sortDirection: "asc" | "desc";
@@ -125,6 +126,7 @@ interface TicketCardProps {
   onReply: (ticket: HDTicket) => void;
   onClose: (ticket: HDTicket) => void;
   onRevoke: (ticket: HDTicket) => void;
+  onReopen: (ticket: HDTicket) => void;
   onRowClick?: (ticket: HDTicket) => void;
 }
 
@@ -136,6 +138,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   onReply,
   onClose,
   onRevoke,
+  onReopen,
   onRowClick,
 }) => {
   const getCategoryName = (categoryId: string | undefined): string => {
@@ -216,6 +219,26 @@ const TicketCard: React.FC<TicketCardProps> = ({
             {formatToIndianDate(ticket.creation)}
           </Typography>
         </div>
+
+        {/* Creator Type */}
+        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)]">
+          <Typography variant="mobileCardLabel" className="block">
+            Creator Type
+          </Typography>
+          <Typography variant="mobileCardValue">
+            {ticket.user_type || "-"}
+          </Typography>
+        </div>
+
+        {/* Number of Comments */}
+        <div className="flex flex-col gap-2 flex-1 min-w-[calc(50%-0.625rem)] sm:min-w-[calc(25%-0.9375rem)] text-right">
+          <Typography variant="mobileCardLabel" className="block">
+            Comments
+          </Typography>
+          <Typography variant="mobileCardValue">
+            {ticket.no_of_comments ?? "0"}
+          </Typography>
+        </div>
       </div>
 
       <div>
@@ -232,6 +255,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
               canClose={showCloseTicketButton(ticket.status)}
               canRevoke={ticket.status === "Open" && !ticket.custom_archived}
               canReply={ticket.status !== "Closed"}
+              canReopen={ticket.status === "Closed"}
+              onReopen={() => onReopen(ticket)}
               onClose={() => onClose(ticket)}
               onReply={() => onReply(ticket)}
               onRevoke={() => onRevoke(ticket)}
@@ -251,6 +276,17 @@ const columns = [
     key: "custom_sub_category",
     label: "Sub Category",
     sortable: true,
+    width: "w-40",
+  }, {
+    key: "no_of_comments",
+    label: "Number of Comments",
+    sortable: false,
+    width: "w-40",
+  },
+  {
+    key: "user_type",
+    label: "Creator Type",
+    sortable: false,
     width: "w-40",
   },
   {
@@ -303,6 +339,7 @@ interface MobileTicketDetailModalProps {
   userLookup?: Map<string, string>;
   getAssignedName: (assignStr: string | null, lookup?: Map<string, string>) => string;
   onReply: (ticket: HDTicket) => void;
+  onReopen: (ticket: HDTicket) => void;
   onCloseTicket: (ticket: HDTicket) => void;
   onRevoke: (ticket: HDTicket) => void;
 }
@@ -315,6 +352,7 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
   userLookup,
   getAssignedName,
   onReply,
+  onReopen,
   onCloseTicket,
   onRevoke,
 }) => {
@@ -376,7 +414,7 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50 shadow-inner max-h-[60vh]">
-          
+
           {/* Card 1: Issue Details */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
             <div className="bg-gradient-to-r from-slate-50 to-white px-4 py-3 border-b border-gray-100 flex items-center gap-2">
@@ -387,6 +425,8 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
               <DetailRow label="Sub Category" value={getCategoryName(ticket.custom_sub_category)} />
               <DetailRow label="Requested By" value={ticket.raise_by_name || "-"} />
               <DetailRow label="Assigned to" value={getAssignedName(ticket._assign, userLookup)} />
+              <DetailRow label="Creator Type" value={ticket.user_type || "-"} />
+              <DetailRow label="Number of Comments" value={ticket.no_of_comments ?? "0"} />
             </div>
           </div>
 
@@ -403,13 +443,13 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
             </div>
             {/* Highlighted section for Escalation */}
             <div className={`px-4 py-3.5 border-t flex gap-3 justify-between items-center ${isExpired ? 'bg-red-50/50 border-red-100' : 'bg-emerald-50/50 border-emerald-100'}`}>
-               <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
-               <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
-                 {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
-               </span>
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isExpired ? 'text-red-700/80' : 'text-emerald-700/80'}`}>Escalation Wait Time</span>
+              <span className={`text-sm font-bold ${isExpired ? 'text-red-600' : 'text-emerald-600'}`}>
+                {isExpired ? "Escalated" : `${hours}h ${minutes}m ${seconds}s`}
+              </span>
             </div>
           </div>
-          
+
         </div>
 
         {/* Action Footer */}
@@ -421,6 +461,8 @@ const MobileTicketDetailModal: React.FC<MobileTicketDetailModalProps> = ({
             canClose={showCloseTicketButton(ticket.status)}
             canRevoke={ticket.status === "Open" && !ticket.custom_archived}
             canReply={ticket.status !== "Closed"}
+            canReopen={ticket.status === "Closed"}
+            onReopen={() => { onReopen(ticket); onClose(); }}
             onClose={() => { onCloseTicket(ticket); onClose(); }}
             onReply={() => { onReply(ticket); onClose(); }}
             onRevoke={() => { onRevoke(ticket); onClose(); }}
@@ -437,6 +479,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
   onReply,
   onClose,
   onRevoke,
+  onReopen,
   onRowClick,
   sortField,
   sortDirection,
@@ -590,6 +633,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
               onReply={onReply}
               onClose={onClose}
               onRevoke={onRevoke}
+              onReopen={onReopen}
               onRowClick={() => setSelectedMobileTicket(ticket)}
             />
           ))}
@@ -602,6 +646,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
             userLookup={userLookup}
             getAssignedName={getAssignedName}
             onReply={onReply}
+            onReopen={onReopen}
             onCloseTicket={onClose}
             onRevoke={onRevoke}
           />
@@ -615,12 +660,12 @@ const TicketTable: React.FC<TicketTableProps> = ({
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col max-h-full">
       <div className="overflow-x-auto" ref={scrollRef}>
         <table className="helpdesk-table w-full min-w-[900px] border-collapse relative">
-          <thead className="bg-gray-50/80 border-b border-gray-100 sticky top-0 z-20">
+          <thead className="bg-gray-50/80 text-center border-b border-gray-100 sticky top-0 z-20">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`py-4 text-left ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
+                  className={`py-4 ${col.width} ${col.sortable ? "cursor-pointer hover:bg-gray-100" : ""} ${col.key === "name" ? "pl-6 pr-4" : "px-4"}`}
                   onClick={() => col.sortable && onSort(col.key)}
                 >
                   <div className="flex items-center gap-1">
@@ -681,6 +726,7 @@ const TicketTable: React.FC<TicketTableProps> = ({
                 onReply={onReply}
                 onClose={onClose}
                 onRevoke={onRevoke}
+                onReopen={onReopen}
                 getStatusBadgeConfig={getStatusBadgeConfig}
                 formatToIndianDate={formatToIndianDate}
                 getAssignedEmail={getAssignedEmail}
