@@ -367,7 +367,7 @@ export default function ThreeLevelOrgChart() {
 
       calculateLayout(initialNodes, initialEdges);
     }
-  }, [employeeHierarchy, employeeId, currentUser, calculateLayout]);
+  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, calculateLayout]);
 
   return (
     <div className="w-full rounded-md bg-white">
