@@ -16,6 +16,7 @@ export type NodeData = {
   onToggleExpand: (id: string) => void;
   showExpand?: boolean;
   image?: string | null;
+  isDottedLine?: boolean;
 };
 
 // ✅ Optional alias (safe version)

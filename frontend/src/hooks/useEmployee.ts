@@ -357,10 +357,10 @@ export const useGetEmployeeFieldPermissions = ({
     enabled: !!doctype,
   });
 };
-export const useGetEmployeeDetailsByEmpId = (employee_id: string) => {
+export const useGetEmployeeDetailsByEmpId = (employee_id: string, fields?: string[]) => {
   return useQuery({
-    queryKey: ["all-emp-details-by-empid", employee_id],
-    queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id),
+    queryKey: ["all-emp-details-by-employee-id", employee_id, fields],
+    queryFn: () => profileService.getEmployeeDetailsByEmpId(employee_id, fields),
     staleTime: 1000 * 60 * 5,
     enabled: !!employee_id,
   });

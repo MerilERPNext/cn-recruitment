@@ -14,7 +14,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
 import { EmployeeHierarchy, NodeData } from "./type/type";
-import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails } from "../../hooks/useEmployee";
+import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails, useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router";
 import { IoChevronForwardOutline } from "react-icons/io5";
 import { useTargetUser } from "../../context/ViewedUserContext";
@@ -280,16 +280,18 @@ export default function ThreeLevelOrgChart() {
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
   const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
+    fields: ["employee", "custom_dotted_line_manager"]
   });
-
+  const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager"]);
+  const dottedManagerId = targetEmployeeId ? targetEmployeeDetails?.custom_dotted_line_manager : currentUser?.custom_dotted_line_manager;
+  const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);
+  const dottedManagerName = dottedLineManagerDetails?.employee_name;
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";
 
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
     employeeId
   );
-
   const calculateLayout = useCallback((nodes: Node<NodeData>[], edges: Edge[]) => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       nodes,
@@ -325,10 +327,47 @@ export default function ThreeLevelOrgChart() {
         parent,
         grandParent
       );
-      // Determine layout based on initial nodes and edges
+
+
+
+      if (dottedManagerId && !initialNodes.find((n) => n.id === dottedManagerId)) {
+        initialNodes.push({
+          id: dottedManagerId,
+          type: "person",
+          position: { x: 0, y: 0 },
+          data: {
+            id: dottedManagerId,
+            name: dottedManagerName || dottedManagerId,
+            title: "",
+            hasChildren: false,
+            isExpanded: false,
+            onToggleExpand: () => { },
+            showExpand: false,
+            totalChildren: 0,
+            directChildren: 0,
+            indirectChildren: 0,
+            isDottedLine: true,
+          },
+        });
+      }
+
+      if (dottedManagerId) {
+        initialEdges.push({
+          id: `e-dotted-${dottedManagerId}-${employeeId}`,
+          source: dottedManagerId,
+          target: employeeId,
+          type: "smoothstep",
+          label: "Dotted Line Manager",
+          labelStyle: { fill: "#7c3aed", fontWeight: 600, fontSize: 11 },
+          labelBgStyle: { fill: "#f5f3ff", borderRadius: 4 },
+          labelBgPadding: [6, 3] as [number, number],
+          style: { stroke: "#7c3aed", strokeWidth: 2, strokeDasharray: "6 3" },
+        });
+      }
+
       calculateLayout(initialNodes, initialEdges);
     }
-  }, [employeeHierarchy, employeeId, calculateLayout]);
+  }, [employeeHierarchy, employeeId, currentUser, calculateLayout]);
 
   return (
     <div className="w-full rounded-md bg-white">
