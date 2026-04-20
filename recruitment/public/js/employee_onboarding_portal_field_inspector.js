@@ -7,6 +7,23 @@ frappe.ui.form.on("Employee Onboarding", {
         frm.fields_dict["custom_available_candidate_portal_fields_html"].$wrapper.html("");
     },
 
+    custom_onboarding_portal_form(frm) {
+        if (frm.doc.docstatus !== 0 || !frm.doc.custom_onboarding_portal_form) return;
+
+        const hasRows = (frm.doc.custom_candidate_portal_fields || []).length > 0;
+        const proceed = () => _load_selected_portal_form_rows(frm);
+
+        if (hasRows) {
+            frappe.confirm(
+                __("Selecting a form will replace existing candidate portal fields. Continue?"),
+                proceed
+            );
+            return;
+        }
+
+        proceed();
+    },
+
     custom_fetch_candidate_portal_fields_btn(frm) {
         if (frm.doc.docstatus !== 0) {
             frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
@@ -26,6 +43,43 @@ frappe.ui.form.on("Employee Onboarding", {
         });
     }
 });
+
+function _apply_form_rows(frm, rows) {
+    frm.clear_table("custom_candidate_portal_fields");
+    (rows || []).forEach(r => {
+        const row = frm.add_child("custom_candidate_portal_fields");
+        row.fieldname = r.fieldname;
+        row.label = r.label;
+        row.fieldtype = r.fieldtype;
+        row.tab_label = r.tab_label;
+        row.section_label = r.section_label;
+        row.is_mandatory = r.is_mandatory;
+        row.read_only = r.read_only;
+        row.hidden = r.hidden;
+        row.options = r.options;
+    });
+    frm.refresh_field("custom_candidate_portal_fields");
+}
+
+function _load_selected_portal_form_rows(frm) {
+    frappe.call({
+        method: "recruitment.api.candidate_portal.get_onboarding_form_fields",
+        args: { form_name: frm.doc.custom_onboarding_portal_form },
+        freeze: true,
+        freeze_message: __("Loading selected onboarding portal form fields..."),
+        callback(r) {
+            if (!r.message || r.message.status !== "success") {
+                frappe.msgprint(__("Could not load selected onboarding portal form."));
+                return;
+            }
+            _apply_form_rows(frm, r.message.fields || []);
+            frappe.show_alert({
+                message: __("Loaded {0} fields from {1}", [r.message.total || 0, r.message.form_name || "form"]),
+                indicator: "green"
+            });
+        }
+    });
+}
 
 
 // ─────────────────────────────────────────────────────────────────────────────

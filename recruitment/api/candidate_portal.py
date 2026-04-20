@@ -13,10 +13,11 @@ _SKIP_FIELDNAMES = frozenset({
     "custom_field_level_approvals",
     "custom_candidate_portal_fields_tab",
     "custom_candidate_portal_fields",
+    "custom_onboarding_portal_form",
 })
 
+
 def _read_onboarding_meta():
-    """Returns a flat list of field dicts from Employee Onboarding meta."""
     try:
         meta = frappe.get_meta("Employee Onboarding")
     except Exception:
@@ -56,8 +57,8 @@ def _read_onboarding_meta():
 
     return result
 
+
 def _read_job_applicant_meta(include_hidden=False, include_skipped=False):
-    """Returns a flat list of field dicts from Job Applicant meta."""
     try:
         meta = frappe.get_meta("Job Applicant")
     except Exception:
@@ -102,10 +103,22 @@ def _read_job_applicant_meta(include_hidden=False, include_skipped=False):
 
     return result
 
-def _get_portal_settings():
-    """Returns the portal_fields from Employee Onboarding Portal Settings."""
+
+def _get_default_onboarding_portal_form_name():
+    return frappe.db.get_value(
+        "Onboarding Portal Forms",
+        {"default": 1},
+        "name",
+        order_by="modified desc",
+    )
+
+
+def _get_portal_settings(form_name=None):
     try:
-        return frappe.get_single("Employee Onboarding Portal Settings").portal_fields or []
+        settings_name = form_name or _get_default_onboarding_portal_form_name()
+        if not settings_name:
+            return []
+        return frappe.get_doc("Onboarding Portal Forms", settings_name).portal_fields or []
     except Exception:
         return []
 
@@ -121,24 +134,34 @@ def _get_onboarding_name_by_job_applicant(job_applicant_id):
 
 def _get_onboarding_portal_rows(onboarding_doc=None):
     """
-    Returns per-onboarding candidate portal field rows when configured,
-    otherwise falls back to global Employee Onboarding Portal Settings.
+    Returns (portal_field_rows, form_source) based on priority:
+      1. custom_candidate_portal_fields child table  -> "per_record_fields"
+      2. custom_onboarding_portal_form linked form   -> "linked_form"
+      3. Global default Onboarding Portal Forms      -> "default_form"
     """
     if onboarding_doc and onboarding_doc.meta.get_field("custom_candidate_portal_fields"):
         rows = onboarding_doc.get("custom_candidate_portal_fields") or []
         if rows:
-            return rows
-    return _get_portal_settings()
+            return rows, "per_record_fields"
+
+    selected_form = None
+    if onboarding_doc and onboarding_doc.meta.get_field("custom_onboarding_portal_form"):
+        selected_form = onboarding_doc.get("custom_onboarding_portal_form")
+
+    if selected_form:
+        return _get_portal_settings(selected_form), "linked_form"
+
+    return _get_portal_settings(None), "default_form"
+
 
 def _get_job_applicant_portal_settings():
-    """Returns the portal_fields from Job Applicant Portal Settings."""
     try:
         return frappe.get_single("Job Applicant Portal Settings").portal_fields or []
     except Exception:
         return []
 
+
 def _get_child_table_fields(child_doctype):
-    """Returns renderable field metadata for a child table doctype."""
     if not child_doctype:
         return []
 
@@ -165,7 +188,6 @@ def _get_child_table_fields(child_doctype):
 
 
 def _serialize_doc_field_value(doc, fieldname, fieldtype):
-    """Returns a JSON-safe field value from a document."""
     value = doc.get(fieldname)
 
     if fieldtype == "Table":
@@ -175,50 +197,129 @@ def _serialize_doc_field_value(doc, fieldname, fieldtype):
         rows = []
         for row in value:
             row_dict = row.as_dict() if hasattr(row, "as_dict") else dict(row)
-            cleaned_row = {}
-
-            for key, row_value in row_dict.items():
-                if key.startswith("_"):
-                    continue
-                if key in {
+            cleaned_row = {
+                key: val
+                for key, val in row_dict.items()
+                if not key.startswith("_") and key not in {
                     "doctype", "parent", "parenttype", "parentfield",
                     "docstatus", "owner", "creation", "modified", "modified_by",
-                }:
-                    continue
-                cleaned_row[key] = row_value
-
+                }
+            }
             rows.append(cleaned_row)
 
         return rows
 
     return value
 
+
+# Approval statuses that mean the candidate cannot edit that field
+_CANDIDATE_READONLY_STATUSES = frozenset({"Filled", "Approved"})
+
+
+def _build_tabbed_response(portal_rows, meta_lookup, doc=None):
+    tab_order = []
+    tab_map = {}
+
+    for row in portal_rows:
+        fn = row.fieldname
+        tab_lbl = (row.tab_label or "").strip()
+        sec_lbl = (row.section_label or "").strip()
+        meta = meta_lookup.get(fn, {})
+
+        fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
+        field_options = row.options or meta.get("options", "")
+
+        # Effective read_only: base setting OR locked by approval status
+        approval_status = (row.get("approval_status") or "Pending").strip()
+        base_read_only = int(row.read_only or 0)
+        effective_read_only = base_read_only or (1 if approval_status in _CANDIDATE_READONLY_STATUSES else 0)
+
+        field_entry = {
+            "fieldname": fn,
+            "label": row.label or meta.get("label", fn),
+            "fieldtype": fieldtype,
+            "is_mandatory": int(row.is_mandatory or 0),
+            "read_only": effective_read_only,
+            "hidden": int(row.hidden or 0),
+            "options": field_options,
+            "value": _serialize_doc_field_value(doc, fn, fieldtype) if doc else None,
+            "approval_status": approval_status,
+            "hr_comment": row.get("hr_comment") or "",
+        }
+        if fieldtype == "Table":
+            field_entry["child_doctype"] = field_options
+            field_entry["child_fields"] = _get_child_table_fields(field_options)
+
+        if tab_lbl not in tab_map:
+            tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
+            tab_order.append(tab_lbl)
+
+        tab_entry = tab_map[tab_lbl]
+        if sec_lbl not in tab_entry["section_map"]:
+            tab_entry["section_map"][sec_lbl] = []
+            tab_entry["section_order"].append(sec_lbl)
+
+        tab_entry["section_map"][sec_lbl].append(field_entry)
+
+    return [
+        {
+            "tab": tab_lbl,
+            "sections": [
+                {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
+                for sec_lbl in tab_map[tab_lbl]["section_order"]
+            ],
+        }
+        for tab_lbl in tab_order
+    ]
+
+
 @frappe.whitelist()
-def get_all_onboarding_fields():
-    """Returns all fields grouped for the desk settings page."""
-    frappe.has_permission("Employee Onboarding Portal Settings", "read", throw=True)
-    fields = _read_onboarding_meta()
+def get_onboarding_form_fields(form_name):
+    frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
+
+    if not form_name:
+        return {"status": "error", "message": _("Please select an onboarding portal form.")}
+
+    doc = frappe.get_doc("Onboarding Portal Forms", form_name)
+    rows = [
+        {
+            "fieldname": row.fieldname,
+            "label": row.label,
+            "fieldtype": row.fieldtype,
+            "tab_label": row.tab_label,
+            "section_label": row.section_label,
+            "is_mandatory": row.is_mandatory,
+            "read_only": row.read_only,
+            "hidden": row.hidden,
+            "options": row.options,
+        }
+        for row in (doc.get("portal_fields") or [])
+    ]
+
     return {
         "status": "success",
-        "total": len(fields),
-        "fields": fields,
+        "form_name": doc.name,
+        "total": len(rows),
+        "fields": rows,
     }
+
+
+@frappe.whitelist()
+def get_all_onboarding_fields():
+    frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
+    fields = _read_onboarding_meta()
+    return {"status": "success", "total": len(fields), "fields": fields}
 
 
 @frappe.whitelist()
 def get_all_onboarding_fields_for_onboarding():
-    """Returns all Employee Onboarding fields for per-candidate portal field inspector."""
     frappe.has_permission("Employee Onboarding", "read", throw=True)
     fields = _read_onboarding_meta()
-    return {
-        "status": "success",
-        "total": len(fields),
-        "fields": fields,
-    }
+    return {"status": "success", "total": len(fields), "fields": fields}
+
 
 @frappe.whitelist()
 def get_all_job_applicant_fields():
-    """Returns Job Applicant fields configured in Job Applicant Portal Settings."""
     frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
     portal_rows = _get_job_applicant_portal_settings()
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
@@ -247,101 +348,54 @@ def get_all_job_applicant_fields():
 
         fields.append(field_entry)
 
-    return {
-        "status": "success",
-        "total": len(fields),
-        "fields": fields,
-    }
+    return {"status": "success", "total": len(fields), "fields": fields}
 
 
 @frappe.whitelist()
 def get_available_job_applicant_fields():
-    """Returns all available Job Applicant meta fields for settings field picker."""
     frappe.has_permission("Job Applicant Portal Settings", "read", throw=True)
     fields = _read_job_applicant_meta(include_hidden=True, include_skipped=True)
-    return {
-        "status": "success",
-        "total": len(fields),
-        "fields": fields,
-    }
+    return {"status": "success", "total": len(fields), "fields": fields}
+
 
 @frappe.whitelist(allow_guest=True)
 def get_candidate_portal_form(job_applicant_id):
-    """Returns the structured portal form with current document values for a given applicant."""
+    """
+    Returns the structured portal form for a given job applicant.
 
+    Scenario A — Employee Onboarding record exists:
+        Form fields and pre-filled values are resolved from the onboarding doc.
+        Source priority: per-record child table > linked portal form > global default.
+
+    Scenario B — No Employee Onboarding record found:
+        Falls back to the global default Onboarding Portal Form.
+        All field values will be null.
+    """
     onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
+    doc = frappe.get_doc("Employee Onboarding", onboarding_name) if onboarding_name else None
 
-    if not onboarding_name:
-        frappe.local.response["http_status_code"] = 404
-        return {"status": "error", "message": _(f"Employee Onboarding for '{job_applicant_id}' not found.")}
-
-    doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    portal_rows = _get_onboarding_portal_rows(doc)
+    portal_rows, form_source = _get_onboarding_portal_rows(doc)
 
     if not portal_rows:
         return {
             "status": "error",
-            "message": _("No candidate portal fields configured.")
+            "message": _("No candidate portal fields configured. Please set up an Onboarding Portal Form."),
         }
 
     meta_lookup = {f["fieldname"]: f for f in _read_onboarding_meta()}
-    tab_order = []
-    tab_map = {}
-
-    for row in portal_rows:
-        fn = row.fieldname
-        tab_lbl = (row.tab_label or "").strip()
-        sec_lbl = (row.section_label or "").strip()
-        meta = meta_lookup.get(fn, {})
-        
-        fieldtype = row.fieldtype or meta.get("fieldtype", "Data")
-        field_options = row.options or meta.get("options", "")
-        
-        field_entry = {
-            "fieldname": fn,
-            "label": row.label or meta.get("label", fn),
-            "fieldtype": fieldtype,
-            "is_mandatory": int(row.is_mandatory or 0),
-            "read_only": int(row.read_only or 0),
-            "hidden": int(row.hidden or 0),
-            "options": field_options,
-            "value": _serialize_doc_field_value(doc, fn, fieldtype),
-        }
-        if fieldtype == "Table":
-            field_entry["child_doctype"] = field_options
-            field_entry["child_fields"] = _get_child_table_fields(field_options)
-
-        if tab_lbl not in tab_map:
-            tab_map[tab_lbl] = {"section_order": [], "section_map": {}}
-            tab_order.append(tab_lbl)
-
-        tab_entry = tab_map[tab_lbl]
-        if sec_lbl not in tab_entry["section_map"]:
-            tab_entry["section_map"][sec_lbl] = []
-            tab_entry["section_order"].append(sec_lbl)
-
-        tab_entry["section_map"][sec_lbl].append(field_entry)
 
     return {
         "status": "success",
-        "onboarding_name": doc.name,
-        "job_applicant": doc.job_applicant,
-        "boarding_status": doc.boarding_status,
-        "tabs": [
-            {
-                "tab": tab_lbl,
-                "sections": [
-                    {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
-                    for sec_lbl in tab_map[tab_lbl]["section_order"]
-                ]
-            }
-            for tab_lbl in tab_order
-        ]
+        "job_applicant": job_applicant_id,
+        "form_source": form_source,
+        "onboarding_name": doc.name if doc else None,
+        "boarding_status": doc.boarding_status if doc else None,
+        "tabs": _build_tabbed_response(portal_rows, meta_lookup, doc),
     }
+
 
 @frappe.whitelist(allow_guest=True)
 def save_candidate_portal_data(job_applicant_id, data):
-    """Saves candidate-filled form data back to the Onboarding document using their Applicant ID."""
     if isinstance(data, str):
         try:
             data = frappe.parse_json(data)
@@ -360,12 +414,21 @@ def save_candidate_portal_data(job_applicant_id, data):
         return {"status": "error", "message": _(f"Employee Onboarding for '{job_applicant_id}' not found.")}
 
     onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
-    portal_rows = _get_onboarding_portal_rows(onboarding_doc)
-    allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
+    portal_rows, _ = _get_onboarding_portal_rows(onboarding_doc)
+
+    # Only allow editing fields where approval_status is Pending or Rejected
+    _EDITABLE_STATUSES = frozenset({"Pending", "Rejected"})
+    allowed_map = {
+        r.fieldname: r for r in portal_rows
+        if not r.get("hidden")
+        and not r.get("read_only")
+        and (r.get("approval_status") or "Pending") in _EDITABLE_STATUSES
+    }
 
     if not allowed_map:
-        return {"status": "error", "message": _("No editable fields configured.")}
+        return {"status": "error", "message": _("No editable fields available. All fields are under review or already approved.")}
 
+    # Validate mandatory fields (only among editable fields)
     missing = [
         row.label or fn for fn, row in allowed_map.items()
         if row.get("is_mandatory") and (fn not in data or data[fn] in (None, "", []))
@@ -402,11 +465,41 @@ def save_candidate_portal_data(job_applicant_id, data):
             updated.append(fn)
 
         doc.save(ignore_permissions=True)
+
+        # After saving, mark updated portal field rows as "Filled"
+        # and snapshot the submitted value into current_value
+        if updated:
+            import json as _json
+            doc.reload()
+            for row in (doc.get("custom_candidate_portal_fields") or []):
+                if row.fieldname not in updated:
+                    continue
+                ft = row.get("fieldtype") or "Data"
+                # Snapshot submitted value
+                live_val = doc.get(row.fieldname)
+                if ft == "Table":
+                    rows_data = live_val or []
+                    row.current_value = _json.dumps(
+                        [{k: str(v or "") for k, v in (r.as_dict() if hasattr(r, "as_dict") else r).items()
+                          if not k.startswith("_") and k not in {
+                              "doctype", "parent", "parenttype", "parentfield",
+                              "docstatus", "owner", "creation", "modified", "modified_by"
+                          }} for r in rows_data],
+                        ensure_ascii=False, default=str
+                    )
+                else:
+                    row.current_value = str(live_val) if live_val is not None else ""
+                # Mark as Filled (awaiting HR review)
+                row.approval_status = "Filled"
+
+            # Update overall submission status
+            doc.save(ignore_permissions=True)
+
         frappe.db.commit()
 
         return {
             "status": "success",
-            "message": _("Data saved successfully."),
+            "message": _("Data saved successfully. Fields are now pending HR review."),
             "updated_fields": updated,
         }
 
@@ -416,24 +509,24 @@ def save_candidate_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "message": str(e)}
 
+
 @frappe.whitelist(allow_guest=True)
 def get_portal_field_names(job_applicant_id=None):
-    """Returns a list of configured fieldnames."""
     onboarding_doc = None
     if job_applicant_id:
         onboarding_name = _get_onboarding_name_by_job_applicant(job_applicant_id)
         if onboarding_name:
             onboarding_doc = frappe.get_doc("Employee Onboarding", onboarding_name)
 
-    rows = _get_onboarding_portal_rows(onboarding_doc)
+    rows, _ = _get_onboarding_portal_rows(onboarding_doc)
     return {
         "status": "success",
         "fields": [r.fieldname for r in rows],
     }
 
+
 @frappe.whitelist(allow_guest=True)
 def get_job_applicant_portal_form(job_applicant_id):
-    """Returns the structured portal form with current Job Applicant values."""
     if not job_applicant_id:
         frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Job Applicant ID is required.")}
@@ -446,10 +539,7 @@ def get_job_applicant_portal_form(job_applicant_id):
     portal_rows = _get_job_applicant_portal_settings()
 
     if not portal_rows:
-        return {
-            "status": "error",
-            "message": _("No job applicant portal fields configured.")
-        }
+        return {"status": "error", "message": _("No job applicant portal fields configured.")}
 
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
     tab_order = []
@@ -497,15 +587,15 @@ def get_job_applicant_portal_form(job_applicant_id):
                 "sections": [
                     {"section": sec_lbl, "fields": tab_map[tab_lbl]["section_map"][sec_lbl]}
                     for sec_lbl in tab_map[tab_lbl]["section_order"]
-                ]
+                ],
             }
             for tab_lbl in tab_order
-        ]
+        ],
     }
+
 
 @frappe.whitelist(allow_guest=True)
 def save_job_applicant_portal_data(job_applicant_id, data):
-    """Saves candidate-filled form data back to the Job Applicant document."""
     if isinstance(data, str):
         try:
             data = frappe.parse_json(data)
@@ -581,13 +671,14 @@ def save_job_applicant_portal_data(job_applicant_id, data):
         frappe.local.response["http_status_code"] = 500
         return {"status": "error", "message": str(e)}
 
+
 @frappe.whitelist(allow_guest=True)
 def get_job_applicant_portal_field_names():
-    """Returns a list of configured fieldnames for Job Applicant portal."""
     return {
         "status": "success",
         "fields": [r.fieldname for r in _get_job_applicant_portal_settings()],
     }
+
 
 @frappe.whitelist(allow_guest=True)
 def get_candidate_feature_flags():

@@ -16,7 +16,7 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def initialize_candidate_portal_fields(self):
         """
         One-time snapshot of default candidate portal fields from
-        Employee Onboarding Portal Settings into this onboarding record.
+        Onboarding Portal Forms into this onboarding record.
         """
         if not self.is_new():
             return
@@ -28,7 +28,14 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
             return
 
         try:
-            default_rows = frappe.get_single("Employee Onboarding Portal Settings").portal_fields or []
+            settings_name = self.get_selected_onboarding_portal_form()
+            if settings_name and self.meta.get_field("custom_onboarding_portal_form") and not self.custom_onboarding_portal_form:
+                self.custom_onboarding_portal_form = settings_name
+            default_rows = (
+                frappe.get_doc("Onboarding Portal Forms", settings_name).portal_fields or []
+                if settings_name
+                else []
+            )
         except Exception:
             default_rows = []
 
@@ -48,6 +55,26 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
                 "hidden": row.hidden,
                 "options": row.options,
             })
+
+    def get_selected_onboarding_portal_form(self):
+        if self.meta.get_field("custom_onboarding_portal_form") and self.custom_onboarding_portal_form:
+            return self.custom_onboarding_portal_form
+
+        default_form = frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {"default": 1},
+            "name",
+            order_by="modified desc",
+        )
+        if default_form:
+            return default_form
+
+        return frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {},
+            "name",
+            order_by="modified desc",
+        )
 
     def set_employee(self):
         if not self.employee:
