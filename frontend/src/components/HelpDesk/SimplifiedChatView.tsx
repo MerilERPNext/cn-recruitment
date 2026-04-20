@@ -23,6 +23,8 @@ import { Form } from "@tsed/react-formio";
 import { Typography } from "../shared/atoms/Typography";
 import { FormioFormSkeleton } from "./LoadingSkeletons";
 import { useFileUploader } from "../../hooks/useFileUploader";
+import Button from "../shared/atoms/Button";
+import Modal from "../shared/Modal";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -1132,93 +1134,233 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     );
   };
 
-  const Header = () => (
-    <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
-      <div className="flex items-center gap-4">
-        {/* Chat icon */}
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <MessageSquare className="w-6 h-6 text-white" />
-        </div>
+  const Header = ({ ticket }: { ticket: TicketDetail }) => {
 
-        {/* Title and assigned */}
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-semibold text-gray-900 text-lg">
-              Issue Discussion
-              <span className="ml-2 text-blue-600">#{ticket.name}</span>
-            </h1>
-            <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
-              {ticket.status}
-            </span>
+    const creationForm = useMemo(() => {
+      const form = ticket.creation_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.creation_form_data])
+
+    const feedbackForm = useMemo(() => {
+      const form = ticket.feedback_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.feedback_form_data])
+
+    const closeForm = useMemo(() => {
+      const form = ticket.closing_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.closing_form_data])
+
+    console.log(feedbackForm)
+
+    const [showForms, setShowForms] = useState<boolean>(false);
+
+    return (
+      <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
+        <div className="flex items-center gap-4">
+          {/* Chat icon */}
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <MessageSquare className="w-6 h-6 text-white" />
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-sm text-gray-500">Assigned to</span>
-            <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
-                <span className="w-2 h-2 rounded-lg bg-green-500"></span>
-                <span className="text-sm font-medium text-gray-700">
-                  {getAssignedUser()}
-                </span>
-              </div>
-            </WrapperHoverCard>
+
+          {/* Title and assigned */}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-gray-900 text-lg">
+                Issue Discussion
+                <span className="ml-2 text-blue-600">#{ticket.name}</span>
+              </h1>
+              <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
+                {ticket.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-sm text-gray-500">Assigned to</span>
+              <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
+                  <span className="w-2 h-2 rounded-lg bg-green-500"></span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {getAssignedUser()}
+                  </span>
+                </div>
+              </WrapperHoverCard>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-        {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
-          <>
-            {/* Accept Closure - closes the ticket */}
-            <button
-              onClick={handleAcceptClosure}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {isClosing ? "Closing..." : "Accept Closure"}
-            </button>
-            {/* Reject Resolution - reopens for more work */}
-            <button
-              onClick={() => setIsRejectModalOpen(true)}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-            >
-              <XCircle className="w-4 h-4" />
-              Reject
-            </button>
-          </>
-        ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
-          <>
-            {!isDrawer && (
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
+          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
+            <>
+              {/* Accept Closure - closes the ticket */}
               <button
-                onClick={handleResolveButtonClick}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Resolve
-              </button>
-            )}
-            {showCloseTicketButton(ticket.status) && (
-              <button
-                onClick={handleCloseButtonClick}
+                onClick={handleAcceptClosure}
                 disabled={isClosing}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Close Ticket"}
+                {isClosing ? "Closing..." : "Accept Closure"}
               </button>
-            )}
-          </>
-        ) : null}
-      </div>
-    </header>
-  );
+              {/* Reject Resolution - reopens for more work */}
+              <button
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+            </>
+          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
+            <>
+              {!isDrawer && (
+                <button
+                  onClick={handleResolveButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Resolve
+                </button>
+              )}
+              {showCloseTicketButton(ticket.status) && (
+                <button
+                  onClick={handleCloseButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isClosing ? "Closing..." : "Close Ticket"}
+                </button>
+              )}
+            </>
+          ) : null}
+
+          {
+            (!!creationForm?.shema || !!closeForm?.schema || !!feedbackForm?.schema) && (
+              <Button
+                onClick={() => { setShowForms(true) }}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Show Forms
+              </Button>
+            )
+          }
+
+          {
+            showForms && (
+              <Modal
+                isOpen={showForms}
+                onClose={() => setShowForms(false)}
+                className="flex flex-col overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
+                  <div>
+                    <Typography variant="h3" color="primary">
+                      Ticket Submission Forms
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2" className="mt-1">
+                      Ticket ID: {ticket.name}
+                    </Typography>
+                  </div>
+                  <button
+                    onClick={() => setShowForms(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30">
+                  <div className="flex flex-col gap-6">
+                    {closeForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Close Form
+                        </Typography>
+                        <Form
+                          form={closeForm.schema}
+                          submission={{ data: closeForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {feedbackForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Feedback Form
+                        </Typography>
+                        <Form
+                          form={feedbackForm.schema}
+                          submission={{ data: feedbackForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {creationForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Creation Form
+                        </Typography>
+                        <Form
+                          form={creationForm.schema}
+                          submission={{ data: creationForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Modal>
+            )
+          }
+
+        </div>
+      </header>
+    )
+  };
 
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
 
-      {isDesktop && <Header />}
+      {isDesktop && <Header ticket={ticket} />}
 
       {/* Info banner when agent has requested closure */}
       {ticket.status === "Resolved" && (
@@ -1278,7 +1420,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           }
         </nav>
       </div>
-      {isDropDownOpen && <Header />}
+      {isDropDownOpen && <Header ticket={ticket} />}
       {/* Content Area */}
       {activeTab === "resolution" ? (
         <div className="flex-1 overflow-y-auto px-6 py-4">

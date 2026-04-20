@@ -764,6 +764,9 @@ export interface TicketDetail {
   contact?: TicketContact;
   comments: TicketComment[];
   communications: TicketCommunication[];
+  creation_form_data: string | null;
+  feedback_form_data: string | null;
+  closing_form_data: string | null;
   history: TicketHistory[];
 }
 
