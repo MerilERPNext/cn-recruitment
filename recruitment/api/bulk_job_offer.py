@@ -209,7 +209,7 @@ def send_bulk_job_offer(job_offers):
             # Update Applicant
             # ----------------------------
             applicant.flags.ignore_notify = True
-            applicant.status = "Offered"
+            applicant.status = "Open"
             applicant.save(ignore_permissions=True)
 
             sent += 1

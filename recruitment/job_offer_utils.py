@@ -121,26 +121,39 @@ def request_for_offer(jo_id):
     trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
 
 
-@frappe.whitelist(allow_guest=True)
-def submit_docs(status, appl,url=None):
-	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-	onboarding_webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-	if status == "Accepted":
-		wf_url = url+"/"+onboarding_webform+"/new?job_offer="+jo_id+"&job_applicant="+appl
-		email_context = {"url":wf_url,"name": jo_id, "applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl},"applicant_name"),"company":frappe.db.get_value("Job Offer", {"job_applicant": appl},"company"),"designation":frappe.db.get_value("Job Offer", {"job_applicant": appl},"designation")}
-		frappe.sendmail(
-			recipients=[job_applicant],
-			subject=frappe.render_template(
-				frappe.db.get_value("Email Template", "Employee Onboarding", "subject"),
-				email_context,
-			),
-			message=frappe.render_template(
-				frappe.db.get_value("Email Template", "Employee Onboarding", "response_html"),
-				email_context,
-			),
-			args=email_context,
-		)
+# @frappe.whitelist(allow_guest=True)
+# def submit_docs(status, appl, url=None):
+# 	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+# 	onboarding_webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
+# 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
+# 	if status == "Accepted":
+# 		if not url:
+# 			return
+
+# 		template = frappe.db.get_value(
+# 			"Email Template", "Employee Onboarding", ["subject", "response_html"], as_dict=True
+# 		)
+# 		if not template or not template.subject or not template.response_html:
+# 			frappe.log_error(
+# 				"Email Template 'Employee Onboarding' is missing or has empty subject/body",
+# 				"submit_docs: Skipped sending empty email",
+# 			)
+# 			return
+
+# 		wf_url = url + "/" + onboarding_webform + "/new?job_offer=" + jo_id + "&job_applicant=" + appl
+# 		email_context = {
+# 			"url": wf_url,
+# 			"name": jo_id,
+# 			"applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "applicant_name"),
+# 			"company": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "company"),
+# 			"designation": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "designation"),
+# 		}
+# 		frappe.sendmail(
+# 			recipients=[job_applicant],
+# 			subject=frappe.render_template(template.subject, email_context),
+# 			message=frappe.render_template(template.response_html, email_context),
+# 			args=email_context,
+# 		)
 
 
 @frappe.whitelist()
@@ -192,7 +205,7 @@ def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
     communication_doc.reference_name = jo_name
     communication_doc.recipients = mail_id+","
     communication_doc.save()
-    frappe.db.set_value("Job Applicant",mail_id,"status","Offered")
+    frappe.db.set_value("Job Applicant",mail_id,"status","Open")
 
 
 
