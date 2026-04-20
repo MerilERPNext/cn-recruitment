@@ -75,7 +75,7 @@ const TeamProofApprovalCard = ({
         {/* Proof */}
 
         <div className="flex justify-center">
-          <StatusBadge status={data?.status} />
+        <StatusBadge status={data?.todo_status === "Closed" && data?.reference_document?.custom_status !== "Rejected" ? "Approved" : data?.reference_document?.custom_status} />
         </div>
 
         {/* Actions */}

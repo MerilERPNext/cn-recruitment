@@ -178,15 +178,10 @@ def sync_onboarding_field_rejection_action(onboarding_doc, approval_list=None):
     if not candidate_email:
         return
 
-    if approval_list is None:
-        try:
-            approval_list = frappe.parse_json(onboarding_doc.custom_field_approval_json) or []
-        except Exception:
-            approval_list = []
-
+    # Read rejection count from child table rows (approval_list param ignored — source of truth is child table)
     rejected_count = 0
-    for row in approval_list or []:
-        if (row.get("status") or "") == "Rejected":
+    for row in (onboarding_doc.get("custom_candidate_portal_fields") or []):
+        if (row.get("approval_status") or "") == "Rejected":
             rejected_count += 1
 
     if rejected_count <= 0:
@@ -249,6 +244,7 @@ def get_action_center_items(candidate_id=None, candidate_email=None, limit=100):
             "attachment",
             "description",
             "modified",
+            "status",
         ],
         order_by="modified desc",
         limit_page_length=max(1, min(limit, 500)),

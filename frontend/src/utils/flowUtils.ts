@@ -10,9 +10,12 @@ export const extractRolesAndUsers = (stage: FlowRequestStage | WorkflowStage) =>
     users.push(allocatedTo);
   }
 
-  const role = stage?.todo?.role;
-  if (role && typeof role === "string") {
-    roles.push(role);
+  if (stage?.todo?.role && typeof stage?.todo?.role === "string") {
+    roles.push(stage?.todo?.role);
+  }
+
+  if (stage?.role && typeof stage?.role === "string") {
+    roles.push(stage?.role);
   }
 
   return {

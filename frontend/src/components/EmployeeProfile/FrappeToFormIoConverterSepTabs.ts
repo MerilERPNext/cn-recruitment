@@ -656,12 +656,13 @@ export async function convertToFormioWithTabMetadata(
     }
   };
 
-  // Helper to ensure we have a tab
+  // Helper to ensure we have a tab — orphan fields land in basic_details_tab so
+  // they are merged when the real Tab Break for basic_details_tab arrives.
   const ensureCurrentTab = () => {
     if (!currentTab) {
       currentTab = {
-        label: "General",
-        key: "general",
+        label: "Basic Details",
+        key: "basic_details_tab",
         components: [],
       };
     }
@@ -692,11 +693,19 @@ export async function convertToFormioWithTabMetadata(
         tabs.push(currentTab);
       }
 
-      currentTab = {
-        label: field.label || `Tab ${tabs.length + 1}`,
-        key: field.fieldname || `tab_${tabs.length + 1}`,
-        components: [],
-      };
+      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
+      // If an orphan basic_details_tab was already pushed, reclaim it to avoid duplicates
+      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
+      if (orphanIdx !== -1) {
+        currentTab = tabs.splice(orphanIdx, 1)[0];
+        currentTab.label = field.label || currentTab.label;
+      } else {
+        currentTab = {
+          label: field.label || `Tab ${tabs.length + 1}`,
+          key: tabKey,
+          components: [],
+        };
+      }
       fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
       if (fieldsBuffer.length > 0 && currentSection) {
@@ -937,11 +946,11 @@ export async function convertToFormioWithTabMetadata(
   // Remove empty tabs (those without any inputs)
   const filteredTabs = tabs.filter((tab) => hasInputs(tab.components));
 
-  // If no tabs were created, create a single general tab
+  // If no tabs were created, fall back to Basic Details
   if (filteredTabs.length === 0) {
     filteredTabs.push({
-      label: "General",
-      key: "general",
+      label: "Basic Details",
+      key: "basic_details_tab",
       components: [],
       schema: undefined
     });
@@ -1021,8 +1030,8 @@ export async function convertToFormioWithLayout(
   const ensureCurrentTab = () => {
     if (!currentTab) {
       currentTab = {
-        label: "General",
-        key: "general",
+        label: "Basic Details",
+        key: "basic_details_tab",
         components: [],
       };
     }
@@ -1053,13 +1062,21 @@ export async function convertToFormioWithLayout(
         tabs.push(currentTab);
       }
 
-      currentTab = {
-        label: field.label || `Tab ${tabs.length + 1}`,
-        key: field.fieldname || `tab_${tabs.length + 1}`,
-        components: [],
-        input: false,
-        tableView: false,
-      };
+      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
+      // Reclaim orphan basic_details_tab if already pushed, to avoid duplicates
+      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
+      if (orphanIdx !== -1) {
+        currentTab = tabs.splice(orphanIdx, 1)[0];
+        currentTab.label = field.label || currentTab.label;
+      } else {
+        currentTab = {
+          label: field.label || `Tab ${tabs.length + 1}`,
+          key: tabKey,
+          components: [],
+          input: false,
+          tableView: false,
+        };
+      }
       fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
       if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
@@ -1336,11 +1353,11 @@ export async function convertToFormioWithLayout(
   // Remove empty tabs (those without any inputs)
   const filteredTabs = tabs.filter((tab) => hasInputs(tab.components));
 
-  // If no tabs were created, create a single general tab
+  // If no tabs were created, fall back to Basic Details
   if (filteredTabs.length === 0) {
     filteredTabs.push({
-      label: "General",
-      key: "general",
+      label: "Basic Details",
+      key: "basic_details_tab",
       components: [],
       input: false,
       tableView: false,
@@ -1419,8 +1436,8 @@ export async function convertFieldsToSimpleTabbedData(
   const ensureCurrentTab = () => {
     if (!currentTab) {
       currentTab = {
-        label: "General",
-        key: "general",
+        label: "Basic Details",
+        key: "basic_details_tab",
         fields: [],
         hidden: false,
         readOnly: false,
@@ -1450,14 +1467,25 @@ export async function convertFieldsToSimpleTabbedData(
     if (field.fieldtype === "Button") continue;
 
     if (field.fieldtype === "Tab Break") {
-      currentTab = {
-        label: field.label || `Tab ${tabs.length + 1}`,
-        key: field.fieldname || `tab_${tabs.length + 1}`,
-        fields: [],
-        hidden: !!field.hidden,
-        readOnly: !!field.read_only,
-      };
-      tabs.push(currentTab);
+      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
+      // Reclaim orphan basic_details_tab if already pushed, to avoid duplicates
+      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
+      if (orphanIdx !== -1) {
+        currentTab = tabs.splice(orphanIdx, 1)[0];
+        currentTab.label = field.label || currentTab.label;
+        currentTab.hidden = !!field.hidden;
+        currentTab.readOnly = !!field.read_only;
+        tabs.push(currentTab);
+      } else {
+        currentTab = {
+          label: field.label || `Tab ${tabs.length + 1}`,
+          key: tabKey,
+          fields: [],
+          hidden: !!field.hidden,
+          readOnly: !!field.read_only,
+        };
+        tabs.push(currentTab);
+      }
     } else if (field.fieldtype === "Section Break") {
       ensureCurrentTab();
     } else if (field.fieldtype === "Column Break") {

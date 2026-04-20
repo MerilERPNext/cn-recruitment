@@ -1,15 +1,36 @@
 // employee_onboarding_portal_settings.js
 // Interactive Field Inspector — collapsible sections, Add Section, Remove, & Mandatory toggle
 
-frappe.ui.form.on("Employee Onboarding Portal Settings", {
+frappe.ui.form.on("Employee Onboarding", {
 
     refresh(frm) {
-        frm.fields_dict["available_fields_html"].$wrapper.html("");
+        frm.fields_dict["custom_available_candidate_portal_fields_html"].$wrapper.html("");
     },
 
-    fetch_fields_btn(frm) {
+    custom_onboarding_portal_form(frm) {
+        if (frm.doc.docstatus !== 0 || !frm.doc.custom_onboarding_portal_form) return;
+
+        const hasRows = (frm.doc.custom_candidate_portal_fields || []).length > 0;
+        const proceed = () => _load_selected_portal_form_rows(frm);
+
+        if (hasRows) {
+            frappe.confirm(
+                __("Selecting a form will replace existing candidate portal fields. Continue?"),
+                proceed
+            );
+            return;
+        }
+
+        proceed();
+    },
+
+    custom_fetch_candidate_portal_fields_btn(frm) {
+        if (frm.doc.docstatus !== 0) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
         frappe.call({
-            method: "recruitment.api.candidate_portal.get_all_onboarding_fields",
+            method: "recruitment.api.candidate_portal.get_all_onboarding_fields_for_onboarding",
             freeze: true,
             freeze_message: __("Reading Employee Onboarding fields…"),
             callback(r) {
@@ -23,11 +44,49 @@ frappe.ui.form.on("Employee Onboarding Portal Settings", {
     }
 });
 
+function _apply_form_rows(frm, rows) {
+    frm.clear_table("custom_candidate_portal_fields");
+    (rows || []).forEach(r => {
+        const row = frm.add_child("custom_candidate_portal_fields");
+        row.fieldname = r.fieldname;
+        row.label = r.label;
+        row.fieldtype = r.fieldtype;
+        row.tab_label = r.tab_label;
+        row.section_label = r.section_label;
+        row.is_mandatory = r.is_mandatory;
+        row.read_only = r.read_only;
+        row.hidden = r.hidden;
+        row.options = r.options;
+    });
+    frm.refresh_field("custom_candidate_portal_fields");
+}
+
+function _load_selected_portal_form_rows(frm) {
+    frappe.call({
+        method: "recruitment.api.candidate_portal.get_onboarding_form_fields",
+        args: { form_name: frm.doc.custom_onboarding_portal_form },
+        freeze: true,
+        freeze_message: __("Loading selected onboarding portal form fields..."),
+        callback(r) {
+            if (!r.message || r.message.status !== "success") {
+                frappe.msgprint(__("Could not load selected onboarding portal form."));
+                return;
+            }
+            _apply_form_rows(frm, r.message.fields || []);
+            frappe.show_alert({
+                message: __("Loaded {0} fields from {1}", [r.message.total || 0, r.message.form_name || "form"]),
+                indicator: "green"
+            });
+        }
+    });
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Inspector Renderer
 // ─────────────────────────────────────────────────────────────────────────────
 function _render_field_inspector(frm, fields) {
+    const _isDraft = () => frm.doc.docstatus === 0;
 
     // ── Group fields: tab → section → [fields] ─────────────────────────────
     const tabs     = {};
@@ -43,13 +102,13 @@ function _render_field_inspector(frm, fields) {
 
     // ── Get wrapper and REMOVE any previously bound delegated handlers ─────
     // This prevents double-firing when the user clicks "Fetch" more than once.
-    const $w = frm.fields_dict["available_fields_html"].$wrapper;
+    const $w = frm.fields_dict["custom_available_candidate_portal_fields_html"].$wrapper;
     $w.off(".cps");
 
     // ── Helpers ────────────────────────────────────────────────────────────
     const _k      = str => (str || "general").replace(/[^a-z0-9]/gi, "_").toLowerCase();
-    const _added  = () => new Set((frm.doc.portal_fields || []).map(r => r.fieldname));
-    const _getRow = fn  => (frm.doc.portal_fields || []).find(r => r.fieldname === fn);
+    const _added  = () => new Set((frm.doc.custom_candidate_portal_fields || []).map(r => r.fieldname));
+    const _getRow = fn  => (frm.doc.custom_candidate_portal_fields || []).find(r => r.fieldname === fn);
 
     function _secCounts(secFields, addedSet) {
         let added = 0;
@@ -144,11 +203,11 @@ function _render_field_inspector(frm, fields) {
     function buildHTML(addedSet) {
         const tabSuggestions = Array.from(new Set([
             ...tabOrder,
-            ...(frm.doc.portal_fields || []).map(r => (r.tab_label || "").trim()).filter(Boolean),
+            ...(frm.doc.custom_candidate_portal_fields || []).map(r => (r.tab_label || "").trim()).filter(Boolean),
         ]));
         const secSuggestions = Array.from(new Set([
             ...tabOrder.flatMap(tab => Object.keys(tabs[tab] || {})),
-            ...(frm.doc.portal_fields || []).map(r => (r.section_label || "").trim()).filter(Boolean),
+            ...(frm.doc.custom_candidate_portal_fields || []).map(r => (r.section_label || "").trim()).filter(Boolean),
         ]));
         const tabOptionsHTML = tabSuggestions
             .map(v => `<option value="${frappe.utils.escape_html(v)}"></option>`)
@@ -493,9 +552,13 @@ function _render_field_inspector(frm, fields) {
     // Add single field
     // ─────────────────────────────────────────────────────────────────────
     function _addField(fn, lbl, ft, tab, sec, isMandatory) {
-        if ((frm.doc.portal_fields || []).some(r => r.fieldname === fn)) return false;
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return false;
+        }
+        if ((frm.doc.custom_candidate_portal_fields || []).some(r => r.fieldname === fn)) return false;
 
-        const row = frappe.model.add_child(frm.doc, "Employee Onboarding Portal Field", "portal_fields");
+        const row = frappe.model.add_child(frm.doc, "Employee Onboarding Portal Field", "custom_candidate_portal_fields");
         frappe.model.set_value(row.doctype, row.name, "fieldname",     fn);
         frappe.model.set_value(row.doctype, row.name, "label",         lbl);
         frappe.model.set_value(row.doctype, row.name, "fieldtype",     ft);
@@ -509,10 +572,14 @@ function _render_field_inspector(frm, fields) {
     // Remove single field
     // ─────────────────────────────────────────────────────────────────────
     function _removeField(fn) {
-        const idx = (frm.doc.portal_fields || []).findIndex(r => r.fieldname === fn);
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
+        const idx = (frm.doc.custom_candidate_portal_fields || []).findIndex(r => r.fieldname === fn);
         if (idx === -1) return;
-        frappe.model.clear_doc("Employee Onboarding Portal Field", frm.doc.portal_fields[idx].name);
-        frm.doc.portal_fields.splice(idx, 1);
+        frappe.model.clear_doc("Employee Onboarding Portal Field", frm.doc.custom_candidate_portal_fields[idx].name);
+        frm.doc.custom_candidate_portal_fields.splice(idx, 1);
         frm.dirty();
     }
 
@@ -537,7 +604,7 @@ function _render_field_inspector(frm, fields) {
                 frappe.show_alert({ message: __(`${fn} already added.`), indicator: "orange" });
                 return;
             }
-            frm.refresh_field("portal_fields");
+            frm.refresh_field("custom_candidate_portal_fields");
             _refreshRowCell(fn, true);
             _refreshSecHeader(secKey);
             frappe.show_alert({
@@ -554,7 +621,7 @@ function _render_field_inspector(frm, fields) {
             const secKey = $row.data("sec-key");
 
             _removeField(fn);
-            frm.refresh_field("portal_fields");
+            frm.refresh_field("custom_candidate_portal_fields");
             _refreshRowCell(fn, false);
             _refreshSecHeader(secKey);
             frappe.show_alert({ message: __(`Removed: ${fn}`), indicator: "orange" });
@@ -562,6 +629,11 @@ function _render_field_inspector(frm, fields) {
 
         // MANDATORY checkbox — toggle live on already-added fields
         $scope.find(".cps-mandatory-chk").off("change").on("change", function () {
+            if (!_isDraft()) {
+                $(this).prop("checked", !$(this).prop("checked"));
+                frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+                return;
+            }
             const fn      = $(this).data("fn");
             const checked = $(this).prop("checked");
             const $label  = $(this).closest(".cps-mandatory-label");
@@ -578,7 +650,7 @@ function _render_field_inspector(frm, fields) {
                     childRow.doctype, childRow.name,
                     "is_mandatory", checked ? 1 : 0
                 );
-                frm.refresh_field("portal_fields");
+                frm.refresh_field("custom_candidate_portal_fields");
                 frappe.show_alert({
                     message: __(checked
                         ? `"${fn}" marked as Mandatory`
@@ -637,6 +709,10 @@ function _render_field_inspector(frm, fields) {
     });
 
     $w.on("click.cps", ".cps-add-selected-btn", function () {
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
         const selectedFns = _selectedFns();
         if (!selectedFns.length) return;
 
@@ -670,7 +746,7 @@ function _render_field_inspector(frm, fields) {
             return;
         }
 
-        frm.refresh_field("portal_fields");
+        frm.refresh_field("custom_candidate_portal_fields");
         const newAdded = _added();
         selectedFns.forEach(fn => _refreshRowCell(fn, newAdded.has(fn)));
         touchedSecKeys.forEach(secKey => {
@@ -695,6 +771,10 @@ function _render_field_inspector(frm, fields) {
     // Add ALL Section button (event delegation)
     // ─────────────────────────────────────────────────────────────────────
     $w.on("click.cps", ".cps-add-sec-btn", function (e) {
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
         e.stopPropagation();
         const secKey  = $(this).data("sec-key");
         const tab     = $(this).data("tab");
@@ -712,7 +792,7 @@ function _render_field_inspector(frm, fields) {
             count++;
         });
 
-        frm.refresh_field("portal_fields");
+        frm.refresh_field("custom_candidate_portal_fields");
 
         const newAdded = _added();
         secFlds.forEach(f => {
@@ -728,6 +808,10 @@ function _render_field_inspector(frm, fields) {
     });
 
     $w.on("click.cps", ".cps-remove-sec-btn", function (e) {
+        if (!_isDraft()) {
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
         e.stopPropagation();
         const secKey  = $(this).data("sec-key");
         const sec     = $(this).data("sec");
@@ -746,7 +830,7 @@ function _render_field_inspector(frm, fields) {
             return;
         }
 
-        frm.refresh_field("portal_fields");
+        frm.refresh_field("custom_candidate_portal_fields");
 
         const newAdded = _added();
         secFlds.forEach(f => {
@@ -795,6 +879,11 @@ function _render_field_inspector(frm, fields) {
     // Section-level: Mark ALL Mandatory toggle
     // ─────────────────────────────────────────────────────────────────────
     $w.on("change.cps", ".cps-sec-mand-chk", function (e) {
+        if (!_isDraft()) {
+            $(this).prop("checked", !$(this).prop("checked"));
+            frappe.msgprint(__("Candidate portal fields can be edited only in Draft."));
+            return;
+        }
         e.stopPropagation();
         const secKey   = $(this).data("sec-key");
         const checked  = $(this).prop("checked");
@@ -822,7 +911,7 @@ function _render_field_inspector(frm, fields) {
         });
 
         if (updatedCount > 0) {
-            frm.refresh_field("portal_fields");
+            frm.refresh_field("custom_candidate_portal_fields");
         }
 
         // Update visual state of section checkbox itself

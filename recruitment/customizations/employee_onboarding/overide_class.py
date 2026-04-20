@@ -10,7 +10,71 @@ class CustomEmployeeOnboarding(EmployeeOnboarding):
     def validate(self):
         super().validate()
         self.set_employee()
+        self.initialize_candidate_portal_fields()
         self.validate_duplicate_employee_onboarding()
+
+    def initialize_candidate_portal_fields(self):
+        """
+        One-time snapshot of default candidate portal fields from
+        Onboarding Portal Forms into this onboarding record.
+        """
+        if not self.is_new():
+            return
+        if self.docstatus != 0:
+            return
+        if not self.meta.get_field("custom_candidate_portal_fields"):
+            return
+        if self.get("custom_candidate_portal_fields"):
+            return
+
+        try:
+            settings_name = self.get_selected_onboarding_portal_form()
+            if settings_name and self.meta.get_field("custom_onboarding_portal_form") and not self.custom_onboarding_portal_form:
+                self.custom_onboarding_portal_form = settings_name
+            default_rows = (
+                frappe.get_doc("Onboarding Portal Forms", settings_name).portal_fields or []
+                if settings_name
+                else []
+            )
+        except Exception:
+            default_rows = []
+
+        if not default_rows:
+            return
+
+        self.set("custom_candidate_portal_fields", [])
+        for row in default_rows:
+            self.append("custom_candidate_portal_fields", {
+                "fieldname": row.fieldname,
+                "label": row.label,
+                "fieldtype": row.fieldtype,
+                "tab_label": row.tab_label,
+                "section_label": row.section_label,
+                "is_mandatory": row.is_mandatory,
+                "read_only": row.read_only,
+                "hidden": row.hidden,
+                "options": row.options,
+            })
+
+    def get_selected_onboarding_portal_form(self):
+        if self.meta.get_field("custom_onboarding_portal_form") and self.custom_onboarding_portal_form:
+            return self.custom_onboarding_portal_form
+
+        default_form = frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {"default": 1},
+            "name",
+            order_by="modified desc",
+        )
+        if default_form:
+            return default_form
+
+        return frappe.db.get_value(
+            "Onboarding Portal Forms",
+            {},
+            "name",
+            order_by="modified desc",
+        )
 
     def set_employee(self):
         if not self.employee:

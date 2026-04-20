@@ -12,12 +12,12 @@ import defaultProfile from "../../assets/face-rec.png";
 import DesktopLayoutWrapper from "../DesktopLayoutWrapper";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
-import { Award, IdCard, Mail, MapPin, NotebookPen, Pencil } from "lucide-react";
+import { Building, IdCard, Mail, MapPin, Pencil } from "lucide-react";
 import { Tab } from "../NavigationTab";
 import EmploymentHistory from "../MyProfile/EmploymentHistory";
 import Button from "../shared/atoms/Button";
-import AttendanceAssignments from "../Attendance/AttendanceAssignments";
-import ShowHolidays from "./ShowHolidays";
+// import AttendanceAssignments from "../Attendance/AttendanceAssignments";
+// import ShowHolidays from "./ShowHolidays";
 
 import { useUpdateFrappeDocument } from "../../hooks/useFrappeQuery";
 import toast from "react-hot-toast";
@@ -56,11 +56,11 @@ const EmployeeProfile: React.FC = () => {
   const { targetEmployeeId, isViewingOtherUser, clearTargetEmployee } =
     useTargetUser();
   const { data: userUiPermission } = useGetUiPermission("Profile");
-  const canAttendanceAssignments = isActionEnabled(
-    userUiPermission,
-    "attendance_assignments",
-    "Employee Profile",
-  );
+  // const canAttendanceAssignments = isActionEnabled(
+  //   userUiPermission,
+  //   "attendance_assignments",
+  //   "Employee Profile",
+  // );
   const canShowEmployeeStatus = isActionEnabled(
     userUiPermission,
     "show_employee_status",
@@ -92,8 +92,8 @@ const EmployeeProfile: React.FC = () => {
   } = useGetEmployeeDetailsByEmpIdForProfile(employeeId);
   const user = empData?.employee;
 
-  const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
-    useState(false);
+  // const [isAttendanceAssignmentsOpen, setIsAttendanceAssignmentsOpen] =
+  //   useState(false);
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
@@ -147,7 +147,7 @@ const EmployeeProfile: React.FC = () => {
       { key: "personal-information", label: "Personal Information", permissionKey: "show_personal_information" },
       { key: "employment-history", label: "Employment History", permissionKey: "show_employment_history" },
       { key: "reporting-details", label: "Reporting Details", permissionKey: "show_reporting_details" },
-      { key: "employee-holidays", label: "Employee Holidays", permissionKey: "show_employee_holidays" },
+      // { key: "employee-holidays", label: "Employee Holidays", permissionKey: "show_employee_holidays" },
       { key: "employee-documents", label: "Employee Documents", permissionKey: "show_employee_documents" },
     ],
     [],
@@ -182,7 +182,7 @@ const EmployeeProfile: React.FC = () => {
       "overview": <Overview />,
       "personal-information": <EmployeeProfileSections />,
       "employment-history": <EmploymentHistory employeeId={user?.employee} />,
-      "employee-holidays": <ShowHolidays />,
+      // "employee-holidays": <ShowHolidays />,
       "employee-documents": <DocumentLibrary />,
       "reporting-details": <ReportingDetails />,
     }),
@@ -343,15 +343,15 @@ const EmployeeProfile: React.FC = () => {
                 >
                   {user?.employee_name}
                 </Typography>
-                {user?.designation_display && (
-                  <Tooltip content={user?.designation_display}>
+                {user?.department_display && (
+                  <Tooltip content={user?.department_display}>
                     <Typography
                       variant="bodySmall"
                       color="secondary"
                       className="font-medium truncate mt-1 flex gap-1.5 items-center"
                     >
-                      <Award size={14} className="text-primary-500" />
-                      <span>{user?.designation_display}</span>
+                      <Building size={14} className="text-primary-500" />
+                      <span>{user?.department_display}</span>
                     </Typography>
                   </Tooltip>
                 )}
@@ -420,7 +420,7 @@ const EmployeeProfile: React.FC = () => {
             </div>
             <div className="flex gap-2 mt-4 mx-2">
               {canAppreciate && <Appreciations />}
-              {
+              {/* {
                 canAttendanceAssignments && (
                   <Button
                     icon={<NotebookPen size={14} />}
@@ -433,7 +433,7 @@ const EmployeeProfile: React.FC = () => {
                   >
                     Attendance Assignment
                   </Button>
-                )}
+                )} */}
             </div>
             <AwardsSection isDesktop={false} />
           </div>
@@ -472,10 +472,10 @@ const EmployeeProfile: React.FC = () => {
           ))}
         </div>
       </div>
-      <AttendanceAssignments
+      {/* <AttendanceAssignments
         open={isAttendanceAssignmentsOpen}
         onClose={() => setIsAttendanceAssignmentsOpen(false)}
-      />
+      /> */}
     </div>
   );
 
@@ -572,14 +572,14 @@ const EmployeeProfile: React.FC = () => {
                         )}
                       </div>
                       <div className="flex flex-col justify-start items-start gap-2 mt-4">
-                        {user?.designation_display && (
-                          <Tooltip content={user?.designation_display}>
+                        {user?.department_display && (
+                          <Tooltip content={"Department : " + user?.department_display}>
                             <Typography
                               variant="bodyMedium"
                               className="font-semibold text-primary-600 flex gap-2 items-center"
                             >
-                              <Award size={16} />
-                              <span>{user?.designation_display}</span>
+                              <Building size={16} />
+                              <span>{user?.department_display}</span>
                             </Typography>
                           </Tooltip>
                         )}
@@ -613,7 +613,7 @@ const EmployeeProfile: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2 mt-2">
-                          {
+                          {/* {
                             canAttendanceAssignments && (
                               <Button
                                 icon={<NotebookPen size={14} />}
@@ -626,7 +626,7 @@ const EmployeeProfile: React.FC = () => {
                               >
                                 Attendance Assignment
                               </Button>
-                            )}
+                            )} */}
                           {canAppreciate && <Appreciations />}
                         </div>
                       </div>
@@ -673,10 +673,10 @@ const EmployeeProfile: React.FC = () => {
           </div>
         </div>
       </div>
-      <AttendanceAssignments
+      {/* <AttendanceAssignments
         open={isAttendanceAssignmentsOpen}
         onClose={() => setIsAttendanceAssignmentsOpen(false)}
-      />
+      /> */}
     </DesktopLayoutWrapper>
   );
 

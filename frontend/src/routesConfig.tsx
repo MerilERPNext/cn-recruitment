@@ -1118,6 +1118,12 @@ export const routesConfig: AppRoute[] = [
     permissionKey: "Help Desk",
   },
   {
+    path: "/work-connect",
+    element:<Navigate to="/work-connect" replace />,
+    permissionKey: "Work Connect",
+  },
+  
+  {
     path: "/webapp/helpdesk/my-tickets",
     element: <HelpDeskApp />,
     permissionKey: "Help Desk My Tickets",

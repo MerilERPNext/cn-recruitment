@@ -202,6 +202,13 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const isEditActive = Boolean(initialExpense || editingExpenseId || isEditingFromDetailsPage || draft_document_name);
 
+  const resetDynamicSelectionState = () => {
+    setDynamicFormData({});
+    setDynamicFields([]);
+    setCalcParams(undefined);
+    setVehicleType(null);
+  };
+
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
     fields: ["name", "employee_name", "company"]
   });
@@ -345,6 +352,9 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setSelectedCategoryType(initialExpense.categoryType || "General");
     setPreviousCategory(initialExpense.expenseCategory);
     setShowCategoryAndType(true);
+    setTimeout(() => {
+      hydrationRef.current = false;
+    }, 0);
   }, [initialExpense, isEditActive]);
 
 
@@ -364,6 +374,11 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       // key based on expenseTypeValue, so it will re-mount automatically.
       // Incrementing formKey here caused a double re-mount race condition
       // that made the dynamic form fail to render on mobile.
+    } else {
+      setDynamicFields([]);
+      setDynamicFormData({});
+      setCalcParams(undefined);
+      setVehicleType(null);
     }
   }, [mainFormData?.expenseType, mainFormData?.expense_type, editingExpenseId, isEditActive]);
 
@@ -423,15 +438,15 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
         {
           type: "select",
           key: "categoryType",
-          label: 'Select Category Type <span style="color:red">&nbsp;*</span>',
-          placeholder: "Select Category Type",
+          label: 'Select Class <span style="color:red">&nbsp;*</span>',
+          placeholder: "Select Class",
           dataSrc: "custom",
           data: {
             custom: `values = data.categoryTypeOptions || [];`,
           },
           validate: {
             required: true,
-            customMessage: "Category Type is required",
+            customMessage: "Class is required",
           },
           input: true,
           html: true,
@@ -513,7 +528,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
 
   const handleSubmit = (submission: any) => {
-    setMainFormData(submission.data);
+    setMainFormData({ ...submission.data });
     setPreviousCategory(submission.data.expenseCategory);
     setShowCategoryAndType(false);
     setFormKey((k) => k + 1);
@@ -735,6 +750,32 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 html: true,
               };
             }
+            if (
+              field?.fieldname === "project" ||
+              field?.fieldname === "cost_center"
+            ) {
+              return {
+                type: "select",
+                key: field?.fieldname,
+                label:
+                  field?.required === true
+                    ? `${field?.label} <span style="color:red">&nbsp;*</span>`
+                    : field?.label,
+                dataSrc: "url",
+                data: {
+                  url: `/api/method/cn_hrms_core.cn_hrms_core.apis.fetch_data.get_searched_doc_list?doctype=${field?.options}`,
+                },
+                template: "<span>{{ item.reference_name || item.name || item }}</span>",
+                valueProperty: "name",
+                selectValues: "message",
+                validate: {
+                  required: field?.required,
+                  customMessage: `${field?.label} is required`,
+                },
+                input: true,
+                html: true,
+              };
+            }
             return {
               type: "select",
               key: field?.fieldname,
@@ -763,8 +804,8 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       .filter(Boolean);
 
   const expenseTypeValue = useMemo(
-    () => mainFormData?.expenseType || undefined,
-    [mainFormData?.expenseType],
+    () => mainFormData?.expenseType || mainFormData?.expense_type || undefined,
+    [mainFormData?.expenseType, mainFormData?.expense_type],
   );
 
   const { data: expenseTypeData, isFetching: isFetchingFields } =
@@ -1217,60 +1258,62 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               },
             }}
             onChange={(change: any) => {
-              // Guard: skip onChange processing during hydration (edit mode init)
-              if (isEditActive) return;
+              // Guard: skip one cycle while initial expense values are being hydrated.
               if (hydrationRef.current) return;
 
               const newCategoryType = change.data.categoryType;
               const newCategory = change.data.expenseCategory;
-              const newExpenseType = change.data.expenseType;
+              const newExpenseType =
+                change.data.expenseType ?? change.data.expense_type;
               const prevCategory = previousCategory;
+              const prevCategoryType = selectedCategoryType;
+              const previousExpenseType =
+                mainFormData?.expenseType ?? mainFormData?.expense_type;
 
-
-              if (
-                selectedCategoryType &&
-                newCategoryType &&
-                selectedCategoryType !== newCategoryType
-              ) {
+              if (!newCategoryType) {
                 change.data.expenseCategory = null;
                 change.data.expenseType = null;
-
-                setDynamicFormData({});
-                setDynamicFields([]);
-                setCalcParams(undefined);
+                setSelectedCategoryType("General");
                 setPreviousCategory(null);
-                setVehicleType(null);
-                setSelectedCategoryType(newCategoryType);
+                resetDynamicSelectionState();
                 setMainFormData({ ...change.data });
-                // Note: Removed setFormKey increment here. Formio handles
-                // cascading updates via refreshOn/clearOnRefresh. Re-keying
-                // the form on every selection change caused re-mount loops
-                // that prevented the dynamic form from rendering on mobile.
                 return;
               }
 
+              if (prevCategoryType && prevCategoryType !== newCategoryType) {
+                change.data.expenseCategory = null;
+                change.data.expenseType = null;
+                setPreviousCategory(null);
+                setSelectedCategoryType(newCategoryType);
+                resetDynamicSelectionState();
+                setMainFormData({ ...change.data });
+                return;
+              }
 
               if (prevCategory && !newCategory) {
                 setPreviousCategory(null);
-                setDynamicFormData({});
-                setDynamicFields([]);
-                setVehicleType(null);
+                change.data.expenseType = null;
+                resetDynamicSelectionState();
                 setMainFormData({ ...change.data });
                 return;
               }
 
               if (newCategory && prevCategory !== newCategory) {
                 change.data.expenseType = null;
-
-                setDynamicFormData({});
-                setVehicleType(null);
+                resetDynamicSelectionState();
                 setPreviousCategory(newCategory);
                 setMainFormData({ ...change.data });
                 return;
               }
 
-              if (newExpenseType !== mainFormData?.expenseType) {
-                setMainFormData(change.data);
+              if (!newExpenseType && previousExpenseType) {
+                resetDynamicSelectionState();
+                setMainFormData({ ...change.data });
+                return;
+              }
+
+              if (newExpenseType !== previousExpenseType) {
+                setMainFormData({ ...change.data });
                 return;
               }
 
@@ -1282,7 +1325,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 setPreviousCategory(newCategory);
               }
 
-              setMainFormData(change.data);
+              setMainFormData({ ...change.data });
             }}
             onSubmit={handleSubmit}
             options={{ noAlerts: true }}
@@ -1302,6 +1345,44 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               form={{
                 display: "form",
                 components: (() => {
+                  let customComponents: any[] = [];
+                  if (expenseTypeData?.custom_form_data) {
+                    try {
+                      const parsed = typeof expenseTypeData.custom_form_data === 'string'
+                        ? JSON.parse(expenseTypeData.custom_form_data)
+                        : expenseTypeData.custom_form_data;
+                        
+                      if (parsed && Array.isArray(parsed.components)) {
+                        const processCustomComponents = (comps: any[]): any[] => {
+                          return comps.filter((c: any) => {
+                            if (c.type === "button" && (!c.action || c.action === "submit")) {
+                              return false;
+                            }
+                            
+                            if (c.validate?.required && c.label && typeof c.label === 'string' && !c.label.includes('<span style="color:red">')) {
+                              c.label = `${c.label} <span style="color:red">&nbsp;*</span>`;
+                              c.html = true;
+                            }
+
+                            if (c.components) {
+                              c.components = processCustomComponents(c.components);
+                            }
+                            if (c.columns) {
+                              c.columns = c.columns.map((col: any) => ({
+                                ...col,
+                                components: processCustomComponents(col.components || [])
+                              }));
+                            }
+                            return true;
+                          });
+                        };
+                        customComponents = processCustomComponents(parsed.components);
+                      }
+                    } catch (e) {
+                      console.error("Failed to parse custom_form_data", e);
+                    }
+                  }
+
                   const attachmentsField = {
                     label: isAttachmentMandatory
                       ? `Attachments <span style="color:red">&nbsp;*</span>`
@@ -1330,19 +1411,6 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   if (isMobile) {
                     return [
                       ...dynamicFields.map((comp) => comp),
-                      ...(isShareAllowed
-                        ? [
-                          {
-                            type: "checkbox",
-                            key: "shareExpenseCheckbox",
-                            label: "Share Expense",
-                            input: true,
-                            defaultValue: displayParticipants.length > 0,
-                            hidden: displayParticipants.length > 0,
-                            customClass: "custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 mt-4",
-                          },
-                        ]
-                        : []),
                       {
                         type: "columns",
                         key: "attachmentsRow",
@@ -1357,6 +1425,24 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                           }
                         ]
                       },
+                      ...(isShareAllowed
+                        ? [
+                          {
+                            type: "checkbox",
+                            key: "shareExpenseCheckbox",
+                            label: "Share Expense",
+                            input: true,
+                            defaultValue: displayParticipants.length > 0,
+                            hidden: displayParticipants.length > 0,
+                            customClass: "custom-halfday-toggle border rounded-lg shadow-sm p-4 bg-gray-50 mt-4",
+                          },
+                        ]
+                        : []),
+                      ...(customComponents.length > 0 ? [
+                        { type: "htmlelement", tag: "div", className: "mt-6 border-t pt-4 border-gray-200", content: "" },
+                        { type: "htmlelement", tag: "h3", className: "text-lg font-semibold mb-4", content: "Additional Details" },
+                        ...customComponents
+                      ] : []),
                       {
                         type: "columns",
                         key: "submitButtonsRow",
@@ -1427,15 +1513,15 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                         }
                       ],
                     },
-                    {
-                      type: "columns",
-                      key: "actionsRow",
-                      customClass: "mt-4",
-                      columns: [
-                        ...(isShareAllowed
-                          ? [
+                    ...(isShareAllowed
+                      ? [
+                        {
+                          type: "columns",
+                          key: "shareRow",
+                          customClass: "mt-4 mb-4",
+                          columns: [
                             {
-                              width: 6,
+                              width: 12,
                               components: [
                                 {
                                   type: "checkbox",
@@ -1448,10 +1534,22 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                                 },
                               ],
                             },
-                          ]
-                          : []),
+                          ],
+                        },
+                      ]
+                      : []),
+                    ...(customComponents.length > 0 ? [
+                      { type: "htmlelement", tag: "div", className: "mt-4 border-t pt-4 border-gray-200", content: "" },
+                      { type: "htmlelement", tag: "h3", className: "text-lg font-semibold mb-4", content: "Additional Details" },
+                      ...customComponents
+                    ] : []),
+                    {
+                      type: "columns",
+                      key: "actionsRow",
+                      customClass: "mt-4",
+                      columns: [
                         {
-                          width: isShareAllowed ? 6 : 12,
+                          width: 12,
                           components: [
                             {
                               type: "columns",
@@ -1496,10 +1594,33 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 })(),
               }}
               onSubmit={async (submission: any) => {
-                const combinedData = {
+                const combinedData: any = {
                   ...mainFormData,
                   ...submission.data,
                 };
+
+                if (expenseTypeData?.custom_form_data) {
+                  const standardKeys = new Set([
+                    "attachments",
+                    "shareExpenseCheckbox",
+                    "saveAndSubmit",
+                    "submitButton",
+                    "submit",
+                    "participants",
+                    ...dynamicFields.map((f: any) => f.key)
+                  ]);
+
+                  const customFormDataObj: any = {};
+                  Object.keys(submission.data).forEach(key => {
+                    if (!standardKeys.has(key)) {
+                      customFormDataObj[key] = submission.data[key];
+                    }
+                  });
+
+                  if (Object.keys(customFormDataObj).length > 0) {
+                    combinedData.custom_form_data = JSON.stringify(customFormDataObj);
+                  }
+                }
 
                 // Normalize dates safe from timezone shifts for both Save and Submit
                 if (combinedData.expense_date) {

@@ -6,7 +6,7 @@ import { allocatedToType } from "../../types/allocatedToTooltip";
 
 interface MobileAllocatedToProps {
     /** User names — string or string[] */
-    users?: string | string[];
+    users?: string | string[] | allocatedToType[];
     /** Fallback user identifier (single or array) */
     allocated_to_user?: string | string[] | null;
     /** Fallback username (single string) */
@@ -19,6 +19,7 @@ interface MobileAllocatedToProps {
     role?: string;
     /** Text alignment — matches the card column position. Default: "left" */
     align?: "left" | "right";
+    showLabel?: boolean;
 }
 
 const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
@@ -29,6 +30,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
     roles,
     role,
     align = "left",
+    showLabel = true
 }) => {
     /** Merge all user sources → deduped array (same logic as AllocatedToTooltip) */
     const allUsers: string[] = React.useMemo(() => {
@@ -92,7 +94,7 @@ const MobileAllocatedTo: React.FC<MobileAllocatedToProps> = ({
 
     const labelEl = (
         <div className={`flex flex-col gap-0.5 ${isRight ? "items-end" : "items-start"}`}>
-            <Typography variant="mobileCardLabel">Allocated To</Typography>
+            {showLabel && <Typography variant="mobileCardLabel">Allocated To</Typography>}
 
             {totalCount === 0 ? (
                 <Typography variant="mobileCardValue" className="text-gray-400">

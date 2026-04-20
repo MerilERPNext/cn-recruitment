@@ -95,13 +95,18 @@ export const profileService = {
     }
   },
   getEmployeeDetailsByEmpId: async (
-    employee_id: string
+    employee_id: string,
+    fields?: string[]
   ): Promise<Employee | null> => {
     try {
-      const result = await FrappeAPI.getDocument("Employee", employee_id);
-      // Handle different response structures
-
-      return result as Employee;
+      const result = await FrappeAPI.getDocument("Employee", employee_id, fields);
+      const full = result as Employee;
+      if (fields && fields.length > 0) {
+        return Object.fromEntries(
+          fields.map((f) => [f, full[f as keyof Employee]])
+        ) as unknown as Employee;
+      }
+      return full;
     } catch (e) {
       throw new Error(
         `Some error occured while fetching employee details.- ${e}`

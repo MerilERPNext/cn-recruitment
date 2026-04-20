@@ -97,7 +97,7 @@ const DocumentLibrary = () => {
   };
 
   return (
-    <div className="bg-white px-0 py-3 md:p-6 ">
+    <div className="bg-white px-0 py-3 md:p-6">
       <div className="flex items-start justify-between">
         <div className="border-gray-200 my-2 pb-2">
           <Typography variant="h4" className="font-bold text-gray-900 mb-2 text-xl sm:text-2xl">
@@ -207,7 +207,7 @@ const DocumentLibrary = () => {
                     key={i}
                     className="border-t hover:bg-gray-50 transition-colors"
                   >
-                    <td className="py-4 px-6 font-medium">{doc.name}</td>
+                    <td className="py-4 px-6 font-medium">{doc.file_name}</td>
                     <td className="py-4 px-6 text-gray-600">
                       {doc.employee_name}
                     </td>

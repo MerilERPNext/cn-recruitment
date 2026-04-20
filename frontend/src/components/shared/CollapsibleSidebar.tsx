@@ -32,6 +32,7 @@ import {
   Workflow,
   Telescope,
   Shield,
+  Share2,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -469,6 +470,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Help Desk",
       path: "/webapp/helpdesk",
       permissionKey: "Help Desk",
+    },
+    {
+      icon: Share2,
+      label: "Work Connect",
+      path: "/work-connect",
+      permissionKey: "Work Connect",
     },
   ];
 
