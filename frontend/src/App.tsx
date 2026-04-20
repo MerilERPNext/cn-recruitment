@@ -33,6 +33,8 @@ import { PermissionProvider } from "./context/PermissionContext";
 import { LoadingOverlayProvider } from "./context/OverlayContext";
 import GlobalLeaveRequestModal from "./components/Leaves/GlobalLeaveRequestModal";
 
+import { useWebsiteBranding } from "./hooks/useBranding";
+
 // Component to sync ViewedUserContext with frappeAPI
 // NOTE: Must be defined BEFORE App to avoid Vite HMR evaluating it outside the provider tree.
 const TargetUserSync: React.FC = () => {
@@ -48,7 +50,24 @@ const TargetUserSync: React.FC = () => {
 const App: React.FC = () => {
   const { data: currentUser, isLoading, } = useCurrentUser();
   const location = useLocation();
+  const { data: brandingData } = useWebsiteBranding();
   const { data: uiPermissions } = useGetUiPermission();
+
+  // Set document title and favicon from branding data
+  useEffect(() => {
+    if (brandingData?.title_prefix) {
+      document.title = brandingData.title_prefix;
+    }
+    if (brandingData?.app_logo) {
+      let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = brandingData.app_logo;
+    }
+  }, [brandingData]);
 
   const renderRoutes = (routes: AppRoute[]) =>
     routes.map(({ path, element, children, index }, idx) =>
@@ -120,6 +139,7 @@ const App: React.FC = () => {
   }, [location.pathname, permittedPages, isLoading, uiPermissions, navigate]);
   return (
     <EmployeeErrorBoundary>
+
       <PermissionProvider permissions={uiPermissions || []}>
         <GlobalStoreProvider>
           <ViewedUserProvider>
