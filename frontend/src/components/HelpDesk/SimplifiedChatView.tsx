@@ -9,12 +9,22 @@ import {
   useResolutionHistory,
   useUserLookup,
   useEmployeeByUserEmail,
+  useGetFeedbackFormJson,
+  useGetExitFormJson,
 } from "../../hooks/useHelpDeskTickets";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SimplifiedChatInput from "./SimplifiedChatInput";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
+import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
+import { getRequiredKeys } from "../../utils/formioUtils";
+import { Form } from "@tsed/react-formio";
+import { Typography } from "../shared/atoms/Typography";
+import { FormioFormSkeleton } from "./LoadingSkeletons";
+import { useFileUploader } from "../../hooks/useFileUploader";
+import Button from "../shared/atoms/Button";
+import Modal from "../shared/Modal";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -90,26 +100,121 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
 
 // Resolution Modal Component
 interface ResolutionModalProps {
+  ticket: TicketDetail,
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (resolution: string) => void;
+  onSubmit: (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => void;
   isLoading: boolean;
   isRaiser: boolean;
   isEditing?: boolean;
+  isClosingTicket: boolean;
   isResolving?: boolean;
   existingResolution?: string;
 }
 
 const ResolutionModal: React.FC<ResolutionModalProps> = ({
+  ticket,
   isOpen,
   onClose,
   onSubmit,
+  isClosingTicket,
   isLoading,
   isEditing,
   isResolving,
   existingResolution,
 }) => {
   const [resolution, setResolution] = useState(existingResolution || "");
+
+  /* Formio Exit and Feedback Form Logic */
+  const { data: exitFormJsonData, isLoading: exitFormJsonLoading } = useGetExitFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
+  const { data: feedbackFormJsonData, isLoading: feedbackFormJsonLoading } = useGetFeedbackFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
+  const [feedbackFormAttachment, setFeedbackFormAttachment] = useState<File[]>([]);
+  const [exitFormAttachment, setExitFormAttachment] = useState<File[]>([]);
+
+  const exitFormRef = useRef(null)
+  const feedbackFormRef = useRef(null)
+
+  const [exitFormJson, setExitFormJson] = useState<FormIOForm | null>(null);
+  const [feedbackFormJson, setFeedbackFormJson] = useState<FormIOForm | null>(null);
+
+  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(false);
+  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(false);
+
+  const [exitFormSubmission, setExitFormSubmission] = useState<Record<string, unknown> | null>(null);
+  const [feedbackFormSubmission, setFeedbackFormSubmission] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(exitFormJsonData?.form_json?.components)) return;
+    const components = exitFormJsonData?.form_json?.components;
+    const requiredKeys = getRequiredKeys(components);
+
+    if (requiredKeys.length > 0) {
+      setIsExitFormValid(false);
+    }
+    if (components.length < 1) return;
+    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
+
+    setExitFormJson({ display: "form", components: filteredComponents });
+  }, [exitFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
+
+  useEffect(() => {
+    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(feedbackFormJsonData?.form_json?.components)) return;
+    const components = feedbackFormJsonData?.form_json?.components;
+    const requiredKeys = getRequiredKeys(components);
+
+    if (requiredKeys.length > 0) {
+      setIsFeedbackFormValid(false);
+    }
+    if (components.length < 1) return;
+    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
+
+    setFeedbackFormJson({ display: "form", components: filteredComponents });
+  }, [feedbackFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
+
+
+  const handleFeedbackFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
+    setFeedbackFormSubmission(submission.data)
+    setIsFeedbackFormValid(submission.isValid);
+    const fileComponents = getFileComponents(feedbackFormJson?.components || []);
+    const extractedFiles: File[] = [];
+
+    fileComponents.forEach((comp) => {
+      const value = submission.data[comp.key];
+
+      if (Array.isArray(value)) {
+        value.forEach((file) => {
+          if (!file?.file) {
+            extractedFiles.push(file);
+          }
+        });
+      }
+    });
+
+    setFeedbackFormAttachment(extractedFiles);
+  };
+
+  const handleExitFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
+    setExitFormSubmission(submission.data)
+    setIsExitFormValid(submission.isValid);
+
+    const fileComponents = getFileComponents(exitFormJson?.components || []);
+    const extractedFiles: File[] = [];
+
+    fileComponents.forEach((comp) => {
+      const value = submission.data[comp.key];
+
+      if (Array.isArray(value)) {
+        value.forEach((file) => {
+          if (file?.file) {
+            extractedFiles.push(file);
+          }
+        });
+      }
+    });
+    setExitFormAttachment(extractedFiles);
+  };
+  /* END:  Formio Exit and Feedback Form Logic */
+
 
   useEffect(() => {
     if (isOpen) {
@@ -124,12 +229,22 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       toast.error("Please enter resolution details");
       return;
     }
-    onSubmit(resolution);
+    if (isClosingTicket) {
+      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? "");
+      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? "");
+      onSubmit(resolution, JSON.stringify(exitData), JSON.stringify(feedbackData), [...exitFormAttachment, ...feedbackFormAttachment]);
+    }
+    else {
+      onSubmit(resolution);
+    }
   };
+
+  const disableSubmit = isLoading || !resolution.trim() || (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
+      <div className="relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
+        {/** Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             {isResolving ? "Resolve Ticket" : isEditing ? "Edit Resolution" : "Close Ticket"}
@@ -141,8 +256,8 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        <div className="px-6 py-4">
+        {/** Body */}
+        <div className="px-6 overflow-y-auto flex-1 py-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Resolution Details <span className="text-red-500">*</span>
           </label>
@@ -160,6 +275,47 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 ? "This will save the resolution and set status to Resolved."
                 : "This will close the ticket and save the resolution details."}
           </p>
+
+          {
+            feedbackFormJsonLoading &&
+            <FormioFormSkeleton />
+          }
+          {!isEditing && !feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
+            <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
+            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+              <Form
+                form={feedbackFormJson}
+                ref={feedbackFormRef}
+                options={{
+                  buttonSettings: {
+                    showSubmit: false
+                  }
+                }}
+                onChange={handleFeedbackFormChange}
+              />
+            </div>
+          </div>
+          }
+          {
+            exitFormJsonLoading &&
+            <FormioFormSkeleton />
+          }
+          {!isEditing && !exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
+            <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
+            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+              <Form
+                form={exitFormJson}
+                ref={exitFormRef}
+                options={{
+                  buttonSettings: {
+                    showSubmit: false
+                  }
+                }}
+                onChange={handleExitFormChange}
+              />
+            </div>
+          </div>
+          }
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
@@ -172,7 +328,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !resolution.trim()}
+            disabled={disableSubmit}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
@@ -199,6 +355,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           </button>
         </div>
       </div>
+      {/** Footer */}
     </div>
   );
 };
@@ -579,13 +736,21 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     setIsResolutionModalOpen(true);
   };
 
+  const { uploadFiles } = useFileUploader();
   // Handle close ticket with resolution from modal
-  const handleCloseTicket = async (resolution: string) => {
+  const handleCloseTicket = async (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => {
     try {
-      await closeTicketMutation.mutateAsync({
+      const res = await closeTicketMutation.mutateAsync({
         ticketId: ticket.name,
         resolutionDetails: resolution,
-      });
+        closingFormData: exitFormSubmission,
+        feedbackFormData: feedbackFormSubmission
+      }) as { doctype: string; name: string };
+
+      if (attachments && attachments.length > 0) {
+        await uploadFiles(attachments, res.doctype, res.name);
+      }
+
       toast.success("Ticket closed successfully");
       setIsResolutionModalOpen(false);
       setIsEditingResolution(false);
@@ -969,93 +1134,233 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     );
   };
 
-  const Header = () => (
-    <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
-      <div className="flex items-center gap-4">
-        {/* Chat icon */}
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <MessageSquare className="w-6 h-6 text-white" />
-        </div>
+  const Header = ({ ticket }: { ticket: TicketDetail }) => {
 
-        {/* Title and assigned */}
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-semibold text-gray-900 text-lg">
-              Issue Discussion
-              <span className="ml-2 text-blue-600">#{ticket.name}</span>
-            </h1>
-            <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
-              {ticket.status}
-            </span>
+    const creationForm = useMemo(() => {
+      const form = ticket.creation_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.creation_form_data])
+
+    const feedbackForm = useMemo(() => {
+      const form = ticket.feedback_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.feedback_form_data])
+
+    const closeForm = useMemo(() => {
+      const form = ticket.closing_form_data;
+      if (typeof form === "string") {
+        try {
+          return JSON.parse(form);
+        } catch (error) {
+          console.error("Error parsing form data", error);
+          return {};
+        }
+      }
+      return form;
+
+    }, [ticket.closing_form_data])
+
+    console.log(feedbackForm)
+
+    const [showForms, setShowForms] = useState<boolean>(false);
+
+    return (
+      <header className="bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0 shadow-sm">
+        <div className="flex items-center gap-4">
+          {/* Chat icon */}
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <MessageSquare className="w-6 h-6 text-white" />
           </div>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-sm text-gray-500">Assigned to</span>
-            <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
-                <span className="w-2 h-2 rounded-lg bg-green-500"></span>
-                <span className="text-sm font-medium text-gray-700">
-                  {getAssignedUser()}
-                </span>
-              </div>
-            </WrapperHoverCard>
+
+          {/* Title and assigned */}
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-gray-900 text-lg">
+                Issue Discussion
+                <span className="ml-2 text-blue-600">#{ticket.name}</span>
+              </h1>
+              <span className={`px-2.5 py-1 text-xs font-medium rounded-lg ${getStatusColor(ticket.status)}`}>
+                {ticket.status}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-sm text-gray-500">Assigned to</span>
+              <WrapperHoverCard employeeId={employeeData?.name} placement="bottom-left">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-app rounded-lg cursor-pointer">
+                  <span className="w-2 h-2 rounded-lg bg-green-500"></span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {getAssignedUser()}
+                  </span>
+                </div>
+              </WrapperHoverCard>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
-        {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
-          <>
-            {/* Accept Closure - closes the ticket */}
-            <button
-              onClick={handleAcceptClosure}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-            >
-              <CheckCircle className="w-4 h-4" />
-              {isClosing ? "Closing..." : "Accept Closure"}
-            </button>
-            {/* Reject Resolution - reopens for more work */}
-            <button
-              onClick={() => setIsRejectModalOpen(true)}
-              disabled={isClosing}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-            >
-              <XCircle className="w-4 h-4" />
-              Reject
-            </button>
-          </>
-        ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
-          <>
-            {!isDrawer && (
+        <div className="flex items-center justify-end gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
+          {ticket.status === "Resolved" && ticket.raised_by === currentUserEmail ? (
+            <>
+              {/* Accept Closure - closes the ticket */}
               <button
-                onClick={handleResolveButtonClick}
-                disabled={isClosing}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Resolve
-              </button>
-            )}
-            {showCloseTicketButton(ticket.status) && (
-              <button
-                onClick={handleCloseButtonClick}
+                onClick={handleAcceptClosure}
                 disabled={isClosing}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 <CheckCircle className="w-4 h-4" />
-                {isClosing ? "Closing..." : "Close Ticket"}
+                {isClosing ? "Closing..." : "Accept Closure"}
               </button>
-            )}
-          </>
-        ) : null}
-      </div>
-    </header>
-  );
+              {/* Reject Resolution - reopens for more work */}
+              <button
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <XCircle className="w-4 h-4" />
+                Reject
+              </button>
+            </>
+          ) : ticket.status !== "Closed" && ticket.status !== "Resolved" ? (
+            <>
+              {!isDrawer && (
+                <button
+                  onClick={handleResolveButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Resolve
+                </button>
+              )}
+              {showCloseTicketButton(ticket.status) && (
+                <button
+                  onClick={handleCloseButtonClick}
+                  disabled={isClosing}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  {isClosing ? "Closing..." : "Close Ticket"}
+                </button>
+              )}
+            </>
+          ) : null}
+
+          {
+            (!!creationForm?.shema || !!closeForm?.schema || !!feedbackForm?.schema) && (
+              <Button
+                onClick={() => { setShowForms(true) }}
+                disabled={isClosing}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 whitespace-nowrap flex-shrink-0"
+              >
+                <CheckCircle className="w-4 h-4" />
+                Show Forms
+              </Button>
+            )
+          }
+
+          {
+            showForms && (
+              <Modal
+                isOpen={showForms}
+                onClose={() => setShowForms(false)}
+                className="flex flex-col overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
+                  <div>
+                    <Typography variant="h3" color="primary">
+                      Ticket Submission Forms
+                    </Typography>
+                    <Typography variant="bodySmall" color="body2" className="mt-1">
+                      Ticket ID: {ticket.name}
+                    </Typography>
+                  </div>
+                  <button
+                    onClick={() => setShowForms(false)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30">
+                  <div className="flex flex-col gap-6">
+                    {closeForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Close Form
+                        </Typography>
+                        <Form
+                          form={closeForm.schema}
+                          submission={{ data: closeForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {feedbackForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Feedback Form
+                        </Typography>
+                        <Form
+                          form={feedbackForm.schema}
+                          submission={{ data: feedbackForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {creationForm?.schema && (
+                      <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
+                        <Typography variant="subheading" color="primary" className="mb-4 block">
+                          Creation Form
+                        </Typography>
+                        <Form
+                          form={creationForm.schema}
+                          submission={{ data: creationForm.answer }}
+                          options={{
+                            readOnly: true
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Modal>
+            )
+          }
+
+        </div>
+      </header>
+    )
+  };
 
   return (
     <div className={`${isDrawer ? "flex-1 min-h-0" : "h-screen"} flex flex-col bg-app`}>
       {/* Header */}
 
-      {isDesktop && <Header />}
+      {isDesktop && <Header ticket={ticket} />}
 
       {/* Info banner when agent has requested closure */}
       {ticket.status === "Resolved" && (
@@ -1115,7 +1420,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           }
         </nav>
       </div>
-      {isDropDownOpen && <Header />}
+      {isDropDownOpen && <Header ticket={ticket} />}
       {/* Content Area */}
       {activeTab === "resolution" ? (
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -1173,6 +1478,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
       {/* Resolution Modal */}
       <ResolutionModal
+        ticket={ticket}
         isOpen={isResolutionModalOpen}
         onClose={() => {
           setIsResolutionModalOpen(false);
@@ -1182,6 +1488,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         onSubmit={isEditingResolution || isResolvingTicket ? handleSaveResolution : handleCloseTicket}
         isLoading={isClosing}
         isRaiser={true}
+        isClosingTicket={!isEditingResolution && !isResolvingTicket}
         isEditing={isEditingResolution}
         isResolving={isResolvingTicket}
         existingResolution={isEditingResolution ? ticket.resolution_details : undefined}

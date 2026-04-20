@@ -26,6 +26,7 @@ interface TicketTableRowProps {
     onReply: (ticket: HDTicket) => void;
     onClose: (ticket: HDTicket) => void;
     onRevoke: (ticket: HDTicket) => void;
+    onReopen: (ticket: HDTicket) => void;
     onRowClick?: (ticket: HDTicket) => void;
 }
 
@@ -42,6 +43,7 @@ const TicketTableRow = ({
     onReply,
     onClose,
     onRevoke,
+    onReopen,
     onRowClick,
 }: TicketTableRowProps) => {
     const creationTime = new Date(ticket.creation);
@@ -56,7 +58,7 @@ const TicketTableRow = ({
     return (
         <tr
             key={ticket.name}
-            className={`border-t border-gray-50 hover:bg-primary/20 transition-colors ${onRowClick ? "cursor-pointer" : ""
+            className={`border-t text-center border-gray-50 hover:bg-primary/20 transition-colors ${onRowClick ? "cursor-pointer" : ""
                 }`}
             onClick={() => onRowClick?.(ticket)}
         >
@@ -78,6 +80,16 @@ const TicketTableRow = ({
             <td className="px-4 py-3">
                 <Typography variant="bodySmall" color="body1">
                     {getCategoryName(ticket.custom_sub_category)}
+                </Typography>
+            </td>
+            <td className="px-4 py-3">
+                <Typography variant="bodySmall" color="body1">
+                    {ticket.no_of_comments}
+                </Typography>
+            </td>
+            <td className="px-4 py-3">
+                <Typography variant="bodySmall" color="body1">
+                    {ticket.user_type}
                 </Typography>
             </td>
             <td className="px-4 py-3">
@@ -173,6 +185,8 @@ const TicketTableRow = ({
                     canClose={showCloseTicketButton(ticket.status)}
                     canRevoke={ticket.status === "Open" && !ticket.custom_archived}
                     canReply={ticket.status !== "Closed"}
+                    canReopen={ticket.status === "Closed"}
+                    onReopen={() => onReopen(ticket)}
                     onClose={() => onClose(ticket)}
                     onReply={() => onReply(ticket)}
                     onRevoke={() => onRevoke(ticket)}

@@ -114,3 +114,39 @@ export const buildFormFromSchemaAndAnswer = (
     components,
   };
 };
+
+
+export const getFileComponents = (components: FormIOComponent[]): FormIOComponent[] => {
+  const result: FormIOComponent[] = [];
+
+  const traverse = (comps: FormIOComponent[]) => {
+    comps.forEach((comp) => {
+      if (!comp) return;
+
+      if (comp.type === "file" && comp.key) {
+        result.push(comp);
+      }
+
+      if (Array.isArray(comp.components)) {
+        traverse(comp.components);
+      }
+
+      if (Array.isArray(comp.columns)) {
+        comp.columns.forEach((col: any) =>
+          traverse(col.components || [])
+        );
+      }
+
+      if (Array.isArray(comp.rows)) {
+        comp.rows.forEach((row: any[]) =>
+          row.forEach((col: any) =>
+            traverse(col.components || [])
+          )
+        );
+      }
+    });
+  };
+
+  traverse(components);
+  return result;
+};
