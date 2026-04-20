@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FrappeAPI } from "../utils/frappeAPI";
 import { TicketStatsV2 } from "../types/helpdesk";
+import { FormIOComponent } from "../types/formio";
 
 // Types
 export interface HDTicket {
@@ -302,10 +303,13 @@ export const useCloseTicket = () => {
     mutationFn: async ({
       ticketId,
       resolutionDetails,
-      status = "Closed",
+      closingFormData,
+      feedbackFormData,
     }: {
       ticketId: string;
       resolutionDetails?: string;
+      closingFormData?: string;
+      feedbackFormData?: string;
       status?: string;
     }) => {
       // Save resolution with history tracking if provided
@@ -319,12 +323,38 @@ export const useCloseTicket = () => {
         );
       }
 
+
       // Then update the status
-      const result = await FrappeAPI.updateDocument(
-        "HD Ticket",
-        ticketId,
-        { status }
+      const result = await FrappeAPI.callMethod(
+        "helpdesk.helpdesk.doctype.hd_ticket.ticket_closure_workflow.close_ticket",
+        {
+          ticket_id: ticketId.toString(),
+          resolution_notes: resolutionDetails,
+          feedback_form_data: feedbackFormData,
+          closing_form_data: closingFormData,
+        }
       );
+      // const result = await FrappeAPI.updateDocument(
+      //   "HD Ticket",
+      //   ticketId,
+      //   { status, closing_form_data: closingFormData, feedback_form_data: feedbackFormData }
+      // );
+
+      console.log("Close Ticket Response", result)
+      // Ensure result is an object before mutating
+      if (typeof result === "object" && result !== null) {
+        const hasDoctype = "doctype" in result;
+        const hasName = "name" in result;
+
+        const normalizedResult = {
+          ...(result as Record<string, unknown>),
+          doctype: hasDoctype ? (result as any).doctype : "HD Ticket",
+          name: hasName ? (result as any).name : ticketId,
+        };
+
+        return normalizedResult;
+      }
+
       return result;
     },
     onSuccess: async (_data, variables) => {
@@ -932,6 +962,52 @@ export const useRevokeTicket = () => {
   });
 };
 
+export const useGetCreationFormJson = ({ category, sub_category }: { category: string, sub_category: string }) => {
+  return useQuery<{ form_json: { components: FormIOComponent[] } }>({
+    queryKey: ["hd-creation-form-json", category, sub_category],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_creation_form_json", {
+        category,
+        sub_category
+      });
+      return result as { form_json: { components: FormIOComponent[] } };
+    },
+    enabled: !!category && !!sub_category,
+    ...defaultQueryOptions,
+  });
+};
+
+
+export const useGetExitFormJson = ({ category, sub_category }: { category?: string, sub_category?: string }) => {
+  return useQuery<{ form_json: { components: FormIOComponent[] } }>({
+    queryKey: ["hd-exit-form-json", category, sub_category],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_exit_form_json", {
+        category,
+        sub_category
+      });
+      return result as { form_json: { components: FormIOComponent[] } };
+    },
+    enabled: !!category && !!sub_category,
+    ...defaultQueryOptions,
+  });
+};
+
+export const useGetFeedbackFormJson = ({ category, sub_category }: { category?: string, sub_category?: string }) => {
+  return useQuery<{ form_json: { components: FormIOComponent[] } }>({
+    queryKey: ["hd-feedback-form-json", category, sub_category],
+    queryFn: async () => {
+      const result = await FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.get_feedback_form_json", {
+        category,
+        sub_category
+      });
+      return result as { form_json: { components: FormIOComponent[] } };
+    },
+    enabled: !!category && !!sub_category,
+    ...defaultQueryOptions,
+  });
+};
+
 export const useReopenTicket = () => {
   const queryClient = useQueryClient();
 
@@ -941,9 +1017,8 @@ export const useReopenTicket = () => {
     }: {
       ticketId: string;
     }) => {
-      const result = await FrappeAPI.updateDocument("HD Ticket", ticketId, {
-        status: "Reopened",
-        custom_archived: 0,
+      const result = await FrappeAPI.callMethod("pw_helpdesk.customizations.api.ticket.reopen_ticket", {
+        ticket_id: ticketId
       });
       return result;
     },

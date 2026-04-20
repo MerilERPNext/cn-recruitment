@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { X, Upload, Trash2, ChevronDown } from "lucide-react";
 import { Typography } from "../shared/atoms/Typography";
 import Button from "../shared/atoms/Button";
@@ -9,9 +9,16 @@ import {
   useSubcategories,
   useCreateTicket,
   HDCategory,
+  useGetCreationFormJson,
 } from "../../hooks/useHelpDeskTickets";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import EmployeeSelect from "../shared/EmployeeSelect";
+import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
+import { Form } from "@tsed/react-formio";
+import { FormioFormSkeleton } from "./LoadingSkeletons";
+import { getRequiredKeys } from "../../utils/formioUtils";
+import { useFileUploader } from "../../hooks/useFileUploader";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -41,9 +48,42 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [formioFiles, setFormioFiles] = useState<File[]>([]);
+
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: creationFormJson, isLoading: creationFormJsonLoading } = useGetCreationFormJson({ category, sub_category: subcategory });
+  const formRef = useRef<FormIOForm | null>(null);
+  const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+  const [isFormioValid, setIsFormioValid] = useState(true);
+  const [formioData, setFormioData] = useState<Record<string, unknown>>({});
+  const loadingContext = useLoadingOverlay();
 
+  useEffect(() => {
+    if (!category || !subcategory) {
+      setFormSchema(null);
+      setIsFormioValid(true);
+      setFormioData({});
+      return;
+    }
+    if (creationFormJson?.form_json?.components) {
+      const components = creationFormJson.form_json.components;
+
+      // remove submit button
+      const filteredComponents = Array.isArray(components)
+        ? components.filter(
+          (comp) => !(comp.type === "button" && comp.action === "submit")
+        )
+        : components;
+
+      setFormSchema({ display: "form", components: filteredComponents });
+      // New schema means fields are empty — check if any required fields exist
+      const requiredKeys = getRequiredKeys(filteredComponents);
+      setIsFormioValid(requiredKeys.length === 0);
+      setFormioData({});
+    }
+  }, [category, subcategory, creationFormJson]);
   // Queries
   const { data: categories = [], isLoading: categoriesLoading } = useCategories();
   const { data: subcategories = [] } = useSubcategories(category);
@@ -73,6 +113,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     return false;
   }, [category, subcategory, categories, subcategories]);
 
+  const { uploadFiles } = useFileUploader();
   // Reset form
   const resetForm = useCallback(() => {
     setTitle("");
@@ -82,6 +123,8 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setSelectedEmployee("");
     setDescription("");
     setAttachments([]);
+    setIsFormioValid(true);
+    setFormioData({});
   }, []);
 
   // Handle close
@@ -100,7 +143,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
     try {
       for (const file of Array.from(files)) {
         const result = await FrappeAPI.uploadFile(file, file.name, undefined, undefined, undefined, "1");
@@ -123,7 +165,65 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     }
   };
 
-  const submitDisabled = createTicketMutation.isPending || !title.trim() || !description.trim() || !category.trim() || !subcategory.trim() || (raisedFor === "Others" && !selectedEmployee.trim()) || (isAttachmentMandatory && attachments.length === 0) || description.trim().length < MIN_DESCRIPTION_LENGTH;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleFormChange = useCallback((submission: any) => {
+    const data: Record<string, unknown> = submission?.data || {};
+    setFormioData(data);
+    if (!formSchema) {
+      setIsFormioValid(true);
+      setFormioFiles([]);
+      return;
+    }
+
+    const fileComponents = getFileComponents(formSchema.components);
+
+    const extractedFiles: File[] = [];
+
+    fileComponents.forEach((comp) => {
+      const value = data[comp.key];
+
+      if (Array.isArray(value)) {
+        value.forEach((file) => {
+          if (file?.file) {
+            extractedFiles.push(file);
+          }
+        });
+      }
+    });
+
+    // ✅ overwrite → removal handled automatically
+    setFormioFiles(extractedFiles);
+
+    // validation
+    if (typeof submission?.isValid === "boolean") {
+      setIsFormioValid(submission.isValid);
+      return;
+    }
+
+    const requiredKeys = getRequiredKeys(formSchema.components);
+    const allFilled = requiredKeys.every((key) => {
+      const val = data[key];
+      if (val === undefined || val === null) return false;
+      if (typeof val === "string" && val.trim() === "") return false;
+      if (Array.isArray(val) && val.length === 0) return false;
+      if (typeof val === "object" && !Array.isArray(val) && Object.keys(val).length === 0) return false;
+      return true;
+    });
+
+    setIsFormioValid(allFilled);
+  }, [formSchema]);
+
+  const submitDisabled =
+    createTicketMutation.isPending ||
+    !title.trim() ||
+    !description.trim() ||
+    !category.trim() ||
+    !subcategory.trim() ||
+    (raisedFor === "Others" && !selectedEmployee.trim()) ||
+    (isAttachmentMandatory && attachments.length === 0) ||
+    description.trim().length < MIN_DESCRIPTION_LENGTH ||
+    !isFormioValid;
+
   // Handle drag events
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -168,6 +268,11 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
   // Handle submit
   const handleSubmit = async () => {
     // Validation
+
+    if (!isFormioValid) {
+      toast.error("Please fill all required additional details");
+      return;
+    }
     if (!title.trim()) {
       toast.error("Title is required");
       return;
@@ -199,7 +304,6 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
     // Embed attachments in description as HTML
     const descriptionWithAttachments = buildDescriptionWithAttachments(description.trim(), attachments);
-
     const payload = {
       doc: {
         subject: title.trim(),
@@ -210,16 +314,30 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         custom_raise_for_employee: raisedFor === "Others" ? selectedEmployee : undefined,
         custom_for_myself: raisedFor === "Myself" ? 1 : 0,
         custom_for_others: raisedFor === "Others" ? 1 : 0,
+        creation_form_data: JSON.stringify(formioData)
       },
     };
 
     try {
-      await createTicketMutation.mutateAsync(payload);
+      const res = await createTicketMutation.mutateAsync(payload) as { doctype?: string, name?: string };
+
+      if (!res?.doctype || !res?.name) {
+        toast.error("Filed to upload files to ticket");
+        return;
+      }
+      if (formioFiles.length > 0) {
+        loadingContext.show("Uploading files");
+        await uploadFiles(formioFiles, res.doctype, res.name);
+        loadingContext.hide();
+      }
       toast.success("Issue submitted successfully");
       handleClose();
       onSuccess?.();
-    } catch {
-      toast.error("Failed to submit issue");
+    } catch (error) {
+      toast.error("Failed to submit ticket");
+      console.error("Error submit ticket", error)
+    } finally {
+      loadingContext.hide();
     }
   };
 
@@ -281,7 +399,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 appearance-none bg-white"
                   disabled={categoriesLoading}
                 >
-                  <option value="">Select Category</option>
+                  <option value="" disabled selected hidden>Select Category</option>
                   {categories.map((cat: HDCategory) => (
                     <option key={cat.name} value={cat.name}>
                       {cat.category_name} - ({cat.name})
@@ -445,6 +563,25 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
               <div className="mt-2 text-sm text-gray-500">Uploading...</div>
             )}
           </div>
+          {creationFormJsonLoading && category && subcategory ? (
+            <FormioFormSkeleton />
+          ) : formSchema ? (
+            <div className="w-full show-req-astrik mt-4 ">
+              <Typography variant="subheading" className="mb-1">Additional Details</Typography>
+              <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+                <Form
+                  form={formSchema}
+                  ref={formRef}
+                  options={{
+                    buttonSettings: {
+                      showSubmit: false
+                    }
+                  }}
+                  onChange={handleFormChange}
+                />
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Footer */}

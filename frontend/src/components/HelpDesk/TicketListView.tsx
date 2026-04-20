@@ -29,6 +29,7 @@ import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useFileUploader } from "../../hooks/useFileUploader";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -198,8 +199,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
       }
     })
   }, [hide, show, reopenTicketMutation])
-
-  const handleResolutionSubmit = useCallback((resolution: string) => {
+  const { uploadFiles } = useFileUploader();
+  const handleResolutionSubmit = useCallback((resolution: string, closingFormData: string, feedbackFormData: string, attachments?: File[]) => {
     if (!selectedTicketForClose) return;
 
     if (isRequestClosureMode) {
@@ -220,16 +221,28 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
         {
           ticketId: selectedTicketForClose.name,
           resolutionDetails: resolution,
+          closingFormData: closingFormData,
+          feedbackFormData: feedbackFormData,
         },
         {
-          onSuccess: () => {
+          onSuccess: async (data) => {
+            try {
+              const res = data as { doctype?: string, name?: string }
+              if (attachments && attachments.length > 0 && res.doctype && res.name) {
+                await uploadFiles(attachments, res.doctype, res.name);
+              }
+            } catch (error) {
+              const formatedError = errorResponseFormater(error, "Failed to upload attachments");
+              toast.error(formatedError);
+              console.log("Failed to upload attachments", error);
+            }
             setIsResolutionModalOpen(false);
             setSelectedTicketForClose(null);
           },
         }
       );
     }
-  }, [selectedTicketForClose, isRequestClosureMode, closeTicketMutation, requestClosureMutation]);
+  }, [selectedTicketForClose, isRequestClosureMode, closeTicketMutation, requestClosureMutation, uploadFiles]);
 
   const handleApplyFilters = useCallback((newFilters: TicketFilters) => {
     setFilters(newFilters);
@@ -360,7 +373,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             setSelectedTicketForClose(null);
           }}
           onSubmit={handleResolutionSubmit}
-          ticketId={selectedTicketForClose?.name || ""}
+          ticket={selectedTicketForClose}
           isRequestClosure={isRequestClosureMode}
           isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
         />

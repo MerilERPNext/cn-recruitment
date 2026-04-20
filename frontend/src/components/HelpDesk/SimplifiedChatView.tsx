@@ -9,12 +9,20 @@ import {
   useResolutionHistory,
   useUserLookup,
   useEmployeeByUserEmail,
+  useGetFeedbackFormJson,
+  useGetExitFormJson,
 } from "../../hooks/useHelpDeskTickets";
 import WrapperHoverCard from "../shared/WrapperHoverCard";
 import SimplifiedChatInput from "./SimplifiedChatInput";
 import toast from "react-hot-toast";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { showCloseTicketButton } from "./hdelpdeskUtils";
+import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
+import { getRequiredKeys } from "../../utils/formioUtils";
+import { Form } from "@tsed/react-formio";
+import { Typography } from "../shared/atoms/Typography";
+import { FormioFormSkeleton } from "./LoadingSkeletons";
+import { useFileUploader } from "../../hooks/useFileUploader";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -90,26 +98,121 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
 
 // Resolution Modal Component
 interface ResolutionModalProps {
+  ticket: TicketDetail,
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (resolution: string) => void;
+  onSubmit: (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => void;
   isLoading: boolean;
   isRaiser: boolean;
   isEditing?: boolean;
+  isClosingTicket: boolean;
   isResolving?: boolean;
   existingResolution?: string;
 }
 
 const ResolutionModal: React.FC<ResolutionModalProps> = ({
+  ticket,
   isOpen,
   onClose,
   onSubmit,
+  isClosingTicket,
   isLoading,
   isEditing,
   isResolving,
   existingResolution,
 }) => {
   const [resolution, setResolution] = useState(existingResolution || "");
+
+  /* Formio Exit and Feedback Form Logic */
+  const { data: exitFormJsonData, isLoading: exitFormJsonLoading } = useGetExitFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
+  const { data: feedbackFormJsonData, isLoading: feedbackFormJsonLoading } = useGetFeedbackFormJson({ category: ticket?.custom_category, sub_category: ticket?.custom_sub_category });
+  const [feedbackFormAttachment, setFeedbackFormAttachment] = useState<File[]>([]);
+  const [exitFormAttachment, setExitFormAttachment] = useState<File[]>([]);
+
+  const exitFormRef = useRef(null)
+  const feedbackFormRef = useRef(null)
+
+  const [exitFormJson, setExitFormJson] = useState<FormIOForm | null>(null);
+  const [feedbackFormJson, setFeedbackFormJson] = useState<FormIOForm | null>(null);
+
+  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(false);
+  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(false);
+
+  const [exitFormSubmission, setExitFormSubmission] = useState<Record<string, unknown> | null>(null);
+  const [feedbackFormSubmission, setFeedbackFormSubmission] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(exitFormJsonData?.form_json?.components)) return;
+    const components = exitFormJsonData?.form_json?.components;
+    const requiredKeys = getRequiredKeys(components);
+
+    if (requiredKeys.length > 0) {
+      setIsExitFormValid(false);
+    }
+    if (components.length < 1) return;
+    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
+
+    setExitFormJson({ display: "form", components: filteredComponents });
+  }, [exitFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
+
+  useEffect(() => {
+    if (!ticket?.custom_category || !ticket?.custom_sub_category || !Array.isArray(feedbackFormJsonData?.form_json?.components)) return;
+    const components = feedbackFormJsonData?.form_json?.components;
+    const requiredKeys = getRequiredKeys(components);
+
+    if (requiredKeys.length > 0) {
+      setIsFeedbackFormValid(false);
+    }
+    if (components.length < 1) return;
+    const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
+
+    setFeedbackFormJson({ display: "form", components: filteredComponents });
+  }, [feedbackFormJsonData, ticket?.custom_category, ticket?.custom_sub_category]);
+
+
+  const handleFeedbackFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
+    setFeedbackFormSubmission(submission.data)
+    setIsFeedbackFormValid(submission.isValid);
+    const fileComponents = getFileComponents(feedbackFormJson?.components || []);
+    const extractedFiles: File[] = [];
+
+    fileComponents.forEach((comp) => {
+      const value = submission.data[comp.key];
+
+      if (Array.isArray(value)) {
+        value.forEach((file) => {
+          if (!file?.file) {
+            extractedFiles.push(file);
+          }
+        });
+      }
+    });
+
+    setFeedbackFormAttachment(extractedFiles);
+  };
+
+  const handleExitFormChange = (submission: { isValid: boolean, data: Record<string, unknown> }) => {
+    setExitFormSubmission(submission.data)
+    setIsExitFormValid(submission.isValid);
+
+    const fileComponents = getFileComponents(exitFormJson?.components || []);
+    const extractedFiles: File[] = [];
+
+    fileComponents.forEach((comp) => {
+      const value = submission.data[comp.key];
+
+      if (Array.isArray(value)) {
+        value.forEach((file) => {
+          if (file?.file) {
+            extractedFiles.push(file);
+          }
+        });
+      }
+    });
+    setExitFormAttachment(extractedFiles);
+  };
+  /* END:  Formio Exit and Feedback Form Logic */
+
 
   useEffect(() => {
     if (isOpen) {
@@ -124,12 +227,20 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       toast.error("Please enter resolution details");
       return;
     }
-    onSubmit(resolution);
+    if (isClosingTicket) {
+      onSubmit(resolution, JSON.stringify(exitFormSubmission ?? ""), JSON.stringify(feedbackFormSubmission ?? ""), [...exitFormAttachment, ...feedbackFormAttachment]);
+    }
+    else {
+      onSubmit(resolution);
+    }
   };
+
+  const disableSubmit = isLoading || !resolution.trim() || (isClosingTicket && (!isExitFormValid || !isFeedbackFormValid));
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4">
+      <div className="relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
+        {/** Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             {isResolving ? "Resolve Ticket" : isEditing ? "Edit Resolution" : "Close Ticket"}
@@ -141,8 +252,8 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             <X className="w-5 h-5" />
           </button>
         </div>
-
-        <div className="px-6 py-4">
+        {/** Body */}
+        <div className="px-6 overflow-y-auto flex-1 py-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Resolution Details <span className="text-red-500">*</span>
           </label>
@@ -160,6 +271,47 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 ? "This will save the resolution and set status to Resolved."
                 : "This will close the ticket and save the resolution details."}
           </p>
+
+          {
+            feedbackFormJsonLoading &&
+            <FormioFormSkeleton />
+          }
+          {!isEditing && !feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
+            <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
+            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+              <Form
+                form={feedbackFormJson}
+                ref={feedbackFormRef}
+                options={{
+                  buttonSettings: {
+                    showSubmit: false
+                  }
+                }}
+                onChange={handleFeedbackFormChange}
+              />
+            </div>
+          </div>
+          }
+          {
+            exitFormJsonLoading &&
+            <FormioFormSkeleton />
+          }
+          {!isEditing && !exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
+            <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
+            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+              <Form
+                form={exitFormJson}
+                ref={exitFormRef}
+                options={{
+                  buttonSettings: {
+                    showSubmit: false
+                  }
+                }}
+                onChange={handleExitFormChange}
+              />
+            </div>
+          </div>
+          }
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
@@ -172,7 +324,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isLoading || !resolution.trim()}
+            disabled={disableSubmit}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
@@ -199,6 +351,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           </button>
         </div>
       </div>
+      {/** Footer */}
     </div>
   );
 };
@@ -579,13 +732,21 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     setIsResolutionModalOpen(true);
   };
 
+  const { uploadFiles } = useFileUploader();
   // Handle close ticket with resolution from modal
-  const handleCloseTicket = async (resolution: string) => {
+  const handleCloseTicket = async (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => {
     try {
-      await closeTicketMutation.mutateAsync({
+      const res = await closeTicketMutation.mutateAsync({
         ticketId: ticket.name,
         resolutionDetails: resolution,
-      });
+        closingFormData: exitFormSubmission,
+        feedbackFormData: feedbackFormSubmission
+      }) as { doctype: string; name: string };
+
+      if (attachments && attachments.length > 0) {
+        await uploadFiles(attachments, res.doctype, res.name);
+      }
+
       toast.success("Ticket closed successfully");
       setIsResolutionModalOpen(false);
       setIsEditingResolution(false);
@@ -1173,6 +1334,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
       {/* Resolution Modal */}
       <ResolutionModal
+        ticket={ticket}
         isOpen={isResolutionModalOpen}
         onClose={() => {
           setIsResolutionModalOpen(false);
@@ -1182,6 +1344,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         onSubmit={isEditingResolution || isResolvingTicket ? handleSaveResolution : handleCloseTicket}
         isLoading={isClosing}
         isRaiser={true}
+        isClosingTicket={!isEditingResolution && !isResolvingTicket}
         isEditing={isEditingResolution}
         isResolving={isResolvingTicket}
         existingResolution={isEditingResolution ? ticket.resolution_details : undefined}
