@@ -314,7 +314,9 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
         custom_raise_for_employee: raisedFor === "Others" ? selectedEmployee : undefined,
         custom_for_myself: raisedFor === "Myself" ? 1 : 0,
         custom_for_others: raisedFor === "Others" ? 1 : 0,
-        creation_form_data: JSON.stringify(formioData)
+        creation_form_data: JSON.stringify(
+          formSchema ? { schema: formSchema, answer: formioData } : formioData
+        )
       },
     };
 

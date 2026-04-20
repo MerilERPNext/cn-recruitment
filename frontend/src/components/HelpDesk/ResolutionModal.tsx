@@ -119,7 +119,9 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
   const handleSubmit = () => {
     if (resolution.trim()) {
-      onSubmit(resolution, JSON.stringify(exitFormSubmission ?? ""), JSON.stringify(feedbackFormSubmission ?? ""), [...exitFormAttachment, ...feedbackFormAttachment]);
+      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? "");
+      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? "");
+      onSubmit(resolution, JSON.stringify(exitData), JSON.stringify(feedbackData), [...exitFormAttachment, ...feedbackFormAttachment]);
     }
   };
 
