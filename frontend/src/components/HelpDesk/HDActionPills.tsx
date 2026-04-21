@@ -1,47 +1,56 @@
 "use client";
 
-import { Trash2, CheckCircle, MessageSquare } from "lucide-react";
+import { Trash2, CheckCircle, MessageSquare, RotateCcw } from "lucide-react";
 import type { JSX } from "react";
 import Tooltip from "../shared/Tooltip";
+import { useScreenSize } from "../../hooks/useScreenSize";
+import Button, { ButtonColor } from "../shared/atoms/Button";
 
 type HDActionPillProp = {
     canRevoke?: boolean;
     canClose?: boolean;
     canReply?: boolean;
+    canReopen?: boolean;
 
     onRevoke?: () => void;
     onClose?: () => void;
     onReply?: () => void;
+    onReopen?: () => void;
 
     revokeLoading?: boolean;
     closeLoading?: boolean;
     replyLoading?: boolean;
+    reopenLoading?: boolean;
 
     variant?: "pill" | "buttons";
 };
 
 type ActionItem = {
-    key: "revoke" | "close" | "reply";
+    key: "revoke" | "close" | "reply" | "reopen";
     tooltip: string;
     icon: JSX.Element;
     onClick?: () => void;
     loading?: boolean;
+    color: ButtonColor;
 };
 
 const HDActionPill = ({
     canRevoke,
     canClose,
     canReply,
+    canReopen,
     onRevoke,
     onClose,
     onReply,
+    onReopen,
     revokeLoading = false,
     closeLoading = false,
     replyLoading = false,
+    reopenLoading = false,
     variant = "pill",
 }: HDActionPillProp) => {
-    const hasActions = canRevoke || canClose || canReply;
-
+    const hasActions = canRevoke || canClose || canReply || canReopen;
+    const { isDesktop } = useScreenSize();
     if (!hasActions) {
         if (variant === "buttons") return null;
 
@@ -61,6 +70,18 @@ const HDActionPill = ({
             loading: closeLoading,
             onClick: onClose,
             icon: <CheckCircle className="w-4 h-4 text-green-500" />,
+            color: "success"
+        });
+    }
+
+    if (canReopen && onReopen) {
+        actions.push({
+            key: "reopen",
+            tooltip: "Reopen Ticket",
+            loading: reopenLoading,
+            onClick: onReopen,
+            icon: <RotateCcw className="w-4 h-4 text-warning" />,
+            color: "warning"
         });
     }
 
@@ -70,7 +91,8 @@ const HDActionPill = ({
             tooltip: "Revoke",
             loading: revokeLoading,
             onClick: onRevoke,
-            icon: <Trash2 className="w-4 h-4 text-red-400" />,
+            icon: <Trash2 className="w-4 h-4 text-error" />,
+            color: "error"
         });
     }
 
@@ -81,41 +103,38 @@ const HDActionPill = ({
             loading: replyLoading,
             onClick: onReply,
             icon: <MessageSquare className="w-4 h-4 text-primary" />,
+            color: "primary"
         });
     }
 
-    // ✅ MOBILE BUTTON VARIANT
-    if (variant === "buttons") {
+    // ✅ MOBILE BUTTON VARIANT OR NON-DESKTOP
+    if (variant === "buttons" || !isDesktop) {
         return (
-            <div className="flex gap-2 mt-3 w-full">
+            <div className={`flex gap-2 w-full ${variant !== "buttons" && !isDesktop ? 'justify-end flex-wrap' : 'mt-3'}`}>
                 {actions.map((action) => (
-                    <button
+                    <Button
                         key={action.key}
+                        bgColor={action.color}
+                        variant={variant === "buttons" ? "contain" : "soft"}
+                        size="sm"
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             action.onClick?.();
                         }}
                         disabled={action.loading}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm"
+                        loading={action.loading}
+                        icon={action.icon}
+                        className={variant === "buttons" ? "flex-1" : ""}
                     >
-                        {action.loading ? (
-                            <span className="w-4 h-4 border border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                {action.icon}
-                                <span className="capitalize">
-                                    {action.key}
-                                </span>
-                            </>
-                        )}
-                    </button>
+                        <span className="capitalize">{action.key === "close" ? "Close Ticket" : action.key === "reopen" ? "Reopen Ticket" : action.key}</span>
+                    </Button>
                 ))}
             </div>
         );
     }
 
-    // ✅ PILL VARIANT
+    // ✅ PILL VARIANT (DESKTOP)
     return (
         <div className="h-8 flex items-center gap-1 px-3 py-1 rounded-3xl bg-gray-10 w-fit">
             {actions.map((action, index) => (
@@ -128,7 +147,7 @@ const HDActionPill = ({
                                 action.onClick?.();
                             }}
                             disabled={action.loading}
-                            className="flex items-center justify-center"
+                            className="flex items-center justify-center gap-1.5"
                         >
                             {action.loading ? (
                                 <span className="w-4 h-4 border border-gray-400 border-t-transparent rounded-full animate-spin" />

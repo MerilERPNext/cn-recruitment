@@ -50,7 +50,7 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 sm:gap-4 w-full">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 w-full">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
@@ -79,7 +79,7 @@ const TicketStatsCards: React.FC<TicketStatsCardsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3 sm:gap-4 w-full">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 w-full">
       {statItems.map((item, index) => (
         <StatCard
           key={index}

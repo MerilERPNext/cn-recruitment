@@ -21,12 +21,16 @@ import {
   HDCategory,
   useRevokeTicket,
   useGetTicketStats,
+  useReopenTicket,
 } from "../../hooks/useHelpDeskTickets";
 import useDebounce from "../../hooks/useDebounce";
 import { useScreenSize } from "../../hooks/useScreenSize";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { errorResponseFormater } from "../../utils/errorResponseFormater";
+import { useFileUploader } from "../../hooks/useFileUploader";
+import { getFileComponents } from "../../utils/flowUtils";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -83,6 +87,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
   const closeTicketMutation = useCloseTicket();
   const requestClosureMutation = useRequestClosure();
   const revokeTicketMutation = useRevokeTicket();
+  const reopenTicketMutation = useReopenTicket();
 
   // Computed values
   const tickets = useMemo(() => ticketData?.data || [], [ticketData]);
@@ -170,8 +175,9 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
       onSuccess: () => {
         toast.success("Ticket revoked successfully");
       },
-      onError: () => {
-        toast.error("Failed to revoke ticket");
+      onError: (error) => {
+        const formatedError = errorResponseFormater(error, "Failed to revoke ticket");
+        toast.error(formatedError);
       },
       onSettled: () => {
         hide();
@@ -179,37 +185,113 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
     })
   }, [hide, show, revokeTicketMutation])
 
-  const handleResolutionSubmit = useCallback((resolution: string) => {
+  const handleReopen = useCallback((ticket: HDTicket) => {
+    show("Reopening ticket...");
+    reopenTicketMutation.mutate({ ticketId: ticket.name }, {
+      onSuccess: () => {
+        toast.success("Ticket reopened successfully");
+      },
+      onError: (error) => {
+        const formatedError = errorResponseFormater(error, "Failed to reopen ticket");
+        toast.error(formatedError);
+      },
+      onSettled: () => {
+        hide();
+      }
+    })
+  }, [hide, show, reopenTicketMutation])
+  const { uploadFiles } = useFileUploader();
+  const handleResolutionSubmit = useCallback(async (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => {
     if (!selectedTicketForClose) return;
 
-    if (isRequestClosureMode) {
-      requestClosureMutation.mutate(
-        {
+    try {
+      show("Processing...");
+
+      if (!isRequestClosureMode) {
+        // 1. Upload Exit Form files
+        if (exitAttachments && exitAttachments.length > 0) {
+          show("Uploading exit form files...");
+          const uploadResults = await uploadFiles(exitAttachments, "HD Ticket", selectedTicketForClose.name);
+          if (exitFormSubmission?.answer) {
+            let uploadIdx = 0;
+            const fileComponents = getFileComponents(exitFormSubmission.schema?.components || []);
+            fileComponents.forEach(comp => {
+              const val = exitFormSubmission.answer[comp.key];
+              if (Array.isArray(val)) {
+                exitFormSubmission.answer[comp.key] = val.map(fileObj => {
+                  if (fileObj.file && uploadIdx < uploadResults.length) {
+                    const uploadRes = uploadResults[uploadIdx++];
+                    return {
+                      storage: "url",
+                      name: uploadRes.file_name,
+                      url: uploadRes.file_url,
+                      size: uploadRes.file_size,
+                      type: uploadRes.file_type,
+                      data: { role: "remote" }
+                    };
+                  }
+                  return fileObj;
+                });
+              }
+            });
+          }
+        }
+
+        // 2. Upload Feedback Form files
+        if (feedbackAttachments && feedbackAttachments.length > 0) {
+          show("Uploading feedback form files...");
+          const uploadResults = await uploadFiles(feedbackAttachments, "HD Ticket", selectedTicketForClose.name);
+          if (feedbackFormSubmission?.answer) {
+            let uploadIdx = 0;
+            const fileComponents = getFileComponents(feedbackFormSubmission.schema?.components || []);
+            fileComponents.forEach(comp => {
+              const val = feedbackFormSubmission.answer[comp.key];
+              if (Array.isArray(val)) {
+                feedbackFormSubmission.answer[comp.key] = val.map(fileObj => {
+                  if (fileObj.file && uploadIdx < uploadResults.length) {
+                    const uploadRes = uploadResults[uploadIdx++];
+                    return {
+                      storage: "url",
+                      name: uploadRes.file_name,
+                      url: uploadRes.file_url,
+                      size: uploadRes.file_size,
+                      type: uploadRes.file_type,
+                      data: { role: "remote" }
+                    };
+                  }
+                  return fileObj;
+                });
+              }
+            });
+          }
+        }
+      }
+
+      if (isRequestClosureMode) {
+        await requestClosureMutation.mutateAsync({
           ticketId: selectedTicketForClose.name,
           resolutionNotes: resolution,
-        },
-        {
-          onSuccess: () => {
-            setIsResolutionModalOpen(false);
-            setSelectedTicketForClose(null);
-          },
-        }
-      );
-    } else {
-      closeTicketMutation.mutate(
-        {
+        });
+        toast.success("Closure request sent");
+      } else {
+        await closeTicketMutation.mutateAsync({
           ticketId: selectedTicketForClose.name,
           resolutionDetails: resolution,
-        },
-        {
-          onSuccess: () => {
-            setIsResolutionModalOpen(false);
-            setSelectedTicketForClose(null);
-          },
-        }
-      );
+          closingFormData: exitFormSubmission ? JSON.stringify(exitFormSubmission) : undefined,
+          feedbackFormData: feedbackFormSubmission ? JSON.stringify(feedbackFormSubmission) : undefined
+        });
+        toast.success("Ticket closed successfully");
+      }
+      setIsResolutionModalOpen(false);
+      setSelectedTicketForClose(null);
+    } catch (error) {
+      const formatedError = errorResponseFormater(error, "Failed to process ticket closure");
+      toast.error(formatedError);
+      console.error("Action aborted", error);
+    } finally {
+      hide();
     }
-  }, [selectedTicketForClose, isRequestClosureMode, closeTicketMutation, requestClosureMutation]);
+  }, [selectedTicketForClose, isRequestClosureMode, closeTicketMutation, requestClosureMutation, uploadFiles, show, hide]);
 
   const handleApplyFilters = useCallback((newFilters: TicketFilters) => {
     setFilters(newFilters);
@@ -240,6 +322,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             onReply={handleReply}
             onClose={handleClose}
             onRevoke={handleRevoke}
+            onReopen={handleReopen}
             onRowClick={handleReply}
             sortField={sortField}
             sortDirection={sortDirection}
@@ -339,7 +422,7 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
             setSelectedTicketForClose(null);
           }}
           onSubmit={handleResolutionSubmit}
-          ticketId={selectedTicketForClose?.name || ""}
+          ticket={selectedTicketForClose}
           isRequestClosure={isRequestClosureMode}
           isLoading={closeTicketMutation.isPending || requestClosureMutation.isPending}
         />

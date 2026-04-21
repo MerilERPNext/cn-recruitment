@@ -133,6 +133,9 @@ chatnext-app.field-required::after {
   /* or whatever original value should be */
 }
 
+.show-req-astrik .field-required::after {
+  display: initial !important;
+}
 
 .form-control.input {
   border-radius: 4px 0 0 4px !important;

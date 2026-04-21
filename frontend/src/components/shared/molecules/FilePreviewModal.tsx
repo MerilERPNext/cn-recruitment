@@ -11,6 +11,7 @@ import {
 
 interface FilePreviewModalProps {
   fileUrl: string;
+  fileName?: string;
   onClose: () => void;
 }
 
@@ -447,12 +448,12 @@ function UnknownPreview({ fileUrl, fileName }: { fileUrl: string; fileName: stri
 
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 
-export function FilePreviewModal({ fileUrl, onClose }: FilePreviewModalProps) {
+export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }: FilePreviewModalProps) {
   const [imageZoom, setImageZoom] = useState(100);
 
   // Strip query params/fragments and guard against trailing slashes
-  const fileName = fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
-  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
+  const fileName = customFileName || fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
+  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileName);
 
   const handleZoomIn  = useCallback(() => setImageZoom((p) => Math.min(p + 25, 200)), []);
   const handleZoomOut = useCallback(() => setImageZoom((p) => Math.max(p - 25, 50)),  []);

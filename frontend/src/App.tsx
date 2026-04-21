@@ -219,6 +219,8 @@ const App: React.FC = () => {
 
 export default App;
 
+const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
+
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails({
     fields: ["name"]
@@ -246,31 +248,53 @@ const MandatoryPoliciesHandler = () => {
     }
   );
 
+  // Total policy count (any status/type) — gates the informational session redirect
+  const {
+    data: totalPoliciesCount,
+    isFetching: isTotalPoliciesCountFetching,
+  } = useFrappeDocumentCount(
+    {
+      doctype: "Policy Details",
+      filters: [
+        ["employee_id", "=", currentEmployee?.name || ""],
+      ],
+    },
+    {
+      enabled: !!currentEmployee,
+    }
+  );
 
   useEffect(() => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined
+      isTotalPoliciesCountFetching ||
+      mandatoryPoliciesCount === undefined ||
+      totalPoliciesCount === undefined
     ) {
       return;
     }
+
+    const alreadyShownThisSession = sessionStorage.getItem(SESSION_POLICY_SHOWN_KEY) === "true";
+    const onPolicyPage = window.location.pathname.includes("/webapp/policies-enforced");
 
     if (mandatoryPoliciesCount <= 0) {
       if (window.isApp) {
         window.nativeInterface.logToNative("destroyNestedWebView");
         window.nativeInterface.execute("destroyNestedWebView");
-      } else if (
-        window.location.pathname.includes("/webapp/policies-enforced") &&
-        isAutoOpened
-      ) {
+      } else if (onPolicyPage && isAutoOpened) {
+        // Only auto-navigate away if we were redirected here due to pending policies
         setInAutoOpened(false);
         navigate(redirectTo);
+      } else if (!alreadyShownThisSession && !onPolicyPage && totalPoliciesCount > 0) {
+        // No mandatory policies but user has at least 1 policy — redirect once per session
+        sessionStorage.setItem(SESSION_POLICY_SHOWN_KEY, "true");
+        setRedirectTo(location.pathname);
+        navigate("/webapp/policies-enforced");
       }
     }
 
     if (mandatoryPoliciesCount > 0) {
-
       if (window.isApp) {
         window.nativeInterface.logToNative("openNestedWebView");
         window.nativeInterface.execute("openNestedWebView", {
@@ -278,9 +302,8 @@ const MandatoryPoliciesHandler = () => {
           title: "HR Policies",
           isCloseable: false,
         });
-      } else if (
-        !window.location.pathname.includes("/webapp/policies-enforced")
-      ) {
+      } else if (!onPolicyPage) {
+        sessionStorage.setItem(SESSION_POLICY_SHOWN_KEY, "true");
         setRedirectTo(location.pathname);
         setInAutoOpened(true);
         navigate("/webapp/policies-enforced");
@@ -288,8 +311,10 @@ const MandatoryPoliciesHandler = () => {
     }
   }, [
     mandatoryPoliciesCount,
+    totalPoliciesCount,
     isCurrentEmployeeFetching,
     isMandatoryPoliciesCountFetching,
+    isTotalPoliciesCountFetching,
     navigate,
   ]);
 

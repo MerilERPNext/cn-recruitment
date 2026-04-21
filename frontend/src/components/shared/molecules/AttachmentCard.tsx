@@ -11,16 +11,18 @@ import { FilePreviewModal } from "./FilePreviewModal";
 
 export function AttachmentCard({
   fileUrl,
+  fileName: customFileName,
   compact = false,
   showFileNameWithEye = false,
 }: {
   fileUrl: string;
+  fileName?: string;
   compact?: boolean;
   showFileNameWithEye?: boolean;
 }) {
-  const fileName = getFileName(fileUrl);
+  const fileName = customFileName || getFileName(fileUrl);
   const [showPreview, setShowPreview] = useState(false);
-  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileUrl);
+  const { category, label, iconColor, bgColor } = getFileTypeInfo(fileName);
 
   const ActionButtons = (
     <div className="flex gap-2 items-center">
@@ -95,6 +97,7 @@ export function AttachmentCard({
       {showPreview && (
         <FilePreviewModal
           fileUrl={fileUrl}
+          fileName={fileName}
           onClose={() => setShowPreview(false)}
         />
       )}

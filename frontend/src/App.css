@@ -252,3 +252,7 @@
 body {
   font-family: "Reddit Sans", sans-serif;
 }
+
+.formio-hide-attachment .formio-component-file .list-group {
+  display: none !important;
+}
