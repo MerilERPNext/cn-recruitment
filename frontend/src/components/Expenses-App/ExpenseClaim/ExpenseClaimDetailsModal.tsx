@@ -65,6 +65,134 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
       }).format(value)
       : "—";
 
+  const renderAdditionalDetailsRow = (customFormData: string | null | undefined, colSpan: number) => {
+    if (!customFormData) return null;
+    let parsed: Record<string, any> = {};
+    try {
+      parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData;
+    } catch (e) {
+      return null;
+    }
+
+    const keysToSkip = [
+      "uid", "name", "expenseCategory", "categoryType", "expenseType",
+      "custom_attach_receipt", "start_datetime", "end_datetime", "location"
+    ];
+
+    const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
+    const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
+
+    const entries = Object.entries(parsed).filter(
+      ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
+    );
+
+    if (entries.length === 0) return null;
+
+    const formatKey = (key: string) => {
+      let formatted = key.replace(/_/g, " ");
+      formatted = formatted.replace(/([A-Z])/g, " $1").trim();
+      return formatted.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    };
+
+    return (
+      <tr className="bg-gray-50/50 border-b border-gray-100">
+        <td colSpan={colSpan} className="px-4 py-4 text-left">
+          <div className="pl-4 border-l-2 border-blue-400">
+            <Typography variant="mobileCardLabel" className="block mb-3 font-semibold text-gray-700">
+              Additional Details
+            </Typography>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {entries.map(([key, value]) => {
+                if (isFileArray(value)) {
+                  return (
+                    <div key={key} className="flex flex-col gap-2 col-span-full md:col-span-3 lg:col-span-4 mt-2">
+                      <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                      <div className="flex flex-wrap gap-2">
+                        {value.map((file: any, idx: number) => {
+                          const fileUrl = file.data?.message?.file_url || file.url || "";
+                          return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} compact /> : null;
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={key} className="flex flex-col gap-1">
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                    <span className="text-sm text-gray-800 break-words">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  const renderAdditionalDetailsMobile = (customFormData: string | null | undefined) => {
+    if (!customFormData) return null;
+    let parsed: Record<string, any> = {};
+    try {
+      parsed = typeof customFormData === 'string' ? JSON.parse(customFormData) : customFormData;
+    } catch (e) {
+      return null;
+    }
+
+    const keysToSkip = [
+      "uid", "name", "expenseCategory", "categoryType", "expenseType",
+      "custom_attach_receipt", "start_datetime", "end_datetime", "location"
+    ];
+
+    const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
+    const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
+
+    const entries = Object.entries(parsed).filter(
+      ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
+    );
+
+    if (entries.length === 0) return null;
+
+    const formatKey = (key: string) => {
+      let formatted = key.replace(/_/g, " ");
+      formatted = formatted.replace(/([A-Z])/g, " $1").trim();
+      return formatted.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+    };
+
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-100">
+        <Typography variant="mobileCardLabel" className="block mb-3 font-semibold text-gray-700">
+          Additional Details
+        </Typography>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+          {entries.map(([key, value]) => {
+            if (isFileArray(value)) {
+              return (
+                <div key={key} className="flex flex-col gap-2 col-span-2 mt-1">
+                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                  <div className="flex flex-col gap-2">
+                    {value.map((file: any, idx: number) => {
+                      const fileUrl = file.data?.message?.file_url || file.url || "";
+                      return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} /> : null;
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div key={key} className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                <span className="text-sm text-gray-800 break-words">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   if (!id) return null;
 
   // Desktop table for participants
@@ -215,68 +343,70 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
           {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
             data.expenses.map((item: Expense) => {
               return (
-                <tr
-                  key={item.name}
-                  className="bg-white hover:bg-gray-50 transition-colors duration-150"
-                >
-                  <td className="px-4 py-3 text-gray-800 truncate">
-                    {data?.custom_expense_category_name}
-                  </td>
-                  <td className="px-4 py-3 text-gray-800 truncate">
-                    {item?.custom_claim_type_name}
-                  </td>
-                  <td className="px-4 py-3 text-gray-800">
-                    {formatToIndianDate(item.expense_date)}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center">
-                      <StatusBadge status={finalStatus} />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3 text-gray-800">
-                    {formatINR(item.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-800">
-                    {formatToIndianDate(item.creation)}
-                  </td>
-
-                  <td className="px-4 py-3 text-gray-800">
-                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col gap-2 items-center justify-center">
-                      {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
-                        <AttachmentCard key={i} fileUrl={file.file_url} compact />
-                      ))}
-                      {getAttachmentsForItem().length === 0 && (
-                        <span className="text-xs text-gray-400 italic">
-                          No file
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  {isSendedBack && (
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => {
-                          const navigationState = buildExpenseNavigationState(
-                            data,
-                            item,
-                            isSendedBack,
-                          );
-                          navigate("/webapp/expenses-app/add-expense", {
-                            state: navigationState,
-                          });
-                        }}
-                        className="text-gray-500 hover:text-blue-600 transition-colors"
-                      >
-                        <SquarePen size={18} />
-                      </button>
+                <React.Fragment key={item.name || item.uid || Math.random()}>
+                  <tr
+                    className="bg-white hover:bg-gray-50 transition-colors duration-150"
+                  >
+                    <td className="px-4 py-3 text-gray-800 truncate">
+                      {data?.custom_expense_category_name}
                     </td>
-                  )}
-                </tr>
+                    <td className="px-4 py-3 text-gray-800 truncate">
+                      {item?.custom_claim_type_name}
+                    </td>
+                    <td className="px-4 py-3 text-gray-800">
+                      {formatToIndianDate(item.expense_date)}
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center">
+                        <StatusBadge status={finalStatus} />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-gray-800">
+                      {formatINR(item.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-800">
+                      {formatToIndianDate(item.creation)}
+                    </td>
+
+                    <td className="px-4 py-3 text-gray-800">
+                      {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-2 items-center justify-center">
+                        {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                          <AttachmentCard key={i} fileUrl={file.file_url} compact />
+                        ))}
+                        {getAttachmentsForItem().length === 0 && (
+                          <span className="text-xs text-gray-400 italic">
+                            No file
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    {isSendedBack && (
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => {
+                            const navigationState = buildExpenseNavigationState(
+                              data,
+                              item,
+                              isSendedBack,
+                            );
+                            navigate("/webapp/expenses-app/add-expense", {
+                              state: navigationState,
+                            });
+                          }}
+                          className="text-gray-500 hover:text-blue-600 transition-colors"
+                        >
+                          <SquarePen size={18} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                  {renderAdditionalDetailsRow(item.custom_form_data, isSendedBack ? 9 : 8)}
+                </React.Fragment>
               );
             })
           ) : (
@@ -376,6 +506,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   )}
                 </div>
               </div>
+
+              {/* Additional Details */}
+              {renderAdditionalDetailsMobile(item.custom_form_data)}
 
               {/* Edit button for sent-back claims */}
               {isSendedBack && (
