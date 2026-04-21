@@ -10,6 +10,7 @@ import {
   useCreateTicket,
   HDCategory,
   useGetCreationFormJson,
+  useUpdateTicket,
 } from "../../hooks/useHelpDeskTickets";
 import { AttachmentCard } from "../shared/molecules/AttachmentCard";
 import EmployeeSelect from "../shared/EmployeeSelect";
@@ -19,6 +20,7 @@ import { FormioFormSkeleton } from "./LoadingSkeletons";
 import { getRequiredKeys } from "../../utils/formioUtils";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
 
 interface RequestIssueModalProps {
   isOpen: boolean;
@@ -90,7 +92,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
   // Mutation
   const createTicketMutation = useCreateTicket();
-
+  const updateTicketMutation = useUpdateTicket();
   // Check if attachment is mandatory based on selected category/subcategory
   const isAttachmentMandatory = useMemo(() => {
     // Check subcategory first
@@ -246,6 +248,55 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeFormioFile = (formId: string, compKey: string, index: number) => {
+    try {
+      // FormIO heavily guards its file deletions natively.
+      // Easiest and most bulletproof way is triggering exactly the hidden trash icon Form.io natively renders!
+      const rootNode = document.getElementById(formId) || document;
+      const container = rootNode.querySelector(`.formio-component-${compKey}`);
+      if (container) {
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
+      }
+
+      // Proactively update local State for instant UI feedback
+      setFormioData((prevData) => {
+        const newData = { ...prevData };
+        if (Array.isArray(newData[compKey])) {
+          newData[compKey] = newData[compKey].filter((_, i) => i !== index);
+        }
+
+        // Recalculate formioFiles globally from the updated local data
+        if (formSchema) {
+          const fileComponents = getFileComponents(formSchema.components);
+          const extractedFiles: File[] = [];
+          fileComponents.forEach((c) => {
+            const value = newData[c.key as string];
+            if (Array.isArray(value)) {
+              value.forEach((file) => {
+                if (file?.file) {
+                  extractedFiles.push(file);
+                }
+              });
+            }
+          });
+          setFormioFiles(extractedFiles);
+        }
+
+        return newData;
+      });
+
+    } catch (err) {
+      console.error("Failed to remove file from formio", err);
+    }
+  };
+
   // Build description with attachments embedded as HTML
   const buildDescriptionWithAttachments = (desc: string, files: UploadedFile[]): string => {
     if (files.length === 0) return desc;
@@ -329,7 +380,50 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
       }
       if (formioFiles.length > 0) {
         loadingContext.show("Uploading files");
-        await uploadFiles(formioFiles, res.doctype, res.name);
+        const uploadResults = await uploadFiles(formioFiles, res.doctype, res.name);
+
+        // Map upload results back to formioData
+        let uploadIdx = 0;
+        const updatedFormioData = { ...formioData };
+
+        if (formSchema?.components) {
+          const fileComponents = getFileComponents(formSchema.components);
+          fileComponents.forEach((comp) => {
+            const val = updatedFormioData[comp.key];
+            if (Array.isArray(val)) {
+              updatedFormioData[comp.key] = val.map((fileObj) => {
+                // If it's a file object that was just uploaded
+                if (fileObj.file && uploadIdx < uploadResults.length) {
+                  const uploadRes = uploadResults[uploadIdx++];
+                  return {
+                    storage: "url",
+                    name: uploadRes.file_name,
+                    url: uploadRes.file_url,
+                    size: uploadRes.file_size,
+                    type: uploadRes.file_type,
+                    data: {
+                      role: "remote",
+                    },
+                  };
+                }
+                return fileObj;
+              });
+            }
+          });
+
+          // updateTicketMutation after file upload use api for updating creation_form_data and answer FormioData to attachment file url with remote role
+          const updatedCreationFormData = JSON.stringify({
+            schema: formSchema,
+            answer: updatedFormioData,
+          });
+
+          await updateTicketMutation.mutateAsync({
+            ticketId: res.name || "",
+            params: {
+              creation_form_data: updatedCreationFormData,
+            },
+          });
+        }
         loadingContext.hide();
       }
       toast.success("Issue submitted successfully");
@@ -546,7 +640,7 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                     <div className="flex-1">
                       <AttachmentCard
                         fileUrl={file.file_url}
-                        showFileNameWithEye={true}
+                        showFileNameWithEye={false}
                       />
                     </div>
                     <button
@@ -570,10 +664,15 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
           ) : formSchema ? (
             <div className="w-full show-req-astrik mt-4 ">
               <Typography variant="subheading" className="mb-1">Additional Details</Typography>
-              <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+              <div id="request-issue-form-container" className="w-full border-gray-100 rounded-lg p-4 border-1">
+                <style>{`
+                  .formio-component-file .list-group {
+                    display: none !important;
+                  }
+                `}</style>
                 <Form
                   form={formSchema}
-                  ref={formRef}
+                  ref={formRef as any}
                   options={{
                     buttonSettings: {
                       showSubmit: false
@@ -581,6 +680,31 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
                   }}
                   onChange={handleFormChange}
                 />
+
+                {/* Formio Attachment Previews via Portals */}
+                {formSchema.components && getFileComponents(formSchema.components).length > 0 && (
+                  <>
+                    {getFileComponents(formSchema.components).map((comp) => {
+                      const rawFiles = formioData[comp.key as string];
+                      const files = Array.isArray(rawFiles) ? rawFiles : (rawFiles ? [rawFiles] : []);
+                      if (files.length === 0) return null;
+
+                      return (
+                        <FormioPreviewPortal key={comp.key} compKey={comp.key as string} formContainerId="request-issue-form-container">
+                          <div className="space-y-2 mt-2 w-full">
+                            {files.map((fileObj, idx) => (
+                              <FormioPreviewItem
+                                key={`${comp.key}-${idx}`}
+                                fileObj={fileObj}
+                                onRemove={() => removeFormioFile("request-issue-form-container", comp.key as string, idx)}
+                              />
+                            ))}
+                          </div>
+                        </FormioPreviewPortal>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             </div>
           ) : null}

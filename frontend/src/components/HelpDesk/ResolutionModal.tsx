@@ -7,11 +7,12 @@ import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
 import { Form } from "@tsed/react-formio";
 import { FormioFormSkeleton } from "./LoadingSkeletons";
 import { getRequiredKeys } from "../../utils/formioUtils";
+import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
 
 interface ResolutionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (resolution: string, closingFormData: string, feedbackFormData: string, attachments: File[]) => void;
+  onSubmit: (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => void;
   ticket: HDTicket | null;
   isRequestClosure?: boolean;
   isLoading?: boolean;
@@ -84,7 +85,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
       if (Array.isArray(value)) {
         value.forEach((file) => {
-          if (!file?.file) {
+          if (file?.file) {
             extractedFiles.push(file);
           }
         });
@@ -115,13 +116,66 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
     setExitFormAttachment(extractedFiles);
   };
 
+  const removeFormioFile = (formId: string, compKey: string, index: number) => {
+    try {
+      const rootNode = document.getElementById(formId) || document;
+      const container = rootNode.querySelector(`.formio-component-${compKey}`);
+      if (container) {
+          const removeButtons = container.querySelectorAll(
+            'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+          );
+          if (removeButtons && removeButtons[index]) {
+             (removeButtons[index] as HTMLElement).click();
+          } else {
+             console.error("Form.io native remove button not found");
+          }
+      }
+    } catch (err) {
+      console.error("Failed to remove file from formio", err);
+    }
+  };
+
+  const renderFormioPreviews = (formId: string, formSchema: any, submissionData: any) => {
+    if (!formSchema?.components) return null;
+    const fileComps = getFileComponents(formSchema.components);
+    if (fileComps.length === 0) return null;
+
+    return (
+      <>
+        {fileComps.map((comp) => {
+          const rawFiles = submissionData?.[comp.key as string];
+          const files = Array.isArray(rawFiles) ? rawFiles : (rawFiles ? [rawFiles] : []);
+          if (files.length === 0) return null;
+
+          return (
+            <FormioPreviewPortal key={comp.key} compKey={comp.key as string} formContainerId={formId}>
+              <div className="space-y-2 mt-2 w-full">
+                {files.map((fileObj, idx) => (
+                  <FormioPreviewItem 
+                    key={`${comp.key}-${idx}`} 
+                    fileObj={fileObj} 
+                    onRemove={() => removeFormioFile(formId, comp.key as string, idx)} 
+                  />
+                ))}
+              </div>
+            </FormioPreviewPortal>
+          );
+        })}
+      </>
+    );
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = () => {
     if (resolution.trim()) {
-      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? "");
-      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? "");
-      onSubmit(resolution, JSON.stringify(exitData), JSON.stringify(feedbackData), [...exitFormAttachment, ...feedbackFormAttachment]);
+      if (isRequestClosure) {
+        onSubmit(resolution);
+      } else {
+        const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? null);
+        const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? null);
+        onSubmit(resolution, exitData, feedbackData, exitFormAttachment, feedbackFormAttachment);
+      }
     }
   };
 
@@ -161,6 +215,11 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
         {/* Body */}
         <div className="px-6 flex-1 overflow-y-auto py-4">
+          <style>{`
+            .formio-component-file .list-group {
+              display: none !important;
+            }
+          `}</style>
           <Typography variant="bodySmall" color="body2" className="mb-3">
             {description}
           </Typography>
@@ -176,9 +235,9 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             feedbackFormJsonLoading &&
             <FormioFormSkeleton />
           }
-          {!feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
+          {!feedbackFormJsonLoading && feedbackFormJson && !isRequestClosure && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
-            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+            <div id={`feedback-form-container-${ticket?.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={feedbackFormJson}
                 ref={feedbackFormRef}
@@ -189,6 +248,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 }}
                 onChange={handleFeedbackFormChange}
               />
+              {renderFormioPreviews(`feedback-form-container-${ticket?.name}`, feedbackFormJson, feedbackFormSubmission)}
             </div>
           </div>
           }
@@ -196,9 +256,9 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             exitFormJsonLoading &&
             <FormioFormSkeleton />
           }
-          {!exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
+          {!exitFormJsonLoading && exitFormJson && !isRequestClosure && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
-            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+            <div id={`exit-form-container-${ticket?.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={exitFormJson}
                 ref={exitFormRef}
@@ -209,6 +269,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 }}
                 onChange={handleExitFormChange}
               />
+              {renderFormioPreviews(`exit-form-container-${ticket?.name}`, exitFormJson, exitFormSubmission)}
             </div>
           </div>
           }

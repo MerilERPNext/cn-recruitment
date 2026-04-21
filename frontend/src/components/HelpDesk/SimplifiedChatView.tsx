@@ -1,3 +1,4 @@
+import { Typography } from "../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import {
@@ -20,11 +21,12 @@ import { showCloseTicketButton } from "./hdelpdeskUtils";
 import { FormIOForm, getFileComponents } from "../../utils/flowUtils";
 import { getRequiredKeys } from "../../utils/formioUtils";
 import { Form } from "@tsed/react-formio";
-import { Typography } from "../shared/atoms/Typography";
 import { FormioFormSkeleton } from "./LoadingSkeletons";
+import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/FormioPreview";
 import { useFileUploader } from "../../hooks/useFileUploader";
 import Button from "../shared/atoms/Button";
 import Modal from "../shared/Modal";
+import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -98,12 +100,62 @@ const parseQuotedContent = (htmlContent: string): ParsedMessage => {
   }
 };
 
+const removeFormioFile = (formId: string, compKey: string, index: number) => {
+  try {
+    const rootNode = document.getElementById(formId) || document;
+    const container = rootNode.querySelector(`.formio-component-${compKey}`);
+    if (container) {
+      const removeButtons = container.querySelectorAll(
+        'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+      );
+      if (removeButtons && removeButtons[index]) {
+        (removeButtons[index] as HTMLElement).click();
+      } else {
+        console.error("Form.io native remove button not found");
+      }
+    }
+  } catch (err) {
+    console.error("Failed to remove file from formio", err);
+  }
+};
+
+const renderFormioPreviews = (formId: string, formSchema: any, submissionData: any, readOnly: boolean = false) => {
+  if (!formSchema?.components) return null;
+  const fileComps = getFileComponents(formSchema.components);
+  if (fileComps.length === 0) return null;
+
+  return (
+    <>
+      {fileComps.map((comp) => {
+        const rawFiles = submissionData?.[comp.key as string];
+        const files = Array.isArray(rawFiles) ? rawFiles : (rawFiles ? [rawFiles] : []);
+        if (files.length === 0) return null;
+
+        return (
+          <FormioPreviewPortal key={comp.key} compKey={comp.key as string} formContainerId={formId}>
+            <div className="space-y-2 mt-2 w-full">
+              {files.map((fileObj, idx) => (
+                <FormioPreviewItem
+                  key={`${comp.key}-${idx}`}
+                  fileObj={fileObj}
+                  onRemove={() => removeFormioFile(formId, comp.key as string, idx)}
+                  readOnly={readOnly}
+                />
+              ))}
+            </div>
+          </FormioPreviewPortal>
+        );
+      })}
+    </>
+  );
+};
+
 // Resolution Modal Component
 interface ResolutionModalProps {
   ticket: TicketDetail,
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => void;
+  onSubmit: (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => void;
   isLoading: boolean;
   isRaiser: boolean;
   isEditing?: boolean;
@@ -183,7 +235,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
       if (Array.isArray(value)) {
         value.forEach((file) => {
-          if (!file?.file) {
+          if (file?.file) {
             extractedFiles.push(file);
           }
         });
@@ -215,7 +267,6 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
   };
   /* END:  Formio Exit and Feedback Form Logic */
 
-
   useEffect(() => {
     if (isOpen) {
       setResolution(existingResolution || "");
@@ -230,9 +281,9 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       return;
     }
     if (isClosingTicket) {
-      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? "");
-      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? "");
-      onSubmit(resolution, JSON.stringify(exitData), JSON.stringify(feedbackData), [...exitFormAttachment, ...feedbackFormAttachment]);
+      const exitData = exitFormJson ? { schema: exitFormJson, answer: exitFormSubmission ?? {} } : (exitFormSubmission ?? null);
+      const feedbackData = feedbackFormJson ? { schema: feedbackFormJson, answer: feedbackFormSubmission ?? {} } : (feedbackFormSubmission ?? null);
+      onSubmit(resolution, exitData, feedbackData, exitFormAttachment, feedbackFormAttachment);
     }
     else {
       onSubmit(resolution);
@@ -243,7 +294,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
+      <div className="formio-hide-attachment  relative w-full max-w-lg sm:mx-4  flex flex-col sm:max-h-[80vh] max-sm:h-full bg-white sm:rounded-xl shadow-xl">
         {/** Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
@@ -258,7 +309,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
         </div>
         {/** Body */}
         <div className="px-6 overflow-y-auto flex-1 py-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block  text-sm font-medium text-gray-700 mb-2">
             Resolution Details <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -282,7 +333,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           }
           {!isEditing && !feedbackFormJsonLoading && feedbackFormJson && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Feedback Form Details</Typography>
-            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+            <div id={`feedback-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={feedbackFormJson}
                 ref={feedbackFormRef}
@@ -293,6 +344,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 }}
                 onChange={handleFeedbackFormChange}
               />
+              {renderFormioPreviews(`feedback-form-container-chat-${ticket.name}`, feedbackFormJson, feedbackFormSubmission)}
             </div>
           </div>
           }
@@ -302,7 +354,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
           }
           {!isEditing && !exitFormJsonLoading && exitFormJson && <div className="w-full show-req-astrik mt-4 ">
             <Typography variant="subheading" className="mb-1">Issue Closure Form</Typography>
-            <div className="w-full border-gray-100 rounded-lg p-4 border-1">
+            <div id={`exit-form-container-chat-${ticket.name}`} className="w-full border-gray-100 rounded-lg p-4 border-1">
               <Form
                 form={exitFormJson}
                 ref={exitFormRef}
@@ -313,6 +365,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
                 }}
                 onChange={handleExitFormChange}
               />
+              {renderFormioPreviews(`exit-form-container-chat-${ticket.name}`, exitFormJson, exitFormSubmission)}
             </div>
           </div>
           }
@@ -735,27 +788,94 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     setIsResolvingTicket(true);
     setIsResolutionModalOpen(true);
   };
-
+  const loadingContext = useLoadingOverlay();
   const { uploadFiles } = useFileUploader();
   // Handle close ticket with resolution from modal
-  const handleCloseTicket = async (resolution: string, exitFormSubmission?: string, feedbackFormSubmission?: string, attachments?: File[]) => {
+  const handleCloseTicket = async (resolution: string, exitFormSubmission?: any, feedbackFormSubmission?: any, exitAttachments?: File[], feedbackAttachments?: File[]) => {
     try {
-      const res = await closeTicketMutation.mutateAsync({
+      const finalExitFormSubmission = exitFormSubmission;
+      const finalFeedbackFormSubmission = feedbackFormSubmission;
+
+      loadingContext.show("Closing ticket...");
+
+      // 1. First upload Exit Form files if they exist
+      if (exitAttachments && exitAttachments.length > 0) {
+        loadingContext.show("Uploading exit form files...");
+        const uploadResults = await uploadFiles(exitAttachments, "HD Ticket", ticket.name);
+
+        // Map results back to exitFormSubmission
+        if (exitFormSubmission?.answer) {
+          let uploadIdx = 0;
+          const fileComponents = getFileComponents(exitFormSubmission.schema?.components || []);
+          fileComponents.forEach(comp => {
+            const val = exitFormSubmission.answer[comp.key];
+            if (Array.isArray(val)) {
+              exitFormSubmission.answer[comp.key] = val.map(fileObj => {
+                if (fileObj.file && uploadIdx < uploadResults.length) {
+                  const uploadRes = uploadResults[uploadIdx++];
+                  return {
+                    storage: "url",
+                    name: uploadRes.file_name,
+                    url: uploadRes.file_url,
+                    size: uploadRes.file_size,
+                    type: uploadRes.file_type,
+                    data: { role: "remote" }
+                  };
+                }
+                return fileObj;
+              });
+            }
+          });
+        }
+      }
+
+      // 2. Upload Feedback Form files if they exist
+      if (feedbackAttachments && feedbackAttachments.length > 0) {
+        loadingContext.show("Uploading feedback form files...");
+        const uploadResults = await uploadFiles(feedbackAttachments, "HD Ticket", ticket.name);
+
+        // Map results back to feedbackFormSubmission
+        if (feedbackFormSubmission?.answer) {
+          let uploadIdx = 0;
+          const fileComponents = getFileComponents(feedbackFormSubmission.schema?.components || []);
+          fileComponents.forEach(comp => {
+            const val = feedbackFormSubmission.answer[comp.key];
+            if (Array.isArray(val)) {
+              feedbackFormSubmission.answer[comp.key] = val.map(fileObj => {
+                if (fileObj.file && uploadIdx < uploadResults.length) {
+                  const uploadRes = uploadResults[uploadIdx++];
+                  return {
+                    storage: "url",
+                    name: uploadRes.file_name,
+                    url: uploadRes.file_url,
+                    size: uploadRes.file_size,
+                    type: uploadRes.file_type,
+                    data: { role: "remote" }
+                  };
+                }
+                return fileObj;
+              });
+            }
+          });
+        }
+      }
+
+      // 3. Close the ticket with updated form data
+      await closeTicketMutation.mutateAsync({
         ticketId: ticket.name,
         resolutionDetails: resolution,
-        closingFormData: exitFormSubmission,
-        feedbackFormData: feedbackFormSubmission
-      }) as { doctype: string; name: string };
-
-      if (attachments && attachments.length > 0) {
-        await uploadFiles(attachments, res.doctype, res.name);
-      }
+        closingFormData: finalExitFormSubmission ? JSON.stringify(finalExitFormSubmission) : undefined,
+        feedbackFormData: finalFeedbackFormSubmission ? JSON.stringify(finalFeedbackFormSubmission) : undefined
+      });
 
       toast.success("Ticket closed successfully");
       setIsResolutionModalOpen(false);
       setIsEditingResolution(false);
-    } catch {
+    } catch (error) {
+      console.error("Failed to close ticket:", error);
       toast.error("Failed to close ticket");
+    } finally {
+      loadingContext.hide();
     }
   };
 
@@ -1179,6 +1299,41 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     }, [ticket.closing_form_data])
 
     console.log(feedbackForm)
+    // ✅ Close form previews
+    const closePreviews = useMemo(() => {
+      if (!closeForm?.schema) return null;
+
+      return renderFormioPreviews(
+        `close-form-container-chat-read-${ticket.name}`,
+        closeForm.schema,
+        closeForm.answer,
+        true
+      );
+    }, [closeForm, ticket.name]);
+
+    // ✅ Feedback previews
+    const feedbackPreviews = useMemo(() => {
+      if (!feedbackForm?.schema) return null;
+
+      return renderFormioPreviews(
+        `feedback-form-container-chat-read-${ticket.name}`,
+        feedbackForm.schema,
+        feedbackForm.answer,
+        true
+      );
+    }, [feedbackForm, ticket.name]);
+
+    // ✅ Creation previews
+    const creationPreviews = useMemo(() => {
+      if (!creationForm?.schema) return null;
+
+      return renderFormioPreviews(
+        `creation-form-container-chat-read-${ticket.name}`,
+        creationForm.schema,
+        creationForm.answer,
+        true
+      );
+    }, [creationForm, ticket.name]);
 
     const [showForms, setShowForms] = useState<boolean>(false);
 
@@ -1262,7 +1417,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           ) : null}
 
           {
-            (!!creationForm?.shema || !!closeForm?.schema || !!feedbackForm?.schema) && (
+            (!!creationForm?.schema || !!closeForm?.schema || !!feedbackForm?.schema) && (
               <Button
                 onClick={() => { setShowForms(true) }}
                 disabled={isClosing}
@@ -1279,7 +1434,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               <Modal
                 isOpen={showForms}
                 onClose={() => setShowForms(false)}
-                className="flex flex-col overflow-hidden"
+                className="flex flex-col overflow-hidden h-[85vh] sm:h-[80vh]"
+                size="lg"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white sticky top-0 z-10 text-left">
@@ -1299,20 +1455,28 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30">
+                <div className="flex-1 overflow-y-auto hide-attachment-readonly  p-4 md:p-6 bg-gray-50/30">
+                  <style>{`
+                    .formio-component-file .list-group {
+                      display: none !important;
+                    }
+                  `}</style>
                   <div className="flex flex-col gap-6">
                     {closeForm?.schema && (
                       <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Close Form
                         </Typography>
-                        <Form
-                          form={closeForm.schema}
-                          submission={{ data: closeForm.answer }}
-                          options={{
-                            readOnly: true
-                          }}
-                        />
+                        <div id={`close-form-container-chat-read-${ticket.name}`}>
+                          <Form
+                            form={closeForm.schema}
+                            submission={{ data: closeForm.answer }}
+                            options={{
+                              readOnly: true
+                            }}
+                          />
+                          {closePreviews}
+                        </div>
                       </div>
                     )}
 
@@ -1321,13 +1485,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Feedback Form
                         </Typography>
-                        <Form
-                          form={feedbackForm.schema}
-                          submission={{ data: feedbackForm.answer }}
-                          options={{
-                            readOnly: true
-                          }}
-                        />
+                        <div id={`feedback-form-container-chat-read-${ticket.name}`}>
+                          <Form
+                            form={feedbackForm.schema}
+                            submission={{ data: feedbackForm.answer }}
+                            options={{
+                              readOnly: true
+                            }}
+                          />
+                          {feedbackPreviews}
+                        </div>
                       </div>
                     )}
 
@@ -1336,13 +1503,16 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Creation Form
                         </Typography>
-                        <Form
-                          form={creationForm.schema}
-                          submission={{ data: creationForm.answer }}
-                          options={{
-                            readOnly: true
-                          }}
-                        />
+                        <div id={`creation-form-container-chat-read-${ticket.name}`}>
+                          <Form
+                            form={creationForm.schema}
+                            submission={{ data: creationForm.answer }}
+                            options={{
+                              readOnly: true
+                            }}
+                          />
+                          {creationPreviews}
+                        </div>
                       </div>
                     )}
                   </div>

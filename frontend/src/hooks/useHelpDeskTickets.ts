@@ -400,6 +400,33 @@ export const useRequestClosure = () => {
   });
 };
 
+export const useUpdateTicket = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      ticketId,
+      params
+    }: {
+      ticketId: string;
+      params: Record<string, unknown>;
+    }) => {
+      const result = await FrappeAPI.updateDocument(
+        "HD Ticket",
+        ticketId,
+        params
+      );
+      return result;
+    },
+    onSuccess: async (_data, variables) => {
+      // Refetch ticket detail immediately to update UI without refresh
+      await queryClient.refetchQueries({ queryKey: ["hd-ticket-detail", variables.ticketId] });
+      // Invalidate list to refresh on next view
+      queryClient.invalidateQueries({ queryKey: ["hd-tickets"] });
+    },
+  });
+};
+
 // ============== Request Issue Modal Hooks ==============
 
 export interface HDCategory {
