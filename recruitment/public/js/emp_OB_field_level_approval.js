@@ -532,7 +532,11 @@ function fla_bulkUpdate(frm, newStatus, comment) {
         () => {
             frappe.call({
                 method: FLA.bulk, freeze: true, freeze_message: __("Updating…"),
-                args: { onboarding_name: frm.doc.name, new_status: newStatus },
+                args: { 
+                    onboarding_name: frm.doc.name, 
+                    new_status: newStatus,
+                    comment: comment || null
+                },
                 callback(r) {
                     if (r.message?.status === "success") {
                         fla_patchDoc(frm, r.message.data);

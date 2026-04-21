@@ -429,8 +429,8 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
         if row_section != section_name:
             continue
 
-        # Only approve/reject fields that have been filled by candidate
-        if new_status in ("Approved", "Rejected") and (row.get("approval_status") or "Pending") not in ("Filled", "Approved", "Rejected"):
+        # Only approve/reject fields that are pending or filled
+        if new_status in ("Approved", "Rejected") and (row.get("approval_status") or "Pending") not in ("Pending", "Filled", "Approved", "Rejected"):
             continue
 
         row.approval_status = new_status
@@ -470,7 +470,7 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
 # 6. Bulk update all Filled fields
 # ─────────────────────────────────────────────────────────────────────────────
 @frappe.whitelist()
-def bulk_update_approval_status(onboarding_name, new_status):
+def bulk_update_approval_status(onboarding_name, new_status, comment=None):
     if new_status not in {"Approved", "Rejected"}:
         frappe.throw(_("Only 'Approved' or 'Rejected' allowed for bulk update."))
     frappe.has_permission("Employee Onboarding", "write", throw=True)
@@ -483,8 +483,8 @@ def bulk_update_approval_status(onboarding_name, new_status):
     now      = frappe.utils.now()
 
     for row in (doc.get("custom_candidate_portal_fields") or []):
-        # Only bulk-action fields that have been submitted by candidate (Filled)
-        if (row.get("approval_status") or "Pending") != "Filled":
+        # Allow bulk-action on fields that are Pending or Filled
+        if (row.get("approval_status") or "Pending") not in ("Pending", "Filled"):
             continue
         row.approval_status = new_status
         if new_status == "Approved":
@@ -492,6 +492,7 @@ def bulk_update_approval_status(onboarding_name, new_status):
             row.reviewed_by = reviewer
             row.reviewed_on = now
         else:
+            row.hr_comment  = comment or ""
             row.reviewed_by = reviewer
             row.reviewed_on = now
 
