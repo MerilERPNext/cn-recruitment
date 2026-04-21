@@ -208,11 +208,13 @@ def initialize_approval_json(onboarding_name):
     Returns the approval list for the FLA panel.
     """
     if _is_new_doc_name(onboarding_name):
+        frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Document not saved yet."), "data": []}
 
     frappe.has_permission("Employee Onboarding", "write", throw=True)
     doc = _get_doc(onboarding_name)
     if not doc:
+        frappe.local.response["http_status_code"] = 404
         return {"status": "error",
                 "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
                 "data": []}
@@ -253,6 +255,7 @@ def get_onboarding_fields_for_approval(onboarding_name):
     frappe.has_permission("Employee Onboarding", "read", throw=True)
     doc = _get_doc(onboarding_name)
     if not doc:
+        frappe.local.response["http_status_code"] = 404
         return {"status": "error",
                 "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
                 "data": []}
@@ -511,6 +514,7 @@ def get_approval_list(onboarding_name):
     frappe.has_permission("Employee Onboarding", "read", throw=True)
     doc = _get_doc(onboarding_name)
     if not doc:
+        frappe.local.response["http_status_code"] = 404
         return {"status": "error",
                 "message": _("Employee Onboarding not found: {0}").format(onboarding_name),
                 "data": []}
