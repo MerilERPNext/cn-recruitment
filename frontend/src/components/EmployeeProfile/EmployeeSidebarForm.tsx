@@ -305,7 +305,7 @@ const EmployeeSidebarForm = ({
                                 {mutation?.isPending || employeeIsLoading ? (
                                     <CircularLoader size="sm" color="white" />
                                 ) : (
-                                    `Update ${edit?.fieldname ? "Field" : "Section"}`
+                                    `Submit ${edit?.fieldname ? "Field" : "Section"} For Approval`
                                 )}{" "}
                             </Button>
                         </div>

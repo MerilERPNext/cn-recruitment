@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "date_of_joining"]
+    fields: ["employee"]
   });
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
@@ -179,44 +179,17 @@ const ReportingDetails = () => {
 
         {/* Hierarchy History Cards */}
         {(() => {
-          const joinDate = currentEmployee?.date_of_joining ? new Date(currentEmployee.date_of_joining).getTime() : null;
-
-          const allRecords: any[] = [];
-          Object.entries(hierarchySections).forEach(([category, records]: [string, any]) => {
-            records.forEach((record: any) => {
-              allRecords.push({ ...record, category });
-            });
-          });
-
-          let overallClosestItem: any = null;
-          let overallClosestCategory: string | null = null;
-          let minDiff = Infinity;
-
-          if (joinDate && allRecords.length > 0) {
-            allRecords.forEach((item) => {
-              const itemDate = item.start_date ? new Date(item.start_date).getTime() : 0;
-              const diff = Math.abs(itemDate - joinDate);
-              if (diff < minDiff) {
-                minDiff = diff;
-                overallClosestItem = item;
-                overallClosestCategory = item.category;
-              }
-            });
-          }
-
-          const sortedCategories = Object.keys(hierarchySections).sort((a, b) => {
-            if (a === overallClosestCategory) return -1;
-            if (b === overallClosestCategory) return 1;
-            return a.localeCompare(b);
-          });
+          const sortedCategories = Object.keys(hierarchySections).sort((a, b) =>
+            a.localeCompare(b)
+          );
 
           return sortedCategories.map((category) => {
             const items = hierarchySections[category];
             const sortedItems = [...items].sort((a, b) => {
-              if (joinDate && category === overallClosestCategory) {
-                if (a.records === overallClosestItem?.records) return -1;
-                if (b.records === overallClosestItem?.records) return 1;
-              }
+              const aIsCurrent = !a.end_date;
+              const bIsCurrent = !b.end_date;
+              if (aIsCurrent && !bIsCurrent) return -1;
+              if (!aIsCurrent && bIsCurrent) return 1;
               const aDate = a.start_date ? new Date(a.start_date).getTime() : 0;
               const bDate = b.start_date ? new Date(b.start_date).getTime() : 0;
               return bDate - aDate;
