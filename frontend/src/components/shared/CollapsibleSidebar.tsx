@@ -33,6 +33,7 @@ import {
   Telescope,
   Shield,
   Share2,
+  SquarePlus,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -458,6 +459,12 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       label: "Recognition",
       path: "/webapp/recognition",
       permissionKey: "Recognition",
+    },
+    {
+      icon: SquarePlus,
+      label: "Employee Onboarding",
+      path: "/webapp/employee-onboarding",
+      permissionKey: "Employee Onboarding",
     },
     {
       icon: ListTodo,

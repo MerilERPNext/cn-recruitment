@@ -153,6 +153,7 @@ export interface ExpenseClaim {
 
 export interface Expense {
   name: string;
+  uid?: string;
   owner: string;
   creation: Date;
   modified: Date;
@@ -188,6 +189,8 @@ export interface Expense {
   custom_start_datetime?: Date;
   custom_location?: string;
   custom_end_datetime?: Date;
+  custom_form_json?: string | null;
+  custom_form_data?: string | null;
 }
 
 

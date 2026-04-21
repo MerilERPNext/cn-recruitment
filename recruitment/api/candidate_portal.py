@@ -278,6 +278,7 @@ def get_onboarding_form_fields(form_name):
     frappe.has_permission("Onboarding Portal Forms", "read", throw=True)
 
     if not form_name:
+        frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("Please select an onboarding portal form.")}
 
     doc = frappe.get_doc("Onboarding Portal Forms", form_name)
@@ -377,6 +378,7 @@ def get_candidate_portal_form(job_applicant_id):
     portal_rows, form_source = _get_onboarding_portal_rows(doc)
 
     if not portal_rows:
+        frappe.local.response["http_status_code"] = 404
         return {
             "status": "error",
             "message": _("No candidate portal fields configured. Please set up an Onboarding Portal Form."),
@@ -426,6 +428,7 @@ def save_candidate_portal_data(job_applicant_id, data):
     }
 
     if not allowed_map:
+        frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("No editable fields available. All fields are under review or already approved.")}
 
     # Validate mandatory fields (only among editable fields)
@@ -539,6 +542,7 @@ def get_job_applicant_portal_form(job_applicant_id):
     portal_rows = _get_job_applicant_portal_settings()
 
     if not portal_rows:
+        frappe.local.response["http_status_code"] = 404
         return {"status": "error", "message": _("No job applicant portal fields configured.")}
 
     meta_lookup = {f["fieldname"]: f for f in _read_job_applicant_meta()}
@@ -619,6 +623,7 @@ def save_job_applicant_portal_data(job_applicant_id, data):
     allowed_map = {r.fieldname: r for r in portal_rows if not r.get("hidden") and not r.get("read_only")}
 
     if not allowed_map:
+        frappe.local.response["http_status_code"] = 400
         return {"status": "error", "message": _("No editable fields configured.")}
 
     missing = [

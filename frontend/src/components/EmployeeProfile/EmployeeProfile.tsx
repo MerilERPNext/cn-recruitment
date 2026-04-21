@@ -348,9 +348,9 @@ const EmployeeProfile: React.FC = () => {
                     <Typography
                       variant="bodySmall"
                       color="secondary"
-                      className="font-medium truncate mt-1 flex gap-1.5 items-center"
+                      className="font-small truncate mt-1 flex gap-1.5 items-center"
                     >
-                      <Building size={14} className="text-primary-500" />
+                      <Building size={12} className="text-primary-500" />
                       <span>{user?.department_display}</span>
                     </Typography>
                   </Tooltip>
@@ -575,8 +575,8 @@ const EmployeeProfile: React.FC = () => {
                         {user?.department_display && (
                           <Tooltip content={"Department : " + user?.department_display}>
                             <Typography
-                              variant="bodyMedium"
-                              className="font-semibold text-primary-600 flex gap-2 items-center"
+                              variant="bodySmall"
+                              className="font-medium text-primary-600 flex gap-2 items-center"
                             >
                               <Building size={16} />
                               <span>{user?.department_display}</span>

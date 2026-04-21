@@ -23,6 +23,8 @@ import Requests from "./components/Requests";
 import PasswordReset from "./components/ResetPassword/ResetPassword";
 import SearchMembers from "./components/SearchMembers";
 import RejectedSeparationRequest from "./components/Flows/Separation/RejectedSeparationRequest";
+import Onboarding from "./components/Onboarding/Onboarding";
+import OnboardingFieldApproval from "./components/Onboarding/component/fieldLabelApproval";
 
 const TeamApprovalListExemptionTable = lazyWithRetry(
   () =>
@@ -1142,6 +1144,14 @@ export const routesConfig: AppRoute[] = [
     path: "/webapp/helpdesk/ticket/:ticketId",
     element: <TicketDetailView />,
     permissionKey: "Help Desk Ticket",
+  },
+  {
+    path: "/webapp/employee-onboarding",
+    element: <Onboarding/>,
+    permissionKey: "Employee Onboarding",
+    children: [
+      { path: "onboarding-field-approval/:onboardingId", element: <OnboardingFieldApproval />, permissionKey: "Employee Onboarding" },
+    ],
   },
   {
     path: "/webapp/todo-app",

@@ -137,46 +137,17 @@ const EmploymentHistory: React.FC<EmploymentHistoryProps> = ({
         {!isLoading &&
           !error &&
           (() => {
-            const joinDate = data?.date_of_joining
-              ? new Date(data.date_of_joining).getTime()
-              : null;
-
-            let overallClosestItem: CustomWorkHistory | null = null;
-            let overallClosestCategory: string | null = null;
-            let minDiff = Infinity;
-
-            if (joinDate && history.length > 0) {
-              history.forEach((item) => {
-                const itemDate = item.start_date
-                  ? new Date(item.start_date).getTime()
-                  : 0;
-                const diff = Math.abs(itemDate - joinDate);
-                if (diff < minDiff) {
-                  minDiff = diff;
-                  overallClosestItem = item;
-                  overallClosestCategory = item.field_label;
-                }
-              });
-            }
-
-            const sortedCategories = Object.keys(groupedHistory).sort(
-              (a, b) => {
-                if (a === overallClosestCategory) return -1;
-                if (b === overallClosestCategory) return 1;
-                return a.localeCompare(b);
-              },
+            const sortedCategories = Object.keys(groupedHistory).sort((a, b) =>
+              a.localeCompare(b),
             );
 
             return sortedCategories.map((category) => {
               const items = groupedHistory[category];
               const sortedItems = [...items].sort((a, b) => {
-                // If we found a closest item and it's in this category, place it at the very top
-                if (joinDate && category === overallClosestCategory) {
-                  if (a.name === overallClosestItem?.name) return -1;
-                  if (b.name === overallClosestItem?.name) return 1;
-                }
-
-                // Otherwise sort by start date descending
+                const aIsCurrent = !a.end_date;
+                const bIsCurrent = !b.end_date;
+                if (aIsCurrent && !bIsCurrent) return -1;
+                if (!aIsCurrent && bIsCurrent) return 1;
                 const aDate = a.start_date
                   ? new Date(a.start_date).getTime()
                   : 0;
