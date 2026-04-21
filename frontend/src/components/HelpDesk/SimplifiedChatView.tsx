@@ -189,8 +189,8 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
   const [exitFormJson, setExitFormJson] = useState<FormIOForm | null>(null);
   const [feedbackFormJson, setFeedbackFormJson] = useState<FormIOForm | null>(null);
 
-  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(false);
-  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(false);
+  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(true);
+  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(true);
 
   const [exitFormSubmission, setExitFormSubmission] = useState<Record<string, unknown> | null>(null);
   const [feedbackFormSubmission, setFeedbackFormSubmission] = useState<Record<string, unknown> | null>(null);
@@ -200,9 +200,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
     const components = exitFormJsonData?.form_json?.components;
     const requiredKeys = getRequiredKeys(components);
 
-    if (requiredKeys.length > 0) {
-      setIsExitFormValid(false);
-    }
+    setIsExitFormValid(requiredKeys.length === 0);
     if (components.length < 1) return;
     const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
 
@@ -214,9 +212,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
     const components = feedbackFormJsonData?.form_json?.components;
     const requiredKeys = getRequiredKeys(components);
 
-    if (requiredKeys.length > 0) {
-      setIsFeedbackFormValid(false);
-    }
+    setIsFeedbackFormValid(requiredKeys.length === 0);
     if (components.length < 1) return;
     const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
 
@@ -1298,7 +1294,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
     }, [ticket.closing_form_data])
 
-    console.log(feedbackForm)
     // ✅ Close form previews
     const closePreviews = useMemo(() => {
       if (!closeForm?.schema) return null;

@@ -39,8 +39,8 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
   const [exitFormJson, setExitFormJson] = useState<FormIOForm | null>(null);
   const [feedbackFormJson, setFeedbackFormJson] = useState<FormIOForm | null>(null);
 
-  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(false);
-  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(false);
+  const [isExitFormValid, setIsExitFormValid] = useState<boolean>(true);
+  const [isFeedbackFormValid, setIsFeedbackFormValid] = useState<boolean>(true);
 
   const [exitFormSubmission, setExitFormSubmission] = useState<Record<string, unknown> | null>(null);
   const [feedbackFormSubmission, setFeedbackFormSubmission] = useState<Record<string, unknown> | null>(null);
@@ -50,9 +50,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
     const components = exitFormJsonData?.form_json?.components;
     const requiredKeys = getRequiredKeys(components);
 
-    if (requiredKeys.length > 0) {
-      setIsExitFormValid(false);
-    }
+    setIsExitFormValid(requiredKeys.length === 0);
     if (components.length < 1) return;
     const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
 
@@ -64,9 +62,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
     const components = feedbackFormJsonData?.form_json?.components;
     const requiredKeys = getRequiredKeys(components);
 
-    if (requiredKeys.length > 0) {
-      setIsFeedbackFormValid(false);
-    }
+    setIsFeedbackFormValid(requiredKeys.length === 0);
     if (components.length < 1) return;
     const filteredComponents = components.filter((comp) => !(comp.type === "button" && comp.action === "submit"));
 
@@ -121,14 +117,14 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
       const rootNode = document.getElementById(formId) || document;
       const container = rootNode.querySelector(`.formio-component-${compKey}`);
       if (container) {
-          const removeButtons = container.querySelectorAll(
-            'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
-          );
-          if (removeButtons && removeButtons[index]) {
-             (removeButtons[index] as HTMLElement).click();
-          } else {
-             console.error("Form.io native remove button not found");
-          }
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
       }
     } catch (err) {
       console.error("Failed to remove file from formio", err);
@@ -151,10 +147,10 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             <FormioPreviewPortal key={comp.key} compKey={comp.key as string} formContainerId={formId}>
               <div className="space-y-2 mt-2 w-full">
                 {files.map((fileObj, idx) => (
-                  <FormioPreviewItem 
-                    key={`${comp.key}-${idx}`} 
-                    fileObj={fileObj} 
-                    onRemove={() => removeFormioFile(formId, comp.key as string, idx)} 
+                  <FormioPreviewItem
+                    key={`${comp.key}-${idx}`}
+                    fileObj={fileObj}
+                    onRemove={() => removeFormioFile(formId, comp.key as string, idx)}
                   />
                 ))}
               </div>
@@ -293,7 +289,7 @@ const ResolutionModal: React.FC<ResolutionModalProps> = ({
             size="md"
             className="max-sm:w-full"
             onClick={handleSubmit}
-            disabled={!resolution.trim() || isLoading || !isExitFormValid || !isFeedbackFormValid}
+            disabled={!resolution.trim() || isLoading || (!isRequestClosure && (!isExitFormValid || !isFeedbackFormValid))}
           >
             {isLoading ? "Processing..." : buttonText}
           </Button>

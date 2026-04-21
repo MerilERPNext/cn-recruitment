@@ -285,6 +285,8 @@ const TicketListView: React.FC<TicketListViewProps> = ({ currentUserEmail, curre
       setIsResolutionModalOpen(false);
       setSelectedTicketForClose(null);
     } catch (error) {
+      const formatedError = errorResponseFormater(error, "Failed to process ticket closure");
+      toast.error(formatedError);
       console.error("Action aborted", error);
     } finally {
       hide();
