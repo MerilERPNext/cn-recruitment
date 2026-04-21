@@ -295,20 +295,24 @@ def save_full_approval_json(onboarding_name, approval_data):
         try:
             approval_data = json.loads(approval_data)
         except (TypeError, ValueError):
-            frappe.throw(_("approval_data must be a valid JSON array."))
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("approval_data must be a valid JSON array.")}
 
     if not isinstance(approval_data, list):
-        frappe.throw(_("approval_data must be a list/array."))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("approval_data must be a list/array.")}
 
     for item in approval_data:
         st = item.get("status", "Pending")
         if st not in VALID_STATUSES:
-            frappe.throw(_("Invalid status '{0}' for field '{1}'.").format(
-                st, item.get("fieldname", "?")))
+            frappe.local.response["http_status_code"] = 400
+            return {"status": "error", "message": _("Invalid status '{0}' for field '{1}'.").format(
+                st, item.get("fieldname", "?"))}
 
     doc = _get_doc(onboarding_name)
     if not doc:
-        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Employee Onboarding not found: {0}").format(onboarding_name)}
 
     reviewer     = frappe.session.user
     now          = frappe.utils.now()
@@ -357,12 +361,15 @@ def save_full_approval_json(onboarding_name, approval_data):
 @frappe.whitelist()
 def update_field_approval_status(onboarding_name, fieldname, new_status, comment=None):
     if new_status not in VALID_STATUSES:
-        frappe.throw(_("Invalid status '{0}'.").format(new_status))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Invalid status '{0}'.").format(new_status)}
+        
     frappe.has_permission("Employee Onboarding", "write", throw=True)
 
     doc = _get_doc(onboarding_name)
     if not doc:
-        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Employee Onboarding not found: {0}").format(onboarding_name)}
 
     reviewer = frappe.session.user
     now      = frappe.utils.now()
@@ -392,7 +399,8 @@ def update_field_approval_status(onboarding_name, fieldname, new_status, comment
         break
 
     if not updated:
-        frappe.throw(_("Field '{0}' not found in candidate portal fields.").format(fieldname))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Field '{0}' not found in candidate portal fields.").format(fieldname)}
 
     _save_doc(doc)
     doc.reload()
@@ -411,12 +419,15 @@ def update_field_approval_status(onboarding_name, fieldname, new_status, comment
 def update_section_approval_status(onboarding_name, section_name, new_status, comment=None):
     """Sets all fields in section_name to new_status."""
     if new_status not in VALID_STATUSES:
-        frappe.throw(_("Invalid status '{0}'.").format(new_status))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Invalid status '{0}'.").format(new_status)}
+        
     frappe.has_permission("Employee Onboarding", "write", throw=True)
 
     doc = _get_doc(onboarding_name)
     if not doc:
-        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Employee Onboarding not found: {0}").format(onboarding_name)}
 
     reviewer = frappe.session.user
     now      = frappe.utils.now()
@@ -448,7 +459,8 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
         updated += 1
 
     if not updated:
-        frappe.throw(_("No reviewable fields found for section '{0}'.").format(section_name))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("No reviewable fields found for section '{0}'.").format(section_name)}
 
     _save_doc(doc)
     doc.reload()
@@ -457,12 +469,14 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
     sync_onboarding_field_rejection_action(doc)
 
     approval_list = _load_approval_list(doc)
+    section_data  = [r for r in approval_list if r.get("section") == section_name]
     counts        = _compute_counts(approval_list)
+    
     return {
         "status":  "success",
         "message": _("{0} field(s) in '{1}' set to {2}").format(updated, section_name, new_status),
         "counts":  counts,
-        "data":    approval_list,
+        "data":    section_data,
     }
 
 
@@ -472,12 +486,15 @@ def update_section_approval_status(onboarding_name, section_name, new_status, co
 @frappe.whitelist()
 def bulk_update_approval_status(onboarding_name, new_status, comment=None):
     if new_status not in {"Approved", "Rejected"}:
-        frappe.throw(_("Only 'Approved' or 'Rejected' allowed for bulk update."))
+        frappe.local.response["http_status_code"] = 400
+        return {"status": "error", "message": _("Only 'Approved' or 'Rejected' allowed for bulk update.")}
+        
     frappe.has_permission("Employee Onboarding", "write", throw=True)
 
     doc = _get_doc(onboarding_name)
     if not doc:
-        frappe.throw(_("Employee Onboarding not found: {0}").format(onboarding_name))
+        frappe.local.response["http_status_code"] = 404
+        return {"status": "error", "message": _("Employee Onboarding not found: {0}").format(onboarding_name)}
 
     reviewer = frappe.session.user
     now      = frappe.utils.now()
