@@ -127,7 +127,7 @@ function FieldRow({
         type="checkbox"
         checked={checked}
         onChange={(e) => onCheck(e.target.checked)}
-        className="mt-1 h-4 w-4 rounded border-gray-300 cursor-pointer flex-shrink-0 accent-blue-600"
+        className="mt-1 h-3 w-3 rounded border-gray-300 cursor-pointer flex-shrink-0 accent-primary-600"
         title="Select for bulk action"
       />
 
@@ -145,13 +145,13 @@ function FieldRow({
                 href={val}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline break-words text-xs border p-2 block"
+                className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
               >
                 {val}
               </a>
             ) : (
               <div
-                className="text-xs text-gray-500 border p-2 break-words leading-relaxed w-full"
+                className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full"
                 dangerouslySetInnerHTML={{ __html: val }}
               />
             )}
@@ -165,8 +165,8 @@ function FieldRow({
           <div className="mt-2 space-y-1.5">
             <p className="text-xs font-medium text-gray-600">
               Comment required to{" "}
-              <span className="text-red-500">reject</span> this field{" "}
-              <span className="text-red-500">*</span>
+              <span className="text-error-600">reject</span> this field{" "}
+              <span className="text-error-600">*</span>
             </p>
             <textarea
               rows={2}
@@ -176,18 +176,18 @@ function FieldRow({
               autoFocus
               className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
                 canSubmitReject
-                  ? "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-                  : "border-amber-300 focus:border-amber-400 focus:ring-amber-100"
+                  ? "border-gray-200 focus:border-primary-400 focus:ring-primary-100"
+                  : "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"
               }`}
             />
             {!canSubmitReject && (
-              <p className="text-xs text-amber-600">Please enter a comment to continue.</p>
+              <p className="text-xs text-yellow-600">Please enter a comment to continue.</p>
             )}
             <div className="flex gap-2">
               <button
                 onClick={handleRejectSubmit}
                 disabled={!canSubmitReject || state.loading}
-                className="px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white bg-red-500 hover:bg-red-600"
+                className="px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white bg-error-600 hover:bg-error-800"
               >
                 {state.loading ? "Submitting..." : "Confirm Reject"}
               </button>
@@ -213,8 +213,8 @@ function FieldRow({
           title="Approve"
           className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
             state.status === "Approved"
-              ? "bg-emerald-500 text-white border-emerald-500"
-              : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500"
+              ? "bg-success-50 text-success-600 border-success-200"
+              : "bg-success-50 text-success-600 border-success-200 hover:bg-success-100 hover:border-success-600"
           }`}
         >
           ✓
@@ -226,17 +226,17 @@ function FieldRow({
           title="Reject"
           className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
             state.status === "Rejected"
-              ? "bg-red-500 text-white border-red-500"
+              ? "bg-error-50 text-error-600 border-error-600"
               : pendingReject
-              ? "bg-red-200 text-red-700 border-red-300"
-              : "bg-red-50 text-red-500 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500"
+              ? "bg-error-200 text-error-600 border-error-200"
+              : "bg-error-50 text-error-600 border-error-200 hover:bg-error-100 hover:border-error-600"
           }`}
         >
           ✗
         </button>
 
         {state.loading && (
-          <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="h-4 w-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         )}
       </div>
     </div>
@@ -269,7 +269,7 @@ function NavItem({
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 text-left transition-all ${
-        active ? "bg-blue-600 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
+        active ? "bg-primary-600 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
       }`}
     >
       <div
@@ -277,9 +277,9 @@ function NavItem({
           active
             ? "bg-white/20 text-white"
             : isDone
-            ? "bg-emerald-100 text-emerald-700"
+            ? "bg-success-100 text-success-800"
             : isPartial
-            ? "bg-amber-100 text-amber-700"
+            ? "bg-amber-100 text-amber-800"
             : "bg-gray-100 text-gray-500"
         }`}
       >
@@ -294,7 +294,7 @@ function NavItem({
         </div>
       </div>
       {isDone && !active && (
-        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+        <div className="w-1.5 h-1.5 rounded-full bg-success-200 flex-shrink-0" />
       )}
     </button>
   );
@@ -323,14 +323,14 @@ function PendingRejectBanner({
 }) {
   const canSubmit = comment.trim().length > 0;
   return (
-    <div className="rounded-xl border px-4 py-3 space-y-2 bg-red-50 border-red-200">
+    <div className="rounded-xl border px-4 py-3 space-y-2 bg-error-50 border-error-200">
       <p className="text-xs font-semibold text-gray-700">
         {label} —{" "}
-        <span className="text-red-600">Rejected</span> pending
+        <span className="text-error-600">Rejected</span> pending
       </p>
       <p className="text-xs text-gray-500">
         A comment is required before confirming this rejection.{" "}
-        <span className="text-red-500">*</span>
+        <span className="text-error-600">*</span>
       </p>
       <textarea
         rows={2}
@@ -340,18 +340,18 @@ function PendingRejectBanner({
         placeholder="Enter your comment..."
         className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
           canSubmit
-            ? "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-            : "border-amber-300 focus:border-amber-400 focus:ring-amber-100"
+            ? "border-gray-200 focus:border-primary-400 focus:ring-blue-100"
+            : "border-yellow-300 focus:border-yellow-400 focus:ring-yellow-100"
         }`}
       />
       {!canSubmit && (
-        <p className="text-xs text-amber-600">Please enter a comment to continue.</p>
+        <p className="text-xs text-yellow-600">Please enter a comment to continue.</p>
       )}
       <div className="flex gap-2">
         <button
           onClick={onConfirm}
           disabled={!canSubmit || loading}
-          className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-red-500 hover:bg-red-600"
+          className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-error-600 hover:bg-error-800"
         >
           {loading ? "Submitting..." : "Confirm Reject"}
         </button>
@@ -553,7 +553,7 @@ export default function OnboardingFieldApproval() {
         {pageLoading && (
           <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
             <div className="text-center space-y-3">
-              <div className="h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="h-8 w-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
               <p>Fetching onboarding data...</p>
             </div>
           </div>
@@ -561,9 +561,9 @@ export default function OnboardingFieldApproval() {
 
         {/* Error */}
         {!pageLoading && pageError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm max-w-xl">
+          <div className="bg-error-50 border border-error-200 rounded-xl p-4 text-error-800 text-sm max-w-xl">
             <p className="font-medium mb-1">Failed to load data</p>
-            <p className="text-xs text-red-500">{pageError}</p>
+            <p className="text-xs text-error-600">{pageError}</p>
           </div>
         )}
 
@@ -575,7 +575,7 @@ export default function OnboardingFieldApproval() {
             <div className="text-xs text-gray-400">
               Onboarding{" "}
               <span className="text-gray-300">/</span>{" "}
-              <span className="text-blue-600 font-medium">{activeSection}</span>
+              <span className="text-primary-600 font-medium">{activeSection}</span>
             </div>
 
             {/* Page header */}
@@ -591,21 +591,21 @@ export default function OnboardingFieldApproval() {
                 {/* Section approve — immediate, no comment */}
                 <button
                   onClick={() => handleSectionApprove(activeSection)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-success-50 text-success-800 border border-emerald-200 hover:bg-success-100 transition-colors"
                 >
                   Approve section
                 </button>
                 {/* Section reject — opens comment banner */}
                 <button
                   onClick={() => handleSectionRejectClick(activeSection)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-error-50 text-error-600 border border-error-200 hover:bg-error-100 transition-colors"
                 >
                   Reject section
                 </button>
                 {/* Bulk approve all pending — no comment required */}
                 <button
                   onClick={bulkApproveAllPending}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
                   title="Approve all pending fields across entire document"
                 >
                   Approve all pending
@@ -617,9 +617,9 @@ export default function OnboardingFieldApproval() {
             <div className="grid grid-cols-4 gap-2">
               {[
                 { label: "Approved", value: approvedAll, color: "text-emerald-600" },
-                { label: "Rejected", value: rejectedAll, color: "text-red-500" },
-                { label: "Pending", value: pendingAll, color: "text-amber-600" },
-                { label: "Progress", value: `${pct}%`, color: "text-blue-600" },
+                { label: "Rejected", value: rejectedAll, color: "text-error-600" },
+                { label: "Pending", value: pendingAll, color: "text-yellow-600" },
+                { label: "Progress", value: `${pct}%`, color: "text-primary-600" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-white border border-gray-100 rounded-xl p-3">
                   <p className={`text-lg font-semibold ${color}`}>{value}</p>
@@ -631,7 +631,7 @@ export default function OnboardingFieldApproval() {
             {/* Progress bar */}
             <div className="h-1 bg-gray-100 rounded-lg overflow-hidden">
               <div
-                className="h-full bg-blue-500 rounded-lg transition-all duration-500"
+                className="h-full bg-primary-500 rounded-lg transition-all duration-500"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -652,21 +652,21 @@ export default function OnboardingFieldApproval() {
 
             {/* ── Bulk-selected action bar ── */}
             {curSelected > 0 && (
-              <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex-wrap">
-                <span className="text-xs text-blue-700 font-medium flex-1">
+              <div className="flex items-center gap-3 bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex-wrap">
+                <span className="text-xs text-primary-700 font-medium flex-1">
                   {curSelected} field{curSelected > 1 ? "s" : ""} selected
                 </span>
                 {/* Bulk approve — immediate, no comment */}
                 <button
                   onClick={handleBulkApprove}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-success-200 bg-success-50 text-success-600 hover:bg-success-100 transition-colors"
                 >
                   Approve selected
                 </button>
                 {/* Bulk reject — opens comment banner */}
                 <button
                   onClick={handleBulkRejectClick}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-error-200 bg-error-50 text-error-600 hover:bg-error-100 transition-colors"
                 >
                   Reject selected
                 </button>
@@ -707,7 +707,7 @@ export default function OnboardingFieldApproval() {
                       type="checkbox"
                       checked={allCurSelected}
                       onChange={(e) => toggleAllCurrentSection(e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-gray-300 accent-blue-600 cursor-pointer"
+                      className="h-3.5 w-3.5 rounded border-gray-300 accent-primary-600 cursor-pointer"
                     />
                     Select all
                   </label>
@@ -750,7 +750,7 @@ export default function OnboardingFieldApproval() {
               <button
                 onClick={goNext}
                 disabled={activeIdx >= secKeys.length - 1}
-                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-lg text-xs font-medium text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next →
               </button>
@@ -764,10 +764,10 @@ export default function OnboardingFieldApproval() {
         <div
           className={`fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl text-xs font-medium border transition-all ${
             toast.type === "error"
-              ? "bg-red-50 text-red-700 border-red-200"
+              ? "bg-error-50 text-error-600 border-error-200"
               : toast.type === "info"
-              ? "bg-blue-50 text-blue-700 border-blue-200"
-              : "bg-emerald-50 text-emerald-700 border-emerald-200"
+              ? "bg-primary-50 text-primary-700 border-primary-200"
+              : "bg-success-50 text-success-600 border-success-200"
           }`}
         >
           {toast.msg}

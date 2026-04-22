@@ -177,6 +177,7 @@ export default function EmployeeOnboardingList() {
                   </div>
 
                   <div className="font-medium items-center flex justify-center">
+                    
     
                   </div>
                 </div>
