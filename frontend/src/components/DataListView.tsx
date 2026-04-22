@@ -574,14 +574,19 @@ const DataListView = <T extends BaseItem>({
 
   // Refetch functionality
   const refetch = useCallback(async () => {
+    if (loadMorePagination) {
+      setLoadMorePage(1);
+      setAccumulatedData([]);
+    }
     // Instead of calling query-specific refetch(), we use queryClient.refetchQueries
     // which goes through our global interceptor for repeated background fetching.
     queryClient.refetchQueries({ queryKey: [queryKey].flat() });
-    
+
     if (onRefetchComplete) {
       onRefetchComplete();
     }
   }, [
+    loadMorePagination,
     queryKey,
     queryClient,
     onRefetchComplete,
