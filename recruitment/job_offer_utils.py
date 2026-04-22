@@ -98,6 +98,15 @@ def job_offer_update(status, appl, reason=None, message=None):
             frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
     frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
 
+    if status in ("Accepted", "Rejected"):
+        from recruitment.api.action_center import mark_item_completed
+        mark_item_completed(
+            reference_doctype="Job Offer",
+            reference_docname=jo_id,
+            candidate_id=appl,
+            commit=True,
+        )
+
     webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
     return {"jo_id": jo_id, "webform": webform}
 

@@ -60,6 +60,7 @@ def _upsert_minimal_item(
                 "redirect_url": redirect_url or "",
                 "description": description or "",
                 "attachment": attachment or "",
+                "status": "Action Required",
             }
         )
         doc.insert(ignore_permissions=True)
@@ -85,6 +86,34 @@ def _delete_minimal_item(candidate_email, reference_doctype, reference_docname, 
 
     for name in names:
         frappe.delete_doc(ACTION_DOCTYPE, name, ignore_permissions=True, force=True)
+
+    if commit and names:
+        frappe.db.commit()
+
+    return names
+
+
+def mark_item_completed(
+    reference_doctype,
+    reference_docname,
+    candidate_id=None,
+    candidate_email=None,
+    commit=False,
+):
+    resolved_email = _resolve_candidate_email(candidate_id=candidate_id, candidate_email=candidate_email)
+
+    names = frappe.get_all(
+        ACTION_DOCTYPE,
+        filters={
+            "candidate_email": resolved_email,
+            "reference_doctype": reference_doctype,
+            "reference_docname": reference_docname,
+        },
+        pluck="name",
+    )
+
+    for name in names:
+        frappe.db.set_value(ACTION_DOCTYPE, name, "status", "Completed")
 
     if commit and names:
         frappe.db.commit()
