@@ -30,7 +30,7 @@ def _upsert_minimal_item(
     commit=False,
 ):
     candidate_email = _resolve_candidate_email(candidate_email=candidate_email)
-
+    print(reference_docname,reference_doctype,"\n\n\n\n\n")
     if not reference_doctype or not reference_docname:
         frappe.throw(_("reference_doctype and reference_docname are required."))
 
@@ -156,12 +156,12 @@ def sync_job_offer_action_item(doc, method=None):
     is_closed = doc.docstatus == 2 or offer_status in {"accepted", "cancelled", "rejected"}
 
     if is_closed:
-        _delete_minimal_item(candidate_email, "Job Offer", doc.name, commit=False)
+        _delete_minimal_item(candidate_email, doc.doctype, doc.name, commit=False)
         return
 
     _upsert_minimal_item(
         candidate_email=candidate_email,
-        reference_doctype="Job Offer",
+        reference_doctype=doc.doctype,
         reference_docname=doc.name,
         redirect_url=build_job_offer_redirect(doc.name, candidate_id),
         description="Job offer released. Open details: {0}".format(build_job_offer_redirect(doc.name, candidate_id)),

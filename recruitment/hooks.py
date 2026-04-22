@@ -189,6 +189,7 @@ doc_events = {
     "Job Offer": {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         "before_save": "recruitment.customizations.job_offer.calculate_salary_structure",
+        "after_insert": "recruitment.api.action_center.sync_job_offer_action_item"
     },
     "Employee": {
         "before_insert": "recruitment.customizations.job_applicant.validate_blacklist_employee",
