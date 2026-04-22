@@ -81,6 +81,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
     const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
     const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
+    const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
+    const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
 
     const entries = Object.entries(parsed).filter(
       ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
@@ -109,8 +111,13 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                       <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
                       <div className="flex flex-wrap gap-2">
                         {value.map((file: any, idx: number) => {
-                          const fileUrl = file.data?.message?.file_url || file.url || "";
-                          return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} compact /> : null;
+                          const fileUrl = getCustomFileUrl(file);
+                          const fileName = getCustomFileName(file);
+                          return fileUrl ? (
+                            <div key={idx} className="min-w-[260px] max-w-[360px] flex-1">
+                              <AttachmentCard fileUrl={fileUrl} fileName={fileName} />
+                            </div>
+                          ) : null;
                         })}
                       </div>
                     </div>
@@ -147,6 +154,8 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
     const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
     const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
+    const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
+    const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
 
     const entries = Object.entries(parsed).filter(
       ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
@@ -173,8 +182,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
                   <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
                   <div className="flex flex-col gap-2">
                     {value.map((file: any, idx: number) => {
-                      const fileUrl = file.data?.message?.file_url || file.url || "";
-                      return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} /> : null;
+                      const fileUrl = getCustomFileUrl(file);
+                      const fileName = getCustomFileName(file);
+                      return fileUrl ? <AttachmentCard key={idx} fileUrl={fileUrl} fileName={fileName} /> : null;
                     })}
                   </div>
                 </div>
