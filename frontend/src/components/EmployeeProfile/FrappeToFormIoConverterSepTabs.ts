@@ -5,6 +5,9 @@ import { profileService } from "../../services/profileService";
 // Cache for table field metadata to prevent duplicate API calls
 const tableFieldsCache = new Map<string, any[]>();
 
+// Tabs from the backend that should never be rendered in the profile UI
+const SKIP_TAB_LABELS = new Set(["Attendance & Leaves"]);
+
 export const READ_ONLY_FIELDS = [
   "custom_cxo",
   "custom_designation_name",
@@ -656,18 +659,6 @@ export async function convertToFormioWithTabMetadata(
     }
   };
 
-  // Helper to ensure we have a tab — orphan fields land in basic_details_tab so
-  // they are merged when the real Tab Break for basic_details_tab arrives.
-  const ensureCurrentTab = () => {
-    if (!currentTab) {
-      currentTab = {
-        label: "Basic Details",
-        key: "basic_details_tab",
-        components: [],
-      };
-    }
-  };
-
   let lastFieldType = "";
   let fieldsBuffer: any[] = [];
 
@@ -693,20 +684,18 @@ export async function convertToFormioWithTabMetadata(
         tabs.push(currentTab);
       }
 
-      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
-      // If an orphan basic_details_tab was already pushed, reclaim it to avoid duplicates
-      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
-      if (orphanIdx !== -1) {
-        currentTab = tabs.splice(orphanIdx, 1)[0];
-        currentTab.label = field.label || currentTab.label;
+      if (SKIP_TAB_LABELS.has(field.label)) {
+        currentTab = null;
+        currentSection = null;
+        fieldsBuffer = [];
       } else {
         currentTab = {
           label: field.label || `Tab ${tabs.length + 1}`,
-          key: tabKey,
+          key: field.fieldname || `tab_${tabs.length + 1}`,
           components: [],
         };
+        fieldsBuffer = [];
       }
-      fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
       if (fieldsBuffer.length > 0 && currentSection) {
         currentSection.components.push(...fieldsBuffer);
@@ -719,7 +708,7 @@ export async function convertToFormioWithTabMetadata(
         currentTab.components.push(currentSection);
       }
 
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       const panelKey =
         field.fieldname ||
@@ -788,11 +777,7 @@ export async function convertToFormioWithTabMetadata(
       fieldsBuffer = [];
     } else if (field.fieldtype === "Column Break") {
       // Column Break ignored to enforce full width
-      ensureCurrentTab();
-
-      // If we are in a section, just ensure we flush the buffer?
-      // Actually, standard behavior is full width so we do nothing special here
-      // just treat it as a continuation
+      if (!currentTab) continue;
 
 
     } else {
@@ -901,8 +886,7 @@ export async function convertToFormioWithTabMetadata(
       }
 
       if (!mapped) continue;
-
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       if (currentSection) {
         currentSection.components.push(mapped);
@@ -1026,17 +1010,6 @@ export async function convertToFormioWithLayout(
     }
   };
 
-  // Helper to ensure we have a tab
-  const ensureCurrentTab = () => {
-    if (!currentTab) {
-      currentTab = {
-        label: "Basic Details",
-        key: "basic_details_tab",
-        components: [],
-      };
-    }
-  };
-
   let lastFieldType = "";
   let fieldsBuffer: any[] = [];
 
@@ -1062,22 +1035,21 @@ export async function convertToFormioWithLayout(
         tabs.push(currentTab);
       }
 
-      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
-      // Reclaim orphan basic_details_tab if already pushed, to avoid duplicates
-      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
-      if (orphanIdx !== -1) {
-        currentTab = tabs.splice(orphanIdx, 1)[0];
-        currentTab.label = field.label || currentTab.label;
+      if (SKIP_TAB_LABELS.has(field.label)) {
+        currentTab = null;
+        currentSection = null;
+        currentColumns = null;
+        fieldsBuffer = [];
       } else {
         currentTab = {
           label: field.label || `Tab ${tabs.length + 1}`,
-          key: tabKey,
+          key: field.fieldname || `tab_${tabs.length + 1}`,
           components: [],
           input: false,
           tableView: false,
         };
+        fieldsBuffer = [];
       }
-      fieldsBuffer = [];
     } else if (field.fieldtype === "Section Break") {
       if (fieldsBuffer.length > 0 && currentSection && !currentColumns) {
         currentSection.components.push(...fieldsBuffer);
@@ -1092,7 +1064,7 @@ export async function convertToFormioWithLayout(
         currentTab.components.push(currentSection);
       }
 
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       const panelKey =
         field.fieldname ||
@@ -1160,7 +1132,7 @@ export async function convertToFormioWithLayout(
       currentColumns = null;
       fieldsBuffer = [];
     } else if (field.fieldtype === "Column Break") {
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       if (!currentSection) {
         currentSection = {
@@ -1306,8 +1278,7 @@ export async function convertToFormioWithLayout(
         mapped = mapFieldToFormio(field, fieldValue);
       }
       if (!mapped) continue;
-
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       if (currentColumns && currentColumns.columns.length > 0) {
         currentColumns.columns[currentColumnIndex].components.push(mapped);
@@ -1433,19 +1404,6 @@ export async function convertFieldsToSimpleTabbedData(
 
   let lastFieldType = "";
 
-  const ensureCurrentTab = () => {
-    if (!currentTab) {
-      currentTab = {
-        label: "Basic Details",
-        key: "basic_details_tab",
-        fields: [],
-        hidden: false,
-        readOnly: false,
-      };
-      tabs.push(currentTab);
-    }
-  };
-
   for (const field of apiFields) {
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
 
@@ -1467,19 +1425,12 @@ export async function convertFieldsToSimpleTabbedData(
     if (field.fieldtype === "Button") continue;
 
     if (field.fieldtype === "Tab Break") {
-      const tabKey = field.fieldname || `tab_${tabs.length + 1}`;
-      // Reclaim orphan basic_details_tab if already pushed, to avoid duplicates
-      const orphanIdx = tabs.findIndex((t) => t.key === tabKey);
-      if (orphanIdx !== -1) {
-        currentTab = tabs.splice(orphanIdx, 1)[0];
-        currentTab.label = field.label || currentTab.label;
-        currentTab.hidden = !!field.hidden;
-        currentTab.readOnly = !!field.read_only;
-        tabs.push(currentTab);
+      if (SKIP_TAB_LABELS.has(field.label)) {
+        currentTab = null;
       } else {
         currentTab = {
           label: field.label || `Tab ${tabs.length + 1}`,
-          key: tabKey,
+          key: field.fieldname || `tab_${tabs.length + 1}`,
           fields: [],
           hidden: !!field.hidden,
           readOnly: !!field.read_only,
@@ -1487,12 +1438,12 @@ export async function convertFieldsToSimpleTabbedData(
         tabs.push(currentTab);
       }
     } else if (field.fieldtype === "Section Break") {
-      ensureCurrentTab();
+      // skip layout breaks when no active tab
     } else if (field.fieldtype === "Column Break") {
-      ensureCurrentTab();
+      // skip layout breaks when no active tab
     } else {
       // It's a field
-      ensureCurrentTab();
+      if (!currentTab) continue;
 
       let fieldValue =
         employeeData[`${field.fieldname}_display`] !== undefined
