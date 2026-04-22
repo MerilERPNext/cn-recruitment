@@ -5,8 +5,6 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import cint
 from frappe.utils import formatdate
 
-
-
 @frappe.whitelist(allow_guest=True)
 def download_job_offer_pdf(appl):
     """Download Job Offer PDF for a given applicant — guest-accessible."""
@@ -40,6 +38,33 @@ def download_job_offer_pdf(appl):
         frappe.local.response.filename = f"{jo_id}.pdf"
         frappe.local.response.filecontent = pdf_content
         frappe.local.response.type = "pdf"
+    finally:
+        frappe.set_user(original_user)
+
+@frappe.whitelist(allow_guest=True)
+def preview_job_offer_html(appl):
+    """Return rendered print-format HTML for a given applicant — guest-accessible."""
+    if not appl:
+        frappe.throw("Missing applicant parameter")
+
+    original_user = frappe.session.user
+    frappe.set_user("Administrator")
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {
+            "job_applicant": appl,
+            "docstatus": ["!=", 2],
+            "status": "Awaiting Response"
+        })
+        if not jo_id:
+            frappe.throw("No active Job Offer found")
+
+        pf = frappe.db.get_single_value(
+            "Recruitment Settings", "job_offer_print_format"
+        ) or None
+
+        # Exact same call your Jinja route makes on line 37 — just no as_pdf.
+        html = frappe.get_print("Job Offer", jo_id, print_format=pf)
+        return {"html": html, "jo_id": jo_id}
     finally:
         frappe.set_user(original_user)
 
@@ -119,42 +144,6 @@ def request_for_offer(jo_id):
     from nextai.funnel.custom_trigger import trigger_event
     doc_data = frappe.get_doc("Job Applicant",jo_id)
     trigger_event(doc=doc_data, event_name="send_mail_to_group_admin")
-
-
-# @frappe.whitelist(allow_guest=True)
-# def submit_docs(status, appl, url=None):
-# 	jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-# 	onboarding_webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-# 	job_applicant = frappe.db.get_value("Job Offer", jo_id, "job_applicant")
-# 	if status == "Accepted":
-# 		if not url:
-# 			return
-
-# 		template = frappe.db.get_value(
-# 			"Email Template", "Employee Onboarding", ["subject", "response_html"], as_dict=True
-# 		)
-# 		if not template or not template.subject or not template.response_html:
-# 			frappe.log_error(
-# 				"Email Template 'Employee Onboarding' is missing or has empty subject/body",
-# 				"submit_docs: Skipped sending empty email",
-# 			)
-# 			return
-
-# 		wf_url = url + "/" + onboarding_webform + "/new?job_offer=" + jo_id + "&job_applicant=" + appl
-# 		email_context = {
-# 			"url": wf_url,
-# 			"name": jo_id,
-# 			"applicant_name": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "applicant_name"),
-# 			"company": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "company"),
-# 			"designation": frappe.db.get_value("Job Offer", {"job_applicant": appl}, "designation"),
-# 		}
-# 		frappe.sendmail(
-# 			recipients=[job_applicant],
-# 			subject=frappe.render_template(template.subject, email_context),
-# 			message=frappe.render_template(template.response_html, email_context),
-# 			args=email_context,
-# 		)
-
 
 @frappe.whitelist()
 def send_job_offer(job_offer_url, candidate, mail_id,company,designation):
