@@ -31,12 +31,17 @@ const defaultQueryOptions = {
 };
 
 // Hook for paginated custom API queries
-export const useCustomApiQuery = <T = any>(
-  customAPI: CustomAPIConfig,
-  params: FetchParams,
-  options?: Omit<UseQueryOptions<FrappePageResponse, Error>, "queryKey" | "queryFn">,
-  queryKeyPrefix?: string | string[]
-): UseQueryResult<FrappePageResponse, Error> => {
+export const useCustomApiQuery = <T = any>({
+  customAPI,
+  params,
+  options,
+  queryKeyPrefix,
+}: {
+  customAPI: CustomAPIConfig;
+  params: FetchParams;
+  options?: Omit<UseQueryOptions<FrappePageResponse, Error>, "queryKey" | "queryFn">;
+  queryKeyPrefix?: string | string[];
+}): UseQueryResult<FrappePageResponse, Error> => {
   return useQuery<FrappePageResponse, Error>({
     queryKey: [
       ...(queryKeyPrefix ? [queryKeyPrefix].flat() : []),
@@ -56,15 +61,20 @@ export const useCustomApiQuery = <T = any>(
 };
 
 // Hook for infinite scrolling custom API queries
-export const useCustomApiInfiniteQuery = <T = any>(
-  customAPI: CustomAPIConfig,
-  baseParams: Omit<FetchParams, "pageParam">,
+export const useCustomApiInfiniteQuery = <T = any>({
+  customAPI,
+  baseParams,
+  options,
+  queryKeyPrefix,
+}: {
+  customAPI: CustomAPIConfig;
+  baseParams: Omit<FetchParams, "pageParam">;
   options?: Omit<
     UseInfiniteQueryOptions<FrappePageResponse, Error>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
-  >,
-  queryKeyPrefix?: string | string[]
-) => {
+  >;
+  queryKeyPrefix?: string | string[];
+}) => {
   return useInfiniteQuery({
     queryKey: [
       ...(queryKeyPrefix ? [queryKeyPrefix].flat() : []),

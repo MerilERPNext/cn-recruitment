@@ -179,7 +179,7 @@ export const useCurrentEmployeeAllDetails = <
     : Pick<Employee, T>;
 
   return useQuery<ResultType | null, Error>({
-    queryKey: ["currentEmployeeAllDetails", effectiveUserId, params?.name, params?.fields],
+    queryKey: ["currentEmployeeAllDetails", effectiveUserId, params?.name, effectiveFields],
     queryFn: async () => {
       if (
         !effectiveUserId ||

@@ -456,21 +456,21 @@ const DataListView = <T extends BaseItem>({
   }, [fetchFunction, effectiveCustomAPI]);
 
   // Infinite query for infinite scroll - always call both hooks but enable conditionally
-  const customApiInfiniteResult = useCustomApiInfiniteQuery<T>(
-    effectiveCustomAPI || { method: "", params: {} },
-    {
+  const customApiInfiniteResult = useCustomApiInfiniteQuery<T>({
+    customAPI: effectiveCustomAPI || { method: "", params: {} },
+    baseParams: {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
       filters: queryParams.filters,
       searchFields: queryParams.searchFields,
       orderBy: queryParams.orderBy,
     },
-    {
+    options: {
       enabled: infiniteScroll && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
-    queryKey
-  );
+    queryKeyPrefix: queryKey,
+  });
 
   const fetchFunctionInfiniteResult = useInfiniteQuery({
     queryKey: [queryKey, "infinite", queryParams],
@@ -492,9 +492,9 @@ const DataListView = <T extends BaseItem>({
     : fetchFunctionInfiniteResult;
 
   // Traditional pagination query - always call both hooks but enable conditionally
-  const customApiPaginationResult = useCustomApiQuery<T>(
-    effectiveCustomAPI || { method: "", params: {} },
-    {
+  const customApiPaginationResult = useCustomApiQuery<T>({
+    customAPI: effectiveCustomAPI || { method: "", params: {} },
+    params: {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
       filters: queryParams.filters,
@@ -502,7 +502,7 @@ const DataListView = <T extends BaseItem>({
       orderBy: queryParams.orderBy,
       pageParam: (currentPage - 1) * (queryParams.pageSize || 20),
     },
-    {
+    options: {
       enabled:
         !infiniteScroll &&
         !loadMorePagination &&
@@ -510,8 +510,8 @@ const DataListView = <T extends BaseItem>({
         !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
-    queryKey
-  );
+    queryKeyPrefix: queryKey,
+  });
 
   const fetchFunctionPaginationResult = useQuery({
     queryKey: [queryKey, "pagination", queryParams, currentPage],
@@ -535,9 +535,9 @@ const DataListView = <T extends BaseItem>({
     : fetchFunctionPaginationResult;
 
   // Load more pagination query - always call both hooks but enable conditionally
-  const customApiLoadMoreResult = useCustomApiQuery<T>(
-    effectiveCustomAPI || { method: "", params: {} },
-    {
+  const customApiLoadMoreResult = useCustomApiQuery<T>({
+    customAPI: effectiveCustomAPI || { method: "", params: {} },
+    params: {
       pageSize: queryParams.pageSize,
       searchTerm: queryParams.searchTerm,
       filters: queryParams.filters,
@@ -545,12 +545,12 @@ const DataListView = <T extends BaseItem>({
       orderBy: queryParams.orderBy,
       pageParam: (loadMorePage - 1) * (queryParams.pageSize || 20),
     },
-    {
+    options: {
       enabled: loadMorePagination && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
-    queryKey
-  );
+    queryKeyPrefix: queryKey,
+  });
 
   const fetchFunctionLoadMoreResult = useQuery({
     queryKey: [queryKey, "loadMore", queryParams, loadMorePage],
