@@ -28,6 +28,7 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
     totalChildren = 0,
     showExpand = true,
     isDottedLine = false,
+    onCollapse,
   } = data;
 
   const handleClick = () => {
@@ -56,8 +57,8 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
 
       <div
         className={`relative min-w-[320px] px-5 py-4 bg-white border-t-4 border-x-1 border-b-1 shadow-sm shadow-md hover:shadow-lg transition-all duration-300 rounded-xl cursor-pointer ${isDottedLine
-          ? "border-t-purple-500 border-x-purple-200 border-b-purple-200"
-          : "border-x-primary/20 border-b-primary/20 border-primary"
+          ? "border-t-primary-500 border-x-primary-200 border-b-primary-200"
+          : "border-x-primary border-b-primary border-primary"
           }`}
         onClick={handleClick}
       >
@@ -79,9 +80,12 @@ export default function PersonNode({ data }: NodeProps<EmployeeNode>) {
           </div>
           {isDottedLine && (
             <div className="flex justify-center">
-              <span className="text-xs font-semibold text-primary bg-primary/5 border border-primary/20 rounded-md px-2 py-0.5">
-                Dotted Line Manager
-              </span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onCollapse?.(); }}
+                className="text-xs font-semibold text-primary bg-primary/5 border border-primary/20 rounded-md px-2 py-0.5 hover:bg-primary/10 transition-colors cursor-pointer"
+              >
+                Dotted Line Manager ↙
+              </button>
             </div>
           )}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-4 p-1">
