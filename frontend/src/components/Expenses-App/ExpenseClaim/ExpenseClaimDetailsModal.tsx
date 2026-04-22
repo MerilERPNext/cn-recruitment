@@ -68,7 +68,7 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
   const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
   const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
 
-  const renderAdditionalDetailsRow = (customFormData: string | null | undefined, colSpan: number) => {
+  const renderAdditionalDetailsCard = (customFormData: string | null | undefined, keyPrefix: string) => {
     if (!customFormData) return null;
     let parsed: Record<string, any> = {};
     try {
@@ -98,44 +98,40 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
     };
 
     return (
-      <tr className="bg-gray-50/50 border-b border-gray-100">
-        <td colSpan={colSpan} className="px-4 py-4 text-left">
-          <div className="pl-4 border-l-2 border-blue-400">
-            <Typography variant="mobileCardLabel" className="block mb-3 font-semibold text-gray-700">
-              Additional Details
-            </Typography>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {entries.map(([key, value]) => {
-                if (isFileArray(value)) {
-                  return (
-                    <div key={key} className="flex flex-col gap-2 col-span-full md:col-span-3 lg:col-span-4 mt-2">
-                      <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
-                      <div className="flex flex-wrap gap-2">
-                        {value.map((file: any, idx: number) => {
-                          const fileUrl = getCustomFileUrl(file);
-                          const fileName = getCustomFileName(file);
-                          return fileUrl ? (
-                            <div key={idx} className="min-w-[260px] max-w-[360px] flex-1">
-                              <AttachmentCard fileUrl={fileUrl} fileName={fileName} />
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div key={key} className="flex flex-col gap-1">
-                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
-                    <span className="text-sm text-gray-800 break-words">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+      <div key={keyPrefix} className="rounded-xl border border-gray-200 bg-white shadow-sm p-4">
+        <Typography variant="label" className="card-title mb-4 block">
+          Additional Details
+        </Typography>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {entries.map(([key, value]) => {
+            if (isFileArray(value)) {
+              return (
+                <div key={key} className="flex flex-col gap-2 col-span-full mt-2">
+                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {value.map((file: any, idx: number) => {
+                      const fileUrl = getCustomFileUrl(file);
+                      const fileName = getCustomFileName(file);
+                      return fileUrl ? (
+                        <div key={idx} className="min-w-[260px] max-w-[360px] flex-1">
+                          <AttachmentCard fileUrl={fileUrl} fileName={fileName} />
+                        </div>
+                      ) : null;
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </td>
-      </tr>
+                </div>
+              );
+            }
+
+            return (
+              <div key={key} className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{formatKey(key)}</span>
+                <span className="text-sm text-gray-800 break-words">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     );
   };
 
@@ -312,124 +308,89 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
   // Desktop table for expense items
   const DesktopExpenseItems = (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-      <table className="min-w-full text-sm text-center">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Expense Category
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Expense Type
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Expense Date
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Status
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Claimed Amt
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Claimed Date
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Sanctioned Amt
-            </th>
-            <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-              Attachment
-            </th>
-            {isSendedBack && (
-              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">
-                Actions
-              </th>
-            )}
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-gray-100">
-          {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
-            data.expenses.map((item: Expense) => {
-              return (
-                <React.Fragment key={item.name || item.uid || Math.random()}>
-                  <tr
-                    className="bg-white hover:bg-gray-50 transition-colors duration-150"
-                  >
-                    <td className="px-4 py-3 text-gray-800 truncate">
-                      {data?.custom_expense_category_name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800 truncate">
-                      {item?.custom_claim_type_name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800">
-                      {formatToIndianDate(item.expense_date)}
-                    </td>
-
-                    <td className="px-4 py-3">
-                      <div className="flex justify-center">
-                        <StatusBadge status={finalStatus} />
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-800">
-                      {formatINR(item.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-gray-800">
-                      {formatToIndianDate(item.creation)}
-                    </td>
-
-                    <td className="px-4 py-3 text-gray-800">
-                      {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-2 items-center justify-center">
-                        {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
-                          <AttachmentCard key={i} fileUrl={file.file_url} compact />
-                        ))}
-                        {getAttachmentsForItem().length === 0 && (
-                          <span className="text-xs text-gray-400 italic">
-                            No file
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    {isSendedBack && (
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => {
-                            const navigationState = buildExpenseNavigationState(
-                              data,
-                              item,
-                              isSendedBack,
-                            );
-                            navigate("/webapp/expenses-app/add-expense", {
-                              state: navigationState,
-                            });
-                          }}
-                          className="text-gray-500 hover:text-blue-600 transition-colors"
-                        >
-                          <SquarePen size={18} />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                  {renderAdditionalDetailsRow(item.custom_form_data, isSendedBack ? 9 : 8)}
-                </React.Fragment>
-              );
-            })
-          ) : (
-            <tr>
-              <td
-                className="px-4 py-8 text-center text-gray-400 italic"
-                colSpan={isSendedBack ? 7 : 6}
-              >
-                No expense items found.
-              </td>
+    <div className="space-y-4">
+      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
+        <table className="min-w-full text-sm text-center">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Category</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Type</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Expense Date</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Status</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Claimed Amt</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Claimed Date</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Sanctioned Amt</th>
+              <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Attachment</th>
+              {isSendedBack && (
+                <th className="px-4 py-3 font-semibold text-gray-600 uppercase tracking-wider text-xs">Actions</th>
+              )}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody className="divide-y divide-gray-100">
+            {Array.isArray(data?.expenses) && data.expenses.length > 0 ? (
+              data.expenses.map((item: Expense) => (
+                <tr
+                  key={item.name || item.uid || Math.random()}
+                  className="bg-white hover:bg-gray-50 transition-colors duration-150"
+                >
+                  <td className="px-4 py-3 text-gray-800 truncate">{data?.custom_expense_category_name}</td>
+                  <td className="px-4 py-3 text-gray-800 truncate">{item?.custom_claim_type_name}</td>
+                  <td className="px-4 py-3 text-gray-800">{formatToIndianDate(item.expense_date)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center">
+                      <StatusBadge status={finalStatus} />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-800">{formatINR(item.amount)}</td>
+                  <td className="px-4 py-3 text-gray-800">{formatToIndianDate(item.creation)}</td>
+                  <td className="px-4 py-3 text-gray-800">
+                    {finalStatus === "Approved" ? formatINR(item.sanctioned_amount) : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col gap-2 items-center justify-center">
+                      {getAttachmentsForItem().map((file: { file_url: string }, i: number) => (
+                        <AttachmentCard key={i} fileUrl={file.file_url} compact />
+                      ))}
+                      {getAttachmentsForItem().length === 0 && (
+                        <span className="text-xs text-gray-400 italic">No file</span>
+                      )}
+                    </div>
+                  </td>
+                  {isSendedBack && (
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => {
+                          const navigationState = buildExpenseNavigationState(data, item, isSendedBack);
+                          navigate("/webapp/expenses-app/add-expense", {
+                            state: navigationState,
+                          });
+                        }}
+                        className="text-gray-500 hover:text-blue-600 transition-colors"
+                      >
+                        <SquarePen size={18} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  className="px-4 py-8 text-center text-gray-400 italic"
+                  colSpan={isSendedBack ? 9 : 8}
+                >
+                  No expense items found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {Array.isArray(data?.expenses) &&
+        data.expenses.map((item: Expense, index: number) =>
+          renderAdditionalDetailsCard(item.custom_form_data, `${item.name || item.uid || index}-additional-details`),
+        )}
     </div>
   );
 
