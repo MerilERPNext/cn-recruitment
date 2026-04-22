@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import {
@@ -7,30 +6,21 @@ import {
   useApprovalActions,
   useSectionNav,
 } from "../../../hooks/useOnboarding";
-import type { ApiConfig, ApprovalField, FieldLocalState } from "../../../types/onboarding";
+import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-/** Read onboardingName from URL search params (?name=HR-EMP-ONB-2026-00001)
- *  or fall back to the last path segment, then to a hard-coded default.
- */
 function getOnboardingNameFromUrl(): string {
   if (typeof window === "undefined") return "";
   const params = new URLSearchParams(window.location.search);
   const fromQuery = params.get("name") || params.get("onboarding_name");
   if (fromQuery) return fromQuery;
-  // Try last path segment e.g. /onboarding/HR-EMP-ONB-2026-00001
+
   const segments = window.location.pathname.split("/").filter(Boolean);
   const last = segments[segments.length - 1];
   if (last && last.startsWith("HR-")) return last;
   return "";
 }
-
-const DEFAULT_CONFIG: ApiConfig = {
-  baseUrl: window?.location?.origin || "http://localhost:8016",
-  onboardingName: getOnboardingNameFromUrl(),
-  authToken: "",
-};
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -71,18 +61,14 @@ interface FieldRowProps {
   state: FieldLocalState;
   checked: boolean;
   onCheck: (checked: boolean) => void;
-  /** Called when user clicks Approve/Reject and has already filled comment */
-  onApprove: (comment: string) => void;
+  onApprove: () => void;
   onReject: (comment: string) => void;
   onCommentChange: (val: string) => void;
 }
 
 /**
- * Mandatory-comment flow:
- *  1. User clicks ✓ or ✗ → comment box opens immediately (showComment = true)
- *  2. pendingAction stores which action is waiting ("Approved" | "Rejected" | null)
- *  3. "Submit" button is disabled until comment has at least 1 non-whitespace char
- *  4. On submit → calls onApprove/onReject with the typed comment, resets local state
+ * Comment is mandatory ONLY for Reject.
+ * Approve fires immediately without a comment gate.
  */
 function FieldRow({
   field,
@@ -95,39 +81,40 @@ function FieldRow({
 }: FieldRowProps) {
   const val = displayValue(field.current_value);
 
-  // Local state: which action is waiting for a comment
-  const [pendingAction, setPendingAction] = useState<"Approved" | "Rejected" | null>(null);
+  const [pendingReject, setPendingReject] = useState(false);
   const [localComment, setLocalComment] = useState(state.comment || "");
 
-  // Sync local comment → parent whenever it changes
   const handleCommentChange = (v: string) => {
     setLocalComment(v);
     onCommentChange(v);
   };
 
-  const handleActionClick = (action: "Approved" | "Rejected") => {
-    // If same action clicked again while pending → cancel
-    if (pendingAction === action) {
-      setPendingAction(null);
-      return;
-    }
-    setPendingAction(action);
+  const handleApproveClick = () => {
+    // Approve fires immediately — no comment required
+    setPendingReject(false);
+    onApprove();
   };
 
-  const handleSubmit = () => {
-    if (!pendingAction) return;
-    if (pendingAction === "Approved") onApprove(localComment);
-    else onReject(localComment);
-    setPendingAction(null);
+  const handleRejectClick = () => {
+    // Toggle reject comment box
+    if (pendingReject) {
+      setPendingReject(false);
+      return;
+    }
+    setPendingReject(true);
+  };
+
+  const handleRejectSubmit = () => {
+    onReject(localComment);
+    setPendingReject(false);
     setLocalComment("");
   };
 
   const handleCancel = () => {
-    setPendingAction(null);
+    setPendingReject(false);
   };
 
-  const commentRequired = pendingAction !== null;
-  const canSubmit = localComment.trim().length > 0;
+  const canSubmitReject = localComment.trim().length > 0;
 
   return (
     <div
@@ -173,46 +160,36 @@ function FieldRow({
           <p className="text-xs text-gray-400 mt-0.5 italic">No value</p>
         )}
 
-        {/* Mandatory comment box — shown when an action is pending */}
-        {commentRequired && (
+        {/* Mandatory comment box — shown only when reject is pending */}
+        {pendingReject && (
           <div className="mt-2 space-y-1.5">
             <p className="text-xs font-medium text-gray-600">
               Comment required to{" "}
-              <span
-                className={
-                  pendingAction === "Approved" ? "text-emerald-600" : "text-red-500"
-                }
-              >
-                {pendingAction?.toLowerCase()}
-              </span>{" "}
-              this field <span className="text-red-500">*</span>
+              <span className="text-red-500">reject</span> this field{" "}
+              <span className="text-red-500">*</span>
             </p>
             <textarea
               rows={2}
               value={localComment}
               onChange={(e) => handleCommentChange(e.target.value)}
-              placeholder="Add a mandatory comment before submitting..."
+              placeholder="Add a mandatory comment before rejecting..."
               autoFocus
               className={`w-full text-xs px-2.5 py-1.5 border rounded-lg bg-white text-gray-700 resize-none outline-none focus:ring-1 placeholder-gray-400 ${
-                canSubmit
+                canSubmitReject
                   ? "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
                   : "border-amber-300 focus:border-amber-400 focus:ring-amber-100"
               }`}
             />
-            {!canSubmit && (
+            {!canSubmitReject && (
               <p className="text-xs text-amber-600">Please enter a comment to continue.</p>
             )}
             <div className="flex gap-2">
               <button
-                onClick={handleSubmit}
-                disabled={!canSubmit || state.loading}
-                className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white ${
-                  pendingAction === "Approved"
-                    ? "bg-emerald-500 hover:bg-emerald-600"
-                    : "bg-red-500 hover:bg-red-600"
-                }`}
+                onClick={handleRejectSubmit}
+                disabled={!canSubmitReject || state.loading}
+                className="px-3 py-1 text-xs font-medium rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white bg-red-500 hover:bg-red-600"
               >
-                {state.loading ? "Submitting..." : `Confirm ${pendingAction}`}
+                {state.loading ? "Submitting..." : "Confirm Reject"}
               </button>
               <button
                 onClick={handleCancel}
@@ -231,14 +208,12 @@ function FieldRow({
         <StatusBadge status={state.status} />
 
         <button
-          onClick={() => handleActionClick("Approved")}
+          onClick={handleApproveClick}
           disabled={state.loading}
           title="Approve"
           className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
             state.status === "Approved"
               ? "bg-emerald-500 text-white border-emerald-500"
-              : pendingAction === "Approved"
-              ? "bg-emerald-200 text-emerald-700 border-emerald-300"
               : "bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-500 hover:text-white hover:border-emerald-500"
           }`}
         >
@@ -246,13 +221,13 @@ function FieldRow({
         </button>
 
         <button
-          onClick={() => handleActionClick("Rejected")}
+          onClick={handleRejectClick}
           disabled={state.loading}
           title="Reject"
           className={`h-7 w-7 flex items-center justify-center rounded-lg border text-xs font-bold transition-all disabled:opacity-40 ${
             state.status === "Rejected"
               ? "bg-red-500 text-white border-red-500"
-              : pendingAction === "Rejected"
+              : pendingReject
               ? "bg-red-200 text-red-700 border-red-300"
               : "bg-red-50 text-red-500 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500"
           }`}
@@ -325,67 +300,21 @@ function NavItem({
   );
 }
 
-// ─── ConfigPanel ──────────────────────────────────────────────────────────────
-
-function ConfigPanel({
-  config,
-  onConfigChange,
-  onReload,
-  loading,
-}: {
-  config: ApiConfig;
-  onConfigChange: (patch: Partial<ApiConfig>) => void;
-  onReload: () => void;
-  loading: boolean;
-}) {
-  const fields: { label: string; key: keyof ApiConfig; placeholder: string }[] = [
-    { label: "Onboarding name", key: "onboardingName", placeholder: "HR-EMP-ONB-2026-00001" },
-    { label: "API base URL", key: "baseUrl", placeholder: "http://localhost:8016" },
-    { label: "Auth token (key:secret)", key: "authToken", placeholder: "api_key:api_secret" },
-  ];
-
-  return (
-    <div className="border-t border-gray-100 p-3 space-y-2">
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Connection</p>
-      {fields.map(({ label, key, placeholder }) => (
-        <div key={key}>
-          <p className="text-xs text-gray-400 mb-1">{label}</p>
-          <input
-            value={config[key]}
-            onChange={(e) => onConfigChange({ [key]: e.target.value })}
-            placeholder={placeholder}
-            className="w-full text-xs px-2 py-1.5 border border-gray-200 rounded-md bg-gray-50 text-gray-700 outline-none focus:border-blue-400"
-          />
-        </div>
-      ))}
-      <button
-        onClick={onReload}
-        disabled={loading}
-        className="w-full mt-1 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50"
-      >
-        {loading ? "Loading..." : "Reload data"}
-      </button>
-    </div>
-  );
-}
-
-// ─── SectionCommentModal ──────────────────────────────────────────────────────
+// ─── PendingActionBanner ──────────────────────────────────────────────────────
 
 /**
- * Inline banner shown above the fields card when a section-level or
- * bulk-selected action is waiting for a mandatory comment.
+ * Inline banner for section-level or bulk-selected reject actions.
+ * Approve actions at section/bulk level do NOT need this banner.
  */
-function PendingActionBanner({
+function PendingRejectBanner({
   label,
-  action,
-  onCommentChange,
   comment,
+  onCommentChange,
   onConfirm,
   onCancel,
   loading,
 }: {
   label: string;
-  action: "Approved" | "Rejected";
   comment: string;
   onCommentChange: (v: string) => void;
   onConfirm: () => void;
@@ -394,22 +323,13 @@ function PendingActionBanner({
 }) {
   const canSubmit = comment.trim().length > 0;
   return (
-    <div
-      className={`rounded-xl border px-4 py-3 space-y-2 ${
-        action === "Approved"
-          ? "bg-emerald-50 border-emerald-200"
-          : "bg-red-50 border-red-200"
-      }`}
-    >
+    <div className="rounded-xl border px-4 py-3 space-y-2 bg-red-50 border-red-200">
       <p className="text-xs font-semibold text-gray-700">
         {label} —{" "}
-        <span className={action === "Approved" ? "text-emerald-700" : "text-red-600"}>
-          {action}
-        </span>{" "}
-        pending
+        <span className="text-red-600">Rejected</span> pending
       </p>
       <p className="text-xs text-gray-500">
-        A comment is required before confirming this action.{" "}
+        A comment is required before confirming this rejection.{" "}
         <span className="text-red-500">*</span>
       </p>
       <textarea
@@ -431,13 +351,9 @@ function PendingActionBanner({
         <button
           onClick={onConfirm}
           disabled={!canSubmit || loading}
-          className={`px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-            action === "Approved"
-              ? "bg-emerald-500 hover:bg-emerald-600"
-              : "bg-red-500 hover:bg-red-600"
-          }`}
+          className="px-3 py-1.5 text-xs font-medium rounded-lg text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed bg-red-500 hover:bg-red-600"
         >
-          {loading ? "Submitting..." : `Confirm ${action}`}
+          {loading ? "Submitting..." : "Confirm Reject"}
         </button>
         <button
           onClick={onCancel}
@@ -454,27 +370,23 @@ function PendingActionBanner({
 // ─── OnboardingFieldApproval (Main Component) ─────────────────────────────────
 
 export default function OnboardingFieldApproval() {
-  // ── API config state ──
-  const [config, setConfig] = useState<ApiConfig>(DEFAULT_CONFIG);
-  const patchConfig = (patch: Partial<ApiConfig>) =>
-    setConfig((prev) => ({ ...prev, ...patch }));
+  // ── Onboarding name from URL ──
+  const onboardingName = getOnboardingNameFromUrl();
 
   // ── Selected fields state (multi-checkbox) ──
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
   const clearSelection = () => setSelectedFields(new Set());
 
-  // ── Section pending action (mandatory comment gate) ──
-  const [sectionPending, setSectionPending] = useState<{
+  // ── Section pending reject (mandatory comment gate) ──
+  const [sectionRejectPending, setSectionRejectPending] = useState<{
     sectionName: string;
-    action: "Approved" | "Rejected";
     comment: string;
     loading: boolean;
   } | null>(null);
 
-  // ── Bulk-selected pending action (mandatory comment gate) ──
-  const [bulkPending, setBulkPending] = useState<{
+  // ── Bulk-selected pending reject (mandatory comment gate) ──
+  const [bulkRejectPending, setBulkRejectPending] = useState<{
     fieldnames: string[];
-    action: "Approved" | "Rejected";
     comment: string;
     loading: boolean;
   } | null>(null);
@@ -491,10 +403,10 @@ export default function OnboardingFieldApproval() {
     loadData,
     patchFieldState,
     setFieldStates,
-  } = useApprovalData(config);
+  } = useApprovalData(onboardingName);
 
   const { singleAction, bulkSelectedAction, sectionAction, bulkApproveAllPending } =
-    useApprovalActions(config, sections, patchFieldState, setFieldStates, showToast);
+    useApprovalActions(onboardingName, sections, patchFieldState, setFieldStates, showToast);
 
   const secKeys = Object.keys(sections);
   const { activeSection, activeIdx, goToSection, goNext, goPrev } = useSectionNav(
@@ -536,40 +448,58 @@ export default function OnboardingFieldApproval() {
     setSelectedFields(next);
   };
 
-  // ── Section action: open comment banner ────────────────────────────────────
-  const handleSectionActionClick = (sectionName: string, action: "Approved" | "Rejected") => {
-    setSectionPending({ sectionName, action, comment: "", loading: false });
-    setBulkPending(null); // close bulk banner if open
+  // ── Section actions ────────────────────────────────────────────────────────
+
+  // Section approve — fires immediately, no comment needed
+  const handleSectionApprove = async (sectionName: string) => {
+    await sectionAction(sectionName, "Approved");
   };
 
-  const handleSectionConfirm = async () => {
-    if (!sectionPending) return;
-    setSectionPending((p) => p && { ...p, loading: true });
+  // Section reject — open comment banner
+  const handleSectionRejectClick = (sectionName: string,) => {
+    setSectionRejectPending({ sectionName, comment: "", loading: false });
+    setBulkRejectPending(null);
+  };
+
+  const handleSectionRejectConfirm = async () => {
+    if (!sectionRejectPending) return;
+    setSectionRejectPending((p) => p && { ...p, loading: true });
     try {
-      await sectionAction(sectionPending.sectionName, sectionPending.action);
+      await sectionAction(sectionRejectPending.sectionName, "Rejected", sectionRejectPending.comment);
     } finally {
-      setSectionPending(null);
+      setSectionRejectPending(null);
     }
   };
 
-  // ── Bulk-selected action: open comment banner ──────────────────────────────
-  const handleBulkActionClick = (action: "Approved" | "Rejected") => {
-    const toUpdate = [...selectedFields].filter((fn) =>
-      curFields.some((f) => f.fieldname === fn)
-    );
+  // ── Bulk-selected actions ──────────────────────────────────────────────────
+
+  const getSelectedInSection = () =>
+    [...selectedFields].filter((fn) => curFields.some((f) => f.fieldname === fn));
+
+  // Bulk approve selected — fires immediately, no comment needed
+  const handleBulkApprove = async () => {
+    const toUpdate = getSelectedInSection();
     if (toUpdate.length === 0) return;
-    setBulkPending({ fieldnames: toUpdate, action, comment: "", loading: false });
-    setSectionPending(null); // close section banner if open
+    await bulkSelectedAction(toUpdate, "Approved");
+    clearSelection();
   };
 
-  const handleBulkConfirm = async () => {
-    if (!bulkPending) return;
-    setBulkPending((p) => p && { ...p, loading: true });
+  // Bulk reject selected — open comment banner
+  const handleBulkRejectClick = () => {
+    const toUpdate = getSelectedInSection();
+    if (toUpdate.length === 0) return;
+    setBulkRejectPending({ fieldnames: toUpdate, comment: "", loading: false });
+    setSectionRejectPending(null);
+  };
+
+  const handleBulkRejectConfirm = async () => {
+    if (!bulkRejectPending) return;
+    setBulkRejectPending((p) => p && { ...p, loading: true });
     try {
-      await bulkSelectedAction(bulkPending.fieldnames, bulkPending.action);
+      await bulkSelectedAction(bulkRejectPending.fieldnames, "Rejected", bulkRejectPending.comment);
       clearSelection();
     } finally {
-      setBulkPending(null);
+      setBulkRejectPending(null);
     }
   };
 
@@ -582,7 +512,7 @@ export default function OnboardingFieldApproval() {
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col sticky top-0 h-screen overflow-hidden flex-shrink-0">
         <div className="px-4 py-4 border-b border-gray-100">
           <h1 className="text-sm font-semibold text-gray-900">Onboarding Approval</h1>
-          <p className="text-xs text-gray-400 mt-0.5 truncate">{config.onboardingName}</p>
+          <p className="text-xs text-gray-400 mt-0.5 truncate">{onboardingName}</p>
         </div>
 
         <nav className="flex-1 p-2 overflow-y-auto">
@@ -613,12 +543,7 @@ export default function OnboardingFieldApproval() {
             })}
         </nav>
 
-        <ConfigPanel
-          config={config}
-          onConfigChange={patchConfig}
-          onReload={loadData}
-          loading={pageLoading}
-        />
+        {/* ConfigPanel removed */}
       </aside>
 
       {/* ── Main ── */}
@@ -639,9 +564,6 @@ export default function OnboardingFieldApproval() {
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm max-w-xl">
             <p className="font-medium mb-1">Failed to load data</p>
             <p className="text-xs text-red-500">{pageError}</p>
-            <p className="text-xs text-red-400 mt-2">
-              Check your API base URL, onboarding name, and auth token in the sidebar.
-            </p>
           </div>
         )}
 
@@ -666,20 +588,21 @@ export default function OnboardingFieldApproval() {
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Section approve/reject → opens comment banner */}
+                {/* Section approve — immediate, no comment */}
                 <button
-                  onClick={() => handleSectionActionClick(activeSection, "Approved")}
+                  onClick={() => handleSectionApprove(activeSection)}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
                 >
                   Approve section
                 </button>
+                {/* Section reject — opens comment banner */}
                 <button
-                  onClick={() => handleSectionActionClick(activeSection, "Rejected")}
+                  onClick={() => handleSectionRejectClick(activeSection)}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors"
                 >
                   Reject section
                 </button>
-                {/* Bulk approve all pending — no comment required (document level, untouched) */}
+                {/* Bulk approve all pending — no comment required */}
                 <button
                   onClick={bulkApproveAllPending}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-colors"
@@ -713,18 +636,17 @@ export default function OnboardingFieldApproval() {
               />
             </div>
 
-            {/* ── Section pending comment banner ── */}
-            {sectionPending && (
-              <PendingActionBanner
-                label={`Section: ${sectionPending.sectionName}`}
-                action={sectionPending.action}
-                comment={sectionPending.comment}
+            {/* ── Section reject comment banner ── */}
+            {sectionRejectPending && (
+              <PendingRejectBanner
+                label={`Section: ${sectionRejectPending.sectionName}`}
+                comment={sectionRejectPending.comment}
                 onCommentChange={(v) =>
-                  setSectionPending((p) => p && { ...p, comment: v })
+                  setSectionRejectPending((p) => p && { ...p, comment: v })
                 }
-                onConfirm={handleSectionConfirm}
-                onCancel={() => setSectionPending(null)}
-                loading={sectionPending.loading}
+                onConfirm={handleSectionRejectConfirm}
+                onCancel={() => setSectionRejectPending(null)}
+                loading={sectionRejectPending.loading}
               />
             )}
 
@@ -734,14 +656,16 @@ export default function OnboardingFieldApproval() {
                 <span className="text-xs text-blue-700 font-medium flex-1">
                   {curSelected} field{curSelected > 1 ? "s" : ""} selected
                 </span>
+                {/* Bulk approve — immediate, no comment */}
                 <button
-                  onClick={() => handleBulkActionClick("Approved")}
+                  onClick={handleBulkApprove}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                 >
                   Approve selected
                 </button>
+                {/* Bulk reject — opens comment banner */}
                 <button
-                  onClick={() => handleBulkActionClick("Rejected")}
+                  onClick={handleBulkRejectClick}
                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
                 >
                   Reject selected
@@ -755,20 +679,19 @@ export default function OnboardingFieldApproval() {
               </div>
             )}
 
-            {/* ── Bulk pending comment banner ── */}
-            {bulkPending && (
-              <PendingActionBanner
-                label={`${bulkPending.fieldnames.length} selected field${
-                  bulkPending.fieldnames.length > 1 ? "s" : ""
+            {/* ── Bulk reject comment banner ── */}
+            {bulkRejectPending && (
+              <PendingRejectBanner
+                label={`${bulkRejectPending.fieldnames.length} selected field${
+                  bulkRejectPending.fieldnames.length > 1 ? "s" : ""
                 }`}
-                action={bulkPending.action}
-                comment={bulkPending.comment}
+                comment={bulkRejectPending.comment}
                 onCommentChange={(v) =>
-                  setBulkPending((p) => p && { ...p, comment: v })
+                  setBulkRejectPending((p) => p && { ...p, comment: v })
                 }
-                onConfirm={handleBulkConfirm}
-                onCancel={() => setBulkPending(null)}
-                loading={bulkPending.loading}
+                onConfirm={handleBulkRejectConfirm}
+                onCancel={() => setBulkRejectPending(null)}
+                loading={bulkRejectPending.loading}
               />
             )}
 
@@ -794,8 +717,7 @@ export default function OnboardingFieldApproval() {
                 </div>
               </div>
 
-              {/* Field rows — single-field actions are untouched in behaviour,
-                  but now pass comment through to the API call */}
+              {/* Field rows */}
               {curFields.map((field) => {
                 const state = fieldStates[field.fieldname];
                 if (!state) return null;
@@ -806,8 +728,8 @@ export default function OnboardingFieldApproval() {
                     state={state}
                     checked={selectedFields.has(field.fieldname)}
                     onCheck={(checked) => toggleField(field.fieldname, checked)}
-                    onApprove={(_comment) => singleAction(field.fieldname, "Approved")}
-                    onReject={(_comment) => singleAction(field.fieldname, "Rejected")}
+                    onApprove={() => singleAction(field.fieldname, "Approved")}
+                    onReject={(comment) => singleAction(field.fieldname, "Rejected", comment)}
                     onCommentChange={(val) =>
                       patchFieldState(field.fieldname, { comment: val })
                     }
