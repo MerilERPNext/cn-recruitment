@@ -947,18 +947,23 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     return { customFormDataObj, customFilesToUpload };
   };
 
-  const uploadCustomFormFiles = async (customFilesToUpload: any[]) => {
+  const uploadCustomFormFiles = async (
+    customFilesToUpload: any[],
+    doctype?: string,
+    docName?: string,
+  ) => {
     const uploadResults: any[] = [];
 
     for (const fileObj of customFilesToUpload) {
       const file = resolveCustomFormFile(fileObj);
       if (!file) {
         console.error("No file object inside custom form fileObj:", fileObj);
+        uploadResults.push(null);
         continue;
       }
 
       try {
-        const result = await FrappeAPI.uploadFile(file, file.name);
+        const result = await FrappeAPI.uploadFile(file, file.name, docName, doctype);
         uploadResults.push({
           file_name: result.file_name || result.name || file.name,
           file_size: result.file_size || file.size,
@@ -968,6 +973,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
       } catch (err) {
         toast.error(`File "${file.name}" upload failed.`);
         console.error(err);
+        uploadResults.push(null);
       }
     }
 
@@ -1006,30 +1012,29 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     return nextCustomFormData;
   };
 
-  const removeFormioFile = (formId: string, compKey: string, index: number) => {
+  const removeFormioFile = (compKey: string, index: number) => {
     try {
-      const rootNode = document.getElementById(formId) || document;
-      const container = rootNode.querySelector(`.formio-component-${compKey}`);
+      const currentValue = dynamicFormRef.current?.submission?.data?.[compKey];
+      const currentFiles = Array.isArray(currentValue)
+        ? currentValue
+        : currentValue
+          ? [currentValue]
+          : [];
+      const nextFiles = currentFiles.filter((_: any, i: number) => i !== index);
 
-      if (container) {
-        const removeButtons = container.querySelectorAll(
-          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
-        );
-
-        if (removeButtons && removeButtons[index]) {
-          (removeButtons[index] as HTMLElement).click();
-        } else {
-          console.error("Form.io native remove button not found");
-        }
+      const component = dynamicFormRef.current?.getComponent?.(compKey);
+      if (component?.setValue) {
+        component.setValue(nextFiles);
       }
 
-      setDynamicFormData((prevData: any) => {
-        const newData = { ...prevData };
-        if (Array.isArray(newData[compKey])) {
-          newData[compKey] = newData[compKey].filter((_: any, i: number) => i !== index);
-        }
-        return newData;
-      });
+      if (dynamicFormRef.current?.submission?.data) {
+        dynamicFormRef.current.submission.data[compKey] = nextFiles;
+      }
+
+      setDynamicFormData((prevData: any) => ({
+        ...prevData,
+        [compKey]: nextFiles,
+      }));
     } catch (err) {
       console.error("Failed to remove file from formio", err);
     }
@@ -1896,22 +1901,32 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                   return;
                 }
 
-                if (customFilesToUpload.length > 0) {
-                  const customUploadResults = await uploadCustomFormFiles(customFilesToUpload);
-
-                  customFormDataObj = applyUploadedCustomFileUrls(
-                    customFormDataObj,
-                    customUploadResults,
-                  );
-                  combinedData.custom_form_data = JSON.stringify(customFormDataObj);
-                }
-
                 const attachments = currentAttachments;
                 const allFilesForFinalUpload = [...attachments];
 
                 if (isAttachmentMandatory && attachments.length === 0) {
                   toast.error("Please attach a receipt to proceed.");
                   return;
+                }
+
+                if (customFilesToUpload.length > 0) {
+                  const linkDoctype = draft_document_name
+                    ? "Draft Expense Claim"
+                    : isEditingFromDetailsPage && expense_claim_name
+                      ? "Expense Claim"
+                      : undefined;
+                  const linkDocName = draft_document_name || (isEditingFromDetailsPage ? expense_claim_name || undefined : undefined);
+                  const customUploadResults = await uploadCustomFormFiles(
+                    customFilesToUpload,
+                    linkDoctype,
+                    linkDocName,
+                  );
+
+                  customFormDataObj = applyUploadedCustomFileUrls(
+                    customFormDataObj,
+                    customUploadResults,
+                  );
+                  combinedData.custom_form_data = JSON.stringify(customFormDataObj);
                 }
 
                 const expenseUid = editingExpenseId ?? Date.now().toString();
@@ -2201,7 +2216,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                           <FormioPreviewItem
                             key={`${String(comp.key)}-${idx}`}
                             fileObj={fileObj}
-                            onRemove={() => removeFormioFile(dynamicFormContainerId, comp.key as string, idx)}
+                            onRemove={() => removeFormioFile(comp.key as string, idx)}
                           />
                         ))}
                       </div>

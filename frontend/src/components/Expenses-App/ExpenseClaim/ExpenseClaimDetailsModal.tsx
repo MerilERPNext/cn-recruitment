@@ -65,6 +65,9 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
       }).format(value)
       : "—";
 
+  const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
+  const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
+
   const renderAdditionalDetailsRow = (customFormData: string | null | undefined, colSpan: number) => {
     if (!customFormData) return null;
     let parsed: Record<string, any> = {};
@@ -81,8 +84,6 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
     const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
     const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
-    const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
-    const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
 
     const entries = Object.entries(parsed).filter(
       ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
@@ -154,8 +155,6 @@ const ExpenseClaimDetailsModal: React.FC<ExpenseClaimModalProps> = ({
 
     const isFileObject = (obj: any) => obj && typeof obj === 'object' && ('url' in obj || 'originalName' in obj || obj.data?.message?.file_url);
     const isFileArray = (arr: any) => Array.isArray(arr) && arr.length > 0 && isFileObject(arr[0]);
-    const getCustomFileUrl = (file: any) => file.data?.message?.file_url || file.file_url || file.url || "";
-    const getCustomFileName = (file: any) => file.originalName || file.name || file.file_name || undefined;
 
     const entries = Object.entries(parsed).filter(
       ([key, value]) => !keysToSkip.includes(key) && value !== null && value !== "" && value !== undefined && !(Array.isArray(value) && value.length === 0)
