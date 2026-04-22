@@ -101,11 +101,16 @@ def build_onboarding_redirect(job_applicant_id, onboarding_name=None, section_na
     return "/candidate-portal/onboarding?{0}".format(urlencode(params))
 
 
-def build_job_offer_redirect(job_offer_name, job_applicant_id=None):
-    params = {"job_offer_name": job_offer_name}
-    if job_applicant_id:
-        params["job_applicant_id"] = job_applicant_id
-    return "/candidate-portal/job-offer?{0}".format(urlencode(params))
+def _candidate_portal_base_url():
+    # Configurable via site_config.json key `candidate_portal_url`; defaults to local dev frontend.
+    return (frappe.conf.get("candidate_portal_url") or "http://localhost:3000").rstrip("/")
+
+
+def build_job_offer_redirect(candidate_email):
+    return "{0}/job_offer?{1}".format(
+        _candidate_portal_base_url(),
+        urlencode({"appl": candidate_email}),
+    )
 
 
 def sync_onboarding_action_item(doc, method=None):
@@ -163,8 +168,8 @@ def sync_job_offer_action_item(doc, method=None):
         candidate_email=candidate_email,
         reference_doctype=doc.doctype,
         reference_docname=doc.name,
-        redirect_url=build_job_offer_redirect(doc.name, candidate_id),
-        description="Job offer released. Open details: {0}".format(build_job_offer_redirect(doc.name, candidate_id)),
+        redirect_url=build_job_offer_redirect(candidate_email),
+        description="Job offer released. Open details: {0}".format(build_job_offer_redirect(candidate_email)),
         attachment="",
         commit=False,
     )
