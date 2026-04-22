@@ -33,9 +33,7 @@ const RegularizeDrawer = () => {
   const [open, setOpen] = useState(false);
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { targetEmployeeId } = useTargetUser();
 
   const monthOptions: MonthOption[] = generateMonthOptions(1);

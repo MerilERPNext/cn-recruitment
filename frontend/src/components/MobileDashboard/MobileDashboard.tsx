@@ -102,16 +102,8 @@ const MobileDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: [
-      "user_id",
-      "employee_name",
-      "company",
-      "custom_allow_mobile_checkin",
-      "employee",
-      "image"
-    ]
-  });
+  const { data: currentEmployee } =
+    useCurrentEmployeeAllDetails();
 
   const employeeState = useEmployeeWithFallback();
   const { data: canShowClockIn } = useCanShowClockIn(

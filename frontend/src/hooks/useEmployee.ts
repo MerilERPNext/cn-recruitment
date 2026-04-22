@@ -89,6 +89,68 @@ export const useCurrentEmployee = (): UseQueryResult<
   });
 };
 
+// Common fields required by various frontend components to avoid multiple API calls
+export const DEFAULT_EMPLOYEE_FIELDS = [
+  // Identity
+  "name",
+  "employee_name",
+  "first_name",
+  "middle_name",
+  "last_name",
+  "image",
+  "user_id",
+  "employee",
+  "employee_number",
+  // Organization
+  "company",
+  "department",
+  "designation",
+  "custom_designation_title",
+  "reports_to",
+  "employment_type",
+  "branch",
+  "grade",
+  "status",
+  "date_of_joining",
+  "default_shift",
+  // Personal
+  "date_of_birth",
+  "gender",
+  "marital_status",
+  "blood_group",
+  "person_to_be_contacted",
+  "emergency_phone_number",
+  // Finance
+  "ctc",
+  "salary_currency",
+  "pan_number",
+  "bank_name",
+  "bank_ac_no",
+  "ifsc_code",
+  "provident_fund_account",
+  "payroll_cost_center",
+  // Lifecycle
+  "final_confirmation_date",
+  "contract_end_date",
+  "notice_number_of_days",
+  "custom_employment_status",
+  // Contact
+  "company_email",
+  "personal_email",
+  "cell_number",
+  // Settings
+  "custom_allow_mobile_checkin",
+  "custom_enable_web_clockin",
+  "custom_dotted_line_manager",
+  "custom_weekly_off",
+  "shift_request_approver",
+] as const;
+
+
+/**
+ * add fields you want in DEFAULT_EMPLOYEE_FIELDS Array inside useEmployee.ts.
+ * or pass fields in params.
+ */
 export const useCurrentEmployeeAllDetails = <
   T extends keyof Employee = never
 >(
@@ -107,7 +169,14 @@ export const useCurrentEmployeeAllDetails = <
   const effectiveUserId =
     params?.user_id && params.user_id.trim() !== "" ? params.user_id : (loggedInUserId ?? "");
 
-  type ResultType = [T] extends [never] ? Employee : Pick<Employee, T>;
+  // Resolve the fields to fetch: prefer explicit fields, fallback to centralized defaults
+  const effectiveFields = params?.fields && params.fields.length > 0
+    ? params.fields
+    : (DEFAULT_EMPLOYEE_FIELDS as unknown as T[]);
+
+  type ResultType = [T] extends [never]
+    ? Pick<Employee, (typeof DEFAULT_EMPLOYEE_FIELDS)[number]>
+    : Pick<Employee, T>;
 
   return useQuery<ResultType | null, Error>({
     queryKey: ["currentEmployeeAllDetails", effectiveUserId, params?.name, params?.fields],
@@ -126,7 +195,7 @@ export const useCurrentEmployeeAllDetails = <
       return EmployeeService.getCurrentEmployeeAllDetails(
         effectiveUserId,
         params?.name,
-        params?.fields,
+        effectiveFields as unknown as string[],
       ) as Promise<ResultType | null>;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

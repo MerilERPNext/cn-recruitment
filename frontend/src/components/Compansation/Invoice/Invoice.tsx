@@ -62,9 +62,7 @@ const [selectedPeriod, setSelectedPeriod] = useState<string>("");
   const uploadMutation = useFileUpload();
   const updateSalarySlipMutation = useUpdateSalarySlip();
 
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
  const { data: payrollPeriods } = useTaxSheetPayrollPriodsData(
     user?.company || null,
   ) as {

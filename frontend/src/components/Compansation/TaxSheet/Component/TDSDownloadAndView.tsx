@@ -17,9 +17,7 @@ type Props = {
 const TDSSlipHandler = ({ disabled, selectedPeriod }: Props) => {
   const [open, setOpen] = useState(false);
   const [html, setHtml] = useState("");
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
 
   const { mutate, isPending } = useTDSPRintViewPDF(
     selectedPeriod,

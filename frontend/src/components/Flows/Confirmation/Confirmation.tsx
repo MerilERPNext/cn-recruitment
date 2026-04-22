@@ -43,9 +43,7 @@ const ConfirmationWorkflow = () => {
     data: currentEmployee,
     isLoading: loadingCurrentEmployee,
     refetch: refetchCurrentEmployee,
-  } = useCurrentEmployeeAllDetails({
-    fields: ["name", "date_of_joining", "final_confirmation_date", "custom_employment_status"]
-  });
+  } = useCurrentEmployeeAllDetails();
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
   const { data: targetEmployee, refetch: refetchTargetEmployee } =
     useEmployee(targetEmployeeId);

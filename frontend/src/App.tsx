@@ -222,9 +222,7 @@ export default App;
 const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
 
 const MandatoryPoliciesHandler = () => {
-  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails({
-    fields: ["name"]
-  });
+  const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails();
 
   const navigate = useNavigate();
   const location = useLocation();

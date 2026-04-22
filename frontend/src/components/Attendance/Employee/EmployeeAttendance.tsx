@@ -105,9 +105,7 @@ const EmployeeAttendance = () => {
     setSidebarOpen(!!showDetailsFor && isDesktop);
   }, [showDetailsFor, isDesktop, setSidebarOpen]);
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const start = format(startOfMonth(selectedDate as Date), "yyyy-MM-dd");
   const end = format(endOfMonth(selectedDate as Date), "yyyy-MM-dd");
 

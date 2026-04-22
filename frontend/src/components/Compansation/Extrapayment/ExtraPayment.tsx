@@ -63,9 +63,7 @@ const columnWidths = ["1fr", "1fr", "1fr", "1fr", "1fr", "1fr"];
 
 export default function ExtraPayment() {
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
   // Don't render until we have employee + company info
   if (!user?.employee || !user?.company) {
     return (

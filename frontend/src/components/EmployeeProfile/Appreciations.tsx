@@ -21,9 +21,7 @@ const Appreciations = () => {
 
     // Get effective target employee
     const { targetEmployeeId } = useTargetUser();
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-      fields: ["employee"]
-    });
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
     const queryClient = useQueryClient();
     const effectiveEmployeeId = targetEmployeeId || currentEmployee?.employee;
     const { data: employeeAppreciations } = useGetEmployeeAppreciations();

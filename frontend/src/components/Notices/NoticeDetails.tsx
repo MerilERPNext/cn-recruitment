@@ -19,9 +19,7 @@ const NoticeDetails = () => {
     const { isDesktop } = useScreenSize();
     const params = useParams()
     const noticeId = params?.id as string
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        fields: ["user_id"]
-    });
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
     const {
         data: notice,

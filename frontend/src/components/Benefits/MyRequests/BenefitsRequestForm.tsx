@@ -38,9 +38,7 @@ export default function BenefitRequestForm({
   docname,
 }: BenefitRequestFormProps) {
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { data: benefitClaim, isLoading: benefitClaimLoading } =
     useGetBenefitDoc(docname || "");
 

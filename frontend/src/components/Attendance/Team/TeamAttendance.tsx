@@ -17,9 +17,7 @@ import { NoDataFound } from "../../shared/atoms/NoDataFound";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 
 const TeamAttendance = () => {
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
 
   const [selectedReporties, setSelectedReporties] = useState("");
   const [searchTerm, setSearchTerm] = useState("");

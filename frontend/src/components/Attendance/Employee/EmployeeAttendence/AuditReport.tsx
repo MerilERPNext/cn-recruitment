@@ -12,9 +12,7 @@ import { Typography } from "../../../shared/atoms/Typography";
 
 const AuditReport = () => {
 
-    const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-        fields: ["employee"],
-    });
+    const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
     const { data: auditReports, isLoading, isError, error } = useGetAuditReport({
         employee: currentEmployee?.employee,

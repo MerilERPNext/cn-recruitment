@@ -20,9 +20,7 @@ const AccrualJournalTab: React.FC<AccrualJournalTabProps> = ({ leaveData }) => {
     data: currentEmployee,
     isLoading: isEmployeeLoading,
     isError: isEmployeeError,
-  } = useCurrentEmployeeAllDetails({
-    fields: ["name"]
-  });
+  } = useCurrentEmployeeAllDetails();
   const employeeId = currentEmployee?.name;
   const leaveType = leaveData?.type || "";
   const leaveId = leaveData?.leave_id || "";

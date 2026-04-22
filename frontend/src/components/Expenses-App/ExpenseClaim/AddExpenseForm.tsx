@@ -209,9 +209,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     setVehicleType(null);
   };
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "employee_name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { data: employeesList, isFetching: isLoadingEmployees } = useEmployees([
     "name",
     "employee_name",

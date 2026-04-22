@@ -65,9 +65,7 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
     data: employeeDetails,
     isLoading: employeeLoading,
     error: employeeError,
-  } = useCurrentEmployeeAllDetails({
-    fields: ["name", "shift_request_approver"]
-  });
+  } = useCurrentEmployeeAllDetails();
 
   const loading = useLoadingOverlay(); // ✅ overlay hook
   const { targetEmployeeId, isViewingOtherUser } = useTargetUser();
@@ -276,12 +274,12 @@ const ShiftRequestFormModal: React.FC<ShiftRequestFormModalProps> = ({
   // Build static shift type options from the fetched list
   const shiftTypeValues = useMemo(() => {
     if (!shiftTypesData?.message) return [];
-    
+
     return shiftTypesData.message.map((st: ShiftTypeTuple) => {
       const id = st[0];
       const name = st[1];
       const label = name && id ? `${name} (${id})` : (name || id || "");
-      
+
       const fmtTime = (t: string) => {
         const parts = t?.split(":");
         return parts?.length >= 3 ? `${parts[0]}:${parts[1]}:${parts[2]}` : (t ?? "");

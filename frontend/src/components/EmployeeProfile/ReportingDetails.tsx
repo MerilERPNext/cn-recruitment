@@ -17,9 +17,7 @@ import { Typography } from "../shared/atoms/Typography";
 import { Link } from "react-router-dom";
 
 const ReportingDetails = () => {
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
   const { data: hierarchyData, isLoading: employeeHierarchyHistoryPending } =
     useGetEmployeeHierarchyHistory(currentEmployee?.employee || "");

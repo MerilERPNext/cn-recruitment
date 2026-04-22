@@ -27,9 +27,7 @@ const EmploymentHistoryForm = ({
 }: EmploymentHistoryProps) => {
   const [instance, setInstance] = useState<any>(null);
   const initialDataApplied = useRef(false);
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const [formValues, setFormValues] = useState({
     company: "",
     department: "",

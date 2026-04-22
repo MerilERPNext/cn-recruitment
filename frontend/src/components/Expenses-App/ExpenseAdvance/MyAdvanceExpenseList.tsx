@@ -35,9 +35,7 @@ const MyAdvanceExpenseList = () => {
   const [isActed, setIsActed] = useState(false);
 
   const { isDesktop } = useScreenSize();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { data: currentUser } = useCurrentUser();
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const navigate = useNavigate();

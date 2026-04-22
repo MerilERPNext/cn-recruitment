@@ -97,9 +97,7 @@ const EmployeeAttendanceDetails = ({
       ? data?.leave_application
       : data?.leave_application_name || leaveEvent?.name;
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
   // Only fetch leave details if it's a leave record
   const { data: leaveDetails } = useFrappeDocument(
