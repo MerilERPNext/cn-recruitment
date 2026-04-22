@@ -469,6 +469,7 @@ const DataListView = <T extends BaseItem>({
       enabled: infiniteScroll && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
+    queryKey
   );
 
   const fetchFunctionInfiniteResult = useInfiniteQuery({
@@ -509,6 +510,7 @@ const DataListView = <T extends BaseItem>({
         !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
+    queryKey
   );
 
   const fetchFunctionPaginationResult = useQuery({
@@ -547,6 +549,7 @@ const DataListView = <T extends BaseItem>({
       enabled: loadMorePagination && !isLoading && !!effectiveCustomAPI,
       refetchOnWindowFocus: false,
     },
+    queryKey
   );
 
   const fetchFunctionLoadMoreResult = useQuery({
@@ -571,24 +574,16 @@ const DataListView = <T extends BaseItem>({
 
   // Refetch functionality
   const refetch = useCallback(async () => {
-    if (infiniteScroll) {
-      await infiniteQueryResult.refetch();
-    } else if (loadMorePagination) {
-      setLoadMorePage(1);
-      setAccumulatedData([]);
-      await loadMoreQueryResult.refetch();
-    } else {
-      await paginationQueryResult.refetch();
-    }
+    // Instead of calling query-specific refetch(), we use queryClient.refetchQueries
+    // which goes through our global interceptor for repeated background fetching.
+    queryClient.refetchQueries({ queryKey: [queryKey].flat() });
+    
     if (onRefetchComplete) {
       onRefetchComplete();
     }
   }, [
-    infiniteScroll,
-    loadMorePagination,
-    infiniteQueryResult,
-    paginationQueryResult,
-    loadMoreQueryResult,
+    queryKey,
+    queryClient,
     onRefetchComplete,
   ]);
 

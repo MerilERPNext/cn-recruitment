@@ -34,10 +34,12 @@ const defaultQueryOptions = {
 export const useCustomApiQuery = <T = any>(
   customAPI: CustomAPIConfig,
   params: FetchParams,
-  options?: Omit<UseQueryOptions<FrappePageResponse, Error>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<FrappePageResponse, Error>, "queryKey" | "queryFn">,
+  queryKeyPrefix?: string | string[]
 ): UseQueryResult<FrappePageResponse, Error> => {
   return useQuery<FrappePageResponse, Error>({
     queryKey: [
+      ...(queryKeyPrefix ? [queryKeyPrefix].flat() : []),
       "custom-api",
       customAPI.method,
       params.pageParam,
@@ -60,10 +62,12 @@ export const useCustomApiInfiniteQuery = <T = any>(
   options?: Omit<
     UseInfiniteQueryOptions<FrappePageResponse, Error>,
     "queryKey" | "queryFn" | "getNextPageParam" | "initialPageParam"
-  >
+  >,
+  queryKeyPrefix?: string | string[]
 ) => {
   return useInfiniteQuery({
     queryKey: [
+      ...(queryKeyPrefix ? [queryKeyPrefix].flat() : []),
       "custom-api-infinite",
       customAPI.method,
       baseParams.pageSize,

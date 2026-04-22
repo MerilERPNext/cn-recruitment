@@ -104,13 +104,13 @@ const MobileDashboard: React.FC = () => {
 
   const { data: currentEmployee } = useCurrentEmployeeAllDetails({
     fields: [
-    "user_id",
-    "employee_name",
-    "company",
-    "custom_allow_mobile_checkin",
-    "employee",
-    "image"
-  ]
+      "user_id",
+      "employee_name",
+      "company",
+      "custom_allow_mobile_checkin",
+      "employee",
+      "image"
+    ]
   });
 
   const employeeState = useEmployeeWithFallback();
@@ -411,7 +411,7 @@ const MobileDashboard: React.FC = () => {
             <Typography variant="subheading">
               Welcome,{" "}
               <span className="text-primary-900 whitespace-nowrap">
-                {currentEmployee?.employee_name.split(" ")[0] || ""}!
+                {currentEmployee?.employee_name?.split(" ")[0] || ""}!
               </span>
             </Typography>
           </Button>
