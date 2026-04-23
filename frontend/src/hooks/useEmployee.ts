@@ -90,6 +90,8 @@ export const useCurrentEmployee = (): UseQueryResult<
 };
 
 // Common fields required by various frontend components to avoid multiple API calls
+// Common fields required by various frontend components
+// Strictly minimal identity fields to avoid over-fetching PII
 export const DEFAULT_EMPLOYEE_FIELDS = [
   // Identity
   "name",
@@ -113,38 +115,21 @@ export const DEFAULT_EMPLOYEE_FIELDS = [
   "status",
   "date_of_joining",
   "default_shift",
-  // Personal
-  "date_of_birth",
-  "gender",
-  "marital_status",
-  "blood_group",
-  "person_to_be_contacted",
-  "emergency_phone_number",
-  // Finance
-  "ctc",
-  "salary_currency",
-  "pan_number",
-  "bank_name",
-  "bank_ac_no",
-  "ifsc_code",
-  "provident_fund_account",
-  "payroll_cost_center",
-  // Lifecycle
-  "final_confirmation_date",
-  "contract_end_date",
-  "notice_number_of_days",
-  "custom_employment_status",
-  // Contact
   "company_email",
   "personal_email",
-  "cell_number",
-  // Settings
-  "custom_allow_mobile_checkin",
-  "custom_enable_web_clockin",
-  "custom_dotted_line_manager",
   "custom_weekly_off",
-  "shift_request_approver",
+  "custom_enable_web_clockin",
+  "custom_allow_mobile_checkin",
+  "custom_employment_status",
+  "final_confirmation_date",
+  "custom_dotted_line_manager",
 ] as const;
+
+/**
+ * Note: Highly sensitive Finance fields (ctc, pan_number, bank_ac_no, etc.)
+ * remain excluded from defaults. Callers requiring these must explicitly 
+ * pass them via the 'fields' parameter in useCurrentEmployeeAllDetails.
+ */
 
 
 /**

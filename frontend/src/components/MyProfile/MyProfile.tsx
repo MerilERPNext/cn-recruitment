@@ -92,7 +92,43 @@ const MyProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>(tabs[0].key);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
-  const { data: user } = useCurrentEmployeeAllDetails();
+  const { data: user } = useCurrentEmployeeAllDetails({
+    fields: [
+      "employee",
+      "employee_name",
+      "designation",
+      "image",
+      "user_id",
+      "employee_number",
+      "company",
+      "department",
+      "reports_to",
+      "date_of_joining",
+      "employment_type",
+      "branch",
+      "grade",
+      "status",
+      "date_of_birth",
+      "gender",
+      "marital_status",
+      "blood_group",
+      "person_to_be_contacted",
+      "emergency_phone_number",
+      "cell_number",
+      "personal_email",
+      "company_email",
+      "ctc",
+      "salary_currency",
+      "provident_fund_account",
+      "pan_number",
+      "bank_name",
+      "bank_ac_no",
+      "ifsc_code",
+      "final_confirmation_date",
+      "contract_end_date",
+      "payroll_cost_center",
+    ],
+  });
 
   const { data: userAddress } = useCurrentEmployeeAddress(user?.user_id || "");
 
