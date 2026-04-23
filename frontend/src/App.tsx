@@ -220,14 +220,20 @@ const App: React.FC = () => {
 export default App;
 
 const SESSION_POLICY_SHOWN_KEY = "policy_page_shown";
+const SESSION_POLICY_REDIRECT_TO_KEY = "policy_redirect_to";
+const SESSION_POLICY_AUTO_OPENED_KEY = "policy_is_auto_opened";
 
 const MandatoryPoliciesHandler = () => {
   const { data: currentEmployee, isFetching: isCurrentEmployeeFetching } = useCurrentEmployeeAllDetails();
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAutoOpened, setInAutoOpened] = useState(false);
-  const [redirectTo, setRedirectTo] = useState<string>("/webapp");
+  const [isAutoOpened, setInAutoOpened] = useState(() => {
+    return sessionStorage.getItem(SESSION_POLICY_AUTO_OPENED_KEY) === "true";
+  });
+  const [redirectTo, setRedirectTo] = useState<string>(() => {
+    return sessionStorage.getItem(SESSION_POLICY_REDIRECT_TO_KEY) || "/webapp";
+  });
 
   const {
     data: mandatoryPoliciesCount,
@@ -239,22 +245,7 @@ const MandatoryPoliciesHandler = () => {
         ["status", "=", "Pending"],
         ["employee_id", "=", currentEmployee?.name || ""],
         ["sign_off_mandatory", "=", 1],
-      ],
-    },
-    {
-      enabled: !!currentEmployee,
-    }
-  );
-
-  // Total policy count (any status/type) — gates the informational session redirect
-  const {
-    data: totalPoliciesCount,
-    isFetching: isTotalPoliciesCountFetching,
-  } = useFrappeDocumentCount(
-    {
-      doctype: "Policy Details",
-      filters: [
-        ["employee_id", "=", currentEmployee?.name || ""],
+        ["custom_triggered_from_flow", "!=", 1]
       ],
     },
     {
@@ -266,14 +257,11 @@ const MandatoryPoliciesHandler = () => {
     if (
       isCurrentEmployeeFetching ||
       isMandatoryPoliciesCountFetching ||
-      isTotalPoliciesCountFetching ||
-      mandatoryPoliciesCount === undefined ||
-      totalPoliciesCount === undefined
+      mandatoryPoliciesCount === undefined
     ) {
       return;
     }
 
-    const alreadyShownThisSession = sessionStorage.getItem(SESSION_POLICY_SHOWN_KEY) === "true";
     const onPolicyPage = window.location.pathname.includes("/webapp/policies-enforced");
 
     if (mandatoryPoliciesCount <= 0) {
@@ -283,12 +271,8 @@ const MandatoryPoliciesHandler = () => {
       } else if (onPolicyPage && isAutoOpened) {
         // Only auto-navigate away if we were redirected here due to pending policies
         setInAutoOpened(false);
+        sessionStorage.removeItem(SESSION_POLICY_AUTO_OPENED_KEY);
         navigate(redirectTo);
-      } else if (!alreadyShownThisSession && !onPolicyPage && totalPoliciesCount > 0) {
-        // No mandatory policies but user has at least 1 policy — redirect once per session
-        sessionStorage.setItem(SESSION_POLICY_SHOWN_KEY, "true");
-        setRedirectTo(location.pathname);
-        navigate("/webapp/policies-enforced");
       }
     }
 
@@ -302,6 +286,8 @@ const MandatoryPoliciesHandler = () => {
         });
       } else if (!onPolicyPage) {
         sessionStorage.setItem(SESSION_POLICY_SHOWN_KEY, "true");
+        sessionStorage.setItem(SESSION_POLICY_AUTO_OPENED_KEY, "true");
+        sessionStorage.setItem(SESSION_POLICY_REDIRECT_TO_KEY, location.pathname);
         setRedirectTo(location.pathname);
         setInAutoOpened(true);
         navigate("/webapp/policies-enforced");
@@ -309,11 +295,12 @@ const MandatoryPoliciesHandler = () => {
     }
   }, [
     mandatoryPoliciesCount,
-    totalPoliciesCount,
     isCurrentEmployeeFetching,
     isMandatoryPoliciesCountFetching,
-    isTotalPoliciesCountFetching,
     navigate,
+    isAutoOpened,
+    redirectTo,
+    location.pathname,
   ]);
 
   return null;

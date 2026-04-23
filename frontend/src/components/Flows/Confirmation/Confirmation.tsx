@@ -27,7 +27,6 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { ConfirmationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
-import { Form } from "@tsed/react-formio";
 import ReviewForm from "../Separation/components/ReviewForm";
 import { createPortal } from "react-dom";
 import ViewFormButton from "../ViewFormButton";
@@ -35,7 +34,7 @@ import { FormIOComponent } from "../../../types/formio";
 import { useApprovalAction } from "../../../hooks/userApprovalList";
 import { TodoType } from "../../../types/todos";
 import { useLoadingOverlay } from "../../../context/OverlayContext";
-import { buildFormFromSchemaAndAnswer } from "../../../utils/flowUtils";
+import FormPreview from "../../shared/molecules/FormPreview";
 
 const ConfirmationWorkflow = () => {
   const { isDesktop } = useScreenSize();
@@ -125,18 +124,15 @@ const ConfirmationWorkflow = () => {
     [item],
   );
 
-  const [formSchema, setFormSchema] = useState();
+  const [formSchema, setFormSchema] = useState<{ display: string; components: FormIOComponent[] } | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, any>>({});
   const handleShowForm = () => {
     const schema: FormIOComponent[] = selfInitFormAndAns?.form?.components;
     const answer = selfInitFormAndAns?.answer;
 
-    setFormSchema((prev: any) => {
-      if (!schema) return prev;
-
-      const updatedSchema = buildFormFromSchemaAndAnswer(schema, answer);
-      return updatedSchema;
-    });
-
+    if (!schema) return;
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(answer || {});
     setShowSelfInitForm(true);
   };
 
@@ -204,7 +200,8 @@ const ConfirmationWorkflow = () => {
   const canInitiateConfirmation =
     enabledActions.initiate_confirmation &&
     showConfirmationButton?.show_button &&
-    !item;
+    !employeeConfirmationPending?.[0] &&
+    activeEmployee?.custom_employment_status == "On Probation";
 
   useEffect(() => {
     const refreshCurrentPageData = () => {
@@ -295,8 +292,7 @@ const ConfirmationWorkflow = () => {
         ? "action_required"
         : "pending",
       show_confirmation_button:
-        canInitiateConfirmation &&
-        activeEmployee?.custom_employment_status == "On Probation",
+        canInitiateConfirmation,
       self_confirmation_btn_name: "Initiate Confirmation",
       show_view_form_btn: !!selfInitFormAndAns,
     },
@@ -396,13 +392,11 @@ const ConfirmationWorkflow = () => {
         showSelfInitForm &&
         createPortal(
           <ReviewForm onClose={() => setShowSelfInitForm(false)}>
-            <Form
-              form={formSchema}
-              options={{
-                readOnly: true, // This makes the entire form read-only
-                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-              }}
-              submit={false}
+            <FormPreview
+              containerId="confirmation-initiation-form-preview"
+              schema={formSchema}
+              submissionData={formAnswer}
+              readOnly={true}
             />
           </ReviewForm>,
           document.body,

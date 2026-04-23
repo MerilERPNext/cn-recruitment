@@ -17,6 +17,8 @@ import {
 } from "react-icons/io5";
 import { useScreenSize } from "../hooks/useScreenSize";
 import { Typography } from "./shared/atoms/Typography";
+import FormPreview from "./shared/molecules/FormPreview";
+import Modal from "./shared/Modal";
 
 interface PolicyDetailsDocument {
   name: string;
@@ -36,6 +38,7 @@ interface PolicyDetailsDocument {
   doctype: string;
   policy_document: string;
   form_json: string;
+  response_json?: string;
 }
 
 const PolicySignOff: React.FC = () => {
@@ -43,6 +46,8 @@ const PolicySignOff: React.FC = () => {
   const { policyId } = useParams<{ policyId: string }>();
   const [isAgreed, setIsAgreed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isFormSubmitted, setIsFormSubmitted] = useState(false);
   const { mutateAsync: updatePolicy } = useUpdateFrappeDocument();
   // Fetch policy details using the API
   const {
@@ -60,6 +65,7 @@ const PolicySignOff: React.FC = () => {
     "allow_decline",
     "policy_document",
     "form_json",
+    "response_json"
   ]) as {
     data: PolicyDetailsDocument | undefined;
     isLoading: boolean;
@@ -67,8 +73,10 @@ const PolicySignOff: React.FC = () => {
     error: any;
   };
 
+  const formSubmitted = isFormSubmitted || (!!policyData?.response_json && policyData.response_json !== "{}");
+
   const handleSignOff = () => {
-    if (policyData?.form_json) {
+    if (policyData?.form_json && !formSubmitted) {
       setIsModalOpen(true);
     } else if (isAgreed) {
       updatePolicy({
@@ -89,7 +97,10 @@ const PolicySignOff: React.FC = () => {
           queryClient.invalidateQueries({
             queryKey: ["mandatory-policies-pending"],
           });
-          navigate("/webapp/policies-enforced");
+          // Only navigate back if we haven't been auto-redirected away by the global handler
+          if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+            navigate("/webapp/policies-enforced");
+          }
         })
         .catch((error) => {
           toast.error("Failed to acknowledge policy");
@@ -103,12 +114,11 @@ const PolicySignOff: React.FC = () => {
       doctype: "Policy Details",
       name: policyId || "",
       data: {
-        status: "Acknowledged",
         response_json: JSON.stringify(formData),
       },
     })
       .then(() => {
-        toast.success("Policy acknowledged successfully");
+        toast.success("Form Submitted successfully");
         setIsModalOpen(false);
         queryClient.invalidateQueries({
           queryKey: ["documents-infinite", "Policy Details"],
@@ -119,7 +129,8 @@ const PolicySignOff: React.FC = () => {
         queryClient.invalidateQueries({
           queryKey: ["mandatory-policies-pending"],
         });
-        navigate("/webapp/policies-enforced");
+        setIsModalOpen(false);
+        setIsFormSubmitted(true);
       })
       .catch((error) => {
         toast.error("Failed to acknowledge policy");
@@ -146,7 +157,10 @@ const PolicySignOff: React.FC = () => {
         queryClient.invalidateQueries({
           queryKey: ["mandatory-policies-pending"],
         });
-        navigate("/webapp/policies-enforced");
+        // Only navigate back if we haven't been auto-redirected away by the global handler
+        if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+          navigate("/webapp/policies-enforced");
+        }
       })
       .catch((error) => {
         toast.error("Failed to decline policy");
@@ -155,7 +169,13 @@ const PolicySignOff: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate("/webapp/policies-enforced");
+    // Only navigate back if we are on the view page
+    if (window.location.pathname.includes("/webapp/policies-enforced/view/")) {
+      navigate("/webapp/policies-enforced");
+    } else {
+      // Fallback in case we are somehow elsewhere
+      navigate("/webapp/policies-enforced");
+    }
   };
 
   const { isDesktop } = useScreenSize();
@@ -310,7 +330,7 @@ const PolicySignOff: React.FC = () => {
         <div className="shrink-0 bg-white border-t border-gray-200 p-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
           {policyData.status === "Pending" ? (
             <div className="max-w-3xl mx-auto w-full">
-              {policyData.form_json ? (
+              {policyData.form_json && !formSubmitted ? (
                 <button
                   onClick={handleSignOff}
                   className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
@@ -320,6 +340,17 @@ const PolicySignOff: React.FC = () => {
                 </button>
               ) : (
                 <div className="space-y-4">
+                  {policyData.form_json && formSubmitted && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => setIsPreviewModalOpen(true)}
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-lg border border-primary-100 transition-colors"
+                      >
+                        <IoCheckmarkCircleOutline size={16} />
+                        View Submitted Form
+                      </button>
+                    </div>
+                  )}
                   <label className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
                     <div className="flex items-center h-5 mt-0.5">
                       <input
@@ -351,11 +382,10 @@ const PolicySignOff: React.FC = () => {
                     <button
                       onClick={handleSignOff}
                       disabled={!isAgreed}
-                      className={`sm:w-[250px] w-full max-sm:text-sm ml-auto font-medium sm:py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${
-                        isAgreed
-                          ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
-                          : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                      }`}
+                      className={`sm:w-[250px] w-full max-sm:text-sm ml-auto font-medium sm:py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${isAgreed
+                        ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
+                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                        }`}
                     >
                       <IoCheckmarkCircleOutline size={20} />
                       Acknowledge Policy
@@ -377,11 +407,10 @@ const PolicySignOff: React.FC = () => {
           ) : (
             <div className="flex items-center justify-center p-2">
               <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-                  policyData.status === "Acknowledged"
-                    ? "bg-success-50 text-success-700 border border-success-100"
-                    : "bg-red-50 text-red-700 border border-red-100"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full ${policyData.status === "Acknowledged"
+                  ? "bg-success-50 text-success-700 border border-success-100"
+                  : "bg-red-50 text-red-700 border border-red-100"
+                  }`}
               >
                 {policyData.status === "Acknowledged" ? (
                   <IoCheckmarkCircleOutline size={18} />
@@ -425,7 +454,7 @@ const PolicySignOff: React.FC = () => {
                   </Typography>
                 </div>
 
-                {policyData.form_json ? (
+                {policyData.form_json && !formSubmitted ? (
                   (() => {
                     try {
                       const formConfig = JSON.parse(policyData.form_json);
@@ -509,6 +538,55 @@ const PolicySignOff: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Form Preview Modal */}
+        {isPreviewModalOpen && policyData && (
+          <Modal
+            isOpen={isPreviewModalOpen}
+            onClose={() => setIsPreviewModalOpen(false)}
+            size="md"
+            className="flex flex-col"
+          >
+            {/* Header */}
+            <div className="shrink-0 flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50 z-10 sticky top-0">
+              <Typography variant="h4" className="text-gray-900">
+                Submitted Acknowledgment Form
+              </Typography>
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 p-2 rounded-lg transition-colors"
+              >
+                <IoCloseCircleOutline size={24} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+              <div className="mb-6 bg-green-50 border border-green-100 rounded-lg p-4">
+                <Typography variant="body" className="text-green-800">
+                  This is a read-only preview of the acknowledgment form you submitted for
+                  <span className="font-semibold ms-1 text-green-900">"{policyData.policy}"</span>.
+                </Typography>
+              </div>
+
+              {policyData.form_json && (
+                <FormPreview
+                  containerId={`policy-preview-${policyData.name}`}
+                  schema={{
+                    display: "form",
+                    components: JSON.parse(policyData.form_json).components || []
+                  }}
+                  submissionData={
+                    policyData.response_json
+                      ? JSON.parse(policyData.response_json)
+                      : {}
+                  }
+                  readOnly={true}
+                />
+              )}
+            </div>
+          </Modal>
         )}
       </div>
     </div>

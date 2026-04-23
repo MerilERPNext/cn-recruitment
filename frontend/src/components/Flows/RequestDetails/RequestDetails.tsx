@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import HeaderBar from "../../HeaderBar";
 import { Attachment } from "../../../types/flows";
@@ -7,10 +6,9 @@ import formatToIndianDate from "../../../utils/formatToIndianDate";
 import FlowTable from "./FlowTable";
 import WorkflowTable from "./WorkflowTable";
 import Button from "../../shared/atoms/Button";
-import { buildFormFromSchemaAndAnswer, FormIOForm } from "../../../utils/flowUtils";
+import { FormIOForm } from "../../../utils/flowUtils";
 import { createPortal } from "react-dom";
 import ReviewForm from "../Separation/components/ReviewForm";
-import { Form } from "@tsed/react-formio";
 import { Eye } from "lucide-react";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import AttachmentPreview from "./AttachmentPreview";
@@ -18,8 +16,12 @@ import { useGetFlowRequestById } from "../../../hooks/useFlows";
 import { useNavigate, useParams } from "react-router-dom";
 import TableSkeleton, { CardSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import NoDataFound from "../../shared/atoms/NoDataFound";
+import FormPreview from "../../shared/molecules/FormPreview";
+import { FormIOComponent } from "../../../types/formio";
 
 type FlowStatusType = "Approval Flow Status" | "Workflow Status";
+type JsonToFormData = { form?: { components?: FormIOComponent[] }, submission_data?: Record<string, unknown> };
+
 
 const RequestDetails: React.FC = () => {
   const { id } = useParams();
@@ -32,22 +34,24 @@ const RequestDetails: React.FC = () => {
   const [showSelfForm, setShowSelfForm] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const haveInitiatorForm = data?.initiator_forms && data.initiator_forms.length > 0;
 
   const handleShowSelfForm = () => {
-    let formData: Record<string, any> = {};
+    let formData: JsonToFormData;
     try {
       formData = JSON.parse(data?.initiator_forms?.[0]?.form_data || "{}");
     } catch (error) {
       console.error("Invalid initiator_forms form_data JSON:", error);
       return;
     }
-    const schema = (formData as any)?.form?.components;
-    const answer = (formData as any)?.submission_data;
+    const schema = formData?.form?.components ?? [];
+    const answer = (formData)?.submission_data ?? {};
 
     if (!schema) return;
-    setFormSchema(buildFormFromSchemaAndAnswer(schema, answer));
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(answer);
     setResponseData(answer);
     setShowSelfForm(true);
   };
@@ -189,13 +193,11 @@ const RequestDetails: React.FC = () => {
             onClose={() => setShowSelfForm(false)}
             title="Initiation Form"
           >
-            <Form
-              form={formSchema}
-              options={{
-                readOnly: true, // This makes the entire form read-only
-                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-              }}
-              submit={false}
+            <FormPreview
+              containerId="initiation-form-preview"
+              schema={formSchema}
+              submissionData={formAnswer}
+              readOnly={true}
             />
             <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,

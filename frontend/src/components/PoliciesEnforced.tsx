@@ -71,11 +71,10 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
         <div className="flex-1 pr-4">
           <div className="flex items-center gap-2 mb-1.5">
             <div
-              className={`p-1.5 rounded-lg ${
-                isComplete
-                  ? "bg-success-50 text-success-600"
-                  : "bg-primary-50 text-primary-600"
-              }`}
+              className={`p-1.5 rounded-lg ${isComplete
+                ? "bg-success-50 text-success-600"
+                : "bg-primary-50 text-primary-600"
+                }`}
             >
               <IoDocumentTextOutline size={18} />
             </div>
@@ -89,11 +88,10 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
 
           <div className="flex items-center gap-3 mt-1 pl-1">
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                item.sign_off_mandatory
-                  ? "bg-red-50 text-red-700 border border-red-100"
-                  : "bg-blue-50 text-blue-700 border border-blue-100"
-              }`}
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.sign_off_mandatory
+                ? "bg-red-50 text-red-700 border border-red-100"
+                : "bg-blue-50 text-blue-700 border border-blue-100"
+                }`}
             >
               {item.sign_off_mandatory ? "Mandatory" : "Optional"}
             </span>
@@ -106,11 +104,10 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
         </div>
 
         <div
-          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${
-            isComplete
-              ? "bg-success-50 text-success-700 border-success-200"
-              : "bg-amber-50 text-amber-700 border-amber-200"
-          }`}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-200 ${isComplete
+            ? "bg-success-50 text-success-700 border-success-200"
+            : "bg-amber-50 text-amber-700 border-amber-200"
+            }`}
         >
           {isComplete ? (
             <IoCheckmarkCircleOutline size={14} />
@@ -124,11 +121,10 @@ const PolicyItem: React.FC<PolicyItemProps> = ({ item }) => {
       <button
         onClick={handleViewPolicy}
         disabled={isComplete}
-        className={`ml-auto sm:w-[200px] w-full font-brand font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-          isComplete
-            ? "bg-gray-100 text-gray-800 cursor-not-allowed border border-gray-200"
-            : "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
-        }`}
+        className={`ml-auto sm:w-[200px] w-full font-brand font-medium py-2.5 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${isComplete
+          ? "bg-gray-100 text-gray-800 cursor-not-allowed border border-gray-200"
+          : "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg focus:ring-2 focus:ring-primary-500 focus:ring-offset-1"
+          }`}
       >
         {isComplete ? (
           <>
@@ -147,13 +143,11 @@ const PoliciesEnforced: React.FC = () => {
   const navigate = useNavigate();
   const [mandatoryPoliciesExpanded, setMandatoryPoliciesExpanded] =
     useState(true);
-  const [completedPoliciesExpanded, setCompletedPoliciesExpanded] =
-    useState(false);
   const { data: currentEmployee, isLoading: isCurrentEmployeeLoading } =
     useCurrentEmployeeAllDetails({
       fields: ["name"]
     });
-  const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } = 
+  const { data: hasMandatoryPolicies = false, isLoading: isMandatoryCheckLoading } =
     useMandatoryPoliciesPending(currentEmployee?.name);
   const { isMobile } = useScreenSize();
 
@@ -173,7 +167,10 @@ const PoliciesEnforced: React.FC = () => {
           {/* Go to Dashboard button — shown only when no mandatory policies are pending */}
           {!isMandatoryCheckLoading && !hasMandatoryPolicies && (
             <button
-              onClick={() => navigate("/webapp/")}
+              onClick={() => {
+                const redirectTo = sessionStorage.getItem("policy_redirect_to") || "/webapp/";
+                navigate(redirectTo);
+              }}
               className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-medium text-sm transition-all duration-200 backdrop-blur-sm shadow-sm hover:shadow-md"
             >
               <IoHomeOutline size={18} />
@@ -220,19 +217,17 @@ const PoliciesEnforced: React.FC = () => {
             onClick={() =>
               setMandatoryPoliciesExpanded(!mandatoryPoliciesExpanded)
             }
-            className={`w-full group flex items-center justify-between p-4 bg-white transition-all duration-200 ${
-              mandatoryPoliciesExpanded
-                ? "border-b border-gray-100 bg-gray-50/50"
-                : "hover:bg-gray-50/50"
-            }`}
+            className={`w-full group flex items-center justify-between p-4 bg-white transition-all duration-200 ${mandatoryPoliciesExpanded
+              ? "border-b border-gray-100 bg-gray-50/50"
+              : "hover:bg-gray-50/50"
+              }`}
           >
             <div className="flex items-center gap-3">
               <div
-                className={`p-2 rounded-lg transition-colors ${
-                  mandatoryPoliciesExpanded
-                    ? "bg-primary-100 text-primary-700"
-                    : "bg-primary-50 text-primary-600 group-hover:bg-primary-100"
-                }`}
+                className={`p-2 rounded-lg transition-colors ${mandatoryPoliciesExpanded
+                  ? "bg-primary-100 text-primary-700"
+                  : "bg-primary-50 text-primary-600 group-hover:bg-primary-100"
+                  }`}
               >
                 <IoDocumentTextOutline size={20} />
               </div>
@@ -249,17 +244,16 @@ const PoliciesEnforced: React.FC = () => {
               </div>
             </div>
             <div
-              className={`p-1.5 rounded-full transition-all duration-300 ${
-                mandatoryPoliciesExpanded
-                  ? "rotate-180 bg-primary-100 text-primary-700"
-                  : "bg-gray-50 text-gray-400 group-hover:text-primary-600 group-hover:bg-primary-50"
-              }`}
+              className={`p-1.5 rounded-full transition-all duration-300 ${mandatoryPoliciesExpanded
+                ? "rotate-180 bg-primary-100 text-primary-700"
+                : "bg-gray-50 text-gray-400 group-hover:text-primary-600 group-hover:bg-primary-50"
+                }`}
             >
               <IoChevronDownOutline size={20} />
             </div>
           </button>
 
-          {mandatoryPoliciesExpanded && (
+          {mandatoryPoliciesExpanded && !isCurrentEmployeeLoading && (
             <div className="bg-gray-50/30 p-4 animate-slideDown">
               <FrappeListView
                 doctype="Policy Details"
@@ -269,6 +263,7 @@ const PoliciesEnforced: React.FC = () => {
                 defaultFilters={{
                   status: "Pending",
                   employee_id: currentEmployee?.name || "",
+                  custom_triggered_from_flow: 0,
                 }}
                 defaultFields={[
                   "name",
@@ -287,77 +282,6 @@ const PoliciesEnforced: React.FC = () => {
           )}
         </div>
 
-        {/* Completed Policies Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8 transition-all duration-300 hover:shadow-md">
-          <button
-            onClick={() =>
-              setCompletedPoliciesExpanded(!completedPoliciesExpanded)
-            }
-            className={`w-full group flex items-center justify-between p-4 bg-white transition-all duration-200 ${
-              completedPoliciesExpanded
-                ? "border-b border-gray-100 bg-gray-50/50"
-                : "hover:bg-gray-50/50"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-lg transition-colors ${
-                  completedPoliciesExpanded
-                    ? "bg-success-100 text-success-700"
-                    : "bg-success-50 text-success-600 group-hover:bg-success-100"
-                }`}
-              >
-                <IoCheckmarkCircleOutline size={20} />
-              </div>
-              <div className="text-left">
-                <Typography
-                  variant={isMobile ? "bodyMedium" : "h4"}
-                  className="text-gray-900"
-                >
-                  Completed Policies
-                </Typography>
-                <Typography variant="caption" className="text-gray-500">
-                  Access your acknowledged policies history
-                </Typography>
-              </div>
-            </div>
-            <div
-              className={`p-1.5 rounded-full transition-all duration-300 ${
-                completedPoliciesExpanded
-                  ? "rotate-180 bg-success-100 text-success-700"
-                  : "bg-gray-50 text-gray-400 group-hover:text-success-600 group-hover:bg-success-50"
-              }`}
-            >
-              <IoChevronDownOutline size={20} />
-            </div>
-          </button>
-
-          {completedPoliciesExpanded && (
-            <div className="bg-gray-50/30 p-4 animate-slideDown">
-              <FrappeListView
-                doctype="Policy Details"
-                isLoading={isCurrentEmployeeLoading}
-                ItemComponent={PolicyItem}
-                SkeletonComponent={PolicyItemSkeleton}
-                defaultFilters={{
-                  status: "Acknowledged",
-                  employee_id: currentEmployee?.name || "",
-                }}
-                defaultFields={[
-                  "name",
-                  "status",
-                  "policy",
-                  "sign_off_mandatory",
-                ]}
-                searchFields={["policy", "name"]}
-                infiniteScroll={true}
-                isSearch={true}
-                isFilter={false}
-                pageSize={10}
-              />
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

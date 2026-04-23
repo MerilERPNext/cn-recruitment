@@ -771,7 +771,8 @@ const DataListView = <T extends BaseItem>({
   };
 
   const refreshData = () => {
-    queryClient.invalidateQueries({ queryKey: [queryKey] });
+    // Calling refetch() is sufficient as it triggers queryClient.refetchQueries,
+    // which starts the background loop and forces an immediate data refresh.
     refetch();
   };
 
