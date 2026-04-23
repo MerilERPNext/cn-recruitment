@@ -7,6 +7,7 @@ import {
   useSectionNav,
 } from "../../../hooks/useOnboarding";
 import type { ApprovalField, FieldLocalState } from "../../../types/onboarding";
+import StatusBadge from "../../shared/atoms/statusBadge";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,26 +33,6 @@ function displayValue(val: string | any[] | null | undefined): string {
       : "[Empty table]";
   }
   return String(val);
-}
-
-// ─── StatusBadge ─────────────────────────────────────────────────────────────
-
-const STATUS_STYLES: Record<string, string> = {
-  Pending: "bg-amber-50 text-amber-700 border-amber-200",
-  Approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Rejected: "bg-red-50 text-red-700 border-red-200",
-};
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium border ${
-        STATUS_STYLES[status] ?? "bg-gray-50 text-gray-600 border-gray-200"
-      }`}
-    >
-      {status}
-    </span>
-  );
 }
 
 // ─── FieldRow ─────────────────────────────────────────────────────────────────
@@ -118,7 +99,7 @@ function FieldRow({
 
   return (
     <div
-      className={`flex items-start gap-3 py-3 border-b border-gray-100 last:border-0 transition-colors ${
+      className={`flex items-center gap-3 py-3  border-b border-gray-100 last:border-0 transition-colors ${
         checked ? "bg-blue-50/40" : ""
       }`}
     >
@@ -135,30 +116,31 @@ function FieldRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-gray-800">{field.label}</span>
-          <span className="text-xs text-gray-400 font-mono">{field.fieldtype}</span>
         </div>
 
         {val ? (
-          <div className="mt-1">
-            {val?.startsWith("http") ? (
-              <a
-                href={val}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
-              >
-                {val}
-              </a>
-            ) : (
-              <div
-                className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full"
-                dangerouslySetInnerHTML={{ __html: val }}
-              />
-            )}
-          </div>
-        ) : (
-          <p className="text-xs text-gray-400 mt-0.5 italic">No value</p>
-        )}
+  <div className="mt-1">
+    {field.fieldtype === "Attach" || field.fieldtype === "Attach Image" ? (
+      <a
+        href={val}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary-500 underline rounded-lg break-words text-xs border p-2 block"
+      >
+        View Attachment
+      </a>
+    ) : (
+      <div
+        className="text-xs text-gray-800 border rounded-lg p-2 break-words leading-relaxed w-full"
+        dangerouslySetInnerHTML={{ __html: val }}
+      />
+    )}
+  </div>
+) : (
+  <div className="text-xs text-gray-500 border rounded-lg p-2 break-words leading-relaxed w-full">
+    Empty value
+  </div>
+)}
 
         {/* Mandatory comment box — shown only when reject is pending */}
         {pendingReject && (
@@ -204,9 +186,8 @@ function FieldRow({
       </div>
 
       {/* Action buttons */}
-      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-        <StatusBadge status={state.status} />
-
+      <div className="flex items-center gap-2 mt-5 flex-shrink-0 flex-wrap justify-end">
+        <StatusBadge status={state.status}/>
         <button
           onClick={handleApproveClick}
           disabled={state.loading}
@@ -269,7 +250,7 @@ function NavItem({
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg mb-0.5 text-left transition-all ${
-        active ? "bg-primary-600 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
+        active ? "bg-primary-500 text-white shadow-sm" : "hover:bg-gray-100 text-gray-700"
       }`}
     >
       <div
@@ -582,7 +563,7 @@ export default function OnboardingFieldApproval() {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900">{activeSection}</h2>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   {curFields.length} fields · {curApproved} approved ·{" "}
                   {curFields.length - curApproved} remaining
                 </p>
@@ -605,7 +586,7 @@ export default function OnboardingFieldApproval() {
                 {/* Bulk approve all pending — no comment required */}
                 <button
                   onClick={bulkApproveAllPending}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-600 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary-500 text-white border border-parimary-600 hover:bg-primary-700 transition-colors"
                   title="Approve all pending fields across entire document"
                 >
                   Approve all pending
