@@ -1,7 +1,6 @@
 import type {
   ApprovalField,
   ApprovalStatus,
-  ApiConfig,
   InitializeApprovalResponse,
 } from "../types/onboarding";
 import FrappeAPI from "../utils/frappeAPI";
@@ -9,16 +8,15 @@ import FrappeAPI from "../utils/frappeAPI";
 // ─── Service Functions ─────────────────────────────────────────────
 
 /**
- * Fetch all fields and their current approval status
+ * Fetch all fields and their current approval status.
+ * Base URL is resolved automatically by FrappeAPI (via VITE_API_BASE_URL or window.location.origin).
  */
 export async function fetchApprovalFields(
-  config: ApiConfig
+  onboardingName: string
 ): Promise<ApprovalField[]> {
   const res = await FrappeAPI.callMethod(
     "recruitment.api.field_level_approval.get_onboarding_fields_for_approval",
-    {
-      onboarding_name: config.onboardingName,
-    }
+    { onboarding_name: onboardingName }
   );
 
   const data = (res as InitializeApprovalResponse)?.data;
@@ -31,53 +29,81 @@ export async function fetchApprovalFields(
 }
 
 /**
- * Update single field approval
+ * Update single field approval status.
+ * Comment is only sent when provided (mandatory for Reject).
  */
 export async function updateFieldApprovalStatus(
-  config: ApiConfig,
+  onboardingName: string,
   fieldname: string,
-  newStatus: ApprovalStatus
+  newStatus: ApprovalStatus,
+  comment?: string
 ): Promise<void> {
   await FrappeAPI.callMethod(
     "recruitment.api.field_level_approval.update_field_approval_status",
     {
-      onboarding_name: config.onboardingName,
+      onboarding_name: onboardingName,
       fieldname,
       new_status: newStatus,
+      ...(comment ? { comment } : {}),
     }
   );
 }
 
 /**
- * Update section approval
+ * Update all fields in a section.
+ * Comment is only sent when provided (mandatory for Reject).
  */
 export async function updateSectionApprovalStatus(
-  config: ApiConfig,
+  onboardingName: string,
   sectionName: string,
-  newStatus: ApprovalStatus
+  newStatus: ApprovalStatus,
+  comment?: string
 ): Promise<void> {
   await FrappeAPI.callMethod(
     "recruitment.api.field_level_approval.update_section_approval_status",
     {
-      onboarding_name: config.onboardingName,
+      onboarding_name: onboardingName,
       section_name: sectionName,
       new_status: newStatus,
+      ...(comment ? { comment } : {}),
     }
   );
 }
 
 /**
- * Bulk update approval
+ * Bulk approve all pending fields across the entire document.
  */
 export async function bulkUpdateApprovalStatus(
-  config: ApiConfig,
+  onboardingName: string,
   newStatus: ApprovalStatus
 ): Promise<void> {
   await FrappeAPI.callMethod(
     "recruitment.api.field_level_approval.bulk_update_approval_status",
     {
-      onboarding_name: config.onboardingName,
+      onboarding_name: onboardingName,
       new_status: newStatus,
+    }
+  );
+}
+
+/**
+ * Update a specific selection of fields in one API call.
+ * Payload: { onboarding_name, fields: string[], new_status, comment? }
+ * Comment is only sent when provided (mandatory for Reject).
+ */
+export async function updateSelectedFieldsApprovalStatus(
+  onboardingName: string,
+  fields: string[],
+  newStatus: ApprovalStatus,
+  comment?: string
+): Promise<void> {
+  await FrappeAPI.callMethod(
+    "recruitment.api.field_level_approval.update_selected_fields_approval_status",
+    {
+      onboarding_name: onboardingName,
+      fields,
+      new_status: newStatus,
+      ...(comment ? { comment } : {}),
     }
   );
 }
