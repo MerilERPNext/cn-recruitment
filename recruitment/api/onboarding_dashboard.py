@@ -22,7 +22,7 @@ def get_dashboard(email):
         row = frappe.db.get_value(
             DOCTYPENAME,
             {"job_applicant": email, "docstatus": ("<", 2)},
-            ["name", "date_of_joining", "designation", "custom_work_location"],
+            ["name", "date_of_joining", "designation", "department", "custom_work_location"],
             as_dict=True,
             order_by="creation desc",
         )
@@ -74,6 +74,7 @@ def get_dashboard(email):
             "name": row.name,
             "date_of_joining": row.date_of_joining,
             "designation": row.designation,
+            "department": row.department,
             "work_location": row.custom_work_location,
             "work_location_details": work_location_details,
             "key_contacts": key_contacts,
