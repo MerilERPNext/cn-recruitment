@@ -755,8 +755,9 @@ export async function convertToFormioWithTabMetadata(
           currentSection.components.push({
             type: "htmlelement",
             key: `header_${panelKey}`,
-            label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
+            label: "",
+            hideLabel: true,
+            content: `<span style="display:block; font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</span>`,
             input: false,
             tableView: false,
           });
@@ -1111,8 +1112,9 @@ export async function convertToFormioWithLayout(
           currentSection.components.push({
             type: "htmlelement",
             key: `header_${panelKey}`,
-            label: field.label,
-            content: `<h4 style="font-weight:600; font-size:1.05rem; margin:8px 0 12px;"></h4>`,
+            label: "",
+            hideLabel: true,
+            content: `<span style="display:block; font-weight:600; font-size:1.05rem; margin:8px 0 12px;">${field.label}</span>`,
             input: false,
             tableView: false,
           });
@@ -1369,13 +1371,24 @@ export interface SimpleField {
   hidden: boolean;
   required: boolean;
   readOnly: boolean;
-  options?: string[]; // New for Select fields
+  options?: string[];
+}
+
+export interface SimpleColumn {
+  key: string;
+  fields: SimpleField[];
+}
+
+export interface SimpleSection {
+  label: string;
+  key: string;
+  columns: SimpleColumn[];
 }
 
 export interface SimpleTab {
   label: string;
   key: string;
-  fields: SimpleField[];
+  sections: SimpleSection[];
   hidden: boolean;
   readOnly: boolean;
 }
@@ -1401,8 +1414,25 @@ export async function convertFieldsToSimpleTabbedData(
 
   const tabs: SimpleTab[] = [];
   let currentTab: SimpleTab | null = null;
+  let currentSection: SimpleSection | null = null;
+  let currentColumn: SimpleColumn | null = null;
 
   let lastFieldType = "";
+
+  const flushColumn = () => {
+    if (currentColumn && currentColumn.fields.length > 0 && currentSection) {
+      currentSection.columns.push(currentColumn);
+    }
+    currentColumn = null;
+  };
+
+  const flushSection = () => {
+    flushColumn();
+    if (currentSection && currentSection.columns.some(c => c.fields.length > 0) && currentTab) {
+      currentTab.sections.push(currentSection);
+    }
+    currentSection = null;
+  };
 
   for (const field of apiFields) {
     if (!field || !field.fieldtype || field?.label === "Connections") continue;
@@ -1425,25 +1455,42 @@ export async function convertFieldsToSimpleTabbedData(
     if (field.fieldtype === "Button") continue;
 
     if (field.fieldtype === "Tab Break") {
+      flushSection();
       if (SKIP_TAB_LABELS.has(field.label)) {
         currentTab = null;
       } else {
         currentTab = {
           label: field.label || `Tab ${tabs.length + 1}`,
           key: field.fieldname || `tab_${tabs.length + 1}`,
-          fields: [],
+          sections: [],
           hidden: !!field.hidden,
           readOnly: !!field.read_only,
         };
         tabs.push(currentTab);
       }
     } else if (field.fieldtype === "Section Break") {
-      // skip layout breaks when no active tab
+      if (!currentTab) continue;
+      flushSection();
+      currentSection = {
+        label: field.label || "",
+        key: field.fieldname || `section_${Date.now()}`,
+        columns: [],
+      };
+      currentColumn = { key: `${currentSection.key}_col0`, fields: [] };
     } else if (field.fieldtype === "Column Break") {
-      // skip layout breaks when no active tab
+      if (!currentTab || !currentSection) continue;
+      flushColumn();
+      currentColumn = {
+        key: `${currentSection.key}_col${currentSection.columns.length}`,
+        fields: [],
+      };
     } else {
       // It's a field
       if (!currentTab) continue;
+      if (!currentSection) {
+        currentSection = { label: "", key: `${currentTab.key}_default`, columns: [] };
+        currentColumn = { key: `${currentSection.key}_col0`, fields: [] };
+      }
 
       let fieldValue =
         employeeData[`${field.fieldname}_display`] !== undefined
@@ -1583,12 +1630,13 @@ export async function convertFieldsToSimpleTabbedData(
         simpleField.options = field.options.split('\n');
       }
 
-      currentTab!.fields.push(simpleField);
+      currentColumn!.fields.push(simpleField);
     }
   }
 
-  // Filter empty tabs if necessary
-  const nonEmptyTabs = tabs.filter(t => t.fields.length > 0);
+  flushSection();
+
+  const nonEmptyTabs = tabs.filter(t => t.sections.some(s => s.columns.some(c => c.fields.length > 0)));
 
   return { tabs: nonEmptyTabs };
 }

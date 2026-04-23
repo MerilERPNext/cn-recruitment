@@ -11,6 +11,8 @@ import {
     convertFieldsToSimpleTabbedData,
     convertToFormioWithTabMetadata,
     SimpleTab,
+    SimpleSection,
+    SimpleColumn,
     TabWithSchema,
 } from "./FrappeToFormIoConverterSepTabs";
 import Button from "../shared/atoms/Button";
@@ -142,88 +144,102 @@ export default function EmployeeProfileSections() {
             )}
             {/* Scrollable Sections */}
             <div className="space-y-2 md:space-y-6 pb-6">
-                {tabs.map(tab => (
-                    <section
-                        key={tab.key}
-                        id={tab.key}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        ref={el => (sectionRefs.current[tab.key] = el) as any}
-                        className="scroll-mt-28"
-                    >
-                        {/* Section Header */}
-                        <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
-                            <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
-                                {tab.label}
-                            </Typography>
+                {tabs.map(tab => {
+                    const allFields = tab.sections.flatMap(s => s.columns.flatMap(c => c.fields));
+                    const allEditable = allFields.filter(f => !f.hidden).every(f => f.readOnly);
+                    return (
+                        <section
+                            key={tab.key}
+                            id={tab.key}
+                            ref={el => { sectionRefs.current[tab.key] = el; }}
+                            className="scroll-mt-28"
+                        >
+                            {/* Tab Header */}
+                            <div className="flex items-center rounded-xl justify-between mb-3 md:mb-6 py-2 max-sm:px-4 px-6 bg-gray-50/50 mx-0 md:mx-6 border border-gray-100/50">
+                                <Typography variant="h4" className="font-bold text-gray-800 max-sm:text-md">
+                                    {tab.label}
+                                </Typography>
+                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && (
+                                    <Button
+                                        variant="subtle"
+                                        icon={<PencilIcon className="h-4 w-4" />}
+                                        size="sm"
+                                        disabled={allEditable}
+                                        onClick={() => setEdit({ key: tab.key, label: tab.label })}
+                                        className={`font-bold ${allEditable ? "text-gray-400 opacity-50 cursor-not-allowed" : "text-primary-600"}`}
+                                    >
+                                        Edit
+                                    </Button>
+                                )}
+                            </div>
 
-                            {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && (
-                                <Button
-                                    variant="subtle"
-                                    icon={<PencilIcon className="h-4 w-4" />}
-                                    size="sm"
-                                    disabled={tab.fields.filter(f => !f.hidden).every(f => f.readOnly)}
-                                    onClick={() => setEdit({ key: tab.key, label: tab.label })}
-                                    className={`font-bold ${tab.fields.filter(f => !f.hidden).every(f => f.readOnly) ? "text-gray-400 opacity-50 cursor-not-allowed" : "text-primary-600"}`}
-                                >
-                                    Edit
-                                </Button>
-                            )}
-                        </div>
+                            {/* Sections */}
+                            <div className="space-y-6 px-0 md:px-6">
+                                {tab.sections.map((section: SimpleSection) => {
+                                    const multiCol = section.columns.length > 1;
+                                    const colCount = Math.min(section.columns.length, 4);
+                                    const gridClass = multiCol
+                                        ? `grid grid-cols-1 sm:grid-cols-2 ${colCount === 2 ? "" : colCount === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-x-6 gap-y-6`
+                                        : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6";
 
-                        {/* Info Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 md:gap-y-8 gap-x-6 px-0 md:px-6">
-                            {tab.fields
-                                ?.filter(field => !field.hidden)
-                                .map(field => {
-                                    const isTable = Array.isArray(field.value);
                                     return (
-                                        <div
-                                            key={field.key}
-                                            className={`${isTable ? "col-span-full mt-4" : "px-4 py-2  hover:border-primary-200 transition-colors"}`}
-                                        >
-                                            <div className="flex items-center justify-between mb-3">
-                                                <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
-                                                    {field.label || "-"}
+                                        <div key={section.key}>
+                                            {section.label && (
+                                                <Typography variant="label" className="font-semibold text-gray-500 uppercase tracking-widest text-[10px] mb-3 block px-4">
+                                                    {section.label}
                                                 </Typography>
-                                                {can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly && !isTable && (
-                                                    <button
-                                                        onClick={() => setEdit({ key: tab.key, label: field.label || tab.label, fieldname: field.key })}
-                                                        className="p-1 hover:bg-gray-100 rounded-full transition-colors group/edit"
-                                                        title={`Edit ${field.label}`}
-                                                    >
-                                                        <PencilIcon className="h-3 w-3 text-primary-600 opacity-0 group-hover/editing:opacity-100 transition-opacity" />
-                                                    </button>
-                                                )}
+                                            )}
+                                            <div className={gridClass}>
+                                                {section.columns.map((col: SimpleColumn) => {
+                                                    const visibleFields = col.fields.filter(f => !f.hidden);
+                                                    if (!visibleFields.length) return null;
+
+                                                    // Multi-column: each col is a vertical stack inside its grid cell
+                                                    if (multiCol) {
+                                                        return (
+                                                            <div key={col.key} className="space-y-4">
+                                                                {visibleFields.map(field => {
+                                                                    const isTable = Array.isArray(field.value);
+                                                                    return (
+                                                                        <FieldCell
+                                                                            key={field.key}
+                                                                            field={field}
+                                                                            tabKey={tab.key}
+                                                                            tabLabel={tab.label}
+                                                                            canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                                            isTable={isTable}
+                                                                            onEdit={setEdit}
+                                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    // Single-column: fields flow directly into the 3-col grid
+                                                    return visibleFields.map(field => {
+                                                        const isTable = Array.isArray(field.value);
+                                                        return (
+                                                            <FieldCell
+                                                                key={field.key}
+                                                                field={field}
+                                                                tabKey={tab.key}
+                                                                tabLabel={tab.label}
+                                                                canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" })}
+                                                                isTable={isTable}
+                                                                onEdit={setEdit}
+                                                            />
+                                                        );
+                                                    });
+                                                })}
                                             </div>
-                                            {
-                                                field?.type === 'file' ? (
-                                                    <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
-                                                        <FileText size={14} />
-                                                        <span className="truncate max-w-[200px] inline-block">{field.value}</span>
-                                                    </Link>
-                                                ) : isTable ? (
-                                                    <CardsRenderer
-                                                        items={field.value}
-                                                        canEdit={can({ app: "Profile", page: "Employee Profile", action: "Edit" }) && !field.readOnly}
-                                                        onEdit={(index) => setEdit({
-                                                            key: tab.key,
-                                                            label: field.label || tab.label,
-                                                            fieldname: field.key,
-                                                            rowIndex: index
-                                                        })}
-                                                    />
-                                                ) : (
-                                                    <Typography variant="bodyMedium" className="font-bold text-gray-900">
-                                                        {field?.value || "—"}
-                                                    </Typography>
-                                                )
-                                            }
                                         </div>
                                     );
                                 })}
-                        </div>
-                    </section>
-                ))}
+                            </div>
+                        </section>
+                    );
+                })}
             </div>
             <EmployeeSidebarForm
                 edit={edit}
@@ -237,6 +253,50 @@ export default function EmployeeProfileSections() {
         </div>
     );
 };
+
+interface FieldCellProps {
+    field: import("./FrappeToFormIoConverterSepTabs").SimpleField;
+    tabKey: string;
+    tabLabel: string;
+    canEdit: boolean;
+    isTable: boolean;
+    onEdit: (v: { key: string; label: string; fieldname?: string; rowIndex?: number }) => void;
+}
+
+const FieldCell = ({ field, tabKey, tabLabel, canEdit, isTable, onEdit }: FieldCellProps) => (
+    <div className={isTable ? "col-span-full mt-4" : "px-4 py-2 hover:border-primary-200 transition-colors"}>
+        <div className="flex items-center justify-between mb-3">
+            <Typography variant="label" color="disabled" className="font-bold text-[10px] uppercase tracking-widest block">
+                {field.label || "-"}
+            </Typography>
+            {canEdit && !field.readOnly && !isTable && (
+                <button
+                    onClick={() => onEdit({ key: tabKey, label: field.label || tabLabel, fieldname: field.key })}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors group/edit"
+                    title={`Edit ${field.label}`}
+                >
+                    <PencilIcon className="h-3 w-3 text-primary-600 opacity-0 group-hover/editing:opacity-100 transition-opacity" />
+                </button>
+            )}
+        </div>
+        {field.type === "file" ? (
+            <Link to={field.value} target="_blank" className="flex items-center gap-2 text-primary-600 hover:text-primary-700 transition-colors font-medium text-sm">
+                <FileText size={14} />
+                <span className="truncate max-w-[200px] inline-block">{field.value}</span>
+            </Link>
+        ) : isTable ? (
+            <CardsRenderer
+                items={field.value}
+                canEdit={canEdit && !field.readOnly}
+                onEdit={(index) => onEdit({ key: tabKey, label: field.label || tabLabel, fieldname: field.key, rowIndex: index })}
+            />
+        ) : (
+            <Typography variant="bodyMedium" className="font-bold text-gray-900">
+                {field.value || "—"}
+            </Typography>
+        )}
+    </div>
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CardsRenderer = ({ items, onEdit, canEdit }: { items: Record<string, any>[], onEdit?: (index: number) => void, canEdit: boolean }) => {
