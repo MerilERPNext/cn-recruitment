@@ -286,9 +286,7 @@ export default function ThreeLevelOrgChart() {
   const [showDottedManager, setShowDottedManager] = useState(false);
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "custom_dotted_line_manager"]
-  });
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails();
   const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager"]);
   const dottedManagerId = targetEmployeeId ? targetEmployeeDetails?.custom_dotted_line_manager : currentUser?.custom_dotted_line_manager;
   const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);

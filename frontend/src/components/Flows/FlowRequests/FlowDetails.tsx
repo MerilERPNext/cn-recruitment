@@ -93,9 +93,7 @@ const FlowDetailsCard = ({ idx, stage, data }: FlowDetailsCardProps) => {
     : [];
 
   const { data: currentUser } = useCurrentUser();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
   const canPerformAction = useMemo(() => {
     if (

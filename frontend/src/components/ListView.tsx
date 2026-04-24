@@ -74,7 +74,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   isFilter?: boolean;
   isLoading?: boolean;
   pageSize?: number;
-  defaultFilters?: Record<string, string>;
+  defaultFilters?: Record<string, string | number>;
   defaultFields?: string[];
   searchFields?: string[];
   onItemClick?: (item: T) => void;
@@ -271,8 +271,8 @@ const FrappeListView = <T extends BaseItem>({
     setSearchTerm(e.target.value);
   };
 
-  const handleFilterChange = (fieldname: string, value: string) => {
-    setFilters((prev: Record<string, string>) => ({
+  const handleFilterChange = (fieldname: string, value: string | number) => {
+    setFilters((prev: Record<string, string | number>) => ({
       ...prev,
       [fieldname]: value,
     }));

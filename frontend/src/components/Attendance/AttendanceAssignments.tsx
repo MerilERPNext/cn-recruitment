@@ -36,9 +36,7 @@ const AttendanceAssignments = ({
   const formInstance = useRef<any>(null);
   const { targetEmployeeId } = useTargetUser();
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
 
   // Use either the passed list or single employee from context
   const targetEmployees = employees.length > 0

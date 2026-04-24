@@ -7,9 +7,7 @@ import { Typography } from "../shared/atoms/Typography";
 
 const ShowHolidays = () => {
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails();
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   const employeeId = targetEmployeeId || (isCurrentUserLoading ? null : currentUser?.employee) || "";

@@ -139,9 +139,7 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
   const { setRefetchAttendance } = useGlobalStore();
   const { isDesktop } = useScreenSize();
 
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { targetEmployeeId } = useTargetUser();
   const { uploadFiles, loading: uploadFileLoading } = useFileUploader();
 

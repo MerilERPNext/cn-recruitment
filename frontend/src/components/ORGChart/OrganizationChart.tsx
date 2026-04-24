@@ -173,9 +173,7 @@ export default function OrganizationChart() {
   const { search } = useLocation();
   const query = new URLSearchParams(search);
   const employeeIdFromQuery = query.get("employee");
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
 
   const employeeId = employeeIdFromQuery || user?.employee || "";
 

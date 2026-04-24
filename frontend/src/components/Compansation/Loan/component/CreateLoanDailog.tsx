@@ -34,9 +34,7 @@ export default function CreateLoanDialog({
   onClose,
 }: CreateLoanDialogProps) {
   const { setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "company"],
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { isDesktop } = useScreenSize();
   const mutation = useCreateNewLoanApplication();
   const formRef = useRef<any>(null);

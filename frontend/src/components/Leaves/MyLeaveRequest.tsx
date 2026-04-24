@@ -30,9 +30,7 @@ const MyLeaveRequests = ({
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
   const { data: currentEmployee, isLoading: isEmployeeLoading } =
-    useCurrentEmployeeAllDetails({
-      fields: ["name"]
-    });
+    useCurrentEmployeeAllDetails();
 
   const today = new Date().toISOString().split("T")[0];
   const { data: leaveBalanceData } = useGetLeaveBalance(

@@ -63,9 +63,8 @@ export function AttachmentCard({
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50">
           {/* Thumbnail — image preview for images, icon for everything else */}
           <div
-            className={`w-12 h-12 rounded-md overflow-hidden border flex items-center justify-center flex-shrink-0 ${
-              category === "image" ? "bg-white" : bgColor
-            }`}
+            className={`w-12 h-12 rounded-md overflow-hidden border flex items-center justify-center flex-shrink-0 ${category === "image" ? "bg-white" : bgColor
+              }`}
           >
             {category === "image" ? (
               <img

@@ -19,9 +19,7 @@ const AttendanceLayoutContent: React.FC = () => {
   const { targetEmployeeId } = useTargetUser();
   const { isSidebarOpen } = useSidebar();
 
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
 
   const effectiveEmployeeId = targetEmployeeId || user?.employee;
   const { data: plannedOvertimAllowed } = usePlannedOvertimeAllowed(
@@ -53,7 +51,7 @@ const AttendanceLayoutContent: React.FC = () => {
     "Planned Overtime",
   );
 
-  
+
   const actionsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Handle click outside actions dropdown
@@ -222,7 +220,7 @@ const AttendanceLayoutContent: React.FC = () => {
     currentPathSegment === "my-overtime-requests" ||
     currentPathSegment === "team-overtime-requests";
 
-    console.log(isOvertimePage && plannedOvertimAllowed && canRequestOvertime, "can show overtime request")
+  console.log(isOvertimePage && plannedOvertimAllowed && canRequestOvertime, "can show overtime request")
   // Actions Button Component for Second Top Bar
   const ActionsButton = () => {
     return (
