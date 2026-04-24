@@ -28,7 +28,7 @@ const TeamAdvanceRequest = () => {
       const data = request?.data || request;
       const todoId = data?.todo_id || request?.todo_id;
       const refName = data?.reference_name || request?.reference_name;
-
+      console.log("Clicked request:", { todoId, refName, request });
       if (todoId || refName) {
         setSearchParams({
           ...(todoId ? { requestId: todoId } : {}),

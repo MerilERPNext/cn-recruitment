@@ -235,14 +235,14 @@ const AdvanceDetailsModal = ({
 
           {/* ACTION BUTTONS */}
           <div className="border-t p-4">
-            <TeamApprovalActionPill
+            {data?.todo_status === "Open" && (<TeamApprovalActionPill
               variant={isDesktop ? "modal" : "buttons"}
               actions={actions}
               status={ref?.status || data?.status || ""}
               recordId={data?.todo_id}
               loadingAction={loadingAction}
               onAction={handleActionClick}
-            />
+            />)}
           </div>
         </div>
       </div>

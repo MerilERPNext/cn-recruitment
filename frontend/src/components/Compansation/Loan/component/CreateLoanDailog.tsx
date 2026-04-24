@@ -21,6 +21,7 @@ import {
 } from "../../../Attendance/AttendanceRequest/AttendanceRequestFormV2";
 import { useScreenSize } from "../../../../hooks/useScreenSize";
 import { useLoadingOverlay } from "../../../../context/OverlayContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CreateLoanDialogProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ export default function CreateLoanDialog({
   const { data: loan, isLoading: loanLoading } = useGetLoanApplicationDoc(
     loanId || "",
   );
+  const queryClient = useQueryClient();
 
   // Track if we've already set the initial submission
   const hasSetInitialData = useRef(false);
@@ -168,7 +170,12 @@ export default function CreateLoanDialog({
                 onSuccess: async () => {
                   toast.success("Loan Request updated successfully!");
                   onClose?.();
-                  setTimeout(() => setRefetchAttendance(true), 2000);
+                  setTimeout(() => {
+                    queryClient.invalidateQueries({
+                      queryKey: [`loan-requests-${currentEmployee?.employee}`],
+                    });
+                    setRefetchAttendance(true);
+                  }, 4000);
                   resolve();
                 },
                 onError: (error: any) => {

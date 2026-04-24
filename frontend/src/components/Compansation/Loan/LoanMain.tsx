@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useCurrentEmployeeAllDetails } from "../../../hooks/useEmployee";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
@@ -13,6 +13,7 @@ import DataListView from "../../DataListView";
 import CardTable, { ColumnSortConfig } from "../../shared/CardTable";
 import { Loan } from "./Type/loan";
 import { createPortal } from "react-dom";
+import { useGlobalStore } from "../../../hooks/useGlobalStore";
 
 const titles = [
   "",
@@ -98,6 +99,10 @@ export default function LoansPage() {
   });
   const employeeId = user?.employee ?? "";
   const [loanId, setLoanId] = useState<string | null>(null);
+  const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
+  const handleRefetchComplete = useCallback(() => {
+    setRefetchAttendance(false);
+  }, [setRefetchAttendance]);
   const handleEdit = (docname: string) => {
     setLoanId(docname);
     setIsDialogOpen(true);
@@ -204,10 +209,8 @@ export default function LoansPage() {
                 onItemClick={(data) => {
                   console.log(data);
                 }}
-                // onRefetchComplete={() => {
-                //   setRefetchAttendance(false);
-                // }}
-                // refetchTrigger={refetchAttendance}
+                onRefetchComplete={handleRefetchComplete}
+                refetchTrigger={refetchAttendance}
                 isSearch={true}
                 isFilter={true}
                 filterFields={[
