@@ -78,60 +78,67 @@ def get_job_offer_status(appl):
 
 @frappe.whitelist(allow_guest=True)
 def job_offer_update(status, appl, reason=None, message=None):
-    frappe.set_user('Administrator')
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    if status == "Accepted":
-        offer_doc=frappe.get_doc("Job Offer",jo_id)
-        offer_doc.status="Accepted"
-        offer_doc.save()
-        appl_doc=frappe.get_doc("Job Applicant",appl)
-        appl_doc.status="Accepted"
-        appl_doc.save()
+    original_ignore = frappe.flags.ignore_permissions
+    frappe.flags.ignore_permissions = True
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        if status == "Accepted":
+            offer_doc = frappe.get_doc("Job Offer", jo_id)
+            offer_doc.status = "Accepted"
+            offer_doc.save(ignore_permissions=True)
+            appl_doc = frappe.get_doc("Job Applicant", appl)
+            appl_doc.status = "Accepted"
+            appl_doc.save(ignore_permissions=True)
 
-    if status == "Rejected":
-        frappe.db.set_value("Job Offer",jo_id,"status","Rejected")
-        frappe.db.set_value("Job Applicant",appl,"status","Rejected")
-        # Store rejection feedback
-        if reason:
-            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
-        if message:
-            frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
-    frappe.db.set_value("Job Offer",jo_id,"docstatus",1)
+        if status == "Rejected":
+            frappe.db.set_value("Job Offer", jo_id, "status", "Rejected")
+            frappe.db.set_value("Job Applicant", appl, "status", "Rejected")
+            # Store rejection feedback
+            if reason:
+                frappe.db.set_value("Job Offer", jo_id, "custom_rejection_reason", reason)
+            if message:
+                frappe.db.set_value("Job Offer", jo_id, "custom_rejection_message", message)
+        frappe.db.set_value("Job Offer", jo_id, "docstatus", 1)
 
-    if status in ("Accepted", "Rejected"):
-        from recruitment.api.action_center import mark_item_completed
-        mark_item_completed(
-            reference_doctype="Job Offer",
-            reference_docname=jo_id,
-            candidate_id=appl,
-            commit=True,
-        )
+        if status in ("Accepted", "Rejected"):
+            from recruitment.api.action_center import mark_item_completed
+            mark_item_completed(
+                reference_doctype="Job Offer",
+                reference_docname=jo_id,
+                candidate_id=appl,
+                commit=True,
+            )
 
-    webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
-    return {"jo_id": jo_id, "webform": webform}
+        webform = frappe.db.get_single_value("Recruitment Settings", "employee_onboarding_webform") or ""
+        return {"jo_id": jo_id, "webform": webform}
+    finally:
+        frappe.flags.ignore_permissions = original_ignore
 
 
 @frappe.whitelist(allow_guest=True)
 def get_job_offer_summary(appl):
-    frappe.set_user('Administrator')
+    original_ignore = frappe.flags.ignore_permissions
+    frappe.flags.ignore_permissions = True
+    try:
+        jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
+        if not jo_id:
+            return {}
 
-    jo_id = frappe.db.get_value("Job Offer", {"job_applicant": appl})
-    if not jo_id:
-        return {}
+        jo = frappe.get_doc("Job Offer", jo_id)
 
-    jo = frappe.get_doc("Job Offer", jo_id)
+        duration = jo.get("custom_duration")
+        expected_doj = jo.get("custom_expected_doj")
+        stipend = jo.get("custom_stipend")
 
-    duration = jo.get("custom_duration")
-    expected_doj = jo.get("custom_expected_doj")
-    stipend = jo.get("custom_stipend")
-
-    return {
-        "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
-        "designation": jo.designation or "Intern",
-        "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
-        "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
-        "stipend_display": f"₹ {stipend}" if stipend else None,
-    }
+        return {
+            "applicant_name": f"{jo.get('applicant_name') or ''} {jo.get('applicant_last_name') or ''}".strip(),
+            "designation": jo.designation or "Intern",
+            "duration_display": f"{duration} Month{'s' if int(duration) != 1 else ''}" if duration else None,
+            "expected_doj_display": formatdate(expected_doj) if expected_doj else None,
+            "stipend_display": f"₹ {stipend}" if stipend else None,
+        }
+    finally:
+        frappe.flags.ignore_permissions = original_ignore
 
 @frappe.whitelist(allow_guest=True)
 def get_company_logo():

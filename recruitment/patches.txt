@@ -1,5 +1,4 @@
 [pre_model_sync]
-recruitment.patches.delete_onboarding_custom_fields
 
 # recruitment.patches.recruitment_settings #recruitment_settings
 # Patches added in this section will be executed before doctypes are migrated

@@ -206,6 +206,7 @@ doc_events = {
         "validate": "recruitment.customizations.job_applicant.validation_blacklist_on_doctypes",
         # "before_save": "recruitment.customizations.employee_onboarding.document_verification.update_verification_documents",
         "on_update": "recruitment.auto_fetch_fields.update_employee_fields",
+        "after_insert": "recruitment.api.action_center.sync_onboarding_action_item",
     },
     "Employee Separation": {
         "before_insert": "recruitment.customizations.employee_separation.employee_separation.calculate_lwd_from_notice_period",

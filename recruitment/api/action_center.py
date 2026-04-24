@@ -122,12 +122,15 @@ def mark_item_completed(
 
 
 def build_onboarding_redirect(job_applicant_id, onboarding_name=None, section_name=None):
-    params = {"job_applicant_id": job_applicant_id}
+    params = {"appl": job_applicant_id}
     if onboarding_name:
         params["onboarding_name"] = onboarding_name
     if section_name:
         params["section"] = section_name
-    return "/candidate-portal/onboarding?{0}".format(urlencode(params))
+    return "{0}/onboarding?{1}".format(
+        _candidate_portal_base_url(),
+        urlencode(params),
+    )
 
 
 def _candidate_portal_base_url():
