@@ -2,6 +2,9 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+const REPEATED_INVALIDATION_COUNT = 5;
+const REPEATED_INVALIDATION_INTERVAL_MS = 3000;
+
 // Create a client
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,12 +17,17 @@ export const queryClient = new QueryClient({
   },
 });
 
-const REPEATED_INVALIDATION_COUNT = 2; // Reduced to 1 follow-up attempt to prevent amplification
-const REPEATED_INVALIDATION_INTERVAL_MS = 5000; // Increased delay for better stability
+const originalInvalidateQueries = queryClient.invalidateQueries.bind(queryClient);
+const originalRefetchQueries = queryClient.refetchQueries.bind(queryClient);
+const originalResetQueries = queryClient.resetQueries.bind(queryClient);
 
-// Track active background loops by individual Query Hash
-const queryLoops = new Map<string, number[]>();
+// Map to track active background loops specifically by individual Query Hash
+const queryLoops = new Map<string, any[]>();
 
+/**
+ * Surgical deduplication: identifies exactly which queries match the filter 
+ * and ensures each has exactly one active background loop.
+ */
 const repeatAction = (args: any[]) => {
   let filters: any = {};
   if (Array.isArray(args[0]) || typeof args[0] === 'string') {
@@ -28,33 +36,35 @@ const repeatAction = (args: any[]) => {
     filters = args[0] || {};
   }
 
+  // Find all queries currently in the cache that match these filters
   const matchingQueries = queryClient.getQueryCache().findAll(filters);
 
   matchingQueries.forEach((query) => {
     const hash = query.queryHash;
 
-    // Clear existing loop
+    // Clear any existing background loop for this specific individual query
     if (queryLoops.has(hash)) {
-      queryLoops.get(hash)?.forEach(window.clearTimeout);
+      queryLoops.get(hash)?.forEach(clearTimeout);
       queryLoops.delete(hash);
     }
 
-    const timeouts: number[] = [];
+    const timeouts: any[] = [];
 
-    // Only 1 additional refetch after a delay to ensure data stability 
-    // without "amplifying" every event into a burst.
     for (let attempt = 1; attempt < REPEATED_INVALIDATION_COUNT; attempt++) {
-      const timeout = window.setTimeout(() => {
-        // Skip if query is inactive or already fetching to avoid redundant load
-        if (query.isActive() && query.state.fetchStatus !== 'fetching') {
-          console.log(`[QueryRetry] Performing stable refetch for: ${hash}`);
-
-          queryClient.refetchQueries(
-            { queryKey: query.queryKey, exact: true },
-            { cancelRefetch: false } // Don't cancel in-flight, just ensure we have latest
-          ).catch(() => {});
+      const timeout = setTimeout(() => {
+        // Optimization: Only perform the background network call if the query is still "active"
+        // (i.e., someone is still looking at this page/data).
+        if (query.isActive()) {
+          console.log(`Repeated background refetch for ACTIVE query: ${hash} (attempt ${attempt})`);
+          originalRefetchQueries(
+            { queryKey: query.queryKey, exact: true, type: 'all' },
+            { cancelRefetch: true }
+          ).catch((err) => console.error(`Background refetch failed for ${hash}:`, err));
+        } else {
+          console.log(`Skipping background refetch for INACTIVE query: ${hash}`);
         }
 
+        // Cleanup map once the final attempt fires
         if (attempt === REPEATED_INVALIDATION_COUNT - 1) {
           queryLoops.delete(hash);
         }
@@ -67,35 +77,26 @@ const repeatAction = (args: any[]) => {
   });
 };
 
-// --- Global Interceptors ---
-// We monkey-patch to ensure mutations that handle complex state propagation 
-// (like payroll/attendance) are eventually consistent without requiring 
-// every call-site to implement its own retry logic.
-
-const originalInvalidateQueries = queryClient.invalidateQueries.bind(queryClient);
-const originalRefetchQueries = queryClient.refetchQueries.bind(queryClient);
-const originalResetQueries = queryClient.resetQueries.bind(queryClient);
-
 queryClient.invalidateQueries = (...args: any[]) => {
-  const result = originalInvalidateQueries(...args);
+  console.log("interceptor: invalidateQueries called", args[0]);
+  const initialInvalidation = originalInvalidateQueries(...args);
   repeatAction(args);
-  return result;
+  return initialInvalidation;
 };
 
 queryClient.refetchQueries = (...args: any[]) => {
-  const result = originalRefetchQueries(...args);
+  console.log("interceptor: refetchQueries called", args[0]);
+  const initialRefetch = originalRefetchQueries(...args);
   repeatAction(args);
-  return result;
+  return initialRefetch;
 };
 
 queryClient.resetQueries = (...args: any[]) => {
-  const result = originalResetQueries(...args);
+  console.log("interceptor: resetQueries called", args[0]);
+  const initialReset = originalResetQueries(...args);
   repeatAction(args);
-  return result;
+  return initialReset;
 };
-
-
-
 
 interface QueryProviderProps {
   children: React.ReactNode;
