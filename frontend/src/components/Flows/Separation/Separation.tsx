@@ -75,10 +75,6 @@ const Separation = () => {
   const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
   const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
 
-  const showTerminationButton2 =
-    !isLoadingSeparationType &&
-    (!separationType?.custom_resignaion_type ||
-      separationType.custom_resignaion_type !== "Termination");
 
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
@@ -161,7 +157,12 @@ const Separation = () => {
   const showTerminationButton =
     isViewingOtherUser &&
     !!termination_funnel_data?.name &&
-    enabledActions.terminate;
+    enabledActions.terminate &&
+    !isLoadingSeparationType &&
+    (!separationType?.custom_resignaion_type ||
+      separationType.custom_resignaion_type !== "Termination" ||
+      (item?.approval_status && item?.approval_status === "Rejected"))
+    ;
 
   const isRejected = item?.approval_status === "Rejected";
   const hasNoItem = !item;
@@ -401,7 +402,7 @@ const Separation = () => {
         </div>
       )}
       <div className="w-full flex items-center justify-center">
-        {showTerminationButton && showTerminationButton2 && (
+        {showTerminationButton && (
           <Button
             onClick={() => handleTriggerChat("Termination")}
             size="md"
