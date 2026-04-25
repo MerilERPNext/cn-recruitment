@@ -92,11 +92,26 @@ export interface UseApprovalDataReturn {
 }
 
 export interface UseApprovalActionsReturn {
-  singleAction: (fieldname: string, status: ApprovalStatus) => Promise<void>;
-  bulkSelectedAction: (fieldnames: string[], status: ApprovalStatus) => Promise<void>;
-  sectionAction: (sectionName: string, status: ApprovalStatus) => Promise<void>;
-  bulkApproveAllPending: () => Promise<void>;
-}
+    singleAction: (
+      fieldname: string,
+      status: ApprovalStatus,
+      comment?: string
+    ) => Promise<void>;
+  
+    bulkSelectedAction: (
+      fieldnames: string[],
+      status: ApprovalStatus,
+      comment?: string
+    ) => Promise<void>;
+  
+    sectionAction: (
+      sectionName: string,
+      status: ApprovalStatus,
+      comment?: string
+    ) => Promise<void>;
+  
+    bulkApproveAllPending: () => Promise<void>;
+  }
 
 export interface UseToastReturn {
   toast: Toast | null;

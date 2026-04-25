@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Trash2 } from "lucide-react";
 import { AttachmentCard } from "./AttachmentCard";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false }: { fileObj: any, onRemove: () => void, readOnly?: boolean }) => {
   const [objectUrl, setObjectUrl] = useState<string>("");
 
@@ -12,8 +13,9 @@ export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false }: { fil
       try {
         url = URL.createObjectURL(fileObj.file);
         setObjectUrl(url);
-      } catch (e) {
-        // ignore
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+      } catch (e: any) {
+        console.error("error in creating object url", e)
       }
     }
     return () => {
@@ -21,8 +23,8 @@ export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false }: { fil
     };
   }, [fileObj]);
 
-  const fileUrl = fileObj.url || fileObj.file_url || objectUrl;
-  const fileName = fileObj.name || fileObj.originalName || (fileObj.file ? fileObj.file.name : "");
+  const fileUrl = fileObj?.data?.message?.file_url || fileObj.url || fileObj.file_url || objectUrl;
+  const fileName = fileObj?.data?.message?.file_name || fileObj.name || fileObj.originalName || (fileObj.file ? fileObj.file.name : "");
 
   if (!fileUrl) return null;
 
@@ -62,7 +64,7 @@ export const FormioPreviewPortal = ({ compKey, formContainerId, children }: { co
       const rootNode = formContainerId ? (document.getElementById(formContainerId) || document) : document;
       const wrapper = rootNode.querySelector(`.formio-component-${compKey}`);
       if (!wrapper) return;
-      
+
       let slot = wrapper.querySelector(`.custom-preview-${compKey}`);
       if (!slot) {
         slot = document.createElement("div");
@@ -91,7 +93,7 @@ export const FormioPreviewPortal = ({ compKey, formContainerId, children }: { co
         currentSlot.parentNode.removeChild(currentSlot);
       }
     };
-  }, [compKey]);
+  }, [compKey, formContainerId]);
 
   if (!targetDom) return null;
   return createPortal(children, targetDom);

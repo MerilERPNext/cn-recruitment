@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createPortal } from "react-dom";
-import { Form } from "@tsed/react-formio";
 import useCurrentUser from "../../../../hooks/useCurrentUser";
 import { useApprovalAction } from "../../../../hooks/userApprovalList";
 import { FormIOComponent } from "../../../../types/formio";
@@ -14,7 +13,8 @@ import { queryClient } from "../../../../providers/QueryProvider";
 import formatToIndianDate from "../../../../utils/formatToIndianDate";
 import ViewFormButton from "../../ViewFormButton";
 import { Attachment, FlowRequestStage } from "../../../../types/flows";
-import { buildFormFromSchemaAndAnswer, extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import { extractRolesAndUsers, FormIOForm } from "../../../../utils/flowUtils";
+import FormPreview from "../../../shared/molecules/FormPreview";
 
 
 interface CardStagesProps {
@@ -31,6 +31,7 @@ const CardStages = ({
   const [formSchema, setFormSchema] = useState<FormIOForm | null>(null);
   const [show, setShow] = useState(false);
   const [responseData, setResponseData] = useState<{ addAttachment?: Attachment[] } | null>(null);
+  const [formAnswer, setFormAnswer] = useState<Record<string, unknown>>({});
 
   const handleShowForm = (
     schema: FormIOComponent[] | undefined,
@@ -38,7 +39,6 @@ const CardStages = ({
     parsedData?: Record<string, unknown>
   ) => {
     let data: Record<string, unknown> = parsedData || {};
-
 
     if (!data) {
       try {
@@ -49,10 +49,9 @@ const CardStages = ({
       }
     }
 
-    setFormSchema((prev) => {
-      if (!schema) return prev;
-      return buildFormFromSchemaAndAnswer(schema, data);
-    });
+    if (!schema) return;
+    setFormSchema({ display: "form", components: schema });
+    setFormAnswer(data);
     setShow(true);
   };
 
@@ -196,13 +195,11 @@ const CardStages = ({
         show &&
         createPortal(
           <ReviewForm onClose={() => setShow(false)}>
-            <Form
-              form={formSchema}
-              options={{
-                readOnly: true, // This makes the entire form read-only
-                viewAsHtml: false, // Set to true to render as plain HTML instead of form inputs
-              }}
-              submit={false}
+            <FormPreview
+              containerId={`separation-stage-${stage.stage_name}-form-preview`}
+              schema={formSchema}
+              submissionData={formAnswer}
+              readOnly={true}
             />
             <AttachmentPreview attachments={responseData?.addAttachment || []} />
           </ReviewForm>,

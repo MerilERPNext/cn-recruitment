@@ -448,7 +448,7 @@ export function useCreateNewAttendanceRequest() {
 
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
-      attendanceService.createAttendanceRequest(body),
+      attendanceService.createAttendanceRequestWithCustomAPI(body),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["attendance", "all"] });

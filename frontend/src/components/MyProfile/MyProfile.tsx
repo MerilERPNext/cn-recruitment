@@ -94,37 +94,41 @@ const MyProfile: React.FC = () => {
 
   const { data: user } = useCurrentEmployeeAllDetails({
     fields: [
-      "user_id",
+      "employee",
       "employee_name",
-      "image",
       "designation",
+      "image",
+      "user_id",
+      "employee_number",
+      "company",
       "department",
       "reports_to",
       "date_of_joining",
       "employment_type",
       "branch",
-      "default_shift",
-      "company",
-      "status",
-      "final_confirmation_date",
-      "contract_end_date",
       "grade",
-      "payroll_cost_center",
-      "employee",
+      "status",
       "date_of_birth",
       "gender",
       "marital_status",
       "blood_group",
       "person_to_be_contacted",
       "emergency_phone_number",
+      "cell_number",
+      "personal_email",
+      "company_email",
       "ctc",
       "salary_currency",
       "provident_fund_account",
       "pan_number",
       "bank_name",
       "bank_ac_no",
-      "ifsc_code"
-    ]});
+      "ifsc_code",
+      "final_confirmation_date",
+      "contract_end_date",
+      "payroll_cost_center",
+    ],
+  });
 
   const { data: userAddress } = useCurrentEmployeeAddress(user?.user_id || "");
 

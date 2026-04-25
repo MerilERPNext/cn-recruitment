@@ -138,6 +138,10 @@ def update_onboarding_details(email, data):
             if fieldtype == "Table" and isinstance(value, list):
                 doc.set(fn, [])
                 for row_data in value:
+                    if not isinstance(row_data, dict):
+                        continue
+                    if not any(v not in (None, "", [], {}) for v in row_data.values()):
+                        continue
                     doc.append(fn, row_data)
             else:
                 doc.set(fn, value)

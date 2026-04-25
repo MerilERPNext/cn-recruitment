@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import {
   ReactFlow,
   Node,
@@ -13,6 +13,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PersonNode from "./PersonNode";
+import DottedLineChipNode from "./DottedLineChipNode";
 import { EmployeeHierarchy, NodeData } from "./type/type";
 import { useGetEmployeeSubordinateHierarchy, useCurrentEmployeeAllDetails, useGetEmployeeDetailsByEmpId } from "../../hooks/useEmployee";
 import { useNavigate } from "react-router";
@@ -77,27 +78,32 @@ export const findGrandParent = (
   return null;
 };
 
-const getLayoutedElements = (
-  nodes: Node<NodeData>[],
-  edges: Edge[],
-  options = { direction: "TB" }
-) => {
+const PERSON_W = 320;
+const PERSON_H = 120;
+const CHIP_W = 200;
+const CHIP_H = 36;
+
+const getNodeDims = (node: Node) =>
+  node.type === "dottedLineChip"
+    ? { w: CHIP_W, h: CHIP_H }
+    : { w: PERSON_W, h: PERSON_H };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getLayoutedElements = (nodes: Node<any>[], edges: Edge[], options = { direction: "TB" }) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const nodeWidth = 320; // Adjusted for new PersonNode size
-  const nodeHeight = 120;
-
   dagreGraph.setGraph({
     rankdir: options.direction,
-    nodesep: 80, // Increased horizontal spacing
-    ranksep: 80, // Increased vertical spacing
+    nodesep: 80,
+    ranksep: 80,
     marginx: 50,
     marginy: 50,
   });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    const { w, h } = getNodeDims(node);
+    dagreGraph.setNode(node.id, { width: w, height: h });
   });
 
   edges.forEach((edge) => {
@@ -108,17 +114,16 @@ const getLayoutedElements = (
 
   const newNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
+    const { w, h } = getNodeDims(node);
     return {
       ...node,
       targetPosition: Position.Top,
       sourcePosition: Position.Bottom,
-      // We are shifting the dagre node position (anchor=center center) to the top left
-      // so it matches React Flow's default anchor point (top left).
       position: {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
+        x: nodeWithPosition.x - w / 2,
+        y: nodeWithPosition.y - h / 2,
       },
-      style: { opacity: 1 }, // Ensure node is visible
+      style: { opacity: 1 },
     };
   });
 
@@ -275,13 +280,13 @@ const buildHierarchyWithGrandparent = (
 };
 
 export default function ThreeLevelOrgChart() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node<NodeData>>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<any>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [showDottedManager, setShowDottedManager] = useState(false);
   const navigate = useNavigate();
   const { targetEmployeeId } = useTargetUser();
-  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails({
-    fields: ["employee", "custom_dotted_line_manager"]
-  });
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useCurrentEmployeeAllDetails();
   const { data: targetEmployeeDetails } = useGetEmployeeDetailsByEmpId(targetEmployeeId || "", ["employee", "custom_dotted_line_manager"]);
   const dottedManagerId = targetEmployeeId ? targetEmployeeDetails?.custom_dotted_line_manager : currentUser?.custom_dotted_line_manager;
   const { data: dottedLineManagerDetails } = useGetEmployeeDetailsByEmpId(dottedManagerId || "", ["employee", "employee_name"]);
@@ -292,7 +297,16 @@ export default function ThreeLevelOrgChart() {
   const { data: employeeHierarchy } = useGetEmployeeSubordinateHierarchy(
     employeeId
   );
-  const calculateLayout = useCallback((nodes: Node<NodeData>[], edges: Edge[]) => {
+
+  // Reset dotted manager visibility when the viewed employee changes
+  useEffect(() => {
+    setShowDottedManager(false);
+  }, [employeeId, dottedManagerId]);
+
+  const handleShowDottedManager = useCallback(() => setShowDottedManager((prev) => !prev), []);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calculateLayout = useCallback((nodes: Node<any>[], edges: Edge[]) => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       nodes,
       edges
@@ -328,46 +342,51 @@ export default function ThreeLevelOrgChart() {
         grandParent
       );
 
-
-
       if (dottedManagerId && !initialNodes.find((n) => n.id === dottedManagerId)) {
-        initialNodes.push({
-          id: dottedManagerId,
-          type: "person",
-          position: { x: 0, y: 0 },
-          data: {
+        if (showDottedManager) {
+          // Full person card — badge acts as the collapse toggle
+          initialNodes.push({
             id: dottedManagerId,
-            name: dottedManagerName || dottedManagerId,
-            title: "",
-            hasChildren: false,
-            isExpanded: false,
-            onToggleExpand: () => { },
-            showExpand: false,
-            totalChildren: 0,
-            directChildren: 0,
-            indirectChildren: 0,
-            isDottedLine: true,
-          },
-        });
-      }
+            type: "person",
+            position: { x: 0, y: 0 },
+            data: {
+              id: dottedManagerId,
+              name: dottedManagerName || dottedManagerId,
+              title: "",
+              hasChildren: false,
+              isExpanded: false,
+              onToggleExpand: () => { },
+              showExpand: false,
+              totalChildren: 0,
+              directChildren: 0,
+              indirectChildren: 0,
+              isDottedLine: true,
+              onCollapse: handleShowDottedManager,
+            },
+          });
+        } else {
+          // Chip node
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (initialNodes as Node<any>[]).push({
+            id: dottedManagerId,
+            type: "dottedLineChip",
+            position: { x: 0, y: 0 },
+            data: { onToggle: handleShowDottedManager },
+          });
+        }
 
-      if (dottedManagerId) {
         initialEdges.push({
           id: `e-dotted-${dottedManagerId}-${employeeId}`,
           source: dottedManagerId,
           target: employeeId,
           type: "smoothstep",
-          label: "Dotted Line Manager",
-          labelStyle: { fill: "#7c3aed", fontWeight: 600, fontSize: 11 },
-          labelBgStyle: { fill: "#f5f3ff", borderRadius: 4 },
-          labelBgPadding: [6, 3] as [number, number],
-          style: { stroke: "#7c3aed", strokeWidth: 2, strokeDasharray: "6 3" },
+          style: { stroke: "#6172F3", strokeWidth: 2, strokeDasharray: "6 3" },
         });
       }
 
       calculateLayout(initialNodes, initialEdges);
     }
-  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, calculateLayout]);
+  }, [employeeHierarchy, employeeId, currentUser, dottedManagerId, dottedManagerName, showDottedManager, handleShowDottedManager, calculateLayout]);
 
   return (
     <div className="w-full rounded-md bg-white">
@@ -395,7 +414,7 @@ export default function ThreeLevelOrgChart() {
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          nodeTypes={{ person: PersonNode }}
+          nodeTypes={{ person: PersonNode, dottedLineChip: DottedLineChipNode }}
           fitView
           attributionPosition="top-right"
           proOptions={{ hideAttribution: true }}

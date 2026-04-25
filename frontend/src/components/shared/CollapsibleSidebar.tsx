@@ -83,9 +83,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [openSubDropdown, setOpenSubDropdown] = useState<string | null>(null);
 
   // const { data: companyLogo } = useCompanyLogo();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const { data: uiPermissions, isLoading: isUiPermissionsLoading } =
     useGetUiPermission();
 

@@ -758,9 +758,7 @@ const ExpensesList: React.FC = () => {
   const [isRelocationAcknowledgementChecked, setIsRelocationAcknowledgementChecked] = React.useState(false);
 
   const { refetchAttendance, setRefetchAttendance } = useGlobalStore();
-  const { data: currentEmployee } = useCurrentEmployeeAllDetails({
-    fields: ["name", "employee_name", "company"]
-  });
+  const { data: currentEmployee } = useCurrentEmployeeAllDetails();
   const navigate = useNavigate();
   const { data: draftExpenses, isFetching: isFetchingDrafts } =
     useGetDraftExpenseClaims(currentEmployee?.name);

@@ -80,9 +80,7 @@ const PoliciesList: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isDesktop } = useScreenSize();
-  const { data: user } = useCurrentEmployeeAllDetails({
-    fields: ["employee"]
-  });
+  const { data: user } = useCurrentEmployeeAllDetails();
   const employeeId = user?.employee ?? "";
   const categoryName = (location.state as PolicyState | undefined)?.name;
   const [selectedStatus, setSelectedStatus] = useState("Acknowledged");

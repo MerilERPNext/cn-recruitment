@@ -45,7 +45,7 @@ def create_bulk_job_offer(applicants):
             job_offer.offer_date = frappe.utils.today()
 
             job_offer.insert(ignore_permissions=True)
-            frappe.db.set_value("Job Applicant", applicant.name, "status", "Offer to be Sent")
+            frappe.db.set_value("Job Applicant", applicant.name, "status", "Open")
 
             created += 1
 

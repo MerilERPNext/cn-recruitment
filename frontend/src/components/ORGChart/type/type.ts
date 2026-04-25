@@ -17,7 +17,15 @@ export type NodeData = {
   showExpand?: boolean;
   image?: string | null;
   isDottedLine?: boolean;
+  onCollapse?: () => void;
 };
+
+export type DottedLineChipData = {
+  onToggle: () => void;
+  isExpanded?: boolean;
+};
+
+export type DottedLineChipNodeType = Node<DottedLineChipData, "dottedLineChip">;
 
 // ✅ Optional alias (safe version)
 export type EmployeeNode = Node<NodeData, "person">;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Typography } from "../shared/atoms/Typography";
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { X, Loader2, MessageSquare, Paperclip, CheckCircle, Edit3, Reply, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
@@ -26,6 +27,7 @@ import { FormioPreviewItem, FormioPreviewPortal } from "../shared/molecules/Form
 import { useFileUploader } from "../../hooks/useFileUploader";
 import Button from "../shared/atoms/Button";
 import Modal from "../shared/Modal";
+import FormPreview from "../shared/molecules/FormPreview";
 import { useLoadingOverlay } from "../../context/OverlayContext";
 
 interface SimplifiedChatViewProps {
@@ -1294,42 +1296,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
     }, [ticket.closing_form_data])
 
-    // ✅ Close form previews
-    const closePreviews = useMemo(() => {
-      if (!closeForm?.schema) return null;
-
-      return renderFormioPreviews(
-        `close-form-container-chat-read-${ticket.name}`,
-        closeForm.schema,
-        closeForm.answer,
-        true
-      );
-    }, [closeForm, ticket.name]);
-
-    // ✅ Feedback previews
-    const feedbackPreviews = useMemo(() => {
-      if (!feedbackForm?.schema) return null;
-
-      return renderFormioPreviews(
-        `feedback-form-container-chat-read-${ticket.name}`,
-        feedbackForm.schema,
-        feedbackForm.answer,
-        true
-      );
-    }, [feedbackForm, ticket.name]);
-
-    // ✅ Creation previews
-    const creationPreviews = useMemo(() => {
-      if (!creationForm?.schema) return null;
-
-      return renderFormioPreviews(
-        `creation-form-container-chat-read-${ticket.name}`,
-        creationForm.schema,
-        creationForm.answer,
-        true
-      );
-    }, [creationForm, ticket.name]);
-
     const [showForms, setShowForms] = useState<boolean>(false);
 
     return (
@@ -1450,28 +1416,19 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto hide-attachment-readonly  p-4 md:p-6 bg-gray-50/30">
-                  <style>{`
-                    .formio-component-file .list-group {
-                      display: none !important;
-                    }
-                  `}</style>
+                <div className="flex-1 overflow-y-auto hide-attachment-readonly p-4 md:p-6 bg-gray-50/30">
                   <div className="flex flex-col gap-6">
                     {closeForm?.schema && (
                       <div className="show-req-astrik border border-gray-200 bg-white rounded-xl p-4 md:p-6 shadow-sm">
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Close Form
                         </Typography>
-                        <div id={`close-form-container-chat-read-${ticket.name}`}>
-                          <Form
-                            form={closeForm.schema}
-                            submission={{ data: closeForm.answer }}
-                            options={{
-                              readOnly: true
-                            }}
-                          />
-                          {closePreviews}
-                        </div>
+                        <FormPreview
+                          containerId={`close-form-container-chat-read-${ticket.name}`}
+                          schema={closeForm.schema}
+                          submissionData={closeForm.answer || {}}
+                          readOnly={true}
+                        />
                       </div>
                     )}
 
@@ -1480,16 +1437,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Feedback Form
                         </Typography>
-                        <div id={`feedback-form-container-chat-read-${ticket.name}`}>
-                          <Form
-                            form={feedbackForm.schema}
-                            submission={{ data: feedbackForm.answer }}
-                            options={{
-                              readOnly: true
-                            }}
-                          />
-                          {feedbackPreviews}
-                        </div>
+                        <FormPreview
+                          containerId={`feedback-form-container-chat-read-${ticket.name}`}
+                          schema={feedbackForm.schema}
+                          submissionData={feedbackForm.answer || {}}
+                          readOnly={true}
+                        />
                       </div>
                     )}
 
@@ -1498,16 +1451,12 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                         <Typography variant="subheading" color="primary" className="mb-4 block">
                           Creation Form
                         </Typography>
-                        <div id={`creation-form-container-chat-read-${ticket.name}`}>
-                          <Form
-                            form={creationForm.schema}
-                            submission={{ data: creationForm.answer }}
-                            options={{
-                              readOnly: true
-                            }}
-                          />
-                          {creationPreviews}
-                        </div>
+                        <FormPreview
+                          containerId={`creation-form-container-chat-read-${ticket.name}`}
+                          schema={creationForm.schema}
+                          submissionData={creationForm.answer || {}}
+                          readOnly={true}
+                        />
                       </div>
                     )}
                   </div>

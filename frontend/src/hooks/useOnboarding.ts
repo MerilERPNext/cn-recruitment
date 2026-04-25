@@ -5,11 +5,11 @@ import {
   updateFieldApprovalStatus,
   updateSectionApprovalStatus,
   bulkUpdateApprovalStatus,
+  updateSelectedFieldsApprovalStatus,
 } from "../services/employeeOnboardingService";
 import type {
   ApprovalField,
   ApprovalStatus,
-  ApiConfig,
   FieldLocalState,
   SectionEntry,
   Toast,
@@ -51,10 +51,6 @@ function buildInitialFieldStates(
 
 // ─── useToast ─────────────────────────────────────────────────────────────────
 
-/**
- * Manages a temporary toast notification.
- * Auto-dismisses after 2800ms.
- */
 export function useToast(): UseToastReturn {
   const [toast, setToast] = useState<Toast | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,11 +69,7 @@ export function useToast(): UseToastReturn {
 
 // ─── useApprovalData ──────────────────────────────────────────────────────────
 
-/**
- * Fetches approval fields from the API and manages their local state.
- * Exposes helpers to mutate individual field states optimistically.
- */
-export function useApprovalData(config: ApiConfig): UseApprovalDataReturn {
+export function useApprovalData(onboardingName: string): UseApprovalDataReturn {
   const [allFields, setAllFields] = useState<ApprovalField[]>([]);
   const [sections, setSections] = useState<Record<string, SectionEntry>>({});
   const [fieldStates, setFieldStates] = useState<Record<string, FieldLocalState>>({});
@@ -92,7 +84,7 @@ export function useApprovalData(config: ApiConfig): UseApprovalDataReturn {
     setFieldStates({});
 
     try {
-      const fields = await fetchApprovalFields(config);
+      const fields = await fetchApprovalFields(onboardingName);
 
       if (fields.length === 0) {
         throw new Error("No fields returned from API. Check your onboarding name.");
@@ -107,7 +99,7 @@ export function useApprovalData(config: ApiConfig): UseApprovalDataReturn {
     } finally {
       setPageLoading(false);
     }
-  }, [config.baseUrl, config.onboardingName, config.authToken]); // eslint-disable-line
+  }, [onboardingName]);
 
   const patchFieldState = useCallback(
     (fieldname: string, patch: Partial<FieldLocalState>) => {
@@ -133,13 +125,8 @@ export function useApprovalData(config: ApiConfig): UseApprovalDataReturn {
 
 // ─── useApprovalActions ───────────────────────────────────────────────────────
 
-/**
- * Wraps all approval mutation API calls.
- * Each action optimistically updates local state, calls the service,
- * then shows a toast on completion or error.
- */
 export function useApprovalActions(
-  config: ApiConfig,
+  onboardingName: string,
   sections: Record<string, SectionEntry>,
   patchFieldState: (fieldname: string, patch: Partial<FieldLocalState>) => void,
   setFieldStates: React.Dispatch<
@@ -151,11 +138,11 @@ export function useApprovalActions(
   // ── Single field approve / reject ──────────────────────────────────────────
 
   const singleAction = useCallback(
-    async (fieldname: string, status: ApprovalStatus) => {
+    async (fieldname: string, status: ApprovalStatus, comment?: string) => {
       patchFieldState(fieldname, { loading: true });
 
       try {
-        await updateFieldApprovalStatus(config, fieldname, status);
+        await updateFieldApprovalStatus(onboardingName, fieldname, status, comment);
         patchFieldState(fieldname, { status, loading: false });
         showToast(`"${fieldname}" ${status.toLowerCase()}`, "success");
       } catch (err: unknown) {
@@ -164,45 +151,45 @@ export function useApprovalActions(
         showToast(`Error: ${msg}`, "error");
       }
     },
-    [config, patchFieldState, showToast]
+    [onboardingName, patchFieldState, showToast]
   );
 
-  // ── Bulk selected fields approve / reject ──────────────────────────────────
+  // ── Bulk selected fields approve / reject — uses new dedicated endpoint ────
 
   const bulkSelectedAction = useCallback(
-    async (fieldnames: string[], status: ApprovalStatus) => {
+    async (fieldnames: string[], status: ApprovalStatus, comment?: string) => {
       if (fieldnames.length === 0) return;
 
+      // Mark all as loading
       fieldnames.forEach((fn) => patchFieldState(fn, { loading: true }));
 
-      let successCount = 0;
+      try {
+        await updateSelectedFieldsApprovalStatus(onboardingName, fieldnames, status, comment);
 
-      await Promise.allSettled(
-        fieldnames.map(async (fn) => {
-          try {
-            await updateFieldApprovalStatus(config, fn, status);
-            patchFieldState(fn, { status, loading: false });
-            successCount++;
-          } catch {
-            patchFieldState(fn, { loading: false });
-          }
-        })
-      );
+        // On success update all statuses at once
+        fieldnames.forEach((fn) =>
+          patchFieldState(fn, { status, loading: false })
+        );
 
-      const total = fieldnames.length;
-      const toastType: ToastType =
-        successCount === total ? "success" : successCount > 0 ? "info" : "error";
-      showToast(`${successCount}/${total} fields ${status.toLowerCase()}`, toastType);
+        showToast(
+          `${fieldnames.length} field${fieldnames.length > 1 ? "s" : ""} ${status.toLowerCase()}`,
+          "success"
+        );
+      } catch (err: unknown) {
+        fieldnames.forEach((fn) => patchFieldState(fn, { loading: false }));
+        const msg = err instanceof Error ? err.message : "Request failed";
+        showToast(`Error: ${msg}`, "error");
+      }
     },
-    [config, patchFieldState, showToast]
+    [onboardingName, patchFieldState, showToast]
   );
 
   // ── Section approve / reject ───────────────────────────────────────────────
 
   const sectionAction = useCallback(
-    async (sectionName: string, status: ApprovalStatus) => {
+    async (sectionName: string, status: ApprovalStatus, comment?: string) => {
       try {
-        await updateSectionApprovalStatus(config, sectionName, status);
+        await updateSectionApprovalStatus(onboardingName, sectionName, status, comment);
 
         const sectionFields = sections[sectionName]?.fields ?? [];
         sectionFields.forEach((f) => patchFieldState(f.fieldname, { status }));
@@ -213,14 +200,14 @@ export function useApprovalActions(
         showToast(`Error: ${msg}`, "error");
       }
     },
-    [config, sections, patchFieldState, showToast]
+    [onboardingName, sections, patchFieldState, showToast]
   );
 
   // ── Bulk approve ALL pending fields across entire document ─────────────────
 
   const bulkApproveAllPending = useCallback(async () => {
     try {
-      await bulkUpdateApprovalStatus(config, "Approved");
+      await bulkUpdateApprovalStatus(onboardingName, "Approved");
 
       setFieldStates((prev) => {
         const next = { ...prev };
@@ -237,7 +224,7 @@ export function useApprovalActions(
       const msg = err instanceof Error ? err.message : "Request failed";
       showToast(`Error: ${msg}`, "error");
     }
-  }, [config, setFieldStates, showToast]);
+  }, [onboardingName, setFieldStates, showToast]);
 
   return {
     singleAction,
@@ -249,10 +236,6 @@ export function useApprovalActions(
 
 // ─── useSectionNav ────────────────────────────────────────────────────────────
 
-/**
- * Manages which section is active and exposes prev/next navigation.
- * Resets selectedFields on section change via the onNavigate callback.
- */
 export function useSectionNav(
   secKeys: string[],
   onNavigate?: () => void
@@ -277,7 +260,6 @@ export function useSectionNav(
     if (activeIdx > 0) goToSection(secKeys[activeIdx - 1]);
   }, [activeIdx, secKeys, goToSection]);
 
-  // Auto-select first section when keys become available
   const prevKeysRef = useRef<string[]>([]);
   if (
     secKeys.length > 0 &&
