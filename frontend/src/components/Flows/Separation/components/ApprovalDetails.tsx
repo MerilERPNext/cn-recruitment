@@ -11,7 +11,7 @@ import { useScreenSize } from "../../../../hooks/useScreenSize";
 import Tooltip from "../../../shared/Tooltip";
 
 interface ApprovalDetailsProps {
-  title: "Employee Separation";
+  title: "Employee Separation" | "Employee Termination";
 }
 
 export default function ApprovalDetails({
