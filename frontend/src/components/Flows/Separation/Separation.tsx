@@ -21,7 +21,7 @@ import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { SeparationSkeleton } from "../../shared/molecules/Skeletons/TableSkeleton";
 import { getActionsEnabled } from "../../../utils/uiPermission";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
+import { useGetEmployeeSeparationType, useGetSeparationFunnelDetails } from "../../../hooks/useSeparation";
 import formatToIndianDate from "../../../utils/formatToIndianDate";
 import { FlowRequestItem } from "../../../types/flows";
 
@@ -71,9 +71,19 @@ const Separation = () => {
 
 
   const item = separationFunnelDetails?.data?.[0];
-  const isLoading = isLoadingSeparationFunnelDetails;
+
+  const reference_name = item?.workflow_stages?.[0]?.todo?.reference_name ?? null;
+  const { data: separationType, isLoading: isLoadingSeparationType } = useGetEmployeeSeparationType(reference_name);
+
+  const showTerminationButton2 =
+    !isLoadingSeparationType &&
+    (!separationType?.custom_resignaion_type ||
+      separationType.custom_resignaion_type !== "Termination");
+
   const [isTriggeringChat, setIsTriggeringChat] = useState(false);
 
+
+  const isLoading = isLoadingSeparationFunnelDetails || isLoadingSeparationType;
   function getFunnelData() {
     const result: any = {
       termination_funnel_data: null,
@@ -241,7 +251,7 @@ const Separation = () => {
   /* ---------------------------------------------------------- */
 
   return (
-    <div className="min-h-screen md:p-4 md:gap-4">
+    <div className=" md:p-4 md:gap-4">
       <div className="flex items-center gap-1 mb-2">
         {!!RejectedRequest &&
           showRequestPage && (
@@ -272,13 +282,13 @@ const Separation = () => {
         )}
       </div>
       {showRequestPage ? (
-        <main className="min-h-full mb-2">
+        <main className="mb-2">
           <div className="max-w-full">
-            <ApprovalTracker For="Employee Separation" data={item as FlowRequestItem} />
+            <ApprovalTracker For={separationType?.custom_resignaion_type === "Termination" ? "Employee Termination" : "Employee Separation"} data={item as FlowRequestItem} />
           </div>
         </main>
       ) : (
-        <div className="min-h-screen">
+        <div className="">
           <div className="flex items-center justify-between"></div>
           <div className="bg-white rounded-xl shadow-sm w-full max-w-full overflow-hidden">
             {/* Main content */}
@@ -391,7 +401,7 @@ const Separation = () => {
         </div>
       )}
       <div className="w-full flex items-center justify-center">
-        {showTerminationButton && (
+        {showTerminationButton && showTerminationButton2 && (
           <Button
             onClick={() => handleTriggerChat("Termination")}
             size="md"

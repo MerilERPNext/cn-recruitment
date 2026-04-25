@@ -21,3 +21,12 @@ export const getSeparationFunnelDetails = async (
 
   return response as SeparationFunnelDetails;
 };
+
+export const getEmployeeSeparationType = async (
+  doctype = "Employee Separation",
+  docname: string,
+) => {
+  const response = await FrappeAPI.getDocument(doctype, docname, ["custom_resignaion_type"])
+
+  return response as { custom_resignaion_type?: string };
+};

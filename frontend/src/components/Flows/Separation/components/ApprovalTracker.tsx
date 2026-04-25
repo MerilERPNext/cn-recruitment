@@ -30,7 +30,7 @@ export interface ApprovalStage {
 
 interface ApprovalTrackerProps {
   data: FlowRequestItem;
-  For: "Employee Separation";
+  For: "Employee Separation" | "Employee Termination";
 }
 
 export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
@@ -110,14 +110,14 @@ export default function ApprovalTracker({ data, For }: ApprovalTrackerProps) {
       <Card>
         <div className="w-full  rounded-lg">
           <Typography className="mb-2" variant="subheading">
-            Separation Workflow Timeline
+            {For == "Employee Separation" ? "Separation Workflow Timeline" : "Termination Workflow Timeline"}
           </Typography>
           <div className="flex flex-col pt-1">
             {haveInitiatorForm && (
               <div className="grid w-full lg:hover:bg-primary/20 cursor-pointer text-sm lg:px-6">
                 <StatusTimelineRow
                   timelineData={{
-                    isLast: false,
+                    isLast: data?.approval_stages.length == 0 ? true : false,
                     status: "completed",
                   }}
                 >
