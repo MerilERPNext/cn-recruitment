@@ -5,6 +5,15 @@ from recruitment.api.candidate_portal import _get_onboarding_portal_rows, _read_
 DOCTYPENAME = "Employee Onboarding"
 MAX_PAGE_LENGTH = 100
 
+APPLICANT_STATUS_TERMINAL = "Rejected"
+
+
+def _get_applicant_status_options():
+    """Ordered status options from Job Applicant doctype's `status` field."""
+    meta = frappe.get_meta("Job Applicant")
+    field = meta.get_field("status")
+    return [o.strip() for o in (field.options or "").split("\n") if o.strip()]
+
 
 def _success_response(message, data, **meta):
     frappe.local.response["http_status_code"] = 200
@@ -283,3 +292,39 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_applicant_status(email):
+    applicant = frappe.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        ["name", "applicant_name", "status"],
+        as_dict=True,
+    )
+
+    if not applicant:
+        return {"success": False, "message": "Applicant not found"}
+
+    current_status = applicant.status
+    all_statuses = _get_applicant_status_options()
+    lifecycle = [s for s in all_statuses if s != APPLICANT_STATUS_TERMINAL]
+    active = set()
+
+    if current_status == APPLICANT_STATUS_TERMINAL and current_status in all_statuses:
+        active.add(APPLICANT_STATUS_TERMINAL)
+    elif current_status in lifecycle:
+        current_index = lifecycle.index(current_status)
+        active.update(lifecycle[: current_index + 1])
+
+    flags = [{"status": stage, "flag": stage in active} for stage in all_statuses]
+
+    return {
+        "success": True,
+        "data": {
+            "id": applicant.name,
+            "name": applicant.applicant_name,
+            "status": current_status,
+            "flags": flags,
+        },
+    }

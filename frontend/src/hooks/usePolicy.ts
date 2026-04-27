@@ -71,7 +71,13 @@ export const useMandatoryPoliciesPending = (employeeId?: string) => {
       try {
         const result = await frappeService.getDocumentList("Policy Details", {
           fields: ["name", "status", "policy", "sign_off_mandatory", "due_date"],
-          filters: [["status", "=", "Pending"], ["employee_id", "=", employeeId], ["sign_off_mandatory", "=", 1], ["custom_triggered_from_flow", "=", 0]],
+          filters: [
+            ["status", "=", "Pending"],
+            ["employee_id", "=", employeeId],
+            ["sign_off_mandatory", "=", 1],
+            ["custom_triggered_from_flow", "!=", 1],
+            ["due_date", ">=", new Date().toLocaleDateString('en-CA')]
+          ],
           limit_page_length: 1
         });
 

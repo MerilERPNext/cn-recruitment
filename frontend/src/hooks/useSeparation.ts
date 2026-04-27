@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getSeparationFunnelDetails, SeparationEmployeeService } from "../services/SeparationService";
+import { getEmployeeSeparationType, getSeparationFunnelDetails, SeparationEmployeeService } from "../services/SeparationService";
 import { SeparationFunnelDetails } from "../types/flows";
 
 export const useSeparationEmployee = () => {
@@ -13,5 +13,14 @@ export const useGetSeparationFunnelDetails = () => {
   return useQuery<SeparationFunnelDetails>({
     queryKey: ["separation-workflow"],
     queryFn: getSeparationFunnelDetails,
+  });
+};
+
+
+export const useGetEmployeeSeparationType = (docname: string) => {
+  return useQuery<{ custom_resignaion_type?: string }>({
+    queryKey: ["employee-separation-type", docname],
+    queryFn: () => getEmployeeSeparationType("Employee Separation", docname),
+    enabled: Boolean(docname)
   });
 };
