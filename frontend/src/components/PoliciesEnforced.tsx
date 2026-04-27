@@ -264,6 +264,7 @@ const PoliciesEnforced: React.FC = () => {
                   status: "Pending",
                   employee_id: currentEmployee?.name || "",
                   custom_triggered_from_flow: 0,
+                  due_date: [">=", new Date().toLocaleDateString('en-CA')],
                 }}
                 defaultFields={[
                   "name",

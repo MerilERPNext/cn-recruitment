@@ -256,3 +256,10 @@ body {
 .formio-hide-attachment .formio-component-file .list-group {
   display: none !important;
 }
+
+
+.docx-preview-wrapper-white .docx-preview-wrapper,
+.docx-preview-wrapper-white .docx-preview {
+  background: white !important;
+  box-shadow: none !important;
+}
