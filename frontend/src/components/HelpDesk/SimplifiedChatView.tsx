@@ -987,11 +987,11 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     const target = e.target as HTMLElement;
     const anchor = target.closest("a");
     if (anchor && anchor.href) {
-      const fileName = anchor.textContent || anchor.href.split("/").pop() || "File";
-      const { category } = getFileTypeInfo(fileName);
+      const { category } = getFileTypeInfo(anchor.href);
       // If it's a previewable file, intercept and show modal
       if (category !== "unknown") {
         e.preventDefault();
+        const fileName = anchor.textContent?.trim() || anchor.href.split("/").pop() || "File";
         setPreviewFile({ url: anchor.href, name: fileName });
       }
     }
