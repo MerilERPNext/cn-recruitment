@@ -263,3 +263,8 @@ body {
   background: white !important;
   box-shadow: none !important;
 }
+
+.simplified-chat-view-quoted-message-a li a:hover{
+  color: white !important;
+  font-weight: 400;
+}
