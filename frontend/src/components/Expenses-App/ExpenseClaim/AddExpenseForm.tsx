@@ -75,8 +75,20 @@ const LOCAL_KEYS = {
   EXPENSES: "add_expense_expenses",
 };
 
+const EXPENSE_ATTACHMENT_FILE_PATTERN =
+  ".pdf,.doc,.docx,.jpg,.jpeg,.png,.csv,.xls,.xlsx";
+
+const mergeFilePatterns = (...patterns: Array<string | undefined>) => {
+  const extensions = patterns
+    .flatMap((pattern) => (pattern || "").split(","))
+    .map((extension) => extension.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(extensions)).join(",");
+};
+
 const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ currentAttachments }) => {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name?: string } | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -106,24 +118,25 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
         if (actualFile && !(actualFile instanceof Blob || actualFile instanceof File)) {
           actualFile = null;
         }
-        const url = f.url;
+        const url = f?.data?.message?.file_url || f.url || f.file_url;
         if (!actualFile && !url) return;
         let parsedUrl = url;
-        if (url && typeof url === 'string' && !url.startsWith('http') && !url.startsWith('/') && !url.startsWith('blob:')) {
-          parsedUrl = `/files/${url}`;
+        if (url && typeof url === "string" && !url.startsWith("http") && !url.startsWith("/") && !url.startsWith("blob:")) {
+          parsedUrl = url.startsWith("files/") ? `/${url}` : `/files/${url}`;
         }
         const previewUrl = actualFile ? URL.createObjectURL(actualFile) : parsedUrl;
         const isImage = actualFile
           ? actualFile.type?.startsWith("image/")
-          : (f.type?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.name || ""));
-        const safeName = (f.originalName || f.name || "Attachment").replace(/"/g, '&quot;');
+          : ((f.type || f?.data?.message?.file_type)?.startsWith("image/") || /\.(jpeg|jpg|gif|png|webp|svg|ico)$/i.test(f.originalName || f.name || f?.data?.message?.file_name || ""));
+        const fileName = f.originalName || f.name || f?.data?.message?.file_name || actualFile?.name || "Attachment";
+        const safeName = fileName.replace(/"/g, '&quot;');
 
-        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px]" style="border: 1px solid #cbd5e1 !important;">';
+        html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px] cursor-pointer preview-image-trigger" data-preview-url="' + previewUrl + '" data-preview-name="' + safeName + '" style="border: 1px solid #cbd5e1 !important;">';
 
         if (isImage) {
-          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;" />`;
+          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm shrink-0" style="border: 1px solid #cbd5e1 !important;" />`;
         } else {
-          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
+          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded text-[10px] font-semibold text-gray-600 uppercase shrink-0" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
         }
         html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px]" title="${safeName}">${safeName}</p>`;
         html += '</div>';
@@ -137,7 +150,8 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
       triggers.forEach(el => {
         el.addEventListener('click', () => {
           const uri = el.getAttribute('data-preview-url');
-          if (uri) setPreviewUrl(uri);
+          const name = el.getAttribute('data-preview-name') || undefined;
+          if (uri) setPreviewFile({ url: uri, name });
         });
       });
 
@@ -146,7 +160,13 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[] }> = ({ cur
     return () => clearInterval(interval);
   }, [currentAttachments]);
 
-  return previewUrl ? <FilePreviewModal fileUrl={previewUrl} onClose={() => setPreviewUrl(null)} /> : null;
+  return previewFile ? (
+    <FilePreviewModal
+      fileUrl={previewFile.url}
+      fileName={previewFile.name}
+      onClose={() => setPreviewFile(null)}
+    />
+  ) : null;
 };
 
 const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
@@ -199,6 +219,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
   const [isDeleteShareConfirmOpen, setIsDeleteShareConfirmOpen] = useState(false);
   const [filesMap, setFilesMap] = useState<Record<string, any[]>>({});
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
+  const [customFormPreviewFiles, setCustomFormPreviewFiles] = useState<Record<string, any[]>>({});
   const [pendingExpensesToSubmit, setPendingExpensesToSubmit] = useState<Expense[] | undefined>(undefined);
   const [isFileProcessing, setIsFileProcessing] = useState(false);
   const hydrationRef = useRef(false);
@@ -286,11 +307,26 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
             const matchedFile = claimAttachments?.find((c: any) => c.file_name === p.name || c.file_url?.includes(p.name));
             if (matchedFile && matchedFile.file_url) {
               changed = true;
-              return { ...p, url: matchedFile.file_url };
+              return {
+                ...p,
+                name: matchedFile.file_name || p.name,
+                originalName: matchedFile.file_name || p.originalName || p.name,
+                url: matchedFile.file_url,
+                file_url: matchedFile.file_url,
+                storage: "url",
+              };
             }
           }
           return p;
         });
+
+        if (changed) {
+          setDynamicFormData((curr: any) => ({
+            ...curr,
+            attachments: next,
+          }));
+        }
+
         return changed ? next : prev;
       });
     }
@@ -839,6 +875,10 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
               next.multiple = true;
               // Defer upload so file linking happens against final docname.
               next.storage = "customfiles";
+              next.filePattern = mergeFilePatterns(
+                next.filePattern,
+                EXPENSE_ATTACHMENT_FILE_PATTERN,
+              );
             }
 
             if (Array.isArray(next.components)) {
@@ -872,6 +912,17 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
     () => customFileComponents.map((comp: any) => String(comp.key)),
     [customFileComponents],
   );
+
+  const getCustomPreviewFiles = (submissionData: Record<string, any> = {}) => {
+    const next: Record<string, any[]> = {};
+
+    customFileKeys.forEach((key) => {
+      const value = submissionData[key];
+      next[key] = Array.isArray(value) ? [...value] : value ? [value] : [];
+    });
+
+    return next;
+  };
 
   const getCustomFileCacheKey = (fileObj: any) => {
     const name = fileObj?.originalName || fileObj?.name || fileObj?.file?.name;
@@ -1012,31 +1063,47 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
 
   const removeFormioFile = (compKey: string, index: number) => {
     try {
-      const currentValue = dynamicFormRef.current?.submission?.data?.[compKey];
-      const currentFiles = Array.isArray(currentValue)
-        ? currentValue
-        : currentValue
-          ? [currentValue]
-          : [];
-      const nextFiles = currentFiles.filter((_: any, i: number) => i !== index);
-
-      const component = dynamicFormRef.current?.getComponent?.(compKey);
-      if (component?.setValue) {
-        component.setValue(nextFiles);
+      const rootNode = document.getElementById(dynamicFormContainerId) || document;
+      const container = rootNode.querySelector(`.formio-component-${compKey}`);
+      if (container) {
+        const removeButtons = container.querySelectorAll(
+          'i[ref="fileStatusRemove"], i[ref="removeLink"], button[ref="removeLink"], i.fa-times'
+        );
+        if (removeButtons && removeButtons[index]) {
+          (removeButtons[index] as HTMLElement).click();
+        } else {
+          console.error("Form.io native remove button not found");
+        }
       }
 
-      if (dynamicFormRef.current?.submission?.data) {
-        dynamicFormRef.current.submission.data[compKey] = nextFiles;
-      }
-
-      setDynamicFormData((prevData: any) => ({
-        ...prevData,
-        [compKey]: nextFiles,
-      }));
+      // Proactively update local state so the custom preview responds immediately.
+      setCustomFormPreviewFiles((prev) => {
+        const currentFiles = Array.isArray(prev[compKey]) ? prev[compKey] : [];
+        return {
+          ...prev,
+          [compKey]: currentFiles.filter((_: any, i: number) => i !== index),
+        };
+      });
+      setDynamicFormData((prevData: any) => {
+        const currentValue = prevData?.[compKey];
+        const currentFiles = Array.isArray(currentValue)
+          ? currentValue
+          : currentValue
+            ? [currentValue]
+            : [];
+        return {
+          ...prevData,
+          [compKey]: currentFiles.filter((_: any, i: number) => i !== index),
+        };
+      });
     } catch (err) {
       console.error("Failed to remove file from formio", err);
     }
   };
+
+  useEffect(() => {
+    setCustomFormPreviewFiles(getCustomPreviewFiles(dynamicFormData || {}));
+  }, [customFileKeys, dynamicFormData]);
 
   useEffect(() => {
     if (!expenseTypeData?.fields) {
@@ -1546,7 +1613,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     input: true,
                     multiple: true,
                     storage: "customfiles",
-                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png",
+                    filePattern: EXPENSE_ATTACHMENT_FILE_PATTERN,
                     customClass: "mb-4",
                     html: true,
                     validate: {
@@ -2088,6 +2155,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                 // to prevent infinite onChange validation loops. 
                 cacheCustomFormFiles(change.data || {});
                 setDynamicFormData(change.data);
+                setCustomFormPreviewFiles(getCustomPreviewFiles(change.data || {}));
 
                 // Form.io mutates arrays directly. We must create a new array reference 
                 // to force React to re-render the Attachment Preview component below.
@@ -2199,8 +2267,7 @@ const AddExpenseForm: React.FC<AddExpenseFormProps> = ({
                     .join("\n")}
                 `}</style>
                 {customFileComponents.map((comp: any) => {
-                  const rawFiles = dynamicFormData?.[comp.key as string];
-                  const files = Array.isArray(rawFiles) ? rawFiles : (rawFiles ? [rawFiles] : []);
+                  const files = customFormPreviewFiles[comp.key as string] || [];
                   if (files.length === 0) return null;
 
                   return (
