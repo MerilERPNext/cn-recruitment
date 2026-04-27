@@ -493,8 +493,8 @@ export function UnknownPreview({ fileUrl, fileName }: { fileUrl: string; fileNam
 }
 
 export function FilePreview({ fileUrl, fileName: customFileName, className = "", zoom }: FilePreviewProps) {
-  const { category } = getFileTypeInfo(fileUrl);
   const fileName = customFileName || fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
+  const { category } = getFileTypeInfo(fileName);
 
   return (
     <div className={`w-full h-full flex flex-col bg-white overflow-hidden ${className}`}>
