@@ -283,3 +283,32 @@ def get_employee_onboarding_list(order_by="boarding_status asc", page_length=10,
     except Exception:
         frappe.log_error(frappe.get_traceback(), "Employee Onboarding List API Error")
         return _error_response("Unable to fetch Employee Onboarding list right now.", 500)
+
+
+@frappe.whitelist(allow_guest=True)
+def get_applicant_status(email):
+    mapping = {
+        "Open": "Applied",
+        "Screening": "Review",
+        "Interview": "Interview",
+        "Accepted": "Transitioning"
+    }
+
+    applicant = frappe.get_value(
+        "Job Applicant",
+        {"email_id": email},
+        ["name", "applicant_name", "status"],
+        as_dict=True
+    )
+
+    if not applicant:
+        return {"success": False, "message": "Applicant not found"}
+
+    return {
+        "success": True,
+        "data": {
+            "id": applicant.name,
+            "name": applicant.applicant_name,
+            "status": mapping.get(applicant.status)
+        }
+    }
