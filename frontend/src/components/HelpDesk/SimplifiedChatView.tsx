@@ -29,6 +29,8 @@ import Button from "../shared/atoms/Button";
 import Modal from "../shared/Modal";
 import FormPreview from "../shared/molecules/FormPreview";
 import { useLoadingOverlay } from "../../context/OverlayContext";
+import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
+import { FileTypeIcon, getFileTypeInfo } from "../../utils/fileUtils";
 
 interface SimplifiedChatViewProps {
   ticket: TicketDetail;
@@ -517,6 +519,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const [replyingTo, setReplyingTo] = useState<SimpleChatMessage | null>(null);
   const [isDropDownOpen, setIsDropDownOpen] = useState(false);
   const { isDesktop } = useScreenSize();
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
   // Mutations
   const sendEmailMutation = useSendEmailReply();
   const closeTicketMutation = useCloseTicket();
@@ -534,12 +537,6 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   const isTicketClosed = ticket.status === "Closed";
 
   // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current && activeTab === "chat") {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [ticket.communications, activeTab]);
-
   // Transform ticket data into simple chat messages (emails only, no comments/activity)
   const messages = useMemo<SimpleChatMessage[]>(() => {
     const msgs: SimpleChatMessage[] = [];
@@ -591,6 +588,22 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     // Sort by timestamp
     return msgs.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }, [ticket, currentUserEmail]);
+
+  // Scroll to bottom when messages change
+  const isInitialScroll = useRef(true);
+  useEffect(() => {
+    if (activeTab === "chat" && messagesEndRef.current) {
+      // Use a small timeout to ensure the layout has updated and animations are settled
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: isInitialScroll.current ? "auto" : "smooth",
+          block: "end",
+        });
+        isInitialScroll.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length, activeTab]);
 
   // Group messages by date
   const groupedMessages = useMemo(() => {
@@ -947,32 +960,51 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     if (!attachments || attachments.length === 0) return null;
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-200/30 space-y-1.5">
-        {attachments.map((attachment, index) => (
-          <a
-            key={index}
-            href={attachment.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${isCurrentUser
-              ? "bg-blue-400/20 text-blue-100 hover:bg-blue-400/30"
-              : "bg-gray-200/50 text-gray-700 hover:bg-gray-200"
-              }`}
-          >
-            <Paperclip className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{attachment.file_name}</span>
-          </a>
-        ))}
+      <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+        {attachments.map((attachment, index) => {
+          const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
+          return (
+            <button
+              key={index}
+              onClick={() => setPreviewFile({ url: attachment.file_url, name: attachment.file_name })}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border ${isCurrentUser
+                ? "bg-blue-400/10 border-blue-400/20 text-blue-100 hover:bg-blue-400/20"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+                }`}
+            >
+              <div className={`w-6 h-6 rounded flex items-center justify-center ${isCurrentUser ? "bg-blue-500/20" : bgColor}`}>
+                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${isCurrentUser ? "text-blue-200" : iconColor}`} />
+              </div>
+              <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+            </button>
+          );
+        })}
       </div>
     );
   };
 
+  const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const anchor = target.closest("a");
+    if (anchor && anchor.href) {
+      const { category } = getFileTypeInfo(anchor.href);
+      // If it's a previewable file, intercept and show modal
+      if (category !== "unknown") {
+        e.preventDefault();
+        const fileName = anchor.textContent?.trim() || anchor.href.split("/").pop() || "File";
+        setPreviewFile({ url: anchor.href, name: fileName });
+      }
+    }
+  };
+
   // Quoted message component
   const QuotedMessage = ({ content, sender, isCurrentUser }: { content: string; sender?: string | null; isCurrentUser: boolean }) => (
-    <div className={`mb-2 p-3 rounded-lg border-l-4 ${isCurrentUser
-      ? 'bg-blue-400/20 border-blue-300 text-blue-100'
-      : 'bg-gray-100 border-gray-300 text-gray-600'
-      }`}>
+    <div
+      onClick={handleContentClick}
+      className={`mb-2 p-3 rounded-lg border-l-4 cursor-pointer${isCurrentUser
+        ? 'bg-blue-400/20 border-blue-300 text-blue-100'
+        : 'bg-gray-100 border-gray-300 text-gray-600'
+        }`}>
       <div className={`text-xs mb-1 font-medium ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
         {sender ? `${sender} wrote:` : 'Previous message:'}
       </div>
@@ -990,7 +1022,7 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     if (isCurrentUser) {
       // Right-aligned message (current user) - blue gradient
       return (
-        <div className="group flex justify-end gap-3 mb-6">
+        <div className="group flex justify-end gap-3 mb-6  simplified-chat-view-quoted-message-a ">
           {/* Reply button - shows on hover */}
           {!isTicketClosed && (
             <button
@@ -1011,7 +1043,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
               {/* Main content */}
               <div
-                className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
+                onClick={handleContentClick}
+                className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
                 dangerouslySetInnerHTML={{ __html: content }}
               />
               <AttachmentList attachments={attachments} isCurrentUser={true} />
@@ -1045,7 +1078,8 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
 
             {/* Content */}
             <div
-              className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
+              onClick={handleContentClick}
+              className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
               dangerouslySetInnerHTML={{ __html: content }}
             />
             <AttachmentList attachments={attachments} isCurrentUser={false} />
@@ -1615,6 +1649,15 @@ const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         onSubmit={handleRejectResolution}
         isLoading={rejectResolutionMutation.isPending}
       />
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };

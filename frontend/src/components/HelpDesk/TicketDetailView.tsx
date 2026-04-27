@@ -164,12 +164,6 @@ const TicketDetailView: React.FC = () => {
   const resolutionAddedByOther = ticket?.resolution_details && !isRaiser && !isAdmin;
 
   // Scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [ticket?.comments, ticket?.communications]);
-
   // Transform ticket data into chat messages (including history/audit trail)
   const allMessages = useMemo<ChatMessageData[]>(() => {
     if (!ticket) return [];
@@ -253,6 +247,21 @@ const TicketDetailView: React.FC = () => {
     // Sort by timestamp
     return messages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }, [ticket, currentUserEmail]);
+
+  // Scroll to bottom when messages change
+  const isInitialScroll = useRef(true);
+  useEffect(() => {
+    if (messagesEndRef.current && activeTab === "activity") {
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: isInitialScroll.current ? "auto" : "smooth",
+          block: "end",
+        });
+        isInitialScroll.current = false;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [allMessages.length, activeTab]);
 
   // Filter messages based on active tab
   const filteredMessages = useMemo(() => {
