@@ -21,8 +21,8 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
   const fileName = customFileName || fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
   const { category, label, iconColor, bgColor } = getFileTypeInfo(fileName);
 
-  const handleZoomIn  = useCallback(() => setImageZoom((p) => Math.min(p + 25, 200)), []);
-  const handleZoomOut = useCallback(() => setImageZoom((p) => Math.max(p - 25, 50)),  []);
+  const handleZoomIn = useCallback(() => setImageZoom((p) => Math.min(p + 25, 200)), []);
+  const handleZoomOut = useCallback(() => setImageZoom((p) => Math.max(p - 25, 50)), []);
   const handleResetZoom = useCallback(() => setImageZoom(100), []);
 
   // Close on Escape
@@ -122,6 +122,7 @@ export function FilePreviewModal({ fileUrl, fileName: customFileName, onClose }:
           <FilePreview
             fileUrl={fileUrl}
             fileName={fileName}
+            zoom={imageZoom}
           />
         </div>
       </div>

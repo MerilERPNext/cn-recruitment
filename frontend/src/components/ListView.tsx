@@ -74,7 +74,7 @@ interface FrappeListViewProps<T extends BaseItem> {
   isFilter?: boolean;
   isLoading?: boolean;
   pageSize?: number;
-  defaultFilters?: Record<string, string | number>;
+  defaultFilters?: Record<string, string | number | [string, unknown]>;
   defaultFields?: string[];
   searchFields?: string[];
   onItemClick?: (item: T) => void;

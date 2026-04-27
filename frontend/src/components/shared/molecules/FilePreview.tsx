@@ -12,6 +12,7 @@ interface FilePreviewProps {
   fileUrl: string;
   fileName?: string;
   className?: string;
+  zoom?: number;
 }
 
 // ─── Shared Components ────────────────────────────────────────────────────────
@@ -491,7 +492,7 @@ export function UnknownPreview({ fileUrl, fileName }: { fileUrl: string; fileNam
   );
 }
 
-export function FilePreview({ fileUrl, fileName: customFileName, className = "" }: FilePreviewProps) {
+export function FilePreview({ fileUrl, fileName: customFileName, className = "", zoom }: FilePreviewProps) {
   const { category } = getFileTypeInfo(fileUrl);
   const fileName = customFileName || fileUrl.split(/[?#]/)[0].split("/").pop() || "File";
 
@@ -499,7 +500,7 @@ export function FilePreview({ fileUrl, fileName: customFileName, className = "" 
     <div className={`w-full h-full flex flex-col bg-white overflow-hidden ${className}`}>
       {(() => {
         switch (category) {
-          case "image": return <ImagePreview fileUrl={fileUrl} fileName={fileName} />;
+          case "image": return <ImagePreview fileUrl={fileUrl} fileName={fileName} zoom={zoom} />;
           case "pdf": return <PdfPreview fileUrl={fileUrl} />;
           case "office-word": return <DocxPreview fileUrl={fileUrl} fileName={fileName} />;
           case "office-excel": return <ExcelPreview fileUrl={fileUrl} fileName={fileName} />;
