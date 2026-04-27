@@ -19,6 +19,8 @@ import { useScreenSize } from "../hooks/useScreenSize";
 import { Typography } from "./shared/atoms/Typography";
 import FormPreview from "./shared/molecules/FormPreview";
 import Modal from "./shared/Modal";
+import { FilePreview } from "./shared/molecules/FilePreview";
+import { getFileTypeInfo } from "../utils/fileUtils";
 
 interface PolicyDetailsDocument {
   name: string;
@@ -305,10 +307,18 @@ const PolicySignOff: React.FC = () => {
           {policyData.policy_document ? (
             <div className="flex-1 w-full h-full overflow-hidden p-4">
               <div className="bg-white rounded-lg shadow-sm w-full h-full border border-gray-200 overflow-hidden">
-                <SecurePdfViewer
-                  fetchUrl={policyData.policy_document}
-                  className="h-full"
-                />
+                {getFileTypeInfo(policyData.policy_document).category === "pdf" ? (
+                  <SecurePdfViewer
+                    fetchUrl={policyData.policy_document}
+                    className="h-full"
+                  />
+                ) : (
+                  <FilePreview
+                    fileUrl={policyData.policy_document}
+                    fileName={policyData.policy}
+                    className="h-full docx-preview-wrapper-white"
+                  />
+                )}
               </div>
             </div>
           ) : (
@@ -326,104 +336,101 @@ const PolicySignOff: React.FC = () => {
           )}
         </div>
 
-        {/* Footer Actions - Fixed at bottom */}
-        <div className="shrink-0 bg-white border-t border-gray-200 p-4 sm:px-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-40">
-          {policyData.status === "Pending" ? (
-            <div className="max-w-3xl mx-auto w-full">
-              {policyData.form_json && !formSubmitted ? (
+        {/* Footer Actions - Compact & Cleaner */}
+        <div className="shrink-0 sticky bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-[0_-1px_10px_rgba(0,0,0,0.04)]">
+          <div className="max-w-3xl mx-auto w-full px-4 sm:px-5 py-2.5">
+            {policyData.status === "Pending" ? (
+              policyData.form_json && !formSubmitted ? (
                 <button
                   onClick={handleSignOff}
-                  className="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white font-medium py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:from-primary-700 hover:to-primary-600 active:scale-[0.99]"
                 >
                   <span>Complete Acknowledgment Form</span>
                   <IoChevronBackOutline className="rotate-180" />
                 </button>
               ) : (
-                <div className="space-y-4">
-                  {policyData.form_json && formSubmitted && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => setIsPreviewModalOpen(true)}
-                        className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-lg border border-primary-100 transition-colors"
-                      >
-                        <IoCheckmarkCircleOutline size={16} />
-                        View Submitted Form
-                      </button>
-                    </div>
-                  )}
-                  <label className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
-                    <div className="flex items-center h-5 mt-0.5">
-                      <input
-                        type="checkbox"
-                        id="agreement"
-                        checked={isAgreed}
-                        onChange={(e) => setIsAgreed(e.target.checked)}
-                        className="w-5 h-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 transition duration-150 ease-in-out cursor-pointer"
-                      />
-                    </div>
-                    <div className="ms-2">
+                <div className="space-y-2">
+                  {/* Checkbox */}
+                  <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 transition-colors hover:bg-gray-50 hover:border-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={isAgreed}
+                      onChange={(e) => setIsAgreed(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <div className="min-w-0 flex flex-wrap gap-x-2">
                       <Typography
                         variant="body"
-                        className="text-gray-700 font-medium"
+                        className="text-sm font-medium text-gray-800 leading-snug"
                       >
                         I have read and understood this policy
                       </Typography>
                       <Typography
                         variant="caption"
-                        className="text-gray-500 mt-1 block"
+                        className="mt-0.5 block text-xs text-gray-500 leading-snug"
                       >
-                        By checking this box, you confirm that you have reviewed
-                        the document above.
+                        ( Confirm that you reviewed the document. )
                       </Typography>
                     </div>
                   </label>
 
-                  <div className={`flex gap-x-4`}>
-                    <button
-                      onClick={handleSignOff}
-                      disabled={!isAgreed}
-                      className={`sm:w-[250px] w-full max-sm:text-sm ml-auto font-medium sm:py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm ${isAgreed
-                        ? "bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 text-white shadow-md hover:shadow-lg"
-                        : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                        }`}
-                    >
-                      <IoCheckmarkCircleOutline size={20} />
-                      Acknowledge Policy
-                    </button>
+                  {/* Actions */}
+                  <div className="flex  gap-2 flex-row sm:items-center sm:justify-end">
+                    {policyData.form_json && formSubmitted && (
+                      <button
+                        onClick={() => setIsPreviewModalOpen(true)}
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-primary-100 bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 sm:min-w-[120px]"
+                      >
+                        <IoCheckmarkCircleOutline size={16} />
+                        Preview
+                      </button>
+                    )}
 
                     {policyData.allow_decline === 1 && (
                       <button
                         onClick={handleDecline}
-                        className="sm:w-[250px] max-sm:text-sm w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-300 font-medium py-3 sm:px-6 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-50 sm:min-w-[120px]"
                       >
-                        <IoCloseCircleOutline size={20} />
+                        <IoCloseCircleOutline size={16} />
                         Decline
                       </button>
                     )}
+
+                    <button
+                      onClick={handleSignOff}
+                      disabled={!isAgreed}
+                      className={`inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-all sm:min-w-[160px] ${isAgreed
+                        ? "bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-sm hover:from-primary-700 hover:to-primary-600 active:scale-[0.99]"
+                        : "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
+                        }`}
+                    >
+                      <IoCheckmarkCircleOutline size={16} />
+                      Acknowledge
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center p-2">
-              <div
-                className={`flex items-center gap-2 px-4 py-2 rounded-full ${policyData.status === "Acknowledged"
-                  ? "bg-success-50 text-success-700 border border-success-100"
-                  : "bg-red-50 text-red-700 border border-red-100"
-                  }`}
-              >
-                {policyData.status === "Acknowledged" ? (
-                  <IoCheckmarkCircleOutline size={18} />
-                ) : (
-                  <IoCloseCircleOutline size={18} />
-                )}
-                <Typography variant="bodyMedium" className="font-semibold">
-                  Policy {policyData.status} on{" "}
-                  {new Date(policyData.modified).toLocaleDateString()}
-                </Typography>
+              )
+            ) : (
+              <div className="flex items-center justify-center py-1">
+                <div
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${policyData.status === "Acknowledged"
+                    ? "border-success-100 bg-success-50 text-success-700"
+                    : "border-red-100 bg-red-50 text-red-700"
+                    }`}
+                >
+                  {policyData.status === "Acknowledged" ? (
+                    <IoCheckmarkCircleOutline size={14} />
+                  ) : (
+                    <IoCloseCircleOutline size={14} />
+                  )}
+                  <span>
+                    {policyData.status} on{" "}
+                    {new Date(policyData.modified).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Full Screen Modal with FormIO Form */}
