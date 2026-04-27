@@ -255,13 +255,11 @@ const RequestIssueModal: React.FC<RequestIssueModalProps> = ({
 
   // Remove attachment
   const removeAttachment = (index: number) => {
-    setAttachments((prev) => {
-      const fileToRemove = prev[index];
-      if (fileToRemove.file_url.startsWith("blob:")) {
-        URL.revokeObjectURL(fileToRemove.file_url);
-      }
-      return prev.filter((_, i) => i !== index);
-    });
+    const fileToRemove = attachments[index];
+    if (fileToRemove?.file_url.startsWith("blob:")) {
+      URL.revokeObjectURL(fileToRemove.file_url);
+    }
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const removeFormioFile = (formId: string, compKey: string, index: number) => {
