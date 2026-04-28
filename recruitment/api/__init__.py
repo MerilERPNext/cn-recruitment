@@ -490,14 +490,20 @@ def get_ticket_list_data(
             }
 
         employee_names = {}
+        employee_ids = {}
         if raised_by_users:
             employee_rows = frappe.get_all(
                 "Employee",
                 filters={"user_id": ["in", raised_by_users]},
-                fields=["user_id", "employee_name"],
+                fields=["user_id", "employee_name", "name"],
             )
             employee_names = {
                 row.user_id: row.employee_name
+                for row in employee_rows
+                if row.user_id
+            }
+            employee_ids = {
+                row.user_id: row.name
                 for row in employee_rows
                 if row.user_id
             }
@@ -515,12 +521,13 @@ def get_ticket_list_data(
             }
 
         for tic in data:
-            if tic.get("raised_by") in employee_names:
-                tic["raise_by_name"] = employee_names[tic.raised_by]
+            raised_by = tic.get("raised_by")
+            if raised_by in employee_names:
+                tic["raise_by_name"] = employee_names[raised_by]
+            if raised_by in employee_ids:
+                tic["raise_by_id"] = employee_ids[raised_by]
             tic["no_of_comments"] = comment_counts.get(tic.get("name"), 0)
-            tic["user_type"] = user_status_map.get(
-                tic.get("raised_by"), "Outside user"
-            )
+            tic["user_type"] = user_status_map.get(raised_by, "Outside user")
     
     # Calculate total count with same filters and or_filters
     # Use frappe.get_list with minimal fields and count the results
