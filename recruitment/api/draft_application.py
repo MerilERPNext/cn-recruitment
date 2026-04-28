@@ -137,19 +137,16 @@ def delete_applicant(job_applicant_email):
 
         draft = frappe.db.get_value(DOCTYPENAME, {"job_applicant_email": email}, "name")
         if draft:
-            frappe.delete_doc(DOCTYPENAME, draft, ignore_permissions=True)
+            frappe.delete_doc(DOCTYPENAME, draft, ignore_permissions=True, force=True)
 
-        frappe.delete_doc("Job Applicant", applicant, ignore_permissions=True)
+        frappe.delete_doc("Job Applicant", applicant, ignore_permissions=True, force=True)
         frappe.db.commit()
-    except frappe.LinkExistsError as e:
-        frappe.db.rollback()
-        return _err(f"Cannot delete Job Applicant: {e}", 409)
     except frappe.PermissionError:
         return _err("You are not permitted to delete this Job Applicant.", 403)
-    except Exception:
+    except Exception as e:
         frappe.db.rollback()
         frappe.log_error(frappe.get_traceback(), "Draft Application delete_applicant failed")
-        return _err("Unable to delete Job Applicant right now.", 500)
+        return _err(f"Unable to delete Job Applicant: {type(e).__name__}: {e}", 500)
 
     return _ok(
         "Job Applicant deleted.",
