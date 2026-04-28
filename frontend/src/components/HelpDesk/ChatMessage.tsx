@@ -1,5 +1,7 @@
 import React from "react";
-import { Paperclip, Mail, MessageSquare, FileText, Activity } from "lucide-react";
+import { Mail, MessageSquare, FileText, Activity } from "lucide-react";
+import { FilePreviewModal } from "../shared/molecules/FilePreviewModal";
+import { FileTypeIcon, getFileTypeInfo } from "../../utils/fileUtils";
 
 export interface ChatMessageData {
   id: string;
@@ -22,6 +24,7 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const { type, content, sender, timestamp, isCurrentUser, attachments, deliveryStatus } = message;
+  const [previewFile, setPreviewFile] = React.useState<{ url: string; name: string } | null>(null);
 
   // Format timestamp
   const formatTime = (date: Date) => {
@@ -119,9 +122,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           />
         ) : (
           <div
-            className={`${sizeClasses} rounded-xl flex items-center justify-center font-medium ${
-              isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
-            }`}
+            className={`${sizeClasses} rounded-xl flex items-center justify-center font-medium ${isCurrentUser ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+              }`}
           >
             {getInitials(sender.name)}
           </div>
@@ -135,25 +137,41 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     if (!attachments || attachments.length === 0) return null;
 
     return (
-      <div className="mt-3 pt-3 border-t border-gray-200/30 space-y-1.5">
-        {attachments.map((attachment, index) => (
-          <a
-            key={index}
-            href={attachment.file_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-              isCurrentUser
-                ? "bg-blue-400/20 text-blue-100 hover:bg-blue-400/30"
-                : "bg-gray-200/50 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            <Paperclip className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">{attachment.file_name}</span>
-          </a>
-        ))}
+      <div className="mt-3 pt-3 border-t border-gray-200/30 flex flex-wrap gap-2">
+        {attachments.map((attachment, index) => {
+          const { category, iconColor, bgColor } = getFileTypeInfo(attachment.file_name);
+          return (
+            <button
+              key={index}
+              onClick={() => setPreviewFile({ url: attachment.file_url, name: attachment.file_name })}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all border ${isCurrentUser
+                ? "bg-blue-400/20 border-blue-400/30 text-blue-50 hover:bg-blue-400/30 shadow-sm shadow-blue-500/10"
+                : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 shadow-sm"
+                }`}
+            >
+              <div className={`w-6 h-6 rounded flex items-center justify-center ${isCurrentUser ? "bg-blue-500/30" : bgColor}`}>
+                <FileTypeIcon category={category} className={`w-3.5 h-3.5 ${isCurrentUser ? "text-white" : iconColor}`} />
+              </div>
+              <span className="truncate max-w-[150px] font-medium">{attachment.file_name}</span>
+            </button>
+          );
+        })}
       </div>
     );
+  };
+
+  const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const anchor = target.closest("a");
+    if (anchor && anchor.href) {
+      const fileName = anchor.textContent || anchor.href.split("/").pop() || "File";
+      const { category } = getFileTypeInfo(fileName);
+      // If it's a previewable file, intercept and show modal
+      if (category !== "unknown") {
+        e.preventDefault();
+        setPreviewFile({ url: anchor.href, name: fileName });
+      }
+    }
   };
 
   // Activity message (system/audit trail)
@@ -180,7 +198,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           {/* Message bubble */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl rounded-br-md px-5 py-4">
             <div
-              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
+              onClick={handleContentClick}
+              className="text-sm prose prose-sm prose-invert max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
               dangerouslySetInnerHTML={createMarkup(content)}
             />
             <AttachmentList />
@@ -212,7 +231,8 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
 
           {/* Content */}
           <div
-            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0"
+            onClick={handleContentClick}
+            className="text-sm text-gray-800 prose prose-sm max-w-none [&>p]:mb-0 [&>p:last-child]:mb-0 cursor-pointer"
             dangerouslySetInnerHTML={createMarkup(content)}
           />
           <AttachmentList />
@@ -221,6 +241,14 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
         {/* Timestamp */}
         <span className="text-xs text-gray-400 mt-2 ml-1">{formatTime(timestamp)}</span>
       </div>
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal
+          fileUrl={previewFile.url}
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
     </div>
   );
 };
