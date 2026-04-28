@@ -329,25 +329,26 @@ export function MyOvertimeDetails({
                   ),
                 )}
               </div>
-              {data?.attachments && data?.attachments?.length > 0 ? (
-                <div className="py-4">
-                  <Typography
-                    variant="bodySmall"
-                    className="mb-2 font-bold block"
-                  >
-                    Attachment
-                  </Typography>
+            </div>
+          )}
 
-                  <div className="space-y-2">
-                    {data.attachments.map((item) => (
-                      <AttachmentCard
-                        key={item.file_url}
-                        fileUrl={item.file_url}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+          {/* Attachments */}
+          {data?.attachments && data?.attachments?.length > 0 && (
+            <div>
+              <Typography
+                variant="bodySmall"
+                className="mb-2 font-bold block"
+              >
+                Attachments
+              </Typography>
+              <div className="space-y-2">
+                {data.attachments.map((item) => (
+                  <AttachmentCard
+                    key={item.file_url}
+                    fileUrl={item.file_url}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>

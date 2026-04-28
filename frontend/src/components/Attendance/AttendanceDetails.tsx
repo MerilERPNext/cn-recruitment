@@ -402,13 +402,21 @@ export function AttendanceDetailView({
           </div>
 
           {/* Attachments */}
-          {data?.attachments?.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <Typography variant="mobileCardLabel">Attachments</Typography>
-
+          {data?.attachments && data?.attachments?.length > 0 && (
+            <div>
+              <Typography
+                variant="bodySmall"
+                className="mb-2 font-bold block"
+              >
+                Attachments
+              </Typography>
               <div className="space-y-2">
                 {data.attachments.map((item: any) => (
-                  <AttachmentCard key={item.file_url} fileUrl={item.file_url} />
+                  <AttachmentCard
+                    key={item.file_url}
+                    fileUrl={item.file_url}
+                    fileName={item.file_name}
+                  />
                 ))}
               </div>
             </div>

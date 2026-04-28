@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import { AttachmentCard } from "./AttachmentCard";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false }: { fileObj: any, onRemove: () => void, readOnly?: boolean }) => {
+export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false, showFileNameWithEye = false }: { fileObj: any, onRemove: () => void, readOnly?: boolean, showFileNameWithEye?: boolean }) => {
   const [objectUrl, setObjectUrl] = useState<string>("");
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export const FormioPreviewItem = ({ fileObj, onRemove, readOnly = false }: { fil
         <AttachmentCard
           fileUrl={fileUrl}
           fileName={fileName}
-          showFileNameWithEye={true}
+          showFileNameWithEye={showFileNameWithEye}
         />
       </div>
       {!readOnly && (

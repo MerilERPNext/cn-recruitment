@@ -34,6 +34,8 @@ import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetUiPermission } from "../../../hooks/userUiPermission";
 import { isActionEnabled } from "../../../utils/uiPermission";
+import { FormioPreviewItem, FormioPreviewPortal } from "../../shared/molecules/FormioPreview";
+import "../../../utils/FormioConfig";
 
 interface AttendanceFormData {
   request_type?: string;
@@ -643,6 +645,20 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
     response?: { data?: { exception?: string } };
   };
 
+  const removeFormioFile = (index: number) => {
+    try {
+      const attachmentComp = formAddressInstance.current?.getComponent("attachments");
+      if (attachmentComp) {
+        const current: any[] = (attachmentComp as any).dataValue || [];
+        (attachmentComp as any).setValue(current.filter((_: any, i: number) => i !== index));
+      }
+    } catch (err) {
+      console.error("Failed to remove file", err);
+    }
+    // Always update local state directly — don't rely solely on onChange firing after setValue
+    setAttachments((prev: any[]) => prev.filter((_: any, i: number) => i !== index));
+  };
+
   const loading = useLoadingOverlay();
 
   const handleSubmit = useCallback(
@@ -899,12 +915,15 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
         setIsForOthers(!!submission.data.isForOthers);
       }
 
-      if (submission?.changed?.component?.key === "attachments")
-        setAttachments((prev) => [
-          ...prev,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ...((submission?.data?.attachments as any) || []),
-        ]);
+      // Sync attachments from full submission data on every change.
+      // We can't rely on changed.component.key for file components with customfiles
+      // storage — Form.io does not always populate `changed` for file fields.
+      const submissionAttachments = submission?.data?.attachments;
+      if (Array.isArray(submissionAttachments)) {
+        setAttachments(submissionAttachments as any);
+      } else if (!submissionAttachments) {
+        setAttachments([]);
+      }
     },
     [
       attendanceRequestAttachmentsMandatory,
@@ -1175,6 +1194,7 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
               </Button>}
             </div>
           ) : null}
+          <style>{`.formio-component-attachments .list-group { display: none !important; }`}</style>
           <Form
             form={formSchema}
             onSubmit={handleSubmit}
@@ -1183,6 +1203,19 @@ const AttendanceRequestFormV2: React.FC<AttendanceRequestFormV2Props> = ({
             onFormReady={onFormReady}
             className="formio-no-border address-form-container mt-4"
           />
+          <FormioPreviewPortal compKey="attachments">
+            {(attachments as any[]).length > 0 && (
+              <div className="mt-2 space-y-2">
+                {(attachments as any[]).map((fileObj: any, idx: number) => (
+                  <FormioPreviewItem
+                    key={idx}
+                    fileObj={fileObj}
+                    onRemove={() => removeFormioFile(idx)}
+                  />
+                ))}
+              </div>
+            )}
+          </FormioPreviewPortal>
         </div>
 
         {/* Submit Bar */}
