@@ -103,12 +103,15 @@ const TicketTableRow = ({
                 </Typography>
             </td>
             <td className="px-4 py-3">
-                <Typography
-                    variant="bodySmall"
-                    color="body1"
-                >
-                    {ticket.raise_by_name}
-                </Typography>
+                <WrapperHoverCard employeeId={ticket.raise_by_id} placement="center-left" >
+                    <Typography
+                        variant="bodySmall"
+                        color="body1"
+                        className="hover:text-primary cursor-pointer"
+                    >
+                        {ticket.raise_by_name}
+                    </Typography>
+                </WrapperHoverCard>
             </td>
             <td className="px-4 py-3">
                 <Typography

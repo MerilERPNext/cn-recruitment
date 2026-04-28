@@ -25,7 +25,7 @@ import CircularLoader from "../shared/atoms/CircularLoader";
 import DocumentLibrary from "../Library/Library";
 import Tooltip from "../shared/Tooltip";
 import { useTargetUser } from "../../context/ViewedUserContext";
-import { useQueryClient } from "@tanstack/react-query";
+// import { useQueryClient } from "@tanstack/react-query";
 import EmployeeProfileSections from "./EmployeeProfileSections";
 import ReportingDetails from "./ReportingDetails";
 import { Typography } from "../shared/atoms/Typography";
@@ -74,7 +74,7 @@ const EmployeeProfile: React.FC = () => {
   const { data: currentUser, isLoading: isCurrentUserLoading } =
     useCurrentEmployeeAllDetails();
 
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   // Use targetEmployeeId if viewing another user, otherwise use current user's employee ID
   // Don't default to empty string until we know currentUser has loaded
@@ -195,12 +195,12 @@ const EmployeeProfile: React.FC = () => {
     }
   }, []);
 
-  //refetching of the ui permission
-  useEffect(() => {
-    queryClient.invalidateQueries({
-      queryKey: ["ui-permission"],
-    });
-  }, [queryClient]);
+  // //refetching of the ui permission
+  // useEffect(() => {
+  //   queryClient.invalidateQueries({
+  //     queryKey: ["ui-permission"],
+  //   });
+  // }, [queryClient]);
 
   // Intersection Observer for scroll-spy
   useEffect(() => {
