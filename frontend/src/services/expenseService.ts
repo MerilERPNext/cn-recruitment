@@ -362,6 +362,7 @@ export const expenseService = {
     const response = await FrappeAPI.getDocumentList("Draft Expense Claim", {
       fields: ["*"],
       filters,
+      orderBy: "creation desc",
     });
     return response.data || [];
   },

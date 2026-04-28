@@ -9,6 +9,11 @@
  "field_order": [
   "job_applicant_email",
   "status",
+  "job_title",
+  "company",
+  "location",
+  "experience",
+  "employment_type",
   "form_data"
  ],
  "fields": [
@@ -31,6 +36,41 @@
    "label": "Status",
    "options": "Pending\nCompleted\nRejected",
    "reqd": 1
+  },
+  {
+   "fieldname": "job_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Job Title",
+   "read_only": 0
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "read_only": 0
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "read_only": 0
+  },
+  {
+   "fieldname": "experience",
+   "fieldtype": "Data",
+   "label": "Experience",
+   "read_only": 0
+  },
+  {
+   "fieldname": "employment_type",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Employment Type",
+   "read_only": 0
   },
   {
    "description": "JSON snapshot of the linked Job Applicant document.",

@@ -421,7 +421,7 @@ export function useCreateDraftExpenseClaim() {
     mutationFn: (payload: any) => expenseService.createDraftExpenseClaim(payload),
     onSuccess: () => {
       toast.success("Draft expense claim saved!");
-      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      queryClient.removeQueries({ queryKey: ["expense-claims-draft"] });
       navigate("/webapp/expenses-app/expenses-list");
     },
     onError: (err: any) => {
@@ -430,14 +430,17 @@ export function useCreateDraftExpenseClaim() {
   });
 }
 
-export const useGetDraftExpenseClaims = (employeeId?: string) => {
+export const useGetDraftExpenseClaims = (
+  employeeId?: string,
+  options?: { enabled?: boolean },
+) => {
   return useQuery({
     queryKey: ["expense-claims-draft", employeeId],
     queryFn: () => {
       if (!employeeId) return [];
       return expenseService.getDraftExpenseClaims(employeeId);
     },
-    enabled: !!employeeId,
+    enabled: options?.enabled ?? !!employeeId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -448,8 +451,14 @@ export function useDeleteDraftExpenseClaim() {
 
   return useMutation({
     mutationFn: (docName: string) => expenseService.deleteDraftExpenseClaim(docName),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+    onSuccess: (_, docName) => {
+      queryClient.setQueriesData(
+        { queryKey: ["expense-claims-draft"] },
+        (existingDrafts: any) => {
+          if (!Array.isArray(existingDrafts)) return existingDrafts;
+          return existingDrafts.filter((draft: any) => draft?.name !== docName);
+        },
+      );
     },
     onError: (err: any) => {
       toast.error(errorResponseFormater(err, "Failed to delete draft."));
@@ -466,7 +475,7 @@ export function useUpdateDraftExpenseClaim() {
       expenseService.updateDraftExpenseClaim(docName, payload),
     onSuccess: () => {
       toast.success("Draft expense claim updated!");
-      queryClient.invalidateQueries({ queryKey: ["expense-claims-draft"] });
+      queryClient.removeQueries({ queryKey: ["expense-claims-draft"] });
       navigate("/webapp/expenses-app/expenses-list");
     },
     onError: (err: any) => {

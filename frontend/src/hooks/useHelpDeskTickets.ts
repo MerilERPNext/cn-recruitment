@@ -14,6 +14,7 @@ export interface HDTicket {
   user_type: string;
   _assign: string | null;
   raised_by: string;
+  raise_by_id: string;
   creation: string;
   modified: string;
   raise_by_name: string;

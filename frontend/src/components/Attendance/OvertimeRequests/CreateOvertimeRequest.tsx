@@ -22,6 +22,7 @@ import { useLoadingOverlay } from "../../../context/OverlayContext";
 import { useScreenSize } from "../../../hooks/useScreenSize";
 import { useTargetUser } from "../../../context/ViewedUserContext";
 import { Typography } from "../../shared/atoms/Typography";
+import { FormioPreviewItem } from "../../shared/molecules/FormioPreview";
 
 interface RequestOvertimeProps {
   onSuccess?: (data?: any) => void;
@@ -244,6 +245,21 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
     setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeFormioFile = (index: number) => {
+    try {
+      const attachmentComp = formInstance.current?.getComponent("attachment");
+      if (attachmentComp) {
+        const current: any[] = attachmentComp.dataValue || [];
+        attachmentComp.setValue(current.filter((_: any, i: number) => i !== index));
+      } else {
+        setAttachments((prev: any[]) => prev.filter((_: any, i: number) => i !== index));
+      }
+    } catch (err) {
+      console.error("Failed to remove file from formio", err);
+      setAttachments((prev: any[]) => prev.filter((_: any, i: number) => i !== index));
+    }
+  };
+
   const loading = useLoadingOverlay();
   const handleSubmit = async () => {
     await loading?.wrap(async () => {
@@ -382,7 +398,8 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
         </div>
 
         {/* Form.io Form */}
-        <div className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
+        <div id="overtime-request-form-container" className="flex-1 min-h-0 p-2 md:px-6 md:py-4 overflow-y-auto overtime-request-form pb-20">
+          <style>{`.formio-component-attachment .list-group { display: none !important; }`}</style>
 
           <Form
             form={useMemo(
@@ -447,6 +464,20 @@ const CreateOvertimeRequest = ({ onCancel, editData, isEditMode }: RequestOverti
               validateOnChange: false,
             }}
           />
+
+          {/* File previews */}
+          {(attachments as any[]).length > 0 && (
+            <div className="mt-2 space-y-2">
+              {(attachments as any[]).map((fileObj: any, idx: number) => (
+                <FormioPreviewItem
+                  key={idx}
+                  fileObj={fileObj}
+                  onRemove={() => removeFormioFile(idx)}
+                />
+              ))}
+            </div>
+          )}
+
           {isEditMode && existingAttachments.length > 0 && (
             <div className="my-2 p-4 bg-gray-50 border border-gray-200 rounded-md">
               <Typography variant="bodySmall" className="font-semibold mb-3">

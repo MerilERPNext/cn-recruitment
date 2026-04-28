@@ -62,7 +62,10 @@ interface RequestLeaveProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[]; onPreviewUrl: (url: string | null) => void }> = ({ currentAttachments, onPreviewUrl }) => {
+const AttachmentPreviewVanilla: React.FC<{ 
+  currentAttachments: any[]; 
+  onPreview: (file: { url: string; name: string }) => void 
+}> = ({ currentAttachments, onPreview }) => {
   useEffect(() => {
     console.log("AttachmentPreviewVanilla - currentAttachments:", currentAttachments);
     const interval = setInterval(() => {
@@ -108,11 +111,11 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[]; onPreviewU
         html += '<div class="flex items-center gap-3 rounded-lg p-2 shadow-sm bg-gray-50 hover:bg-white transition-colors w-fit max-w-[300px]" style="border: 1px solid #cbd5e1 !important;">';
 
         if (isImage) {
-          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;" />`;
+          html += `<img src="${previewUrl}" alt="${safeName}" class="w-12 h-12 object-cover rounded shadow-sm cursor-pointer shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" style="border: 1px solid #cbd5e1 !important;" />`;
         } else {
-          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
+          html += `<div class="w-12 h-12 flex items-center justify-center bg-gray-200 shadow-sm rounded cursor-pointer text-[10px] font-semibold text-gray-600 uppercase shrink-0 preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" style="border: 1px solid #cbd5e1 !important;">Open</div>`;
         }
-        html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px]" title="${safeName}">${safeName}</p>`;
+        html += `<p class="text-sm text-gray-700 font-medium truncate max-w-[180px] cursor-pointer preview-image-trigger" data-preview-url="${previewUrl}" data-preview-name="${safeName}" title="${safeName}">${safeName}</p>`;
         html += '</div>';
       });
 
@@ -123,14 +126,16 @@ const AttachmentPreviewVanilla: React.FC<{ currentAttachments: any[]; onPreviewU
       triggers.forEach(el => {
         el.addEventListener('click', () => {
           const uri = el.getAttribute('data-preview-url');
-          if (uri) onPreviewUrl(uri);
+          const name = el.getAttribute('data-preview-name');
+          if (uri && name) onPreview({ url: uri, name });
+          else if (uri) onPreview({ url: uri, name: "Attachment" });
         });
       });
 
     }, 500);
 
     return () => clearInterval(interval);
-  }, [currentAttachments, onPreviewUrl]);
+  }, [currentAttachments, onPreview]);
 
   return null;
 };
@@ -167,7 +172,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentAttachments, setCurrentAttachments] = useState<any[]>([]);
   const [isFileProcessing, setIsFileProcessing] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string; name: string } | null>(null);
 
   const handleUpdate = useCallback(async () => {
     if (!currentEmployee?.name) {
@@ -686,7 +691,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
                         requiredFieldMap["custom_attachment"] ||
                         isAttachmentMandatory,
                     },
-                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif",
+                    filePattern: ".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.csv,.xls",
                     customClass: "mb-4",
                   },
                 ],
@@ -1021,7 +1026,7 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
 
       <AttachmentPreviewVanilla
         currentAttachments={currentAttachments}
-        onPreviewUrl={setPreviewUrl}
+        onPreview={setPreviewFile}
       />
 
       {isAttendanceModalOpen && (
@@ -1033,8 +1038,12 @@ const RequestLeave: React.FC<RequestLeaveProps> = ({ onSuccess, onCancel }) => {
         />
       )}
 
-      {previewUrl && (
-        <FilePreviewModal fileUrl={previewUrl} onClose={() => setPreviewUrl(null)} />
+      {previewFile && (
+        <FilePreviewModal 
+          fileUrl={previewFile.url} 
+          fileName={previewFile.name}
+          onClose={() => setPreviewFile(null)} 
+        />
       )}
     </div>
   );

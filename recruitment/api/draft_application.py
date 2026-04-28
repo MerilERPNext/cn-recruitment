@@ -1,18 +1,3 @@
-"""Draft Application API.
-
-Endpoints:
-    save_draft(job_applicant_email)        -> upsert a Draft Application with a
-        JSON snapshot of the matching Job Applicant. Status is auto-derived
-        from Job Applicant.docstatus (0 -> Pending, 1 -> Completed). A
-        previously set 'Rejected' is preserved across saves.
-
-    get_draft(job_applicant_email)         -> return the stored snapshot so the
-        UI can prefill the form on reopen.
-
-    delete_applicant(job_applicant_email)  -> delete the Job Applicant document
-        and its associated Draft Application (if any).
-"""
-
 import json
 
 import frappe
@@ -39,9 +24,25 @@ def _serialize(doc):
         "name": doc.name,
         "job_applicant_email": doc.job_applicant_email,
         "status": doc.status,
+        "job_title": doc.job_title,
+        "company": doc.company,
+        "location": doc.location,
+        "experience": doc.experience,
+        "employment_type": doc.employment_type,
         "form_data": form_data,
         "creation": doc.creation,
         "modified": doc.modified,
+    }
+
+
+def _fetch_applicant_context(job_applicant):
+    """Read the 5 display fields directly from the Job Applicant doc."""
+    return {
+        "job_title": job_applicant.get("designation"),
+        "company": job_applicant.get("custom_company_finalized"),
+        "location": job_applicant.get("custom_location"),
+        "employment_type": job_applicant.get("custom_employment_type"),
+        "experience": job_applicant.get("custom_experience_range"),
     }
 
 
@@ -64,25 +65,33 @@ def save_draft(job_applicant_email):
     docstatus = int(job_applicant.docstatus or 0)
     derived_status = "Pending" if docstatus == 0 else "Completed" if docstatus == 1 else None
 
+    applicant_context = _fetch_applicant_context(job_applicant)
+
     existing = frappe.db.get_value(DOCTYPENAME, {"job_applicant_email": email}, "name")
 
     try:
         if existing:
             doc = frappe.get_doc(DOCTYPENAME, existing)
-            doc.form_data = snapshot
+            created = False
+        else:
+            doc = frappe.new_doc(DOCTYPENAME)
+            doc.job_applicant_email = email
+            created = True
+
+        doc.form_data = snapshot
+        doc.job_title = applicant_context["job_title"]
+        doc.company = applicant_context["company"]
+        doc.location = applicant_context["location"]
+        doc.experience = applicant_context["experience"]
+        doc.employment_type = applicant_context["employment_type"]
+
+        if created:
+            doc.status = derived_status or "Pending"
+            doc.insert(ignore_permissions=True)
+        else:
             if derived_status and doc.status != "Rejected":
                 doc.status = derived_status
             doc.save(ignore_permissions=True)
-            created = False
-        else:
-            doc = frappe.get_doc({
-                "doctype": DOCTYPENAME,
-                "job_applicant_email": email,
-                "status": derived_status or "Pending",
-                "form_data": snapshot,
-            })
-            doc.insert(ignore_permissions=True)
-            created = True
 
         frappe.db.commit()
     except Exception:
@@ -110,3 +119,40 @@ def get_draft(job_applicant_email):
 
     doc = frappe.get_doc(DOCTYPENAME, name)
     return _ok("Draft Application fetched.", _serialize(doc))
+
+
+@frappe.whitelist()
+def delete_applicant(job_applicant_email):
+    if not job_applicant_email:
+        return _err("job_applicant_email is required.", 400)
+
+    email = job_applicant_email.strip()
+
+    applicant = frappe.db.get_value("Job Applicant", {"email_id": email}, "name")
+    if not applicant:
+        return _err(f"No Job Applicant found for '{email}'.", 404)
+
+    try:
+        frappe.has_permission("Job Applicant", "delete", doc=applicant, throw=True)
+
+        draft = frappe.db.get_value(DOCTYPENAME, {"job_applicant_email": email}, "name")
+        if draft:
+            frappe.delete_doc(DOCTYPENAME, draft, ignore_permissions=True, force=True)
+
+        frappe.delete_doc("Job Applicant", applicant, ignore_permissions=True, force=True)
+        frappe.db.commit()
+    except frappe.PermissionError:
+        return _err("You are not permitted to delete this Job Applicant.", 403)
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "Draft Application delete_applicant failed")
+        return _err(f"Unable to delete Job Applicant: {type(e).__name__}: {e}", 500)
+
+    return _ok(
+        "Job Applicant deleted.",
+        {
+            "job_applicant_email": email,
+            "deleted_applicant": applicant,
+            "deleted_draft": draft,
+        },
+    )

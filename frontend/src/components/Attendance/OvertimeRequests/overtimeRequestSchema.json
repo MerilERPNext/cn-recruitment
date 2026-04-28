@@ -91,6 +91,7 @@
       "storage": "customfiles",
       "fileReader": false,
       "privateDownload": false,
+      "filePattern": ".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png",
       "validate": {
         "required": false
       },
